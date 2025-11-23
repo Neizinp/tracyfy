@@ -1,13 +1,15 @@
 import React from 'react';
-import { LayoutGrid, Settings, FolderOpen, Plus } from 'lucide-react';
+import { LayoutGrid, Settings, FolderOpen, Plus, Download, Upload } from 'lucide-react';
 
 interface LayoutProps {
     children: React.ReactNode;
     onNewRequirement: () => void;
     onNewUseCase?: () => void;
+    onExport?: () => void;
+    onImport?: () => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNewUseCase }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNewUseCase, onExport, onImport }) => {
     return (
         <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
             {/* Sidebar */}
@@ -94,6 +96,46 @@ export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNe
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px' }}>
+                        {onImport && (
+                            <button
+                                onClick={onImport}
+                                style={{
+                                    backgroundColor: 'transparent',
+                                    color: 'var(--color-text-secondary)',
+                                    border: '1px solid var(--color-border)',
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '6px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    cursor: 'pointer',
+                                    fontWeight: 500,
+                                    transition: 'background-color 0.2s'
+                                }}>
+                                <Upload size={18} />
+                                Import
+                            </button>
+                        )}
+                        {onExport && (
+                            <button
+                                onClick={onExport}
+                                style={{
+                                    backgroundColor: 'transparent',
+                                    color: 'var(--color-text-secondary)',
+                                    border: '1px solid var(--color-border)',
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '6px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    cursor: 'pointer',
+                                    fontWeight: 500,
+                                    transition: 'background-color 0.2s'
+                                }}>
+                                <Download size={18} />
+                                Export
+                            </button>
+                        )}
                         {onNewUseCase && (
                             <button
                                 onClick={onNewUseCase}

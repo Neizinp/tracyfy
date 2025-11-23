@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { RequirementTree } from './components/RequirementTree';
 import { NewRequirementModal } from './components/NewRequirementModal';
@@ -120,10 +120,36 @@ function buildTree(requirements: Requirement[]): RequirementTreeNode[] {
   return rootNodes;
 }
 
+// LocalStorage key for persisting data
+const STORAGE_KEY = 'reqtrace-data';
+
+// Load saved data from LocalStorage or use initial data
+function loadSavedData() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        requirements: parsed.requirements || initialRequirements,
+        useCases: parsed.useCases || initialUseCases,
+        links: parsed.links || []
+      };
+    }
+  } catch (error) {
+    console.error('Failed to load saved data:', error);
+  }
+  return {
+    requirements: initialRequirements,
+    useCases: initialUseCases,
+    links: []
+  };
+}
+
 function App() {
-  const [requirements, setRequirements] = useState<Requirement[]>(initialRequirements);
-  const [useCases, setUseCases] = useState<UseCase[]>(initialUseCases);
-  const [links, setLinks] = useState<Link[]>([]);
+  const savedData = loadSavedData();
+  const [requirements, setRequirements] = useState<Requirement[]>(savedData.requirements);
+  const [useCases, setUseCases] = useState<UseCase[]>(savedData.useCases);
+  const [links, setLinks] = useState<Link[]>(savedData.links);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -132,6 +158,66 @@ function App() {
   const [editingRequirement, setEditingRequirement] = useState<Requirement | null>(null);
   const [editingUseCase, setEditingUseCase] = useState<UseCase | null>(null);
   const [currentView, setCurrentView] = useState<'tree' | 'matrix' | 'usecases'>('tree');
+
+  // Auto-save to LocalStorage whenever data changes
+  useEffect(() => {
+    try {
+      const dataToSave = {
+        requirements,
+        useCases,
+        links
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    } catch (error) {
+      console.error('Failed to save data:', error);
+    }
+  }, [requirements, useCases, links]);
+
+  // Export data as JSON file
+  const handleExport = () => {
+    const dataToExport = {
+      requirements,
+      useCases,
+      links,
+      exportedAt: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `requirements-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Import data from JSON file
+  const handleImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const imported = JSON.parse(event.target?.result as string);
+            if (imported.requirements) setRequirements(imported.requirements);
+            if (imported.useCases) setUseCases(imported.useCases);
+            if (imported.links) setLinks(imported.links);
+            alert('Data imported successfully!');
+          } catch (error) {
+            console.error('Failed to import data:', error);
+            alert('Failed to import data. Please check the file format.');
+          }
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  };
 
   const handleAddRequirement = (newReqData: Omit<Requirement, 'id' | 'lastModified'>) => {
     // Simple ID generation strategy
@@ -239,7 +325,12 @@ function App() {
   const treeData = buildTree(requirements);
 
   return (
-    <Layout onNewRequirement={() => setIsModalOpen(true)} onNewUseCase={() => setIsUseCaseModalOpen(true)}>
+    <Layout
+      onNewRequirement={() => setIsModalOpen(true)}
+      onNewUseCase={() => setIsUseCaseModalOpen(true)}
+      onExport={handleExport}
+      onImport={handleImport}
+    >
       <div style={{ marginBottom: 'var(--spacing-md)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
           <div>
