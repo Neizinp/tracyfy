@@ -4,6 +4,7 @@ import { RequirementTree } from './components/RequirementTree';
 import { NewRequirementModal } from './components/NewRequirementModal';
 import { LinkModal } from './components/LinkModal';
 import { EditRequirementModal } from './components/EditRequirementModal';
+import { DetailedRequirementView } from './components/DetailedRequirementView';
 import { TraceabilityMatrix } from './components/TraceabilityMatrix';
 import { UseCaseModal } from './components/UseCaseModal';
 import { UseCaseList } from './components/UseCaseList';
@@ -155,7 +156,7 @@ function App() {
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
   const [editingRequirement, setEditingRequirement] = useState<Requirement | null>(null);
   const [editingUseCase, setEditingUseCase] = useState<UseCase | null>(null);
-  const [currentView, setCurrentView] = useState<'tree' | 'matrix' | 'usecases'>('tree');
+  const [currentView, setCurrentView] = useState<'tree' | 'detailed' | 'matrix' | 'usecases'>('tree');
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [versions, setVersions] = useState<Version[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -809,12 +810,13 @@ function App() {
             <button
               onClick={() => setCurrentView('tree')}
               style={{
-                padding: '8px 16px',
+                padding: '6px 12px',
                 borderRadius: '6px',
                 border: '1px solid var(--color-border)',
                 backgroundColor: currentView === 'tree' ? 'var(--color-accent)' : 'transparent',
                 color: currentView === 'tree' ? 'white' : 'var(--color-text-primary)',
                 cursor: 'pointer',
+                fontSize: '0.875rem',
                 fontWeight: 500,
                 transition: 'all 0.2s'
               }}
@@ -822,9 +824,25 @@ function App() {
               Tree View
             </button>
             <button
+              onClick={() => setCurrentView('detailed')}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: '1px solid var(--color-border)',
+                backgroundColor: currentView === 'detailed' ? 'var(--color-accent)' : 'transparent',
+                color: currentView === 'detailed' ? 'white' : 'var(--color-text-primary)',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                transition: 'all 0.2s'
+              }}
+            >
+              Detailed View
+            </button>
+            <button
               onClick={() => setCurrentView('matrix')}
               style={{
-                padding: '8px 16px',
+                padding: '6px 12px',
                 borderRadius: '6px',
                 border: '1px solid var(--color-border)',
                 backgroundColor: currentView === 'matrix' ? 'var(--color-accent)' : 'transparent',
@@ -862,6 +880,13 @@ function App() {
           allRequirements={requirements}
           onReorder={handleReorder}
           onLink={handleLink}
+          onEdit={handleEdit}
+        />
+      )}
+
+      {currentView === 'detailed' && (
+        <DetailedRequirementView
+          requirements={filteredRequirements}
           onEdit={handleEdit}
         />
       )}
