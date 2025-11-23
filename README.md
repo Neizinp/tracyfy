@@ -14,7 +14,10 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 
 ### Data Management
 - **Auto-Save** - All changes automatically saved to browser LocalStorage
+- **Version History** - Track changes over time with automatic snapshots and restore capability
 - **Export/Import** - Backup and restore data as JSON files
+- **PDF Export** - Generate professional PDF documents with requirements, use cases, and traceability matrix
+- **Excel Export** - Download structured spreadsheets with multi-sheet support
 - **Persistent Storage** - Data survives page refreshes and browser restarts
 
 ### Requirement Fields
@@ -77,9 +80,15 @@ npm run build
 2. Click **"New Use Case"** to create
 3. Define actors, preconditions, flows, and postconditions
 
-### Export/Import Data
-- **Export**: Click "Export" button to download JSON backup
-- **Import**: Click "Import" button to load from JSON file
+### Version History
+1. Click the **clock icon** in the header
+2. View timeline of auto-saved versions
+3. Restore any previous version with one click
+
+### Export Options
+- **PDF**: Professional document generation
+- **Excel**: Structured spreadsheet data
+- **JSON**: Full data backup/restore
 
 ## 🏗️ Architecture
 

@@ -1,5 +1,5 @@
-import React from 'react';
-import { LayoutGrid, Settings, FolderOpen, Plus, Download, Upload, Clock } from 'lucide-react';
+import { LayoutGrid, Settings, FolderOpen, Plus, Download, Upload, Clock, FileText, FileSpreadsheet, ChevronDown } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -8,9 +8,27 @@ interface LayoutProps {
     onExport?: () => void;
     onImport?: () => void;
     onViewHistory?: () => void;
+    onExportPDF?: () => void;
+    onExportExcel?: () => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNewUseCase, onExport, onImport, onViewHistory }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNewUseCase, onExport, onImport, onViewHistory, onExportPDF, onExportExcel }) => {
+    const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    const exportMenuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+                setIsExportMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     return (
         <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
             {/* Sidebar */}
@@ -137,9 +155,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNe
                                 Import
                             </button>
                         )}
-                        {onExport && (
+                        {/* Export Dropdown */}
+                        <div style={{ position: 'relative' }} ref={exportMenuRef}>
                             <button
-                                onClick={onExport}
+                                onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
                                 style={{
                                     backgroundColor: 'transparent',
                                     color: 'var(--color-text-secondary)',
@@ -155,8 +174,105 @@ export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNe
                                 }}>
                                 <Download size={18} />
                                 Export
+                                <ChevronDown size={14} />
                             </button>
-                        )}
+
+                            {isExportMenuOpen && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    right: 0,
+                                    marginTop: '0.5rem',
+                                    backgroundColor: 'var(--color-bg-primary)',
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: '6px',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                                    zIndex: 100,
+                                    minWidth: '180px',
+                                    overflow: 'hidden'
+                                }}>
+                                    {onExportPDF && (
+                                        <button
+                                            onClick={() => {
+                                                onExportPDF();
+                                                setIsExportMenuOpen(false);
+                                            }}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--spacing-sm)',
+                                                width: '100%',
+                                                padding: '0.75rem 1rem',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: 'var(--color-text-primary)',
+                                                cursor: 'pointer',
+                                                textAlign: 'left',
+                                                fontSize: '0.9rem'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <FileText size={16} />
+                                            Export to PDF
+                                        </button>
+                                    )}
+                                    {onExportExcel && (
+                                        <button
+                                            onClick={() => {
+                                                onExportExcel();
+                                                setIsExportMenuOpen(false);
+                                            }}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--spacing-sm)',
+                                                width: '100%',
+                                                padding: '0.75rem 1rem',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: 'var(--color-text-primary)',
+                                                cursor: 'pointer',
+                                                textAlign: 'left',
+                                                fontSize: '0.9rem'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <FileSpreadsheet size={16} />
+                                            Export to Excel
+                                        </button>
+                                    )}
+                                    {onExport && (
+                                        <button
+                                            onClick={() => {
+                                                onExport();
+                                                setIsExportMenuOpen(false);
+                                            }}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--spacing-sm)',
+                                                width: '100%',
+                                                padding: '0.75rem 1rem',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: 'var(--color-text-primary)',
+                                                cursor: 'pointer',
+                                                textAlign: 'left',
+                                                fontSize: '0.9rem',
+                                                borderTop: '1px solid var(--color-border)'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <Download size={16} />
+                                            Export JSON
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                         {onNewUseCase && (
                             <button
                                 onClick={onNewUseCase}

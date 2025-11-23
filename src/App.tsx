@@ -9,6 +9,9 @@ import { UseCaseModal } from './components/UseCaseModal';
 import { UseCaseList } from './components/UseCaseList';
 import { VersionHistory } from './components/VersionHistory';
 import type { Requirement, RequirementTreeNode, Link, UseCase, Version } from './types';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 // Mock Data - Now using flat structure with parentIds
 const initialRequirements: Requirement[] = [
@@ -16,118 +19,110 @@ const initialRequirements: Requirement[] = [
     id: 'REQ-001',
     title: 'System Authentication',
     description: 'The system shall allow users to log in using secure credentials.',
-    text: 'The system shall provide a secure authentication mechanism that verifies user identity before granting access to protected resources.',
-    rationale: 'Authentication is critical for protecting sensitive data and ensuring only authorized users can access the system.',
-    parentIds: [],
+    text: 'The system must support multi-factor authentication for all administrative access.',
+    rationale: 'Security compliance requires MFA for privileged accounts.',
     status: 'approved',
     priority: 'high',
-    lastModified: Date.now(),
+    parentIds: [],
+    lastModified: Date.now()
   },
   {
     id: 'REQ-002',
-    title: 'Password Complexity',
-    description: 'Passwords must be at least 12 characters long.',
-    text: 'User passwords shall be at least 12 characters long and contain a mix of uppercase, lowercase, numbers, and special characters.',
-    rationale: 'Strong password requirements reduce the risk of brute-force attacks and unauthorized access.',
-    parentIds: ['REQ-001'],
-    status: 'draft',
-    priority: 'medium',
-    lastModified: Date.now(),
+    title: 'Data Encryption',
+    description: 'All sensitive data must be encrypted at rest and in transit.',
+    text: 'AES-256 encryption must be used for database storage.',
+    rationale: 'Data protection regulations.',
+    status: 'approved',
+    priority: 'high',
+    parentIds: [],
+    lastModified: Date.now()
   },
   {
     id: 'REQ-003',
-    title: 'MFA Support',
-    description: 'The system shall support Multi-Factor Authentication.',
-    text: 'The system shall support multi-factor authentication using time-based one-time passwords (TOTP) or SMS codes.',
-    rationale: 'MFA provides an additional layer of security beyond passwords, significantly reducing the risk of account compromise.',
-    parentIds: ['REQ-001', 'REQ-004'], // Demonstrates many-to-many: belongs to both REQ-001 and REQ-004
-    status: 'approved',
-    priority: 'high',
-    lastModified: Date.now(),
+    title: 'User Profile Management',
+    description: 'Users shall be able to update their profile information.',
+    text: 'Users can update email, phone number, and display name.',
+    rationale: 'User autonomy and data accuracy.',
+    status: 'draft',
+    priority: 'medium',
+    parentIds: ['REQ-001'],
+    lastModified: Date.now()
   },
   {
     id: 'REQ-004',
-    title: 'Data Export',
-    description: 'Users shall be able to export data in CSV format.',
-    text: 'The system shall provide functionality to export all requirement data to CSV format for external analysis.',
-    rationale: 'Data export enables integration with external tools and supports backup and reporting workflows.',
-    parentIds: [],
+    title: 'Password Reset',
+    description: 'Users shall be able to reset their password via email.',
+    text: 'Password reset link expires in 24 hours.',
+    rationale: 'Account recovery mechanism.',
     status: 'draft',
-    priority: 'low',
-    lastModified: Date.now(),
+    priority: 'medium',
+    parentIds: ['REQ-001'],
+    lastModified: Date.now()
   }
 ];
 
-// Mock Use Cases
 const initialUseCases: UseCase[] = [
   {
     id: 'UC-001',
     title: 'User Login',
-    description: 'User authenticates to access the system',
-    actor: 'End User',
-    preconditions: 'User has valid credentials',
-    postconditions: 'User is authenticated and has access to the system',
-    mainFlow: '1. User navigates to login page\n2. User enters username and password\n3. System validates credentials\n4. System grants access',
-    alternativeFlows: '3a. Invalid credentials: System displays error message',
+    description: 'A registered user logs into the system.',
+    actor: 'Registered User',
+    preconditions: 'User has a valid account.',
+    postconditions: 'User is authenticated and redirected to dashboard.',
+    mainFlow: '1. User navigates to login page.\n2. User enters credentials.\n3. System validates credentials.\n4. System redirects to dashboard.',
+    alternativeFlows: '3a. Invalid credentials: System shows error message.',
     priority: 'high',
     status: 'approved',
-    lastModified: Date.now()
-  },
-  {
-    id: 'UC-002',
-    title: 'Export Requirements',
-    description: 'User exports requirement data for external analysis',
-    actor: 'Project Manager',
-    preconditions: 'User is logged in and has requirements to export',
-    postconditions: 'Requirements are exported in CSV format',
-    mainFlow: '1. User clicks export button\n2. System generates CSV file\n3. System downloads file to user\'s device',
-    priority: 'medium',
-    status: 'draft',
     lastModified: Date.now()
   }
 ];
 
-// Helper function to build tree structure from flat requirements
-function buildTree(requirements: Requirement[]): RequirementTreeNode[] {
+const initialLinks: Link[] = [];
+
+const STORAGE_KEY = 'reqtrace-data';
+const VERSIONS_KEY = 'reqtrace-versions';
+const MAX_VERSIONS = 50;
+
+// Helper to build tree structure from flat requirements
+const buildTree = (requirements: Requirement[]): RequirementTreeNode[] => {
   const reqMap = new Map<string, RequirementTreeNode>();
 
-  // Initialize all requirements as tree nodes with empty children
+  // Initialize all nodes
   requirements.forEach(req => {
     reqMap.set(req.id, { ...req, children: [] });
   });
 
   const rootNodes: RequirementTreeNode[] = [];
 
-  // Build the tree structure
+  // Build hierarchy
   requirements.forEach(req => {
     const node = reqMap.get(req.id)!;
 
     if (req.parentIds.length === 0) {
-      // No parents - this is a root node
       rootNodes.push(node);
     } else {
-      // Has parents - add as child to each parent
       req.parentIds.forEach(parentId => {
         const parent = reqMap.get(parentId);
         if (parent) {
-          // Create a copy of the node for each parent to support many-to-many display
-          const nodeCopy: RequirementTreeNode = { ...req, children: [] };
-          parent.children.push(nodeCopy);
+          // Check if child already exists to avoid duplicates (though UI shouldn't allow it)
+          if (!parent.children.find(c => c.id === node.id)) {
+            parent.children.push(node);
+          }
+        } else {
+          // Parent not found (orphan), treat as root for now or handle error
+          if (!rootNodes.find(n => n.id === node.id)) {
+            rootNodes.push(node);
+          }
         }
       });
     }
   });
 
   return rootNodes;
-}
+};
 
-// LocalStorage keys for persisting data
-const STORAGE_KEY = 'reqtrace-data';
-const VERSIONS_KEY = 'reqtrace-versions';
-const MAX_VERSIONS = 50; // Keep last 50 versions
-
-// Load saved data from LocalStorage or use initial data
-function loadSavedData() {
+// Helper to load data from LocalStorage
+const loadSavedData = () => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -135,7 +130,7 @@ function loadSavedData() {
       return {
         requirements: parsed.requirements || initialRequirements,
         useCases: parsed.useCases || initialUseCases,
-        links: parsed.links || []
+        links: parsed.links || initialLinks
       };
     }
   } catch (error) {
@@ -144,9 +139,9 @@ function loadSavedData() {
   return {
     requirements: initialRequirements,
     useCases: initialUseCases,
-    links: []
+    links: initialLinks
   };
-}
+};
 
 function App() {
   const savedData = loadSavedData();
@@ -232,6 +227,12 @@ function App() {
     }
   };
 
+  const handleBreakDownUseCase = (_useCase: UseCase) => {
+    // Open new requirement modal with use case pre-selected
+    // For now, just open the modal - user can manually link
+    setIsModalOpen(true);
+  };
+
   // Export data as JSON file
   const handleExport = () => {
     const dataToExport = {
@@ -278,6 +279,277 @@ function App() {
     input.click();
   };
 
+  // Helper to trigger file download
+  const triggerDownload = (blob: Blob, filename: string) => {
+    try {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename); // Explicitly set attribute
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup with a slightly longer delay
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 500);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Failed to trigger download. Please check your browser settings.');
+    }
+  };
+
+  // Export data as PDF
+  const handleExportPDF = () => {
+    try {
+      console.log('jsPDF imported:', jsPDF);
+      console.log('autoTable imported:', autoTable);
+
+      const doc = new jsPDF();
+      console.log('doc created:', doc);
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      // Title Page
+      doc.setFontSize(24);
+      doc.text('Requirements Document', pageWidth / 2, 30, { align: 'center' });
+
+      doc.setFontSize(12);
+      doc.text('Mars Rover 2030 Project', pageWidth / 2, 45, { align: 'center' });
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 55, { align: 'center' });
+
+      doc.setFontSize(10);
+      doc.text(`Total Requirements: ${requirements.length}`, pageWidth / 2, 70, { align: 'center' });
+      doc.text(`Total Use Cases: ${useCases.length}`, pageWidth / 2, 77, { align: 'center' });
+      doc.text(`Total Links: ${links.length}`, pageWidth / 2, 84, { align: 'center' });
+
+      // Requirements Section
+      doc.addPage();
+      doc.setFontSize(16);
+      doc.text('Requirements', 14, 20);
+
+      const reqTableData = requirements.map(req => [
+        req.id,
+        req.title,
+        req.status,
+        req.priority,
+        req.description || '',
+        req.parentIds.join(', ') || 'None'
+      ]);
+
+      autoTable(doc, {
+        startY: 30,
+        head: [['ID', 'Title', 'Status', 'Priority', 'Description', 'Parents']],
+        body: reqTableData,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [99, 102, 241], textColor: 255 },
+        margin: { left: 10, right: 10 },
+        columnStyles: {
+          0: { cellWidth: 15 },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 40 },
+          5: { cellWidth: 25 }
+        },
+        didDrawPage: () => {
+          // Footer
+          doc.setFontSize(8);
+          doc.text(
+            `Page ${doc.getCurrentPageInfo().pageNumber}`,
+            pageWidth / 2,
+            doc.internal.pageSize.getHeight() - 10,
+            { align: 'center' }
+          );
+        }
+      });
+
+      // Detailed Requirements
+      requirements.forEach((req) => {
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.text(`${req.id}: ${req.title}`, 14, 20);
+
+        doc.setFontSize(10);
+        let yPos = 35;
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('Description:', 14, yPos);
+        doc.setFont('helvetica', 'normal');
+        const descLines = doc.splitTextToSize(req.description || '', pageWidth - 28);
+        doc.text(descLines, 14, yPos + 5);
+        yPos += descLines.length * 5 + 10;
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('Requirement Text:', 14, yPos);
+        doc.setFont('helvetica', 'normal');
+        const textLines = doc.splitTextToSize(req.text || '', pageWidth - 28);
+        doc.text(textLines, 14, yPos + 5);
+        yPos += textLines.length * 5 + 10;
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('Rationale:', 14, yPos);
+        doc.setFont('helvetica', 'normal');
+        const rationaleLines = doc.splitTextToSize(req.rationale || '', pageWidth - 28);
+        doc.text(rationaleLines, 14, yPos + 5);
+        yPos += rationaleLines.length * 5 + 10;
+
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Status: `, 14, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(req.status || 'Draft', 40, yPos);
+
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Priority: `, 80, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(req.priority || 'Medium', 106, yPos);
+      });
+
+      // Use Cases Section
+      if (useCases.length > 0) {
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.text('Use Cases', 14, 20);
+
+        useCases.forEach((uc) => {
+          doc.addPage();
+          doc.setFontSize(14);
+          doc.text(`${uc.id}: ${uc.title}`, 14, 20);
+
+          doc.setFontSize(10);
+          let yPos = 35;
+
+          doc.setFont('helvetica', 'bold');
+          doc.text('Actor:', 14, yPos);
+          doc.setFont('helvetica', 'normal');
+          doc.text(uc.actor || '', 40, yPos);
+          yPos += 10;
+
+          doc.setFont('helvetica', 'bold');
+          doc.text('Description:', 14, yPos);
+          doc.setFont('helvetica', 'normal');
+          const descLines = doc.splitTextToSize(uc.description || '', pageWidth - 28);
+          doc.text(descLines, 14, yPos + 5);
+          yPos += descLines.length * 5 + 10;
+
+          doc.setFont('helvetica', 'bold');
+          doc.text('Preconditions:', 14, yPos);
+          doc.setFont('helvetica', 'normal');
+          const preLines = doc.splitTextToSize(uc.preconditions || '', pageWidth - 28);
+          doc.text(preLines, 14, yPos + 5);
+          yPos += preLines.length * 5 + 10;
+
+          doc.setFont('helvetica', 'bold');
+          doc.text('Main Flow:', 14, yPos);
+          doc.setFont('helvetica', 'normal');
+          const flowLines = doc.splitTextToSize(uc.mainFlow || '', pageWidth - 28);
+          doc.text(flowLines, 14, yPos + 5);
+          yPos += flowLines.length * 5 + 10;
+
+          if (uc.alternativeFlows) {
+            doc.setFont('helvetica', 'bold');
+            doc.text('Alternative Flows:', 14, yPos);
+            doc.setFont('helvetica', 'normal');
+            const altLines = doc.splitTextToSize(uc.alternativeFlows || '', pageWidth - 28);
+            doc.text(altLines, 14, yPos + 5);
+            yPos += altLines.length * 5 + 10;
+          }
+
+          doc.setFont('helvetica', 'bold');
+          doc.text('Postconditions:', 14, yPos);
+          doc.setFont('helvetica', 'normal');
+          const postLines = doc.splitTextToSize(uc.postconditions || '', pageWidth - 28);
+          doc.text(postLines, 14, yPos + 5);
+        });
+      }
+
+      // Links/Traceability Section
+      if (links.length > 0) {
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.text('Requirement Links', 14, 20);
+
+        const linkTableData = links.map(link => [
+          link.sourceId,
+          link.targetId,
+          link.type.replace('_', ' '),
+          link.description || '-'
+        ]);
+
+        autoTable(doc, {
+          startY: 30,
+          head: [['Source', 'Target', 'Type', 'Description']],
+          body: linkTableData,
+          styles: { fontSize: 9, cellPadding: 3 },
+          headStyles: { fillColor: [99, 102, 241], textColor: 255 }
+        });
+      }
+
+      // Save PDF manually to force download with correct name
+      const blob = doc.output('blob');
+      triggerDownload(blob, 'Mars_Rover_2030_Requirements.pdf');
+    } catch (error) {
+      console.error('PDF Export Error:', error);
+      alert(`Failed to export PDF: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  // Export data as Excel
+  const handleExportExcel = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+
+      // Requirements Sheet
+      const reqData = requirements.map(req => ({
+        ID: req.id,
+        Title: req.title,
+        Status: req.status,
+        Priority: req.priority,
+        Description: req.description,
+        'Requirement Text': req.text,
+        Rationale: req.rationale,
+        Parents: req.parentIds.join(', ')
+      }));
+      const reqWs = XLSX.utils.json_to_sheet(reqData);
+      XLSX.utils.book_append_sheet(wb, reqWs, 'Requirements');
+
+      // Use Cases Sheet
+      const ucData = useCases.map(uc => ({
+        ID: uc.id,
+        Title: uc.title,
+        Actor: uc.actor,
+        Description: uc.description,
+        Preconditions: uc.preconditions,
+        'Main Flow': uc.mainFlow,
+        'Alternative Flows': uc.alternativeFlows,
+        Postconditions: uc.postconditions,
+        Priority: uc.priority,
+        Status: uc.status
+      }));
+      const ucWs = XLSX.utils.json_to_sheet(ucData);
+      XLSX.utils.book_append_sheet(wb, ucWs, 'Use Cases');
+
+      // Links Sheet
+      const linkData = links.map(link => ({
+        Source: link.sourceId,
+        Target: link.targetId,
+        Type: link.type,
+        Description: link.description
+      }));
+      const linkWs = XLSX.utils.json_to_sheet(linkData);
+      XLSX.utils.book_append_sheet(wb, linkWs, 'Links');
+
+      // Save File manually
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      triggerDownload(blob, 'Mars_Rover_2030_Requirements.xlsx');
+    } catch (error) {
+      console.error('Excel Export Error:', error);
+      alert(`Failed to export Excel: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
   const handleAddRequirement = (newReqData: Omit<Requirement, 'id' | 'lastModified'>) => {
     // Simple ID generation strategy
     const nextIdNumber = requirements.length + 1;
@@ -293,39 +565,30 @@ function App() {
   };
 
   const handleReorder = (activeId: string, overId: string) => {
-    // When dragging a requirement onto another, add the target as a parent
-    const newRequirements = requirements.map(req => {
-      if (req.id === activeId) {
-        // Find the parent of the over item
-        const overReq = requirements.find(r => r.id === overId);
-        if (!overReq) return req;
+    const oldIndex = requirements.findIndex(r => r.id === activeId);
+    const newIndex = requirements.findIndex(r => r.id === overId);
 
-        // Add the over item's parents (or the over item itself if it's a root) as the new parent
-        const newParentIds = overReq.parentIds.length > 0 ? [...overReq.parentIds] : [overId];
-
-        // Avoid duplicates
-        const uniqueParentIds = Array.from(new Set([...newParentIds]));
-
-        return { ...req, parentIds: uniqueParentIds };
-      }
-      return req;
-    });
-
-    setRequirements(newRequirements);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const newRequirements = [...requirements];
+      const [movedItem] = newRequirements.splice(oldIndex, 1);
+      newRequirements.splice(newIndex, 0, movedItem);
+      setRequirements(newRequirements);
+    }
   };
 
-  const handleLink = (requirementId: string) => {
-    setSelectedRequirementId(requirementId);
+  const handleLink = (sourceId: string) => {
+    setSelectedRequirementId(sourceId);
     setIsLinkModalOpen(true);
   };
 
-  const handleAddLink = (link: Omit<Link, 'id'>) => {
+  const handleAddLink = (linkData: Omit<Link, 'id'>) => {
     const newLink: Link = {
-      ...link,
-      id: `LINK-${links.length + 1}`
+      ...linkData,
+      id: `LINK-${Date.now()}`
     };
     setLinks([...links, newLink]);
-    console.log('Link created:', newLink);
+    setIsLinkModalOpen(false);
+    setSelectedRequirementId(null);
   };
 
   const handleEdit = (requirement: Requirement) => {
@@ -333,30 +596,38 @@ function App() {
     setIsEditModalOpen(true);
   };
 
-  const handleUpdateRequirement = (id: string, updates: Partial<Requirement>) => {
+  const handleUpdateRequirement = (id: string, updatedData: Partial<Requirement>) => {
     setRequirements(requirements.map(req =>
-      req.id === id ? { ...req, ...updates, lastModified: Date.now() } : req
+      req.id === id
+        ? { ...req, ...updatedData, lastModified: Date.now() }
+        : req
     ));
+    setIsEditModalOpen(false);
+    setEditingRequirement(null);
   };
 
   // Use Case Handlers
-  const handleAddUseCase = (data: any) => {
+  const handleAddUseCase = (data: Omit<UseCase, 'id' | 'lastModified'> | { id: string; updates: Partial<UseCase> }) => {
     if ('id' in data) {
-      // Editing existing use case
+      // Update existing
       setUseCases(useCases.map(uc =>
-        uc.id === data.id ? { ...uc, ...data.updates } : uc
+        uc.id === data.id
+          ? { ...uc, ...data.updates, lastModified: Date.now() } as UseCase
+          : uc
       ));
+      setEditingUseCase(null);
     } else {
-      // Creating new use case
+      // Create new
       const nextIdNumber = useCases.length + 1;
       const newId = `UC-${String(nextIdNumber).padStart(3, '0')}`;
       const newUseCase: UseCase = {
         ...data,
         id: newId,
         lastModified: Date.now()
-      };
+      } as UseCase;
       setUseCases([...useCases, newUseCase]);
     }
+    setIsUseCaseModalOpen(false);
   };
 
   const handleEditUseCase = (useCase: UseCase) => {
@@ -375,12 +646,6 @@ function App() {
     }
   };
 
-  const handleBreakDownUseCase = (_useCase: UseCase) => {
-    // Open new requirement modal with use case pre-selected
-    // For now, just open the modal - user can manually link
-    setIsModalOpen(true);
-  };
-
   const treeData = buildTree(requirements);
 
   return (
@@ -390,6 +655,8 @@ function App() {
       onExport={handleExport}
       onImport={handleImport}
       onViewHistory={() => setIsVersionHistoryOpen(true)}
+      onExportPDF={handleExportPDF}
+      onExportExcel={handleExportExcel}
     >
       <div style={{ marginBottom: 'var(--spacing-md)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
