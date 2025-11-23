@@ -190,19 +190,21 @@ function App() {
   // Create version snapshot whenever data changes (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
-      createVersionSnapshot('Auto-save');
+      createVersionSnapshot('Auto-save', 'auto-save');
     }, 2000); // Wait 2 seconds after last change
 
     return () => clearTimeout(timer);
   }, [requirements, useCases, links]);
 
   // Create a version snapshot
-  const createVersionSnapshot = (message: string) => {
+  const createVersionSnapshot = (message: string, type: 'auto-save' | 'baseline' = 'auto-save', tag?: string) => {
     try {
       const newVersion: Version = {
         id: `v-${Date.now()}`,
         timestamp: Date.now(),
         message,
+        type,
+        tag,
         data: {
           requirements: JSON.parse(JSON.stringify(requirements)),
           useCases: JSON.parse(JSON.stringify(useCases)),
@@ -218,6 +220,10 @@ function App() {
     }
   };
 
+  const handleCreateBaseline = (name: string) => {
+    createVersionSnapshot(`Baseline: ${name}`, 'baseline', name);
+  };
+
   // Restore a previous version
   const handleRestoreVersion = (versionId: string) => {
     const version = versions.find(v => v.id === versionId);
@@ -225,7 +231,7 @@ function App() {
       setRequirements(version.data.requirements);
       setUseCases(version.data.useCases);
       setLinks(version.data.links);
-      createVersionSnapshot(`Restored from ${new Date(version.timestamp).toLocaleString()}`);
+      createVersionSnapshot(`Restored from ${new Date(version.timestamp).toLocaleString()}`, 'auto-save');
     }
   };
 
@@ -270,7 +276,7 @@ function App() {
               setRequirements(data.requirements);
               setUseCases(data.useCases || []);
               setLinks(data.links || []);
-              createVersionSnapshot('Imported from JSON');
+              createVersionSnapshot('Imported from JSON', 'auto-save');
               alert('Data imported successfully!');
             } else {
               alert('Invalid data format');
@@ -352,7 +358,7 @@ function App() {
               setLinks(parsedLinks);
             }
 
-            createVersionSnapshot('Imported from Excel');
+            createVersionSnapshot('Imported from Excel', 'auto-save');
             alert('Excel data imported successfully!');
           } catch (error) {
             console.error('Excel Import error:', error);
@@ -876,6 +882,7 @@ function App() {
         versions={versions}
         onClose={() => setIsVersionHistoryOpen(false)}
         onRestore={handleRestoreVersion}
+        onCreateBaseline={handleCreateBaseline}
       />
     </Layout>
   );

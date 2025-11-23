@@ -51,6 +51,8 @@ export interface Version {
   id: string;
   timestamp: number;
   message: string;
+  type: 'auto-save' | 'baseline';
+  tag?: string;
   data: {
     requirements: Requirement[];
     useCases: UseCase[];
