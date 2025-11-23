@@ -175,16 +175,18 @@ function App() {
 
   // Load versions on startup
   useEffect(() => {
-    try {
+    const loadVersions = () => {
       const savedVersions = localStorage.getItem(VERSIONS_KEY);
       if (savedVersions) {
-        setVersions(JSON.parse(savedVersions));
+        try {
+          setVersions(JSON.parse(savedVersions));
+        } catch (e) {
+          console.error('Failed to load versions', e);
+        }
       }
-    } catch (error) {
-      console.error('Failed to load versions:', error);
-    }
+    };
+    loadVersions();
   }, []);
-
   // Create version snapshot whenever data changes (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -252,7 +254,7 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  // Import data from JSON file
+  // Import data from JSON
   const handleImport = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -263,14 +265,19 @@ function App() {
         const reader = new FileReader();
         reader.onload = (event) => {
           try {
-            const imported = JSON.parse(event.target?.result as string);
-            if (imported.requirements) setRequirements(imported.requirements);
-            if (imported.useCases) setUseCases(imported.useCases);
-            if (imported.links) setLinks(imported.links);
-            alert('Data imported successfully!');
+            const data = JSON.parse(event.target?.result as string);
+            if (data.requirements && Array.isArray(data.requirements)) {
+              setRequirements(data.requirements);
+              setUseCases(data.useCases || []);
+              setLinks(data.links || []);
+              createVersionSnapshot('Imported from JSON');
+              alert('Data imported successfully!');
+            } else {
+              alert('Invalid data format');
+            }
           } catch (error) {
-            console.error('Failed to import data:', error);
-            alert('Failed to import data. Please check the file format.');
+            console.error('Import error:', error);
+            alert('Error importing data');
           }
         };
         reader.readAsText(file);
@@ -279,17 +286,120 @@ function App() {
     input.click();
   };
 
+  // Import data from Excel
+  const handleImportExcel = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx, .xls';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const data = new Uint8Array(event.target?.result as ArrayBuffer);
+            const workbook = XLSX.read(data, { type: 'array' });
+
+            // Parse Requirements
+            const reqSheet = workbook.Sheets['Requirements'];
+            if (reqSheet) {
+              const reqData = XLSX.utils.sheet_to_json<any>(reqSheet);
+              const parsedReqs: Requirement[] = reqData.map((row: any) => ({
+                id: row['ID'],
+                title: row['Title'],
+                status: row['Status'] || 'draft',
+                priority: row['Priority'] || 'medium',
+                description: row['Description'] || '',
+                text: row['Requirement Text'] || '',
+                rationale: row['Rationale'] || '',
+                parentIds: row['Parents'] ? row['Parents'].split(',').map((id: string) => id.trim()).filter((id: string) => id) : [],
+                lastModified: Date.now()
+              }));
+              setRequirements(parsedReqs);
+            }
+
+            // Parse Use Cases
+            const ucSheet = workbook.Sheets['Use Cases'];
+            if (ucSheet) {
+              const ucData = XLSX.utils.sheet_to_json<any>(ucSheet);
+              const parsedUCs: UseCase[] = ucData.map((row: any) => ({
+                id: row['ID'],
+                title: row['Title'],
+                actor: row['Actor'] || '',
+                description: row['Description'] || '',
+                preconditions: row['Preconditions'] || '',
+                mainFlow: row['Main Flow'] || '',
+                alternativeFlows: row['Alternative Flows'] || '',
+                postconditions: row['Postconditions'] || '',
+                priority: row['Priority'] || 'medium',
+                status: row['Status'] || 'draft',
+                lastModified: Date.now()
+              }));
+              setUseCases(parsedUCs);
+            }
+
+            // Parse Links
+            const linkSheet = workbook.Sheets['Links'];
+            if (linkSheet) {
+              const linkData = XLSX.utils.sheet_to_json<any>(linkSheet);
+              const parsedLinks: Link[] = linkData.map((row: any) => ({
+                id: crypto.randomUUID(),
+                sourceId: row['Source'],
+                targetId: row['Target'],
+                type: row['Type'],
+                description: row['Description'] || ''
+              }));
+              setLinks(parsedLinks);
+            }
+
+            createVersionSnapshot('Imported from Excel');
+            alert('Excel data imported successfully!');
+          } catch (error) {
+            console.error('Excel Import error:', error);
+            alert(`Error importing Excel data: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    };
+    input.click();
+  };
+
   // Helper to trigger file download
-  const triggerDownload = (blob: Blob, filename: string) => {
+  const triggerDownload = async (blob: Blob, filename: string) => {
     try {
+      // Try to use the File System Access API if available
+      if ('showSaveFilePicker' in window) {
+        try {
+          const handle = await (window as any).showSaveFilePicker({
+            suggestedName: filename,
+            types: [{
+              description: 'Exported File',
+              accept: {
+                [blob.type]: [`.${filename.split('.').pop()}`]
+              }
+            }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          return;
+        } catch (err: any) {
+          // If user cancelled, don't do anything
+          if (err.name === 'AbortError') return;
+          // If other error, fall back to default download
+          console.warn('File System Access API failed, falling back to download:', err);
+        }
+      }
+
+      // Fallback to default download
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', filename); // Explicitly set attribute
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
 
-      // Cleanup with a slightly longer delay
       setTimeout(() => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
@@ -654,6 +764,7 @@ function App() {
       onNewUseCase={() => setIsUseCaseModalOpen(true)}
       onExport={handleExport}
       onImport={handleImport}
+      onImportExcel={handleImportExcel}
       onViewHistory={() => setIsVersionHistoryOpen(true)}
       onExportPDF={handleExportPDF}
       onExportExcel={handleExportExcel}

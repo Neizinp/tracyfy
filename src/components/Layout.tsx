@@ -10,16 +10,22 @@ interface LayoutProps {
     onViewHistory?: () => void;
     onExportPDF?: () => void;
     onExportExcel?: () => void;
+    onImportExcel?: () => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNewUseCase, onExport, onImport, onViewHistory, onExportPDF, onExportExcel }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNewUseCase, onExport, onImport, onImportExcel, onViewHistory, onExportPDF, onExportExcel }) => {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
+    const importMenuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
                 setIsExportMenuOpen(false);
+            }
+            if (importMenuRef.current && !importMenuRef.current.contains(event.target as Node)) {
+                setIsImportMenuOpen(false);
             }
         };
 
@@ -135,9 +141,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNe
                                 History
                             </button>
                         )}
-                        {onImport && (
+                        {/* Import Dropdown */}
+                        <div style={{ position: 'relative' }} ref={importMenuRef}>
                             <button
-                                onClick={onImport}
+                                onClick={() => setIsImportMenuOpen(!isImportMenuOpen)}
                                 style={{
                                     backgroundColor: 'transparent',
                                     color: 'var(--color-text-secondary)',
@@ -153,8 +160,79 @@ export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNe
                                 }}>
                                 <Upload size={18} />
                                 Import
+                                <ChevronDown size={14} />
                             </button>
-                        )}
+
+                            {isImportMenuOpen && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    right: 0,
+                                    marginTop: '0.5rem',
+                                    backgroundColor: 'var(--color-bg-primary)',
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: '6px',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                                    zIndex: 100,
+                                    minWidth: '180px',
+                                    overflow: 'hidden'
+                                }}>
+                                    {onImport && (
+                                        <button
+                                            onClick={() => {
+                                                onImport();
+                                                setIsImportMenuOpen(false);
+                                            }}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--spacing-sm)',
+                                                width: '100%',
+                                                padding: '0.75rem 1rem',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: 'var(--color-text-primary)',
+                                                cursor: 'pointer',
+                                                textAlign: 'left',
+                                                fontSize: '0.9rem'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <Upload size={16} />
+                                            Import JSON
+                                        </button>
+                                    )}
+                                    {onImportExcel && (
+                                        <button
+                                            onClick={() => {
+                                                onImportExcel();
+                                                setIsImportMenuOpen(false);
+                                            }}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--spacing-sm)',
+                                                width: '100%',
+                                                padding: '0.75rem 1rem',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: 'var(--color-text-primary)',
+                                                cursor: 'pointer',
+                                                textAlign: 'left',
+                                                fontSize: '0.9rem',
+                                                borderTop: '1px solid var(--color-border)'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <FileSpreadsheet size={16} />
+                                            Import Excel
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                         {/* Export Dropdown */}
                         <div style={{ position: 'relative' }} ref={exportMenuRef}>
                             <button
