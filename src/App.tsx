@@ -7,7 +7,8 @@ import { EditRequirementModal } from './components/EditRequirementModal';
 import { TraceabilityMatrix } from './components/TraceabilityMatrix';
 import { UseCaseModal } from './components/UseCaseModal';
 import { UseCaseList } from './components/UseCaseList';
-import type { Requirement, RequirementTreeNode, Link, UseCase } from './types';
+import { VersionHistory } from './components/VersionHistory';
+import type { Requirement, RequirementTreeNode, Link, UseCase, Version } from './types';
 
 // Mock Data - Now using flat structure with parentIds
 const initialRequirements: Requirement[] = [
@@ -120,8 +121,10 @@ function buildTree(requirements: Requirement[]): RequirementTreeNode[] {
   return rootNodes;
 }
 
-// LocalStorage key for persisting data
+// LocalStorage keys for persisting data
 const STORAGE_KEY = 'reqtrace-data';
+const VERSIONS_KEY = 'reqtrace-versions';
+const MAX_VERSIONS = 50; // Keep last 50 versions
 
 // Load saved data from LocalStorage or use initial data
 function loadSavedData() {
@@ -158,6 +161,8 @@ function App() {
   const [editingRequirement, setEditingRequirement] = useState<Requirement | null>(null);
   const [editingUseCase, setEditingUseCase] = useState<UseCase | null>(null);
   const [currentView, setCurrentView] = useState<'tree' | 'matrix' | 'usecases'>('tree');
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [versions, setVersions] = useState<Version[]>([]);
 
   // Auto-save to LocalStorage whenever data changes
   useEffect(() => {
@@ -172,6 +177,60 @@ function App() {
       console.error('Failed to save data:', error);
     }
   }, [requirements, useCases, links]);
+
+  // Load versions on startup
+  useEffect(() => {
+    try {
+      const savedVersions = localStorage.getItem(VERSIONS_KEY);
+      if (savedVersions) {
+        setVersions(JSON.parse(savedVersions));
+      }
+    } catch (error) {
+      console.error('Failed to load versions:', error);
+    }
+  }, []);
+
+  // Create version snapshot whenever data changes (debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      createVersionSnapshot('Auto-save');
+    }, 2000); // Wait 2 seconds after last change
+
+    return () => clearTimeout(timer);
+  }, [requirements, useCases, links]);
+
+  // Create a version snapshot
+  const createVersionSnapshot = (message: string) => {
+    try {
+      const newVersion: Version = {
+        id: `v-${Date.now()}`,
+        timestamp: Date.now(),
+        message,
+        data: {
+          requirements: JSON.parse(JSON.stringify(requirements)),
+          useCases: JSON.parse(JSON.stringify(useCases)),
+          links: JSON.parse(JSON.stringify(links))
+        }
+      };
+
+      const updatedVersions = [newVersion, ...versions].slice(0, MAX_VERSIONS);
+      setVersions(updatedVersions);
+      localStorage.setItem(VERSIONS_KEY, JSON.stringify(updatedVersions));
+    } catch (error) {
+      console.error('Failed to create version snapshot:', error);
+    }
+  };
+
+  // Restore a previous version
+  const handleRestoreVersion = (versionId: string) => {
+    const version = versions.find(v => v.id === versionId);
+    if (version) {
+      setRequirements(version.data.requirements);
+      setUseCases(version.data.useCases);
+      setLinks(version.data.links);
+      createVersionSnapshot(`Restored from ${new Date(version.timestamp).toLocaleString()}`);
+    }
+  };
 
   // Export data as JSON file
   const handleExport = () => {
@@ -330,6 +389,7 @@ function App() {
       onNewUseCase={() => setIsUseCaseModalOpen(true)}
       onExport={handleExport}
       onImport={handleImport}
+      onViewHistory={() => setIsVersionHistoryOpen(true)}
     >
       <div style={{ marginBottom: 'var(--spacing-md)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
@@ -431,6 +491,13 @@ function App() {
           setEditingUseCase(null);
         }}
         onSubmit={handleAddUseCase}
+      />
+
+      <VersionHistory
+        isOpen={isVersionHistoryOpen}
+        versions={versions}
+        onClose={() => setIsVersionHistoryOpen(false)}
+        onRestore={handleRestoreVersion}
       />
     </Layout>
   );

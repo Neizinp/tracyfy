@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, Settings, FolderOpen, Plus, Download, Upload } from 'lucide-react';
+import { LayoutGrid, Settings, FolderOpen, Plus, Download, Upload, Clock } from 'lucide-react';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -7,9 +7,10 @@ interface LayoutProps {
     onNewUseCase?: () => void;
     onExport?: () => void;
     onImport?: () => void;
+    onViewHistory?: () => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNewUseCase, onExport, onImport }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNewUseCase, onExport, onImport, onViewHistory }) => {
     return (
         <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
             {/* Sidebar */}
@@ -96,6 +97,26 @@ export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNe
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px' }}>
+                        {onViewHistory && (
+                            <button
+                                onClick={onViewHistory}
+                                style={{
+                                    backgroundColor: 'transparent',
+                                    color: 'var(--color-text-secondary)',
+                                    border: '1px solid var(--color-border)',
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '6px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    cursor: 'pointer',
+                                    fontWeight: 500,
+                                    transition: 'background-color 0.2s'
+                                }}>
+                                <Clock size={18} />
+                                History
+                            </button>
+                        )}
                         {onImport && (
                             <button
                                 onClick={onImport}

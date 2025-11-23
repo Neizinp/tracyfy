@@ -46,3 +46,14 @@ export interface Project {
   useCases: UseCase[];
   links: Link[];
 }
+
+export interface Version {
+  id: string;
+  timestamp: number;
+  message: string;
+  data: {
+    requirements: Requirement[];
+    useCases: UseCase[];
+    links: Link[];
+  };
+}
