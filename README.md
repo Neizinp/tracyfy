@@ -1,73 +1,200 @@
-# React + TypeScript + Vite
+# ReqTrace - Requirement Management Tool
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, web-based requirement management tool inspired by IBM Rational Doors. Built with React, TypeScript, and Vite for managing system requirements, use cases, and traceability.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Core Functionality
+- **Hierarchical Requirements** - Organize requirements in parent-child relationships
+- **Drag & Drop** - Intuitive reordering and restructuring of requirements
+- **Use Cases** - Define and manage use cases with actors, flows, and conditions
+- **Requirement Links** - Create relationships between requirements (relates to, depends on, conflicts with)
+- **Traceability Matrix** - Visualize requirement relationships and dependencies
+- **Multi-Parent Support** - Requirements can belong to multiple parent requirements
 
-## React Compiler
+### Data Management
+- **Auto-Save** - All changes automatically saved to browser LocalStorage
+- **Export/Import** - Backup and restore data as JSON files
+- **Persistent Storage** - Data survives page refreshes and browser restarts
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Requirement Fields
+- ID (auto-generated, sequential)
+- Title
+- Description
+- Requirement Text
+- Rationale
+- Status (draft, approved, implemented, verified)
+- Priority (low, medium, high)
+- Parent relationships
+- Use case associations
 
-## Expanding the ESLint configuration
+## 🚀 Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
+- Node.js 18+ and npm
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Installation
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+```bash
+# Clone the repository
+git clone https://github.com/Neizinp/requirement-management-tool.git
+cd requirement-management-tool
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The application will be available at `http://localhost:5173`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Build for Production
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
 ```
+
+## 📖 Usage
+
+### Creating Requirements
+1. Click **"New Requirement"** in the header
+2. Fill in the requirement details
+3. Submit to create - data auto-saves immediately
+
+### Managing Hierarchy
+- **Drag and drop** requirements to reorganize
+- Requirements can have multiple parents
+- Visual indicators show multi-parent relationships
+
+### Creating Links
+1. Click the **link icon** on any requirement
+2. Select target requirement
+3. Choose link type (relates to, depends on, conflicts with)
+
+### Use Cases
+1. Switch to **"Use Cases"** view
+2. Click **"New Use Case"** to create
+3. Define actors, preconditions, flows, and postconditions
+
+### Export/Import Data
+- **Export**: Click "Export" button to download JSON backup
+- **Import**: Click "Import" button to load from JSON file
+
+## 🏗️ Architecture
+
+### Tech Stack
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **@dnd-kit** - Drag and drop functionality
+- **Lucide React** - Icon library
+
+### Project Structure
+```
+src/
+├── components/
+│   ├── Layout.tsx              # Main layout with sidebar
+│   ├── RequirementTree.tsx     # Hierarchical tree view
+│   ├── NewRequirementModal.tsx # Create requirement form
+│   ├── EditRequirementModal.tsx # Edit requirement form
+│   ├── LinkModal.tsx           # Create links between requirements
+│   ├── TraceabilityMatrix.tsx  # Relationship visualization
+│   ├── UseCaseModal.tsx        # Create/edit use cases
+│   └── UseCaseList.tsx         # Use case management
+├── types.ts                    # TypeScript type definitions
+├── App.tsx                     # Main application component
+└── index.css                   # Global styles
+```
+
+### Data Model
+
+**Requirement**
+```typescript
+{
+  id: string;              // REQ-001, REQ-002, etc.
+  title: string;
+  description: string;
+  text: string;            // Full requirement text
+  rationale: string;       // Why this requirement exists
+  parentIds: string[];     // Array of parent requirement IDs
+  useCaseIds?: string[];   // Associated use cases
+  status: 'draft' | 'approved' | 'implemented' | 'verified';
+  priority: 'low' | 'medium' | 'high';
+  lastModified: number;    // Timestamp
+}
+```
+
+**Use Case**
+```typescript
+{
+  id: string;              // UC-001, UC-002, etc.
+  title: string;
+  description: string;
+  actor: string;           // Who performs this use case
+  preconditions: string;
+  postconditions: string;
+  mainFlow: string;
+  alternativeFlows?: string;
+  priority: 'low' | 'medium' | 'high';
+  status: 'draft' | 'approved' | 'implemented' | 'verified';
+  lastModified: number;
+}
+```
+
+**Link**
+```typescript
+{
+  id: string;
+  sourceId: string;        // Source requirement ID
+  targetId: string;        // Target requirement ID
+  type: 'relates_to' | 'depends_on' | 'conflicts_with';
+  description?: string;
+}
+```
+
+## 🎨 Design
+
+- **Dark Theme** - Modern dark UI with glassmorphism effects
+- **Responsive** - Works on desktop and tablet devices
+- **Accessible** - Semantic HTML and keyboard navigation
+- **Visual Feedback** - Hover states, transitions, and animations
+
+## 🔒 Data Privacy
+
+- All data stored locally in browser LocalStorage
+- No external servers or cloud storage
+- Export feature allows manual backups
+- Private GitHub repository for code
+
+## 🛠️ Development
+
+### Available Scripts
+
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run preview  # Preview production build
+npm run lint     # Run ESLint
+```
+
+### Code Quality
+- TypeScript for type safety
+- ESLint for code quality
+- Strict mode enabled
+
+## 📝 License
+
+Private project - All rights reserved
+
+## 🤝 Contributing
+
+This is a private project. Contributions are not currently accepted.
+
+## 📧 Contact
+
+For questions or issues, please contact the repository owner.
+
+---
+
+**Built with ❤️ using React + TypeScript + Vite**
