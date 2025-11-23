@@ -1,4 +1,4 @@
-import { LayoutGrid, Settings, FolderOpen, Plus, Download, Upload, Clock, FileText, FileSpreadsheet, ChevronDown } from 'lucide-react';
+import { LayoutGrid, Settings, FolderOpen, Plus, Download, Upload, Clock, FileText, FileSpreadsheet, ChevronDown, Search } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 interface LayoutProps {
@@ -11,9 +11,10 @@ interface LayoutProps {
     onExportPDF?: () => void;
     onExportExcel?: () => void;
     onImportExcel?: () => void;
+    onSearch?: (query: string) => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNewUseCase, onExport, onImport, onImportExcel, onViewHistory, onExportPDF, onExportExcel }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNewUseCase, onExport, onImport, onImportExcel, onViewHistory, onExportPDF, onExportExcel, onSearch }) => {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -119,6 +120,37 @@ export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNe
                         <span style={{ color: 'var(--color-text-muted)' }}>Projects / Mars Rover 2030 /</span>
                         <span style={{ fontWeight: 500 }}>Requirements</span>
                     </div>
+
+                    {/* Search Bar */}
+                    {onSearch && (
+                        <div style={{
+                            position: 'relative',
+                            width: '300px',
+                            margin: '0 var(--spacing-md)'
+                        }}>
+                            <Search size={16} style={{
+                                position: 'absolute',
+                                left: '10px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                color: 'var(--color-text-muted)'
+                            }} />
+                            <input
+                                type="text"
+                                placeholder="Search requirements..."
+                                onChange={(e) => onSearch(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '8px 12px 8px 36px',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--color-border)',
+                                    backgroundColor: 'var(--color-bg-secondary)',
+                                    color: 'var(--color-text-primary)',
+                                    fontSize: '0.875rem'
+                                }}
+                            />
+                        </div>
+                    )}
 
                     <div style={{ display: 'flex', gap: '8px' }}>
                         {onViewHistory && (

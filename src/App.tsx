@@ -158,6 +158,7 @@ function App() {
   const [currentView, setCurrentView] = useState<'tree' | 'matrix' | 'usecases'>('tree');
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [versions, setVersions] = useState<Version[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Auto-save to LocalStorage whenever data changes
   useEffect(() => {
@@ -762,7 +763,29 @@ function App() {
     }
   };
 
-  const treeData = buildTree(requirements);
+  const filteredRequirements = requirements.filter(req => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      req.id.toLowerCase().includes(query) ||
+      req.title.toLowerCase().includes(query) ||
+      req.description.toLowerCase().includes(query) ||
+      req.text.toLowerCase().includes(query)
+    );
+  });
+
+  const filteredUseCases = useCases.filter(uc => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      uc.id.toLowerCase().includes(query) ||
+      uc.title.toLowerCase().includes(query) ||
+      uc.description.toLowerCase().includes(query) ||
+      uc.actor.toLowerCase().includes(query)
+    );
+  });
+
+  const treeData = buildTree(filteredRequirements);
 
   return (
     <Layout
@@ -774,6 +797,7 @@ function App() {
       onViewHistory={() => setIsVersionHistoryOpen(true)}
       onExportPDF={handleExportPDF}
       onExportExcel={handleExportExcel}
+      onSearch={setSearchQuery}
     >
       <div style={{ marginBottom: 'var(--spacing-md)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
@@ -831,13 +855,27 @@ function App() {
         </div>
       </div>
 
-      {currentView === 'tree' ? (
-        <RequirementTree requirements={treeData} links={links} onReorder={handleReorder} onLink={handleLink} onEdit={handleEdit} allRequirements={requirements} />
-      ) : currentView === 'matrix' ? (
-        <TraceabilityMatrix requirements={requirements} links={links} />
-      ) : (
+      {currentView === 'tree' && (
+        <RequirementTree
+          requirements={treeData}
+          links={links}
+          allRequirements={requirements}
+          onReorder={handleReorder}
+          onLink={handleLink}
+          onEdit={handleEdit}
+        />
+      )}
+
+      {currentView === 'matrix' && (
+        <TraceabilityMatrix
+          requirements={filteredRequirements}
+          links={links}
+        />
+      )}
+
+      {currentView === 'usecases' && (
         <UseCaseList
-          useCases={useCases}
+          useCases={filteredUseCases}
           requirements={requirements}
           onEdit={handleEditUseCase}
           onDelete={handleDeleteUseCase}
