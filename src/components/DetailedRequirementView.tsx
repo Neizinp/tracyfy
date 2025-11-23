@@ -1,13 +1,14 @@
 import React from 'react';
-import { Edit2 } from 'lucide-react';
+import { Edit2, Trash2 } from 'lucide-react';
 import type { Requirement } from '../types';
 
 interface DetailedRequirementViewProps {
     requirements: Requirement[];
     onEdit: (requirement: Requirement) => void;
+    onDelete: (id: string) => void;
 }
 
-export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = ({ requirements, onEdit }) => {
+export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = ({ requirements, onEdit, onDelete }) => {
     const formatDate = (timestamp: number) => {
         return new Date(timestamp).toLocaleString(undefined, {
             year: 'numeric',
@@ -17,6 +18,12 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
             minute: '2-digit',
             hour12: false
         });
+    };
+
+    const handleDelete = (id: string) => {
+        if (window.confirm('Are you sure you want to delete this requirement?')) {
+            onDelete(id);
+        }
     };
 
     return (
@@ -37,7 +44,7 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                             <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '100px' }}>Priority</th>
                             <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '100px' }}>Status</th>
                             <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '150px' }}>Last Modified</th>
-                            <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '50px' }}></th>
+                            <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '80px' }}></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -98,19 +105,34 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                                         {formatDate(req.lastModified)}
                                     </td>
                                     <td style={{ padding: '12px', verticalAlign: 'top' }}>
-                                        <button
-                                            onClick={() => onEdit(req)}
-                                            style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                color: 'var(--color-text-muted)',
-                                                cursor: 'pointer',
-                                                padding: '4px'
-                                            }}
-                                            title="Edit"
-                                        >
-                                            <Edit2 size={16} />
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                            <button
+                                                onClick={() => onEdit(req)}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    color: 'var(--color-text-muted)',
+                                                    cursor: 'pointer',
+                                                    padding: '4px'
+                                                }}
+                                                title="Edit"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(req.id)}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    color: '#ef4444',
+                                                    cursor: 'pointer',
+                                                    padding: '4px'
+                                                }}
+                                                title="Delete"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))

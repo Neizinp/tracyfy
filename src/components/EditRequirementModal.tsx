@@ -8,9 +8,10 @@ interface EditRequirementModalProps {
     allRequirements: Requirement[];
     onClose: () => void;
     onSubmit: (id: string, updates: Partial<Requirement>) => void;
+    onDelete: (id: string) => void;
 }
 
-export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOpen, requirement, allRequirements, onClose, onSubmit }) => {
+export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOpen, requirement, allRequirements, onClose, onSubmit, onDelete }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [text, setText] = useState('');
@@ -84,6 +85,12 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
     };
 
 
+    const handleDelete = () => {
+        if (window.confirm('Are you sure you want to delete this requirement? This action cannot be undone.')) {
+            onDelete(requirement.id);
+        }
+    };
+
     return (
         <div style={{
             position: 'fixed',
@@ -134,6 +141,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ padding: 'var(--spacing-lg)' }}>
+                    {/* ... existing form fields ... */}
                     <div style={{ marginBottom: 'var(--spacing-md)' }}>
                         <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Title</label>
                         <input
@@ -320,35 +328,52 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-sm)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--spacing-sm)' }}>
                         <button
                             type="button"
-                            onClick={onClose}
+                            onClick={handleDelete}
                             style={{
                                 padding: '8px 16px',
                                 borderRadius: '6px',
-                                border: '1px solid var(--color-border)',
+                                border: '1px solid #ef4444',
                                 backgroundColor: 'transparent',
-                                color: 'var(--color-text-primary)',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            style={{
-                                padding: '8px 16px',
-                                borderRadius: '6px',
-                                border: 'none',
-                                backgroundColor: 'var(--color-accent)',
-                                color: 'white',
+                                color: '#ef4444',
                                 cursor: 'pointer',
                                 fontWeight: 500
                             }}
                         >
-                            Save Changes
+                            Delete
                         </button>
+                        <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                style={{
+                                    padding: '8px 16px',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--color-border)',
+                                    backgroundColor: 'transparent',
+                                    color: 'var(--color-text-primary)',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                style={{
+                                    padding: '8px 16px',
+                                    borderRadius: '6px',
+                                    border: 'none',
+                                    backgroundColor: 'var(--color-accent)',
+                                    color: 'white',
+                                    cursor: 'pointer',
+                                    fontWeight: 500
+                                }}
+                            >
+                                Save Changes
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>

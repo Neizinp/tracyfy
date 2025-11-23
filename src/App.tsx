@@ -222,6 +222,25 @@ function App() {
     }
   };
 
+  const handleDeleteRequirement = (id: string) => {
+    // 1. Remove the requirement AND clean up parent references in a single update
+    setRequirements(prev =>
+      prev
+        .filter(req => req.id !== id) // Remove the deleted requirement
+        .map(req => ({
+          ...req,
+          parentIds: req.parentIds ? req.parentIds.filter(parentId => parentId !== id) : []
+        })) // Remove deleted ID from any parent references
+    );
+
+    // 2. Remove any links involving this requirement
+    setLinks(prev => prev.filter(link => link.sourceId !== id && link.targetId !== id));
+
+    // 3. Close modal if open
+    setIsEditModalOpen(false);
+    setEditingRequirement(null);
+  };
+
   const handleCreateBaseline = (name: string) => {
     createVersionSnapshot(`Baseline: ${name}`, 'baseline', name);
   };
@@ -888,6 +907,7 @@ function App() {
         <DetailedRequirementView
           requirements={filteredRequirements}
           onEdit={handleEdit}
+          onDelete={handleDeleteRequirement}
         />
       )}
 
@@ -922,13 +942,19 @@ function App() {
         onSubmit={handleAddLink}
       />
 
-      <EditRequirementModal
-        isOpen={isEditModalOpen}
-        requirement={editingRequirement}
-        allRequirements={requirements}
-        onClose={() => setIsEditModalOpen(false)}
-        onSubmit={handleUpdateRequirement}
-      />
+      {isEditModalOpen && editingRequirement && (
+        <EditRequirementModal
+          isOpen={isEditModalOpen}
+          requirement={editingRequirement}
+          allRequirements={requirements}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingRequirement(null);
+          }}
+          onSubmit={handleUpdateRequirement}
+          onDelete={handleDeleteRequirement}
+        />
+      )}
 
       <UseCaseModal
         isOpen={isUseCaseModalOpen}
