@@ -348,10 +348,10 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
                             marginBottom: 'var(--spacing-md)'
                         }}>
                             <div style={{ color: '#991b1b', fontWeight: 500, marginBottom: 'var(--spacing-xs)' }}>
-                                ⚠️ Confirm Deletion
+                                ⚠️ Move to Trash
                             </div>
                             <div style={{ color: '#7f1d1d', fontSize: '0.875rem', marginBottom: 'var(--spacing-md)' }}>
-                                Are you sure you want to delete this requirement? This action cannot be undone.
+                                Are you sure you want to move this requirement to the trash? You can restore it later from the Trash Bin.
                             </div>
                             <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
                                 <button
@@ -367,7 +367,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
                                         fontWeight: 500
                                     }}
                                 >
-                                    Yes, Delete
+                                    Move to Trash
                                 </button>
                                 <button
                                     type="button"
@@ -375,9 +375,9 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
                                     style={{
                                         padding: '8px 16px',
                                         borderRadius: '6px',
-                                        border: '1px solid var(--color-border)',
+                                        border: '1px solid #d1d5db',
                                         backgroundColor: 'white',
-                                        color: 'var(--color-text-primary)',
+                                        color: '#374151',
                                         cursor: 'pointer'
                                     }}
                                 >

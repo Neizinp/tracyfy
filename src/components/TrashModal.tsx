@@ -153,13 +153,14 @@ export const TrashModal: React.FC<TrashModalProps> = ({
                                                 style={{
                                                     padding: '6px 12px',
                                                     borderRadius: '4px',
-                                                    border: '1px solid var(--color-border)',
-                                                    backgroundColor: 'white',
-                                                    color: 'var(--color-success)',
+                                                    border: '1px solid #bbf7d0',
+                                                    backgroundColor: '#f0fdf4',
+                                                    color: '#15803d',
                                                     cursor: 'pointer',
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    gap: '4px'
+                                                    gap: '4px',
+                                                    fontWeight: 500
                                                 }}
                                             >
                                                 <RefreshCw size={14} /> Restore
@@ -223,13 +224,14 @@ export const TrashModal: React.FC<TrashModalProps> = ({
                                                 style={{
                                                     padding: '6px 12px',
                                                     borderRadius: '4px',
-                                                    border: '1px solid var(--color-border)',
-                                                    backgroundColor: 'white',
-                                                    color: 'var(--color-success)',
+                                                    border: '1px solid #bbf7d0',
+                                                    backgroundColor: '#f0fdf4',
+                                                    color: '#15803d',
                                                     cursor: 'pointer',
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    gap: '4px'
+                                                    gap: '4px',
+                                                    fontWeight: 500
                                                 }}
                                             >
                                                 <RefreshCw size={14} /> Restore
