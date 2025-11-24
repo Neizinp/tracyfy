@@ -12,6 +12,7 @@ interface LayoutProps {
     onOpenProjectSettings: (project: Project) => void;
     onNewRequirement: () => void;
     onNewUseCase?: () => void;
+    onNewTestCase?: () => void;
     onExport?: () => void;
     onImport?: () => void;
     onViewHistory?: () => void;
@@ -32,6 +33,7 @@ export const Layout: React.FC<LayoutProps> = ({
     onOpenProjectSettings,
     onNewRequirement,
     onNewUseCase,
+    onNewTestCase,
     onExport,
     onImport,
     onImportExcel,
@@ -493,20 +495,44 @@ export const Layout: React.FC<LayoutProps> = ({
                             <button
                                 onClick={onNewUseCase}
                                 style={{
-                                    backgroundColor: 'transparent',
-                                    color: 'var(--color-accent)',
-                                    border: '1px solid var(--color-accent)',
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: '6px',
+                                    padding: '8px 16px',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: 'var(--spacing-sm)',
+                                    gap: '8px',
+                                    backgroundColor: 'var(--color-accent)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
                                     cursor: 'pointer',
                                     fontWeight: 500,
-                                    transition: 'background-color 0.2s'
-                                }}>
-                                <Plus size={18} />
+                                    fontSize: '0.875rem',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <span style={{ fontSize: '1.25rem' }}>+</span>
                                 New Use Case
+                            </button>
+                        )}
+                        {onNewTestCase && (
+                            <button
+                                onClick={onNewTestCase}
+                                style={{
+                                    padding: '8px 16px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    backgroundColor: 'var(--color-accent)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontWeight: 500,
+                                    fontSize: '0.875rem',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <span style={{ fontSize: '1.25rem' }}>+</span>
+                                New Test Case
                             </button>
                         )}
                         <button

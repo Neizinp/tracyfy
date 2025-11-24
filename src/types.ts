@@ -39,6 +39,21 @@ export interface UseCase {
   deletedAt?: number;
 }
 
+export interface TestCase {
+  id: string;
+  title: string;
+  description: string;
+  requirementIds: string[]; // Which requirements this test verifies
+  status: 'draft' | 'approved' | 'passed' | 'failed' | 'blocked';
+  priority: 'low' | 'medium' | 'high';
+  author?: string;
+  lastRun?: number;
+  dateCreated: number;
+  lastModified: number;
+  isDeleted?: boolean;
+  deletedAt?: number;
+}
+
 export interface Link {
   id: string;
   sourceId: string;
@@ -53,6 +68,7 @@ export interface Project {
   description: string;
   requirements: Requirement[];
   useCases: UseCase[];
+  testCases: TestCase[];
   links: Link[];
   lastModified: number;
 }
@@ -67,5 +83,6 @@ export interface Version {
     requirements: Requirement[];
     useCases: UseCase[];
     links: Link[];
+    testCases: TestCase[];
   };
 }
