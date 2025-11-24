@@ -1,8 +1,15 @@
 import { LayoutGrid, Settings, FolderOpen, Plus, Download, Upload, Clock, FileText, FileSpreadsheet, ChevronDown, Search, Trash2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import type { Project } from '../types';
 
 interface LayoutProps {
     children: React.ReactNode;
+    currentProjectName: string;
+    projects: Project[];
+    currentProjectId: string;
+    onSwitchProject: (projectId: string) => void;
+    onCreateProject: () => void;
+    onOpenProjectSettings: (project: Project) => void;
     onNewRequirement: () => void;
     onNewUseCase?: () => void;
     onExport?: () => void;
@@ -15,7 +22,25 @@ interface LayoutProps {
     onTrashOpen?: () => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNewUseCase, onExport, onImport, onImportExcel, onViewHistory, onExportPDF, onExportExcel, onSearch, onTrashOpen }) => {
+export const Layout: React.FC<LayoutProps> = ({
+    children,
+    currentProjectName,
+    projects,
+    currentProjectId,
+    onSwitchProject,
+    onCreateProject,
+    onOpenProjectSettings,
+    onNewRequirement,
+    onNewUseCase,
+    onExport,
+    onImport,
+    onImportExcel,
+    onViewHistory,
+    onExportPDF,
+    onExportExcel,
+    onSearch,
+    onTrashOpen
+}) => {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -54,54 +79,114 @@ export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNe
                     </h1>
                 </div>
 
-                <nav style={{ flex: 1, padding: 'var(--spacing-md)' }}>
+                <nav style={{ flex: 1, padding: 'var(--spacing-md)', overflowY: 'auto' }}>
                     <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                        <h2 style={{
-                            fontSize: '0.75rem',
-                            textTransform: 'uppercase',
-                            color: 'var(--color-text-muted)',
-                            marginBottom: 'var(--spacing-sm)',
-                            letterSpacing: '0.05em'
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: 'var(--spacing-sm)'
                         }}>
-                            Projects
-                        </h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
-                            <button style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 'var(--spacing-sm)',
-                                padding: 'var(--spacing-sm)',
-                                backgroundColor: 'var(--color-bg-hover)',
-                                border: 'none',
-                                borderRadius: '6px',
-                                color: 'var(--color-text-primary)',
-                                cursor: 'pointer',
-                                width: '100%',
-                                textAlign: 'left'
+                            <h2 style={{
+                                fontSize: '0.75rem',
+                                textTransform: 'uppercase',
+                                color: 'var(--color-text-muted)',
+                                letterSpacing: '0.05em',
+                                margin: 0
                             }}>
-                                <FolderOpen size={18} />
-                                <span>Mars Rover 2030</span>
+                                Projects
+                            </h2>
+                            <button
+                                onClick={onCreateProject}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: 'var(--color-text-muted)',
+                                    padding: '4px',
+                                    borderRadius: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                                title="New Project"
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                            >
+                                <Plus size={14} />
                             </button>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
+                            {projects.map(project => (
+                                <div
+                                    key={project.id}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 'var(--spacing-xs)',
+                                        padding: 'var(--spacing-sm)',
+                                        backgroundColor: project.id === currentProjectId ? 'var(--color-bg-hover)' : 'transparent',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                        position: 'relative'
+                                    }}
+                                    className="group"
+                                >
+                                    <button
+                                        onClick={() => onSwitchProject(project.id)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 'var(--spacing-sm)',
+                                            border: 'none',
+                                            background: 'none',
+                                            color: project.id === currentProjectId ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                                            flex: 1,
+                                            textAlign: 'left',
+                                            cursor: 'pointer',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                    >
+                                        <FolderOpen size={18} />
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{project.name}</span>
+                                    </button>
+
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onOpenProjectSettings(project);
+                                        }}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            color: 'var(--color-text-muted)',
+                                            padding: '4px',
+                                            borderRadius: '4px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            opacity: project.id === currentProjectId ? 1 : 0,
+                                            transition: 'opacity 0.2s'
+                                        }}
+                                        className="group-hover:opacity-100"
+                                        title="Project Settings"
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    >
+                                        <Settings size={14} />
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </nav>
 
                 <div style={{ padding: 'var(--spacing-md)', borderTop: '1px solid var(--color-border)' }}>
-                    <button style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--spacing-sm)',
-                        padding: 'var(--spacing-sm)',
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--color-text-secondary)',
-                        cursor: 'pointer',
-                        width: '100%',
-                        textAlign: 'left'
-                    }}>
-                        <Settings size={18} />
-                        <span>Settings</span>
-                    </button>
+                    {/* Global Settings or User Profile could go here */}
                 </div>
             </aside>
 
@@ -118,7 +203,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNe
                     backgroundColor: 'var(--color-bg-app)'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Projects / Mars Rover 2030 /</span>
+                        <span style={{ color: 'var(--color-text-muted)' }}>Projects / {currentProjectName} /</span>
                         <span style={{ fontWeight: 500 }}>Requirements</span>
                     </div>
 
@@ -453,3 +538,4 @@ export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNe
         </div >
     );
 };
+

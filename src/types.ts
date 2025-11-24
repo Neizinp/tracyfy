@@ -49,6 +49,7 @@ export interface Project {
   requirements: Requirement[];
   useCases: UseCase[];
   links: Link[];
+  lastModified: number;
 }
 
 export interface Version {

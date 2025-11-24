@@ -10,7 +10,9 @@ import { UseCaseModal } from './components/UseCaseModal';
 import { UseCaseList } from './components/UseCaseList';
 import { TrashModal } from './components/TrashModal';
 import { VersionHistory } from './components/VersionHistory';
-import type { Requirement, RequirementTreeNode, Link, UseCase, Version } from './types';
+import { ProjectSettingsModal } from './components/ProjectSettingsModal';
+import { CreateProjectModal } from './components/CreateProjectModal';
+import type { Requirement, RequirementTreeNode, Link, UseCase, Version, Project } from './types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -81,7 +83,9 @@ const initialUseCases: UseCase[] = [
 
 const initialLinks: Link[] = [];
 
-const STORAGE_KEY = 'reqtrace-data';
+const STORAGE_KEY = 'reqtrace-data'; // Legacy key for migration
+const PROJECTS_KEY = 'reqtrace-projects';
+const CURRENT_PROJECT_KEY = 'reqtrace-current-project-id';
 const VERSIONS_KEY = 'reqtrace-versions';
 const USED_NUMBERS_KEY = 'reqtrace-used-numbers';
 const MAX_VERSIONS = 50;
@@ -124,26 +128,69 @@ const buildTree = (requirements: Requirement[]): RequirementTreeNode[] => {
   return rootNodes;
 };
 
-// Helper to load data from LocalStorage
-const loadSavedData = () => {
+// Helper to load projects (handling migration)
+const loadProjects = () => {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
+    const savedProjects = localStorage.getItem(PROJECTS_KEY);
+    const savedCurrentId = localStorage.getItem(CURRENT_PROJECT_KEY);
+
+    if (savedProjects) {
+      const projects = JSON.parse(savedProjects);
       return {
-        requirements: parsed.requirements || initialRequirements,
-        useCases: parsed.useCases || initialUseCases,
-        links: parsed.links || initialLinks
+        projects,
+        currentProjectId: savedCurrentId || projects[0]?.id || 'default-project'
       };
     }
+
+    // Migration: Check for legacy data
+    const legacyData = localStorage.getItem(STORAGE_KEY);
+    if (legacyData) {
+      const parsed = JSON.parse(legacyData);
+      const defaultProject: Project = {
+        id: 'default-project',
+        name: 'Default Project',
+        description: 'Migrated from legacy data',
+        requirements: parsed.requirements || initialRequirements,
+        useCases: parsed.useCases || initialUseCases,
+        links: parsed.links || initialLinks,
+        lastModified: Date.now()
+      };
+      return {
+        projects: [defaultProject],
+        currentProjectId: defaultProject.id
+      };
+    }
+
+    // Default empty
+    const defaultProject: Project = {
+      id: 'default-project',
+      name: 'My First Project',
+      description: 'Default project',
+      requirements: initialRequirements,
+      useCases: initialUseCases,
+      links: initialLinks,
+      lastModified: Date.now()
+    };
+    return {
+      projects: [defaultProject],
+      currentProjectId: defaultProject.id
+    };
   } catch (error) {
-    console.error('Failed to load saved data:', error);
+    console.error('Failed to load projects:', error);
+    const defaultProject: Project = {
+      id: 'default-project',
+      name: 'My First Project',
+      description: 'Default project',
+      requirements: initialRequirements,
+      useCases: initialUseCases,
+      links: initialLinks,
+      lastModified: Date.now()
+    };
+    return {
+      projects: [defaultProject],
+      currentProjectId: defaultProject.id
+    };
   }
-  return {
-    requirements: initialRequirements,
-    useCases: initialUseCases,
-    links: initialLinks
-  };
 };
 
 // Helper to load used numbers from LocalStorage
@@ -189,12 +236,26 @@ const initializeUsedNumbers = (requirements: Requirement[], useCases: UseCase[])
 };
 
 function App() {
-  const savedData = loadSavedData();
-  const initialUsedNumbers = initializeUsedNumbers(savedData.requirements, savedData.useCases);
+  const { projects: initialProjects, currentProjectId: initialCurrentId } = loadProjects();
 
-  const [requirements, setRequirements] = useState<Requirement[]>(savedData.requirements);
-  const [useCases, setUseCases] = useState<UseCase[]>(savedData.useCases);
-  const [links, setLinks] = useState<Link[]>(savedData.links);
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [currentProjectId, setCurrentProjectId] = useState<string>(initialCurrentId);
+
+  // Project Settings State
+  const [isProjectSettingsOpen, setIsProjectSettingsOpen] = useState(false);
+  const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+  const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
+
+  // Get current project data
+  const currentProject = projects.find(p => p.id === currentProjectId) || projects[0];
+
+  // Initialize state from current project
+  // Note: We keep local state for performance and sync back to projects array
+  const [requirements, setRequirements] = useState<Requirement[]>(currentProject.requirements);
+  const [useCases, setUseCases] = useState<UseCase[]>(currentProject.useCases);
+  const [links, setLinks] = useState<Link[]>(currentProject.links);
+
+  const initialUsedNumbers = initializeUsedNumbers(currentProject.requirements, currentProject.useCases);
   const [usedReqNumbers, setUsedReqNumbers] = useState<Set<number>>(initialUsedNumbers.usedReqNumbers);
   const [usedUcNumbers, setUsedUcNumbers] = useState<Set<number>>(initialUsedNumbers.usedUcNumbers);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -209,19 +270,86 @@ function App() {
   const [versions, setVersions] = useState<Version[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Auto-save to LocalStorage whenever data changes
+  // Sync local state back to projects array whenever data changes
+  useEffect(() => {
+    setProjects(prevProjects =>
+      prevProjects.map(p =>
+        p.id === currentProjectId
+          ? { ...p, requirements, useCases, links, lastModified: Date.now() }
+          : p
+      )
+    );
+  }, [requirements, useCases, links, currentProjectId]);
+
+  // Persist projects to LocalStorage
   useEffect(() => {
     try {
-      const dataToSave = {
-        requirements,
-        useCases,
-        links
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+      localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+      localStorage.setItem(CURRENT_PROJECT_KEY, currentProjectId);
     } catch (error) {
-      console.error('Failed to save data:', error);
+      console.error('Failed to save projects:', error);
     }
-  }, [requirements, useCases, links]);
+  }, [projects, currentProjectId]);
+
+  const handleSwitchProject = (projectId: string) => {
+    const targetProject = projects.find(p => p.id === projectId);
+    if (targetProject) {
+      setCurrentProjectId(projectId);
+      setRequirements(targetProject.requirements);
+      setUseCases(targetProject.useCases);
+      setLinks(targetProject.links);
+
+      // Update used numbers for the new project
+      const newUsedNumbers = initializeUsedNumbers(targetProject.requirements, targetProject.useCases);
+      setUsedReqNumbers(newUsedNumbers.usedReqNumbers);
+      setUsedUcNumbers(newUsedNumbers.usedUcNumbers);
+    }
+  };
+
+  const handleCreateProject = () => {
+    setIsCreateProjectModalOpen(true);
+  };
+
+  const handleCreateProjectSubmit = (name: string, description: string) => {
+    const newProject: Project = {
+      id: `proj-${Date.now()}`,
+      name,
+      description,
+      requirements: [],
+      useCases: [],
+      links: [],
+      lastModified: Date.now()
+    };
+
+    setProjects([...projects, newProject]);
+    handleSwitchProject(newProject.id);
+    setIsCreateProjectModalOpen(false);
+  };
+
+  const handleOpenProjectSettings = (project: Project) => {
+    setProjectToEdit(project);
+    setIsProjectSettingsOpen(true);
+  };
+
+  const handleUpdateProject = (projectId: string, name: string, description: string) => {
+    setProjects(prev => prev.map(p =>
+      p.id === projectId ? { ...p, name, description, lastModified: Date.now() } : p
+    ));
+  };
+
+  const handleDeleteProject = (projectId: string) => {
+    if (projects.length <= 1) {
+      alert("Cannot delete the last project.");
+      return;
+    }
+
+    const newProjects = projects.filter(p => p.id !== projectId);
+    setProjects(newProjects);
+
+    if (currentProjectId === projectId) {
+      handleSwitchProject(newProjects[0].id);
+    }
+  };
 
   // Auto-save used numbers to LocalStorage whenever they change
   useEffect(() => {
@@ -919,8 +1047,20 @@ function App() {
 
   return (
     <Layout
-      onNewRequirement={() => setIsModalOpen(true)}
-      onNewUseCase={() => setIsUseCaseModalOpen(true)}
+      currentProjectName={currentProject.name}
+      projects={projects}
+      currentProjectId={currentProjectId}
+      onSwitchProject={handleSwitchProject}
+      onCreateProject={handleCreateProject}
+      onOpenProjectSettings={handleOpenProjectSettings}
+      onNewRequirement={() => {
+        setEditingRequirement(null);
+        setIsModalOpen(true);
+      }}
+      onNewUseCase={() => {
+        setEditingUseCase(null);
+        setIsUseCaseModalOpen(true);
+      }}
       onExport={handleExport}
       onImport={handleImport}
       onImportExcel={handleImportExcel}
@@ -1094,6 +1234,25 @@ function App() {
         onRestoreUseCase={handleRestoreUseCase}
         onPermanentDeleteRequirement={handlePermanentDeleteRequirement}
         onPermanentDeleteUseCase={handlePermanentDeleteUseCase}
+      />
+
+      {isProjectSettingsOpen && projectToEdit && (
+        <ProjectSettingsModal
+          isOpen={isProjectSettingsOpen}
+          project={projectToEdit}
+          onClose={() => {
+            setIsProjectSettingsOpen(false);
+            setProjectToEdit(null);
+          }}
+          onUpdate={handleUpdateProject}
+          onDelete={handleDeleteProject}
+        />
+      )}
+
+      <CreateProjectModal
+        isOpen={isCreateProjectModalOpen}
+        onClose={() => setIsCreateProjectModalOpen(false)}
+        onSubmit={handleCreateProjectSubmit}
       />
     </Layout>
   );
