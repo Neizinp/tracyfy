@@ -8,6 +8,7 @@ import { DetailedRequirementView } from './components/DetailedRequirementView';
 import { TraceabilityMatrix } from './components/TraceabilityMatrix';
 import { UseCaseModal } from './components/UseCaseModal';
 import { UseCaseList } from './components/UseCaseList';
+import { TrashModal } from './components/TrashModal';
 import { VersionHistory } from './components/VersionHistory';
 import type { Requirement, RequirementTreeNode, Link, UseCase, Version } from './types';
 import jsPDF from 'jspdf';
@@ -283,21 +284,16 @@ function App() {
   };
 
   const handleDeleteRequirement = (id: string) => {
-    // 1. Remove the requirement AND clean up parent references in a single update
-    setRequirements(prev => {
-      const filtered = prev
-        .filter(req => req.id !== id) // Remove the deleted requirement
-        .map(req => ({
-          ...req,
-          parentIds: req.parentIds ? req.parentIds.filter(parentId => parentId !== id) : []
-        })); // Remove deleted ID from any parent references
-      return filtered;
-    });
+    // Soft delete: Mark as deleted instead of removing
+    setRequirements(prev =>
+      prev.map(req =>
+        req.id === id
+          ? { ...req, isDeleted: true, deletedAt: Date.now() }
+          : req
+      )
+    );
 
-    // 2. Remove any links involving this requirement
-    setLinks(prev => prev.filter(link => link.sourceId !== id && link.targetId !== id));
-
-    // 3. Close modal if open
+    // Close modal if open
     setIsEditModalOpen(false);
     setEditingRequirement(null);
   };
@@ -857,7 +853,46 @@ function App() {
     }
   };
 
+  const [isTrashModalOpen, setIsTrashModalOpen] = useState(false);
+
+  const handleRestoreRequirement = (id: string) => {
+    setRequirements(prev =>
+      prev.map(req =>
+        req.id === id
+          ? { ...req, isDeleted: false, deletedAt: undefined }
+          : req
+      )
+    );
+  };
+
+  const handlePermanentDeleteRequirement = (id: string) => {
+    setRequirements(prev =>
+      prev
+        .filter(req => req.id !== id)
+        .map(req => ({
+          ...req,
+          parentIds: req.parentIds ? req.parentIds.filter(parentId => parentId !== id) : []
+        }))
+    );
+    setLinks(prev => prev.filter(link => link.sourceId !== id && link.targetId !== id));
+  };
+
+  const handleRestoreUseCase = (id: string) => {
+    setUseCases(prev =>
+      prev.map(uc =>
+        uc.id === id
+          ? { ...uc, isDeleted: false, deletedAt: undefined }
+          : uc
+      )
+    );
+  };
+
+  const handlePermanentDeleteUseCase = (id: string) => {
+    setUseCases(prev => prev.filter(uc => uc.id !== id));
+  };
+
   const filteredRequirements = requirements.filter(req => {
+    if (req.isDeleted) return false;
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -869,6 +904,7 @@ function App() {
   });
 
   const filteredUseCases = useCases.filter(uc => {
+    if (uc.isDeleted) return false;
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -892,6 +928,7 @@ function App() {
       onExportPDF={handleExportPDF}
       onExportExcel={handleExportExcel}
       onSearch={setSearchQuery}
+      onTrashOpen={() => setIsTrashModalOpen(true)}
     >
       <div style={{ marginBottom: 'var(--spacing-md)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
@@ -1046,6 +1083,17 @@ function App() {
         onClose={() => setIsVersionHistoryOpen(false)}
         onRestore={handleRestoreVersion}
         onCreateBaseline={handleCreateBaseline}
+      />
+
+      <TrashModal
+        isOpen={isTrashModalOpen}
+        onClose={() => setIsTrashModalOpen(false)}
+        deletedRequirements={requirements.filter(r => r.isDeleted)}
+        deletedUseCases={useCases.filter(u => u.isDeleted)}
+        onRestoreRequirement={handleRestoreRequirement}
+        onRestoreUseCase={handleRestoreUseCase}
+        onPermanentDeleteRequirement={handlePermanentDeleteRequirement}
+        onPermanentDeleteUseCase={handlePermanentDeleteUseCase}
       />
     </Layout>
   );

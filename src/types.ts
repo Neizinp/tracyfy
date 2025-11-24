@@ -9,6 +9,8 @@ export interface Requirement {
   status: 'draft' | 'approved' | 'implemented' | 'verified';
   priority: 'low' | 'medium' | 'high';
   lastModified: number;
+  isDeleted?: boolean;
+  deletedAt?: number;
 }
 
 // Tree node type for rendering (computed from flat requirements)
@@ -28,6 +30,8 @@ export interface UseCase {
   priority: 'low' | 'medium' | 'high';
   status: 'draft' | 'approved' | 'implemented' | 'verified';
   lastModified: number;
+  isDeleted?: boolean;
+  deletedAt?: number;
 }
 
 export interface Link {

@@ -1,4 +1,4 @@
-import { LayoutGrid, Settings, FolderOpen, Plus, Download, Upload, Clock, FileText, FileSpreadsheet, ChevronDown, Search } from 'lucide-react';
+import { LayoutGrid, Settings, FolderOpen, Plus, Download, Upload, Clock, FileText, FileSpreadsheet, ChevronDown, Search, Trash2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 interface LayoutProps {
@@ -12,9 +12,10 @@ interface LayoutProps {
     onExportExcel?: () => void;
     onImportExcel?: () => void;
     onSearch?: (query: string) => void;
+    onTrashOpen?: () => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNewUseCase, onExport, onImport, onImportExcel, onViewHistory, onExportPDF, onExportExcel, onSearch }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNewUseCase, onExport, onImport, onImportExcel, onViewHistory, onExportPDF, onExportExcel, onSearch, onTrashOpen }) => {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -171,6 +172,26 @@ export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNe
                                 }}>
                                 <Clock size={18} />
                                 History
+                            </button>
+                        )}
+                        {onTrashOpen && (
+                            <button
+                                onClick={onTrashOpen}
+                                style={{
+                                    backgroundColor: 'transparent',
+                                    color: 'var(--color-text-secondary)',
+                                    border: '1px solid var(--color-border)',
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '6px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    cursor: 'pointer',
+                                    fontWeight: 500,
+                                    transition: 'background-color 0.2s'
+                                }}>
+                                <Trash2 size={18} />
+                                Trash
                             </button>
                         )}
                         {/* Import Dropdown */}
@@ -429,6 +450,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, onNewRequirement, onNe
                     {children}
                 </div>
             </main>
-        </div>
+        </div >
     );
 };
