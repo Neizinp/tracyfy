@@ -1212,6 +1212,8 @@ function App() {
         setSelectedInformation(null);
         setIsInformationModalOpen(true);
       }}
+      currentView={currentView}
+      onSwitchView={setCurrentView}
     >
       <div style={{ marginBottom: 'var(--spacing-md)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
@@ -1220,156 +1222,76 @@ function App() {
             <p style={{ color: 'var(--color-text-secondary)' }}>Manage and trace system requirements for the Mars Rover 2030 project.</p>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={() => setCurrentView('tree')}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: '1px solid var(--color-border)',
-                backgroundColor: currentView === 'tree' ? 'var(--color-accent)' : 'transparent',
-                color: currentView === 'tree' ? 'white' : 'var(--color-text-primary)',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                transition: 'all 0.2s'
-              }}
-            >
-              Tree View
-            </button>
-            <button
-              onClick={() => setCurrentView('detailed')}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: '1px solid var(--color-border)',
-                backgroundColor: currentView === 'detailed' ? 'var(--color-accent)' : 'transparent',
-                color: currentView === 'detailed' ? 'white' : 'var(--color-text-primary)',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                transition: 'all 0.2s'
-              }}
-            >
-              Detailed View
-            </button>
-            <button
-              onClick={() => setCurrentView('matrix')}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: '1px solid var(--color-border)',
-                backgroundColor: currentView === 'matrix' ? 'var(--color-accent)' : 'transparent',
-                color: currentView === 'matrix' ? 'white' : 'var(--color-text-primary)',
-                cursor: 'pointer',
-                fontWeight: 500,
-                transition: 'all 0.2s'
-              }}
-            >
-              Matrix View
-            </button>
-            <button
-              onClick={() => setCurrentView('usecases')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '6px',
-                border: '1px solid var(--color-border)',
-                backgroundColor: currentView === 'usecases' ? 'var(--color-accent)' : 'transparent',
-                color: currentView === 'usecases' ? 'white' : 'var(--color-text-primary)',
-                cursor: 'pointer',
-                fontWeight: 500,
-                transition: 'all 0.2s'
-              }}
-            >
-              Use Cases
-            </button>
-            <button
-              onClick={() => setCurrentView('testcases')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '6px',
-                border: '1px solid var(--color-border)',
-                backgroundColor: currentView === 'testcases' ? 'var(--color-accent)' : 'transparent',
-                color: currentView === 'testcases' ? 'white' : 'var(--color-text-primary)',
-                cursor: 'pointer',
-                fontWeight: 500,
-                transition: 'all 0.2s'
-              }}
-            >
-              Test Cases
-            </button>
-            <button
-              onClick={() => setCurrentView('information')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '6px',
-                border: '1px solid var(--color-border)',
-                backgroundColor: currentView === 'information' ? 'var(--color-accent)' : 'transparent',
-                color: currentView === 'information' ? 'white' : 'var(--color-text-primary)',
-                cursor: 'pointer',
-                fontWeight: 500,
-                transition: 'all 0.2s'
-              }}
-            >
-              Information
-            </button>
           </div>
         </div>
       </div>
 
-      {currentView === 'tree' && (
-        <RequirementTree
-          requirements={treeData}
-          links={links}
-          allRequirements={requirements}
-          onReorder={handleReorder}
-          onLink={handleLink}
-          onEdit={handleEdit}
-        />
-      )}
+      {
+        currentView === 'tree' && (
+          <RequirementTree
+            requirements={treeData}
+            links={links}
+            allRequirements={requirements}
+            onReorder={handleReorder}
+            onLink={handleLink}
+            onEdit={handleEdit}
+          />
+        )
+      }
 
-      {currentView === 'detailed' && (
-        <DetailedRequirementView
-          requirements={filteredRequirements}
-          onEdit={handleEdit}
-          onDelete={handleDeleteRequirement}
-        />
-      )}
+      {
+        currentView === 'detailed' && (
+          <DetailedRequirementView
+            requirements={filteredRequirements}
+            onEdit={handleEdit}
+            onDelete={handleDeleteRequirement}
+          />
+        )
+      }
 
-      {currentView === 'matrix' && (
-        <TraceabilityMatrix
-          requirements={filteredRequirements}
-          links={links}
-        />
-      )}
+      {
+        currentView === 'matrix' && (
+          <TraceabilityMatrix
+            requirements={filteredRequirements}
+            links={links}
+          />
+        )
+      }
 
-      {currentView === 'usecases' && (
-        <UseCaseList
-          useCases={filteredUseCases}
-          requirements={requirements}
-          onEdit={handleEditUseCase}
-          onDelete={handleDeleteUseCase}
-          onBreakDown={handleBreakDownUseCase}
-        />
-      )}
+      {
+        currentView === 'usecases' && (
+          <UseCaseList
+            useCases={filteredUseCases}
+            requirements={requirements}
+            onEdit={handleEditUseCase}
+            onDelete={handleDeleteUseCase}
+            onBreakDown={handleBreakDownUseCase}
+          />
+        )
+      }
 
-      {currentView === 'testcases' && (
-        <TestCaseList
-          testCases={testCases.filter(tc => !tc.isDeleted)}
-          onEdit={(tc) => {
-            setSelectedTestCase(tc);
-            setIsEditTestCaseModalOpen(true);
-          }}
-          onDelete={handleDeleteTestCase}
-        />
-      )}
+      {
+        currentView === 'testcases' && (
+          <TestCaseList
+            testCases={testCases.filter(tc => !tc.isDeleted)}
+            onEdit={(tc) => {
+              setSelectedTestCase(tc);
+              setIsEditTestCaseModalOpen(true);
+            }}
+            onDelete={handleDeleteTestCase}
+          />
+        )
+      }
 
-      {currentView === 'information' && (
-        <InformationList
-          information={information.filter(info => !info.isDeleted)}
-          onEdit={handleEditInformation}
-          onDelete={handleDeleteInformation}
-        />
-      )}
+      {
+        currentView === 'information' && (
+          <InformationList
+            information={information.filter(info => !info.isDeleted)}
+            onEdit={handleEditInformation}
+            onDelete={handleDeleteInformation}
+          />
+        )
+      }
 
       <NewRequirementModal
         isOpen={isModalOpen}
@@ -1385,19 +1307,21 @@ function App() {
         onSubmit={handleAddLink}
       />
 
-      {isEditModalOpen && editingRequirement && (
-        <EditRequirementModal
-          isOpen={isEditModalOpen}
-          requirement={editingRequirement}
-          allRequirements={requirements}
-          onClose={() => {
-            setIsEditModalOpen(false);
-            setEditingRequirement(null);
-          }}
-          onSubmit={handleUpdateRequirement}
-          onDelete={handleDeleteRequirement}
-        />
-      )}
+      {
+        isEditModalOpen && editingRequirement && (
+          <EditRequirementModal
+            isOpen={isEditModalOpen}
+            requirement={editingRequirement}
+            allRequirements={requirements}
+            onClose={() => {
+              setIsEditModalOpen(false);
+              setEditingRequirement(null);
+            }}
+            onSubmit={handleUpdateRequirement}
+            onDelete={handleDeleteRequirement}
+          />
+        )
+      }
 
       <UseCaseModal
         isOpen={isUseCaseModalOpen}
@@ -1460,25 +1384,27 @@ function App() {
         onPermanentDeleteInformation={handlePermanentDeleteInformation}
       />
 
-      {isProjectSettingsOpen && projectToEdit && (
-        <ProjectSettingsModal
-          isOpen={isProjectSettingsOpen}
-          project={projectToEdit}
-          onClose={() => {
-            setIsProjectSettingsOpen(false);
-            setProjectToEdit(null);
-          }}
-          onUpdate={handleUpdateProject}
-          onDelete={handleDeleteProject}
-        />
-      )}
+      {
+        isProjectSettingsOpen && projectToEdit && (
+          <ProjectSettingsModal
+            isOpen={isProjectSettingsOpen}
+            project={projectToEdit}
+            onClose={() => {
+              setIsProjectSettingsOpen(false);
+              setProjectToEdit(null);
+            }}
+            onUpdate={handleUpdateProject}
+            onDelete={handleDeleteProject}
+          />
+        )
+      }
 
       <CreateProjectModal
         isOpen={isCreateProjectModalOpen}
         onClose={() => setIsCreateProjectModalOpen(false)}
         onSubmit={handleCreateProjectSubmit}
       />
-    </Layout>
+    </Layout >
   );
 }
 

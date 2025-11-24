@@ -22,6 +22,8 @@ interface LayoutProps {
     onSearch?: (query: string) => void;
     onTrashOpen?: () => void;
     onNewInformation?: () => void;
+    currentView: 'tree' | 'detailed' | 'matrix' | 'usecases' | 'testcases' | 'information';
+    onSwitchView: (view: 'tree' | 'detailed' | 'matrix' | 'usecases' | 'testcases' | 'information') => void;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -43,12 +45,16 @@ export const Layout: React.FC<LayoutProps> = ({
     onExportExcel,
     onSearch,
     onTrashOpen,
-    onNewInformation
+    onNewInformation,
+    currentView,
+    onSwitchView
 }) => {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
+    const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const importMenuRef = useRef<HTMLDivElement>(null);
+    const createMenuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -57,6 +63,9 @@ export const Layout: React.FC<LayoutProps> = ({
             }
             if (importMenuRef.current && !importMenuRef.current.contains(event.target as Node)) {
                 setIsImportMenuOpen(false);
+            }
+            if (createMenuRef.current && !createMenuRef.current.contains(event.target as Node)) {
+                setIsCreateMenuOpen(false);
             }
         };
 
@@ -151,7 +160,8 @@ export const Layout: React.FC<LayoutProps> = ({
                                             cursor: 'pointer',
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap'
+                                            whiteSpace: 'nowrap',
+                                            fontWeight: project.id === currentProjectId ? 600 : 400
                                         }}
                                     >
                                         <FolderOpen size={18} />
@@ -185,6 +195,135 @@ export const Layout: React.FC<LayoutProps> = ({
                                     </button>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* Views Navigation */}
+                    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                        <h2 style={{
+                            fontSize: '0.75rem',
+                            textTransform: 'uppercase',
+                            color: 'var(--color-text-muted)',
+                            letterSpacing: '0.05em',
+                            margin: '0 0 var(--spacing-sm) 0'
+                        }}>
+                            Views
+                        </h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <button
+                                onClick={() => onSwitchView('tree')}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    padding: '8px 12px',
+                                    border: 'none',
+                                    background: currentView === 'tree' ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: currentView === 'tree' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    fontWeight: currentView === 'tree' ? 500 : 400
+                                }}
+                            >
+                                <LayoutGrid size={18} />
+                                Requirements Tree
+                            </button>
+                            <button
+                                onClick={() => onSwitchView('detailed')}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    padding: '8px 12px',
+                                    border: 'none',
+                                    background: currentView === 'detailed' ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: currentView === 'detailed' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    fontWeight: currentView === 'detailed' ? 500 : 400
+                                }}
+                            >
+                                <FileText size={18} />
+                                Detailed View
+                            </button>
+                            <button
+                                onClick={() => onSwitchView('matrix')}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    padding: '8px 12px',
+                                    border: 'none',
+                                    background: currentView === 'matrix' ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: currentView === 'matrix' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    fontWeight: currentView === 'matrix' ? 500 : 400
+                                }}
+                            >
+                                <LayoutGrid size={18} style={{ transform: 'rotate(45deg)' }} />
+                                Traceability Matrix
+                            </button>
+                            <button
+                                onClick={() => onSwitchView('usecases')}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    padding: '8px 12px',
+                                    border: 'none',
+                                    background: currentView === 'usecases' ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: currentView === 'usecases' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    fontWeight: currentView === 'usecases' ? 500 : 400
+                                }}
+                            >
+                                <FileText size={18} />
+                                Use Cases
+                            </button>
+                            <button
+                                onClick={() => onSwitchView('testcases')}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    padding: '8px 12px',
+                                    border: 'none',
+                                    background: currentView === 'testcases' ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: currentView === 'testcases' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    fontWeight: currentView === 'testcases' ? 500 : 400
+                                }}
+                            >
+                                <FileText size={18} />
+                                Test Cases
+                            </button>
+                            <button
+                                onClick={() => onSwitchView('information')}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    padding: '8px 12px',
+                                    border: 'none',
+                                    background: currentView === 'information' ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: currentView === 'information' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    fontWeight: currentView === 'information' ? 500 : 400
+                                }}
+                            >
+                                <FileText size={18} />
+                                Information
+                            </button>
                         </div>
                     </div>
                 </nav>
@@ -243,6 +382,151 @@ export const Layout: React.FC<LayoutProps> = ({
                     )}
 
                     <div style={{ display: 'flex', gap: '8px' }}>
+                        {/* Create New Dropdown */}
+                        <div style={{ position: 'relative' }} ref={createMenuRef}>
+                            <button
+                                onClick={() => setIsCreateMenuOpen(!isCreateMenuOpen)}
+                                style={{
+                                    backgroundColor: 'var(--color-accent)',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '6px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    cursor: 'pointer',
+                                    fontWeight: 500,
+                                    transition: 'background-color 0.2s'
+                                }}>
+                                <Plus size={18} />
+                                Create New
+                                <ChevronDown size={14} />
+                            </button>
+
+                            {isCreateMenuOpen && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    right: 0,
+                                    marginTop: '0.5rem',
+                                    backgroundColor: 'var(--color-bg-primary)',
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: '6px',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                                    zIndex: 100,
+                                    minWidth: '200px',
+                                    overflow: 'hidden'
+                                }}>
+                                    <button
+                                        onClick={() => {
+                                            onNewRequirement();
+                                            setIsCreateMenuOpen(false);
+                                        }}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 'var(--spacing-sm)',
+                                            width: '100%',
+                                            padding: '0.75rem 1rem',
+                                            border: 'none',
+                                            background: 'transparent',
+                                            color: 'var(--color-text-primary)',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            fontSize: '0.9rem'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    >
+                                        <Plus size={16} />
+                                        New Requirement
+                                    </button>
+                                    {onNewUseCase && (
+                                        <button
+                                            onClick={() => {
+                                                onNewUseCase();
+                                                setIsCreateMenuOpen(false);
+                                            }}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--spacing-sm)',
+                                                width: '100%',
+                                                padding: '0.75rem 1rem',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: 'var(--color-text-primary)',
+                                                cursor: 'pointer',
+                                                textAlign: 'left',
+                                                fontSize: '0.9rem',
+                                                borderTop: '1px solid var(--color-border)'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <Plus size={16} />
+                                            New Use Case
+                                        </button>
+                                    )}
+                                    {onNewTestCase && (
+                                        <button
+                                            onClick={() => {
+                                                onNewTestCase();
+                                                setIsCreateMenuOpen(false);
+                                            }}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--spacing-sm)',
+                                                width: '100%',
+                                                padding: '0.75rem 1rem',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: 'var(--color-text-primary)',
+                                                cursor: 'pointer',
+                                                textAlign: 'left',
+                                                fontSize: '0.9rem',
+                                                borderTop: '1px solid var(--color-border)'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <Plus size={16} />
+                                            New Test Case
+                                        </button>
+                                    )}
+                                    {onNewInformation && (
+                                        <button
+                                            onClick={() => {
+                                                onNewInformation();
+                                                setIsCreateMenuOpen(false);
+                                            }}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--spacing-sm)',
+                                                width: '100%',
+                                                padding: '0.75rem 1rem',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: 'var(--color-text-primary)',
+                                                cursor: 'pointer',
+                                                textAlign: 'left',
+                                                fontSize: '0.9rem',
+                                                borderTop: '1px solid var(--color-border)'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <Plus size={16} />
+                                            New Information
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
                         {onViewHistory && (
                             <button
                                 onClick={onViewHistory}
@@ -493,90 +777,6 @@ export const Layout: React.FC<LayoutProps> = ({
                                 </div>
                             )}
                         </div>
-                        {onNewUseCase && (
-                            <button
-                                onClick={onNewUseCase}
-                                style={{
-                                    padding: '8px 16px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    backgroundColor: 'var(--color-accent)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontWeight: 500,
-                                    fontSize: '0.875rem',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <span style={{ fontSize: '1.25rem' }}>+</span>
-                                New Use Case
-                            </button>
-                        )}
-                        {onNewTestCase && (
-                            <button
-                                onClick={onNewTestCase}
-                                style={{
-                                    padding: '8px 16px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    backgroundColor: 'var(--color-accent)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontWeight: 500,
-                                    fontSize: '0.875rem',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <span style={{ fontSize: '1.25rem' }}>+</span>
-                                New Test Case
-                            </button>
-                        )}
-                        {onNewInformation && (
-                            <button
-                                onClick={onNewInformation}
-                                style={{
-                                    padding: '8px 16px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    backgroundColor: 'var(--color-accent)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontWeight: 500,
-                                    fontSize: '0.875rem',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <span style={{ fontSize: '1.25rem' }}>+</span>
-                                New Information
-                            </button>
-                        )}
-                        <button
-                            onClick={onNewRequirement}
-                            style={{
-                                backgroundColor: 'var(--color-accent)',
-                                color: 'white',
-                                border: 'none',
-                                padding: '0.5rem 1rem',
-                                borderRadius: '6px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 'var(--spacing-sm)',
-                                cursor: 'pointer',
-                                fontWeight: 500,
-                                transition: 'background-color 0.2s'
-                            }}>
-                            <Plus size={18} />
-                            New Requirement
-                        </button>
                     </div>
                 </header>
 
