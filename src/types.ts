@@ -8,6 +8,11 @@ export interface Requirement {
   useCaseIds?: string[]; // Which use cases this requirement supports
   status: 'draft' | 'approved' | 'implemented' | 'verified';
   priority: 'low' | 'medium' | 'high';
+  author?: string;
+  verificationMethod?: string;
+  comments?: string;
+  dateCreated: number;
+  approvalDate?: number;
   lastModified: number;
   isDeleted?: boolean;
   deletedAt?: number;

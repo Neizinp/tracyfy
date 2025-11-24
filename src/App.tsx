@@ -28,6 +28,7 @@ const initialRequirements: Requirement[] = [
     status: 'approved',
     priority: 'high',
     parentIds: [],
+    dateCreated: Date.now(),
     lastModified: Date.now()
   },
   {
@@ -39,6 +40,7 @@ const initialRequirements: Requirement[] = [
     status: 'approved',
     priority: 'high',
     parentIds: [],
+    dateCreated: Date.now(),
     lastModified: Date.now()
   },
   {
@@ -50,6 +52,7 @@ const initialRequirements: Requirement[] = [
     status: 'draft',
     priority: 'medium',
     parentIds: ['REQ-001'],
+    dateCreated: Date.now(),
     lastModified: Date.now()
   },
   {
@@ -61,6 +64,7 @@ const initialRequirements: Requirement[] = [
     status: 'draft',
     priority: 'medium',
     parentIds: ['REQ-001'],
+    dateCreated: Date.now(),
     lastModified: Date.now()
   }
 ];
@@ -136,9 +140,17 @@ const loadProjects = () => {
 
     if (savedProjects) {
       const projects = JSON.parse(savedProjects);
+      // Migrate existing requirements to add dateCreated if missing
+      const migratedProjects = projects.map((project: Project) => ({
+        ...project,
+        requirements: project.requirements.map((req: Requirement) => ({
+          ...req,
+          dateCreated: req.dateCreated || req.lastModified || Date.now()
+        }))
+      }));
       return {
-        projects,
-        currentProjectId: savedCurrentId || projects[0]?.id || 'default-project'
+        projects: migratedProjects,
+        currentProjectId: savedCurrentId || migratedProjects[0]?.id || 'default-project'
       };
     }
 
@@ -525,6 +537,7 @@ function App() {
                 text: row['Requirement Text'] || '',
                 rationale: row['Rationale'] || '',
                 parentIds: row['Parents'] ? row['Parents'].split(',').map((id: string) => id.trim()).filter((id: string) => id) : [],
+                dateCreated: Date.now(),
                 lastModified: Date.now()
               }));
               setRequirements(parsedReqs);

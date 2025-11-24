@@ -19,6 +19,9 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
     const [priority, setPriority] = useState<Requirement['priority']>('medium');
     const [status, setStatus] = useState<Requirement['status']>('draft');
     const [parentIds, setParentIds] = useState<string[]>([]);
+    const [author, setAuthor] = useState('');
+    const [verificationMethod, setVerificationMethod] = useState('');
+    const [comments, setComments] = useState('');
 
     useEffect(() => {
         if (requirement) {
@@ -29,6 +32,9 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
             setPriority(requirement.priority);
             setStatus(requirement.status);
             setParentIds(requirement.parentIds || []);
+            setAuthor(requirement.author || '');
+            setVerificationMethod(requirement.verificationMethod || '');
+            setComments(requirement.comments || '');
         }
     }, [requirement]);
 
@@ -36,7 +42,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit(requirement.id, {
+        const updates: Partial<Requirement> = {
             title,
             description,
             text,
@@ -44,8 +50,18 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
             priority,
             status,
             parentIds,
+            author: author || undefined,
+            verificationMethod: verificationMethod || undefined,
+            comments: comments || undefined,
             lastModified: Date.now()
-        });
+        };
+
+        // Auto-set approval date when status changes to approved
+        if (status === 'approved' && requirement.status !== 'approved') {
+            updates.approvalDate = Date.now();
+        }
+
+        onSubmit(requirement.id, updates);
         onClose();
     };
 
@@ -250,7 +266,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
                         </select>
                     </div>
 
-                    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
                         <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Status</label>
                         <select
                             value={status}
@@ -271,6 +287,101 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
                             <option value="verified">Verified</option>
                         </select>
                     </div>
+
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Author</label>
+                        <input
+                            type="text"
+                            value={author}
+                            onChange={(e) => setAuthor(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--color-border)',
+                                backgroundColor: 'var(--color-bg-app)',
+                                color: 'var(--color-text-primary)',
+                                outline: 'none'
+                            }}
+                        />
+                    </div>
+
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Verification Method</label>
+                        <input
+                            type="text"
+                            value={verificationMethod}
+                            onChange={(e) => setVerificationMethod(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--color-border)',
+                                backgroundColor: 'var(--color-bg-app)',
+                                color: 'var(--color-text-primary)',
+                                outline: 'none'
+                            }}
+                        />
+                    </div>
+
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Comments</label>
+                        <textarea
+                            value={comments}
+                            onChange={(e) => setComments(e.target.value)}
+                            rows={3}
+                            style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--color-border)',
+                                backgroundColor: 'var(--color-bg-app)',
+                                color: 'var(--color-text-primary)',
+                                outline: 'none',
+                                resize: 'vertical'
+                            }}
+                        />
+                    </div>
+
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Date Created</label>
+                        <input
+                            type="text"
+                            value={new Date(requirement.dateCreated).toLocaleString()}
+                            disabled
+                            style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--color-border)',
+                                backgroundColor: 'var(--color-bg-secondary)',
+                                color: 'var(--color-text-muted)',
+                                outline: 'none',
+                                cursor: 'not-allowed'
+                            }}
+                        />
+                    </div>
+
+                    {requirement.approvalDate && (
+                        <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                            <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Approval Date</label>
+                            <input
+                                type="text"
+                                value={new Date(requirement.approvalDate).toLocaleString()}
+                                disabled
+                                style={{
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--color-border)',
+                                    backgroundColor: 'var(--color-bg-secondary)',
+                                    color: 'var(--color-text-muted)',
+                                    outline: 'none',
+                                    cursor: 'not-allowed'
+                                }}
+                            />
+                        </div>
+                    )}
 
                     <div style={{ marginBottom: 'var(--spacing-lg)' }}>
                         <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>

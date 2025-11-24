@@ -14,6 +14,9 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
     const [text, setText] = useState('');
     const [rationale, setRationale] = useState('');
     const [priority, setPriority] = useState<Requirement['priority']>('medium');
+    const [author, setAuthor] = useState('');
+    const [verificationMethod, setVerificationMethod] = useState('');
+    const [comments, setComments] = useState('');
 
     if (!isOpen) return null;
 
@@ -25,6 +28,10 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
             text,
             rationale,
             priority,
+            author: author || undefined,
+            verificationMethod: verificationMethod || undefined,
+            comments: comments || undefined,
+            dateCreated: Date.now(),
             status: 'draft',
             parentIds: [] // New requirements start with no parents
         });
@@ -34,6 +41,9 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
         setText('');
         setRationale('');
         setPriority('medium');
+        setAuthor('');
+        setVerificationMethod('');
+        setComments('');
         onClose();
     };
 
@@ -158,7 +168,7 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
                         />
                     </div>
 
-                    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
                         <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Priority</label>
                         <select
                             value={priority}
@@ -177,6 +187,61 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
                             <option value="medium">Medium</option>
                             <option value="high">High</option>
                         </select>
+                    </div>
+
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Author</label>
+                        <input
+                            type="text"
+                            value={author}
+                            onChange={(e) => setAuthor(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--color-border)',
+                                backgroundColor: 'var(--color-bg-app)',
+                                color: 'var(--color-text-primary)',
+                                outline: 'none'
+                            }}
+                        />
+                    </div>
+
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Verification Method</label>
+                        <input
+                            type="text"
+                            value={verificationMethod}
+                            onChange={(e) => setVerificationMethod(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--color-border)',
+                                backgroundColor: 'var(--color-bg-app)',
+                                color: 'var(--color-text-primary)',
+                                outline: 'none'
+                            }}
+                        />
+                    </div>
+
+                    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Comments</label>
+                        <textarea
+                            value={comments}
+                            onChange={(e) => setComments(e.target.value)}
+                            rows={3}
+                            style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--color-border)',
+                                backgroundColor: 'var(--color-bg-app)',
+                                color: 'var(--color-text-primary)',
+                                outline: 'none',
+                                resize: 'vertical'
+                            }}
+                        />
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-sm)' }}>

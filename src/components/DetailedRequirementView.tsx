@@ -34,23 +34,24 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
             overflow: 'hidden' // For rounded corners with table
         }}>
             <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1000px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1400px' }}>
                     <thead>
                         <tr style={{ backgroundColor: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)' }}>
-                            <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '200px' }}>ID / Title</th>
-                            <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Description</th>
-                            <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Text</th>
-                            <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Rationale</th>
+                            <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '180px' }}>ID / Title</th>
+                            <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '200px' }}>Description</th>
+                            <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '120px' }}>Author</th>
+                            <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '150px' }}>Verification</th>
                             <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '100px' }}>Priority</th>
                             <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '100px' }}>Status</th>
-                            <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '150px' }}>Last Modified</th>
+                            <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '140px' }}>Created</th>
+                            <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '140px' }}>Approved</th>
                             <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '80px' }}></th>
                         </tr>
                     </thead>
                     <tbody>
                         {requirements.length === 0 ? (
                             <tr>
-                                <td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                                <td colSpan={9} style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
                                     No requirements found.
                                 </td>
                             </tr>
@@ -72,10 +73,10 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                                         {req.description}
                                     </td>
                                     <td style={{ padding: '12px', verticalAlign: 'top', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                                        {req.text}
+                                        {req.author || '-'}
                                     </td>
                                     <td style={{ padding: '12px', verticalAlign: 'top', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                                        {req.rationale}
+                                        {req.verificationMethod || '-'}
                                     </td>
                                     <td style={{ padding: '12px', verticalAlign: 'top' }}>
                                         <span style={{
@@ -102,7 +103,10 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                                         </span>
                                     </td>
                                     <td style={{ padding: '12px', verticalAlign: 'top', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-                                        {formatDate(req.lastModified)}
+                                        {formatDate(req.dateCreated)}
+                                    </td>
+                                    <td style={{ padding: '12px', verticalAlign: 'top', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                                        {req.approvalDate ? formatDate(req.approvalDate) : '-'}
                                     </td>
                                     <td style={{ padding: '12px', verticalAlign: 'top' }}>
                                         <div style={{ display: 'flex', gap: '4px' }}>
