@@ -101,7 +101,8 @@ const initialLinks: Link[] = [];
 const STORAGE_KEY = 'reqtrace-data'; // Legacy key for migration
 const PROJECTS_KEY = 'reqtrace-projects';
 const CURRENT_PROJECT_KEY = 'reqtrace-current-project-id';
-const VERSIONS_KEY = 'reqtrace-versions';
+const LEGACY_VERSIONS_KEY = 'reqtrace-versions'; // Legacy global key for migration
+const getVersionsKey = (projectId: string) => `reqtrace-versions-${projectId}`;
 const USED_NUMBERS_KEY = 'reqtrace-used-numbers';
 const MAX_VERSIONS = 50;
 
@@ -407,20 +408,42 @@ function App() {
     }
   }, [usedReqNumbers, usedUcNumbers]);
 
-  // Load versions on startup
+  // Migrate legacy global versions to current project (one-time migration)
   useEffect(() => {
-    const loadVersions = () => {
-      const savedVersions = localStorage.getItem(VERSIONS_KEY);
+    const migrateGlobalVersions = () => {
+      const legacyVersions = localStorage.getItem(LEGACY_VERSIONS_KEY);
+      if (legacyVersions) {
+        try {
+          // Save to current project
+          localStorage.setItem(getVersionsKey(currentProjectId), legacyVersions);
+          // Remove legacy key
+          localStorage.removeItem(LEGACY_VERSIONS_KEY);
+          console.log('Migrated legacy versions to current project');
+        } catch (e) {
+          console.error('Failed to migrate legacy versions', e);
+        }
+      }
+    };
+    migrateGlobalVersions();
+  }, []); // Run once on mount
+
+  // Load versions for current project
+  useEffect(() => {
+    const loadVersions = (projectId: string) => {
+      const savedVersions = localStorage.getItem(getVersionsKey(projectId));
       if (savedVersions) {
         try {
           setVersions(JSON.parse(savedVersions));
         } catch (e) {
           console.error('Failed to load versions', e);
+          setVersions([]);
         }
+      } else {
+        setVersions([]);
       }
     };
-    loadVersions();
-  }, []);
+    loadVersions(currentProjectId);
+  }, [currentProjectId]);
   // Create version snapshot whenever data changes (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -448,9 +471,14 @@ function App() {
         }
       };
 
-      const updatedVersions = [newVersion, ...versions].slice(0, MAX_VERSIONS);
+      // Read current project's versions from localStorage to avoid stale state
+      const currentVersionsKey = getVersionsKey(currentProjectId);
+      const savedVersions = localStorage.getItem(currentVersionsKey);
+      const currentVersions = savedVersions ? JSON.parse(savedVersions) : [];
+
+      const updatedVersions = [newVersion, ...currentVersions].slice(0, MAX_VERSIONS);
       setVersions(updatedVersions);
-      localStorage.setItem(VERSIONS_KEY, JSON.stringify(updatedVersions));
+      localStorage.setItem(currentVersionsKey, JSON.stringify(updatedVersions));
     } catch (error) {
       console.error('Failed to create version snapshot:', error);
     }
