@@ -54,6 +54,17 @@ export interface TestCase {
   deletedAt?: number;
 }
 
+export interface Information {
+  id: string;
+  title: string;
+  content: string;
+  type: 'note' | 'meeting' | 'decision' | 'other';
+  dateCreated: number;
+  lastModified: number;
+  isDeleted?: boolean;
+  deletedAt?: number;
+}
+
 export interface Link {
   id: string;
   sourceId: string;
@@ -69,6 +80,7 @@ export interface Project {
   requirements: Requirement[];
   useCases: UseCase[];
   testCases: TestCase[];
+  information: Information[];
   links: Link[];
   lastModified: number;
 }
@@ -84,5 +96,6 @@ export interface Version {
     useCases: UseCase[];
     links: Link[];
     testCases: TestCase[];
+    information: Information[];
   };
 }

@@ -21,6 +21,7 @@ interface LayoutProps {
     onImportExcel?: () => void;
     onSearch?: (query: string) => void;
     onTrashOpen?: () => void;
+    onNewInformation?: () => void;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -41,7 +42,8 @@ export const Layout: React.FC<LayoutProps> = ({
     onExportPDF,
     onExportExcel,
     onSearch,
-    onTrashOpen
+    onTrashOpen,
+    onNewInformation
 }) => {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
@@ -533,6 +535,28 @@ export const Layout: React.FC<LayoutProps> = ({
                             >
                                 <span style={{ fontSize: '1.25rem' }}>+</span>
                                 New Test Case
+                            </button>
+                        )}
+                        {onNewInformation && (
+                            <button
+                                onClick={onNewInformation}
+                                style={{
+                                    padding: '8px 16px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    backgroundColor: 'var(--color-accent)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontWeight: 500,
+                                    fontSize: '0.875rem',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <span style={{ fontSize: '1.25rem' }}>+</span>
+                                New Information
                             </button>
                         )}
                         <button

@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { X, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
-import type { Requirement, UseCase } from '../types';
+import type { Requirement, UseCase, Information } from '../types';
 
 interface TrashModalProps {
     isOpen: boolean;
     onClose: () => void;
     deletedRequirements: Requirement[];
     deletedUseCases: UseCase[];
+    deletedInformation: Information[];
     onRestoreRequirement: (id: string) => void;
     onRestoreUseCase: (id: string) => void;
+    onRestoreInformation: (id: string) => void;
     onPermanentDeleteRequirement: (id: string) => void;
     onPermanentDeleteUseCase: (id: string) => void;
+    onPermanentDeleteInformation: (id: string) => void;
 }
 
 export const TrashModal: React.FC<TrashModalProps> = ({
@@ -18,12 +21,15 @@ export const TrashModal: React.FC<TrashModalProps> = ({
     onClose,
     deletedRequirements,
     deletedUseCases,
+    deletedInformation,
     onRestoreRequirement,
     onRestoreUseCase,
+    onRestoreInformation,
     onPermanentDeleteRequirement,
-    onPermanentDeleteUseCase
+    onPermanentDeleteUseCase,
+    onPermanentDeleteInformation
 }) => {
-    const [activeTab, setActiveTab] = useState<'requirements' | 'usecases'>('requirements');
+    const [activeTab, setActiveTab] = useState<'requirements' | 'usecases' | 'information'>('requirements');
 
     if (!isOpen) return null;
 
@@ -116,11 +122,25 @@ export const TrashModal: React.FC<TrashModalProps> = ({
                     >
                         Use Cases ({deletedUseCases.length})
                     </button>
+                    <button
+                        onClick={() => setActiveTab('information')}
+                        style={{
+                            padding: '12px 16px',
+                            background: 'none',
+                            border: 'none',
+                            borderBottom: activeTab === 'information' ? '2px solid var(--color-accent)' : '2px solid transparent',
+                            color: activeTab === 'information' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                            fontWeight: 500,
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Information ({deletedInformation.length})
+                    </button>
                 </div>
 
                 {/* Content */}
                 <div style={{ flex: 1, overflow: 'auto', padding: 'var(--spacing-md)' }}>
-                    {activeTab === 'requirements' ? (
+                    {activeTab === 'requirements' && (
                         deletedRequirements.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-muted)' }}>
                                 No deleted requirements
@@ -191,7 +211,9 @@ export const TrashModal: React.FC<TrashModalProps> = ({
                                 ))}
                             </div>
                         )
-                    ) : (
+                    )}
+
+                    {activeTab === 'usecases' && (
                         deletedUseCases.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-muted)' }}>
                                 No deleted use cases
@@ -240,6 +262,79 @@ export const TrashModal: React.FC<TrashModalProps> = ({
                                                 onClick={() => {
                                                     if (window.confirm('Delete permanently? This cannot be undone.')) {
                                                         onPermanentDeleteUseCase(uc.id);
+                                                    }
+                                                }}
+                                                title="Delete Forever"
+                                                style={{
+                                                    padding: '6px 12px',
+                                                    borderRadius: '4px',
+                                                    border: '1px solid #fecaca',
+                                                    backgroundColor: '#fef2f2',
+                                                    color: '#dc2626',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px'
+                                                }}
+                                            >
+                                                <Trash2 size={14} /> Delete Forever
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )
+                    )}
+
+                    {activeTab === 'information' && (
+                        deletedInformation.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-muted)' }}>
+                                No deleted information
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+                                {deletedInformation.map(info => (
+                                    <div key={info.id} style={{
+                                        padding: 'var(--spacing-md)',
+                                        border: '1px solid var(--color-border)',
+                                        borderRadius: '6px',
+                                        backgroundColor: 'var(--color-bg-app)',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
+                                    }}>
+                                        <div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                                <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-accent)' }}>{info.id}</span>
+                                                <span style={{ fontWeight: 500 }}>{info.title}</span>
+                                            </div>
+                                            <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                                                Deleted: {formatDate(info.deletedAt)}
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button
+                                                onClick={() => onRestoreInformation(info.id)}
+                                                title="Restore"
+                                                style={{
+                                                    padding: '6px 12px',
+                                                    borderRadius: '4px',
+                                                    border: '1px solid #bbf7d0',
+                                                    backgroundColor: '#f0fdf4',
+                                                    color: '#15803d',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                    fontWeight: 500
+                                                }}
+                                            >
+                                                <RefreshCw size={14} /> Restore
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm('Delete permanently? This cannot be undone.')) {
+                                                        onPermanentDeleteInformation(info.id);
                                                     }
                                                 }}
                                                 title="Delete Forever"

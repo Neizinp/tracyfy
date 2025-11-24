@@ -1,21 +1,25 @@
 import { useState, useEffect } from 'react';
-import { Layout } from './components/Layout';
-import { RequirementTree } from './components/RequirementTree';
-import { NewRequirementModal } from './components/NewRequirementModal';
-import { LinkModal } from './components/LinkModal';
-import { EditRequirementModal } from './components/EditRequirementModal';
-import { DetailedRequirementView } from './components/DetailedRequirementView';
-import { TraceabilityMatrix } from './components/TraceabilityMatrix';
-import { UseCaseModal } from './components/UseCaseModal';
-import { UseCaseList } from './components/UseCaseList';
-import { TrashModal } from './components/TrashModal';
-import { VersionHistory } from './components/VersionHistory';
-import { ProjectSettingsModal } from './components/ProjectSettingsModal';
-import { CreateProjectModal } from './components/CreateProjectModal';
-import { NewTestCaseModal } from './components/NewTestCaseModal';
-import { EditTestCaseModal } from './components/EditTestCaseModal';
-import { TestCaseList } from './components/TestCaseList';
-import type { Requirement, RequirementTreeNode, Link, UseCase, TestCase, Version, Project } from './types';
+import {
+  Layout,
+  RequirementTree,
+  NewRequirementModal,
+  LinkModal,
+  EditRequirementModal,
+  DetailedRequirementView,
+  TraceabilityMatrix,
+  UseCaseModal,
+  UseCaseList,
+  TrashModal,
+  VersionHistory,
+  ProjectSettingsModal,
+  CreateProjectModal,
+  NewTestCaseModal,
+  EditTestCaseModal,
+  TestCaseList,
+  InformationList,
+  InformationModal
+} from './components';
+import type { Requirement, RequirementTreeNode, Link, UseCase, TestCase, Information, Version, Project } from './types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -90,6 +94,8 @@ const initialUseCases: UseCase[] = [
 
 const initialTestCases: TestCase[] = [];
 
+const initialInformation: Information[] = [];
+
 const initialLinks: Link[] = [];
 
 const STORAGE_KEY = 'reqtrace-data'; // Legacy key for migration
@@ -153,7 +159,8 @@ const loadProjects = () => {
         requirements: project.requirements.map((req: Requirement) => ({
           ...req,
           dateCreated: req.dateCreated || req.lastModified || Date.now()
-        }))
+        })),
+        information: project.information || [] // Add information if missing
       }));
       return {
         projects: migratedProjects,
@@ -172,6 +179,7 @@ const loadProjects = () => {
         requirements: parsed.requirements || initialRequirements,
         useCases: parsed.useCases || initialUseCases,
         testCases: [],
+        information: [],
         links: parsed.links || initialLinks,
         lastModified: Date.now()
       };
@@ -189,6 +197,7 @@ const loadProjects = () => {
       requirements: initialRequirements,
       useCases: initialUseCases,
       testCases: initialTestCases,
+      information: initialInformation,
       links: initialLinks,
       lastModified: Date.now()
     };
@@ -205,6 +214,7 @@ const loadProjects = () => {
       requirements: initialRequirements,
       useCases: initialUseCases,
       testCases: initialTestCases,
+      information: initialInformation,
       links: initialLinks,
       lastModified: Date.now()
     };
@@ -276,23 +286,27 @@ function App() {
   const [requirements, setRequirements] = useState<Requirement[]>(currentProject.requirements);
   const [useCases, setUseCases] = useState<UseCase[]>(currentProject.useCases);
   const [testCases, setTestCases] = useState<TestCase[]>(currentProject.testCases);
+  const [information, setInformation] = useState<Information[]>(currentProject.information || []);
   const [links, setLinks] = useState<Link[]>(currentProject.links);
 
   const initialUsedNumbers = initializeUsedNumbers(currentProject.requirements, currentProject.useCases);
   const [usedReqNumbers, setUsedReqNumbers] = useState<Set<number>>(initialUsedNumbers.usedReqNumbers);
   const [usedUcNumbers, setUsedUcNumbers] = useState<Set<number>>(initialUsedNumbers.usedUcNumbers);
   const [usedTestNumbers, setUsedTestNumbers] = useState<Set<number>>(new Set());
+  const [usedInfoNumbers, setUsedInfoNumbers] = useState<Set<number>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isUseCaseModalOpen, setIsUseCaseModalOpen] = useState(false);
   const [isNewTestCaseModalOpen, setIsNewTestCaseModalOpen] = useState(false);
   const [isEditTestCaseModalOpen, setIsEditTestCaseModalOpen] = useState(false);
+  const [isInformationModalOpen, setIsInformationModalOpen] = useState(false);
   const [selectedTestCase, setSelectedTestCase] = useState<TestCase | null>(null);
+  const [selectedInformation, setSelectedInformation] = useState<Information | null>(null);
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
   const [editingRequirement, setEditingRequirement] = useState<Requirement | null>(null);
   const [editingUseCase, setEditingUseCase] = useState<UseCase | null>(null);
-  const [currentView, setCurrentView] = useState<'tree' | 'detailed' | 'matrix' | 'usecases' | 'testcases'>('tree');
+  const [currentView, setCurrentView] = useState<'tree' | 'detailed' | 'matrix' | 'usecases' | 'testcases' | 'information'>('tree');
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [versions, setVersions] = useState<Version[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -301,10 +315,10 @@ function App() {
   useEffect(() => {
     setProjects(prevProjects => prevProjects.map(p =>
       p.id === currentProjectId
-        ? { ...p, requirements, useCases, testCases, links, lastModified: Date.now() }
+        ? { ...p, requirements, useCases, testCases, information, links, lastModified: Date.now() }
         : p
     ));
-  }, [requirements, useCases, testCases, links, currentProjectId]);
+  }, [requirements, useCases, testCases, information, links, currentProjectId]);
 
   // Persist projects to localStorage
   useEffect(() => {
@@ -322,6 +336,8 @@ function App() {
       setCurrentProjectId(projectId);
       setRequirements(targetProject.requirements);
       setUseCases(targetProject.useCases);
+      setTestCases(targetProject.testCases || []);
+      setInformation(targetProject.information || []);
       setLinks(targetProject.links);
 
       // Update used numbers for the new project
@@ -343,6 +359,7 @@ function App() {
       requirements: [],
       useCases: [],
       testCases: [],
+      information: [],
       links: [],
       lastModified: Date.now()
     };
@@ -411,7 +428,7 @@ function App() {
     }, 2000); // Wait 2 seconds after last change
 
     return () => clearTimeout(timer);
-  }, [requirements, useCases, testCases, links]);
+  }, [requirements, useCases, testCases, information, links]);
 
   // Create a version snapshot
   const createVersionSnapshot = (message: string, type: 'auto-save' | 'baseline' = 'auto-save', tag?: string) => {
@@ -426,7 +443,8 @@ function App() {
           requirements: JSON.parse(JSON.stringify(requirements)),
           useCases: JSON.parse(JSON.stringify(useCases)),
           links: JSON.parse(JSON.stringify(links)),
-          testCases: JSON.parse(JSON.stringify(testCases))
+          testCases: JSON.parse(JSON.stringify(testCases)),
+          information: JSON.parse(JSON.stringify(information))
         }
       };
 
@@ -463,6 +481,8 @@ function App() {
     if (version) {
       setRequirements(version.data.requirements);
       setUseCases(version.data.useCases);
+      setTestCases(version.data.testCases || []);
+      setInformation(version.data.information || []);
       setLinks(version.data.links);
       createVersionSnapshot(`Restored from ${new Date(version.timestamp).toLocaleString()}`, 'auto-save');
     }
@@ -479,6 +499,8 @@ function App() {
     const dataToExport = {
       requirements,
       useCases,
+      testCases,
+      information,
       links,
       exportedAt: new Date().toISOString()
     };
@@ -508,6 +530,8 @@ function App() {
             if (data.requirements && Array.isArray(data.requirements)) {
               setRequirements(data.requirements);
               setUseCases(data.useCases || []);
+              setTestCases(data.testCases || []);
+              setInformation(data.information || []);
               setLinks(data.links || []);
               createVersionSnapshot('Imported from JSON', 'auto-save');
               alert('Data imported successfully!');
@@ -1040,6 +1064,61 @@ function App() {
     ));
   };
 
+  // Information Management
+  const handleAddInformation = (data: Omit<Information, 'id' | 'lastModified' | 'dateCreated'> | { id: string; updates: Partial<Information> }) => {
+    if ('id' in data) {
+      // Update existing
+      setInformation(information.map(info =>
+        info.id === data.id
+          ? { ...info, ...data.updates, lastModified: Date.now() } as Information
+          : info
+      ));
+      setSelectedInformation(null);
+    } else {
+      // Create new
+      let nextNum = 1;
+      while (usedInfoNumbers.has(nextNum)) {
+        nextNum++;
+      }
+
+      const newInformation: Information = {
+        ...data,
+        id: `INFO-${String(nextNum).padStart(3, '0')}`,
+        dateCreated: Date.now(),
+        lastModified: Date.now()
+      };
+
+      setInformation([...information, newInformation]);
+      setUsedInfoNumbers(new Set([...usedInfoNumbers, nextNum]));
+    }
+    setIsInformationModalOpen(false);
+  };
+
+  const handleEditInformation = (info: Information) => {
+    setSelectedInformation(info);
+    setIsInformationModalOpen(true);
+  };
+
+  const handleDeleteInformation = (id: string) => {
+    setInformation(information.map(info =>
+      info.id === id ? { ...info, isDeleted: true, deletedAt: Date.now() } : info
+    ));
+  };
+
+  const handleRestoreInformation = (id: string) => {
+    setInformation(prev =>
+      prev.map(info =>
+        info.id === id
+          ? { ...info, isDeleted: false, deletedAt: undefined }
+          : info
+      )
+    );
+  };
+
+  const handlePermanentDeleteInformation = (id: string) => {
+    setInformation(prev => prev.filter(info => info.id !== id));
+  };
+
   const [isTrashModalOpen, setIsTrashModalOpen] = useState(false);
 
   const handleRestoreRequirement = (id: string) => {
@@ -1129,6 +1208,10 @@ function App() {
       onExportExcel={handleExportExcel}
       onSearch={setSearchQuery}
       onTrashOpen={() => setIsTrashModalOpen(true)}
+      onNewInformation={() => {
+        setSelectedInformation(null);
+        setIsInformationModalOpen(true);
+      }}
     >
       <div style={{ marginBottom: 'var(--spacing-md)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
@@ -1214,6 +1297,21 @@ function App() {
             >
               Test Cases
             </button>
+            <button
+              onClick={() => setCurrentView('information')}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '6px',
+                border: '1px solid var(--color-border)',
+                backgroundColor: currentView === 'information' ? 'var(--color-accent)' : 'transparent',
+                color: currentView === 'information' ? 'white' : 'var(--color-text-primary)',
+                cursor: 'pointer',
+                fontWeight: 500,
+                transition: 'all 0.2s'
+              }}
+            >
+              Information
+            </button>
           </div>
         </div>
       </div>
@@ -1262,6 +1360,14 @@ function App() {
             setIsEditTestCaseModalOpen(true);
           }}
           onDelete={handleDeleteTestCase}
+        />
+      )}
+
+      {currentView === 'information' && (
+        <InformationList
+          information={information.filter(info => !info.isDeleted)}
+          onEdit={handleEditInformation}
+          onDelete={handleDeleteInformation}
         />
       )}
 
@@ -1322,6 +1428,16 @@ function App() {
         onDelete={handleDeleteTestCase}
       />
 
+      <InformationModal
+        isOpen={isInformationModalOpen}
+        information={selectedInformation}
+        onClose={() => {
+          setIsInformationModalOpen(false);
+          setSelectedInformation(null);
+        }}
+        onSubmit={handleAddInformation}
+      />
+
       <VersionHistory
         isOpen={isVersionHistoryOpen}
         versions={versions}
@@ -1339,6 +1455,9 @@ function App() {
         onRestoreUseCase={handleRestoreUseCase}
         onPermanentDeleteRequirement={handlePermanentDeleteRequirement}
         onPermanentDeleteUseCase={handlePermanentDeleteUseCase}
+        deletedInformation={information.filter(i => i.isDeleted)}
+        onRestoreInformation={handleRestoreInformation}
+        onPermanentDeleteInformation={handlePermanentDeleteInformation}
       />
 
       {isProjectSettingsOpen && projectToEdit && (
