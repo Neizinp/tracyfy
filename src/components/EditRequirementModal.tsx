@@ -85,10 +85,20 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
     };
 
 
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
     const handleDelete = () => {
-        if (window.confirm('Are you sure you want to delete this requirement? This action cannot be undone.')) {
-            onDelete(requirement.id);
-        }
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = () => {
+        onDelete(requirement.id);
+        setShowDeleteConfirm(false);
+        onClose();
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteConfirm(false);
     };
 
     return (
@@ -328,18 +338,69 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
                         </div>
                     </div>
 
+                    {showDeleteConfirm ? (
+                        // Delete confirmation UI
+                        <div style={{
+                            padding: 'var(--spacing-md)',
+                            backgroundColor: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            borderRadius: '6px',
+                            marginBottom: 'var(--spacing-md)'
+                        }}>
+                            <div style={{ color: '#991b1b', fontWeight: 500, marginBottom: 'var(--spacing-xs)' }}>
+                                ⚠️ Confirm Deletion
+                            </div>
+                            <div style={{ color: '#7f1d1d', fontSize: '0.875rem', marginBottom: 'var(--spacing-md)' }}>
+                                Are you sure you want to delete this requirement? This action cannot be undone.
+                            </div>
+                            <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                                <button
+                                    type="button"
+                                    onClick={confirmDelete}
+                                    style={{
+                                        padding: '8px 16px',
+                                        borderRadius: '6px',
+                                        border: 'none',
+                                        backgroundColor: '#dc2626',
+                                        color: 'white',
+                                        cursor: 'pointer',
+                                        fontWeight: 500
+                                    }}
+                                >
+                                    Yes, Delete
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={cancelDelete}
+                                    style={{
+                                        padding: '8px 16px',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--color-border)',
+                                        backgroundColor: 'white',
+                                        color: 'var(--color-text-primary)',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    ) : null}
+
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--spacing-sm)' }}>
                         <button
                             type="button"
                             onClick={handleDelete}
+                            disabled={showDeleteConfirm}
                             style={{
                                 padding: '8px 16px',
                                 borderRadius: '6px',
                                 border: '1px solid #ef4444',
                                 backgroundColor: 'transparent',
                                 color: '#ef4444',
-                                cursor: 'pointer',
-                                fontWeight: 500
+                                cursor: showDeleteConfirm ? 'not-allowed' : 'pointer',
+                                fontWeight: 500,
+                                opacity: showDeleteConfirm ? 0.5 : 1
                             }}
                         >
                             Delete

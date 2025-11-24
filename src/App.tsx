@@ -82,6 +82,7 @@ const initialLinks: Link[] = [];
 
 const STORAGE_KEY = 'reqtrace-data';
 const VERSIONS_KEY = 'reqtrace-versions';
+const USED_NUMBERS_KEY = 'reqtrace-used-numbers';
 const MAX_VERSIONS = 50;
 
 // Helper to build tree structure from flat requirements
@@ -144,11 +145,57 @@ const loadSavedData = () => {
   };
 };
 
+// Helper to load used numbers from LocalStorage
+const loadUsedNumbers = () => {
+  try {
+    const saved = localStorage.getItem(USED_NUMBERS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        usedReqNumbers: new Set<number>(parsed.usedReqNumbers || []),
+        usedUcNumbers: new Set<number>(parsed.usedUcNumbers || [])
+      };
+    }
+  } catch (error) {
+    console.error('Failed to load used numbers:', error);
+  }
+  return {
+    usedReqNumbers: new Set<number>(),
+    usedUcNumbers: new Set<number>()
+  };
+};
+
+// Initialize used numbers from existing requirements/use cases
+const initializeUsedNumbers = (requirements: Requirement[], useCases: UseCase[]) => {
+  const savedNumbers = loadUsedNumbers();
+
+  // Extract numbers from existing IDs and merge with saved used numbers
+  requirements.forEach(req => {
+    const match = req.id.match(/REQ-(\d+)/);
+    if (match) {
+      savedNumbers.usedReqNumbers.add(parseInt(match[1], 10));
+    }
+  });
+
+  useCases.forEach(uc => {
+    const match = uc.id.match(/UC-(\d+)/);
+    if (match) {
+      savedNumbers.usedUcNumbers.add(parseInt(match[1], 10));
+    }
+  });
+
+  return savedNumbers;
+};
+
 function App() {
   const savedData = loadSavedData();
+  const initialUsedNumbers = initializeUsedNumbers(savedData.requirements, savedData.useCases);
+
   const [requirements, setRequirements] = useState<Requirement[]>(savedData.requirements);
   const [useCases, setUseCases] = useState<UseCase[]>(savedData.useCases);
   const [links, setLinks] = useState<Link[]>(savedData.links);
+  const [usedReqNumbers, setUsedReqNumbers] = useState<Set<number>>(initialUsedNumbers.usedReqNumbers);
+  const [usedUcNumbers, setUsedUcNumbers] = useState<Set<number>>(initialUsedNumbers.usedUcNumbers);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -174,6 +221,19 @@ function App() {
       console.error('Failed to save data:', error);
     }
   }, [requirements, useCases, links]);
+
+  // Auto-save used numbers to LocalStorage whenever they change
+  useEffect(() => {
+    try {
+      const usedNumbersToSave = {
+        usedReqNumbers: Array.from(usedReqNumbers),
+        usedUcNumbers: Array.from(usedUcNumbers)
+      };
+      localStorage.setItem(USED_NUMBERS_KEY, JSON.stringify(usedNumbersToSave));
+    } catch (error) {
+      console.error('Failed to save used numbers:', error);
+    }
+  }, [usedReqNumbers, usedUcNumbers]);
 
   // Load versions on startup
   useEffect(() => {
@@ -224,14 +284,15 @@ function App() {
 
   const handleDeleteRequirement = (id: string) => {
     // 1. Remove the requirement AND clean up parent references in a single update
-    setRequirements(prev =>
-      prev
+    setRequirements(prev => {
+      const filtered = prev
         .filter(req => req.id !== id) // Remove the deleted requirement
         .map(req => ({
           ...req,
           parentIds: req.parentIds ? req.parentIds.filter(parentId => parentId !== id) : []
-        })) // Remove deleted ID from any parent references
-    );
+        })); // Remove deleted ID from any parent references
+      return filtered;
+    });
 
     // 2. Remove any links involving this requirement
     setLinks(prev => prev.filter(link => link.sourceId !== id && link.targetId !== id));
@@ -688,8 +749,12 @@ function App() {
   };
 
   const handleAddRequirement = (newReqData: Omit<Requirement, 'id' | 'lastModified'>) => {
-    // Simple ID generation strategy
-    const nextIdNumber = requirements.length + 1;
+    // Find next available number that hasn't been used
+    let nextIdNumber = 1;
+    while (usedReqNumbers.has(nextIdNumber)) {
+      nextIdNumber++;
+    }
+
     const newId = `REQ-${String(nextIdNumber).padStart(3, '0')}`;
 
     const newRequirement: Requirement = {
@@ -698,6 +763,8 @@ function App() {
       lastModified: Date.now()
     };
 
+    // Mark this number as used
+    setUsedReqNumbers(prev => new Set(prev).add(nextIdNumber));
     setRequirements([...requirements, newRequirement]);
   };
 
@@ -754,14 +821,21 @@ function App() {
       ));
       setEditingUseCase(null);
     } else {
-      // Create new
-      const nextIdNumber = useCases.length + 1;
+      // Create new - find next available number that hasn't been used
+      let nextIdNumber = 1;
+      while (usedUcNumbers.has(nextIdNumber)) {
+        nextIdNumber++;
+      }
+
       const newId = `UC-${String(nextIdNumber).padStart(3, '0')}`;
       const newUseCase: UseCase = {
         ...data,
         id: newId,
         lastModified: Date.now()
       } as UseCase;
+
+      // Mark this number as used
+      setUsedUcNumbers(prev => new Set(prev).add(nextIdNumber));
       setUseCases([...useCases, newUseCase]);
     }
     setIsUseCaseModalOpen(false);
