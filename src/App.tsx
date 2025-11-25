@@ -17,7 +17,8 @@ import {
   EditTestCaseModal,
   TestCaseList,
   InformationList,
-  InformationModal
+  InformationModal,
+  ColumnSelector
 } from './components';
 import type { Requirement, RequirementTreeNode, Link, UseCase, TestCase, Information, Version, Project, ColumnVisibility } from './types';
 import { mockRequirements, mockUseCases, mockTestCases, mockInformation, mockLinks } from './mockData';
@@ -774,7 +775,7 @@ function App() {
       doc.text('Requirements Document', pageWidth / 2, 30, { align: 'center' });
 
       doc.setFontSize(12);
-      doc.text('Mars Rover 2030 Project', pageWidth / 2, 45, { align: 'center' });
+      doc.text(currentProject.name, pageWidth / 2, 45, { align: 'center' });
       doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 55, { align: 'center' });
 
       doc.setFontSize(10);
@@ -1302,10 +1303,28 @@ function App() {
       <div style={{ marginBottom: 'var(--spacing-md)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
           <div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>System Requirements</h2>
-            <p style={{ color: 'var(--color-text-secondary)' }}>Manage and trace system requirements for the Mars Rover 2030 project.</p>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>
+              {currentView === 'usecases' ? 'Use Cases' :
+                currentView === 'testcases' ? 'Test Cases' :
+                  currentView === 'information' ? 'Information' :
+                    'Requirements'}
+            </h2>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
+            {currentView === 'detailed' && (
+              <ColumnSelector
+                visibleColumns={columnVisibility}
+                onColumnVisibilityChange={(columns) => {
+                  setColumnVisibility(columns);
+                  // Persist to localStorage (scoped by project)
+                  try {
+                    localStorage.setItem(`column-visibility-${currentProjectId}`, JSON.stringify(columns));
+                  } catch (error) {
+                    console.error('Failed to save column visibility:', error);
+                  }
+                }}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -1329,15 +1348,6 @@ function App() {
             requirements={filteredRequirements}
             onEdit={handleEdit}
             visibleColumns={columnVisibility}
-            onColumnVisibilityChange={(columns) => {
-              setColumnVisibility(columns);
-              // Persist to localStorage (scoped by project)
-              try {
-                localStorage.setItem(`column-visibility-${currentProjectId}`, JSON.stringify(columns));
-              } catch (error) {
-                console.error('Failed to save column visibility:', error);
-              }
-            }}
           />
         )
       }

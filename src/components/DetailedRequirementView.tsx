@@ -3,13 +3,12 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import type { Requirement, ColumnVisibility } from '../types';
-import { ColumnSelector } from './ColumnSelector';
 
 interface DetailedRequirementViewProps {
     requirements: Requirement[];
     onEdit: (requirement: Requirement) => void;
     visibleColumns: ColumnVisibility;
-    onColumnVisibilityChange: (columns: ColumnVisibility) => void;
+    onColumnVisibilityChange?: (columns: ColumnVisibility) => void;
 }
 
 // Compact Markdown renderer for table cells
@@ -67,7 +66,7 @@ const MarkdownCell: React.FC<{ content: string }> = ({ content }) => {
     );
 };
 
-export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = ({ requirements, onEdit, visibleColumns, onColumnVisibilityChange }) => {
+export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = ({ requirements, onEdit, visibleColumns }) => {
     const formatDate = (timestamp: number) => {
         return new Date(timestamp).toLocaleString(undefined, {
             year: 'numeric',
@@ -85,14 +84,6 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
 
     return (
         <div>
-            {/* Column Selector */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
-                <ColumnSelector
-                    visibleColumns={visibleColumns}
-                    onColumnVisibilityChange={onColumnVisibilityChange}
-                />
-            </div>
-
             {/* Table */}
             <div style={{
                 backgroundColor: 'var(--color-bg-card)',
