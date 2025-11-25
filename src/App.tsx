@@ -293,8 +293,7 @@ function App() {
   const projectsWithDemo = hasDemoProject ? initialProjects : [...initialProjects, createDemoProject()];
 
   const [projects, setProjects] = useState<Project[]>(projectsWithDemo);
-  const [currentProjectId, setCurrentProjectId] = useState<string>(initialCurrentId);
-
+  const [currentProjectId, setCurrentProjectId] = useState<string>(initialCurrentId || (hasDemoProject ? 'demo-project' : projectsWithDemo[0].id));
   // Project Settings State
   const [isProjectSettingsOpen, setIsProjectSettingsOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
