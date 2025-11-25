@@ -1,17 +1,15 @@
 import React from 'react';
-import { Edit2, Trash2 } from 'lucide-react';
 import type { Requirement, ColumnVisibility } from '../types';
 import { ColumnSelector } from './ColumnSelector';
 
 interface DetailedRequirementViewProps {
     requirements: Requirement[];
     onEdit: (requirement: Requirement) => void;
-    onDelete: (id: string) => void;
     visibleColumns: ColumnVisibility;
     onColumnVisibilityChange: (columns: ColumnVisibility) => void;
 }
 
-export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = ({ requirements, onEdit, onDelete, visibleColumns, onColumnVisibilityChange }) => {
+export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = ({ requirements, onEdit, visibleColumns, onColumnVisibilityChange }) => {
     const formatDate = (timestamp: number) => {
         return new Date(timestamp).toLocaleString(undefined, {
             year: 'numeric',
@@ -24,13 +22,7 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
     };
 
     const getVisibleColumnCount = () => {
-        return Object.values(visibleColumns).filter(Boolean).length + 1; // +1 for actions column
-    };
-
-    const handleDelete = (id: string) => {
-        if (window.confirm('Are you sure you want to delete this requirement?')) {
-            onDelete(id);
-        }
+        return Object.values(visibleColumns).filter(Boolean).length;
     };
 
     return (
@@ -65,7 +57,6 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                                 {visibleColumns.comments && <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '180px' }}>Comments</th>}
                                 {visibleColumns.created && <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '140px' }}>Created</th>}
                                 {visibleColumns.approved && <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '140px' }}>Approved</th>}
-                                <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '80px' }}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -79,7 +70,12 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                                 requirements.map((req) => (
                                     <tr
                                         key={req.id}
-                                        style={{ borderBottom: '1px solid var(--color-border)', transition: 'background-color 0.1s' }}
+                                        onClick={() => onEdit(req)}
+                                        style={{
+                                            borderBottom: '1px solid var(--color-border)',
+                                            transition: 'background-color 0.1s',
+                                            cursor: 'pointer'
+                                        }}
                                         onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)'}
                                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                     >
@@ -159,36 +155,6 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                                                 {req.approvalDate ? formatDate(req.approvalDate) : '-'}
                                             </td>
                                         )}
-                                        <td style={{ padding: '12px', verticalAlign: 'top' }}>
-                                            <div style={{ display: 'flex', gap: '4px' }}>
-                                                <button
-                                                    onClick={() => onEdit(req)}
-                                                    style={{
-                                                        background: 'none',
-                                                        border: 'none',
-                                                        color: 'var(--color-text-muted)',
-                                                        cursor: 'pointer',
-                                                        padding: '4px'
-                                                    }}
-                                                    title="Edit"
-                                                >
-                                                    <Edit2 size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(req.id)}
-                                                    style={{
-                                                        background: 'none',
-                                                        border: 'none',
-                                                        color: '#ef4444',
-                                                        cursor: 'pointer',
-                                                        padding: '4px'
-                                                    }}
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
                                     </tr>
                                 ))
                             )}

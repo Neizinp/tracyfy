@@ -1308,7 +1308,6 @@ function App() {
           <DetailedRequirementView
             requirements={filteredRequirements}
             onEdit={handleEdit}
-            onDelete={handleDeleteRequirement}
             visibleColumns={columnVisibility}
             onColumnVisibilityChange={(columns) => {
               setColumnVisibility(columns);
