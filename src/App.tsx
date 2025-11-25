@@ -762,13 +762,26 @@ function App() {
   // Export data as PDF
   const handleExportPDF = () => {
     try {
-      console.log('jsPDF imported:', jsPDF);
-      console.log('autoTable imported:', autoTable);
-
       const doc = new jsPDF();
-      console.log('doc created:', doc);
-
       const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 14;
+
+      // Track page numbers for TOC
+      const pageNumbers: { [key: string]: number } = {};
+
+      // Helper function to add page footer
+      const addFooter = () => {
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(
+          `Page ${doc.getCurrentPageInfo().pageNumber}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: 'center' }
+        );
+        doc.setTextColor(0, 0, 0);
+      };
 
       // Title Page
       doc.setFontSize(24);
@@ -783,19 +796,109 @@ function App() {
       doc.text(`Total Use Cases: ${useCases.length}`, pageWidth / 2, 77, { align: 'center' });
       doc.text(`Total Links: ${links.length}`, pageWidth / 2, 84, { align: 'center' });
 
-      // Requirements Section
-      doc.addPage();
-      doc.setFontSize(16);
-      doc.text('Requirements', 14, 20);
+      addFooter();
 
-      const reqTableData = requirements.map(req => [
-        req.id,
-        req.title,
-        req.status,
-        req.priority,
-        req.description || '',
-        req.parentIds.join(', ') || 'None'
-      ]);
+      // Revision History Section
+      doc.addPage();
+      pageNumbers.revisionHistory = doc.getCurrentPageInfo().pageNumber;
+
+      doc.setFontSize(18);
+      doc.text('Revision History', margin, 20);
+
+      // Get baseline versions (most recent 10)
+      const baselineVersions = versions
+        .filter(v => v.type === 'baseline')
+        .slice(0, 10);
+
+      // Add current export as first entry
+      const revisionData = [
+        [formatDateTime(Date.now()), 'Current', 'PDF Export Generated'],
+        ...baselineVersions.map(v => [
+          formatDateTime(v.timestamp),
+          v.tag || `v-${v.id.substring(2, 8)}`,
+          v.message
+        ])
+      ];
+
+      autoTable(doc, {
+        startY: 30,
+        head: [['Date', 'Version', 'Description']],
+        body: revisionData,
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [99, 102, 241], textColor: 255 },
+        columnStyles: {
+          0: { cellWidth: 45 },
+          1: { cellWidth: 30 },
+          2: { cellWidth: 'auto' }
+        },
+        didDrawPage: addFooter
+      });
+
+      // Table of Contents
+      doc.addPage();
+      pageNumbers.toc = doc.getCurrentPageInfo().pageNumber;
+
+      doc.setFontSize(18);
+      doc.text('Table of Contents', margin, 20);
+
+      doc.setFontSize(11);
+      let tocY = 40;
+      const tocEntries: Array<{ title: string, page: string }> = [
+        { title: 'Revision History', page: String(pageNumbers.revisionHistory) }
+      ];
+
+      // Add entries for sections we'll create later
+      // We'll fill in the page numbers after creating the sections
+      const tocPlaceholders = [
+        'Requirements Overview',
+        'Detailed Requirements',
+        ...(useCases.length > 0 ? ['Use Cases'] : []),
+        ...(links.length > 0 ? ['Requirement Links'] : [])
+      ];
+
+      tocPlaceholders.forEach(title => {
+        tocEntries.push({ title, page: '___' }); // Placeholder
+      });
+
+      tocEntries.forEach((entry, index) => {
+        if (index > 0) { // Skip revision history as we already know its page
+          doc.setTextColor(99, 102, 241);
+          doc.textWithLink(entry.title, margin, tocY, {
+            pageNumber: parseInt(entry.page) || 1
+          });
+          doc.setTextColor(0, 0, 0);
+        } else {
+          doc.setTextColor(99, 102, 241);
+          doc.textWithLink(entry.title, margin, tocY, {
+            pageNumber: parseInt(entry.page)
+          });
+          doc.setTextColor(0, 0, 0);
+        }
+
+        const pageNumText = entry.page === '___' ? '...' : entry.page;
+        doc.text(pageNumText, pageWidth - margin, tocY, { align: 'right' });
+        tocY += 10;
+      });
+
+      addFooter();
+
+      // Requirements Overview Section
+      doc.addPage();
+      pageNumbers.requirementsOverview = doc.getCurrentPageInfo().pageNumber;
+
+      doc.setFontSize(16);
+      doc.text('Requirements Overview', margin, 20);
+
+      const reqTableData = requirements
+        .filter(r => !r.isDeleted)
+        .map(req => [
+          req.id,
+          req.title,
+          req.status,
+          req.priority,
+          req.description || '',
+          req.parentIds.join(', ') || 'None'
+        ]);
 
       autoTable(doc, {
         startY: 30,
@@ -805,129 +908,167 @@ function App() {
         headStyles: { fillColor: [99, 102, 241], textColor: 255 },
         margin: { left: 10, right: 10 },
         columnStyles: {
-          0: { cellWidth: 15 },
-          1: { cellWidth: 35 },
-          2: { cellWidth: 20 },
-          3: { cellWidth: 20 },
-          4: { cellWidth: 40 },
-          5: { cellWidth: 25 }
+          0: { cellWidth: 25 },  // Wider ID column
+          1: { cellWidth: 40 },
+          2: { cellWidth: 18 },
+          3: { cellWidth: 18 },
+          4: { cellWidth: 45 },
+          5: { cellWidth: 20 }
         },
-        didDrawPage: () => {
-          // Footer
-          doc.setFontSize(8);
-          doc.text(
-            `Page ${doc.getCurrentPageInfo().pageNumber}`,
-            pageWidth / 2,
-            doc.internal.pageSize.getHeight() - 10,
-            { align: 'center' }
-          );
+        didDrawPage: addFooter
+      });
+
+      // Detailed Requirements Section (without page breaks between requirements)
+      doc.addPage();
+      pageNumbers.detailedRequirements = doc.getCurrentPageInfo().pageNumber;
+
+      doc.setFontSize(16);
+      doc.text('Detailed Requirements', margin, 20);
+
+      let currentY = 35;
+      const activeRequirements = requirements.filter(r => !r.isDeleted);
+
+      activeRequirements.forEach((req, index) => {
+        // Check if we need a new page
+        const estimatedHeight = 80; // Rough estimate for requirement height
+        if (currentY + estimatedHeight > pageHeight - 20) {
+          doc.addPage();
+          addFooter();
+          currentY = 20;
+        }
+
+        // Requirement header
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${req.id}: ${req.title}`, margin, currentY);
+        currentY += 8;
+
+        doc.setFontSize(9);
+
+        // Description
+        if (req.description) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Description:', margin, currentY);
+          currentY += 5;
+          doc.setFont('helvetica', 'normal');
+          const descLines = doc.splitTextToSize(req.description, pageWidth - 2 * margin);
+          doc.text(descLines, margin, currentY);
+          currentY += descLines.length * 4 + 3;
+        }
+
+        // Requirement Text
+        if (req.text) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Requirement Text:', margin, currentY);
+          currentY += 5;
+          doc.setFont('helvetica', 'normal');
+          const textLines = doc.splitTextToSize(req.text, pageWidth - 2 * margin);
+          doc.text(textLines, margin, currentY);
+          currentY += textLines.length * 4 + 3;
+        }
+
+        // Rationale
+        if (req.rationale) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Rationale:', margin, currentY);
+          currentY += 5;
+          doc.setFont('helvetica', 'normal');
+          const rationaleLines = doc.splitTextToSize(req.rationale, pageWidth - 2 * margin);
+          doc.text(rationaleLines, margin, currentY);
+          currentY += rationaleLines.length * 4 + 3;
+        }
+
+        // Status and Priority
+        doc.setFont('helvetica', 'bold');
+        doc.text('Status:', margin, currentY);
+        doc.setFont('helvetica', 'normal');
+        doc.text(req.status || 'Draft', margin + 20, currentY);
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('Priority:', margin + 60, currentY);
+        doc.setFont('helvetica', 'normal');
+        doc.text(req.priority || 'Medium', margin + 80, currentY);
+        currentY += 8;
+
+        // Add separator line between requirements (but not after the last one)
+        if (index < activeRequirements.length - 1) {
+          doc.setDrawColor(200, 200, 200);
+          doc.line(margin, currentY, pageWidth - margin, currentY);
+          currentY += 8;
         }
       });
 
-      // Detailed Requirements
-      requirements.forEach((req) => {
-        doc.addPage();
-        doc.setFontSize(14);
-        doc.text(`${req.id}: ${req.title}`, 14, 20);
-
-        doc.setFontSize(10);
-        let yPos = 35;
-
-        doc.setFont('helvetica', 'bold');
-        doc.text('Description:', 14, yPos);
-        doc.setFont('helvetica', 'normal');
-        const descLines = doc.splitTextToSize(req.description || '', pageWidth - 28);
-        doc.text(descLines, 14, yPos + 5);
-        yPos += descLines.length * 5 + 10;
-
-        doc.setFont('helvetica', 'bold');
-        doc.text('Requirement Text:', 14, yPos);
-        doc.setFont('helvetica', 'normal');
-        const textLines = doc.splitTextToSize(req.text || '', pageWidth - 28);
-        doc.text(textLines, 14, yPos + 5);
-        yPos += textLines.length * 5 + 10;
-
-        doc.setFont('helvetica', 'bold');
-        doc.text('Rationale:', 14, yPos);
-        doc.setFont('helvetica', 'normal');
-        const rationaleLines = doc.splitTextToSize(req.rationale || '', pageWidth - 28);
-        doc.text(rationaleLines, 14, yPos + 5);
-        yPos += rationaleLines.length * 5 + 10;
-
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Status: `, 14, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(req.status || 'Draft', 40, yPos);
-
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Priority: `, 80, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(req.priority || 'Medium', 106, yPos);
-      });
+      addFooter();
 
       // Use Cases Section
       if (useCases.length > 0) {
         doc.addPage();
+        pageNumbers.useCases = doc.getCurrentPageInfo().pageNumber;
+
         doc.setFontSize(16);
-        doc.text('Use Cases', 14, 20);
+        doc.text('Use Cases', margin, 20);
 
         useCases.forEach((uc) => {
           doc.addPage();
           doc.setFontSize(14);
-          doc.text(`${uc.id}: ${uc.title}`, 14, 20);
+          doc.text(`${uc.id}: ${uc.title}`, margin, 20);
 
           doc.setFontSize(10);
           let yPos = 35;
 
           doc.setFont('helvetica', 'bold');
-          doc.text('Actor:', 14, yPos);
+          doc.text('Actor:', margin, yPos);
           doc.setFont('helvetica', 'normal');
-          doc.text(uc.actor || '', 40, yPos);
+          doc.text(uc.actor || '', margin + 26, yPos);
           yPos += 10;
 
           doc.setFont('helvetica', 'bold');
-          doc.text('Description:', 14, yPos);
+          doc.text('Description:', margin, yPos);
           doc.setFont('helvetica', 'normal');
-          const descLines = doc.splitTextToSize(uc.description || '', pageWidth - 28);
-          doc.text(descLines, 14, yPos + 5);
+          const descLines = doc.splitTextToSize(uc.description || '', pageWidth - 2 * margin);
+          doc.text(descLines, margin, yPos + 5);
           yPos += descLines.length * 5 + 10;
 
           doc.setFont('helvetica', 'bold');
-          doc.text('Preconditions:', 14, yPos);
+          doc.text('Preconditions:', margin, yPos);
           doc.setFont('helvetica', 'normal');
-          const preLines = doc.splitTextToSize(uc.preconditions || '', pageWidth - 28);
-          doc.text(preLines, 14, yPos + 5);
+          const preLines = doc.splitTextToSize(uc.preconditions || '', pageWidth - 2 * margin);
+          doc.text(preLines, margin, yPos + 5);
           yPos += preLines.length * 5 + 10;
 
           doc.setFont('helvetica', 'bold');
-          doc.text('Main Flow:', 14, yPos);
+          doc.text('Main Flow:', margin, yPos);
           doc.setFont('helvetica', 'normal');
-          const flowLines = doc.splitTextToSize(uc.mainFlow || '', pageWidth - 28);
-          doc.text(flowLines, 14, yPos + 5);
+          const flowLines = doc.splitTextToSize(uc.mainFlow || '', pageWidth - 2 * margin);
+          doc.text(flowLines, margin, yPos + 5);
           yPos += flowLines.length * 5 + 10;
 
           if (uc.alternativeFlows) {
             doc.setFont('helvetica', 'bold');
-            doc.text('Alternative Flows:', 14, yPos);
+            doc.text('Alternative Flows:', margin, yPos);
             doc.setFont('helvetica', 'normal');
-            const altLines = doc.splitTextToSize(uc.alternativeFlows || '', pageWidth - 28);
-            doc.text(altLines, 14, yPos + 5);
+            const altLines = doc.splitTextToSize(uc.alternativeFlows || '', pageWidth - 2 * margin);
+            doc.text(altLines, margin, yPos + 5);
             yPos += altLines.length * 5 + 10;
           }
 
           doc.setFont('helvetica', 'bold');
-          doc.text('Postconditions:', 14, yPos);
+          doc.text('Postconditions:', margin, yPos);
           doc.setFont('helvetica', 'normal');
-          const postLines = doc.splitTextToSize(uc.postconditions || '', pageWidth - 28);
-          doc.text(postLines, 14, yPos + 5);
+          const postLines = doc.splitTextToSize(uc.postconditions || '', pageWidth - 2 * margin);
+          doc.text(postLines, margin, yPos + 5);
+
+          addFooter();
         });
       }
 
       // Links/Traceability Section
       if (links.length > 0) {
         doc.addPage();
+        pageNumbers.links = doc.getCurrentPageInfo().pageNumber;
+
         doc.setFontSize(16);
-        doc.text('Requirement Links', 14, 20);
+        doc.text('Requirement Links', margin, 20);
 
         const linkTableData = links.map(link => [
           link.sourceId,
@@ -941,13 +1082,43 @@ function App() {
           head: [['Source', 'Target', 'Type', 'Description']],
           body: linkTableData,
           styles: { fontSize: 9, cellPadding: 3 },
-          headStyles: { fillColor: [99, 102, 241], textColor: 255 }
+          headStyles: { fillColor: [99, 102, 241], textColor: 255 },
+          didDrawPage: addFooter
         });
       }
 
-      // Save PDF manually to force download with correct name
+      // Update TOC with actual page numbers
+      const tocPageNum = pageNumbers.toc;
+      doc.setPage(tocPageNum);
+
+      // Clear old TOC content
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 35, pageWidth, pageHeight - 45, 'F');
+
+      // Redraw TOC with correct page numbers
+      tocY = 40;
+      const finalTocEntries = [
+        { title: 'Revision History', page: pageNumbers.revisionHistory },
+        { title: 'Requirements Overview', page: pageNumbers.requirementsOverview },
+        { title: 'Detailed Requirements', page: pageNumbers.detailedRequirements },
+        ...(useCases.length > 0 ? [{ title: 'Use Cases', page: pageNumbers.useCases }] : []),
+        ...(links.length > 0 ? [{ title: 'Requirement Links', page: pageNumbers.links }] : [])
+      ];
+
+      doc.setFontSize(11);
+      finalTocEntries.forEach(entry => {
+        doc.setTextColor(99, 102, 241);
+        doc.textWithLink(entry.title, margin, tocY, {
+          pageNumber: entry.page
+        });
+        doc.setTextColor(0, 0, 0);
+        doc.text(String(entry.page), pageWidth - margin, tocY, { align: 'right' });
+        tocY += 10;
+      });
+
+      // Save PDF
       const blob = doc.output('blob');
-      triggerDownload(blob, 'Mars_Rover_2030_Requirements.pdf');
+      triggerDownload(blob, `${currentProject.name}_Requirements.pdf`);
     } catch (error) {
       console.error('PDF Export Error:', error);
       alert(`Failed to export PDF: ${error instanceof Error ? error.message : String(error)}`);
