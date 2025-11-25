@@ -19,7 +19,7 @@ import {
   InformationList,
   InformationModal
 } from './components';
-import type { Requirement, RequirementTreeNode, Link, UseCase, TestCase, Information, Version, Project } from './types';
+import type { Requirement, RequirementTreeNode, Link, UseCase, TestCase, Information, Version, Project, ColumnVisibility } from './types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -312,6 +312,39 @@ function App() {
   const [versions, setVersions] = useState<Version[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Column visibility state with default all visible
+  const getDefaultColumnVisibility = (): ColumnVisibility => ({
+    idTitle: true,
+    description: true,
+    text: true,
+    rationale: true,
+    author: true,
+    verification: true,
+    priority: true,
+    status: true,
+    comments: true,
+    created: true,
+    approved: true
+  });
+
+  // Load column visibility from localStorage (scoped by project)
+  const loadColumnVisibility = (projectId: string): ColumnVisibility => {
+    try {
+      const saved = localStorage.getItem(`column-visibility-${projectId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...getDefaultColumnVisibility(), ...parsed };
+      }
+    } catch (error) {
+      console.error('Failed to load column visibility:', error);
+    }
+    return getDefaultColumnVisibility();
+  };
+
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>(
+    loadColumnVisibility(currentProjectId)
+  );
+
   // Sync local state back to projects array whenever data changes
   useEffect(() => {
     setProjects(prevProjects => prevProjects.map(p =>
@@ -345,6 +378,9 @@ function App() {
       const newUsedNumbers = initializeUsedNumbers(targetProject.requirements, targetProject.useCases);
       setUsedReqNumbers(newUsedNumbers.usedReqNumbers);
       setUsedUcNumbers(newUsedNumbers.usedUcNumbers);
+
+      // Load column visibility for the new project
+      setColumnVisibility(loadColumnVisibility(projectId));
     }
   };
 
@@ -1273,6 +1309,16 @@ function App() {
             requirements={filteredRequirements}
             onEdit={handleEdit}
             onDelete={handleDeleteRequirement}
+            visibleColumns={columnVisibility}
+            onColumnVisibilityChange={(columns) => {
+              setColumnVisibility(columns);
+              // Persist to localStorage (scoped by project)
+              try {
+                localStorage.setItem(`column-visibility-${currentProjectId}`, JSON.stringify(columns));
+              } catch (error) {
+                console.error('Failed to save column visibility:', error);
+              }
+            }}
           />
         )
       }

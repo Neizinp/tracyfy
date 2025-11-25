@@ -16,3 +16,4 @@ export * from './EditTestCaseModal';
 export * from './TestCaseList';
 export * from './InformationList';
 export * from './InformationModal';
+export * from './ColumnSelector';

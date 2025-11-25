@@ -99,3 +99,17 @@ export interface Version {
     information: Information[];
   };
 }
+
+export interface ColumnVisibility {
+  idTitle: boolean;       // Always true, not user-configurable
+  description: boolean;
+  text: boolean;          // Requirement Text
+  rationale: boolean;
+  author: boolean;
+  verification: boolean;
+  priority: boolean;
+  status: boolean;
+  comments: boolean;
+  created: boolean;
+  approved: boolean;
+}
