@@ -20,6 +20,7 @@ import {
   InformationModal
 } from './components';
 import type { Requirement, RequirementTreeNode, Link, UseCase, TestCase, Information, Version, Project, ColumnVisibility } from './types';
+import { mockRequirements, mockUseCases, mockTestCases, mockInformation, mockLinks } from './mockData';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -268,10 +269,29 @@ const initializeUsedNumbers = (requirements: Requirement[], useCases: UseCase[])
   return savedNumbers;
 };
 
+// Helper to create a demo project with comprehensive mock data
+const createDemoProject = (): Project => {
+  return {
+    id: 'demo-project',
+    name: 'Demo Project - E-Commerce Platform',
+    description: 'A comprehensive demo project showcasing all features with realistic requirements, use cases, test cases, and documentation.',
+    requirements: mockRequirements,
+    useCases: mockUseCases,
+    testCases: mockTestCases,
+    information: mockInformation,
+    links: mockLinks,
+    lastModified: Date.now()
+  };
+};
+
 function App() {
   const { projects: initialProjects, currentProjectId: initialCurrentId } = loadProjects();
 
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  // Check if demo project exists, if not create it
+  const hasDemoProject = initialProjects.some((p: Project) => p.id === 'demo-project');
+  const projectsWithDemo = hasDemoProject ? initialProjects : [...initialProjects, createDemoProject()];
+
+  const [projects, setProjects] = useState<Project[]>(projectsWithDemo);
   const [currentProjectId, setCurrentProjectId] = useState<string>(initialCurrentId);
 
   // Project Settings State

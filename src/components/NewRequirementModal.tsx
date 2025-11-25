@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import type { Requirement } from '../types';
+import { MarkdownEditor } from './MarkdownEditor';
 
 interface NewRequirementModalProps {
     isOpen: boolean;
@@ -112,59 +113,32 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
                     </div>
 
                     <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Description</label>
-                        <textarea
+                        <MarkdownEditor
+                            label="Description"
                             value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            rows={4}
-                            style={{
-                                width: '100%',
-                                padding: '8px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid var(--color-border)',
-                                backgroundColor: 'var(--color-bg-app)',
-                                color: 'var(--color-text-primary)',
-                                outline: 'none',
-                                resize: 'vertical'
-                            }}
+                            onChange={setDescription}
+                            height={150}
+                            placeholder="Enter description with Markdown formatting..."
                         />
                     </div>
 
                     <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Requirement Text</label>
-                        <textarea
+                        <MarkdownEditor
+                            label="Requirement Text"
                             value={text}
-                            onChange={(e) => setText(e.target.value)}
-                            rows={3}
-                            style={{
-                                width: '100%',
-                                padding: '8px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid var(--color-border)',
-                                backgroundColor: 'var(--color-bg-app)',
-                                color: 'var(--color-text-primary)',
-                                outline: 'none',
-                                resize: 'vertical'
-                            }}
+                            onChange={setText}
+                            height={120}
+                            placeholder="Enter detailed requirement text with Markdown..."
                         />
                     </div>
 
                     <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Rationale</label>
-                        <textarea
+                        <MarkdownEditor
+                            label="Rationale"
                             value={rationale}
-                            onChange={(e) => setRationale(e.target.value)}
-                            rows={3}
-                            style={{
-                                width: '100%',
-                                padding: '8px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid var(--color-border)',
-                                backgroundColor: 'var(--color-bg-app)',
-                                color: 'var(--color-text-primary)',
-                                outline: 'none',
-                                resize: 'vertical'
-                            }}
+                            onChange={setRationale}
+                            height={120}
+                            placeholder="Explain the rationale with Markdown..."
                         />
                     </div>
 
@@ -226,21 +200,12 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
                     </div>
 
                     <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Comments</label>
-                        <textarea
+                        <MarkdownEditor
+                            label="Comments"
                             value={comments}
-                            onChange={(e) => setComments(e.target.value)}
-                            rows={3}
-                            style={{
-                                width: '100%',
-                                padding: '8px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid var(--color-border)',
-                                backgroundColor: 'var(--color-bg-app)',
-                                color: 'var(--color-text-primary)',
-                                outline: 'none',
-                                resize: 'vertical'
-                            }}
+                            onChange={setComments}
+                            height={100}
+                            placeholder="Add comments with Markdown..."
                         />
                     </div>
 

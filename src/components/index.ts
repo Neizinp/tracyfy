@@ -17,3 +17,4 @@ export * from './TestCaseList';
 export * from './InformationList';
 export * from './InformationModal';
 export * from './ColumnSelector';
+export * from './MarkdownEditor';

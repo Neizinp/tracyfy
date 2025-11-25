@@ -1,4 +1,7 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import type { Requirement, ColumnVisibility } from '../types';
 import { ColumnSelector } from './ColumnSelector';
 
@@ -8,6 +11,61 @@ interface DetailedRequirementViewProps {
     visibleColumns: ColumnVisibility;
     onColumnVisibilityChange: (columns: ColumnVisibility) => void;
 }
+
+// Compact Markdown renderer for table cells
+const MarkdownCell: React.FC<{ content: string }> = ({ content }) => {
+    if (!content) return <span>-</span>;
+
+    return (
+        <div className="markdown-cell" style={{ fontSize: '0.875rem' }}>
+            <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                    // Compact styling for table cells
+                    h1: ({ ...props }) => <h1 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: '4px 0', color: 'var(--color-text-primary)' }} {...props} />,
+                    h2: ({ ...props }) => <h2 style={{ fontSize: '1rem', fontWeight: 'bold', margin: '4px 0', color: 'var(--color-text-primary)' }} {...props} />,
+                    h3: ({ ...props }) => <h3 style={{ fontSize: '0.95rem', fontWeight: 'bold', margin: '3px 0', color: 'var(--color-text-primary)' }} {...props} />,
+                    h4: ({ ...props }) => <h4 style={{ fontSize: '0.9rem', fontWeight: 'bold', margin: '2px 0', color: 'var(--color-text-primary)' }} {...props} />,
+                    p: ({ ...props }) => <p style={{ margin: '2px 0', color: 'var(--color-text-secondary)' }} {...props} />,
+                    ul: ({ ...props }) => <ul style={{ margin: '4px 0', paddingLeft: '16px', color: 'var(--color-text-secondary)' }} {...props} />,
+                    ol: ({ ...props }) => <ol style={{ margin: '4px 0', paddingLeft: '16px', color: 'var(--color-text-secondary)' }} {...props} />,
+                    li: ({ ...props }) => <li style={{ margin: '1px 0', color: 'var(--color-text-secondary)' }} {...props} />,
+                    blockquote: ({ ...props }) => (
+                        <blockquote style={{ borderLeft: '2px solid var(--color-accent)', paddingLeft: '8px', margin: '4px 0', fontStyle: 'italic', color: 'var(--color-text-muted)' }} {...props} />
+                    ),
+                    code: ({ className, children, ...props }) => {
+                        const inline = !className;
+                        return inline ? (
+                            <code style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)', padding: '1px 4px', borderRadius: '3px', fontSize: '0.85em', color: 'var(--color-accent-light)' }} {...props}>
+                                {children}
+                            </code>
+                        ) : (
+                            <code style={{ display: 'block', backgroundColor: 'var(--color-bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85em', overflowX: 'auto', margin: '4px 0' }} {...props}>
+                                {children}
+                            </code>
+                        );
+                    },
+                    pre: ({ ...props }) => <pre style={{ margin: '4px 0', overflowX: 'auto' }} {...props} />,
+                    table: ({ ...props }) => (
+                        <div style={{ overflowX: 'auto', margin: '4px 0' }}>
+                            <table style={{ fontSize: '0.8rem', borderCollapse: 'collapse', border: '1px solid var(--color-border)' }} {...props} />
+                        </div>
+                    ),
+                    thead: ({ ...props }) => <thead style={{ backgroundColor: 'var(--color-bg-secondary)' }} {...props} />,
+                    th: ({ ...props }) => <th style={{ border: '1px solid var(--color-border)', padding: '4px 8px', textAlign: 'left' }} {...props} />,
+                    td: ({ ...props }) => <td style={{ border: '1px solid var(--color-border)', padding: '4px 8px' }} {...props} />,
+                    a: ({ ...props }) => <a style={{ color: 'var(--color-accent-light)', textDecoration: 'underline' }} {...props} />,
+                    strong: ({ ...props }) => <strong style={{ fontWeight: 'bold', color: 'var(--color-text-primary)' }} {...props} />,
+                    em: ({ ...props }) => <em style={{ fontStyle: 'italic' }} {...props} />,
+                    hr: ({ ...props }) => <hr style={{ margin: '8px 0', border: 'none', borderTop: '1px solid var(--color-border)' }} {...props} />
+                }}
+            >
+                {content}
+            </ReactMarkdown>
+        </div>
+    );
+};
 
 export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = ({ requirements, onEdit, visibleColumns, onColumnVisibilityChange }) => {
     const formatDate = (timestamp: number) => {
@@ -88,18 +146,18 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                                             </td>
                                         )}
                                         {visibleColumns.description && (
-                                            <td style={{ padding: '12px', verticalAlign: 'top', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                                                {req.description}
+                                            <td style={{ padding: '12px', verticalAlign: 'top' }}>
+                                                <MarkdownCell content={req.description} />
                                             </td>
                                         )}
                                         {visibleColumns.text && (
-                                            <td style={{ padding: '12px', verticalAlign: 'top', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                                                {req.text || '-'}
+                                            <td style={{ padding: '12px', verticalAlign: 'top' }}>
+                                                <MarkdownCell content={req.text} />
                                             </td>
                                         )}
                                         {visibleColumns.rationale && (
-                                            <td style={{ padding: '12px', verticalAlign: 'top', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                                                {req.rationale || '-'}
+                                            <td style={{ padding: '12px', verticalAlign: 'top' }}>
+                                                <MarkdownCell content={req.rationale} />
                                             </td>
                                         )}
                                         {visibleColumns.author && (
@@ -141,8 +199,8 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                                             </td>
                                         )}
                                         {visibleColumns.comments && (
-                                            <td style={{ padding: '12px', verticalAlign: 'top', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                                                {req.comments || '-'}
+                                            <td style={{ padding: '12px', verticalAlign: 'top' }}>
+                                                <MarkdownCell content={req.comments || ''} />
                                             </td>
                                         )}
                                         {visibleColumns.created && (
