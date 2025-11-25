@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { Requirement } from '../types';
 import { MarkdownEditor } from './MarkdownEditor';
+import { formatDateTime } from '../utils/dateUtils';
 
 interface EditRequirementModalProps {
     isOpen: boolean;
@@ -312,7 +313,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
                         <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Date Created</label>
                         <input
                             type="text"
-                            value={new Date(requirement.dateCreated).toLocaleString()}
+                            value={formatDateTime(requirement.dateCreated)}
                             disabled
                             style={{
                                 width: '100%',
@@ -332,7 +333,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
                             <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Approval Date</label>
                             <input
                                 type="text"
-                                value={new Date(requirement.approvalDate).toLocaleString()}
+                                value={formatDateTime(requirement.approvalDate)}
                                 disabled
                                 style={{
                                     width: '100%',

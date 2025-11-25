@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { TestCase, Requirement } from '../types';
+import { formatDateTime } from '../utils/dateUtils';
 
 interface EditTestCaseModalProps {
     isOpen: boolean;
@@ -225,7 +226,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({ isOpen, te
                         <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Date Created</label>
                         <input
                             type="text"
-                            value={new Date(testCase.dateCreated).toLocaleString()}
+                            value={formatDateTime(testCase.dateCreated)}
                             disabled
                             style={{
                                 width: '100%',
@@ -245,7 +246,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({ isOpen, te
                             <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Last Run</label>
                             <input
                                 type="text"
-                                value={new Date(testCase.lastRun).toLocaleString()}
+                                value={formatDateTime(testCase.lastRun)}
                                 disabled
                                 style={{
                                     width: '100%',

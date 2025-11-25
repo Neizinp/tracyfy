@@ -1,6 +1,7 @@
 import React from 'react';
 import { Edit2, Trash2, FileText, Calendar, Tag } from 'lucide-react';
 import type { Information } from '../types';
+import { formatDate } from '../utils/dateUtils';
 
 interface InformationListProps {
     information: Information[];
@@ -96,7 +97,7 @@ export const InformationList: React.FC<InformationListProps> = ({
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                             <Calendar size={14} />
-                            <span>{new Date(info.lastModified).toLocaleDateString()}</span>
+                            <span>{formatDate(info.lastModified)}</span>
                         </div>
                     </div>
 

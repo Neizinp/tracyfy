@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
 import type { Requirement, UseCase, Information } from '../types';
+import { formatDateTime } from '../utils/dateUtils';
 
 interface TrashModalProps {
     isOpen: boolean;
@@ -35,7 +36,7 @@ export const TrashModal: React.FC<TrashModalProps> = ({
 
     const formatDate = (timestamp?: number) => {
         if (!timestamp) return 'Unknown date';
-        return new Date(timestamp).toLocaleString();
+        return formatDateTime(timestamp);
     };
 
     return (

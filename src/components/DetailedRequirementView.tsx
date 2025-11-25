@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import type { Requirement, ColumnVisibility } from '../types';
+import { formatDateTime } from '../utils/dateUtils';
 
 interface DetailedRequirementViewProps {
     requirements: Requirement[];
@@ -67,16 +68,6 @@ const MarkdownCell: React.FC<{ content: string }> = ({ content }) => {
 };
 
 export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = ({ requirements, onEdit, visibleColumns }) => {
-    const formatDate = (timestamp: number) => {
-        return new Date(timestamp).toLocaleString(undefined, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
-    };
 
     const getVisibleColumnCount = () => {
         return Object.values(visibleColumns).filter(Boolean).length;
@@ -196,12 +187,12 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                                         )}
                                         {visibleColumns.created && (
                                             <td style={{ padding: '12px', verticalAlign: 'top', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-                                                {formatDate(req.dateCreated)}
+                                                {formatDateTime(req.dateCreated)}
                                             </td>
                                         )}
                                         {visibleColumns.approved && (
                                             <td style={{ padding: '12px', verticalAlign: 'top', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-                                                {req.approvalDate ? formatDate(req.approvalDate) : '-'}
+                                                {req.approvalDate ? formatDateTime(req.approvalDate) : '-'}
                                             </td>
                                         )}
                                     </tr>

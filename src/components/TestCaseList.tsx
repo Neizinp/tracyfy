@@ -1,6 +1,7 @@
 import React from 'react';
 import { Edit2, Trash2 } from 'lucide-react';
 import type { TestCase } from '../types';
+import { formatDateTime } from '../utils/dateUtils';
 
 interface TestCaseListProps {
     testCases: TestCase[];
@@ -9,16 +10,6 @@ interface TestCaseListProps {
 }
 
 export const TestCaseList: React.FC<TestCaseListProps> = ({ testCases, onEdit, onDelete }) => {
-    const formatDate = (timestamp: number) => {
-        return new Date(timestamp).toLocaleString(undefined, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
-    };
 
     const getStatusColor = (status: TestCase['status']) => {
         switch (status) {
@@ -102,7 +93,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({ testCases, onEdit, o
                                         </span>
                                     </td>
                                     <td style={{ padding: '12px', verticalAlign: 'top', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-                                        {tc.lastRun ? formatDate(tc.lastRun) : '-'}
+                                        {tc.lastRun ? formatDateTime(tc.lastRun) : '-'}
                                     </td>
                                     <td style={{ padding: '12px', verticalAlign: 'top' }}>
                                         <div style={{ display: 'flex', gap: '4px' }}>

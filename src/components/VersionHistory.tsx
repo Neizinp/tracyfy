@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, RotateCcw, Clock, Save, Tag } from 'lucide-react';
 import type { Version } from '../types';
+import { formatDateTime } from '../utils/dateUtils';
 
 interface VersionHistoryProps {
     isOpen: boolean;
@@ -16,20 +17,6 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({ isOpen, versions
     const [filter, setFilter] = useState<'all' | 'baseline'>('all');
 
     if (!isOpen) return null;
-
-    const formatDate = (timestamp: number) => {
-        const date = new Date(timestamp);
-        return date.toLocaleString(undefined, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            timeZoneName: 'short',
-            hour12: false
-        });
-    };
 
     const handleRestore = (versionId: string) => {
         if (confirm('Are you sure you want to restore this version? Current unsaved changes will be lost.')) {
@@ -264,7 +251,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({ isOpen, versions
                                                 alignItems: 'center',
                                                 gap: '8px'
                                             }}>
-                                                {formatDate(version.timestamp)}
+                                                {formatDateTime(version.timestamp)}
                                                 {version.type === 'baseline' && (
                                                     <span style={{
                                                         padding: '2px 8px',

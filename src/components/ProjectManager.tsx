@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Project } from '../types';
+import { formatDate } from '../utils/dateUtils';
 
 interface ProjectManagerProps {
     projects: Project[];
@@ -134,7 +135,7 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
                                     <div className="mt-2 flex items-center text-xs text-gray-500 space-x-4">
                                         <span>{project.requirements.length} Requirements</span>
                                         <span>{project.useCases.length} Use Cases</span>
-                                        <span>Last modified: {new Date(project.lastModified).toLocaleDateString()}</span>
+                                        <span>Last modified: {formatDate(project.lastModified)}</span>
                                     </div>
                                 </div>
 

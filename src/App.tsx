@@ -25,6 +25,7 @@ import { mockRequirements, mockUseCases, mockTestCases, mockInformation, mockLin
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { formatDateTime, formatDate } from './utils/dateUtils';
 
 // Mock Data - Now using flat structure with parentIds
 const initialRequirements: Requirement[] = [
@@ -568,7 +569,7 @@ function App() {
       setTestCases(version.data.testCases || []);
       setInformation(version.data.information || []);
       setLinks(version.data.links);
-      createVersionSnapshot(`Restored from ${new Date(version.timestamp).toLocaleString()}`, 'auto-save');
+      createVersionSnapshot(`Restored from ${formatDateTime(version.timestamp)}`, 'auto-save');
     }
   };
 
@@ -775,7 +776,7 @@ function App() {
 
       doc.setFontSize(12);
       doc.text(currentProject.name, pageWidth / 2, 45, { align: 'center' });
-      doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 55, { align: 'center' });
+      doc.text(`Generated: ${formatDate(Date.now())}`, pageWidth / 2, 55, { align: 'center' });
 
       doc.setFontSize(10);
       doc.text(`Total Requirements: ${requirements.length}`, pageWidth / 2, 70, { align: 'center' });
