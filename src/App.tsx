@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Layout,
   RequirementTree,
@@ -18,95 +18,21 @@ import {
   TestCaseList,
   InformationList,
   InformationModal,
-  ColumnSelector
+  ColumnSelector,
+  GlobalLibraryModal
 } from './components';
-import type { Requirement, RequirementTreeNode, Link, UseCase, TestCase, Information, Version, Project, ColumnVisibility } from './types';
+import type { Requirement, RequirementTreeNode, Link, UseCase, TestCase, Information, Version, Project, ColumnVisibility, GlobalState, ViewType } from './types';
 import { mockRequirements, mockUseCases, mockTestCases, mockInformation, mockLinks } from './mockData';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { formatDateTime, formatDate } from './utils/dateUtils';
 
-// Mock Data - Now using flat structure with parentIds
-const initialRequirements: Requirement[] = [
-  {
-    id: 'REQ-001',
-    title: 'System Authentication',
-    description: 'The system shall allow users to log in using secure credentials.',
-    text: 'The system must support multi-factor authentication for all administrative access.',
-    rationale: 'Security compliance requires MFA for privileged accounts.',
-    status: 'approved',
-    priority: 'high',
-    parentIds: [],
-    dateCreated: Date.now(),
-    lastModified: Date.now()
-  },
-  {
-    id: 'REQ-002',
-    title: 'Data Encryption',
-    description: 'All sensitive data must be encrypted at rest and in transit.',
-    text: 'AES-256 encryption must be used for database storage.',
-    rationale: 'Data protection regulations.',
-    status: 'approved',
-    priority: 'high',
-    parentIds: [],
-    dateCreated: Date.now(),
-    lastModified: Date.now()
-  },
-  {
-    id: 'REQ-003',
-    title: 'User Profile Management',
-    description: 'Users shall be able to update their profile information.',
-    text: 'Users can update email, phone number, and display name.',
-    rationale: 'User autonomy and data accuracy.',
-    status: 'draft',
-    priority: 'medium',
-    parentIds: ['REQ-001'],
-    dateCreated: Date.now(),
-    lastModified: Date.now()
-  },
-  {
-    id: 'REQ-004',
-    title: 'Password Reset',
-    description: 'Users shall be able to reset their password via email.',
-    text: 'Password reset link expires in 24 hours.',
-    rationale: 'Account recovery mechanism.',
-    status: 'draft',
-    priority: 'medium',
-    parentIds: ['REQ-001'],
-    dateCreated: Date.now(),
-    lastModified: Date.now()
-  }
-];
-
-const initialUseCases: UseCase[] = [
-  {
-    id: 'UC-001',
-    title: 'User Login',
-    description: 'A registered user logs into the system.',
-    actor: 'Registered User',
-    preconditions: 'User has a valid account.',
-    postconditions: 'User is authenticated and redirected to dashboard.',
-    mainFlow: '1. User navigates to login page.\n2. User enters credentials.\n3. System validates credentials.\n4. System redirects to dashboard.',
-    alternativeFlows: '3a. Invalid credentials: System shows error message.',
-    priority: 'high',
-    status: 'approved',
-    lastModified: Date.now()
-  }
-];
-
-const initialTestCases: TestCase[] = [];
-
-const initialInformation: Information[] = [];
-
-const initialLinks: Link[] = [];
-
-const STORAGE_KEY = 'reqtrace-data'; // Legacy key for migration
 const PROJECTS_KEY = 'reqtrace-projects';
 const CURRENT_PROJECT_KEY = 'reqtrace-current-project-id';
-const LEGACY_VERSIONS_KEY = 'reqtrace-versions'; // Legacy global key for migration
-const getVersionsKey = (projectId: string) => `reqtrace-versions-${projectId}`;
 const USED_NUMBERS_KEY = 'reqtrace-used-numbers';
+const LEGACY_VERSIONS_KEY = 'reqtrace-versions';
+const getVersionsKey = (projectId: string) => `reqtrace-versions-${projectId}`;
 const MAX_VERSIONS = 50;
 
 // Helper to build tree structure from flat requirements
@@ -147,86 +73,16 @@ const buildTree = (requirements: Requirement[]): RequirementTreeNode[] => {
   return rootNodes;
 };
 
-// Helper to load projects (handling migration)
-const loadProjects = () => {
-  try {
-    const savedProjects = localStorage.getItem(PROJECTS_KEY);
-    const savedCurrentId = localStorage.getItem(CURRENT_PROJECT_KEY);
+const GLOBAL_STATE_KEY = 'reqtrace-global-state';
 
-    if (savedProjects) {
-      const projects = JSON.parse(savedProjects);
-      // Migrate existing requirements to add dateCreated if missing
-      // and ensure testCases exists
-      const migratedProjects = projects.map((project: Project) => ({
-        ...project,
-        testCases: project.testCases || [],  // Add testCases if missing
-        requirements: project.requirements.map((req: Requirement) => ({
-          ...req,
-          dateCreated: req.dateCreated || req.lastModified || Date.now()
-        })),
-        information: project.information || [] // Add information if missing
-      }));
-      return {
-        projects: migratedProjects,
-        currentProjectId: savedCurrentId || migratedProjects[0]?.id || 'default-project'
-      };
-    }
-
-    // Migration: Check for legacy data
-    const legacyData = localStorage.getItem(STORAGE_KEY);
-    if (legacyData) {
-      const parsed = JSON.parse(legacyData);
-      const defaultProject: Project = {
-        id: 'default-project',
-        name: 'Default Project',
-        description: 'Migrated from legacy data',
-        requirements: parsed.requirements || initialRequirements,
-        useCases: parsed.useCases || initialUseCases,
-        testCases: [],
-        information: [],
-        links: parsed.links || initialLinks,
-        lastModified: Date.now()
-      };
-      return {
-        projects: [defaultProject],
-        currentProjectId: defaultProject.id
-      };
-    }
-
-    // Default empty
-    const defaultProject: Project = {
-      id: 'default-project',
-      name: 'My First Project',
-      description: 'Default project',
-      requirements: initialRequirements,
-      useCases: initialUseCases,
-      testCases: initialTestCases,
-      information: initialInformation,
-      links: initialLinks,
-      lastModified: Date.now()
-    };
-    return {
-      projects: [defaultProject],
-      currentProjectId: defaultProject.id
-    };
-  } catch (error) {
-    console.error('Failed to load projects:', error);
-    const defaultProject: Project = {
-      id: 'default-project',
-      name: 'My First Project',
-      description: 'Default project',
-      requirements: initialRequirements,
-      useCases: initialUseCases,
-      testCases: initialTestCases,
-      information: initialInformation,
-      links: initialLinks,
-      lastModified: Date.now()
-    };
-    return {
-      projects: [defaultProject],
-      currentProjectId: defaultProject.id
-    };
-  }
+// Helper to deduplicate items by ID
+const uniqBy = <T extends { id: string }>(arr: T[]): T[] => {
+  const seen = new Set();
+  return arr.filter(item => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
 };
 
 // Helper to load used numbers from LocalStorage
@@ -271,47 +127,203 @@ const initializeUsedNumbers = (requirements: Requirement[], useCases: UseCase[])
   return savedNumbers;
 };
 
+// Helper to load projects (handling migration to Global Pool)
+// Helper to load projects (handling migration to Global Pool)
+const loadProjects = (): { projects: Project[], currentProjectId: string, globalState: GlobalState } => {
+  try {
+    const savedProjects = localStorage.getItem(PROJECTS_KEY);
+    const savedGlobal = localStorage.getItem(GLOBAL_STATE_KEY);
+    const savedCurrentId = localStorage.getItem(CURRENT_PROJECT_KEY);
+
+    // Case 1: Global State exists (Already migrated)
+    if (savedGlobal && savedProjects) {
+      try {
+        const parsedGlobal = JSON.parse(savedGlobal);
+        const parsedProjects = JSON.parse(savedProjects);
+
+        if (parsedGlobal && Array.isArray(parsedProjects)) {
+          return {
+            projects: parsedProjects,
+            currentProjectId: savedCurrentId || 'default-project',
+            globalState: parsedGlobal
+          };
+        }
+      } catch (e) {
+        console.error('Failed to parse saved state:', e);
+      }
+    }
+
+    // Case 2: Only Projects exist (Migration needed)
+    if (savedProjects) {
+      try {
+        const oldProjects = JSON.parse(savedProjects);
+
+        if (Array.isArray(oldProjects)) {
+          const globalState: GlobalState = {
+            requirements: [],
+            useCases: [],
+            testCases: [],
+            information: [],
+            links: []
+          };
+
+          const newProjects = oldProjects.map((p: any) => {
+            // Extract artifacts to global state
+            if (p.requirements && Array.isArray(p.requirements)) globalState.requirements.push(...p.requirements);
+            if (p.useCases && Array.isArray(p.useCases)) globalState.useCases.push(...p.useCases);
+            if (p.testCases && Array.isArray(p.testCases)) globalState.testCases.push(...p.testCases);
+            if (p.information && Array.isArray(p.information)) globalState.information.push(...p.information);
+            if (p.links && Array.isArray(p.links)) globalState.links.push(...p.links);
+
+            // Return project with IDs only
+            return {
+              id: p.id,
+              name: p.name,
+              description: p.description,
+              requirementIds: (p.requirements || []).map((r: any) => r.id),
+              useCaseIds: (p.useCases || []).map((u: any) => u.id),
+              testCaseIds: (p.testCases || []).map((t: any) => t.id),
+              informationIds: (p.information || []).map((i: any) => i.id),
+              lastModified: p.lastModified || Date.now()
+            };
+          });
+
+          // Deduplicate global state
+          globalState.requirements = uniqBy(globalState.requirements);
+          globalState.useCases = uniqBy(globalState.useCases);
+          globalState.testCases = uniqBy(globalState.testCases);
+          globalState.information = uniqBy(globalState.information);
+          globalState.links = uniqBy(globalState.links);
+
+          return {
+            projects: newProjects,
+            currentProjectId: savedCurrentId || newProjects[0]?.id || 'default-project',
+            globalState
+          };
+        }
+      } catch (e) {
+        console.error('Failed to migrate projects:', e);
+      }
+    }
+
+    // Case 3: Fresh Start / Demo (or fallback)
+    const { project, globalState } = createDemoProject();
+    return {
+      projects: [project],
+      currentProjectId: project.id,
+      globalState
+    };
+
+  } catch (error) {
+    console.error('Failed to load projects:', error);
+    const { project, globalState } = createDemoProject();
+    return {
+      projects: [project],
+      currentProjectId: project.id,
+      globalState
+    };
+  }
+};
+
 // Helper to create a demo project with comprehensive mock data
-const createDemoProject = (): Project => {
-  return {
+const createDemoProject = (): { project: Project, globalState: GlobalState } => {
+  const project: Project = {
     id: 'demo-project',
     name: 'Demo Project - E-Commerce Platform',
     description: 'A comprehensive demo project showcasing all features with realistic requirements, use cases, test cases, and documentation.',
+    requirementIds: mockRequirements.map(r => r.id),
+    useCaseIds: mockUseCases.map(u => u.id),
+    testCaseIds: mockTestCases.map(t => t.id),
+    informationIds: mockInformation.map(i => i.id),
+    lastModified: Date.now()
+  };
+
+  const globalState: GlobalState = {
     requirements: mockRequirements,
     useCases: mockUseCases,
     testCases: mockTestCases,
     information: mockInformation,
-    links: mockLinks,
-    lastModified: Date.now()
+    links: mockLinks
   };
+
+  return { project, globalState };
 };
 
 function App() {
-  const { projects: initialProjects, currentProjectId: initialCurrentId } = loadProjects();
+  const { projects: initialProjects, currentProjectId: initialCurrentId, globalState: initialGlobal } = loadProjects();
+  // const initialProjects: Project[] = [{ id: 'dummy', name: 'Dummy', description: '', requirementIds: [], useCaseIds: [], testCaseIds: [], informationIds: [], lastModified: 0 }];
+  // const initialCurrentId = 'dummy';
+  // const initialGlobal: GlobalState = { requirements: [], useCases: [], testCases: [], information: [], links: [] };
 
-  // Check if demo project exists, if not create it
-  const hasDemoProject = initialProjects.some((p: Project) => p.id === 'demo-project');
-  const projectsWithDemo = hasDemoProject ? initialProjects : [...initialProjects, createDemoProject()];
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [currentProjectId, setCurrentProjectId] = useState<string>(initialCurrentId);
 
-  const [projects, setProjects] = useState<Project[]>(projectsWithDemo);
-  const [currentProjectId, setCurrentProjectId] = useState<string>(initialCurrentId || (hasDemoProject ? 'demo-project' : projectsWithDemo[0].id));
+  // Global State
+  const [globalRequirements, setGlobalRequirements] = useState<Requirement[]>(initialGlobal.requirements);
+  const [globalUseCases, setGlobalUseCases] = useState<UseCase[]>(initialGlobal.useCases);
+  const [globalTestCases, setGlobalTestCases] = useState<TestCase[]>(initialGlobal.testCases);
+  const [globalInformation, setGlobalInformation] = useState<Information[]>(initialGlobal.information);
+  const [links, setLinks] = useState<Link[]>(initialGlobal.links); // Links are global
+
   // Project Settings State
   const [isProjectSettingsOpen, setIsProjectSettingsOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
+  const [isGlobalLibraryOpen, setIsGlobalLibraryOpen] = useState(false);
+
+  // Ref to track if this is the initial mount
+  const isInitialMount = useRef(true);
+  const isResetting = useRef(false);
 
   // Get current project data
   const currentProject = projects.find(p => p.id === currentProjectId) || projects[0];
 
-  // Initialize state from current project
-  // Note: We keep local state for performance and sync back to projects array
-  const [requirements, setRequirements] = useState<Requirement[]>(currentProject.requirements);
-  const [useCases, setUseCases] = useState<UseCase[]>(currentProject.useCases);
-  const [testCases, setTestCases] = useState<TestCase[]>(currentProject.testCases);
-  const [information, setInformation] = useState<Information[]>(currentProject.information || []);
-  const [links, setLinks] = useState<Link[]>(currentProject.links);
+  // Initialize local view state from Global State + Project IDs
+  // We use a key to force re-initialization when project changes, 
+  // but actually we want to maintain state.
+  // Better: Initialize once, then update when currentProject changes.
+  // But wait, if we use `useState(initial)`, it only runs once.
+  // We need `useEffect` to update local state when `currentProjectId` changes.
 
-  const initialUsedNumbers = initializeUsedNumbers(currentProject.requirements, currentProject.useCases);
+  const [requirements, setRequirements] = useState<Requirement[]>(() =>
+    globalRequirements.filter(r => currentProject.requirementIds.includes(r.id))
+  );
+  const [useCases, setUseCases] = useState<UseCase[]>(() =>
+    globalUseCases.filter(u => currentProject.useCaseIds.includes(u.id))
+  );
+  const [testCases, setTestCases] = useState<TestCase[]>(() =>
+    globalTestCases.filter(t => currentProject.testCaseIds.includes(t.id))
+  );
+  const [information, setInformation] = useState<Information[]>(() =>
+    globalInformation.filter(i => currentProject.informationIds.includes(i.id))
+  );
+
+  // Update local state when project changes
+  useEffect(() => {
+    const project = projects.find(p => p.id === currentProjectId);
+    if (project) {
+      setRequirements(globalRequirements.filter(r => project.requirementIds.includes(r.id)));
+      setUseCases(globalUseCases.filter(u => project.useCaseIds.includes(u.id)));
+      setTestCases(globalTestCases.filter(t => project.testCaseIds.includes(t.id)));
+      setInformation(globalInformation.filter(i => project.informationIds.includes(i.id)));
+      // Links are global, so no need to filter for state, but views might filter
+
+      // Update used numbers
+      const newUsedNumbers = initializeUsedNumbers(
+        globalRequirements.filter(r => project.requirementIds.includes(r.id)),
+        globalUseCases.filter(u => project.useCaseIds.includes(u.id))
+      );
+      setUsedReqNumbers(newUsedNumbers.usedReqNumbers);
+      setUsedUcNumbers(newUsedNumbers.usedUcNumbers);
+
+      setColumnVisibility(loadColumnVisibility(currentProjectId));
+    }
+  }, [currentProjectId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Be careful: if we update projects in the sync effect, this might loop if not careful.
+  // Actually, we only need to update local state when SWITCHING projects.
+  // When editing current project, local state drives the updates.
+
+  const initialUsedNumbers = initializeUsedNumbers(requirements, useCases);
   const [usedReqNumbers, setUsedReqNumbers] = useState<Set<number>>(initialUsedNumbers.usedReqNumbers);
   const [usedUcNumbers, setUsedUcNumbers] = useState<Set<number>>(initialUsedNumbers.usedUcNumbers);
   const [usedTestNumbers, setUsedTestNumbers] = useState<Set<number>>(new Set());
@@ -328,7 +340,7 @@ function App() {
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
   const [editingRequirement, setEditingRequirement] = useState<Requirement | null>(null);
   const [editingUseCase, setEditingUseCase] = useState<UseCase | null>(null);
-  const [currentView, setCurrentView] = useState<'tree' | 'detailed' | 'matrix' | 'usecases' | 'testcases' | 'information'>('tree');
+  const [currentView, setCurrentView] = useState<ViewType>('tree');
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [versions, setVersions] = useState<Version[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -366,43 +378,79 @@ function App() {
     loadColumnVisibility(currentProjectId)
   );
 
-  // Sync local state back to projects array whenever data changes
+  // Sync local state back to Global State and Projects
   useEffect(() => {
+    // Skip on initial mount to preserve loaded data
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // 1. Update Global State (Upsert)
+    setGlobalRequirements(prev => {
+      const map = new Map(prev.map(r => [r.id, r]));
+      requirements.forEach(r => map.set(r.id, r));
+      return Array.from(map.values());
+    });
+    setGlobalUseCases(prev => {
+      const map = new Map(prev.map(u => [u.id, u]));
+      useCases.forEach(u => map.set(u.id, u));
+      return Array.from(map.values());
+    });
+    setGlobalTestCases(prev => {
+      const map = new Map(prev.map(t => [t.id, t]));
+      testCases.forEach(t => map.set(t.id, t));
+      return Array.from(map.values());
+    });
+    setGlobalInformation(prev => {
+      const map = new Map(prev.map(i => [i.id, i]));
+      information.forEach(i => map.set(i.id, i));
+      return Array.from(map.values());
+    });
+    // Links are already global state, updated directly via setLinks
+
+    // 2. Update Project IDs
     setProjects(prevProjects => prevProjects.map(p =>
       p.id === currentProjectId
-        ? { ...p, requirements, useCases, testCases, information, links, lastModified: Date.now() }
+        ? {
+          ...p,
+          requirementIds: requirements.map(r => r.id),
+          useCaseIds: useCases.map(u => u.id),
+          testCaseIds: testCases.map(t => t.id),
+          informationIds: information.map(i => i.id),
+          lastModified: Date.now()
+        }
         : p
     ));
-  }, [requirements, useCases, testCases, information, links, currentProjectId]);
+  }, [requirements, useCases, testCases, information, currentProjectId]);
 
-  // Persist projects to localStorage
+  // Persist to localStorage
   useEffect(() => {
+    // Skip if resetting to prevent overwriting demo data
+    if (isResetting.current) {
+      return;
+    }
+
     try {
       localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
       localStorage.setItem(CURRENT_PROJECT_KEY, currentProjectId);
+
+      const globalState: GlobalState = {
+        requirements: globalRequirements,
+        useCases: globalUseCases,
+        testCases: globalTestCases,
+        information: globalInformation,
+        links: links
+      };
+      localStorage.setItem(GLOBAL_STATE_KEY, JSON.stringify(globalState));
     } catch (error) {
-      console.error('Failed to save projects:', error);
+      console.error('Failed to save data:', error);
     }
-  }, [projects, currentProjectId]);
+  }, [projects, currentProjectId, globalRequirements, globalUseCases, globalTestCases, globalInformation, links]);
 
   const handleSwitchProject = (projectId: string) => {
-    const targetProject = projects.find(p => p.id === projectId);
-    if (targetProject) {
-      setCurrentProjectId(projectId);
-      setRequirements(targetProject.requirements);
-      setUseCases(targetProject.useCases);
-      setTestCases(targetProject.testCases || []);
-      setInformation(targetProject.information || []);
-      setLinks(targetProject.links);
-
-      // Update used numbers for the new project
-      const newUsedNumbers = initializeUsedNumbers(targetProject.requirements, targetProject.useCases);
-      setUsedReqNumbers(newUsedNumbers.usedReqNumbers);
-      setUsedUcNumbers(newUsedNumbers.usedUcNumbers);
-
-      // Load column visibility for the new project
-      setColumnVisibility(loadColumnVisibility(projectId));
-    }
+    setCurrentProjectId(projectId);
+    // The useEffect [currentProjectId] will handle loading the data
   };
 
   const handleCreateProject = () => {
@@ -414,11 +462,10 @@ function App() {
       id: `proj-${Date.now()}`,
       name,
       description,
-      requirements: [],
-      useCases: [],
-      testCases: [],
-      information: [],
-      links: [],
+      requirementIds: [],
+      useCaseIds: [],
+      testCaseIds: [],
+      informationIds: [],
       lastModified: Date.now()
     };
 
@@ -450,6 +497,67 @@ function App() {
     if (currentProjectId === projectId) {
       handleSwitchProject(newProjects[0].id);
     }
+  };
+
+  const handleResetToDemo = () => {
+    if (!confirm('This will replace all current projects with the Demo Project containing sample data and reload the page. Continue?')) {
+      return;
+    }
+
+    // Clear all storage
+    localStorage.clear();
+
+    // Reload the page to trigger demo project creation
+    window.location.reload();
+  };
+
+  const handleAddToProject = (artifacts: { requirements: string[], useCases: string[], testCases: string[] }) => {
+    setProjects(prev => prev.map(p => {
+      if (p.id !== currentProjectId) return p;
+
+      // Add IDs if not already present
+      const newReqIds = Array.from(new Set([...p.requirementIds, ...artifacts.requirements]));
+      const newUcIds = Array.from(new Set([...p.useCaseIds, ...artifacts.useCases]));
+      const newTcIds = Array.from(new Set([...p.testCaseIds, ...artifacts.testCases]));
+
+      return {
+        ...p,
+        requirementIds: newReqIds,
+        useCaseIds: newUcIds,
+        testCaseIds: newTcIds,
+        lastModified: Date.now()
+      };
+    }));
+
+    // Also update local state to reflect changes immediately
+    // (The useEffect will sync this back to projects, but we want immediate UI update)
+    // Actually, the useEffect [currentProjectId, projects] might handle it if we update projects?
+    // Let's rely on the useEffect that updates local state when project changes?
+    // No, that useEffect runs when currentProjectId changes.
+    // We need to update local state here too, OR trigger a reload.
+    // The easiest way is to update local state, and let the sync-back effect update the project.
+    // BUT, my handleAddToProject updates PROJECT directly.
+    // The sync effect (lines 356-393) goes Local State -> Global State & Project.
+    // So if I update Project directly, it might get overwritten by Local State -> Project sync?
+    // Let's check:
+    // useEffect [requirements, ...] updates setProjects.
+    // So if I update projects here, and then local state doesn't change, the next render might overwrite projects with old local state?
+    // YES.
+    // So I should update LOCAL STATE here.
+
+    // Filter global artifacts by the new IDs
+    const newReqs = globalRequirements.filter(r => artifacts.requirements.includes(r.id) || requirements.some(existing => existing.id === r.id));
+    const newUCs = globalUseCases.filter(u => artifacts.useCases.includes(u.id) || useCases.some(existing => existing.id === u.id));
+    const newTCs = globalTestCases.filter(t => artifacts.testCases.includes(t.id) || testCases.some(existing => existing.id === t.id));
+
+    setRequirements(newReqs);
+    setUseCases(newUCs);
+    setTestCases(newTCs);
+
+    // The sync effect will then update the Project object.
+
+    createVersionSnapshot('Added artifacts from Global Library', 'auto-save');
+    alert(`Added ${artifacts.requirements.length} Requirements, ${artifacts.useCases.length} Use Cases, and ${artifacts.testCases.length} Test Cases to the project.`);
   };
 
   // Auto-save used numbers to LocalStorage whenever they change
@@ -1462,6 +1570,8 @@ function App() {
       onViewHistory={() => setIsVersionHistoryOpen(true)}
       onExportPDF={handleExportPDF}
       onExportExcel={handleExportExcel}
+      onOpenGlobalLibrary={() => setIsGlobalLibraryOpen(true)}
+      onResetToDemo={handleResetToDemo}
       onSearch={setSearchQuery}
       onTrashOpen={() => setIsTrashModalOpen(true)}
       onNewInformation={() => {
@@ -1478,7 +1588,11 @@ function App() {
               {currentView === 'usecases' ? 'Use Cases' :
                 currentView === 'testcases' ? 'Test Cases' :
                   currentView === 'information' ? 'Information' :
-                    'Requirements'}
+                    currentView === 'library-requirements' ? 'Requirements' :
+                      currentView === 'library-usecases' ? 'Use Cases' :
+                        currentView === 'library-testcases' ? 'Test Cases' :
+                          currentView === 'library-information' ? 'Information' :
+                            'Requirements'}
             </h2>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -1567,6 +1681,60 @@ function App() {
         )
       }
 
+      {/* Library Views - Show all artifacts from global pool */}
+      {
+        currentView === 'library-requirements' && (
+          <DetailedRequirementView
+            requirements={globalRequirements.filter(r => !r.isDeleted)}
+            onEdit={handleEdit}
+            visibleColumns={columnVisibility}
+            showProjectColumn={true}
+            projects={projects}
+          />
+        )
+      }
+
+      {
+        currentView === 'library-usecases' && (
+          <UseCaseList
+            useCases={globalUseCases.filter(u => !u.isDeleted)}
+            requirements={globalRequirements}
+            onEdit={handleEditUseCase}
+            onDelete={handleDeleteUseCase}
+            onBreakDown={handleBreakDownUseCase}
+            showProjectColumn={true}
+            projects={projects}
+          />
+        )
+      }
+
+      {
+        currentView === 'library-testcases' && (
+          <TestCaseList
+            testCases={globalTestCases.filter(t => !t.isDeleted)}
+            onEdit={(tc) => {
+              setSelectedTestCase(tc);
+              setIsEditTestCaseModalOpen(true);
+            }}
+            onDelete={handleDeleteTestCase}
+            showProjectColumn={true}
+            projects={projects}
+          />
+        )
+      }
+
+      {
+        currentView === 'library-information' && (
+          <InformationList
+            information={globalInformation.filter(i => !i.isDeleted)}
+            onEdit={handleEditInformation}
+            onDelete={handleDeleteInformation}
+            showProjectColumn={true}
+            projects={projects}
+          />
+        )
+      }
+
       <NewRequirementModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -1576,7 +1744,11 @@ function App() {
       <LinkModal
         isOpen={isLinkModalOpen}
         sourceRequirementId={selectedRequirementId}
-        requirements={requirements}
+        projects={projects}
+        currentProjectId={currentProjectId}
+        globalRequirements={globalRequirements}
+        globalUseCases={globalUseCases}
+        globalTestCases={globalTestCases}
         onClose={() => setIsLinkModalOpen(false)}
         onSubmit={handleAddLink}
       />
@@ -1587,6 +1759,9 @@ function App() {
             isOpen={isEditModalOpen}
             requirement={editingRequirement}
             allRequirements={requirements}
+            links={links}
+            projects={projects}
+            currentProjectId={currentProjectId}
             onClose={() => {
               setIsEditModalOpen(false);
               setEditingRequirement(null);
@@ -1673,11 +1848,26 @@ function App() {
         )
       }
 
-      <CreateProjectModal
-        isOpen={isCreateProjectModalOpen}
-        onClose={() => setIsCreateProjectModalOpen(false)}
-        onSubmit={handleCreateProjectSubmit}
-      />
+      {isCreateProjectModalOpen && (
+        <CreateProjectModal
+          isOpen={isCreateProjectModalOpen}
+          onClose={() => setIsCreateProjectModalOpen(false)}
+          onSubmit={handleCreateProjectSubmit}
+        />
+      )}
+
+      {isGlobalLibraryOpen && (
+        <GlobalLibraryModal
+          isOpen={isGlobalLibraryOpen}
+          onClose={() => setIsGlobalLibraryOpen(false)}
+          projects={projects}
+          currentProjectId={currentProjectId}
+          globalRequirements={globalRequirements}
+          globalUseCases={globalUseCases}
+          globalTestCases={globalTestCases}
+          onAddToProject={handleAddToProject}
+        />
+      )}
     </Layout >
   );
 }

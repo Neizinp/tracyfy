@@ -1,19 +1,31 @@
 import React from 'react';
 import { Edit2, Trash2, FileText, Calendar, Tag } from 'lucide-react';
-import type { Information } from '../types';
+import type { Information, Project } from '../types';
 import { formatDate } from '../utils/dateUtils';
 
 interface InformationListProps {
     information: Information[];
     onEdit: (info: Information) => void;
     onDelete: (id: string) => void;
+    showProjectColumn?: boolean;
+    projects?: Project[];
 }
 
 export const InformationList: React.FC<InformationListProps> = ({
     information,
     onEdit,
-    onDelete
+    onDelete,
+    showProjectColumn,
+    projects
 }) => {
+    const getProjectNames = (infoId: string) => {
+        if (!projects) return '';
+        return projects
+            .filter(p => p.informationIds.includes(infoId))
+            .map(p => p.name)
+            .join(', ');
+    };
+
     if (information.length === 0) {
         return (
             <div style={{
@@ -90,7 +102,20 @@ export const InformationList: React.FC<InformationListProps> = ({
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 'var(--spacing-md)', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                    <div style={{ display: 'flex', gap: 'var(--spacing-md)', fontSize: '0.875rem', color: 'var(--color-text-secondary)', flexWrap: 'wrap', alignItems: 'center' }}>
+                        {showProjectColumn && getProjectNames(info.id).split(', ').map((name, i) => (
+                            name && (
+                                <span key={i} style={{
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    backgroundColor: 'var(--color-bg-tertiary)',
+                                    border: '1px solid var(--color-border)',
+                                    color: 'var(--color-text-secondary)'
+                                }}>
+                                    {name}
+                                </span>
+                            )
+                        ))}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                             <Tag size={14} />
                             <span style={{ textTransform: 'capitalize' }}>{info.type}</span>

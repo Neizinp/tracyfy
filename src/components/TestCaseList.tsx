@@ -1,15 +1,23 @@
 import React from 'react';
 import { Edit2, Trash2 } from 'lucide-react';
-import type { TestCase } from '../types';
+import type { TestCase, Project } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 
 interface TestCaseListProps {
     testCases: TestCase[];
     onEdit: (testCase: TestCase) => void;
     onDelete: (id: string) => void;
+    showProjectColumn?: boolean;
+    projects?: Project[];
 }
 
-export const TestCaseList: React.FC<TestCaseListProps> = ({ testCases, onEdit, onDelete }) => {
+export const TestCaseList: React.FC<TestCaseListProps> = ({
+    testCases,
+    onEdit,
+    onDelete,
+    showProjectColumn,
+    projects
+}) => {
 
     const getStatusColor = (status: TestCase['status']) => {
         switch (status) {
@@ -19,6 +27,14 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({ testCases, onEdit, o
             case 'approved': return { bg: 'rgba(59, 130, 246, 0.2)', text: '#93c5fd' };
             default: return { bg: 'rgba(148, 163, 184, 0.2)', text: 'var(--color-text-secondary)' };
         }
+    };
+
+    const getProjectNames = (tcId: string) => {
+        if (!projects) return '';
+        return projects
+            .filter(p => p.testCaseIds.includes(tcId))
+            .map(p => p.name)
+            .join(', ');
     };
 
     return (
@@ -33,6 +49,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({ testCases, onEdit, o
                     <thead>
                         <tr style={{ backgroundColor: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)' }}>
                             <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '180px' }}>ID / Title</th>
+                            {showProjectColumn && <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '150px' }}>Project(s)</th>}
                             <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '250px' }}>Description</th>
                             <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '150px' }}>Requirements</th>
                             <th style={{ padding: '12px', textAlign: 'left', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-secondary)', width: '100px' }}>Priority</th>
@@ -44,7 +61,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({ testCases, onEdit, o
                     <tbody>
                         {testCases.length === 0 ? (
                             <tr>
-                                <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                                <td colSpan={showProjectColumn ? 8 : 7} style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
                                     No test cases found.
                                 </td>
                             </tr>
@@ -62,6 +79,26 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({ testCases, onEdit, o
                                             <span style={{ fontWeight: 500 }}>{tc.title}</span>
                                         </div>
                                     </td>
+                                    {showProjectColumn && (
+                                        <td style={{ padding: '12px', verticalAlign: 'top' }}>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                                {getProjectNames(tc.id).split(', ').map((name, i) => (
+                                                    name && (
+                                                        <span key={i} style={{
+                                                            fontSize: '0.75rem',
+                                                            padding: '2px 6px',
+                                                            borderRadius: '4px',
+                                                            backgroundColor: 'var(--color-bg-tertiary)',
+                                                            border: '1px solid var(--color-border)',
+                                                            color: 'var(--color-text-secondary)'
+                                                        }}>
+                                                            {name}
+                                                        </span>
+                                                    )
+                                                ))}
+                                            </div>
+                                        </td>
+                                    )}
                                     <td style={{ padding: '12px', verticalAlign: 'top', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
                                         {tc.description}
                                     </td>

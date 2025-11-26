@@ -1,6 +1,6 @@
-import { LayoutGrid, Settings, FolderOpen, Plus, Download, Upload, Clock, FileText, FileSpreadsheet, ChevronDown, Search, Trash2 } from 'lucide-react';
+import { LayoutGrid, Settings, FolderOpen, Plus, Download, Upload, Clock, FileText, FileSpreadsheet, ChevronDown, Search, Trash2, BookOpen } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-import type { Project } from '../types';
+import type { Project, ViewType } from '../types';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -19,11 +19,13 @@ interface LayoutProps {
     onExportPDF?: () => void;
     onExportExcel?: () => void;
     onImportExcel?: () => void;
+    onOpenGlobalLibrary?: () => void; // Added this line
+    onResetToDemo?: () => void; // Added for demo reset button
     onSearch?: (query: string) => void;
     onTrashOpen?: () => void;
     onNewInformation?: () => void;
-    currentView: 'tree' | 'detailed' | 'matrix' | 'usecases' | 'testcases' | 'information';
-    onSwitchView: (view: 'tree' | 'detailed' | 'matrix' | 'usecases' | 'testcases' | 'information') => void;
+    currentView: ViewType;
+    onSwitchView: (view: ViewType) => void;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -40,6 +42,8 @@ export const Layout: React.FC<LayoutProps> = ({
     onExport,
     onImport,
     onImportExcel,
+    onOpenGlobalLibrary, // Added this line
+    onResetToDemo,
     onViewHistory,
     onExportPDF,
     onExportExcel,
@@ -322,6 +326,97 @@ export const Layout: React.FC<LayoutProps> = ({
                                 }}
                             >
                                 <FileText size={18} />
+                                Information
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Library Navigation */}
+                    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                        <h2 style={{
+                            fontSize: '0.75rem',
+                            textTransform: 'uppercase',
+                            color: 'var(--color-text-muted)',
+                            letterSpacing: '0.05em',
+                            margin: '0 0 var(--spacing-sm) 0'
+                        }}>
+                            Library
+                        </h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <button
+                                onClick={() => onSwitchView('library-requirements')}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    padding: '8px 12px',
+                                    border: 'none',
+                                    background: currentView === 'library-requirements' ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: currentView === 'library-requirements' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    fontWeight: currentView === 'library-requirements' ? 500 : 400
+                                }}
+                            >
+                                <BookOpen size={18} />
+                                Requirements
+                            </button>
+                            <button
+                                onClick={() => onSwitchView('library-usecases')}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    padding: '8px 12px',
+                                    border: 'none',
+                                    background: currentView === 'library-usecases' ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: currentView === 'library-usecases' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    fontWeight: currentView === 'library-usecases' ? 500 : 400
+                                }}
+                            >
+                                <BookOpen size={18} />
+                                Use Cases
+                            </button>
+                            <button
+                                onClick={() => onSwitchView('library-testcases')}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    padding: '8px 12px',
+                                    border: 'none',
+                                    background: currentView === 'library-testcases' ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: currentView === 'library-testcases' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    fontWeight: currentView === 'library-testcases' ? 500 : 400
+                                }}
+                            >
+                                <BookOpen size={18} />
+                                Test Cases
+                            </button>
+                            <button
+                                onClick={() => onSwitchView('library-information')}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    padding: '8px 12px',
+                                    border: 'none',
+                                    background: currentView === 'library-information' ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: currentView === 'library-information' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    fontWeight: currentView === 'library-information' ? 500 : 400
+                                }}
+                            >
+                                <BookOpen size={18} />
                                 Information
                             </button>
                         </div>
@@ -654,6 +749,61 @@ export const Layout: React.FC<LayoutProps> = ({
                                         >
                                             <FileSpreadsheet size={16} />
                                             Import Excel
+                                        </button>
+                                    )}
+                                    {onOpenGlobalLibrary && (
+                                        <button
+                                            onClick={() => {
+                                                onOpenGlobalLibrary();
+                                                setIsImportMenuOpen(false);
+                                            }}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--spacing-sm)',
+                                                width: '100%',
+                                                padding: '0.75rem 1rem',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: 'var(--color-text-primary)',
+                                                cursor: 'pointer',
+                                                textAlign: 'left',
+                                                fontSize: '0.9rem',
+                                                borderTop: '1px solid var(--color-border)'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <FolderOpen size={16} />
+                                            Import from Project
+                                        </button>
+                                    )}
+                                    {onResetToDemo && (
+                                        <button
+                                            onClick={() => {
+                                                onResetToDemo();
+                                                setIsImportMenuOpen(false);
+                                            }}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--spacing-sm)',
+                                                width: '100%',
+                                                padding: '0.75rem 1rem',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: 'var(--color-accent)',
+                                                cursor: 'pointer',
+                                                textAlign: 'left',
+                                                fontSize: '0.9rem',
+                                                borderTop: '1px solid var(--color-border)',
+                                                fontWeight: 500
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <span style={{ fontSize: '1.1rem' }}>🎁</span>
+                                            Reset to Demo Data
                                         </button>
                                     )}
                                 </div>

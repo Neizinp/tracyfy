@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import type { Requirement } from '../types';
+import type { Requirement, Link, Project } from '../types';
 import { MarkdownEditor } from './MarkdownEditor';
 import { formatDateTime } from '../utils/dateUtils';
 
@@ -8,12 +8,25 @@ interface EditRequirementModalProps {
     isOpen: boolean;
     requirement: Requirement | null;
     allRequirements: Requirement[];
+    links: Link[];
+    projects: Project[];
+    currentProjectId: string;
     onClose: () => void;
     onSubmit: (id: string, updates: Partial<Requirement>) => void;
     onDelete: (id: string) => void;
 }
 
-export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOpen, requirement, allRequirements, onClose, onSubmit, onDelete }) => {
+export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
+    isOpen,
+    requirement,
+    allRequirements,
+    links,
+    projects,
+    currentProjectId,
+    onClose,
+    onSubmit,
+    onDelete
+}) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [text, setText] = useState('');
@@ -412,6 +425,80 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({ isOp
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>
                             Select parent requirements. This requirement will appear under all selected parents.
+                        </div>
+                    </div>
+
+                    {/* Links Section */}
+                    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>
+                            Linked Items
+                        </label>
+                        <div style={{
+                            border: '1px solid var(--color-border)',
+                            borderRadius: '6px',
+                            padding: '8px',
+                            backgroundColor: 'var(--color-bg-app)',
+                            minHeight: '50px'
+                        }}>
+                            {links.filter(l => l.sourceId === requirement.id || l.targetId === requirement.id).length === 0 ? (
+                                <div style={{ padding: '8px', color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+                                    No links found. Use the "Link" button in the main view to create links.
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    {links.filter(l => l.sourceId === requirement.id || l.targetId === requirement.id).map(link => {
+                                        const isSource = link.sourceId === requirement.id;
+                                        const otherId = isSource ? link.targetId : link.sourceId;
+                                        const otherProjectId = isSource ? link.targetProjectId : link.sourceProjectId;
+
+                                        // Find project name if external
+                                        const otherProject = otherProjectId ? projects.find(p => p.id === otherProjectId) : null;
+                                        const projectName = otherProject ? otherProject.name : (otherProjectId ? 'Unknown Project' : 'Current Project');
+                                        const isExternal = !!otherProjectId && otherProjectId !== currentProjectId;
+
+                                        return (
+                                            <div key={link.id} style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: '6px 8px',
+                                                backgroundColor: 'var(--color-bg-card)',
+                                                borderRadius: '4px',
+                                                border: '1px solid var(--color-border)'
+                                            }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.875rem' }}>
+                                                    <span style={{
+                                                        padding: '2px 6px',
+                                                        borderRadius: '4px',
+                                                        backgroundColor: 'var(--color-bg-secondary)',
+                                                        fontSize: '0.75rem',
+                                                        fontFamily: 'monospace'
+                                                    }}>
+                                                        {link.type.replace('_', ' ')}
+                                                    </span>
+                                                    <span style={{ color: 'var(--color-text-secondary)' }}>
+                                                        {isSource ? '→' : '←'}
+                                                    </span>
+                                                    <span style={{ fontWeight: 500 }}>
+                                                        {otherId}
+                                                    </span>
+                                                    {isExternal && (
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            color: 'var(--color-accent)',
+                                                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                                            padding: '2px 6px',
+                                                            borderRadius: '10px'
+                                                        }}>
+                                                            {projectName}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
 

@@ -69,6 +69,8 @@ export interface Link {
   id: string;
   sourceId: string;
   targetId: string;
+  targetProjectId?: string; // If missing, assumes current project
+  sourceProjectId?: string; // If missing, assumes current project
   type: 'relates_to' | 'depends_on' | 'conflicts_with';
   description?: string;
 }
@@ -77,12 +79,25 @@ export interface Project {
   id: string;
   name: string;
   description: string;
+  requirementIds: string[];
+  useCaseIds: string[];
+  testCaseIds: string[];
+  informationIds: string[];
+  // Links are now global, so we don't strictly need them here, 
+  // but keeping a reference might be useful for project-specific views if we ever want to scope them tightly.
+  // For now, let's remove them from Project as per plan, or keep them as IDs if we want "Project owns these links".
+  // The plan said "Links are now global", implying they exist outside of projects. 
+  // However, usually links belong to the artifacts they link. 
+  // Let's keep it simple: Links are global. We can derive relevant links by checking if source/target is in the project.
+  lastModified: number;
+}
+
+export interface GlobalState {
   requirements: Requirement[];
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
   links: Link[];
-  lastModified: number;
 }
 
 export interface Version {
@@ -113,3 +128,15 @@ export interface ColumnVisibility {
   created: boolean;
   approved: boolean;
 }
+
+export type ViewType =
+  | 'tree'
+  | 'detailed'
+  | 'matrix'
+  | 'usecases'
+  | 'testcases'
+  | 'information'
+  | 'library-requirements'
+  | 'library-usecases'
+  | 'library-testcases'
+  | 'library-information';

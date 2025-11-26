@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, Edit, Trash2, FileText } from 'lucide-react';
-import type { UseCase, Requirement } from '../types';
+import type { UseCase, Requirement, Project } from '../types';
 
 interface UseCaseListProps {
     useCases: UseCase[];
@@ -8,9 +8,19 @@ interface UseCaseListProps {
     onEdit: (useCase: UseCase) => void;
     onDelete: (id: string) => void;
     onBreakDown: (useCase: UseCase) => void;
+    showProjectColumn?: boolean;
+    projects?: Project[];
 }
 
-export const UseCaseList: React.FC<UseCaseListProps> = ({ useCases, requirements, onEdit, onDelete, onBreakDown }) => {
+export const UseCaseList: React.FC<UseCaseListProps> = ({
+    useCases,
+    requirements,
+    onEdit,
+    onDelete,
+    onBreakDown,
+    showProjectColumn,
+    projects
+}) => {
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
     const toggleExpand = (id: string) => {
@@ -26,6 +36,14 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({ useCases, requirements
     // Get requirements linked to a use case
     const getLinkedRequirements = (useCaseId: string): Requirement[] => {
         return requirements.filter(req => req.useCaseIds?.includes(useCaseId));
+    };
+
+    const getProjectNames = (ucId: string) => {
+        if (!projects) return '';
+        return projects
+            .filter(p => p.useCaseIds.includes(ucId))
+            .map(p => p.name)
+            .join(', ');
     };
 
     const getPriorityColor = (priority: string) => {
@@ -100,7 +118,20 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({ useCases, requirements
                                     </span>
                                     <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>{useCase.title}</h3>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', fontSize: '0.75rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', fontSize: '0.75rem', flexWrap: 'wrap' }}>
+                                    {showProjectColumn && getProjectNames(useCase.id).split(', ').map((name, i) => (
+                                        name && (
+                                            <span key={i} style={{
+                                                padding: '2px 6px',
+                                                borderRadius: '4px',
+                                                backgroundColor: 'var(--color-bg-tertiary)',
+                                                border: '1px solid var(--color-border)',
+                                                color: 'var(--color-text-secondary)'
+                                            }}>
+                                                {name}
+                                            </span>
+                                        )
+                                    ))}
                                     <span style={{
                                         padding: '2px 8px',
                                         borderRadius: '4px',
