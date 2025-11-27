@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus } from 'lucide-react';
-import type { Project, Requirement, UseCase, TestCase } from '../types';
+import type { Project, Requirement, UseCase, TestCase, Information } from '../types';
 
 interface GlobalLibraryModalProps {
     isOpen: boolean;
@@ -10,7 +10,8 @@ interface GlobalLibraryModalProps {
     globalRequirements: Requirement[];
     globalUseCases: UseCase[];
     globalTestCases: TestCase[];
-    onAddToProject: (artifacts: { requirements: string[], useCases: string[], testCases: string[] }) => void;
+    globalInformation: Information[];
+    onAddToProject: (artifacts: { requirements: string[], useCases: string[], testCases: string[], information: string[] }) => void;
 }
 
 type FilterMode = 'all' | 'unassigned' | 'project';
@@ -23,6 +24,7 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
     globalRequirements,
     globalUseCases,
     globalTestCases,
+    globalInformation,
     onAddToProject
 }) => {
     const [filterMode, setFilterMode] = useState<FilterMode>('all');
@@ -32,6 +34,7 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
     const [selectedRequirements, setSelectedRequirements] = useState<Set<string>>(new Set());
     const [selectedUseCases, setSelectedUseCases] = useState<Set<string>>(new Set());
     const [selectedTestCases, setSelectedTestCases] = useState<Set<string>>(new Set());
+    const [selectedInformation, setSelectedInformation] = useState<Set<string>>(new Set());
 
     // Reset selection when modal opens
     useEffect(() => {
@@ -41,7 +44,9 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
             setSearchQuery('');
             setSelectedRequirements(new Set());
             setSelectedUseCases(new Set());
+            setSelectedUseCases(new Set());
             setSelectedTestCases(new Set());
+            setSelectedInformation(new Set());
         }
     }, [isOpen]);
 
@@ -53,7 +58,8 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
         if (!project) return false;
         return project.requirementIds.includes(artifactId) ||
             project.useCaseIds.includes(artifactId) ||
-            project.testCaseIds.includes(artifactId);
+            project.testCaseIds.includes(artifactId) ||
+            project.informationIds.includes(artifactId);
     };
 
     // Helper to check if an artifact is assigned to ANY project
@@ -61,7 +67,8 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
         return projects.some(p =>
             p.requirementIds.includes(artifactId) ||
             p.useCaseIds.includes(artifactId) ||
-            p.testCaseIds.includes(artifactId)
+            p.testCaseIds.includes(artifactId) ||
+            p.informationIds.includes(artifactId)
         );
     };
 
@@ -70,20 +77,23 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
         let reqs = globalRequirements;
         let ucs = globalUseCases;
         let tcs = globalTestCases;
+        let info = globalInformation;
 
         // 1. Apply Mode Filter
         if (filterMode === 'unassigned') {
             reqs = reqs.filter(r => !isAssignedToAnyProject(r.id));
             ucs = ucs.filter(u => !isAssignedToAnyProject(u.id));
             tcs = tcs.filter(t => !isAssignedToAnyProject(t.id));
+            info = info.filter(i => !isAssignedToAnyProject(i.id));
         } else if (filterMode === 'project' && selectedProjectId) {
             const proj = projects.find(p => p.id === selectedProjectId);
             if (proj) {
                 reqs = reqs.filter(r => proj.requirementIds.includes(r.id));
                 ucs = ucs.filter(u => proj.useCaseIds.includes(u.id));
                 tcs = tcs.filter(t => proj.testCaseIds.includes(t.id));
+                info = info.filter(i => proj.informationIds.includes(i.id));
             } else {
-                reqs = []; ucs = []; tcs = [];
+                reqs = []; ucs = []; tcs = []; info = [];
             }
         }
 
@@ -103,12 +113,16 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
                 t.id.toLowerCase().includes(query) ||
                 t.title.toLowerCase().includes(query)
             );
+            info = info.filter(i =>
+                i.id.toLowerCase().includes(query) ||
+                i.title.toLowerCase().includes(query)
+            );
         }
 
-        return { reqs, ucs, tcs };
+        return { reqs, ucs, tcs, info };
     };
 
-    const { reqs: filteredReqs, ucs: filteredUCs, tcs: filteredTCs } = getFilteredArtifacts();
+    const { reqs: filteredReqs, ucs: filteredUCs, tcs: filteredTCs, info: filteredInfo } = getFilteredArtifacts();
 
     const handleToggleRequirement = (id: string) => {
         const newSet = new Set(selectedRequirements);
@@ -131,11 +145,19 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
         setSelectedTestCases(newSet);
     };
 
+    const handleToggleInformation = (id: string) => {
+        const newSet = new Set(selectedInformation);
+        if (newSet.has(id)) newSet.delete(id);
+        else newSet.add(id);
+        setSelectedInformation(newSet);
+    };
+
     const handleAdd = () => {
         onAddToProject({
             requirements: Array.from(selectedRequirements),
             useCases: Array.from(selectedUseCases),
-            testCases: Array.from(selectedTestCases)
+            testCases: Array.from(selectedTestCases),
+            information: Array.from(selectedInformation)
         });
         onClose();
     };
@@ -212,7 +234,7 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
 
                 {/* Content Grid */}
                 <div className="flex-1 overflow-hidden p-6">
-                    <div className="grid grid-cols-3 gap-6 h-full">
+                    <div className="grid grid-cols-4 gap-6 h-full">
                         {/* Requirements Column */}
                         <div className="flex flex-col bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
                             <div className="p-3 bg-gray-700/50 border-b border-gray-700 flex justify-between items-center">
@@ -226,8 +248,8 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
                                         <div
                                             key={req.id}
                                             className={`p-3 rounded border transition-all ${selectedRequirements.has(req.id)
-                                                    ? 'bg-blue-900/30 border-blue-500/50'
-                                                    : 'bg-gray-700/30 border-gray-700 hover:bg-gray-700'
+                                                ? 'bg-blue-900/30 border-blue-500/50'
+                                                : 'bg-gray-700/30 border-gray-700 hover:bg-gray-700'
                                                 } ${inCurrent ? 'opacity-50' : ''}`}
                                         >
                                             <div className="flex items-start gap-3">
@@ -267,8 +289,8 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
                                         <div
                                             key={uc.id}
                                             className={`p-3 rounded border transition-all ${selectedUseCases.has(uc.id)
-                                                    ? 'bg-purple-900/30 border-purple-500/50'
-                                                    : 'bg-gray-700/30 border-gray-700 hover:bg-gray-700'
+                                                ? 'bg-purple-900/30 border-purple-500/50'
+                                                : 'bg-gray-700/30 border-gray-700 hover:bg-gray-700'
                                                 } ${inCurrent ? 'opacity-50' : ''}`}
                                         >
                                             <div className="flex items-start gap-3">
@@ -307,8 +329,8 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
                                         <div
                                             key={tc.id}
                                             className={`p-3 rounded border transition-all ${selectedTestCases.has(tc.id)
-                                                    ? 'bg-green-900/30 border-green-500/50'
-                                                    : 'bg-gray-700/30 border-gray-700 hover:bg-gray-700'
+                                                ? 'bg-green-900/30 border-green-500/50'
+                                                : 'bg-gray-700/30 border-gray-700 hover:bg-gray-700'
                                                 } ${inCurrent ? 'opacity-50' : ''}`}
                                         >
                                             <div className="flex items-start gap-3">
@@ -333,13 +355,53 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
                                 {filteredTCs.length === 0 && <div className="text-center text-gray-500 py-8 italic">No test cases found</div>}
                             </div>
                         </div>
+
+                        {/* Information Column */}
+                        <div className="flex flex-col bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                            <div className="p-3 bg-gray-700/50 border-b border-gray-700 flex justify-between items-center">
+                                <h3 className="font-medium text-yellow-400">Information</h3>
+                                <span className="text-xs bg-gray-700 px-2 py-0.5 rounded text-gray-300">{filteredInfo.length}</span>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                                {filteredInfo.map(info => {
+                                    const inCurrent = isInProject(info.id, currentProjectId);
+                                    return (
+                                        <div
+                                            key={info.id}
+                                            className={`p-3 rounded border transition-all ${selectedInformation.has(info.id)
+                                                ? 'bg-yellow-900/30 border-yellow-500/50'
+                                                : 'bg-gray-700/30 border-gray-700 hover:bg-gray-700'
+                                                } ${inCurrent ? 'opacity-50' : ''}`}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedInformation.has(info.id) || inCurrent}
+                                                    onChange={() => !inCurrent && handleToggleInformation(info.id)}
+                                                    disabled={inCurrent}
+                                                    className="mt-1"
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex justify-between items-start">
+                                                        <span className="text-xs font-mono text-yellow-400">{info.id}</span>
+                                                        {inCurrent && <span className="text-[10px] bg-green-900 text-green-300 px-1.5 rounded">Added</span>}
+                                                    </div>
+                                                    <div className="text-sm text-gray-200 font-medium truncate">{info.title}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                {filteredInfo.length === 0 && <div className="text-center text-gray-500 py-8 italic">No information found</div>}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 {/* Footer */}
                 <div className="p-6 border-t border-gray-700 bg-gray-800 rounded-b-lg flex justify-between items-center">
                     <div className="text-sm text-gray-400">
-                        Selected: <span className="text-white font-medium">{selectedRequirements.size}</span> Requirements, <span className="text-white font-medium">{selectedUseCases.size}</span> Use Cases, <span className="text-white font-medium">{selectedTestCases.size}</span> Test Cases
+                        Selected: <span className="text-white font-medium">{selectedRequirements.size}</span> Reqs, <span className="text-white font-medium">{selectedUseCases.size}</span> UCs, <span className="text-white font-medium">{selectedTestCases.size}</span> TCs, <span className="text-white font-medium">{selectedInformation.size}</span> Info
                     </div>
                     <div className="flex gap-3">
                         <button
@@ -350,7 +412,7 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
                         </button>
                         <button
                             onClick={handleAdd}
-                            disabled={selectedRequirements.size === 0 && selectedUseCases.size === 0 && selectedTestCases.size === 0}
+                            disabled={selectedRequirements.size === 0 && selectedUseCases.size === 0 && selectedTestCases.size === 0 && selectedInformation.size === 0}
                             className="px-6 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
                         >
                             <Plus size={18} />

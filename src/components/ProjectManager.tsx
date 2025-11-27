@@ -133,8 +133,8 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
                                     </div>
                                     <p className="mt-1 text-sm text-gray-500 truncate">{project.description || 'No description'}</p>
                                     <div className="mt-2 flex items-center text-xs text-gray-500 space-x-4">
-                                        <span>{project.requirements.length} Requirements</span>
-                                        <span>{project.useCases.length} Use Cases</span>
+                                        <span>{project.requirementIds.length} Requirements</span>
+                                        <span>{project.useCaseIds.length} Use Cases</span>
                                         <span>Last modified: {formatDate(project.lastModified)}</span>
                                     </div>
                                 </div>

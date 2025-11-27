@@ -18,4 +18,6 @@ export * from './InformationList';
 export { InformationModal } from './InformationModal';
 export { ColumnSelector } from './ColumnSelector';
 export { GlobalLibraryModal } from './GlobalLibraryModal';
+export { GlobalLibraryPanel } from './GlobalLibraryPanel';
 export * from './MarkdownEditor';
+export * from './ProjectSidebarItem';

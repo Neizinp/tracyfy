@@ -1,4 +1,5 @@
-import { LayoutGrid, Settings, FolderOpen, Plus, Download, Upload, Clock, FileText, FileSpreadsheet, ChevronDown, Search, Trash2, BookOpen } from 'lucide-react';
+import { LayoutGrid, FolderOpen, Plus, Download, Upload, Clock, FileText, FileSpreadsheet, ChevronDown, Search, Trash2, BookOpen } from 'lucide-react';
+import { ProjectSidebarItem } from './ProjectSidebarItem';
 import { useState, useRef, useEffect } from 'react';
 import type { Project, ViewType } from '../types';
 
@@ -26,6 +27,8 @@ interface LayoutProps {
     onNewInformation?: () => void;
     currentView: ViewType;
     onSwitchView: (view: ViewType) => void;
+    rightPanel?: React.ReactNode;
+    onOpenLibrary?: (tab: 'requirements' | 'usecases' | 'testcases' | 'information') => void;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -51,7 +54,9 @@ export const Layout: React.FC<LayoutProps> = ({
     onTrashOpen,
     onNewInformation,
     currentView,
-    onSwitchView
+    onSwitchView,
+    rightPanel,
+    onOpenLibrary
 }) => {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
@@ -136,68 +141,13 @@ export const Layout: React.FC<LayoutProps> = ({
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
                             {projects.map(project => (
-                                <div
+                                <ProjectSidebarItem
                                     key={project.id}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 'var(--spacing-xs)',
-                                        padding: 'var(--spacing-sm)',
-                                        backgroundColor: project.id === currentProjectId ? 'var(--color-bg-hover)' : 'transparent',
-                                        borderRadius: '6px',
-                                        cursor: 'pointer',
-                                        position: 'relative'
-                                    }}
-                                    className="group"
-                                >
-                                    <button
-                                        onClick={() => onSwitchProject(project.id)}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 'var(--spacing-sm)',
-                                            border: 'none',
-                                            background: 'none',
-                                            color: project.id === currentProjectId ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                                            flex: 1,
-                                            textAlign: 'left',
-                                            cursor: 'pointer',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap',
-                                            fontWeight: project.id === currentProjectId ? 600 : 400
-                                        }}
-                                    >
-                                        <FolderOpen size={18} />
-                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{project.name}</span>
-                                    </button>
-
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onOpenProjectSettings(project);
-                                        }}
-                                        style={{
-                                            background: 'none',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            color: 'var(--color-text-muted)',
-                                            padding: '4px',
-                                            borderRadius: '4px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            opacity: project.id === currentProjectId ? 1 : 0,
-                                            transition: 'opacity 0.2s'
-                                        }}
-                                        className="group-hover:opacity-100"
-                                        title="Project Settings"
-                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                    >
-                                        <Settings size={14} />
-                                    </button>
-                                </div>
+                                    project={project}
+                                    isActive={project.id === currentProjectId}
+                                    onSwitchProject={onSwitchProject}
+                                    onOpenProjectSettings={onOpenProjectSettings}
+                                />
                             ))}
                         </div>
                     </div>
@@ -344,76 +294,76 @@ export const Layout: React.FC<LayoutProps> = ({
                         </h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             <button
-                                onClick={() => onSwitchView('library-requirements')}
+                                onClick={() => onOpenLibrary?.('requirements')}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
                                     border: 'none',
-                                    background: currentView === 'library-requirements' ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: currentView === 'library-requirements' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    background: 'transparent',
+                                    color: 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: currentView === 'library-requirements' ? 500 : 400
+                                    fontWeight: 400
                                 }}
                             >
                                 <BookOpen size={18} />
                                 Requirements
                             </button>
                             <button
-                                onClick={() => onSwitchView('library-usecases')}
+                                onClick={() => onOpenLibrary?.('usecases')}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
                                     border: 'none',
-                                    background: currentView === 'library-usecases' ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: currentView === 'library-usecases' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    background: 'transparent',
+                                    color: 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: currentView === 'library-usecases' ? 500 : 400
+                                    fontWeight: 400
                                 }}
                             >
                                 <BookOpen size={18} />
                                 Use Cases
                             </button>
                             <button
-                                onClick={() => onSwitchView('library-testcases')}
+                                onClick={() => onOpenLibrary?.('testcases')}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
                                     border: 'none',
-                                    background: currentView === 'library-testcases' ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: currentView === 'library-testcases' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    background: 'transparent',
+                                    color: 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: currentView === 'library-testcases' ? 500 : 400
+                                    fontWeight: 400
                                 }}
                             >
                                 <BookOpen size={18} />
                                 Test Cases
                             </button>
                             <button
-                                onClick={() => onSwitchView('library-information')}
+                                onClick={() => onOpenLibrary?.('information')}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
                                     border: 'none',
-                                    background: currentView === 'library-information' ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: currentView === 'library-information' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    background: 'transparent',
+                                    color: 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: currentView === 'library-information' ? 500 : 400
+                                    fontWeight: 400
                                 }}
                             >
                                 <BookOpen size={18} />
@@ -477,6 +427,7 @@ export const Layout: React.FC<LayoutProps> = ({
                     )}
 
                     <div style={{ display: 'flex', gap: '8px' }}>
+
                         {/* Create New Dropdown */}
                         <div style={{ position: 'relative' }} ref={createMenuRef}>
                             <button
@@ -931,11 +882,23 @@ export const Layout: React.FC<LayoutProps> = ({
                 </header>
 
                 {/* Content Area */}
-                <div style={{ flex: 1, overflow: 'auto', padding: 'var(--spacing-lg)' }}>
-                    {children}
+                <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+                    <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                        {children}
+                    </div>
+                    {rightPanel && (
+                        <div style={{
+                            width: '350px',
+                            borderLeft: '1px solid var(--color-border)',
+                            backgroundColor: 'var(--color-bg-secondary)',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}>
+                            {rightPanel}
+                        </div>
+                    )}
                 </div>
             </main>
         </div >
     );
 };
-

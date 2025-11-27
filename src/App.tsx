@@ -19,14 +19,17 @@ import {
   InformationList,
   InformationModal,
   ColumnSelector,
-  GlobalLibraryModal
+  GlobalLibraryPanel
 } from './components';
+import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor, KeyboardSensor, closestCenter } from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
 import type { Requirement, RequirementTreeNode, Link, UseCase, TestCase, Information, Version, Project, ColumnVisibility, GlobalState, ViewType } from './types';
 import { mockRequirements, mockUseCases, mockTestCases, mockInformation, mockLinks } from './mockData';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { formatDateTime, formatDate } from './utils/dateUtils';
+import { formatDateTime } from './utils/dateUtils';
 
 const PROJECTS_KEY = 'reqtrace-projects';
 const CURRENT_PROJECT_KEY = 'reqtrace-current-project-id';
@@ -269,7 +272,22 @@ function App() {
   const [isProjectSettingsOpen, setIsProjectSettingsOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
-  const [isGlobalLibraryOpen, setIsGlobalLibraryOpen] = useState(false);
+
+  const [isLibraryPanelOpen, setIsLibraryPanelOpen] = useState(false);
+  const [activeLibraryTab, setActiveLibraryTab] = useState<'requirements' | 'usecases' | 'testcases' | 'information'>('requirements');
+  const [activeDragItem, setActiveDragItem] = useState<any>(null);
+  const [globalLibrarySelection, setGlobalLibrarySelection] = useState<Set<string>>(new Set());
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Ref to track if this is the initial mount
   const isInitialMount = useRef(true);
@@ -511,53 +529,64 @@ function App() {
     window.location.reload();
   };
 
-  const handleAddToProject = (artifacts: { requirements: string[], useCases: string[], testCases: string[] }) => {
+  const handleAddToProject = (
+    artifacts: { requirements: string[], useCases: string[], testCases: string[], information: string[] },
+    targetProjectId: string = currentProjectId
+  ) => {
     setProjects(prev => prev.map(p => {
-      if (p.id !== currentProjectId) return p;
+      if (p.id !== targetProjectId) return p;
 
       // Add IDs if not already present
       const newReqIds = Array.from(new Set([...p.requirementIds, ...artifacts.requirements]));
       const newUcIds = Array.from(new Set([...p.useCaseIds, ...artifacts.useCases]));
       const newTcIds = Array.from(new Set([...p.testCaseIds, ...artifacts.testCases]));
+      const newInfoIds = Array.from(new Set([...p.informationIds, ...artifacts.information]));
 
       return {
         ...p,
         requirementIds: newReqIds,
         useCaseIds: newUcIds,
         testCaseIds: newTcIds,
+        informationIds: newInfoIds,
         lastModified: Date.now()
       };
     }));
 
-    // Also update local state to reflect changes immediately
-    // (The useEffect will sync this back to projects, but we want immediate UI update)
-    // Actually, the useEffect [currentProjectId, projects] might handle it if we update projects?
-    // Let's rely on the useEffect that updates local state when project changes?
-    // No, that useEffect runs when currentProjectId changes.
-    // We need to update local state here too, OR trigger a reload.
-    // The easiest way is to update local state, and let the sync-back effect update the project.
-    // BUT, my handleAddToProject updates PROJECT directly.
-    // The sync effect (lines 356-393) goes Local State -> Global State & Project.
-    // So if I update Project directly, it might get overwritten by Local State -> Project sync?
-    // Let's check:
-    // useEffect [requirements, ...] updates setProjects.
-    // So if I update projects here, and then local state doesn't change, the next render might overwrite projects with old local state?
-    // YES.
-    // So I should update LOCAL STATE here.
+    // Also update local state to reflect changes immediately IF it's the current project
+    if (targetProjectId === currentProjectId) {
+      // Filter global artifacts by the new IDs
+      const newReqs = globalRequirements.filter(r => artifacts.requirements.includes(r.id) || requirements.some(existing => existing.id === r.id));
+      const newUCs = globalUseCases.filter(u => artifacts.useCases.includes(u.id) || useCases.some(existing => existing.id === u.id));
+      const newTCs = globalTestCases.filter(t => artifacts.testCases.includes(t.id) || testCases.some(existing => existing.id === t.id));
+      const newInfo = globalInformation.filter(i => artifacts.information.includes(i.id) || information.some(existing => existing.id === i.id));
 
-    // Filter global artifacts by the new IDs
-    const newReqs = globalRequirements.filter(r => artifacts.requirements.includes(r.id) || requirements.some(existing => existing.id === r.id));
-    const newUCs = globalUseCases.filter(u => artifacts.useCases.includes(u.id) || useCases.some(existing => existing.id === u.id));
-    const newTCs = globalTestCases.filter(t => artifacts.testCases.includes(t.id) || testCases.some(existing => existing.id === t.id));
-
-    setRequirements(newReqs);
-    setUseCases(newUCs);
-    setTestCases(newTCs);
+      setRequirements(newReqs);
+      setUseCases(newUCs);
+      setTestCases(newTCs);
+      setInformation(newInfo);
+    }
 
     // The sync effect will then update the Project object.
 
     createVersionSnapshot('Added artifacts from Global Library', 'auto-save');
-    alert(`Added ${artifacts.requirements.length} Requirements, ${artifacts.useCases.length} Use Cases, and ${artifacts.testCases.length} Test Cases to the project.`);
+    // alert(`Added ${artifacts.requirements.length} Requirements, ${artifacts.useCases.length} Use Cases, ${artifacts.testCases.length} Test Cases, and ${artifacts.information.length} Information items to the project.`);
+  };
+
+  const handleGlobalLibrarySelect = (id: string) => {
+    setGlobalLibrarySelection(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleOpenLibrary = (tab: 'requirements' | 'usecases' | 'testcases' | 'information') => {
+    setActiveLibraryTab(tab);
+    setIsLibraryPanelOpen(true);
   };
 
   // Auto-save used numbers to LocalStorage whenever they change
@@ -822,471 +851,8 @@ function App() {
     input.click();
   };
 
-  // Helper to trigger file download
-  const triggerDownload = async (blob: Blob, filename: string) => {
-    try {
-      // Try to use the File System Access API if available
-      if ('showSaveFilePicker' in window) {
-        try {
-          const handle = await (window as any).showSaveFilePicker({
-            suggestedName: filename,
-            types: [{
-              description: 'Exported File',
-              accept: {
-                [blob.type]: [`.${filename.split('.').pop()}`]
-              }
-            }]
-          });
-          const writable = await handle.createWritable();
-          await writable.write(blob);
-          await writable.close();
-          return;
-        } catch (err: any) {
-          // If user cancelled, don't do anything
-          if (err.name === 'AbortError') return;
-          // If other error, fall back to default download
-          console.warn('File System Access API failed, falling back to download:', err);
-        }
-      }
 
-      // Fallback to default download
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
 
-      setTimeout(() => {
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      }, 500);
-    } catch (error) {
-      console.error('Download failed:', error);
-      alert('Failed to trigger download. Please check your browser settings.');
-    }
-  };
-
-  // Export data as PDF
-  const handleExportPDF = () => {
-    try {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 14;
-
-      // Track page numbers for TOC
-      const pageNumbers: { [key: string]: number } = {};
-
-      // Helper function to add page footer
-      const addFooter = () => {
-        doc.setFontSize(8);
-        doc.setTextColor(128, 128, 128);
-        doc.text(
-          `Page ${doc.getCurrentPageInfo().pageNumber}`,
-          pageWidth / 2,
-          pageHeight - 10,
-          { align: 'center' }
-        );
-        doc.setTextColor(0, 0, 0);
-      };
-
-      // Title Page
-      doc.setFontSize(24);
-      doc.text('Requirements Document', pageWidth / 2, 30, { align: 'center' });
-
-      doc.setFontSize(12);
-      doc.text(currentProject.name, pageWidth / 2, 45, { align: 'center' });
-      doc.text(`Generated: ${formatDate(Date.now())}`, pageWidth / 2, 55, { align: 'center' });
-
-      doc.setFontSize(10);
-      doc.text(`Total Requirements: ${requirements.length}`, pageWidth / 2, 70, { align: 'center' });
-      doc.text(`Total Use Cases: ${useCases.length}`, pageWidth / 2, 77, { align: 'center' });
-      doc.text(`Total Links: ${links.length}`, pageWidth / 2, 84, { align: 'center' });
-
-      addFooter();
-
-      // Revision History Section
-      doc.addPage();
-      pageNumbers.revisionHistory = doc.getCurrentPageInfo().pageNumber;
-
-      doc.setFontSize(18);
-      doc.text('Revision History', margin, 20);
-
-      // Get baseline versions (most recent 10)
-      const baselineVersions = versions
-        .filter(v => v.type === 'baseline')
-        .slice(0, 10);
-
-      // Add current export as first entry
-      const revisionData = [
-        [formatDateTime(Date.now()), 'Current', 'PDF Export Generated'],
-        ...baselineVersions.map(v => [
-          formatDateTime(v.timestamp),
-          v.tag || `v-${v.id.substring(2, 8)}`,
-          v.message
-        ])
-      ];
-
-      autoTable(doc, {
-        startY: 30,
-        head: [['Date', 'Version', 'Description']],
-        body: revisionData,
-        styles: { fontSize: 9, cellPadding: 3 },
-        headStyles: { fillColor: [99, 102, 241], textColor: 255 },
-        columnStyles: {
-          0: { cellWidth: 45 },
-          1: { cellWidth: 30 },
-          2: { cellWidth: 'auto' }
-        },
-        didDrawPage: addFooter
-      });
-
-      // Table of Contents
-      doc.addPage();
-      pageNumbers.toc = doc.getCurrentPageInfo().pageNumber;
-
-      doc.setFontSize(18);
-      doc.text('Table of Contents', margin, 20);
-
-      doc.setFontSize(11);
-      let tocY = 40;
-      const tocEntries: Array<{ title: string, page: string }> = [
-        { title: 'Revision History', page: String(pageNumbers.revisionHistory) }
-      ];
-
-      // Add entries for sections we'll create later
-      // We'll fill in the page numbers after creating the sections
-      const tocPlaceholders = [
-        'Requirements Overview',
-        'Detailed Requirements',
-        ...(useCases.length > 0 ? ['Use Cases'] : []),
-        ...(links.length > 0 ? ['Requirement Links'] : [])
-      ];
-
-      tocPlaceholders.forEach(title => {
-        tocEntries.push({ title, page: '___' }); // Placeholder
-      });
-
-      tocEntries.forEach((entry, index) => {
-        if (index > 0) { // Skip revision history as we already know its page
-          doc.setTextColor(99, 102, 241);
-          doc.textWithLink(entry.title, margin, tocY, {
-            pageNumber: parseInt(entry.page) || 1
-          });
-          doc.setTextColor(0, 0, 0);
-        } else {
-          doc.setTextColor(99, 102, 241);
-          doc.textWithLink(entry.title, margin, tocY, {
-            pageNumber: parseInt(entry.page)
-          });
-          doc.setTextColor(0, 0, 0);
-        }
-
-        const pageNumText = entry.page === '___' ? '...' : entry.page;
-        doc.text(pageNumText, pageWidth - margin, tocY, { align: 'right' });
-        tocY += 10;
-      });
-
-      addFooter();
-
-      // Requirements Overview Section
-      doc.addPage();
-      pageNumbers.requirementsOverview = doc.getCurrentPageInfo().pageNumber;
-
-      doc.setFontSize(16);
-      doc.text('Requirements Overview', margin, 20);
-
-      const reqTableData = requirements
-        .filter(r => !r.isDeleted)
-        .map(req => [
-          req.id,
-          req.title,
-          req.status,
-          req.priority,
-          req.description || '',
-          req.parentIds.join(', ') || 'None'
-        ]);
-
-      autoTable(doc, {
-        startY: 30,
-        head: [['ID', 'Title', 'Status', 'Priority', 'Description', 'Parents']],
-        body: reqTableData,
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [99, 102, 241], textColor: 255 },
-        margin: { left: 10, right: 10 },
-        columnStyles: {
-          0: { cellWidth: 25 },  // Wider ID column
-          1: { cellWidth: 40 },
-          2: { cellWidth: 18 },
-          3: { cellWidth: 18 },
-          4: { cellWidth: 45 },
-          5: { cellWidth: 20 }
-        },
-        didDrawPage: addFooter
-      });
-
-      // Detailed Requirements Section (without page breaks between requirements)
-      doc.addPage();
-      pageNumbers.detailedRequirements = doc.getCurrentPageInfo().pageNumber;
-
-      doc.setFontSize(16);
-      doc.text('Detailed Requirements', margin, 20);
-
-      let currentY = 35;
-      const activeRequirements = requirements.filter(r => !r.isDeleted);
-
-      activeRequirements.forEach((req, index) => {
-        // Check if we need a new page
-        const estimatedHeight = 80; // Rough estimate for requirement height
-        if (currentY + estimatedHeight > pageHeight - 20) {
-          doc.addPage();
-          addFooter();
-          currentY = 20;
-        }
-
-        // Requirement header
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`${req.id}: ${req.title}`, margin, currentY);
-        currentY += 8;
-
-        doc.setFontSize(9);
-
-        // Description
-        if (req.description) {
-          doc.setFont('helvetica', 'bold');
-          doc.text('Description:', margin, currentY);
-          currentY += 5;
-          doc.setFont('helvetica', 'normal');
-          const descLines = doc.splitTextToSize(req.description, pageWidth - 2 * margin);
-          doc.text(descLines, margin, currentY);
-          currentY += descLines.length * 4 + 3;
-        }
-
-        // Requirement Text
-        if (req.text) {
-          doc.setFont('helvetica', 'bold');
-          doc.text('Requirement Text:', margin, currentY);
-          currentY += 5;
-          doc.setFont('helvetica', 'normal');
-          const textLines = doc.splitTextToSize(req.text, pageWidth - 2 * margin);
-          doc.text(textLines, margin, currentY);
-          currentY += textLines.length * 4 + 3;
-        }
-
-        // Rationale
-        if (req.rationale) {
-          doc.setFont('helvetica', 'bold');
-          doc.text('Rationale:', margin, currentY);
-          currentY += 5;
-          doc.setFont('helvetica', 'normal');
-          const rationaleLines = doc.splitTextToSize(req.rationale, pageWidth - 2 * margin);
-          doc.text(rationaleLines, margin, currentY);
-          currentY += rationaleLines.length * 4 + 3;
-        }
-
-        // Status and Priority
-        doc.setFont('helvetica', 'bold');
-        doc.text('Status:', margin, currentY);
-        doc.setFont('helvetica', 'normal');
-        doc.text(req.status || 'Draft', margin + 20, currentY);
-
-        doc.setFont('helvetica', 'bold');
-        doc.text('Priority:', margin + 60, currentY);
-        doc.setFont('helvetica', 'normal');
-        doc.text(req.priority || 'Medium', margin + 80, currentY);
-        currentY += 8;
-
-        // Add separator line between requirements (but not after the last one)
-        if (index < activeRequirements.length - 1) {
-          doc.setDrawColor(200, 200, 200);
-          doc.line(margin, currentY, pageWidth - margin, currentY);
-          currentY += 8;
-        }
-      });
-
-      addFooter();
-
-      // Use Cases Section
-      if (useCases.length > 0) {
-        doc.addPage();
-        pageNumbers.useCases = doc.getCurrentPageInfo().pageNumber;
-
-        doc.setFontSize(16);
-        doc.text('Use Cases', margin, 20);
-
-        useCases.forEach((uc) => {
-          doc.addPage();
-          doc.setFontSize(14);
-          doc.text(`${uc.id}: ${uc.title}`, margin, 20);
-
-          doc.setFontSize(10);
-          let yPos = 35;
-
-          doc.setFont('helvetica', 'bold');
-          doc.text('Actor:', margin, yPos);
-          doc.setFont('helvetica', 'normal');
-          doc.text(uc.actor || '', margin + 26, yPos);
-          yPos += 10;
-
-          doc.setFont('helvetica', 'bold');
-          doc.text('Description:', margin, yPos);
-          doc.setFont('helvetica', 'normal');
-          const descLines = doc.splitTextToSize(uc.description || '', pageWidth - 2 * margin);
-          doc.text(descLines, margin, yPos + 5);
-          yPos += descLines.length * 5 + 10;
-
-          doc.setFont('helvetica', 'bold');
-          doc.text('Preconditions:', margin, yPos);
-          doc.setFont('helvetica', 'normal');
-          const preLines = doc.splitTextToSize(uc.preconditions || '', pageWidth - 2 * margin);
-          doc.text(preLines, margin, yPos + 5);
-          yPos += preLines.length * 5 + 10;
-
-          doc.setFont('helvetica', 'bold');
-          doc.text('Main Flow:', margin, yPos);
-          doc.setFont('helvetica', 'normal');
-          const flowLines = doc.splitTextToSize(uc.mainFlow || '', pageWidth - 2 * margin);
-          doc.text(flowLines, margin, yPos + 5);
-          yPos += flowLines.length * 5 + 10;
-
-          if (uc.alternativeFlows) {
-            doc.setFont('helvetica', 'bold');
-            doc.text('Alternative Flows:', margin, yPos);
-            doc.setFont('helvetica', 'normal');
-            const altLines = doc.splitTextToSize(uc.alternativeFlows || '', pageWidth - 2 * margin);
-            doc.text(altLines, margin, yPos + 5);
-            yPos += altLines.length * 5 + 10;
-          }
-
-          doc.setFont('helvetica', 'bold');
-          doc.text('Postconditions:', margin, yPos);
-          doc.setFont('helvetica', 'normal');
-          const postLines = doc.splitTextToSize(uc.postconditions || '', pageWidth - 2 * margin);
-          doc.text(postLines, margin, yPos + 5);
-
-          addFooter();
-        });
-      }
-
-      // Links/Traceability Section
-      if (links.length > 0) {
-        doc.addPage();
-        pageNumbers.links = doc.getCurrentPageInfo().pageNumber;
-
-        doc.setFontSize(16);
-        doc.text('Requirement Links', margin, 20);
-
-        const linkTableData = links.map(link => [
-          link.sourceId,
-          link.targetId,
-          link.type.replace('_', ' '),
-          link.description || '-'
-        ]);
-
-        autoTable(doc, {
-          startY: 30,
-          head: [['Source', 'Target', 'Type', 'Description']],
-          body: linkTableData,
-          styles: { fontSize: 9, cellPadding: 3 },
-          headStyles: { fillColor: [99, 102, 241], textColor: 255 },
-          didDrawPage: addFooter
-        });
-      }
-
-      // Update TOC with actual page numbers
-      const tocPageNum = pageNumbers.toc;
-      doc.setPage(tocPageNum);
-
-      // Clear old TOC content
-      doc.setFillColor(255, 255, 255);
-      doc.rect(0, 35, pageWidth, pageHeight - 45, 'F');
-
-      // Redraw TOC with correct page numbers
-      tocY = 40;
-      const finalTocEntries = [
-        { title: 'Revision History', page: pageNumbers.revisionHistory },
-        { title: 'Requirements Overview', page: pageNumbers.requirementsOverview },
-        { title: 'Detailed Requirements', page: pageNumbers.detailedRequirements },
-        ...(useCases.length > 0 ? [{ title: 'Use Cases', page: pageNumbers.useCases }] : []),
-        ...(links.length > 0 ? [{ title: 'Requirement Links', page: pageNumbers.links }] : [])
-      ];
-
-      doc.setFontSize(11);
-      finalTocEntries.forEach(entry => {
-        doc.setTextColor(99, 102, 241);
-        doc.textWithLink(entry.title, margin, tocY, {
-          pageNumber: entry.page
-        });
-        doc.setTextColor(0, 0, 0);
-        doc.text(String(entry.page), pageWidth - margin, tocY, { align: 'right' });
-        tocY += 10;
-      });
-
-      // Save PDF
-      const blob = doc.output('blob');
-      triggerDownload(blob, `${currentProject.name}_Requirements.pdf`);
-    } catch (error) {
-      console.error('PDF Export Error:', error);
-      alert(`Failed to export PDF: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  };
-
-  // Export data as Excel
-  const handleExportExcel = () => {
-    try {
-      const wb = XLSX.utils.book_new();
-
-      // Requirements Sheet
-      const reqData = requirements.map(req => ({
-        ID: req.id,
-        Title: req.title,
-        Status: req.status,
-        Priority: req.priority,
-        Description: req.description,
-        'Requirement Text': req.text,
-        Rationale: req.rationale,
-        Parents: req.parentIds.join(', ')
-      }));
-      const reqWs = XLSX.utils.json_to_sheet(reqData);
-      XLSX.utils.book_append_sheet(wb, reqWs, 'Requirements');
-
-      // Use Cases Sheet
-      const ucData = useCases.map(uc => ({
-        ID: uc.id,
-        Title: uc.title,
-        Actor: uc.actor,
-        Description: uc.description,
-        Preconditions: uc.preconditions,
-        'Main Flow': uc.mainFlow,
-        'Alternative Flows': uc.alternativeFlows,
-        Postconditions: uc.postconditions,
-        Priority: uc.priority,
-        Status: uc.status
-      }));
-      const ucWs = XLSX.utils.json_to_sheet(ucData);
-      XLSX.utils.book_append_sheet(wb, ucWs, 'Use Cases');
-
-      // Links Sheet
-      const linkData = links.map(link => ({
-        Source: link.sourceId,
-        Target: link.targetId,
-        Type: link.type,
-        Description: link.description
-      }));
-      const linkWs = XLSX.utils.json_to_sheet(linkData);
-      XLSX.utils.book_append_sheet(wb, linkWs, 'Links');
-
-      // Save File manually
-      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      triggerDownload(blob, 'Mars_Rover_2030_Requirements.xlsx');
-    } catch (error) {
-      console.error('Excel Export Error:', error);
-      alert(`Failed to export Excel: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  };
 
   const handleAddRequirement = (newReqData: Omit<Requirement, 'id' | 'lastModified'>) => {
     // Find next available number that hasn't been used
@@ -1308,17 +874,7 @@ function App() {
     setRequirements([...requirements, newRequirement]);
   };
 
-  const handleReorder = (activeId: string, overId: string) => {
-    const oldIndex = requirements.findIndex(r => r.id === activeId);
-    const newIndex = requirements.findIndex(r => r.id === overId);
 
-    if (oldIndex !== -1 && newIndex !== -1) {
-      const newRequirements = [...requirements];
-      const [movedItem] = newRequirements.splice(oldIndex, 1);
-      newRequirements.splice(newIndex, 0, movedItem);
-      setRequirements(newRequirements);
-    }
-  };
 
   const handleLink = (sourceId: string) => {
     setSelectedRequirementId(sourceId);
@@ -1545,330 +1101,505 @@ function App() {
     );
   });
 
-  const treeData = buildTree(filteredRequirements);
+
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDragItem(event.active.data.current);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveDragItem(null);
+
+    if (!over) return;
+
+    // Case 0: Dragging from Global Library to Project Sidebar
+    if (active.data.current?.type === 'global-item' && over.data.current?.type === 'project-target') {
+      const targetProjectId = over.data.current.projectId;
+      const draggedId = active.data.current.id;
+      const itemType = active.data.current.itemType; // 'requirement', 'usecase', etc.
+
+      // Determine items to add
+      const itemsToAdd = {
+        requirements: [] as string[],
+        useCases: [] as string[],
+        testCases: [] as string[],
+        information: [] as string[]
+      };
+
+      // If dragged item is in selection, add all selected items
+      if (globalLibrarySelection.has(draggedId)) {
+        // We need to know the type of each selected item.
+        // Since selection is just IDs, we have to look them up.
+        // Or we can just try to find them in each list.
+        globalLibrarySelection.forEach(id => {
+          if (globalRequirements.find(r => r.id === id)) itemsToAdd.requirements.push(id);
+          else if (globalUseCases.find(u => u.id === id)) itemsToAdd.useCases.push(id);
+          else if (globalTestCases.find(t => t.id === id)) itemsToAdd.testCases.push(id);
+          else if (globalInformation.find(i => i.id === id)) itemsToAdd.information.push(id);
+        });
+      } else {
+        // Add only the dragged item
+        if (itemType === 'requirement') itemsToAdd.requirements.push(draggedId);
+        else if (itemType === 'usecase') itemsToAdd.useCases.push(draggedId);
+        else if (itemType === 'testcase') itemsToAdd.testCases.push(draggedId);
+        else if (itemType === 'information') itemsToAdd.information.push(draggedId);
+      }
+
+      handleAddToProject(itemsToAdd, targetProjectId);
+
+      // Clear selection after drop? Maybe not, user might want to drag to another project.
+      // But usually drag and drop implies "done".
+      // Let's keep selection for now.
+      return;
+    }
+
+    // Case 1: Dragging from Global Library to Requirement Tree (Current Project)
+    if (active.data.current?.type === 'global-item' && active.data.current?.itemType === 'requirement') {
+      const reqId = active.data.current.id;
+
+      // Check if already exists
+      if (requirements.some(r => r.id === reqId)) {
+        alert('This requirement is already in the project.');
+        return;
+      }
+
+      // Find the requirement to import
+      const globalReq = globalRequirements.find(r => r.id === reqId);
+      if (globalReq) {
+        // Clone and clear parents to make it a root item in this project
+        const reqToImport = { ...globalReq, parentIds: [] };
+
+        // Import it
+        setRequirements(prev => [...prev, reqToImport]);
+
+        // Update project
+        setProjects(prev => prev.map(p =>
+          p.id === currentProjectId
+            ? { ...p, requirementIds: [...p.requirementIds, reqId], lastModified: Date.now() }
+            : p
+        ));
+
+        createVersionSnapshot(`Imported ${reqId} via drag-and-drop`, 'auto-save');
+        console.log(`Successfully imported ${reqId}`);
+      }
+      return;
+    }
+
+    // Case 2: Reordering within Requirement Tree
+    if (active.id !== over.id) {
+      // We need to handle reordering. 
+      // Since RequirementTree uses a flat list for SortableContext (in some places) or nested?
+      // RequirementTree logic:
+      // It calls onReorder(active.id, over.id).
+      // We need to implement that logic here or pass it down.
+      // BUT, RequirementTree previously had its own DndContext.
+      // Now we are lifting it. So we must handle the reorder here.
+
+      // Find indices
+      const oldIndex = requirements.findIndex(r => r.id === active.id);
+      const newIndex = requirements.findIndex(r => r.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        // This is a simple reorder in the flat list. 
+        // However, the Tree view implies hierarchy.
+        // If we just reorder the flat list, does it affect the tree?
+        // The tree is built from parentIds.
+        // Reordering in the flat list might not change the tree structure unless we change parentIds.
+        // OR, if the tree rendering depends on the order of the flat list (it usually does for siblings).
+
+        setRequirements((items) => {
+          return arrayMove(items, oldIndex, newIndex);
+        });
+      }
+    }
+  };
 
   return (
-    <Layout
-      currentProjectName={currentProject.name}
-      projects={projects}
-      currentProjectId={currentProjectId}
-      onSwitchProject={handleSwitchProject}
-      onCreateProject={handleCreateProject}
-      onOpenProjectSettings={handleOpenProjectSettings}
-      onNewRequirement={() => {
-        setEditingRequirement(null);
-        setIsModalOpen(true);
-      }}
-      onNewUseCase={() => {
-        setEditingUseCase(null);
-        setIsUseCaseModalOpen(true);
-      }}
-      onNewTestCase={() => setIsNewTestCaseModalOpen(true)}
-      onExport={handleExport}
-      onImport={handleImport}
-      onImportExcel={handleImportExcel}
-      onViewHistory={() => setIsVersionHistoryOpen(true)}
-      onExportPDF={handleExportPDF}
-      onExportExcel={handleExportExcel}
-      onOpenGlobalLibrary={() => setIsGlobalLibraryOpen(true)}
-      onResetToDemo={handleResetToDemo}
-      onSearch={setSearchQuery}
-      onTrashOpen={() => setIsTrashModalOpen(true)}
-      onNewInformation={() => {
-        setSelectedInformation(null);
-        setIsInformationModalOpen(true);
-      }}
-      currentView={currentView}
-      onSwitchView={setCurrentView}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
     >
-      <div style={{ marginBottom: 'var(--spacing-md)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
-          <div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>
-              {currentView === 'usecases' ? 'Use Cases' :
-                currentView === 'testcases' ? 'Test Cases' :
-                  currentView === 'information' ? 'Information' :
-                    currentView === 'library-requirements' ? 'Requirements' :
-                      currentView === 'library-usecases' ? 'Use Cases' :
-                        currentView === 'library-testcases' ? 'Test Cases' :
-                          currentView === 'library-information' ? 'Information' :
-                            'Requirements'}
-            </h2>
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {currentView === 'detailed' && (
-              <ColumnSelector
-                visibleColumns={columnVisibility}
-                onColumnVisibilityChange={(columns) => {
-                  setColumnVisibility(columns);
-                  // Persist to localStorage (scoped by project)
-                  try {
-                    localStorage.setItem(`column-visibility-${currentProjectId}`, JSON.stringify(columns));
-                  } catch (error) {
-                    console.error('Failed to save column visibility:', error);
-                  }
-                }}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-
-      {
-        currentView === 'tree' && (
-          <RequirementTree
-            requirements={treeData}
-            links={links}
-            allRequirements={requirements}
-            onReorder={handleReorder}
-            onLink={handleLink}
-            onEdit={handleEdit}
-          />
-        )
-      }
-
-      {
-        currentView === 'detailed' && (
-          <DetailedRequirementView
-            requirements={filteredRequirements}
-            onEdit={handleEdit}
-            visibleColumns={columnVisibility}
-          />
-        )
-      }
-
-      {
-        currentView === 'matrix' && (
-          <TraceabilityMatrix
-            requirements={filteredRequirements}
-            links={links}
-          />
-        )
-      }
-
-      {
-        currentView === 'usecases' && (
-          <UseCaseList
-            useCases={filteredUseCases}
-            requirements={requirements}
-            onEdit={handleEditUseCase}
-            onDelete={handleDeleteUseCase}
-            onBreakDown={handleBreakDownUseCase}
-          />
-        )
-      }
-
-      {
-        currentView === 'testcases' && (
-          <TestCaseList
-            testCases={testCases.filter(tc => !tc.isDeleted)}
-            onEdit={(tc) => {
-              setSelectedTestCase(tc);
-              setIsEditTestCaseModalOpen(true);
-            }}
-            onDelete={handleDeleteTestCase}
-          />
-        )
-      }
-
-      {
-        currentView === 'information' && (
-          <InformationList
-            information={information.filter(info => !info.isDeleted)}
-            onEdit={handleEditInformation}
-            onDelete={handleDeleteInformation}
-          />
-        )
-      }
-
-      {/* Library Views - Show all artifacts from global pool */}
-      {
-        currentView === 'library-requirements' && (
-          <DetailedRequirementView
-            requirements={globalRequirements.filter(r => !r.isDeleted)}
-            onEdit={handleEdit}
-            visibleColumns={columnVisibility}
-            showProjectColumn={true}
-            projects={projects}
-          />
-        )
-      }
-
-      {
-        currentView === 'library-usecases' && (
-          <UseCaseList
-            useCases={globalUseCases.filter(u => !u.isDeleted)}
-            requirements={globalRequirements}
-            onEdit={handleEditUseCase}
-            onDelete={handleDeleteUseCase}
-            onBreakDown={handleBreakDownUseCase}
-            showProjectColumn={true}
-            projects={projects}
-          />
-        )
-      }
-
-      {
-        currentView === 'library-testcases' && (
-          <TestCaseList
-            testCases={globalTestCases.filter(t => !t.isDeleted)}
-            onEdit={(tc) => {
-              setSelectedTestCase(tc);
-              setIsEditTestCaseModalOpen(true);
-            }}
-            onDelete={handleDeleteTestCase}
-            showProjectColumn={true}
-            projects={projects}
-          />
-        )
-      }
-
-      {
-        currentView === 'library-information' && (
-          <InformationList
-            information={globalInformation.filter(i => !i.isDeleted)}
-            onEdit={handleEditInformation}
-            onDelete={handleDeleteInformation}
-            showProjectColumn={true}
-            projects={projects}
-          />
-        )
-      }
-
-      <NewRequirementModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleAddRequirement}
-      />
-
-      <LinkModal
-        isOpen={isLinkModalOpen}
-        sourceRequirementId={selectedRequirementId}
+      <Layout
+        currentProjectName={currentProject.name}
         projects={projects}
         currentProjectId={currentProjectId}
-        globalRequirements={globalRequirements}
-        globalUseCases={globalUseCases}
-        globalTestCases={globalTestCases}
-        onClose={() => setIsLinkModalOpen(false)}
-        onSubmit={handleAddLink}
-      />
-
-      {
-        isEditModalOpen && editingRequirement && (
-          <EditRequirementModal
-            isOpen={isEditModalOpen}
-            requirement={editingRequirement}
-            allRequirements={requirements}
-            links={links}
+        onSwitchProject={handleSwitchProject}
+        onCreateProject={handleCreateProject}
+        onOpenProjectSettings={handleOpenProjectSettings}
+        onNewRequirement={() => setIsModalOpen(true)}
+        onNewUseCase={() => setIsUseCaseModalOpen(true)}
+        onNewTestCase={() => setIsNewTestCaseModalOpen(true)}
+        onNewInformation={() => setIsInformationModalOpen(true)}
+        onExport={handleExport}
+        onImport={handleImport}
+        onImportExcel={handleImportExcel}
+        onOpenGlobalLibrary={() => setIsLibraryPanelOpen(!isLibraryPanelOpen)}
+        onResetToDemo={handleResetToDemo}
+        onViewHistory={() => setIsVersionHistoryOpen(true)}
+        onExportPDF={() => {
+          const doc = new jsPDF();
+          doc.text('Requirements Export', 10, 10);
+          autoTable(doc, {
+            head: [['ID', 'Title', 'Status', 'Priority']],
+            body: requirements.map(r => [r.id, r.title, r.status, r.priority])
+          });
+          doc.save('requirements.pdf');
+        }}
+        onExportExcel={() => {
+          const ws = XLSX.utils.json_to_sheet(requirements);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Requirements");
+          XLSX.writeFile(wb, "requirements.xlsx");
+        }}
+        onSearch={setSearchQuery}
+        onTrashOpen={() => { /* Open Trash Modal */ }}
+        currentView={currentView}
+        onSwitchView={setCurrentView}
+        onOpenLibrary={handleOpenLibrary}
+        rightPanel={isLibraryPanelOpen ? (
+          <GlobalLibraryPanel
+            isOpen={true}
+            onClose={() => setIsLibraryPanelOpen(false)}
+            requirements={globalRequirements}
+            useCases={globalUseCases}
+            testCases={globalTestCases}
+            information={globalInformation}
             projects={projects}
-            currentProjectId={currentProjectId}
-            onClose={() => {
-              setIsEditModalOpen(false);
-              setEditingRequirement(null);
-            }}
-            onSubmit={handleUpdateRequirement}
-            onDelete={handleDeleteRequirement}
+            selectedItems={globalLibrarySelection}
+            onToggleSelect={handleGlobalLibrarySelect}
+            activeTab={activeLibraryTab}
+            onTabChange={(tab) => setActiveLibraryTab(tab as any)}
           />
-        )
-      }
+        ) : undefined}
+      >
+        <div style={{ marginBottom: 'var(--spacing-md)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
+            <div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>
+                {currentView === 'usecases' ? 'Use Cases' :
+                  currentView === 'testcases' ? 'Test Cases' :
+                    currentView === 'information' ? 'Information' :
+                      currentView === 'library-requirements' ? 'Requirements' :
+                        currentView === 'library-usecases' ? 'Use Cases' :
+                          currentView === 'library-testcases' ? 'Test Cases' :
+                            currentView === 'library-information' ? 'Information' :
+                              'Requirements'}
+              </h2>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {currentView === 'detailed' && (
+                <ColumnSelector
+                  visibleColumns={columnVisibility}
+                  onColumnVisibilityChange={(columns) => {
+                    setColumnVisibility(columns);
+                    // Persist to localStorage (scoped by project)
+                    try {
+                      localStorage.setItem(`column-visibility-${currentProjectId}`, JSON.stringify(columns));
+                    } catch (error) {
+                      console.error('Failed to save column visibility:', error);
+                    }
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
 
-      <UseCaseModal
-        isOpen={isUseCaseModalOpen}
-        useCase={editingUseCase}
-        onClose={() => {
-          setIsUseCaseModalOpen(false);
-          setEditingUseCase(null);
-        }}
-        onSubmit={handleAddUseCase}
-      />
+        {
+          currentView === 'tree' && (
+            <RequirementTree
+              requirements={filteredRequirements}
+              links={links}
+              allRequirements={requirements}
+              onReorder={(activeId, overId) => {
+                const oldIndex = requirements.findIndex(r => r.id === activeId);
+                const newIndex = requirements.findIndex(r => r.id === overId);
 
-      <NewTestCaseModal
-        isOpen={isNewTestCaseModalOpen}
-        requirements={requirements.filter(r => !r.isDeleted)}
-        onClose={() => setIsNewTestCaseModalOpen(false)}
-        onSubmit={handleAddTestCase}
-      />
+                if (oldIndex !== -1 && newIndex !== -1) {
+                  const newRequirements = [...requirements];
+                  const [movedItem] = newRequirements.splice(oldIndex, 1);
+                  newRequirements.splice(newIndex, 0, movedItem);
+                  setRequirements(newRequirements);
+                }
+              }}
+              onLink={handleLink}
+              onEdit={handleEdit}
+            />
+          )
+        }
 
-      <EditTestCaseModal
-        isOpen={isEditTestCaseModalOpen}
-        testCase={selectedTestCase}
-        requirements={requirements.filter(r => !r.isDeleted)}
-        onClose={() => {
-          setIsEditTestCaseModalOpen(false);
-          setSelectedTestCase(null);
-        }}
-        onSubmit={handleUpdateTestCase}
-        onDelete={handleDeleteTestCase}
-      />
+        {
+          currentView === 'detailed' && (
+            <DetailedRequirementView
+              requirements={filteredRequirements}
+              onEdit={handleEdit}
+              visibleColumns={columnVisibility}
+            />
+          )
+        }
 
-      <InformationModal
-        isOpen={isInformationModalOpen}
-        information={selectedInformation}
-        onClose={() => {
-          setIsInformationModalOpen(false);
-          setSelectedInformation(null);
-        }}
-        onSubmit={handleAddInformation}
-      />
+        {
+          currentView === 'matrix' && (
+            <TraceabilityMatrix
+              requirements={filteredRequirements}
+              links={links}
+            />
+          )
+        }
 
-      <VersionHistory
-        isOpen={isVersionHistoryOpen}
-        versions={versions}
-        onClose={() => setIsVersionHistoryOpen(false)}
-        onRestore={handleRestoreVersion}
-        onCreateBaseline={handleCreateBaseline}
-      />
+        {
+          currentView === 'usecases' && (
+            <UseCaseList
+              useCases={filteredUseCases}
+              requirements={requirements}
+              onEdit={handleEditUseCase}
+              onDelete={handleDeleteUseCase}
+              onBreakDown={handleBreakDownUseCase}
+            />
+          )
+        }
 
-      <TrashModal
-        isOpen={isTrashModalOpen}
-        onClose={() => setIsTrashModalOpen(false)}
-        deletedRequirements={requirements.filter(r => r.isDeleted)}
-        deletedUseCases={useCases.filter(u => u.isDeleted)}
-        onRestoreRequirement={handleRestoreRequirement}
-        onRestoreUseCase={handleRestoreUseCase}
-        onPermanentDeleteRequirement={handlePermanentDeleteRequirement}
-        onPermanentDeleteUseCase={handlePermanentDeleteUseCase}
-        deletedInformation={information.filter(i => i.isDeleted)}
-        onRestoreInformation={handleRestoreInformation}
-        onPermanentDeleteInformation={handlePermanentDeleteInformation}
-      />
+        {
+          currentView === 'testcases' && (
+            <TestCaseList
+              testCases={testCases.filter(tc => !tc.isDeleted)}
+              onEdit={(tc) => {
+                setSelectedTestCase(tc);
+                setIsEditTestCaseModalOpen(true);
+              }}
+              onDelete={handleDeleteTestCase}
+            />
+          )
+        }
 
-      {
-        isProjectSettingsOpen && projectToEdit && (
-          <ProjectSettingsModal
-            isOpen={isProjectSettingsOpen}
-            project={projectToEdit}
-            onClose={() => {
-              setIsProjectSettingsOpen(false);
-              setProjectToEdit(null);
-            }}
-            onUpdate={handleUpdateProject}
-            onDelete={handleDeleteProject}
-          />
-        )
-      }
+        {
+          currentView === 'information' && (
+            <InformationList
+              information={information.filter(info => !info.isDeleted)}
+              onEdit={handleEditInformation}
+              onDelete={handleDeleteInformation}
+            />
+          )
+        }
 
-      {isCreateProjectModalOpen && (
-        <CreateProjectModal
-          isOpen={isCreateProjectModalOpen}
-          onClose={() => setIsCreateProjectModalOpen(false)}
-          onSubmit={handleCreateProjectSubmit}
+        {/* Library Views - Show all artifacts from global pool */}
+        {
+          currentView === 'library-requirements' && (
+            <DetailedRequirementView
+              requirements={globalRequirements.filter(r => !r.isDeleted)}
+              onEdit={handleEdit}
+              visibleColumns={columnVisibility}
+              showProjectColumn={true}
+              projects={projects}
+            />
+          )
+        }
+
+        {
+          currentView === 'library-usecases' && (
+            <UseCaseList
+              useCases={globalUseCases.filter(u => !u.isDeleted)}
+              requirements={globalRequirements}
+              onEdit={handleEditUseCase}
+              onDelete={handleDeleteUseCase}
+              onBreakDown={handleBreakDownUseCase}
+              showProjectColumn={true}
+              projects={projects}
+            />
+          )
+        }
+
+        {
+          currentView === 'library-testcases' && (
+            <TestCaseList
+              testCases={globalTestCases.filter(t => !t.isDeleted)}
+              onEdit={(tc) => {
+                setSelectedTestCase(tc);
+                setIsEditTestCaseModalOpen(true);
+              }}
+              onDelete={handleDeleteTestCase}
+              showProjectColumn={true}
+              projects={projects}
+            />
+          )
+        }
+
+        {
+          currentView === 'library-information' && (
+            <InformationList
+              information={globalInformation.filter(i => !i.isDeleted)}
+              onEdit={handleEditInformation}
+              onDelete={handleDeleteInformation}
+              showProjectColumn={true}
+              projects={projects}
+            />
+          )
+        }
+
+        <NewRequirementModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSubmit={handleAddRequirement}
         />
-      )}
 
-      {isGlobalLibraryOpen && (
-        <GlobalLibraryModal
-          isOpen={isGlobalLibraryOpen}
-          onClose={() => setIsGlobalLibraryOpen(false)}
+        <LinkModal
+          isOpen={isLinkModalOpen}
+          sourceRequirementId={selectedRequirementId}
           projects={projects}
           currentProjectId={currentProjectId}
           globalRequirements={globalRequirements}
           globalUseCases={globalUseCases}
           globalTestCases={globalTestCases}
-          onAddToProject={handleAddToProject}
+          onClose={() => setIsLinkModalOpen(false)}
+          onSubmit={handleAddLink}
         />
-      )}
-    </Layout >
+
+        {
+          isEditModalOpen && editingRequirement && (
+            <EditRequirementModal
+              isOpen={isEditModalOpen}
+              requirement={editingRequirement}
+              allRequirements={requirements}
+              links={links}
+              projects={projects}
+              currentProjectId={currentProjectId}
+              onClose={() => {
+                setIsEditModalOpen(false);
+                setEditingRequirement(null);
+              }}
+              onSubmit={handleUpdateRequirement}
+              onDelete={handleDeleteRequirement}
+            />
+          )
+        }
+
+        <UseCaseModal
+          isOpen={isUseCaseModalOpen}
+          useCase={editingUseCase}
+          onClose={() => {
+            setIsUseCaseModalOpen(false);
+            setEditingUseCase(null);
+          }}
+          onSubmit={handleAddUseCase}
+        />
+
+        <NewTestCaseModal
+          isOpen={isNewTestCaseModalOpen}
+          requirements={requirements.filter(r => !r.isDeleted)}
+          onClose={() => setIsNewTestCaseModalOpen(false)}
+          onSubmit={handleAddTestCase}
+        />
+
+        <EditTestCaseModal
+          isOpen={isEditTestCaseModalOpen}
+          testCase={selectedTestCase}
+          requirements={requirements.filter(r => !r.isDeleted)}
+          onClose={() => {
+            setIsEditTestCaseModalOpen(false);
+            setSelectedTestCase(null);
+          }}
+          onSubmit={handleUpdateTestCase}
+          onDelete={handleDeleteTestCase}
+        />
+
+        <InformationModal
+          isOpen={isInformationModalOpen}
+          information={selectedInformation}
+          onClose={() => {
+            setIsInformationModalOpen(false);
+            setSelectedInformation(null);
+          }}
+          onSubmit={handleAddInformation}
+        />
+
+        <VersionHistory
+          isOpen={isVersionHistoryOpen}
+          versions={versions}
+          onClose={() => setIsVersionHistoryOpen(false)}
+          onRestore={handleRestoreVersion}
+          onCreateBaseline={handleCreateBaseline}
+        />
+
+        <TrashModal
+          isOpen={isTrashModalOpen}
+          onClose={() => setIsTrashModalOpen(false)}
+          deletedRequirements={requirements.filter(r => r.isDeleted)}
+          deletedUseCases={useCases.filter(u => u.isDeleted)}
+          onRestoreRequirement={handleRestoreRequirement}
+          onRestoreUseCase={handleRestoreUseCase}
+          onPermanentDeleteRequirement={handlePermanentDeleteRequirement}
+          onPermanentDeleteUseCase={handlePermanentDeleteUseCase}
+          deletedInformation={information.filter(i => i.isDeleted)}
+          onRestoreInformation={handleRestoreInformation}
+          onPermanentDeleteInformation={handlePermanentDeleteInformation}
+        />
+
+        {
+          isProjectSettingsOpen && projectToEdit && (
+            <ProjectSettingsModal
+              isOpen={isProjectSettingsOpen}
+              project={projectToEdit}
+              onClose={() => {
+                setIsProjectSettingsOpen(false);
+                setProjectToEdit(null);
+              }}
+              onUpdate={handleUpdateProject}
+              onDelete={handleDeleteProject}
+            />
+          )
+        }
+
+        {isCreateProjectModalOpen && (
+          <CreateProjectModal
+            isOpen={isCreateProjectModalOpen}
+            onClose={() => setIsCreateProjectModalOpen(false)}
+            onSubmit={handleCreateProjectSubmit}
+          />
+        )}
+
+
+
+        <DragOverlay>
+          {activeDragItem ? (
+            <div style={{
+              padding: '12px',
+              backgroundColor: 'var(--color-bg-card)',
+              border: '1px solid var(--color-accent)',
+              borderRadius: '6px',
+              boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
+              width: '300px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              {globalLibrarySelection.has(activeDragItem.id) && globalLibrarySelection.size > 1 && (
+                <div style={{
+                  backgroundColor: 'var(--color-accent)',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: '20px',
+                  height: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.75rem',
+                  fontWeight: 600
+                }}>
+                  {globalLibrarySelection.size}
+                </div>
+              )}
+              <div>
+                <div style={{ fontWeight: 500 }}>{activeDragItem.title}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{activeDragItem.id}</div>
+              </div>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </Layout>
+    </DndContext>
   );
 }
 

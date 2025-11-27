@@ -6,25 +6,24 @@ import { ChevronRight, ChevronDown, FileText, AlertCircle, GripVertical, Link2, 
 import type { Requirement, RequirementTreeNode, Link } from '../types';
 
 interface RequirementTreeProps {
-    requirements: RequirementTreeNode[];
+    requirements: Requirement[];
     links: Link[];
     allRequirements: Requirement[];
     onReorder: (activeId: string, overId: string) => void;
     onLink: (requirementId: string) => void;
-    onEdit: (requirement: RequirementTreeNode) => void;
+    onEdit: (requirement: Requirement) => void;
 }
 
 interface SortableRequirementItemProps {
-    req: RequirementTreeNode;
-    level: number;
+    req: Requirement;
     links: Link[];
     allRequirements: Requirement[];
     onReorder: (activeId: string, overId: string) => void;
     onLink: (requirementId: string) => void;
-    onEdit: (requirement: RequirementTreeNode) => void;
+    onEdit: (requirement: Requirement) => void;
 }
 
-const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({ req, level, links, allRequirements, onReorder, onLink, onEdit }) => {
+const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({ req, links, allRequirements, onReorder, onLink, onEdit }) => {
     const {
         attributes,
         listeners,
@@ -41,9 +40,6 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({ req, 
         marginBottom: '2px'
     };
 
-    const [expanded, setExpanded] = React.useState(true);
-    const hasChildren = req.children && req.children.length > 0;
-
     // Check if this requirement has multiple parents
     const originalReq = allRequirements.find(r => r.id === req.id);
     const hasMultipleParents = originalReq && originalReq.parentIds.length > 1;
@@ -54,7 +50,6 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({ req, 
                 display: 'flex',
                 alignItems: 'center',
                 padding: '8px 12px',
-                paddingLeft: `${level * 20 + 12}px`,
                 borderRadius: '6px',
                 backgroundColor: 'transparent',
                 border: '1px solid transparent',
@@ -78,14 +73,7 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({ req, 
                     <GripVertical size={14} />
                 </div>
 
-                <div
-                    style={{ marginRight: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', width: '20px' }}
-                    onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-                >
-                    {hasChildren && (
-                        expanded ? <ChevronDown size={16} color="var(--color-text-muted)" /> : <ChevronRight size={16} color="var(--color-text-muted)" />
-                    )}
-                </div>
+
 
                 <div style={{ marginRight: '12px', color: 'var(--color-accent-light)', fontFamily: 'monospace', fontSize: '0.9em' }}>
                     {req.id}
@@ -198,27 +186,7 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({ req, 
                 </div>
             </div>
 
-            {expanded && hasChildren && (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <SortableContext
-                        items={req.children!.map(c => c.id)}
-                        strategy={verticalListSortingStrategy}
-                    >
-                        {req.children!.map(child => (
-                            <SortableRequirementItem
-                                key={child.id}
-                                req={child}
-                                level={level + 1}
-                                links={links}
-                                allRequirements={allRequirements}
-                                onReorder={onReorder}
-                                onLink={onLink}
-                                onEdit={onEdit}
-                            />
-                        ))}
-                    </SortableContext>
-                </div>
-            )}
+
         </div>
     );
 };
@@ -258,7 +226,6 @@ export const RequirementTree: React.FC<RequirementTreeProps> = ({ requirements, 
                         <SortableRequirementItem
                             key={req.id}
                             req={req}
-                            level={0}
                             links={links}
                             allRequirements={allRequirements}
                             onReorder={onReorder}
