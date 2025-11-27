@@ -883,7 +883,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
                 {/* Content Area */}
                 <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
-                    <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', padding: 'var(--spacing-lg)' }}>
                         {children}
                     </div>
                     {rightPanel && (

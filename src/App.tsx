@@ -1279,14 +1279,17 @@ function App() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
             <div>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>
-                {currentView === 'usecases' ? 'Use Cases' :
-                  currentView === 'testcases' ? 'Test Cases' :
-                    currentView === 'information' ? 'Information' :
-                      currentView === 'library-requirements' ? 'Requirements' :
-                        currentView === 'library-usecases' ? 'Use Cases' :
-                          currentView === 'library-testcases' ? 'Test Cases' :
-                            currentView === 'library-information' ? 'Information' :
-                              'Requirements'}
+                {currentView === 'tree' ? 'Requirements Tree' :
+                  currentView === 'detailed' ? 'Detailed View' :
+                    currentView === 'matrix' ? 'Traceability Matrix' :
+                      currentView === 'usecases' ? 'Use Cases' :
+                        currentView === 'testcases' ? 'Test Cases' :
+                          currentView === 'information' ? 'Information' :
+                            currentView === 'library-requirements' ? 'Requirements' :
+                              currentView === 'library-usecases' ? 'Use Cases' :
+                                currentView === 'library-testcases' ? 'Test Cases' :
+                                  currentView === 'library-information' ? 'Information' :
+                                    'Requirements Tree'}
               </h2>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
