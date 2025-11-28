@@ -21,8 +21,7 @@ import {
   ColumnSelector,
   GlobalLibraryPanel,
   BaselineManager,
-  BaselineRevisionHistory,
-  PendingChangesPanel
+  BaselineRevisionHistory
 } from './components';
 import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor, KeyboardSensor, closestCenter } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
@@ -36,7 +35,6 @@ import { formatDateTime } from './utils/dateUtils';
 
 import { incrementRevision } from './utils/revisionUtils';
 import { gitService } from './services/gitService';
-import { invoke } from '@tauri-apps/api/core';
 
 const PROJECTS_KEY = 'reqtrace-projects';
 const CURRENT_PROJECT_KEY = 'reqtrace-current-project-id';
@@ -48,16 +46,6 @@ const MAX_VERSIONS = 50;
 
 
 const GLOBAL_STATE_KEY = 'reqtrace-global-state';
-
-// Helper to deduplicate items by ID
-const uniqBy = <T extends { id: string }>(arr: T[]): T[] => {
-  const seen = new Set();
-  return arr.filter(item => {
-    if (seen.has(item.id)) return false;
-    seen.add(item.id);
-    return true;
-  });
-};
 
 // Helper to load used numbers from LocalStorage
 const loadUsedNumbers = () => {
@@ -161,37 +149,7 @@ const createDemoProject = (): { project: Project, globalState: GlobalState } => 
   return { project, globalState };
 };
 
-const migrateToGit = async (projects: Project[], globalState: GlobalState) => {
-  console.log('Starting migration to Git...');
 
-  for (const project of projects) {
-    try {
-      // 1. Init Project
-      await gitService.initProject(project.name);
-
-      // 2. Save Artifacts
-      // 2. Save Artifacts
-      const projReqs = globalState.requirements.filter(r => project.requirementIds.includes(r.id));
-      const projUCs = globalState.useCases.filter(u => project.useCaseIds.includes(u.id));
-      const projTCs = globalState.testCases.filter(t => project.testCaseIds.includes(t.id));
-      const projInfo = globalState.information.filter(i => project.informationIds.includes(i.id));
-
-      for (const r of projReqs) await gitService.saveArtifact(project.name, 'requirements', r);
-      for (const u of projUCs) await gitService.saveArtifact(project.name, 'usecases', u);
-      for (const t of projTCs) await gitService.saveArtifact(project.name, 'testcases', t);
-      for (const i of projInfo) await gitService.saveArtifact(project.name, 'information', i);
-
-      // 2b. Save Links
-      await gitService.saveFile(project.name, 'information', '_links.json', JSON.stringify(globalState.links, null, 2));
-
-      // 3. Initial Commit
-      await gitService.commit(project.name, "Initial migration from localStorage");
-      console.log(`Migrated project: ${project.name}`);
-    } catch (e) {
-      console.error(`Failed to migrate project ${project.name}`, e);
-    }
-  }
-};
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -246,127 +204,24 @@ function App() {
   useEffect(() => {
     const init = async () => {
       try {
-        // Check if we're running in Tauri context
-        const isTauri = '__TAURI__' in window;
-        console.log('Running in Tauri:', isTauri);
+        console.log('Initializing in browser mode...');
 
-        if (!isTauri) {
-          // Browser mode - use localStorage
-          console.log('Browser mode detected, using localStorage');
-
-          // Initialize Git for browser (Single Repo)
-          try {
-            await gitService.init();
-            console.log('Browser Git initialized successfully');
-          } catch (e) {
-            console.error('Failed to initialize Browser Git:', e);
-          }
-
-          const { projects: initialProjects, currentProjectId: initialCurrentId, globalState: initialGlobal } = loadProjects();
-          setProjects(initialProjects);
-          setCurrentProjectId(initialCurrentId);
-          setGlobalRequirements(initialGlobal.requirements);
-          setGlobalUseCases(initialGlobal.useCases);
-          setGlobalTestCases(initialGlobal.testCases);
-          setGlobalInformation(initialGlobal.information);
-          setLinks(initialGlobal.links);
-          setIsLoading(false);
-          return;
+        // Initialize Git for browser (Single Repo)
+        try {
+          await gitService.init();
+          console.log('Browser Git initialized successfully');
+        } catch (e) {
+          console.error('Failed to initialize Browser Git:', e);
         }
 
-        // Tauri mode - use Git
-
-        const savedProjects = localStorage.getItem(PROJECTS_KEY);
-        const savedGlobal = localStorage.getItem(GLOBAL_STATE_KEY);
-
-        if (savedProjects && savedGlobal) {
-          // Check if already migrated flag? Or just try to load from FS?
-          // Let's try to migrate if we haven't marked it as done.
-          const isMigrated = localStorage.getItem('reqtrace-migrated-to-git');
-
-          if (!isMigrated) {
-            const parsedProjects = JSON.parse(savedProjects);
-            const parsedGlobal = JSON.parse(savedGlobal);
-            await migrateToGit(parsedProjects, parsedGlobal);
-            localStorage.setItem('reqtrace-migrated-to-git', 'true');
-          }
-        }
-
-        // Now Load from FS
-        // We need to know what projects exist. 
-        // Since we don't have a "list projects" command yet, we might need to rely on localStorage for the *list* of projects,
-        // but load their *content* from FS.
-        // Or we can implement listProjects in gitService (using fs readDir).
-        // For this step, let's rely on the projects list in localStorage as the "registry", but load content from Git.
-
-        if (savedProjects) {
-          const parsedProjects = JSON.parse(savedProjects);
-          setProjects(parsedProjects);
-          const currentId = localStorage.getItem(CURRENT_PROJECT_KEY) || parsedProjects[0]?.id;
-          setCurrentProjectId(currentId);
-
-          // Load artifacts for ALL projects into global state? 
-          // Or just load current?
-          // The app architecture assumes a "Global Pool". 
-          // So we should probably load everything.
-
-          const allReqs: Requirement[] = [];
-          const allUCs: UseCase[] = [];
-          const allTCs: TestCase[] = [];
-          const allInfo: Information[] = [];
-          const allLinks: Link[] = [];
-
-          for (const p of parsedProjects) {
-            const data = await gitService.loadProjectArtifacts(p.name);
-            allReqs.push(...data.requirements);
-            allUCs.push(...data.useCases);
-            allTCs.push(...data.testCases);
-            allInfo.push(...data.information);
-
-            // Load links from _links.json
-            try {
-              const linksPath = await gitService.getProjectPath(p.name);
-              const linksFile = await invoke<string>('read_artifact_file', {
-                path: `${linksPath}/information/_links.json`
-              });
-              const projLinks = JSON.parse(linksFile);
-              if (Array.isArray(projLinks)) {
-                allLinks.push(...projLinks);
-              }
-            } catch (e) {
-              console.warn(`No links file for project ${p.name}`);
-            }
-          }
-
-          setGlobalRequirements(uniqBy(allReqs));
-          setGlobalUseCases(uniqBy(allUCs));
-          setGlobalTestCases(uniqBy(allTCs));
-          setGlobalInformation(uniqBy(allInfo));
-          setLinks(uniqBy(allLinks));
-        } else {
-          // First time: Create demo project
-          const { project: demoProject, globalState: demoGlobalState } = createDemoProject();
-
-          // Initialize git repository for demo project
-          try {
-            await gitService.initProject(demoProject.name);
-            console.log(`Initialized git repository for demo project: ${demoProject.name}`);
-          } catch (error) {
-            console.error('Failed to initialize git repository for demo project:', error);
-          }
-
-          setProjects([demoProject]);
-          setCurrentProjectId(demoProject.id);
-          setGlobalRequirements(demoGlobalState.requirements);
-          setGlobalUseCases(demoGlobalState.useCases);
-          setGlobalTestCases(demoGlobalState.testCases);
-          setGlobalInformation(demoGlobalState.information);
-          setLinks(demoGlobalState.links);
-
-          // Save to localStorage
-          localStorage.setItem(PROJECTS_KEY, JSON.stringify([demoProject]));
-        }
-
+        const { projects: initialProjects, currentProjectId: initialCurrentId, globalState: initialGlobal } = loadProjects();
+        setProjects(initialProjects);
+        setCurrentProjectId(initialCurrentId);
+        setGlobalRequirements(initialGlobal.requirements);
+        setGlobalUseCases(initialGlobal.useCases);
+        setGlobalTestCases(initialGlobal.testCases);
+        setGlobalInformation(initialGlobal.information);
+        setLinks(initialGlobal.links);
       } catch (e) {
         console.error("Initialization failed", e);
       } finally {
