@@ -175,7 +175,6 @@ export const Layout: React.FC<LayoutProps> = ({
                                 Pending Changes
                             </h2>
                             <PendingChangesPanel
-                                projectName={currentProjectName}
                                 onChange={onPendingChangesChange}
                                 onCommit={onCommitArtifact}
                             />

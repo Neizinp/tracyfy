@@ -162,6 +162,16 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
                                 />
                             </div>
 
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <MarkdownEditor
+                                    label="Requirement Text"
+                                    value={text}
+                                    onChange={setText}
+                                    height={200}
+                                    placeholder="Enter detailed requirement text with Markdown..."
+                                />
+                            </div>
+
                             <div>
                                 <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Priority</label>
                                 <select
@@ -200,16 +210,6 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
                                     }}
                                 />
                             </div>
-
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <MarkdownEditor
-                                    label="Description"
-                                    value={description}
-                                    onChange={setDescription}
-                                    height={250}
-                                    placeholder="Enter description with Markdown formatting..."
-                                />
-                            </div>
                         </div>
                     )}
 
@@ -217,11 +217,11 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
                             <div>
                                 <MarkdownEditor
-                                    label="Requirement Text"
-                                    value={text}
-                                    onChange={setText}
-                                    height={180}
-                                    placeholder="Enter detailed requirement text with Markdown..."
+                                    label="Description"
+                                    value={description}
+                                    onChange={setDescription}
+                                    height={150}
+                                    placeholder="Enter description with Markdown formatting..."
                                 />
                             </div>
 
@@ -230,7 +230,7 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
                                     label="Rationale"
                                     value={rationale}
                                     onChange={setRationale}
-                                    height={180}
+                                    height={150}
                                     placeholder="Explain the rationale with Markdown..."
                                 />
                             </div>

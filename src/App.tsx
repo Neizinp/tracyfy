@@ -20,6 +20,7 @@ import {
   InformationModal,
   ColumnSelector,
   GlobalLibraryPanel,
+  GlobalLibraryModal,
   BaselineManager,
   BaselineRevisionHistory
 } from './components';
@@ -202,18 +203,14 @@ function App() {
 
   // Initialize Data (Async)
   useEffect(() => {
-    const init = async () => {
+    const initializeApp = async () => {
+      setIsLoading(true);
       try {
-        console.log('Initializing in browser mode...');
+        // Run migration to global artifacts storage
+        await gitService.migrateToGlobalArtifacts();
 
-        // Initialize Git for browser (Single Repo)
-        try {
-          await gitService.init();
-          console.log('Browser Git initialized successfully');
-        } catch (e) {
-          console.error('Failed to initialize Browser Git:', e);
-        }
-
+        await gitService.init();
+        console.log('Git service initialized');
         const { projects: initialProjects, currentProjectId: initialCurrentId, globalState: initialGlobal } = loadProjects();
         setProjects(initialProjects);
         setCurrentProjectId(initialCurrentId);
@@ -229,7 +226,7 @@ function App() {
       }
     };
 
-    init();
+    initializeApp();
   }, []);
 
   // Project Settings State
@@ -238,6 +235,7 @@ function App() {
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
 
   const [isLibraryPanelOpen, setIsLibraryPanelOpen] = useState(false);
+  const [isGlobalLibraryModalOpen, setIsGlobalLibraryModalOpen] = useState(false);
   const [activeLibraryTab, setActiveLibraryTab] = useState<'requirements' | 'usecases' | 'testcases' | 'information'>('requirements');
   const [activeDragItem, setActiveDragItem] = useState<any>(null);
   const [globalLibrarySelection, setGlobalLibrarySelection] = useState<Set<string>>(new Set());
@@ -438,10 +436,10 @@ function App() {
         const projInfo = globalInformation.filter(i => project.informationIds.includes(i.id));
 
         // Save artifacts
-        for (const req of projReqs) await gitService.saveArtifact(project.name, 'requirements', req);
-        for (const uc of projUCs) await gitService.saveArtifact(project.name, 'usecases', uc);
-        for (const tc of projTCs) await gitService.saveArtifact(project.name, 'testcases', tc);
-        for (const info of projInfo) await gitService.saveArtifact(project.name, 'information', info);
+        for (const req of projReqs) await gitService.saveArtifact('requirements', req);
+        for (const uc of projUCs) await gitService.saveArtifact('usecases', uc);
+        for (const tc of projTCs) await gitService.saveArtifact('testcases', tc);
+        for (const info of projInfo) await gitService.saveArtifact('information', info);
 
         // Save links
         await gitService.saveFile(project.name, 'information', '_links.json', JSON.stringify(links, null, 2));
@@ -466,7 +464,15 @@ function App() {
       const project = projects.find(p => p.id === currentProjectId);
       if (!project) return;
 
-      await gitService.commitArtifact(project.name, type as any, artifactId, message);
+      // Map singular type to plural folder name
+      let folderType: 'requirements' | 'usecases' | 'testcases' | 'information';
+      if (type === 'requirement') folderType = 'requirements';
+      else if (type === 'usecase') folderType = 'usecases';
+      else if (type === 'testcase') folderType = 'testcases';
+      else if (type === 'information') folderType = 'information';
+      else folderType = type as any;
+
+      await gitService.commitArtifact(folderType, artifactId, message);
 
       // Refresh pending changes - PendingChangesPanel will auto-refresh via its own polling
     } catch (error) {
@@ -612,14 +618,62 @@ function App() {
     artifacts: { requirements: string[], useCases: string[], testCases: string[], information: string[] },
     targetProjectId: string = currentProjectId
   ) => {
+    // Check which artifacts are already assigned to ANY project
+    const alreadyAssigned: string[] = [];
+    const checkAssignment = (artifactId: string): boolean => {
+      return projects.some(p =>
+        p.requirementIds.includes(artifactId) ||
+        p.useCaseIds.includes(artifactId) ||
+        p.testCaseIds.includes(artifactId) ||
+        p.informationIds.includes(artifactId)
+      );
+    };
+
+    // Filter out artifacts that are already assigned to any project
+    const filteredArtifacts = {
+      requirements: artifacts.requirements.filter(id => {
+        const isAssigned = checkAssignment(id);
+        if (isAssigned) alreadyAssigned.push(id);
+        return !isAssigned;
+      }),
+      useCases: artifacts.useCases.filter(id => {
+        const isAssigned = checkAssignment(id);
+        if (isAssigned) alreadyAssigned.push(id);
+        return !isAssigned;
+      }),
+      testCases: artifacts.testCases.filter(id => {
+        const isAssigned = checkAssignment(id);
+        if (isAssigned) alreadyAssigned.push(id);
+        return !isAssigned;
+      }),
+      information: artifacts.information.filter(id => {
+        const isAssigned = checkAssignment(id);
+        if (isAssigned) alreadyAssigned.push(id);
+        return !isAssigned;
+      })
+    };
+
+    // Show warning if some artifacts were filtered out
+    if (alreadyAssigned.length > 0) {
+      alert(`The following artifacts are already assigned to other projects and were not added:\n${alreadyAssigned.join(', ')}`);
+    }
+
+    // If no artifacts to add after filtering, return early
+    if (filteredArtifacts.requirements.length === 0 &&
+      filteredArtifacts.useCases.length === 0 &&
+      filteredArtifacts.testCases.length === 0 &&
+      filteredArtifacts.information.length === 0) {
+      return;
+    }
+
     setProjects(prev => prev.map(p => {
       if (p.id !== targetProjectId) return p;
 
       // Add IDs if not already present
-      const newReqIds = Array.from(new Set([...p.requirementIds, ...artifacts.requirements]));
-      const newUcIds = Array.from(new Set([...p.useCaseIds, ...artifacts.useCases]));
-      const newTcIds = Array.from(new Set([...p.testCaseIds, ...artifacts.testCases]));
-      const newInfoIds = Array.from(new Set([...p.informationIds, ...artifacts.information]));
+      const newReqIds = Array.from(new Set([...p.requirementIds, ...filteredArtifacts.requirements]));
+      const newUcIds = Array.from(new Set([...p.useCaseIds, ...filteredArtifacts.useCases]));
+      const newTcIds = Array.from(new Set([...p.testCaseIds, ...filteredArtifacts.testCases]));
+      const newInfoIds = Array.from(new Set([...p.informationIds, ...filteredArtifacts.information]));
 
       return {
         ...p,
@@ -634,10 +688,10 @@ function App() {
     // Also update local state to reflect changes immediately IF it's the current project
     if (targetProjectId === currentProjectId) {
       // Filter global artifacts by the new IDs
-      const newReqs = globalRequirements.filter(r => artifacts.requirements.includes(r.id) || requirements.some(existing => existing.id === r.id));
-      const newUCs = globalUseCases.filter(u => artifacts.useCases.includes(u.id) || useCases.some(existing => existing.id === u.id));
-      const newTCs = globalTestCases.filter(t => artifacts.testCases.includes(t.id) || testCases.some(existing => existing.id === t.id));
-      const newInfo = globalInformation.filter(i => artifacts.information.includes(i.id) || information.some(existing => existing.id === i.id));
+      const newReqs = globalRequirements.filter(r => filteredArtifacts.requirements.includes(r.id) || requirements.some(existing => existing.id === r.id));
+      const newUCs = globalUseCases.filter(u => filteredArtifacts.useCases.includes(u.id) || useCases.some(existing => existing.id === u.id));
+      const newTCs = globalTestCases.filter(t => filteredArtifacts.testCases.includes(t.id) || testCases.some(existing => existing.id === t.id));
+      const newInfo = globalInformation.filter(i => filteredArtifacts.information.includes(i.id) || information.some(existing => existing.id === i.id));
 
       setRequirements(newReqs);
       setUseCases(newUCs);
@@ -648,7 +702,7 @@ function App() {
     // The sync effect will then update the Project object.
 
     createVersionSnapshot('Added artifacts from Global Library', 'auto-save');
-    // alert(`Added ${artifacts.requirements.length} Requirements, ${artifacts.useCases.length} Use Cases, ${artifacts.testCases.length} Test Cases, and ${artifacts.information.length} Information items to the project.`);
+    // alert(`Added ${filteredArtifacts.requirements.length} Requirements, ${filteredArtifacts.useCases.length} Use Cases, ${filteredArtifacts.testCases.length} Test Cases, and ${filteredArtifacts.information.length} Information items to the project.`);
   };
 
   const handleGlobalLibrarySelect = (id: string) => {
@@ -967,7 +1021,7 @@ function App() {
     try {
       const project = projects.find(p => p.id === currentProjectId);
       if (project) {
-        await gitService.saveArtifact(project.name, 'requirements', newRequirement);
+        await gitService.saveArtifact('requirements', newRequirement);
       }
     } catch (error) {
       console.error('Failed to save requirement to git:', error);
@@ -1017,7 +1071,7 @@ function App() {
     try {
       const project = projects.find(p => p.id === currentProjectId);
       if (project) {
-        await gitService.saveArtifact(project.name, 'requirements', finalRequirement);
+        await gitService.saveArtifact('requirements', finalRequirement);
       }
     } catch (error) {
       console.error('Failed to save requirement to git:', error);
@@ -1069,7 +1123,7 @@ function App() {
       try {
         const project = projects.find(p => p.id === currentProjectId);
         if (project) {
-          await gitService.saveArtifact(project.name, 'usecases', savedUseCase);
+          await gitService.saveArtifact('usecases', savedUseCase);
         }
       } catch (error) {
         console.error('Failed to save use case to git:', error);
@@ -1117,7 +1171,7 @@ function App() {
     try {
       const project = projects.find(p => p.id === currentProjectId);
       if (project) {
-        await gitService.saveArtifact(project.name, 'testcases', newTestCase);
+        await gitService.saveArtifact('testcases', newTestCase);
       }
     } catch (error) {
       console.error('Failed to save test case to git:', error);
@@ -1143,7 +1197,7 @@ function App() {
     try {
       const project = projects.find(p => p.id === currentProjectId);
       if (project) {
-        await gitService.saveArtifact(project.name, 'testcases', finalTestCase);
+        await gitService.saveArtifact('testcases', finalTestCase);
       }
     } catch (error) {
       console.error('Failed to save test case to git:', error);
@@ -1200,7 +1254,7 @@ function App() {
       try {
         const project = projects.find(p => p.id === currentProjectId);
         if (project) {
-          await gitService.saveArtifact(project.name, 'information', savedInformation);
+          await gitService.saveArtifact('information', savedInformation);
         }
       } catch (error) {
         console.error('Failed to save information to git:', error);
@@ -1463,7 +1517,7 @@ function App() {
         onExport={handleExport}
         onImport={handleImport}
         onImportExcel={handleImportExcel}
-        onOpenGlobalLibrary={() => setIsLibraryPanelOpen(!isLibraryPanelOpen)}
+        onOpenGlobalLibrary={() => setIsGlobalLibraryModalOpen(true)}
         onResetToDemo={handleResetToDemo}
         onViewHistory={() => setIsVersionHistoryOpen(true)}
         onPendingChangesChange={handlePendingChangesChange}
@@ -1816,6 +1870,18 @@ function App() {
             onSubmit={handleCreateProjectSubmit}
           />
         )}
+
+        <GlobalLibraryModal
+          isOpen={isGlobalLibraryModalOpen}
+          onClose={() => setIsGlobalLibraryModalOpen(false)}
+          projects={projects}
+          currentProjectId={currentProjectId}
+          globalRequirements={globalRequirements}
+          globalUseCases={globalUseCases}
+          globalTestCases={globalTestCases}
+          globalInformation={globalInformation}
+          onAddToProject={handleAddToProject}
+        />
 
 
 

@@ -3,33 +3,31 @@ import { FileText, GitCommit, AlertCircle } from 'lucide-react';
 import type { ArtifactChange } from '../types';
 
 interface PendingChangesPanelProps {
-    projectName: string;
     onChange: (changes: ArtifactChange[]) => void;
     onCommit: (artifactId: string, type: string, message: string) => void;
 }
 
-export function PendingChangesPanel({ projectName, onChange, onCommit }: PendingChangesPanelProps) {
+export function PendingChangesPanel({ onChange, onCommit }: PendingChangesPanelProps) {
     const [pendingChanges, setPendingChanges] = useState<ArtifactChange[]>([]);
     const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
     const [committing, setCommitting] = useState<Record<string, boolean>>({});
 
-    // Load pending changes periodically
     useEffect(() => {
         const loadPendingChanges = async () => {
             try {
                 const { gitService } = await import('../services/gitService');
-                const fileStatuses = await gitService.getPendingChanges(projectName);
+                const fileStatuses = await gitService.getPendingChanges();
 
-                // Convert file statuses to ArtifactChange objects
+                // Convert file statuses to  ArtifactChange objects
                 const changes: ArtifactChange[] = fileStatuses
                     .filter(fs => fs.path.endsWith('.md') && fs.status !== 'unchanged')
                     .map(fs => {
-                        // Parse path like "projects/ProjectName/requirements/REQ-001.md"
+                        // Parse global artifact path: artifacts/{type}/{id}.md
                         const parts = fs.path.split('/');
-                        if (parts.length < 2) return null;
+                        if (parts.length < 3 || parts[0] !== 'artifacts') return null;
 
-                        const filename = parts[parts.length - 1];
-                        const typeStr = parts[parts.length - 2];
+                        const typeStr = parts[1]; // 'requirements', 'usecases', etc.
+                        const filename = parts[2];
                         const id = filename.replace('.md', '');
 
                         // Map folder names to artifact types
@@ -78,7 +76,7 @@ export function PendingChangesPanel({ projectName, onChange, onCommit }: Pending
         // Refresh every 5 seconds
         const interval = setInterval(loadPendingChanges, 5000);
         return () => clearInterval(interval);
-    }, [projectName, commitMessages, onChange]);
+    }, [commitMessages, onChange]);
 
     const handleCommitMessageChange = (id: string, message: string) => {
         setCommitMessages(prev => ({ ...prev, [id]: message }));

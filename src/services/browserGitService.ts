@@ -116,15 +116,12 @@ class BrowserGitService {
         }
     }
 
-    // Write artifact to file as Markdown (No Commit)
+    // Write artifact to file as Markdown (No Commit) - Global Storage
     async saveArtifact(
-        projectName: string,
         type: 'requirements' | 'usecases' | 'testcases' | 'information',
         artifact: Requirement | UseCase | TestCase | Information
     ): Promise<void> {
         await this.init(); // Ensure repo is initialized
-
-        const projectPath = await this.getProjectPath(projectName);
 
         // Convert to Markdown based on type
         let markdown: string;
@@ -149,20 +146,47 @@ class BrowserGitService {
                 break;
         }
 
-        const relativePath = `${projectPath}/${type}/${filename}`;
+        // Use global artifacts directory
+        const relativePath = `artifacts/${type}/${filename}`;
         const filePath = `${this.repoDir}/${relativePath}`;
-        const dirPath = `${this.repoDir}/${projectPath}/${type}`;
+        const dirPath = `${this.repoDir}/artifacts/${type}`;
 
         try {
             // Ensure directory exists
-            await pfs.mkdir(`${this.repoDir}/projects`).catch(() => { });
-            await pfs.mkdir(`${this.repoDir}/${projectPath}`).catch(() => { });
+            await pfs.mkdir(`${this.repoDir}/artifacts`).catch(() => { });
             await pfs.mkdir(dirPath).catch(() => { });
 
             await pfs.writeFile(filePath, markdown, 'utf8');
             console.log(`✅ Saved artifact to: ${relativePath}`);
         } catch (error) {
             console.error(`❌ Failed to save artifact ${filename}:`, error);
+            throw error;
+        }
+    }
+
+    // Save project manifest (tracks which artifacts belong to a project)
+    async saveProjectManifest(
+        projectName: string,
+        manifest: {
+            requirementIds: string[];
+            useCaseIds: string[];
+            testCaseIds: string[];
+            informationIds: string[];
+        }
+    ): Promise<void> {
+        await this.init();
+        const projectPath = await this.getProjectPath(projectName);
+        const manifestPath = `${projectPath}/_manifest.json`;
+        const filePath = `${this.repoDir}/${manifestPath}`;
+
+        try {
+            await pfs.mkdir(`${this.repoDir}/projects`).catch(() => { });
+            await pfs.mkdir(`${this.repoDir}/${projectPath}`).catch(() => { });
+
+            await pfs.writeFile(filePath, JSON.stringify(manifest, null, 2), 'utf8');
+            console.log(`✅ Saved project manifest: ${manifestPath}`);
+        } catch (error) {
+            console.error(`❌ Failed to save project manifest:`, error);
             throw error;
         }
     }
@@ -218,24 +242,16 @@ class BrowserGitService {
         }
     }
 
-    // Commit a single artifact file with its own message
+    // Commit a single artifact file with its own message - Global Storage
     async commitArtifact(
-        projectName: string,
         type: 'requirements' | 'usecases' | 'testcases' | 'information',
         artifactId: string,
         commitMessage: string
     ): Promise<string> {
         await this.init();
 
-        const projectPath = await this.getProjectPath(projectName);
-
-        // Map singular types to plural directory names
-        let dirName = type as string;
-        if (type === 'requirement') dirName = 'requirements';
-        else if (type === 'usecase') dirName = 'usecases';
-        else if (type === 'testcase') dirName = 'testcases';
-
-        const relativeFilePath = `${projectPath}/${dirName}/${artifactId}.md`;
+        // Use global artifacts path - type is already plural
+        const relativeFilePath = `artifacts/${type}/${artifactId}.md`;
 
         try {
             // Add the file
@@ -249,7 +265,7 @@ class BrowserGitService {
             await git.commit({
                 fs,
                 dir: this.repoDir,
-                message: `[${projectName}] ${commitMessage}`,
+                message: commitMessage,  // No project prefix needed - artifacts are global
                 author: {
                     name: 'User',
                     email: 'user@reqtrace.local'
@@ -265,8 +281,8 @@ class BrowserGitService {
         }
     }
 
-    // Get list of uncommitted changes (all projects)
-    async getPendingChanges(projectName?: string): Promise<FileStatus[]> {
+    // Get list of uncommitted changes (global artifacts only)
+    async getPendingChanges(): Promise<FileStatus[]> {
         await this.init();
 
         try {
@@ -278,14 +294,11 @@ class BrowserGitService {
             const changes: FileStatus[] = [];
 
             for (const [filepath, headStatus, workdirStatus] of status) {
-                // Skip .git directory and README
-                if (filepath.startsWith('.git') || filepath === 'README.md') continue;
+                // Skip .git directory, README, and project manifests
+                if (filepath.startsWith('.git') || filepath === 'README.md' || filepath.includes('_manifest.json')) continue;
 
-                // If projectName specified, filter by project
-                if (projectName) {
-                    const projectPath = await this.getProjectPath(projectName);
-                    if (!filepath.startsWith(projectPath)) continue;
-                }
+                // Only include artifacts directory
+                if (!filepath.startsWith('artifacts/')) continue;
 
                 let fileStatus: string;
 
@@ -309,7 +322,7 @@ class BrowserGitService {
                 });
             }
 
-            console.log(`Found ${changes.length} pending changes`);
+            console.log(`Found ${changes.length} pending changes in global artifacts`);
             return changes;
         } catch (error) {
             console.error('Failed to get pending changes:', error);
@@ -317,16 +330,15 @@ class BrowserGitService {
         }
     }
 
-    // Get revision history for a specific artifact
+    // Get revision history for a specific artifact - Global Storage
     async getArtifactHistory(
-        projectName: string,
         type: 'requirements' | 'usecases' | 'testcases' | 'information',
         artifactId: string
     ): Promise<CommitInfo[]> {
         await this.init();
 
-        const projectPath = await this.getProjectPath(projectName);
-        const relativeFilePath = `${projectPath}/${type}/${artifactId}.md`;
+        // Use global artifacts path
+        const relativeFilePath = `artifacts/${type}/${artifactId}.md`;
 
         try {
             const commits = await git.log({
@@ -397,7 +409,78 @@ class BrowserGitService {
         return result;
     }
 
-    async getHistory(projectName: string, filePath?: string): Promise<CommitInfo[]> {
+    // Migrate from old per-project storage to global artifacts storage
+    async migrateToGlobalArtifacts(): Promise<void> {
+        await this.init();
+
+        const artifactsDir = `${this.repoDir}/artifacts`;
+
+        try {
+            // Check if already migrated
+            await pfs.readdir(artifactsDir);
+            console.log('✅ Already using global artifacts storage');
+            return;
+        } catch {
+            console.log('🔄 Migrating to global artifacts storage...');
+        }
+
+        try {
+            // Create artifacts directories
+            await pfs.mkdir(artifactsDir).catch(() => { });
+            await pfs.mkdir(`${artifactsDir}/requirements`).catch(() => { });
+            await pfs.mkdir(`${artifactsDir}/usecases`).catch(() => { });
+            await pfs.mkdir(`${artifactsDir}/testcases`).catch(() => { });
+            await pfs.mkdir(`${artifactsDir}/information`).catch(() => { });
+
+            // Scan projects directory
+            const projectsDir = `${this.repoDir}/projects`;
+            try {
+                const projects = await pfs.readdir(projectsDir);
+
+                for (const projectName of projects) {
+                    const projectPath = `${projectsDir}/${projectName}`;
+                    const types = ['requirements', 'usecases', 'testcases', 'information'];
+
+                    for (const type of types) {
+                        const typePath = `${projectPath}/${type}`;
+                        try {
+                            const files = await pfs.readdir(typePath);
+
+                            for (const file of files) {
+                                if (!file.endsWith('.md')) continue;
+
+                                const sourcePath = `${typePath}/${file}`;
+                                const destPath = `${artifactsDir}/${type}/${file}`;
+
+                                // Check if file already exists in global location
+                                try {
+                                    await pfs.readFile(destPath, 'utf8');
+                                    console.log(`  ⏭️  Skipping ${file} (already exists)`);
+                                } catch {
+                                    // File doesn't exist, move it
+                                    const content = await pfs.readFile(sourcePath, 'utf8');
+                                    await pfs.writeFile(destPath, content, 'utf8');
+                                    console.log(`  ✅ Moved ${type}/${file}`);
+                                }
+                            }
+                        } catch (e) {
+                            // Directory might not exist, skip
+                        }
+                    }
+                }
+            } catch (e) {
+                // Projects directory doesn't exist, nothing to migrate
+                console.log('  No projects to migrate');
+            }
+
+            console.log('✅ Migration to global artifacts complete');
+        } catch (error) {
+            console.error('❌ Migration failed:', error);
+            throw error;
+        }
+    }
+
+    async getHistory(filePath?: string): Promise<CommitInfo[]> {
         await this.init();
 
         try {
