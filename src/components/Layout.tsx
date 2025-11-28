@@ -1,5 +1,6 @@
-import { LayoutGrid, FolderOpen, Plus, Download, Upload, Clock, FileText, FileSpreadsheet, ChevronDown, Search, Trash2, BookOpen } from 'lucide-react';
+import { LayoutGrid, FolderOpen, Plus, Download, Upload, Clock, FileText, FileSpreadsheet, ChevronDown, Search, Trash2, BookOpen, GitBranch } from 'lucide-react';
 import { ProjectSidebarItem } from './ProjectSidebarItem';
+import { PendingChangesPanel } from './PendingChangesPanel';
 import { useState, useRef, useEffect } from 'react';
 import type { Project, ViewType } from '../types';
 
@@ -29,6 +30,9 @@ interface LayoutProps {
     onSwitchView: (view: ViewType) => void;
     rightPanel?: React.ReactNode;
     onOpenLibrary?: (tab: 'requirements' | 'usecases' | 'testcases' | 'information') => void;
+    // Pending changes props
+    onPendingChangesChange?: (changes: any[]) => void;
+    onCommitArtifact?: (artifactId: string, type: string, message: string) => void;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -56,7 +60,9 @@ export const Layout: React.FC<LayoutProps> = ({
     currentView,
     onSwitchView,
     rightPanel,
-    onOpenLibrary
+    onOpenLibrary,
+    onPendingChangesChange,
+    onCommitArtifact
 }) => {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
@@ -151,6 +157,30 @@ export const Layout: React.FC<LayoutProps> = ({
                             ))}
                         </div>
                     </div>
+
+                    {/* Pending Changes Section */}
+                    {onCommitArtifact && onPendingChangesChange && (
+                        <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                            <h2 style={{
+                                fontSize: '0.75rem',
+                                textTransform: 'uppercase',
+                                color: 'var(--color-text-muted)',
+                                letterSpacing: '0.05em',
+                                margin: '0 0 var(--spacing-sm) 0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 'var(--spacing-xs)'
+                            }}>
+                                <GitBranch size={12} />
+                                Pending Changes
+                            </h2>
+                            <PendingChangesPanel
+                                projectName={currentProjectName}
+                                onChange={onPendingChangesChange}
+                                onCommit={onCommitArtifact}
+                            />
+                        </div>
+                    )}
 
                     {/* Views Navigation */}
                     <div style={{ marginBottom: 'var(--spacing-lg)' }}>

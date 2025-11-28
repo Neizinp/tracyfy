@@ -75,7 +75,19 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                                 >
                                     <td style={{ padding: '12px', verticalAlign: 'top' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <span style={{ fontFamily: 'monospace', color: 'var(--color-accent-light)', fontWeight: 500 }}>{tc.id}</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <span style={{ fontFamily: 'monospace', color: 'var(--color-accent-light)', fontWeight: 500 }}>{tc.id}</span>
+                                                <span style={{
+                                                    fontSize: '0.7rem',
+                                                    padding: '0 4px',
+                                                    borderRadius: '3px',
+                                                    backgroundColor: 'var(--color-bg-tertiary)',
+                                                    color: 'var(--color-text-muted)',
+                                                    border: '1px solid var(--color-border)'
+                                                }}>
+                                                    v{tc.revision || '01'}
+                                                </span>
+                                            </div>
                                             <span style={{ fontWeight: 500 }}>{tc.title}</span>
                                         </div>
                                     </td>

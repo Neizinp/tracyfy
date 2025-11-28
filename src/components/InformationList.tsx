@@ -70,6 +70,16 @@ export const InformationList: React.FC<InformationListProps> = ({
                             }}>
                                 {info.id}
                             </span>
+                            <span style={{
+                                fontSize: '0.75rem',
+                                padding: '1px 5px',
+                                borderRadius: '3px',
+                                backgroundColor: 'var(--color-bg-tertiary)',
+                                color: 'var(--color-text-muted)',
+                                border: '1px solid var(--color-border)'
+                            }}>
+                                v{info.revision || '01'}
+                            </span>
                             <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{info.title}</h3>
                         </div>
                         <div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>

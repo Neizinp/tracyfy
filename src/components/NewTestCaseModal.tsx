@@ -26,7 +26,8 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({ isOpen, requ
             priority,
             author: author || undefined,
             requirementIds,
-            status: 'draft'
+            status: 'draft',
+            revision: '01'
         });
         // Reset form
         setTitle('');

@@ -16,6 +16,7 @@ export interface Requirement {
   lastModified: number;
   isDeleted?: boolean;
   deletedAt?: number;
+  revision: string;
 }
 
 // Tree node type for rendering (computed from flat requirements)
@@ -37,6 +38,7 @@ export interface UseCase {
   lastModified: number;
   isDeleted?: boolean;
   deletedAt?: number;
+  revision: string;
 }
 
 export interface TestCase {
@@ -52,6 +54,7 @@ export interface TestCase {
   lastModified: number;
   isDeleted?: boolean;
   deletedAt?: number;
+  revision: string;
 }
 
 export interface Information {
@@ -63,6 +66,7 @@ export interface Information {
   lastModified: number;
   isDeleted?: boolean;
   deletedAt?: number;
+  revision: string;
 }
 
 export interface Link {
@@ -83,6 +87,8 @@ export interface Project {
   useCaseIds: string[];
   testCaseIds: string[];
   informationIds: string[];
+  baselines?: string[]; // IDs of baselines for this project
+  currentBaseline?: string; // ID of current baseline
   // Links are now global, so we don't strictly need them here, 
   // but keeping a reference might be useful for project-specific views if we ever want to scope them tightly.
   // For now, let's remove them from Project as per plan, or keep them as IDs if we want "Project owns these links".
@@ -136,7 +142,46 @@ export type ViewType =
   | 'usecases'
   | 'testcases'
   | 'information'
+  | 'baselines'
+  | 'baseline-history'
   | 'library-requirements'
   | 'library-usecases'
   | 'library-testcases'
   | 'library-information';
+
+// Git Revision Control Types
+
+export interface ArtifactChange {
+  id: string;
+  type: 'requirement' | 'usecase' | 'testcase' | 'information';
+  title: string;
+  status: 'new' | 'modified'; // No 'deleted' - artifacts can only be removed from projects
+  path: string;
+  commitMessage?: string; // User's pending commit message
+}
+
+export interface ArtifactRevision {
+  commitHash: string;
+  message: string;
+  author: string;
+  timestamp: number;
+}
+
+export interface ProjectBaseline {
+  id: string;
+  projectId: string;
+  version: string; // e.g., "01", "02", "03"
+  name: string;
+  description: string;
+  timestamp: number;
+  // Snapshot of which artifacts are in the project at this baseline
+  artifactCommits: {
+    [artifactId: string]: {
+      commitHash: string;
+      type: 'requirement' | 'usecase' | 'testcase' | 'information';
+    };
+  };
+  // Track what was added/removed from project since last baseline
+  addedArtifacts?: string[];
+  removedArtifacts?: string[];
+}

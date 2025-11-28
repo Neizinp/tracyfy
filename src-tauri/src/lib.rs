@@ -18,6 +18,7 @@ pub fn run() {
       // Git operations
       git_ops::git_init,
       git_ops::git_commit,
+      git_ops::git_commit_file,
       git_ops::git_log,
       git_ops::git_checkout_file,
       git_ops::git_status,

@@ -17,6 +17,7 @@ export const mockRequirements: Requirement[] = [
         dateCreated: Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 days ago
         approvalDate: Date.now() - 25 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
         comments: 'Approved by security team'
     },
     {
@@ -33,6 +34,7 @@ export const mockRequirements: Requirement[] = [
         dateCreated: Date.now() - 29 * 24 * 60 * 60 * 1000,
         approvalDate: Date.now() - 24 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'REQ-003',
@@ -48,6 +50,7 @@ export const mockRequirements: Requirement[] = [
         dateCreated: Date.now() - 28 * 24 * 60 * 60 * 1000,
         approvalDate: Date.now() - 23 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'REQ-004',
@@ -63,6 +66,7 @@ export const mockRequirements: Requirement[] = [
         dateCreated: Date.now() - 27 * 24 * 60 * 60 * 1000,
         approvalDate: Date.now() - 22 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
 
     // Data Management Requirements
@@ -81,6 +85,7 @@ export const mockRequirements: Requirement[] = [
         dateCreated: Date.now() - 26 * 24 * 60 * 60 * 1000,
         approvalDate: Date.now() - 21 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'REQ-006',
@@ -95,6 +100,7 @@ export const mockRequirements: Requirement[] = [
         verificationMethod: 'Database configuration review',
         dateCreated: Date.now() - 25 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'REQ-007',
@@ -110,6 +116,7 @@ export const mockRequirements: Requirement[] = [
         dateCreated: Date.now() - 24 * 24 * 60 * 60 * 1000,
         approvalDate: Date.now() - 20 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
 
     // User Interface Requirements
@@ -126,6 +133,7 @@ export const mockRequirements: Requirement[] = [
         verificationMethod: 'Cross-device testing',
         dateCreated: Date.now() - 23 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'REQ-009',
@@ -140,6 +148,7 @@ export const mockRequirements: Requirement[] = [
         verificationMethod: 'Accessibility audit using WAVE and axe tools',
         dateCreated: Date.now() - 22 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'REQ-010',
@@ -154,6 +163,7 @@ export const mockRequirements: Requirement[] = [
         verificationMethod: 'Visual testing',
         dateCreated: Date.now() - 21 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
 
     // Performance Requirements
@@ -171,6 +181,7 @@ export const mockRequirements: Requirement[] = [
         dateCreated: Date.now() - 20 * 24 * 60 * 60 * 1000,
         approvalDate: Date.now() - 15 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'REQ-012',
@@ -185,6 +196,7 @@ export const mockRequirements: Requirement[] = [
         verificationMethod: 'Load testing with Apache JMeter',
         dateCreated: Date.now() - 19 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
 
     // Notification Requirements
@@ -202,6 +214,7 @@ export const mockRequirements: Requirement[] = [
         dateCreated: Date.now() - 18 * 24 * 60 * 60 * 1000,
         approvalDate: Date.now() - 13 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'REQ-014',
@@ -216,6 +229,7 @@ export const mockRequirements: Requirement[] = [
         verificationMethod: 'User acceptance testing',
         dateCreated: Date.now() - 17 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
 
     // Audit and Logging
@@ -232,6 +246,7 @@ export const mockRequirements: Requirement[] = [
         verificationMethod: 'Log analysis and compliance review',
         dateCreated: Date.now() - 16 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     }
 ];
 
@@ -258,6 +273,7 @@ export const mockUseCases: UseCase[] = [
         priority: 'high',
         status: 'approved',
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'UC-002',
@@ -280,6 +296,7 @@ export const mockUseCases: UseCase[] = [
         priority: 'high',
         status: 'approved',
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'UC-003',
@@ -307,6 +324,7 @@ export const mockUseCases: UseCase[] = [
         priority: 'high',
         status: 'approved',
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'UC-004',
@@ -330,6 +348,7 @@ export const mockUseCases: UseCase[] = [
         priority: 'medium',
         status: 'verified',
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'UC-005',
@@ -350,6 +369,7 @@ export const mockUseCases: UseCase[] = [
         priority: 'medium',
         status: 'draft',
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'UC-006',
@@ -373,6 +393,7 @@ export const mockUseCases: UseCase[] = [
         priority: 'medium',
         status: 'draft',
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'UC-007',
@@ -396,6 +417,7 @@ export const mockUseCases: UseCase[] = [
         priority: 'high',
         status: 'draft',
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'UC-008',
@@ -415,6 +437,7 @@ export const mockUseCases: UseCase[] = [
         priority: 'medium',
         status: 'implemented',
         lastModified: Date.now(),
+        revision: "01",
     }
 ];
 
@@ -430,6 +453,7 @@ export const mockTestCases: TestCase[] = [
         lastRun: Date.now() - 2 * 24 * 60 * 60 * 1000,
         dateCreated: Date.now() - 15 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'TC-002',
@@ -442,6 +466,7 @@ export const mockTestCases: TestCase[] = [
         lastRun: Date.now() - 2 * 24 * 60 * 60 * 1000,
         dateCreated: Date.now() - 15 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'TC-003',
@@ -454,6 +479,7 @@ export const mockTestCases: TestCase[] = [
         lastRun: Date.now() - 3 * 24 * 60 * 60 * 1000,
         dateCreated: Date.now() - 14 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'TC-004',
@@ -466,6 +492,7 @@ export const mockTestCases: TestCase[] = [
         lastRun: Date.now() - 4 * 24 * 60 * 60 * 1000,
         dateCreated: Date.now() - 13 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'TC-005',
@@ -478,6 +505,7 @@ export const mockTestCases: TestCase[] = [
         lastRun: Date.now() - 1 * 24 * 60 * 60 * 1000,
         dateCreated: Date.now() - 12 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'TC-006',
@@ -490,6 +518,7 @@ export const mockTestCases: TestCase[] = [
         lastRun: Date.now() - 5 * 24 * 60 * 60 * 1000,
         dateCreated: Date.now() - 11 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'TC-007',
@@ -502,6 +531,7 @@ export const mockTestCases: TestCase[] = [
         lastRun: Date.now() - 7 * 24 * 60 * 60 * 1000,
         dateCreated: Date.now() - 10 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'TC-008',
@@ -514,6 +544,7 @@ export const mockTestCases: TestCase[] = [
         lastRun: Date.now() - 1 * 24 * 60 * 60 * 1000,
         dateCreated: Date.now() - 9 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'TC-009',
@@ -525,6 +556,7 @@ export const mockTestCases: TestCase[] = [
         author: 'QA Team',
         dateCreated: Date.now() - 8 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'TC-010',
@@ -537,6 +569,7 @@ export const mockTestCases: TestCase[] = [
         lastRun: Date.now() - 3 * 24 * 60 * 60 * 1000,
         dateCreated: Date.now() - 7 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'TC-011',
@@ -549,6 +582,7 @@ export const mockTestCases: TestCase[] = [
         lastRun: Date.now() - 6 * 24 * 60 * 60 * 1000,
         dateCreated: Date.now() - 6 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'TC-012',
@@ -561,6 +595,7 @@ export const mockTestCases: TestCase[] = [
         lastRun: Date.now() - 2 * 24 * 60 * 60 * 1000,
         dateCreated: Date.now() - 5 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'TC-013',
@@ -573,6 +608,7 @@ export const mockTestCases: TestCase[] = [
         lastRun: Date.now() - 1 * 24 * 60 * 60 * 1000,
         dateCreated: Date.now() - 4 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'TC-014',
@@ -584,6 +620,7 @@ export const mockTestCases: TestCase[] = [
         author: 'QA Team',
         dateCreated: Date.now() - 3 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'TC-015',
@@ -595,6 +632,7 @@ export const mockTestCases: TestCase[] = [
         author: 'QA Team',
         dateCreated: Date.now() - 2 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     }
 ];
 
@@ -622,6 +660,7 @@ April 15, 2025 @ 2:00 PM`,
         type: 'meeting',
         dateCreated: Date.now() - 10 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'INFO-002',
@@ -657,6 +696,7 @@ We will use JWT tokens stored in httpOnly cookies with the following characteris
         type: 'decision',
         dateCreated: Date.now() - 20 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'INFO-003',
@@ -685,6 +725,7 @@ We will use JWT tokens stored in httpOnly cookies with the following characteris
         type: 'note',
         dateCreated: Date.now() - 5 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'INFO-004',
@@ -716,6 +757,7 @@ We will use JWT tokens stored in httpOnly cookies with the following characteris
         type: 'other',
         dateCreated: Date.now() - 15 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     },
     {
         id: 'INFO-005',
@@ -751,6 +793,7 @@ We will use JWT tokens stored in httpOnly cookies with the following characteris
         type: 'note',
         dateCreated: Date.now() - 25 * 24 * 60 * 60 * 1000,
         lastModified: Date.now(),
+        revision: "01",
     }
 ];
 

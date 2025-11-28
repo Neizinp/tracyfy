@@ -41,7 +41,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                 updates: { title, content, type }
             });
         } else {
-            onSubmit({ title, content, type });
+            onSubmit({ title, content, type, revision: '01' });
         }
         onClose();
     };

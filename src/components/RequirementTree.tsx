@@ -2,8 +2,8 @@ import React from 'react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronRight, ChevronDown, FileText, AlertCircle, GripVertical, Link2, ArrowRight } from 'lucide-react';
-import type { Requirement, RequirementTreeNode, Link } from '../types';
+import { FileText, AlertCircle, GripVertical, Link2, ArrowRight } from 'lucide-react';
+import type { Requirement, Link } from '../types';
 
 interface RequirementTreeProps {
     requirements: Requirement[];
@@ -23,7 +23,7 @@ interface SortableRequirementItemProps {
     onEdit: (requirement: Requirement) => void;
 }
 
-const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({ req, links, allRequirements, onReorder, onLink, onEdit }) => {
+const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({ req, links, allRequirements, onLink, onEdit }) => {
     const {
         attributes,
         listeners,

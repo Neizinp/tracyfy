@@ -113,6 +113,7 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                     <thead>
                         <tr style={{ background: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)' }}>
                             <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-secondary)', width: '250px' }}>ID / Title</th>
+                            <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-secondary)', width: '60px' }}>Rev</th>
                             {showProjectColumn && <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-secondary)', width: '150px' }}>Project(s)</th>}
                             {visibleColumns.description && <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-secondary)', minWidth: '300px' }}>Description</th>}
                             {visibleColumns.text && <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-secondary)', minWidth: '300px' }}>Requirement Text</th>}
@@ -149,6 +150,18 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                                     <td style={{ padding: '12px 16px', verticalAlign: 'top' }}>
                                         <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '4px' }}>{req.id}</div>
                                         <div style={{ color: 'var(--color-text-primary)' }}>{req.title}</div>
+                                    </td>
+                                    <td style={{ padding: '12px 16px', verticalAlign: 'top' }}>
+                                        <span style={{
+                                            fontSize: '0.75rem',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px',
+                                            backgroundColor: 'var(--color-bg-tertiary)',
+                                            color: 'var(--color-text-secondary)',
+                                            border: '1px solid var(--color-border)'
+                                        }}>
+                                            {req.revision || '01'}
+                                        </span>
                                     </td>
                                     {showProjectColumn && (
                                         <td style={{ padding: '12px 16px', verticalAlign: 'top' }}>

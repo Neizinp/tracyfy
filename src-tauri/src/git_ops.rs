@@ -105,9 +105,55 @@ pub fn git_log(repo_path: String, file_path: Option<String>) -> Result<Vec<Commi
         
         // If file_path is specified, filter commits that touched this file
         if let Some(ref path) = file_path {
-            // Simple approach: check if the commit message or changes involve this file
-            // For a more sophisticated approach, we'd need to diff trees
-            // For now, include all commits
+            let path_obj = Path::new(path);
+            
+            // Check if this commit modified the file
+            let commit_tree = commit.tree()
+                .map_err(|e| format!("Failed to get commit tree: {}", e))?;
+            
+            // Check if file exists in this commit
+            let file_in_commit = commit_tree.get_path(path_obj).is_ok();
+            
+            // Compare with parent to see if file was changed
+            let mut file_changed = false;
+            
+            if commit.parent_count() == 0 {
+                // Initial commit - include if file exists
+                file_changed = file_in_commit;
+            } else {
+                // Check against parent(s)
+                for i in 0..commit.parent_count() {
+                    if let Ok(parent) = commit.parent(i) {
+                        if let Ok(parent_tree) = parent.tree() {
+                            let file_in_parent = parent_tree.get_path(path_obj).is_ok();
+                            
+                            // File changed if:
+                            // - It exists now but didn't before (added)
+                            // - It existed before but doesn't now (deleted)
+                            // - It exists in both but content differs
+                            if file_in_commit != file_in_parent {
+                                file_changed = true;
+                                break;
+                            } else if file_in_commit && file_in_parent {
+                                // Both exist, check if content changed
+                                if let (Ok(curr_entry), Ok(parent_entry)) = (
+                                    commit_tree.get_path(path_obj),
+                                    parent_tree.get_path(path_obj)
+                                ) {
+                                    if curr_entry.id() != parent_entry.id() {
+                                        file_changed = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if !file_changed {
+                continue;
+            }
         }
         
         commits.push(CommitInfo {
@@ -180,4 +226,69 @@ pub fn git_status(repo_path: String) -> Result<Vec<FileStatus>, String> {
     }
     
     Ok(file_statuses)
+}
+
+/// Commit a single file with a specific message
+#[tauri::command]  
+pub fn git_commit_file(
+    repo_path: String,
+    file_path: String,
+    message: String,
+) -> Result<String, String> {
+    let repo = Repository::open(&repo_path)
+        .map_err(|e| format!("Failed to open repository: {}", e))?;
+    
+    // Get the index
+    let mut index = repo.index()
+        .map_err(|e| format!("Failed to get index: {}", e))?;
+    
+    // Add only the specific file
+    index.add_path(Path::new(&file_path))
+        .map_err(|e| format!("Failed to add file to index: {}", e))?;
+    
+    index.write()
+        .map_err(|e| format!("Failed to write index: {}", e))?;
+    
+    let tree_id = index.write_tree()
+        .map_err(|e| format!("Failed to write tree: {}", e))?;
+    
+    let tree = repo.find_tree(tree_id)
+        .map_err(|e| format!("Failed to find tree: {}", e))?;
+    
+    // Get the signature
+    let signature = Signature::now("ReqTrace User", "user@reqtrace.local")
+        .map_err(|e| format!("Failed to create signature: {}", e))?;
+    
+    // Get parent commit if it exists
+    let parent_commit = match repo.head() {
+        Ok(head) => {
+            let oid = head.target().ok_or("Failed to get HEAD target")?;
+            Some(repo.find_commit(oid)
+                .map_err(|e| format!("Failed to find parent commit: {}", e))?)
+        },
+        Err(_) => None,
+    };
+    
+    // Create the commit
+    let commit_oid = if let Some(parent) = parent_commit {
+        repo.commit(
+            Some("HEAD"),
+            &signature,
+            &signature,
+            &message,
+            &tree,
+            &[&parent],
+        )
+    } else {
+        repo.commit(
+            Some("HEAD"),
+            &signature,
+            &signature,
+            &message,
+            &tree,
+            &[],
+        )
+    }.map_err(|e| format!("Failed to create commit: {}", e))?;
+    
+    Ok(commit_oid.to_string())
 }

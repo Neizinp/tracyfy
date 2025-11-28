@@ -16,6 +16,8 @@ interface EditRequirementModalProps {
     onDelete: (id: string) => void;
 }
 
+type Tab = 'overview' | 'details' | 'relationships' | 'comments';
+
 export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
     isOpen,
     requirement,
@@ -27,6 +29,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
     onSubmit,
     onDelete
 }) => {
+    const [activeTab, setActiveTab] = useState<Tab>('overview');
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [text, setText] = useState('');
@@ -37,6 +40,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
     const [author, setAuthor] = useState('');
     const [verificationMethod, setVerificationMethod] = useState('');
     const [comments, setComments] = useState('');
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
         if (requirement) {
@@ -53,11 +57,11 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
         }
     }, [requirement]);
 
-    if (!isOpen || !requirement) return null;
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const updates: Partial<Requirement> = {
+        if (!requirement) return;
+
+        onSubmit(requirement.id, {
             title,
             description,
             text,
@@ -65,19 +69,26 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
             priority,
             status,
             parentIds,
-            author: author || undefined,
-            verificationMethod: verificationMethod || undefined,
-            comments: comments || undefined,
-            lastModified: Date.now()
-        };
-
-        // Auto-set approval date when status changes to approved
-        if (status === 'approved' && requirement.status !== 'approved') {
-            updates.approvalDate = Date.now();
-        }
-
-        onSubmit(requirement.id, updates);
+            author,
+            verificationMethod,
+            comments
+        });
         onClose();
+    };
+
+    const handleDelete = () => {
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = () => {
+        if (requirement) {
+            onDelete(requirement.id);
+            onClose();
+        }
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteConfirm(false);
     };
 
     const handleParentToggle = (parentId: string) => {
@@ -88,49 +99,42 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
         );
     };
 
-    // Recursively find all descendants of a requirement
-    const getAllDescendants = (reqId: string, allReqs: Requirement[]): Set<string> => {
-        const descendants = new Set<string>();
+    const canBeParent = (potentialParentId: string): boolean => {
+        if (!requirement) return true;
 
-        const findChildren = (id: string) => {
-            // Find all requirements that have this ID as a parent
-            allReqs.forEach(req => {
-                if (req.parentIds.includes(id) && !descendants.has(req.id)) {
-                    descendants.add(req.id);
-                    findChildren(req.id); // Recursively find their children
-                }
-            });
+        const getAllDescendants = (reqId: string): Set<string> => {
+            const descendants = new Set<string>();
+            const queue = [reqId];
+
+            while (queue.length > 0) {
+                const currentId = queue.shift()!;
+                allRequirements
+                    .filter(r => r.parentIds?.includes(currentId))
+                    .forEach(child => {
+                        if (!descendants.has(child.id)) {
+                            descendants.add(child.id);
+                            queue.push(child.id);
+                        }
+                    });
+            }
+
+            return descendants;
         };
 
-        findChildren(reqId);
-        return descendants;
+        const descendants = getAllDescendants(requirement.id);
+        return !descendants.has(potentialParentId);
     };
 
-    // Get available parents (exclude self and descendants to prevent circular dependencies)
-    const descendants = requirement ? getAllDescendants(requirement.id, allRequirements) : new Set<string>();
-    const availableParents = allRequirements.filter(req => req.id !== requirement?.id);
+    const availableParents = allRequirements.filter(req => req.id !== requirement?.id && !req.isDeleted);
 
-    // Check if a requirement can be selected as a parent
-    const canBeParent = (reqId: string): boolean => {
-        return !descendants.has(reqId);
-    };
+    if (!isOpen || !requirement) return null;
 
-
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-    const handleDelete = () => {
-        setShowDeleteConfirm(true);
-    };
-
-    const confirmDelete = () => {
-        onDelete(requirement.id);
-        setShowDeleteConfirm(false);
-        onClose();
-    };
-
-    const cancelDelete = () => {
-        setShowDeleteConfirm(false);
-    };
+    const tabs: { id: Tab; label: string }[] = [
+        { id: 'overview', label: 'Overview' },
+        { id: 'details', label: 'Details' },
+        { id: 'relationships', label: 'Relationships' },
+        { id: 'comments', label: 'Comments' }
+    ];
 
     return (
         <div style={{
@@ -143,29 +147,28 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 1000,
-            backdropFilter: 'blur(2px)'
+            zIndex: 1000
         }}>
             <div style={{
                 backgroundColor: 'var(--color-bg-card)',
                 borderRadius: '8px',
                 border: '1px solid var(--color-border)',
-                width: '500px',
-                maxWidth: '90%',
-                maxHeight: '90vh',
-                overflow: 'auto',
+                width: '800px',
+                maxWidth: '95%',
+                maxHeight: '80vh',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
                 boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
             }}>
+                {/* Header */}
                 <div style={{
                     padding: 'var(--spacing-md)',
                     borderBottom: '1px solid var(--color-border)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    position: 'sticky',
-                    top: 0,
                     backgroundColor: 'var(--color-bg-card)',
-                    zIndex: 1
                 }}>
                     <h3 style={{ fontWeight: 600 }}>Edit Requirement - {requirement.id}</h3>
                     <button
@@ -181,335 +184,355 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} style={{ padding: 'var(--spacing-lg)' }}>
-                    {/* ... existing form fields ... */}
-                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Title</label>
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            required
-                            autoFocus
+                {/* Tab Navigation */}
+                <div style={{
+                    display: 'flex',
+                    borderBottom: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-bg-secondary)'
+                }}>
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
                             style={{
-                                width: '100%',
-                                padding: '8px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid var(--color-border)',
-                                backgroundColor: 'var(--color-bg-app)',
-                                color: 'var(--color-text-primary)',
-                                outline: 'none'
-                            }}
-                        />
-                    </div>
-
-                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <MarkdownEditor
-                            label="Description"
-                            value={description}
-                            onChange={setDescription}
-                            height={150}
-                            placeholder="Enter description with Markdown formatting..."
-                        />
-                    </div>
-
-                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <MarkdownEditor
-                            label="Requirement Text"
-                            value={text}
-                            onChange={setText}
-                            height={120}
-                            placeholder="Enter detailed requirement text with Markdown..."
-                        />
-                    </div>
-
-                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <MarkdownEditor
-                            label="Rationale"
-                            value={rationale}
-                            onChange={setRationale}
-                            height={120}
-                            placeholder="Explain the rationale with Markdown..."
-                        />
-                    </div>
-
-                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Priority</label>
-                        <select
-                            value={priority}
-                            onChange={(e) => setPriority(e.target.value as Requirement['priority'])}
-                            style={{
-                                width: '100%',
-                                padding: '8px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid var(--color-border)',
-                                backgroundColor: 'var(--color-bg-app)',
-                                color: 'var(--color-text-primary)',
-                                outline: 'none'
+                                padding: '12px 24px',
+                                border: 'none',
+                                backgroundColor: activeTab === tab.id ? 'var(--color-bg-card)' : 'transparent',
+                                color: activeTab === tab.id ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                cursor: 'pointer',
+                                fontWeight: activeTab === tab.id ? 600 : 400,
+                                borderBottom: activeTab === tab.id ? '2px solid var(--color-accent)' : '2px solid transparent',
+                                transition: 'all 0.2s'
                             }}
                         >
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                        </select>
-                    </div>
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
 
-                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Status</label>
-                        <select
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value as Requirement['status'])}
-                            style={{
-                                width: '100%',
-                                padding: '8px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid var(--color-border)',
-                                backgroundColor: 'var(--color-bg-app)',
-                                color: 'var(--color-text-primary)',
-                                outline: 'none'
-                            }}
-                        >
-                            <option value="draft">Draft</option>
-                            <option value="approved">Approved</option>
-                            <option value="implemented">Implemented</option>
-                            <option value="verified">Verified</option>
-                        </select>
-                    </div>
+                {/* Tab Content */}
+                <form id="edit-requirement-form" onSubmit={handleSubmit} style={{
+                    padding: 'var(--spacing-lg)',
+                    overflowY: 'auto',
+                    flex: 1,
+                    minHeight: 0
+                }}>
+                    {activeTab === 'overview' && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Title *</label>
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    required
+                                    autoFocus
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--color-border)',
+                                        backgroundColor: 'var(--color-bg-app)',
+                                        color: 'var(--color-text-primary)',
+                                        outline: 'none'
+                                    }}
+                                />
+                            </div>
 
-                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Author</label>
-                        <input
-                            type="text"
-                            value={author}
-                            onChange={(e) => setAuthor(e.target.value)}
-                            style={{
-                                width: '100%',
-                                padding: '8px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid var(--color-border)',
-                                backgroundColor: 'var(--color-bg-app)',
-                                color: 'var(--color-text-primary)',
-                                outline: 'none'
-                            }}
-                        />
-                    </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Priority</label>
+                                <select
+                                    value={priority}
+                                    onChange={(e) => setPriority(e.target.value as Requirement['priority'])}
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--color-border)',
+                                        backgroundColor: 'var(--color-bg-app)',
+                                        color: 'var(--color-text-primary)',
+                                        outline: 'none'
+                                    }}
+                                >
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
 
-                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Verification Method</label>
-                        <input
-                            type="text"
-                            value={verificationMethod}
-                            onChange={(e) => setVerificationMethod(e.target.value)}
-                            style={{
-                                width: '100%',
-                                padding: '8px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid var(--color-border)',
-                                backgroundColor: 'var(--color-bg-app)',
-                                color: 'var(--color-text-primary)',
-                                outline: 'none'
-                            }}
-                        />
-                    </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Status</label>
+                                <select
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value as Requirement['status'])}
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--color-border)',
+                                        backgroundColor: 'var(--color-bg-app)',
+                                        color: 'var(--color-text-primary)',
+                                        outline: 'none'
+                                    }}
+                                >
+                                    <option value="draft">Draft</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="implemented">Implemented</option>
+                                    <option value="verified">Verified</option>
+                                </select>
+                            </div>
 
-                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <MarkdownEditor
-                            label="Comments"
-                            value={comments}
-                            onChange={setComments}
-                            height={100}
-                            placeholder="Add comments with Markdown..."
-                        />
-                    </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Author</label>
+                                <input
+                                    type="text"
+                                    value={author}
+                                    onChange={(e) => setAuthor(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--color-border)',
+                                        backgroundColor: 'var(--color-bg-app)',
+                                        color: 'var(--color-text-primary)',
+                                        outline: 'none'
+                                    }}
+                                />
+                            </div>
 
-                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Date Created</label>
-                        <input
-                            type="text"
-                            value={formatDateTime(requirement.dateCreated)}
-                            disabled
-                            style={{
-                                width: '100%',
-                                padding: '8px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid var(--color-border)',
-                                backgroundColor: 'var(--color-bg-secondary)',
-                                color: 'var(--color-text-muted)',
-                                outline: 'none',
-                                cursor: 'not-allowed'
-                            }}
-                        />
-                    </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Date Created</label>
+                                <input
+                                    type="text"
+                                    value={formatDateTime(requirement.dateCreated)}
+                                    disabled
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--color-border)',
+                                        backgroundColor: 'var(--color-bg-secondary)',
+                                        color: 'var(--color-text-muted)',
+                                        outline: 'none',
+                                        cursor: 'not-allowed'
+                                    }}
+                                />
+                            </div>
 
-                    {requirement.approvalDate && (
-                        <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                            <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Approval Date</label>
-                            <input
-                                type="text"
-                                value={formatDateTime(requirement.approvalDate)}
-                                disabled
-                                style={{
-                                    width: '100%',
-                                    padding: '8px 12px',
-                                    borderRadius: '6px',
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <MarkdownEditor
+                                    label="Description"
+                                    value={description}
+                                    onChange={setDescription}
+                                    height={200}
+                                    placeholder="Enter description with Markdown formatting..."
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'details' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+                            <div>
+                                <MarkdownEditor
+                                    label="Requirement Text"
+                                    value={text}
+                                    onChange={setText}
+                                    height={180}
+                                    placeholder="Enter detailed requirement text with Markdown..."
+                                />
+                            </div>
+
+                            <div>
+                                <MarkdownEditor
+                                    label="Rationale"
+                                    value={rationale}
+                                    onChange={setRationale}
+                                    height={180}
+                                    placeholder="Explain the rationale with Markdown..."
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Verification Method</label>
+                                <input
+                                    type="text"
+                                    value={verificationMethod}
+                                    onChange={(e) => setVerificationMethod(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--color-border)',
+                                        backgroundColor: 'var(--color-bg-app)',
+                                        color: 'var(--color-text-primary)',
+                                        outline: 'none'
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'relationships' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>
+                                    Parent Requirements ({parentIds.length} selected)
+                                </label>
+                                <div style={{
+                                    maxHeight: '250px',
+                                    overflowY: 'auto',
                                     border: '1px solid var(--color-border)',
-                                    backgroundColor: 'var(--color-bg-secondary)',
-                                    color: 'var(--color-text-muted)',
-                                    outline: 'none',
-                                    cursor: 'not-allowed'
-                                }}
+                                    borderRadius: '6px',
+                                    padding: '8px',
+                                    backgroundColor: 'var(--color-bg-app)'
+                                }}>
+                                    {availableParents.length === 0 ? (
+                                        <div style={{ padding: '8px', color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+                                            No other requirements available
+                                        </div>
+                                    ) : (
+                                        availableParents.map(req => {
+                                            const isDescendant = !canBeParent(req.id);
+                                            const isDisabled = isDescendant;
+
+                                            return (
+                                                <label
+                                                    key={req.id}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        padding: '6px 8px',
+                                                        cursor: isDisabled ? 'not-allowed' : 'pointer',
+                                                        borderRadius: '4px',
+                                                        marginBottom: '2px',
+                                                        transition: 'background-color 0.1s',
+                                                        opacity: isDisabled ? 0.5 : 1
+                                                    }}
+                                                    onMouseEnter={(e) => !isDisabled && (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')}
+                                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                    title={isDisabled ? `Cannot select: ${req.id} is a descendant of this requirement (would create circular dependency)` : ''}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={parentIds.includes(req.id)}
+                                                        onChange={() => handleParentToggle(req.id)}
+                                                        disabled={isDisabled}
+                                                        style={{ marginRight: '8px', cursor: isDisabled ? 'not-allowed' : 'pointer' }}
+                                                    />
+                                                    <span style={{ fontFamily: 'monospace', fontSize: '0.85em', color: 'var(--color-accent-light)', marginRight: '8px' }}>
+                                                        {req.id}
+                                                    </span>
+                                                    <span style={{ fontSize: '0.875rem' }}>
+                                                        {req.title}
+                                                    </span>
+                                                    {isDescendant && (
+                                                        <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                                                            (descendant)
+                                                        </span>
+                                                    )}
+                                                </label>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>
+                                    Linked Items
+                                </label>
+                                <div style={{
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: '6px',
+                                    padding: '8px',
+                                    backgroundColor: 'var(--color-bg-app)',
+                                    minHeight: '100px',
+                                    maxHeight: '200px',
+                                    overflowY: 'auto'
+                                }}>
+                                    {links.filter(l => l.sourceId === requirement.id || l.targetId === requirement.id).length === 0 ? (
+                                        <div style={{ padding: '8px', color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+                                            No links found. Use the "Link" button in the main view to create links.
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                            {links.filter(l => l.sourceId === requirement.id || l.targetId === requirement.id).map(link => {
+                                                const isSource = link.sourceId === requirement.id;
+                                                const otherId = isSource ? link.targetId : link.sourceId;
+                                                const otherProjectId = isSource ? link.targetProjectId : link.sourceProjectId;
+
+                                                const otherProject = otherProjectId ? projects.find(p => p.id === otherProjectId) : null;
+                                                const projectName = otherProject ? otherProject.name : (otherProjectId ? 'Unknown Project' : 'Current Project');
+                                                const isExternal = !!otherProjectId && otherProjectId !== currentProjectId;
+
+                                                return (
+                                                    <div key={link.id} style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        padding: '6px 8px',
+                                                        backgroundColor: 'var(--color-bg-card)',
+                                                        borderRadius: '4px',
+                                                        border: '1px solid var(--color-border)'
+                                                    }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.875rem' }}>
+                                                            <span style={{
+                                                                padding: '2px 6px',
+                                                                borderRadius: '4px',
+                                                                backgroundColor: 'var(--color-bg-secondary)',
+                                                                fontSize: '0.75rem',
+                                                                fontFamily: 'monospace'
+                                                            }}>
+                                                                {link.type.replace('_', ' ')}
+                                                            </span>
+                                                            <span style={{ color: 'var(--color-text-secondary)' }}>
+                                                                {isSource ? '→' : '←'}
+                                                            </span>
+                                                            <span style={{ fontWeight: 500 }}>
+                                                                {otherId}
+                                                            </span>
+                                                            {isExternal && (
+                                                                <span style={{
+                                                                    fontSize: '0.75rem',
+                                                                    color: 'var(--color-accent)',
+                                                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                                                    padding: '2px 6px',
+                                                                    borderRadius: '10px'
+                                                                }}>
+                                                                    {projectName}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'comments' && (
+                        <div>
+                            <MarkdownEditor
+                                label="Comments"
+                                value={comments}
+                                onChange={setComments}
+                                height={400}
+                                placeholder="Add comments with Markdown..."
                             />
                         </div>
                     )}
 
-                    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>
-                            Parent Requirements ({parentIds.length} selected)
-                        </label>
-                        <div style={{
-                            maxHeight: '200px',
-                            overflowY: 'auto',
-                            border: '1px solid var(--color-border)',
-                            borderRadius: '6px',
-                            padding: '8px',
-                            backgroundColor: 'var(--color-bg-app)'
-                        }}>
-                            {availableParents.length === 0 ? (
-                                <div style={{ padding: '8px', color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
-                                    No other requirements available
-                                </div>
-                            ) : (
-                                availableParents.map(req => {
-                                    const isDescendant = !canBeParent(req.id);
-                                    const isDisabled = isDescendant;
-
-                                    return (
-                                        <label
-                                            key={req.id}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                padding: '6px 8px',
-                                                cursor: isDisabled ? 'not-allowed' : 'pointer',
-                                                borderRadius: '4px',
-                                                marginBottom: '2px',
-                                                transition: 'background-color 0.1s',
-                                                opacity: isDisabled ? 0.5 : 1
-                                            }}
-                                            onMouseEnter={(e) => !isDisabled && (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')}
-                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                            title={isDisabled ? `Cannot select: ${req.id} is a descendant of this requirement (would create circular dependency)` : ''}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={parentIds.includes(req.id)}
-                                                onChange={() => handleParentToggle(req.id)}
-                                                disabled={isDisabled}
-                                                style={{ marginRight: '8px', cursor: isDisabled ? 'not-allowed' : 'pointer' }}
-                                            />
-                                            <span style={{ fontFamily: 'monospace', fontSize: '0.85em', color: 'var(--color-accent-light)', marginRight: '8px' }}>
-                                                {req.id}
-                                            </span>
-                                            <span style={{ fontSize: '0.875rem' }}>
-                                                {req.title}
-                                            </span>
-                                            {isDescendant && (
-                                                <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                                                    (descendant)
-                                                </span>
-                                            )}
-                                        </label>
-                                    );
-                                })
-                            )}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>
-                            Select parent requirements. This requirement will appear under all selected parents.
-                        </div>
-                    </div>
-
-                    {/* Links Section */}
-                    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>
-                            Linked Items
-                        </label>
-                        <div style={{
-                            border: '1px solid var(--color-border)',
-                            borderRadius: '6px',
-                            padding: '8px',
-                            backgroundColor: 'var(--color-bg-app)',
-                            minHeight: '50px'
-                        }}>
-                            {links.filter(l => l.sourceId === requirement.id || l.targetId === requirement.id).length === 0 ? (
-                                <div style={{ padding: '8px', color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
-                                    No links found. Use the "Link" button in the main view to create links.
-                                </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    {links.filter(l => l.sourceId === requirement.id || l.targetId === requirement.id).map(link => {
-                                        const isSource = link.sourceId === requirement.id;
-                                        const otherId = isSource ? link.targetId : link.sourceId;
-                                        const otherProjectId = isSource ? link.targetProjectId : link.sourceProjectId;
-
-                                        // Find project name if external
-                                        const otherProject = otherProjectId ? projects.find(p => p.id === otherProjectId) : null;
-                                        const projectName = otherProject ? otherProject.name : (otherProjectId ? 'Unknown Project' : 'Current Project');
-                                        const isExternal = !!otherProjectId && otherProjectId !== currentProjectId;
-
-                                        return (
-                                            <div key={link.id} style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                padding: '6px 8px',
-                                                backgroundColor: 'var(--color-bg-card)',
-                                                borderRadius: '4px',
-                                                border: '1px solid var(--color-border)'
-                                            }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.875rem' }}>
-                                                    <span style={{
-                                                        padding: '2px 6px',
-                                                        borderRadius: '4px',
-                                                        backgroundColor: 'var(--color-bg-secondary)',
-                                                        fontSize: '0.75rem',
-                                                        fontFamily: 'monospace'
-                                                    }}>
-                                                        {link.type.replace('_', ' ')}
-                                                    </span>
-                                                    <span style={{ color: 'var(--color-text-secondary)' }}>
-                                                        {isSource ? '→' : '←'}
-                                                    </span>
-                                                    <span style={{ fontWeight: 500 }}>
-                                                        {otherId}
-                                                    </span>
-                                                    {isExternal && (
-                                                        <span style={{
-                                                            fontSize: '0.75rem',
-                                                            color: 'var(--color-accent)',
-                                                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                                            padding: '2px 6px',
-                                                            borderRadius: '10px'
-                                                        }}>
-                                                            {projectName}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {showDeleteConfirm ? (
-                        // Delete confirmation UI
+                    {showDeleteConfirm && (
                         <div style={{
                             padding: 'var(--spacing-md)',
                             backgroundColor: '#fef2f2',
                             border: '1px solid #fecaca',
                             borderRadius: '6px',
-                            marginBottom: 'var(--spacing-md)'
+                            marginTop: 'var(--spacing-md)'
                         }}>
                             <div style={{ color: '#991b1b', fontWeight: 500, marginBottom: 'var(--spacing-xs)' }}>
                                 ⚠️ Move to Trash
@@ -549,58 +572,67 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                                 </button>
                             </div>
                         </div>
-                    ) : null}
+                    )}
+                </form>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--spacing-sm)' }}>
+                {/* Footer */}
+                <div style={{
+                    padding: 'var(--spacing-md)',
+                    borderTop: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-bg-card)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: 'var(--spacing-sm)'
+                }}>
+                    <button
+                        type="button"
+                        onClick={handleDelete}
+                        disabled={showDeleteConfirm}
+                        style={{
+                            padding: '8px 16px',
+                            borderRadius: '6px',
+                            border: '1px solid #ef4444',
+                            backgroundColor: 'transparent',
+                            color: '#ef4444',
+                            cursor: showDeleteConfirm ? 'not-allowed' : 'pointer',
+                            fontWeight: 500,
+                            opacity: showDeleteConfirm ? 0.5 : 1
+                        }}
+                    >
+                        Delete
+                    </button>
+                    <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
                         <button
                             type="button"
-                            onClick={handleDelete}
-                            disabled={showDeleteConfirm}
+                            onClick={onClose}
                             style={{
                                 padding: '8px 16px',
                                 borderRadius: '6px',
-                                border: '1px solid #ef4444',
+                                border: '1px solid var(--color-border)',
                                 backgroundColor: 'transparent',
-                                color: '#ef4444',
-                                cursor: showDeleteConfirm ? 'not-allowed' : 'pointer',
-                                fontWeight: 500,
-                                opacity: showDeleteConfirm ? 0.5 : 1
+                                color: 'var(--color-text-primary)',
+                                cursor: 'pointer'
                             }}
                         >
-                            Delete
+                            Cancel
                         </button>
-                        <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                style={{
-                                    padding: '8px 16px',
-                                    borderRadius: '6px',
-                                    border: '1px solid var(--color-border)',
-                                    backgroundColor: 'transparent',
-                                    color: 'var(--color-text-primary)',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                style={{
-                                    padding: '8px 16px',
-                                    borderRadius: '6px',
-                                    border: 'none',
-                                    backgroundColor: 'var(--color-accent)',
-                                    color: 'white',
-                                    cursor: 'pointer',
-                                    fontWeight: 500
-                                }}
-                            >
-                                Save Changes
-                            </button>
-                        </div>
+                        <button
+                            type="submit"
+                            form="edit-requirement-form"
+                            style={{
+                                padding: '8px 16px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                backgroundColor: 'var(--color-accent)',
+                                color: 'white',
+                                cursor: 'pointer',
+                                fontWeight: 500
+                            }}
+                        >
+                            Save Changes
+                        </button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     );

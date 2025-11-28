@@ -116,6 +116,16 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
                                     <span style={{ fontFamily: 'monospace', fontSize: '0.85em', color: 'var(--color-accent-light)' }}>
                                         {useCase.id}
                                     </span>
+                                    <span style={{
+                                        fontSize: '0.75rem',
+                                        padding: '1px 5px',
+                                        borderRadius: '3px',
+                                        backgroundColor: 'var(--color-bg-tertiary)',
+                                        color: 'var(--color-text-muted)',
+                                        border: '1px solid var(--color-border)'
+                                    }}>
+                                        v{useCase.revision || '01'}
+                                    </span>
                                     <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>{useCase.title}</h3>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', fontSize: '0.75rem', flexWrap: 'wrap' }}>
