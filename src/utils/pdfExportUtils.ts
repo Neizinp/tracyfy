@@ -24,6 +24,30 @@ export async function exportProjectToPDF(
     projectTestCaseIds: string[],
     projectInformationIds: string[]
 ): Promise<void> {
+    // 0. Request File Handle FIRST (to ensure user activation is valid)
+    let fileHandle: any = null;
+    const defaultFilename = `${project.name.replace(/[^a-z0-9]/gi, '_')}-export.pdf`;
+
+    try {
+        if ('showSaveFilePicker' in window) {
+            fileHandle = await (window as any).showSaveFilePicker({
+                suggestedName: defaultFilename,
+                types: [{
+                    description: 'PDF Document',
+                    accept: { 'application/pdf': ['.pdf'] }
+                }]
+            });
+        }
+    } catch (error) {
+        console.log('Save dialog cancelled or not supported, will fallback to download');
+        // If user cancelled, we might want to stop? 
+        // But usually we just let it fall back or stop.
+        // If it was a cancel, error.name === 'AbortError'
+        if ((error as any).name === 'AbortError') {
+            return; // Stop export if user cancelled dialog
+        }
+    }
+
     const doc = new jsPDF();
     let currentPage = 1;
     const tocEntries: TOCEntry[] = [];
@@ -103,8 +127,20 @@ export async function exportProjectToPDF(
     addPageNumbers(doc);
 
     // Save with file dialog
-    const defaultFilename = `${project.name.replace(/[^a-z0-9]/gi, '_')}-export.pdf`;
-    await savePDFWithDialog(doc, defaultFilename);
+    if (fileHandle) {
+        try {
+            const writable = await fileHandle.createWritable();
+            const pdfBlob = doc.output('blob');
+            await writable.write(pdfBlob);
+            await writable.close();
+        } catch (err) {
+            console.error('Error writing to file:', err);
+            doc.save(defaultFilename);
+        }
+    } else {
+        // Fallback
+        doc.save(defaultFilename);
+    }
 }
 
 // Cover Page
@@ -507,30 +543,4 @@ function addPageNumbers(doc: jsPDF): void {
     }
 }
 
-// File save dialog
-async function savePDFWithDialog(doc: jsPDF, defaultFilename: string): Promise<void> {
-    try {
-        // Try modern File System Access API
-        if ('showSaveFilePicker' in window) {
-            const handle = await (window as any).showSaveFilePicker({
-                suggestedName: defaultFilename,
-                types: [{
-                    description: 'PDF Document',
-                    accept: { 'application/pdf': ['.pdf'] }
-                }]
-            });
 
-            const writable = await handle.createWritable();
-            const pdfBlob = doc.output('blob');
-            await writable.write(pdfBlob);
-            await writable.close();
-        } else {
-            // Fallback for browsers that don't support showSaveFilePicker
-            doc.save(defaultFilename);
-        }
-    } catch (error) {
-        // User cancelled or error occurred, fallback to simple save
-        console.log('Save dialog cancelled or not supported, using default save');
-        doc.save(defaultFilename);
-    }
-}

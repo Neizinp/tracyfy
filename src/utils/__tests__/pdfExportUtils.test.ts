@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { exportProjectToPDF } from '../pdfExportUtils';
-import type { Project, Requirement, UseCase, TestCase, Information } from '../../types';
+import type { Project, Requirement, UseCase } from '../../types';
 
 // Mock jsPDF
 const mockText = vi.fn();
@@ -101,6 +101,15 @@ describe('pdfExportUtils', () => {
             information: []
         };
 
+        // Mock showSaveFilePicker
+        const mockHandle = {
+            createWritable: vi.fn().mockResolvedValue({
+                write: vi.fn(),
+                close: vi.fn()
+            })
+        };
+        (window as any).showSaveFilePicker = vi.fn().mockResolvedValue(mockHandle);
+
         await exportProjectToPDF(
             mockProject,
             globalState,
@@ -109,6 +118,9 @@ describe('pdfExportUtils', () => {
             [],
             []
         );
+
+        // Verify showSaveFilePicker was called
+        expect((window as any).showSaveFilePicker).toHaveBeenCalled();
 
         // Verify TOC generation
         // We expect calls to doc.text with TOC entries
@@ -121,11 +133,6 @@ describe('pdfExportUtils', () => {
         expect(mockText).toHaveBeenCalledWith('Use Cases', expect.any(Number), expect.any(Number));
 
         // 3. Granular Artifacts (indented)
-        // The indentation is handled by x-coordinate calculation in addTableOfContents
-        // Requirements are level 0, artifacts level 1.
-        // Level 0 indent = 0, x = 25
-        // Level 1 indent = 10, x = 35
-
         expect(mockText).toHaveBeenCalledWith('r1 - My Requirement', 35, expect.any(Number));
         expect(mockText).toHaveBeenCalledWith('u1 - My Use Case', 35, expect.any(Number));
     });
