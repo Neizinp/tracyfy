@@ -7,6 +7,7 @@ import { formatDate } from './dateUtils';
 interface TOCEntry {
     title: string;
     page: number;
+    level: number;
 }
 
 // Main export function
@@ -42,8 +43,9 @@ export async function exportProjectToPDF(
     );
     if (projectRequirements.length > 0) {
         doc.addPage();
-        tocEntries.push({ title: 'Requirements', page: currentPage });
-        currentPage = addRequirementsSection(doc, projectRequirements, currentPage);
+        doc.addPage();
+        tocEntries.push({ title: 'Requirements', page: currentPage, level: 0 });
+        currentPage = addRequirementsSection(doc, projectRequirements, currentPage, tocEntries);
     }
 
     // 4. Use Cases Section
@@ -52,8 +54,9 @@ export async function exportProjectToPDF(
     );
     if (projectUseCases.length > 0) {
         doc.addPage();
-        tocEntries.push({ title: 'Use Cases', page: currentPage });
-        currentPage = addUseCasesSection(doc, projectUseCases, currentPage);
+        doc.addPage();
+        tocEntries.push({ title: 'Use Cases', page: currentPage, level: 0 });
+        currentPage = addUseCasesSection(doc, projectUseCases, currentPage, tocEntries);
     }
 
     // 5. Test Cases Section
@@ -62,8 +65,9 @@ export async function exportProjectToPDF(
     );
     if (projectTestCases.length > 0) {
         doc.addPage();
-        tocEntries.push({ title: 'Test Cases', page: currentPage });
-        currentPage = addTestCasesSection(doc, projectTestCases, currentPage);
+        doc.addPage();
+        tocEntries.push({ title: 'Test Cases', page: currentPage, level: 0 });
+        currentPage = addTestCasesSection(doc, projectTestCases, currentPage, tocEntries);
     }
 
     // 6. Information Section
@@ -72,15 +76,17 @@ export async function exportProjectToPDF(
     );
     if (projectInformation.length > 0) {
         doc.addPage();
-        tocEntries.push({ title: 'Information', page: currentPage });
-        currentPage = addInformationSection(doc, projectInformation, currentPage);
+        doc.addPage();
+        tocEntries.push({ title: 'Information', page: currentPage, level: 0 });
+        currentPage = addInformationSection(doc, projectInformation, currentPage, tocEntries);
     }
 
     // 7. Revision History
     if (projectRequirements.length > 0 || projectUseCases.length > 0 ||
         projectTestCases.length > 0 || projectInformation.length > 0) {
         doc.addPage();
-        tocEntries.push({ title: 'Revision History', page: currentPage });
+        doc.addPage();
+        tocEntries.push({ title: 'Revision History', page: currentPage, level: 0 });
         addRevisionHistory(doc, {
             requirements: projectRequirements,
             useCases: projectUseCases,
@@ -144,14 +150,51 @@ function addTableOfContents(doc: jsPDF, entries: TOCEntry[]): void {
 
     let yPos = 35;
     entries.forEach(entry => {
-        doc.text(entry.title, 25, yPos);
-        doc.text(String(entry.page), 180, yPos, { align: 'right' });
-        yPos += 8;
+        if (yPos > 270) {
+            doc.addPage();
+            yPos = 20;
+        }
+
+        const indent = entry.level * 10;
+        const fontSize = entry.level === 0 ? 12 : 10;
+        const fontStyle = entry.level === 0 ? 'bold' : 'normal';
+
+        doc.setFontSize(fontSize);
+        doc.setFont('helvetica', fontStyle);
+
+        // Truncate title if too long
+        let title = entry.title;
+        const maxWidth = 150 - indent;
+        if (doc.getTextWidth(title) > maxWidth) {
+            // Simple truncation
+            while (doc.getTextWidth(title + '...') > maxWidth && title.length > 0) {
+                title = title.substring(0, title.length - 1);
+            }
+            title += '...';
+        }
+
+        doc.text(title, 25 + indent, yPos);
+
+        // Dotted line leader
+        const titleWidth = doc.getTextWidth(title);
+        const pageText = String(entry.page);
+        const pageWidth = doc.getTextWidth(pageText);
+        const dotsStart = 25 + indent + titleWidth + 2;
+        const dotsEnd = 180 - pageWidth - 2;
+
+        if (dotsEnd > dotsStart) {
+            doc.setFontSize(10);
+            doc.text('.'.repeat(Math.floor((dotsEnd - dotsStart) / 2)), dotsStart, yPos);
+        }
+
+        doc.setFontSize(fontSize);
+        doc.text(pageText, 180, yPos, { align: 'right' });
+        yPos += entry.level === 0 ? 8 : 6;
     });
 }
 
 // Requirements Section
-function addRequirementsSection(doc: jsPDF, requirements: Requirement[], startPage: number): number {
+function addRequirementsSection(doc: jsPDF, requirements: Requirement[], startPage: number, tocEntries: TOCEntry[]): number {
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('Requirements', 20, 20);
@@ -170,7 +213,12 @@ function addRequirementsSection(doc: jsPDF, requirements: Requirement[], startPa
         // Requirement header
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text(`${req.id} - ${req.title}`, 20, yPos);
+        const title = `${req.id} - ${req.title}`;
+        doc.text(title, 20, yPos);
+
+        // Add to TOC
+        tocEntries.push({ title: title, page: page, level: 1 });
+
         yPos += 7;
 
         // Metadata table
@@ -227,7 +275,7 @@ function addRequirementsSection(doc: jsPDF, requirements: Requirement[], startPa
 }
 
 // Use Cases Section
-function addUseCasesSection(doc: jsPDF, useCases: UseCase[], startPage: number): number {
+function addUseCasesSection(doc: jsPDF, useCases: UseCase[], startPage: number, tocEntries: TOCEntry[]): number {
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('Use Cases', 20, 20);
@@ -245,7 +293,12 @@ function addUseCasesSection(doc: jsPDF, useCases: UseCase[], startPage: number):
         // Use Case header
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text(`${useCase.id} - ${useCase.title}`, 20, yPos);
+        const title = `${useCase.id} - ${useCase.title}`;
+        doc.text(title, 20, yPos);
+
+        // Add to TOC
+        tocEntries.push({ title: title, page: page, level: 1 });
+
         yPos += 7;
 
         // Metadata
@@ -301,7 +354,7 @@ function addUseCasesSection(doc: jsPDF, useCases: UseCase[], startPage: number):
 }
 
 // Test Cases Section
-function addTestCasesSection(doc: jsPDF, testCases: TestCase[], startPage: number): number {
+function addTestCasesSection(doc: jsPDF, testCases: TestCase[], startPage: number, tocEntries: TOCEntry[]): number {
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('Test Cases', 20, 20);
@@ -318,7 +371,12 @@ function addTestCasesSection(doc: jsPDF, testCases: TestCase[], startPage: numbe
 
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text(`${testCase.id} - ${testCase.title}`, 20, yPos);
+        const title = `${testCase.id} - ${testCase.title}`;
+        doc.text(title, 20, yPos);
+
+        // Add to TOC
+        tocEntries.push({ title: title, page: page, level: 1 });
+
         yPos += 7;
 
         // Metadata
@@ -357,7 +415,7 @@ function addTestCasesSection(doc: jsPDF, testCases: TestCase[], startPage: numbe
 }
 
 // Information Section
-function addInformationSection(doc: jsPDF, information: Information[], startPage: number): number {
+function addInformationSection(doc: jsPDF, information: Information[], startPage: number, tocEntries: TOCEntry[]): number {
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('Information', 20, 20);
@@ -374,7 +432,12 @@ function addInformationSection(doc: jsPDF, information: Information[], startPage
 
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text(`${info.id} - ${info.title}`, 20, yPos);
+        const title = `${info.id} - ${info.title}`;
+        doc.text(title, 20, yPos);
+
+        // Add to TOC
+        tocEntries.push({ title: title, page: page, level: 1 });
+
         yPos += 7;
 
         // Content
