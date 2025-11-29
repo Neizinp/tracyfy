@@ -1,35 +1,67 @@
 # ReqTrace - Requirement Management Tool
 
-A modern, web-based requirement management tool inspired by IBM Rational Doors. Built with React, TypeScript, and Vite for managing system requirements, use cases, and traceability.
+A modern, web-based requirement management tool inspired by IBM Rational Doors. Built with React, TypeScript, and Vite for managing system requirements, use cases, test cases, and comprehensive documentation with multi-project support.
 
 ## ✨ Features
+
+### Project Management
+- **Multi-Project Support** - Manage multiple independent projects in a single workspace
+- **Global Artifact Library** - Reuse artifacts (requirements, use cases, test cases, information) across projects
+- **Project Switching** - Seamlessly switch between projects with independent artifact sets
+- **Demo Project** - Pre-populated example project for quick exploration
 
 ### Core Functionality
 - **Hierarchical Requirements** - Organize requirements in parent-child relationships
 - **Drag & Drop** - Intuitive reordering and restructuring of requirements
-- **Use Cases** - Define and manage use cases with actors, flows, and conditions
+- **Use Cases** - Define and manage use cases with actors, flows, preconditions, and postconditions
+- **Test Cases** - Create test cases linked to requirements for verification tracking
+- **Information Management** - Store project notes, meeting minutes, and decisions
 - **Requirement Links** - Create relationships between requirements (relates to, depends on, conflicts with)
-- **Traceability Matrix** - Visualize requirement relationships and dependencies
-- **Multi-Parent Support** - Requirements can belong to multiple parent requirements
+- **Traceability Matrix** - Visualize requirement relationships and dependencies across projects
+- **Trash Bin** - Soft delete with restore capability for all artifact types
 
-### Data Management
+### Revision Control & Baselines
+- **Revision Tracking** - Automatic revision numbering for all artifacts (starts at "01", increments on changes)
+- **Baseline Management** - Create project baselines to snapshot artifact states
+- **Baseline Comparison** - Compare current state against baselines
+- **Pending Changes** - Git-style pending changes view showing new/modified artifacts
+- **Commit System** - Commit artifact changes with messages
+
+### Data Management  
 - **Auto-Save** - All changes automatically saved to browser LocalStorage
-- **Version History** - Track changes over time with automatic snapshots and restore capability
 - **Export/Import** - Backup and restore data as JSON files
-- **PDF Export** - Generate professional PDF documents with requirements, use cases, and traceability matrix
+- **Comprehensive PDF Export** - Professional PDF documents with:
+  - Cover page with project metadata
+  - Table of contents with page numbers
+  - All artifact types with full details (text, rationale, flows, etc.)
+  - Revision history
+  - Baseline information
+  - **File Save Dialog** - Choose where to save PDFs using modern browser API
 - **Excel Export** - Download structured spreadsheets with multi-sheet support
 - **Persistent Storage** - Data survives page refreshes and browser restarts
 
+### Views & Interfaces
+- **Requirements Tree** - Hierarchical view with drag-and-drop
+- **Detailed View** - Tabular view with customizable column visibility
+- **Traceability Matrix** - Visual relationship mapping
+- **Use Cases View** - Dedicated use case management interface
+- **Test Cases View** - Test management and requirement traceability
+- **Information View** - Notes and documentation management
+- **Baselines View** - Baseline creation and management
+- **Global Library** - Browse and add artifacts from any project
+
 ### Requirement Fields
-- ID (auto-generated, sequential)
+- ID (auto-generated, sequential: REQ-001, REQ-002, etc.)
 - Title
 - Description
-- Requirement Text
-- Rationale
+- Requirement Text (full details with Markdown support)
+- Rationale (why the requirement exists)
 - Status (draft, approved, implemented, verified)
 - Priority (low, medium, high)
-- Parent relationships
+- Revision (auto-incremented: 01, 02, 03, etc.)
+- Parent relationships (multi-parent support)
 - Use case associations
+- Baseline version (if baselined)
 
 ## 🚀 Getting Started
 
@@ -60,10 +92,18 @@ npm run build
 
 ## 📖 Usage
 
+### Managing Projects
+1. Click **"New Project"** to create a new project
+2. Switch between projects using the project selector
+3. Each project maintains its own set of artifacts
+4. Delete projects that are no longer needed
+
 ### Creating Requirements
-1. Click **"New Requirement"** in the header
-2. Fill in the requirement details
-3. Submit to create - data auto-saves immediately
+1. Select a project
+2. Click **"Create New"** → **"New Requirement"**
+3. Fill in title, requirement text, rationale, and other fields
+4. Submit to create - data auto-saves immediately
+5. Revision automatically set to "01"
 
 ### Managing Hierarchy
 - **Drag and drop** requirements to reorganize
@@ -72,21 +112,43 @@ npm run build
 
 ### Creating Links
 1. Click the **link icon** on any requirement
-2. Select target requirement
+2. Select target requirement (can be from any project)
 3. Choose link type (relates to, depends on, conflicts with)
 
 ### Use Cases
 1. Switch to **"Use Cases"** view
-2. Click **"New Use Case"** to create
-3. Define actors, preconditions, flows, and postconditions
+2. Click **"Create New"** → **"New Use Case"**
+3. Define actors, preconditions, main flow, alternative flows, and postconditions
+4. Link to related requirements
 
-### Version History
-1. Click the **clock icon** in the header
-2. View timeline of auto-saved versions
-3. Restore any previous version with one click
+### Test Cases
+1. Switch to **"Test Cases"** view
+2. Click **"Create New"** → **"New Test Case"**
+3. Define test description and link to requirements
+4. Track verification status
+
+### Creating Baselines
+1. Switch to **"Baselines"** view
+2. Click **"Create Baseline"**
+3. Provide version name and description
+4. All current artifact revisions are captured
+
+### Global Library (Multi-Project)
+1. Click **"Library"** button
+2. Filter by project to see available artifacts
+3. Drag artifacts from library into current project
+4. Artifacts can be used in multiple projects simultaneously
+5. Editing an artifact updates it across all projects (global state)
+
+### Trash Bin
+1. Delete any artifact (moves to trash)
+2. Click **"Trash"** button to view deleted items
+3. Restore items or permanently delete
 
 ### Export Options
-- **PDF**: Professional document generation
+- **PDF**: Comprehensive document with cover page, table of contents, all artifacts, revision history
+  - Prompts for save location using modern file picker
+  - Includes project metadata and baseline information
 - **Excel**: Structured spreadsheet data
 - **JSON**: Full data backup/restore
 
@@ -98,6 +160,14 @@ npm run build
 - **Vite** - Build tool and dev server
 - **@dnd-kit** - Drag and drop functionality
 - **Lucide React** - Icon library
+- **jsPDF** - PDF generation
+- **jsPDF-AutoTable** - PDF table formatting
+- **SheetJS (xlsx)** - Excel export
+
+### Testing
+- **Vitest** - Unit and component testing (15 tests)
+- **Playwright** - End-to-end testing (3 passing, 3 deferred)
+- **React Testing Library** - Component testing utilities
 
 ### Project Structure
 ```
@@ -110,13 +180,39 @@ src/
 │   ├── LinkModal.tsx           # Create links between requirements
 │   ├── TraceabilityMatrix.tsx  # Relationship visualization
 │   ├── UseCaseModal.tsx        # Create/edit use cases
-│   └── UseCaseList.tsx         # Use case management
+│   ├── UseCaseList.tsx         # Use case management
+│   ├── TestCaseList.tsx        # Test case management
+│   ├── InformationList.tsx     # Information management
+│   ├── ProjectManager.tsx      # Multi-project management
+│   ├── TrashModal.tsx          # Soft delete management
+│   ├── GlobalLibraryPanel.tsx  # Global artifact library
+│   └── VersionHistory.tsx      # Baseline and revision history
+├── utils/
+│   ├── pdfExportUtils.ts       # Comprehensive PDF generation
+│   ├── revisionUtils.ts        # Revision number management
+│   ├── dateUtils.ts            # Date formatting utilities
+│   └── markdownUtils.ts        # Markdown processing
 ├── types.ts                    # TypeScript type definitions
 ├── App.tsx                     # Main application component
 └── index.css                   # Global styles
 ```
 
 ### Data Model
+
+**Project**
+```typescript
+{
+  id: string;
+  name: string;
+  description: string;
+  requirementIds: string[];    // IDs of requirements in this project
+  useCaseIds: string[];        // IDs of use cases in this project
+  testCaseIds: string[];       // IDs of test cases in this project
+  informationIds: string[];    // IDs of information items
+  currentBaseline?: string;    // Current baseline ID
+  lastModified: number;
+}
+```
 
 **Requirement**
 ```typescript
@@ -130,7 +226,8 @@ src/
   useCaseIds?: string[];   // Associated use cases
   status: 'draft' | 'approved' | 'implemented' | 'verified';
   priority: 'low' | 'medium' | 'high';
-  lastModified: number;    // Timestamp
+  revision: string;        // "01", "02", "03", etc.
+  lastModified: number;
 }
 ```
 
@@ -147,18 +244,22 @@ src/
   alternativeFlows?: string;
   priority: 'low' | 'medium' | 'high';
   status: 'draft' | 'approved' | 'implemented' | 'verified';
+  revision: string;
   lastModified: number;
 }
 ```
 
-**Link**
+**Test Case**
 ```typescript
 {
-  id: string;
-  sourceId: string;        // Source requirement ID
-  targetId: string;        // Target requirement ID
-  type: 'relates_to' | 'depends_on' | 'conflicts_with';
-  description?: string;
+  id: string;              // TC-001, TC-002, etc.
+  title: string;
+  description: string;
+  requirementIds: string[]; // Requirements this test verifies
+  status: 'draft' | 'approved' | 'passed' | 'failed' | 'blocked';
+  priority: 'low' | 'medium' | 'high';
+  revision: string;
+  lastModified: number;
 }
 ```
 
@@ -168,6 +269,7 @@ src/
 - **Responsive** - Works on desktop and tablet devices
 - **Accessible** - Semantic HTML and keyboard navigation
 - **Visual Feedback** - Hover states, transitions, and animations
+- **Professional Exports** - Publication-quality PDF documents
 
 ## 🔒 Data Privacy
 
@@ -185,12 +287,42 @@ npm run dev      # Start development server
 npm run build    # Build for production
 npm run preview  # Preview production build
 npm run lint     # Run ESLint
+npm test         # Run Vitest unit/component tests
+npx playwright test  # Run E2E tests
 ```
 
+### Testing
+
+**Unit/Component Tests** (Vitest)
+- `src/utils/__tests__/revisionUtils.test.ts` - Revision numbering logic
+- `src/components/__tests__/ProjectManager.test.tsx` - Project management
+- `src/components/__tests__/MarkdownEditor.test.tsx` - Markdown editor
+
+**E2E Tests** (Playwright)
+- `e2e/basic-flow.spec.ts` - Core CRUD operations
+- `e2e/revision-baseline.spec.ts` - Revision tracking and baselines
+- `e2e/use-case-flow.spec.ts` - Use case workflow
+- `e2e/multi-project-artifacts.spec.ts` - Multi-project artifact sharing
+- `e2e/pdf-export.spec.ts` - Comprehensive PDF export
+
 ### Code Quality
-- TypeScript for type safety
+- TypeScript for type safety  
 - ESLint for code quality
 - Strict mode enabled
+- Comprehensive test coverage for critical paths
+
+## 📝 Recent Updates
+
+### Version 2.0 (November 2024)
+- ✅ **Multi-project support** with global artifact library
+- ✅ **Comprehensive PDF export** with file save dialog, table of contents, and all artifact types
+- ✅ **Revision tracking** with automatic numbering (01, 02, 03...)
+- ✅ **Baseline management** for version control
+- ✅ **Trash bin** with soft delete and restore
+- ✅ **Testing infrastructure** (Vitest + Playwright)
+- ✅ **Global artifact sharing** - artifacts can be used in multiple projects
+- ✅ Fixed critical multi-project artifact bug
+- ✅ E2E test coverage for critical workflows
 
 ## 📝 License
 
