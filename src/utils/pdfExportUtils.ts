@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Requirement, UseCase, TestCase, Information, Project } from '../types';
+import { formatDate } from './dateUtils';
 
 // Additional types
 interface TOCEntry {
@@ -123,7 +124,7 @@ function addCoverPage(doc: jsPDF, project: Project): void {
 
     // Export date
     doc.setFontSize(10);
-    doc.text(`Export Date: ${new Date().toLocaleDateString()}`, pageWidth / 2, 140, { align: 'center' });
+    doc.text(`Export Date: ${formatDate(Date.now())}`, pageWidth / 2, 140, { align: 'center' });
 
     // Baseline info if available
     if (project.currentBaseline) {
