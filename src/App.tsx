@@ -325,8 +325,18 @@ function App() {
   const [versions, setVersions] = useState<Version[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Git Revision Control State
-  const [baselines, setBaselines] = useState<ProjectBaseline[]>([]);
+  // Git Revision Control State - Baselines are versions with type='baseline'
+  const baselines = versions.filter(v => v.type === 'baseline').map(v => ({
+    id: v.id,
+    projectId: currentProjectId,
+    version: v.tag || '01',
+    name: v.message,
+    description: '',
+    timestamp: v.timestamp,
+    artifactCommits: {},
+    addedArtifacts: [],
+    removedArtifacts: []
+  } as ProjectBaseline));
   const [selectedBaseline, setSelectedBaseline] = useState<string | null>(null);
 
 
@@ -481,60 +491,13 @@ function App() {
     }
   };
 
-  const handleCreateBaseline = async () => {
-    const name = prompt("Enter baseline name:");
-    if (!name) return;
-    const description = prompt("Enter baseline description:") || "";
+  const handleCreateBaseline = async (name?: string) => {
+    // If name is not provided (e.g., from BaselineManager), prompt for it
+    const baselineName = name || prompt("Enter baseline name:");
+    if (!baselineName) return;
 
-    try {
-      const project = projects.find(p => p.id === currentProjectId);
-      if (!project) return;
-
-      // 1. Get current baselines to determine next version
-      // In a real app, we'd fetch this from a file or the project metadata
-      // For now, we'll use the state
-      const nextVersion = incrementRevision(baselines.length > 0 ? baselines[0].version : '00');
-
-      // 2. Create the baseline object
-      // We need to capture the current commit hash of all artifacts
-      // This is complex because we need to know the latest commit for each artifact
-      // A simpler approach for this MVP is to commit all pending changes first? 
-      // Or just snapshot the current state.
-      // The requirement says "Baseline: A snapshot of the project at a specific point in time."
-      // Let's assume the user has committed everything they want to include.
-
-      // For this MVP, we'll create a baseline by committing a baseline file
-      // But we need to track added/removed artifacts.
-
-      // Let's use a simplified approach:
-      // Just create a tag or a specific commit that represents the baseline?
-      // The plan says "ProjectBaseline interface... addedArtifacts, removedArtifacts".
-
-      // Let's just create a new baseline entry in the project metadata
-      const newBaseline: ProjectBaseline = {
-        id: `bl-${Date.now()}`,
-        projectId: project.id,
-        version: nextVersion,
-        name,
-        description,
-        timestamp: Date.now(),
-        artifactCommits: {}, // We would populate this by querying git log for each artifact
-        addedArtifacts: [], // We would calculate this by comparing with previous baseline
-        removedArtifacts: []
-      };
-
-      // In a real implementation, we would do heavy lifting here to calculate diffs
-      // For now, let's just save it to state and maybe a file
-      setBaselines([newBaseline, ...baselines]);
-
-      // Save baselines to file
-      // await gitService.saveArtifact(project.name, 'information', '_baselines.json', JSON.stringify([newBaseline, ...baselines], null, 2));
-
-      alert(`Baseline ${nextVersion} created successfully!`);
-    } catch (error) {
-      console.error('Failed to create baseline:', error);
-      alert('Failed to create baseline: ' + error);
-    }
+    // Create the baseline using the version snapshot mechanism
+    await createVersionSnapshot(baselineName, 'baseline', baselineName);
   };
 
   const handleViewBaselineHistory = (baselineId: string) => {
