@@ -29,9 +29,8 @@ import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
 import type { Requirement, Link, UseCase, TestCase, Information, Version, Project, ColumnVisibility, GlobalState, ViewType, ArtifactChange, ProjectBaseline } from './types';
 import { mockRequirements, mockUseCases, mockTestCases, mockInformation, mockLinks } from './mockData';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { exportProjectToPDF } from './utils/pdfExportUtils';
 import { formatDateTime } from './utils/dateUtils';
 
 import { incrementRevision } from './utils/revisionUtils';
@@ -581,62 +580,15 @@ function App() {
     artifacts: { requirements: string[], useCases: string[], testCases: string[], information: string[] },
     targetProjectId: string = currentProjectId
   ) => {
-    // Check which artifacts are already assigned to ANY project
-    const alreadyAssigned: string[] = [];
-    const checkAssignment = (artifactId: string): boolean => {
-      return projects.some(p =>
-        p.requirementIds.includes(artifactId) ||
-        p.useCaseIds.includes(artifactId) ||
-        p.testCaseIds.includes(artifactId) ||
-        p.informationIds.includes(artifactId)
-      );
-    };
-
-    // Filter out artifacts that are already assigned to any project
-    const filteredArtifacts = {
-      requirements: artifacts.requirements.filter(id => {
-        const isAssigned = checkAssignment(id);
-        if (isAssigned) alreadyAssigned.push(id);
-        return !isAssigned;
-      }),
-      useCases: artifacts.useCases.filter(id => {
-        const isAssigned = checkAssignment(id);
-        if (isAssigned) alreadyAssigned.push(id);
-        return !isAssigned;
-      }),
-      testCases: artifacts.testCases.filter(id => {
-        const isAssigned = checkAssignment(id);
-        if (isAssigned) alreadyAssigned.push(id);
-        return !isAssigned;
-      }),
-      information: artifacts.information.filter(id => {
-        const isAssigned = checkAssignment(id);
-        if (isAssigned) alreadyAssigned.push(id);
-        return !isAssigned;
-      })
-    };
-
-    // Show warning if some artifacts were filtered out
-    if (alreadyAssigned.length > 0) {
-      alert(`The following artifacts are already assigned to other projects and were not added:\n${alreadyAssigned.join(', ')}`);
-    }
-
-    // If no artifacts to add after filtering, return early
-    if (filteredArtifacts.requirements.length === 0 &&
-      filteredArtifacts.useCases.length === 0 &&
-      filteredArtifacts.testCases.length === 0 &&
-      filteredArtifacts.information.length === 0) {
-      return;
-    }
 
     setProjects(prev => prev.map(p => {
       if (p.id !== targetProjectId) return p;
 
       // Add IDs if not already present
-      const newReqIds = Array.from(new Set([...p.requirementIds, ...filteredArtifacts.requirements]));
-      const newUcIds = Array.from(new Set([...p.useCaseIds, ...filteredArtifacts.useCases]));
-      const newTcIds = Array.from(new Set([...p.testCaseIds, ...filteredArtifacts.testCases]));
-      const newInfoIds = Array.from(new Set([...p.informationIds, ...filteredArtifacts.information]));
+      const newReqIds = Array.from(new Set([...p.requirementIds, ...artifacts.requirements]));
+      const newUcIds = Array.from(new Set([...p.useCaseIds, ...artifacts.useCases]));
+      const newTcIds = Array.from(new Set([...p.testCaseIds, ...artifacts.testCases]));
+      const newInfoIds = Array.from(new Set([...p.informationIds, ...artifacts.information]));
 
       return {
         ...p,
@@ -651,10 +603,10 @@ function App() {
     // Also update local state to reflect changes immediately IF it's the current project
     if (targetProjectId === currentProjectId) {
       // Filter global artifacts by the new IDs
-      const newReqs = globalRequirements.filter(r => filteredArtifacts.requirements.includes(r.id) || requirements.some(existing => existing.id === r.id));
-      const newUCs = globalUseCases.filter(u => filteredArtifacts.useCases.includes(u.id) || useCases.some(existing => existing.id === u.id));
-      const newTCs = globalTestCases.filter(t => filteredArtifacts.testCases.includes(t.id) || testCases.some(existing => existing.id === t.id));
-      const newInfo = globalInformation.filter(i => filteredArtifacts.information.includes(i.id) || information.some(existing => existing.id === i.id));
+      const newReqs = globalRequirements.filter(r => artifacts.requirements.includes(r.id) || requirements.some(existing => existing.id === r.id));
+      const newUCs = globalUseCases.filter(u => artifacts.useCases.includes(u.id) || useCases.some(existing => existing.id === u.id));
+      const newTCs = globalTestCases.filter(t => artifacts.testCases.includes(t.id) || testCases.some(existing => existing.id === t.id));
+      const newInfo = globalInformation.filter(i => artifacts.information.includes(i.id) || information.some(existing => existing.id === i.id));
 
       setRequirements(newReqs);
       setUseCases(newUCs);
@@ -1485,14 +1437,26 @@ function App() {
         onViewHistory={() => setIsVersionHistoryOpen(true)}
         onPendingChangesChange={handlePendingChangesChange}
         onCommitArtifact={handleCommitArtifact}
-        onExportPDF={() => {
-          const doc = new jsPDF();
-          doc.text('Requirements Export', 10, 10);
-          autoTable(doc, {
-            head: [['ID', 'Title', 'Status', 'Priority']],
-            body: requirements.map(r => [r.id, r.title, r.status, r.priority])
-          });
-          doc.save('requirements.pdf');
+        onExportPDF={async () => {
+          const currentProject = projects.find(p => p.id === currentProjectId);
+          if (!currentProject) {
+            alert('No project selected');
+            return;
+          }
+
+          await exportProjectToPDF(
+            currentProject,
+            {
+              requirements: globalRequirements,
+              useCases: globalUseCases,
+              testCases: globalTestCases,
+              information: globalInformation
+            },
+            currentProject.requirementIds,
+            currentProject.useCaseIds,
+            currentProject.testCaseIds,
+            currentProject.informationIds
+          );
         }}
         onExportExcel={() => {
           const ws = XLSX.utils.json_to_sheet(requirements);
@@ -1501,7 +1465,7 @@ function App() {
           XLSX.writeFile(wb, "requirements.xlsx");
         }}
         onSearch={setSearchQuery}
-        onTrashOpen={() => { /* Open Trash Modal */ }}
+        onTrashOpen={() => setIsTrashModalOpen(true)}
         currentView={currentView}
         onSwitchView={setCurrentView}
         onOpenLibrary={handleOpenLibrary}

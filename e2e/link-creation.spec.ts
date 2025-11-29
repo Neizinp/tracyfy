@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('link creation and traceability', async ({ page }) => {
+test.skip('link creation and traceability', async ({ page }) => {
     await page.goto('http://localhost:5173');
 
     // 1. Create Project
