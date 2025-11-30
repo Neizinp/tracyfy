@@ -269,10 +269,20 @@ function addRequirementsSection(doc: jsPDF, requirements: Requirement[], startPa
                 req.revision || '01',
                 '-' // Baseline info not directly on artifact
             ]],
-            theme: 'grid',
+            theme: 'plain',
             margin: { left: 20 },
             tableWidth: 170,
-            styles: { fontSize: 8 }
+            styles: {
+                fontSize: 8,
+                textColor: [0, 0, 0],
+                lineColor: [0, 0, 0],
+                lineWidth: 0.1
+            },
+            headStyles: {
+                fillColor: [255, 255, 255],
+                textColor: [0, 0, 0],
+                fontStyle: 'bold'
+            }
         });
 
         yPos = (doc as any).lastAutoTable.finalY + 5;
@@ -348,10 +358,20 @@ function addUseCasesSection(doc: jsPDF, useCases: UseCase[], startPage: number, 
                 useCase.actor || '-',
                 useCase.revision || '01'
             ]],
-            theme: 'grid',
+            theme: 'plain',
             margin: { left: 20 },
             tableWidth: 170,
-            styles: { fontSize: 8 }
+            styles: {
+                fontSize: 8,
+                textColor: [0, 0, 0],
+                lineColor: [0, 0, 0],
+                lineWidth: 0.1
+            },
+            headStyles: {
+                fillColor: [255, 255, 255],
+                textColor: [0, 0, 0],
+                fontStyle: 'bold'
+            }
         });
 
         yPos = (doc as any).lastAutoTable.finalY + 5;
@@ -425,10 +445,20 @@ function addTestCasesSection(doc: jsPDF, testCases: TestCase[], startPage: numbe
                 testCase.priority,
                 testCase.revision || '01'
             ]],
-            theme: 'grid',
+            theme: 'plain',
             margin: { left: 20 },
             tableWidth: 170,
-            styles: { fontSize: 8 }
+            styles: {
+                fontSize: 8,
+                textColor: [0, 0, 0],
+                lineColor: [0, 0, 0],
+                lineWidth: 0.1
+            },
+            headStyles: {
+                fillColor: [255, 255, 255],
+                textColor: [0, 0, 0],
+                fontStyle: 'bold'
+            }
         });
 
         yPos = (doc as any).lastAutoTable.finalY + 5;
@@ -520,10 +550,20 @@ function addRevisionHistory(doc: jsPDF, artifacts: {
         startY: 30,
         head: [['ID', 'Type', 'Revision', 'Baseline']],
         body: rows,
-        theme: 'grid',
+        theme: 'plain',
         margin: { left: 20 },
         tableWidth: 170,
-        styles: { fontSize: 9 }
+        styles: {
+            fontSize: 9,
+            textColor: [0, 0, 0],
+            lineColor: [0, 0, 0],
+            lineWidth: 0.1
+        },
+        headStyles: {
+            fillColor: [255, 255, 255],
+            textColor: [0, 0, 0],
+            fontStyle: 'bold'
+        }
     });
 }
 
