@@ -50,6 +50,13 @@ vi.mock('jspdf-autotable', () => ({
     })
 }));
 
+// Mock gitService
+vi.mock('../../services/gitService', () => ({
+    gitService: {
+        getArtifactHistory: vi.fn().mockResolvedValue([])
+    }
+}));
+
 describe('pdfExportUtils', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -139,7 +146,8 @@ describe('pdfExportUtils', () => {
             ['r1'],
             ['u1'],
             ['t1'],
-            ['i1']
+            ['i1'],
+            []
         );
 
         // Verify Title
@@ -170,7 +178,8 @@ describe('pdfExportUtils', () => {
             ['r1'],
             ['u1'],
             ['t1'],
-            ['i1']
+            ['i1'],
+            []
         );
 
         // Header
@@ -203,7 +212,8 @@ describe('pdfExportUtils', () => {
             ['r1'],
             ['u1'],
             ['t1'],
-            ['i1']
+            ['i1'],
+            []
         );
 
         // Requirements Section
@@ -239,6 +249,7 @@ describe('pdfExportUtils', () => {
             mockProject,
             globalState,
             ['r1'],
+            [],
             [],
             [],
             []

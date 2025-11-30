@@ -1,7 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { Requirement, UseCase, TestCase, Information, Project } from '../types';
+import type { Requirement, UseCase, TestCase, Information, Project, ProjectBaseline } from '../types';
 import { formatDate } from './dateUtils';
+import { gitService, type CommitInfo } from '../services/gitService';
 
 // Additional types
 interface TOCEntry {
@@ -22,7 +23,8 @@ export async function exportProjectToPDF(
     projectRequirementIds: string[],
     projectUseCaseIds: string[],
     projectTestCaseIds: string[],
-    projectInformationIds: string[]
+    projectInformationIds: string[],
+    baselines: ProjectBaseline[]
 ): Promise<void> {
     // 0. Request File Handle FIRST (to ensure user activation is valid)
     let fileHandle: any = null;
@@ -61,10 +63,101 @@ export async function exportProjectToPDF(
     const tocPage = currentPage;
     currentPage++;
 
-    // 3. Requirements Section
+    // 3. Fetch git commit history since last baseline
     const projectRequirements = globalState.requirements.filter(r =>
         projectRequirementIds.includes(r.id)
     );
+    const projectUseCases = globalState.useCases.filter(u =>
+        projectUseCaseIds.includes(u.id)
+    );
+    const projectTestCases = globalState.testCases.filter(t =>
+        projectTestCaseIds.includes(t.id)
+    );
+    const projectInformation = globalState.information.filter(i =>
+        projectInformationIds.includes(i.id)
+    );
+
+    // Get last baseline commit hash to filter commits
+    const sortedBaselines = [...baselines].sort((a, b) => b.timestamp - a.timestamp);
+    const lastBaseline = sortedBaselines.length > 0 ? sortedBaselines[0] : null;
+
+    // Fetch commit history for all artifacts since last baseline
+    interface ArtifactCommit {
+        artifactId: string;
+        artifactType: 'requirement' | 'usecase' | 'testcase' | 'information';
+        commits: CommitInfo[];
+    }
+
+    const artifactCommits: ArtifactCommit[] = [];
+
+    // Fetch commits for each artifact type
+    for (const req of projectRequirements) {
+        const history = await gitService.getArtifactHistory('requirements', req.id);
+        // Filter commits after last baseline
+        const filteredHistory = lastBaseline
+            ? history.filter(commit => commit.timestamp > lastBaseline.timestamp)
+            : history;
+        if (filteredHistory.length > 0) {
+            artifactCommits.push({
+                artifactId: req.id,
+                artifactType: 'requirement',
+                commits: filteredHistory
+            });
+        }
+    }
+
+    for (const uc of projectUseCases) {
+        const history = await gitService.getArtifactHistory('usecases', uc.id);
+        const filteredHistory = lastBaseline
+            ? history.filter(commit => commit.timestamp > lastBaseline.timestamp)
+            : history;
+        if (filteredHistory.length > 0) {
+            artifactCommits.push({
+                artifactId: uc.id,
+                artifactType: 'usecase',
+                commits: filteredHistory
+            });
+        }
+    }
+
+    for (const tc of projectTestCases) {
+        const history = await gitService.getArtifactHistory('testcases', tc.id);
+        const filteredHistory = lastBaseline
+            ? history.filter(commit => commit.timestamp > lastBaseline.timestamp)
+            : history;
+        if (filteredHistory.length > 0) {
+            artifactCommits.push({
+                artifactId: tc.id,
+                artifactType: 'testcase',
+                commits: filteredHistory
+            });
+        }
+    }
+
+    for (const info of projectInformation) {
+        const history = await gitService.getArtifactHistory('information', info.id);
+        const filteredHistory = lastBaseline
+            ? history.filter(commit => commit.timestamp > lastBaseline.timestamp)
+            : history;
+        if (filteredHistory.length > 0) {
+            artifactCommits.push({
+                artifactId: info.id,
+                artifactType: 'information',
+                commits: filteredHistory
+            });
+        }
+    }
+
+    // 4. Revision History (NEW POSITION - after TOC)
+    if (artifactCommits.length > 0) {
+        doc.addPage();
+        doc.addPage();
+        tocEntries.push({ title: 'Revision History', page: currentPage, level: 0 });
+        addRevisionHistory(doc, artifactCommits);
+        currentPage++;
+    }
+
+    // 5. Requirements Section
     if (projectRequirements.length > 0) {
         doc.addPage();
         doc.addPage();
@@ -72,10 +165,7 @@ export async function exportProjectToPDF(
         currentPage = addRequirementsSection(doc, projectRequirements, currentPage, tocEntries);
     }
 
-    // 4. Use Cases Section
-    const projectUseCases = globalState.useCases.filter(u =>
-        projectUseCaseIds.includes(u.id)
-    );
+    // 6. Use Cases Section
     if (projectUseCases.length > 0) {
         doc.addPage();
         doc.addPage();
@@ -83,10 +173,7 @@ export async function exportProjectToPDF(
         currentPage = addUseCasesSection(doc, projectUseCases, currentPage, tocEntries);
     }
 
-    // 5. Test Cases Section
-    const projectTestCases = globalState.testCases.filter(t =>
-        projectTestCaseIds.includes(t.id)
-    );
+    // 7. Test Cases Section
     if (projectTestCases.length > 0) {
         doc.addPage();
         doc.addPage();
@@ -94,29 +181,12 @@ export async function exportProjectToPDF(
         currentPage = addTestCasesSection(doc, projectTestCases, currentPage, tocEntries);
     }
 
-    // 6. Information Section
-    const projectInformation = globalState.information.filter(i =>
-        projectInformationIds.includes(i.id)
-    );
+    // 8. Information Section
     if (projectInformation.length > 0) {
         doc.addPage();
         doc.addPage();
         tocEntries.push({ title: 'Information', page: currentPage, level: 0 });
         currentPage = addInformationSection(doc, projectInformation, currentPage, tocEntries);
-    }
-
-    // 7. Revision History
-    if (projectRequirements.length > 0 || projectUseCases.length > 0 ||
-        projectTestCases.length > 0 || projectInformation.length > 0) {
-        doc.addPage();
-        doc.addPage();
-        tocEntries.push({ title: 'Revision History', page: currentPage, level: 0 });
-        addRevisionHistory(doc, {
-            requirements: projectRequirements,
-            useCases: projectUseCases,
-            testCases: projectTestCases,
-            information: projectInformation
-        });
     }
 
     // Add TOC (go back to page 2)
@@ -520,49 +590,81 @@ function addInformationSection(doc: jsPDF, information: Information[], startPage
 }
 
 // Revision History
-function addRevisionHistory(doc: jsPDF, artifacts: {
-    requirements: Requirement[];
-    useCases: UseCase[];
-    testCases: TestCase[];
-    information: Information[];
-}): void {
+interface ArtifactCommit {
+    artifactId: string;
+    artifactType: 'requirement' | 'usecase' | 'testcase' | 'information';
+    commits: CommitInfo[];
+}
+
+function addRevisionHistory(doc: jsPDF, artifactCommits: ArtifactCommit[]): void {
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('Revision History', 20, 20);
 
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Changes since last baseline', 20, 30);
+
     const rows: any[] = [];
 
-    // Collect all revisions
-    artifacts.requirements.forEach(r => {
-        rows.push([r.id, 'Requirement', r.revision || '01', '-']);
-    });
-    artifacts.useCases.forEach(u => {
-        rows.push([u.id, 'Use Case', u.revision || '01', '-']);
-    });
-    artifacts.testCases.forEach(t => {
-        rows.push([t.id, 'Test Case', t.revision || '01', '-']);
-    });
-    artifacts.information.forEach(i => {
-        rows.push([i.id, 'Information', i.revision || '01', '-']);
+    // Flatten all commits from all artifacts
+    const allCommits: Array<{ artifactId: string; artifactType: string; commit: CommitInfo }> = [];
+
+    artifactCommits.forEach(ac => {
+        ac.commits.forEach(commit => {
+            allCommits.push({
+                artifactId: ac.artifactId,
+                artifactType: ac.artifactType,
+                commit
+            });
+        });
     });
 
+    // Sort by timestamp (newest first)
+    allCommits.sort((a, b) => b.commit.timestamp - a.commit.timestamp);
+
+    // Build table rows
+    allCommits.forEach(item => {
+        rows.push([
+            formatDate(item.commit.timestamp),
+            item.artifactId,
+            item.commit.message,
+            item.commit.author
+        ]);
+    });
+
+    // If no commits, show message
+    if (rows.length === 0) {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'italic');
+        doc.text('No changes since last baseline.', 20, 45);
+        return;
+    }
+
     autoTable(doc, {
-        startY: 30,
-        head: [['ID', 'Type', 'Revision', 'Baseline']],
+        startY: 40,
+        head: [['Date', 'Artifact', 'Message', 'Author']],
         body: rows,
         theme: 'plain',
         margin: { left: 20 },
         tableWidth: 170,
         styles: {
-            fontSize: 9,
+            fontSize: 8,
             textColor: [0, 0, 0],
             lineColor: [0, 0, 0],
-            lineWidth: 0.1
+            lineWidth: 0.1,
+            cellPadding: 3
         },
         headStyles: {
             fillColor: [255, 255, 255],
             textColor: [0, 0, 0],
             fontStyle: 'bold'
+        },
+        columnStyles: {
+            0: { cellWidth: 25 },  // Date
+            1: { cellWidth: 25 },  // Artifact ID
+            2: { cellWidth: 90 },  // Message (wider)
+            3: { cellWidth: 30 }   // Author
         }
     });
 }

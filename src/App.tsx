@@ -1455,7 +1455,8 @@ function App() {
             currentProject.requirementIds,
             currentProject.useCaseIds,
             currentProject.testCaseIds,
-            currentProject.informationIds
+            currentProject.informationIds,
+            baselines
           );
         }}
         onExportExcel={() => {
