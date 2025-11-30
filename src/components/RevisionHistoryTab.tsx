@@ -49,6 +49,7 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({ artifact
                             textAlign: 'left',
                             color: 'var(--color-text-secondary)'
                         }}>
+                            <th style={{ padding: '12px 8px', fontWeight: 600 }}>Rev</th>
                             <th style={{ padding: '12px 8px', fontWeight: 600 }}>Date</th>
                             <th style={{ padding: '12px 8px', fontWeight: 600 }}>Author</th>
                             <th style={{ padding: '12px 8px', fontWeight: 600 }}>Message</th>
@@ -56,25 +57,34 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({ artifact
                         </tr>
                     </thead>
                     <tbody>
-                        {history.map((commit) => (
-                            <tr key={commit.hash} style={{
-                                borderBottom: '1px solid var(--color-border)',
-                                transition: 'background-color 0.1s'
-                            }}>
-                                <td style={{ padding: '12px 8px', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
-                                    {formatDateTime(commit.timestamp)}
-                                </td>
-                                <td style={{ padding: '12px 8px', color: 'var(--color-text-primary)' }}>
-                                    {commit.author}
-                                </td>
-                                <td style={{ padding: '12px 8px', color: 'var(--color-text-primary)' }}>
-                                    {commit.message}
-                                </td>
-                                <td style={{ padding: '12px 8px', fontFamily: 'monospace', color: 'var(--color-accent-light)' }}>
-                                    {commit.hash.substring(0, 7)}
-                                </td>
-                            </tr>
-                        ))}
+                        {history.map((commit) => {
+                            // Extract revision from message if present (e.g. "(Rev 02)")
+                            const revMatch = commit.message.match(/\(Rev (\d+)\)/);
+                            const revision = revMatch ? revMatch[1] : '-';
+
+                            return (
+                                <tr key={commit.hash} style={{
+                                    borderBottom: '1px solid var(--color-border)',
+                                    transition: 'background-color 0.1s'
+                                }}>
+                                    <td style={{ padding: '12px 8px', color: 'var(--color-text-primary)', fontWeight: 500 }}>
+                                        {revision}
+                                    </td>
+                                    <td style={{ padding: '12px 8px', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
+                                        {formatDateTime(commit.timestamp)}
+                                    </td>
+                                    <td style={{ padding: '12px 8px', color: 'var(--color-text-primary)' }}>
+                                        {commit.author}
+                                    </td>
+                                    <td style={{ padding: '12px 8px', color: 'var(--color-text-primary)' }}>
+                                        {commit.message}
+                                    </td>
+                                    <td style={{ padding: '12px 8px', fontFamily: 'monospace', color: 'var(--color-accent-light)' }}>
+                                        {commit.hash.substring(0, 7)}
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>

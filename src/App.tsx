@@ -966,18 +966,21 @@ function App() {
   };
 
   const handleUpdateRequirement = async (id: string, updatedData: Partial<Requirement>) => {
-    const updatedRequirement = requirements.find(req => req.id === id);
-    if (!updatedRequirement) return;
+    const updatedReq = requirements.find(req => req.id === id);
+    if (!updatedReq) return;
 
+    // Increment revision
+    const newRevision = incrementRevision(updatedReq.revision || '01');
     const finalRequirement = {
-      ...updatedRequirement,
+      ...updatedReq,
       ...updatedData,
-      lastModified: Date.now(),
-      revision: incrementRevision(updatedRequirement.revision || "01")
+      revision: newRevision,
+      lastModified: Date.now()
     };
 
-    setRequirements(requirements.map(req =>
-      req.id === id ? finalRequirement : req
+    // Update local state
+    setRequirements(prev => prev.map(r =>
+      r.id === finalRequirement.id ? finalRequirement : r
     ));
     setIsEditModalOpen(false);
     setEditingRequirement(null);
@@ -987,6 +990,11 @@ function App() {
       const project = projects.find(p => p.id === currentProjectId);
       if (project) {
         await gitService.saveArtifact('requirements', finalRequirement);
+        await gitService.commitArtifact(
+          'requirements',
+          finalRequirement.id,
+          `Update requirement ${finalRequirement.id}: ${finalRequirement.title} (Rev ${newRevision})`
+        );
       }
     } catch (error) {
       console.error('Failed to save requirement to git:', error);
@@ -999,18 +1007,22 @@ function App() {
 
     if ('id' in data) {
       // Update existing
-      const updatedUseCases = useCases.map(uc =>
-        uc.id === data.id
-          ? {
-            ...uc,
-            ...data.updates,
-            lastModified: Date.now(),
-            revision: incrementRevision(uc.revision || "01")
-          } as UseCase
-          : uc
-      );
-      setUseCases(updatedUseCases);
-      savedUseCase = updatedUseCases.find(uc => uc.id === data.id) || null;
+      const updatedUseCase = useCases.find(uc => uc.id === data.id);
+      if (!updatedUseCase) return;
+
+      // Increment revision
+      const newRevision = incrementRevision(updatedUseCase.revision || '01');
+      const finalUseCase = {
+        ...updatedUseCase,
+        ...data.updates,
+        revision: newRevision,
+        lastModified: Date.now()
+      };
+
+      setUseCases(prev => prev.map(u =>
+        u.id === finalUseCase.id ? finalUseCase : u
+      ));
+      savedUseCase = finalUseCase;
       setEditingUseCase(null);
     } else {
       // Create new - find next available number that hasn't been used
@@ -1039,6 +1051,11 @@ function App() {
         const project = projects.find(p => p.id === currentProjectId);
         if (project) {
           await gitService.saveArtifact('usecases', savedUseCase);
+          await gitService.commitArtifact(
+            'usecases',
+            savedUseCase.id,
+            `Update use case ${savedUseCase.id}: ${savedUseCase.title} (Rev ${savedUseCase.revision})`
+          );
         }
       } catch (error) {
         console.error('Failed to save use case to git:', error);
@@ -1097,15 +1114,17 @@ function App() {
     const updatedTestCase = testCases.find(tc => tc.id === id);
     if (!updatedTestCase) return;
 
+    // Increment revision
+    const newRevision = incrementRevision(updatedTestCase.revision || '01');
     const finalTestCase = {
       ...updatedTestCase,
       ...updates,
-      lastModified: Date.now(),
-      revision: incrementRevision(updatedTestCase.revision || "01")
+      revision: newRevision,
+      lastModified: Date.now()
     };
 
-    setTestCases(testCases.map(tc =>
-      tc.id === id ? finalTestCase : tc
+    setTestCases(prev => prev.map(tc =>
+      tc.id === finalTestCase.id ? finalTestCase : tc
     ));
 
     // Save to git repository to make it appear in Pending Changes
@@ -1113,6 +1132,11 @@ function App() {
       const project = projects.find(p => p.id === currentProjectId);
       if (project) {
         await gitService.saveArtifact('testcases', finalTestCase);
+        await gitService.commitArtifact(
+          'testcases',
+          finalTestCase.id,
+          `Update test case ${finalTestCase.id}: ${finalTestCase.title} (Rev ${newRevision})`
+        );
       }
     } catch (error) {
       console.error('Failed to save test case to git:', error);
@@ -1131,18 +1155,22 @@ function App() {
 
     if ('id' in data) {
       // Update existing
-      const updatedInformation = information.map(info =>
-        info.id === data.id
-          ? {
-            ...info,
-            ...data.updates,
-            lastModified: Date.now(),
-            revision: incrementRevision(info.revision || "01")
-          } as Information
-          : info
-      );
-      setInformation(updatedInformation);
-      savedInformation = updatedInformation.find(info => info.id === data.id) || null;
+      const updatedInfo = information.find(info => info.id === data.id);
+      if (!updatedInfo) return;
+
+      // Increment revision
+      const newRevision = incrementRevision(updatedInfo.revision || '01');
+      const finalInfo = {
+        ...updatedInfo,
+        ...data.updates,
+        revision: newRevision,
+        lastModified: Date.now()
+      };
+
+      setInformation(prev => prev.map(i =>
+        i.id === finalInfo.id ? finalInfo : i
+      ));
+      savedInformation = finalInfo;
       setSelectedInformation(null);
     } else {
       // Create new

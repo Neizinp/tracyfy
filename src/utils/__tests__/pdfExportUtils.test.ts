@@ -12,6 +12,11 @@ const mockSetFontSize = vi.fn();
 const mockSave = vi.fn();
 const mockSplitTextToSize = vi.fn((text) => [text]); // Simple mock: returns array with single text
 const mockGetTextWidth = vi.fn(() => 10);
+const mockSetDrawColor = vi.fn();
+const mockSetLineWidth = vi.fn();
+const mockRect = vi.fn();
+const mockSetFillColor = vi.fn();
+const mockSetTextColor = vi.fn();
 const mockInternal = {
     pageSize: {
         getWidth: () => 210,
@@ -33,6 +38,11 @@ vi.mock('jspdf', () => {
                     save: mockSave,
                     splitTextToSize: mockSplitTextToSize,
                     getTextWidth: mockGetTextWidth,
+                    setDrawColor: mockSetDrawColor,
+                    setLineWidth: mockSetLineWidth,
+                    rect: mockRect,
+                    setFillColor: mockSetFillColor,
+                    setTextColor: mockSetTextColor,
                     internal: mockInternal,
                     getNumberOfPages: () => 5,
                     output: mockOutput
@@ -218,28 +228,33 @@ describe('pdfExportUtils', () => {
 
         // Requirements Section
         expect(mockText).toHaveBeenCalledWith('Requirements', 20, 20);
-        expect(mockText).toHaveBeenCalledWith('r1 - My Requirement', 20, 30);
-        expect(mockText).toHaveBeenCalledWith('Requirement Text:', 20, expect.any(Number));
-        expect(mockText).toHaveBeenCalledWith(['Req text'], 20, expect.any(Number));
-        expect(mockText).toHaveBeenCalledWith('Rationale:', 20, expect.any(Number));
-        expect(mockText).toHaveBeenCalledWith(['Rationale'], 20, expect.any(Number));
+        // Header
+        expect(mockText).toHaveBeenCalledWith('r1 - My Requirement', expect.any(Number), expect.any(Number));
+        // Metadata Bar
+        expect(mockText).toHaveBeenCalledWith(expect.stringContaining('Status: draft'), expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(expect.stringContaining('Priority: high'), expect.any(Number), expect.any(Number));
+        // Content
+        expect(mockText).toHaveBeenCalledWith('Requirement Text:', expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Req text'], expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('Rationale:', expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Rationale'], expect.any(Number), expect.any(Number));
 
         // Use Cases Section
         expect(mockText).toHaveBeenCalledWith('Use Cases', 20, 20);
-        expect(mockText).toHaveBeenCalledWith('u1 - My Use Case', 20, 30);
-        expect(mockText).toHaveBeenCalledWith('Main Flow:', 20, expect.any(Number));
-        expect(mockText).toHaveBeenCalledWith(['Step 1. Do this.'], 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('u1 - My Use Case', expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('Main Flow:', expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Step 1. Do this.'], expect.any(Number), expect.any(Number));
 
         // Test Cases Section
         expect(mockText).toHaveBeenCalledWith('Test Cases', 20, 20);
-        expect(mockText).toHaveBeenCalledWith('t1 - My Test Case', 20, 30);
-        expect(mockText).toHaveBeenCalledWith('Description:', 20, expect.any(Number));
-        expect(mockText).toHaveBeenCalledWith(['Test Steps'], 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('t1 - My Test Case', expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('Description:', expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Test Steps'], expect.any(Number), expect.any(Number));
 
         // Information Section
         expect(mockText).toHaveBeenCalledWith('Information', 20, 20);
-        expect(mockText).toHaveBeenCalledWith('i1 - My Info', 20, 30);
-        expect(mockText).toHaveBeenCalledWith(['Info Content'], 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('i1 - My Info', expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Info Content'], expect.any(Number), expect.any(Number));
     });
 
     it('should fallback to doc.save if showSaveFilePicker is not available', async () => {
@@ -254,44 +269,108 @@ describe('pdfExportUtils', () => {
             [],
             []
         );
-
         expect(mockSave).toHaveBeenCalledWith('Test_Project-export.pdf');
     });
 
     it('should export all requirement attributes', async () => {
-        (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
-            createWritable: vi.fn().mockResolvedValue({
-                write: vi.fn(),
-                close: vi.fn()
-            })
-        });
-
-        const fullReq: Requirement = {
-            ...mockReq,
-            description: 'Full description text',
-            author: 'John Doe',
-            verificationMethod: 'Test',
-            comments: 'Some comments here',
-            approvalDate: 1234567890000
-        };
+        const requirements: Requirement[] = [
+            {
+                id: 'REQ-001',
+                title: 'Test Req',
+                description: 'Desc',
+                text: 'Text',
+                rationale: 'Rationale',
+                priority: 'high',
+                status: 'approved',
+                author: 'Tester',
+                verificationMethod: 'Test',
+                comments: 'Comment',
+                dateCreated: 1234567890,
+                lastModified: 1234567890,
+                revision: '02',
+                parentIds: []
+            }
+        ];
 
         await exportProjectToPDF(
             mockProject,
-            { ...globalState, requirements: [fullReq] },
-            ['r1'],
+            {
+                requirements,
+                useCases: [],
+                testCases: [],
+                information: []
+            },
+            ['REQ-001'], // projectRequirementIds
+            [], // projectUseCaseIds
+            [], // projectTestCaseIds
+            [], // projectInformationIds
+            [] // baselines
+        );
+
+        // Check for all attributes
+        expect(mockText).toHaveBeenCalledWith(expect.stringContaining('Description:'), expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(expect.stringContaining('Requirement Text:'), expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(expect.stringContaining('Rationale:'), expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(expect.stringContaining('Comments:'), expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(expect.stringContaining('Author: Tester'), expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(expect.stringContaining('Verification: Test'), expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(expect.stringContaining('Rev: 02'), expect.any(Number), expect.any(Number), expect.any(Object));
+    });
+
+    it('should exclude deleted artifacts', async () => {
+        const requirements: Requirement[] = [
+            {
+                id: 'REQ-001',
+                title: 'Active Req',
+                status: 'draft',
+                priority: 'medium',
+                dateCreated: Date.now(),
+                lastModified: Date.now(),
+                description: '',
+                text: '',
+                rationale: '',
+                parentIds: [],
+                revision: '01'
+            },
+            {
+                id: 'REQ-002',
+                title: 'Deleted Req',
+                status: 'draft',
+                priority: 'medium',
+                dateCreated: Date.now(),
+                lastModified: Date.now(),
+                isDeleted: true,
+                description: '',
+                text: '',
+                rationale: '',
+                parentIds: [],
+                revision: '01'
+            }
+        ];
+
+        await exportProjectToPDF(
+            mockProject,
+            {
+                requirements,
+                useCases: [],
+                testCases: [],
+                information: []
+            },
+            ['REQ-001', 'REQ-002'],
             [],
             [],
             [],
             []
         );
 
-        // Verify Description section
-        expect(mockText).toHaveBeenCalledWith('Description:', 20, expect.any(Number));
-        expect(mockText).toHaveBeenCalledWith(['Full description text'], 20, expect.any(Number));
+        // Should include active req
+        expect(mockText).toHaveBeenCalledWith(expect.stringContaining('REQ-001'), expect.any(Number), expect.any(Number));
 
-        // Verify Comments section
-        expect(mockText).toHaveBeenCalledWith('Comments:', 20, expect.any(Number));
-        expect(mockText).toHaveBeenCalledWith(['Some comments here'], 20, expect.any(Number));
+        // Should NOT include deleted req
+        // We check all calls to ensure REQ-002 is not present
+        const allCalls = mockText.mock.calls.map(call => call[0]);
+        const deletedReqPresent = allCalls.some(text => typeof text === 'string' && text.includes('REQ-002'));
+        expect(deletedReqPresent).toBe(false);
     });
 
     it('should export all use case attributes', async () => {
@@ -320,16 +399,16 @@ describe('pdfExportUtils', () => {
         );
 
         // Verify Preconditions section
-        expect(mockText).toHaveBeenCalledWith('Preconditions:', 20, expect.any(Number));
-        expect(mockText).toHaveBeenCalledWith(['User must be logged in'], 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('Preconditions:', expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['User must be logged in'], expect.any(Number), expect.any(Number));
 
         // Verify Postconditions section
-        expect(mockText).toHaveBeenCalledWith('Postconditions:', 20, expect.any(Number));
-        expect(mockText).toHaveBeenCalledWith(['Data is saved'], 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('Postconditions:', expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Data is saved'], expect.any(Number), expect.any(Number));
 
         // Verify Alternative Flows section
-        expect(mockText).toHaveBeenCalledWith('Alternative Flows:', 20, expect.any(Number));
-        expect(mockText).toHaveBeenCalledWith(['Alternative path description'], 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('Alternative Flows:', expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Alternative path description'], expect.any(Number), expect.any(Number));
     });
 
     it('should export all test case attributes', async () => {
@@ -358,8 +437,8 @@ describe('pdfExportUtils', () => {
         );
 
         // Verify Tests Requirements section (traceability)
-        expect(mockText).toHaveBeenCalledWith('Tests Requirements:', 20, expect.any(Number));
-        expect(mockText).toHaveBeenCalledWith('r1, r2', 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('Tests Requirements:', expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('r1, r2', expect.any(Number), expect.any(Number));
     });
 
     it('should export all information attributes', async () => {
@@ -387,7 +466,11 @@ describe('pdfExportUtils', () => {
 
         // Verify Information section is created
         expect(mockText).toHaveBeenCalledWith('Information', 20, 20);
-        expect(mockText).toHaveBeenCalledWith('i1 - My Info', 20, 30);
+        expect(mockText).toHaveBeenCalledWith('i1 - My Info', expect.any(Number), expect.any(Number));
+
+        // Verify Metadata
+        expect(mockText).toHaveBeenCalledWith(expect.stringContaining('Type: Meeting'), expect.any(Number), expect.any(Number));
     });
 });
+
 

@@ -65,16 +65,16 @@ export async function exportProjectToPDF(
 
     // 3. Fetch git commit history since last baseline
     const projectRequirements = globalState.requirements.filter(r =>
-        projectRequirementIds.includes(r.id)
+        projectRequirementIds.includes(r.id) && !r.isDeleted
     );
     const projectUseCases = globalState.useCases.filter(u =>
-        projectUseCaseIds.includes(u.id)
+        projectUseCaseIds.includes(u.id) && !u.isDeleted
     );
     const projectTestCases = globalState.testCases.filter(t =>
-        projectTestCaseIds.includes(t.id)
+        projectTestCaseIds.includes(t.id) && !t.isDeleted
     );
     const projectInformation = globalState.information.filter(i =>
-        projectInformationIds.includes(i.id)
+        projectInformationIds.includes(i.id) && !i.isDeleted
     );
 
     // Get last baseline commit hash to filter commits
@@ -309,142 +309,155 @@ function addRequirementsSection(doc: jsPDF, requirements: Requirement[], startPa
     let page = startPage;
 
     requirements.forEach((req) => {
-        // Check if we need a new page
-        if (yPos > 250) {
+        // Check if we need a new page (need ~60mm minimum for header + some content)
+        if (yPos > 230) {
             doc.addPage();
             page++;
             yPos = 20;
         }
 
-        // Requirement header
-        doc.setFontSize(12);
+        const boxLeft = 15;
+        const boxWidth = 180;
+        let boxTop = yPos;
+        let currentY = boxTop;
+
+        // Draw outer box border
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.5);
+
+        // Header section with shaded background
+        const headerHeight = 10;
+        doc.setFillColor(240, 240, 240);
+        doc.rect(boxLeft, currentY, boxWidth, headerHeight, 'FD');
+
+        // Requirement ID and Title
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
         const title = `${req.id} - ${req.title}`;
-        doc.text(title, 20, yPos);
+        doc.text(title, boxLeft + 3, currentY + 7);
 
-        // Add to TOC
-        tocEntries.push({ title: title, page: page, level: 1 });
-
-        yPos += 7;
-
-        // Metadata table
+        // Revision (right-aligned)
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        autoTable(doc, {
-            startY: yPos,
-            head: [['Status', 'Priority', 'Revision', 'Author', 'Verification']],
-            body: [[
-                req.status,
-                req.priority,
-                req.revision || '01',
-                req.author || '-',
-                req.verificationMethod || '-'
-            ]],
-            theme: 'plain',
-            margin: { left: 20 },
-            tableWidth: 170,
-            styles: {
-                fontSize: 8,
-                textColor: [0, 0, 0],
-                lineColor: [0, 0, 0],
-                lineWidth: 0.1
-            },
-            headStyles: {
-                fillColor: [255, 255, 255],
-                textColor: [0, 0, 0],
-                fontStyle: 'bold'
-            }
-        });
+        const revText = `Rev: ${req.revision || '01'}`;
+        doc.text(revText, boxLeft + boxWidth - 3, currentY + 7, { align: 'right' });
 
-        yPos = (doc as any).lastAutoTable.finalY + 5;
+        // Add to TOC
+        tocEntries.push({ title: `${req.id} - ${req.title}`, page: page, level: 1 });
 
-        // Dates table
-        autoTable(doc, {
-            startY: yPos,
-            head: [['Created', 'Last Modified', 'Approved']],
-            body: [[
-                formatDate(req.dateCreated),
-                formatDate(req.lastModified),
-                req.approvalDate ? formatDate(req.approvalDate) : '-'
-            ]],
-            theme: 'plain',
-            margin: { left: 20 },
-            tableWidth: 170,
-            styles: {
-                fontSize: 8,
-                textColor: [0, 0, 0],
-                lineColor: [0, 0, 0],
-                lineWidth: 0.1
-            },
-            headStyles: {
-                fillColor: [255, 255, 255],
-                textColor: [0, 0, 0],
-                fontStyle: 'bold'
-            }
-        });
+        currentY += headerHeight;
 
-        yPos = (doc as any).lastAutoTable.finalY + 5;
+        // Metadata bar (Status | Priority | Author)
+        doc.setFillColor(250, 250, 250);
+        doc.rect(boxLeft, currentY, boxWidth, 6, 'F');
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        const metadataText = `Status: ${req.status}  |  Priority: ${req.priority}  |  Author: ${req.author || 'N/A'}`;
+        doc.text(metadataText, boxLeft + 3, currentY + 4);
+        currentY += 6;
+
+        // Content sections
+        const contentLeft = boxLeft + 3;
+        const contentWidth = boxWidth - 6;
+        currentY += 3;
 
         // Description
         if (req.description) {
+            if (currentY > 260) {
+                // Close current box and start new page
+                doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
+                doc.addPage();
+                page++;
+                currentY = 20;
+                boxTop = 20; // Update boxTop for new page
+            }
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
-            doc.text('Description:', 20, yPos);
-            yPos += 5;
+            doc.text('Description:', contentLeft, currentY);
+            currentY += 4;
             doc.setFont('helvetica', 'normal');
-            const descLines = doc.splitTextToSize(req.description, 170);
-            doc.text(descLines, 20, yPos);
-            yPos += descLines.length * 5 + 3;
+            doc.setFontSize(8);
+            const descLines = doc.splitTextToSize(req.description, contentWidth);
+            doc.text(descLines, contentLeft, currentY);
+            currentY += descLines.length * 4 + 3;
         }
 
         // Requirement Text
         if (req.text) {
-            if (yPos > 250) {
+            if (currentY > 260) {
+                doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
                 doc.addPage();
                 page++;
-                yPos = 20;
+                currentY = 20;
+                boxTop = 20; // Update boxTop for new page
             }
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
-            doc.text('Requirement Text:', 20, yPos);
-            yPos += 5;
+            doc.text('Requirement Text:', contentLeft, currentY);
+            currentY += 4;
             doc.setFont('helvetica', 'normal');
-            const textLines = doc.splitTextToSize(req.text, 170);
-            doc.text(textLines, 20, yPos);
-            yPos += textLines.length * 5 + 3;
+            doc.setFontSize(8);
+            const textLines = doc.splitTextToSize(req.text, contentWidth);
+            doc.text(textLines, contentLeft, currentY);
+            currentY += textLines.length * 4 + 3;
         }
 
         // Rationale
         if (req.rationale) {
-            if (yPos > 250) {
+            if (currentY > 260) {
+                doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
                 doc.addPage();
                 page++;
-                yPos = 20;
+                currentY = 20;
+                boxTop = 20; // Update boxTop for new page
             }
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
-            doc.text('Rationale:', 20, yPos);
-            yPos += 5;
+            doc.text('Rationale:', contentLeft, currentY);
+            currentY += 4;
             doc.setFont('helvetica', 'normal');
-            const rationaleLines = doc.splitTextToSize(req.rationale, 170);
-            doc.text(rationaleLines, 20, yPos);
-            yPos += rationaleLines.length * 5 + 3;
+            doc.setFontSize(8);
+            const rationaleLines = doc.splitTextToSize(req.rationale, contentWidth);
+            doc.text(rationaleLines, contentLeft, currentY);
+            currentY += rationaleLines.length * 4 + 3;
         }
 
         // Comments
         if (req.comments) {
-            if (yPos > 250) {
+            if (currentY > 260) {
+                doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
                 doc.addPage();
                 page++;
-                yPos = 20;
+                currentY = 20;
+                boxTop = 20; // Update boxTop for new page
             }
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
-            doc.text('Comments:', 20, yPos);
-            yPos += 5;
+            doc.text('Comments:', contentLeft, currentY);
+            currentY += 4;
             doc.setFont('helvetica', 'normal');
-            const commentsLines = doc.splitTextToSize(req.comments, 170);
-            doc.text(commentsLines, 20, yPos);
-            yPos += commentsLines.length * 5 + 3;
+            doc.setFontSize(8);
+            const commentsLines = doc.splitTextToSize(req.comments, contentWidth);
+            doc.text(commentsLines, contentLeft, currentY);
+            currentY += commentsLines.length * 4 + 3;
         }
 
-        yPos += 5; // Space between requirements
+        // Footer metadata bar
+        currentY += 1;
+        doc.setFillColor(250, 250, 250);
+        doc.rect(boxLeft, currentY, boxWidth, 6, 'F');
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        const footerText = `Verification: ${req.verificationMethod || 'N/A'}  |  Created: ${formatDate(req.dateCreated)}  |  Modified: ${formatDate(req.lastModified)}  |  Approved: ${req.approvalDate ? formatDate(req.approvalDate) : 'N/A'}`;
+        doc.text(footerText, boxLeft + 3, currentY + 4);
+        currentY += 6;
+
+        // Draw final box border
+        doc.setDrawColor(200, 200, 200);
+        doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
+
+        yPos = currentY + 5; // Space between requirements
     });
 
     return page;
@@ -460,128 +473,174 @@ function addUseCasesSection(doc: jsPDF, useCases: UseCase[], startPage: number, 
     let page = startPage;
 
     useCases.forEach(useCase => {
-        if (yPos > 250) {
+        // Check if we need a new page (need ~60mm minimum for header + some content)
+        if (yPos > 230) {
             doc.addPage();
             page++;
             yPos = 20;
         }
 
-        // Use Case header
-        doc.setFontSize(12);
+        const boxLeft = 15;
+        const boxWidth = 180;
+        let boxTop = yPos;
+        let currentY = boxTop;
+
+        // Draw outer box border
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.5);
+
+        // Header section with shaded background
+        const headerHeight = 10;
+        doc.setFillColor(240, 240, 240);
+        doc.rect(boxLeft, currentY, boxWidth, headerHeight, 'FD');
+
+        // Use Case ID and Title
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
         const title = `${useCase.id} - ${useCase.title}`;
-        doc.text(title, 20, yPos);
+        doc.text(title, boxLeft + 3, currentY + 7);
+
+        // Revision (right-aligned)
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        const revText = `Rev: ${useCase.revision || '01'}`;
+        doc.text(revText, boxLeft + boxWidth - 3, currentY + 7, { align: 'right' });
 
         // Add to TOC
         tocEntries.push({ title: title, page: page, level: 1 });
 
-        yPos += 7;
+        currentY += headerHeight;
 
-        // Metadata
-        doc.setFontSize(9);
-        autoTable(doc, {
-            startY: yPos,
-            head: [['Status', 'Priority', 'Actor', 'Revision']],
-            body: [[
-                useCase.status,
-                useCase.priority,
-                useCase.actor || '-',
-                useCase.revision || '01'
-            ]],
-            theme: 'plain',
-            margin: { left: 20 },
-            tableWidth: 170,
-            styles: {
-                fontSize: 8,
-                textColor: [0, 0, 0],
-                lineColor: [0, 0, 0],
-                lineWidth: 0.1
-            },
-            headStyles: {
-                fillColor: [255, 255, 255],
-                textColor: [0, 0, 0],
-                fontStyle: 'bold'
-            }
-        });
+        // Metadata bar (Status | Priority | Actor)
+        doc.setFillColor(250, 250, 250);
+        doc.rect(boxLeft, currentY, boxWidth, 6, 'F');
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        const metadataText = `Status: ${useCase.status}  |  Priority: ${useCase.priority}  |  Actor: ${useCase.actor || 'N/A'}`;
+        doc.text(metadataText, boxLeft + 3, currentY + 4);
+        currentY += 6;
 
-        yPos = (doc as any).lastAutoTable.finalY + 5;
+        // Content sections
+        const contentLeft = boxLeft + 3;
+        const contentWidth = boxWidth - 6;
+        currentY += 3;
 
         // Description
         if (useCase.description) {
+            if (currentY > 260) {
+                doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
+                doc.addPage();
+                page++;
+                currentY = 20;
+                boxTop = 20;
+            }
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
-            doc.text('Description:', 20, yPos);
-            yPos += 5;
+            doc.text('Description:', contentLeft, currentY);
+            currentY += 4;
             doc.setFont('helvetica', 'normal');
-            const descLines = doc.splitTextToSize(useCase.description, 170);
-            doc.text(descLines, 20, yPos);
-            yPos += descLines.length * 5 + 3;
+            doc.setFontSize(8);
+            const descLines = doc.splitTextToSize(useCase.description, contentWidth);
+            doc.text(descLines, contentLeft, currentY);
+            currentY += descLines.length * 4 + 3;
         }
 
         // Preconditions
         if (useCase.preconditions) {
-            if (yPos > 240) {
+            if (currentY > 260) {
+                doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
                 doc.addPage();
                 page++;
-                yPos = 20;
+                currentY = 20;
+                boxTop = 20;
             }
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
-            doc.text('Preconditions:', 20, yPos);
-            yPos += 5;
+            doc.text('Preconditions:', contentLeft, currentY);
+            currentY += 4;
             doc.setFont('helvetica', 'normal');
-            const preLines = doc.splitTextToSize(useCase.preconditions, 170);
-            doc.text(preLines, 20, yPos);
-            yPos += preLines.length * 5 + 3;
+            doc.setFontSize(8);
+            const preLines = doc.splitTextToSize(useCase.preconditions, contentWidth);
+            doc.text(preLines, contentLeft, currentY);
+            currentY += preLines.length * 4 + 3;
         }
 
         // Main Flow
         if (useCase.mainFlow) {
-            if (yPos > 240) {
+            if (currentY > 260) {
+                doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
                 doc.addPage();
                 page++;
-                yPos = 20;
+                currentY = 20;
+                boxTop = 20;
             }
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
-            doc.text('Main Flow:', 20, yPos);
-            yPos += 5;
+            doc.text('Main Flow:', contentLeft, currentY);
+            currentY += 4;
             doc.setFont('helvetica', 'normal');
-            const flowLines = doc.splitTextToSize(useCase.mainFlow, 170);
-            doc.text(flowLines, 20, yPos);
-            yPos += flowLines.length * 5 + 3;
+            doc.setFontSize(8);
+            const flowLines = doc.splitTextToSize(useCase.mainFlow, contentWidth);
+            doc.text(flowLines, contentLeft, currentY);
+            currentY += flowLines.length * 4 + 3;
         }
 
         // Alternative Flows
         if (useCase.alternativeFlows) {
-            if (yPos > 240) {
+            if (currentY > 260) {
+                doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
                 doc.addPage();
                 page++;
-                yPos = 20;
+                currentY = 20;
+                boxTop = 20;
             }
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
-            doc.text('Alternative Flows:', 20, yPos);
-            yPos += 5;
+            doc.text('Alternative Flows:', contentLeft, currentY);
+            currentY += 4;
             doc.setFont('helvetica', 'normal');
-            const altLines = doc.splitTextToSize(useCase.alternativeFlows, 170);
-            doc.text(altLines, 20, yPos);
-            yPos += altLines.length * 5 + 3;
+            doc.setFontSize(8);
+            const altLines = doc.splitTextToSize(useCase.alternativeFlows, contentWidth);
+            doc.text(altLines, contentLeft, currentY);
+            currentY += altLines.length * 4 + 3;
         }
 
         // Postconditions
         if (useCase.postconditions) {
-            if (yPos > 240) {
+            if (currentY > 260) {
+                doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
                 doc.addPage();
                 page++;
-                yPos = 20;
+                currentY = 20;
+                boxTop = 20;
             }
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
-            doc.text('Postconditions:', 20, yPos);
-            yPos += 5;
+            doc.text('Postconditions:', contentLeft, currentY);
+            currentY += 4;
             doc.setFont('helvetica', 'normal');
-            const postLines = doc.splitTextToSize(useCase.postconditions, 170);
-            doc.text(postLines, 20, yPos);
-            yPos += postLines.length * 5 + 3;
+            doc.setFontSize(8);
+            const postLines = doc.splitTextToSize(useCase.postconditions, contentWidth);
+            doc.text(postLines, contentLeft, currentY);
+            currentY += postLines.length * 4 + 3;
         }
 
-        yPos += 5;
+        // Footer metadata bar (Dates)
+        currentY += 1;
+        doc.setFillColor(250, 250, 250);
+        doc.rect(boxLeft, currentY, boxWidth, 6, 'F');
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        const footerText = `Modified: ${formatDate(useCase.lastModified)}`;
+        doc.text(footerText, boxLeft + 3, currentY + 4);
+        currentY += 6;
+
+        // Draw final box border
+        doc.setDrawColor(200, 200, 200);
+        doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
+
+        yPos = currentY + 5;
     });
 
     return page;
@@ -597,100 +656,113 @@ function addTestCasesSection(doc: jsPDF, testCases: TestCase[], startPage: numbe
     let page = startPage;
 
     testCases.forEach(testCase => {
-        if (yPos > 250) {
+        // Check if we need a new page
+        if (yPos > 230) {
             doc.addPage();
             page++;
             yPos = 20;
         }
 
-        doc.setFontSize(12);
+        const boxLeft = 15;
+        const boxWidth = 180;
+        let boxTop = yPos;
+        let currentY = boxTop;
+
+        // Draw outer box border
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.5);
+
+        // Header section with shaded background
+        const headerHeight = 10;
+        doc.setFillColor(240, 240, 240);
+        doc.rect(boxLeft, currentY, boxWidth, headerHeight, 'FD');
+
+        // Test Case ID and Title
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
         const title = `${testCase.id} - ${testCase.title}`;
-        doc.text(title, 20, yPos);
+        doc.text(title, boxLeft + 3, currentY + 7);
+
+        // Revision (right-aligned)
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        const revText = `Rev: ${testCase.revision || '01'}`;
+        doc.text(revText, boxLeft + boxWidth - 3, currentY + 7, { align: 'right' });
 
         // Add to TOC
         tocEntries.push({ title: title, page: page, level: 1 });
 
-        yPos += 7;
+        currentY += headerHeight;
 
-        // Metadata
-        doc.setFontSize(9);
-        autoTable(doc, {
-            startY: yPos,
-            head: [['Status', 'Priority', 'Revision', 'Author']],
-            body: [[
-                testCase.status,
-                testCase.priority,
-                testCase.revision || '01',
-                testCase.author || '-'
-            ]],
-            theme: 'plain',
-            margin: { left: 20 },
-            tableWidth: 170,
-            styles: {
-                fontSize: 8,
-                textColor: [0, 0, 0],
-                lineColor: [0, 0, 0],
-                lineWidth: 0.1
-            },
-            headStyles: {
-                fillColor: [255, 255, 255],
-                textColor: [0, 0, 0],
-                fontStyle: 'bold'
+        // Metadata bar (Status | Priority | Author)
+        doc.setFillColor(250, 250, 250);
+        doc.rect(boxLeft, currentY, boxWidth, 6, 'F');
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        const metadataText = `Status: ${testCase.status}  |  Priority: ${testCase.priority}  |  Author: ${testCase.author || 'N/A'}`;
+        doc.text(metadataText, boxLeft + 3, currentY + 4);
+        currentY += 6;
+
+        // Content sections
+        const contentLeft = boxLeft + 3;
+        const contentWidth = boxWidth - 6;
+        currentY += 3;
+
+        // Description
+        if (testCase.description) {
+            if (currentY > 260) {
+                doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
+                doc.addPage();
+                page++;
+                currentY = 20;
+                boxTop = 20;
             }
-        });
-
-        yPos = (doc as any).lastAutoTable.finalY + 5;
-
-        // Dates table
-        autoTable(doc, {
-            startY: yPos,
-            head: [['Created', 'Last Modified', 'Last Run']],
-            body: [[
-                formatDate(testCase.dateCreated),
-                formatDate(testCase.lastModified),
-                testCase.lastRun ? formatDate(testCase.lastRun) : '-'
-            ]],
-            theme: 'plain',
-            margin: { left: 20 },
-            tableWidth: 170,
-            styles: {
-                fontSize: 8,
-                textColor: [0, 0, 0],
-                lineColor: [0, 0, 0],
-                lineWidth: 0.1
-            },
-            headStyles: {
-                fillColor: [255, 255, 255],
-                textColor: [0, 0, 0],
-                fontStyle: 'bold'
-            }
-        });
-
-        yPos = (doc as any).lastAutoTable.finalY + 5;
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Description:', contentLeft, currentY);
+            currentY += 4;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            const descLines = doc.splitTextToSize(testCase.description, contentWidth);
+            doc.text(descLines, contentLeft, currentY);
+            currentY += descLines.length * 4 + 3;
+        }
 
         // Tests Requirements (traceability)
         if (testCase.requirementIds && testCase.requirementIds.length > 0) {
+            if (currentY > 260) {
+                doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
+                doc.addPage();
+                page++;
+                currentY = 20;
+                boxTop = 20;
+            }
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
-            doc.text('Tests Requirements:', 20, yPos);
-            yPos += 5;
+            doc.text('Tests Requirements:', contentLeft, currentY);
+            currentY += 4;
             doc.setFont('helvetica', 'normal');
-            doc.text(testCase.requirementIds.join(', '), 20, yPos);
-            yPos += 8;
+            doc.setFontSize(8);
+            doc.text(testCase.requirementIds.join(', '), contentLeft, currentY);
+            currentY += 7;
         }
 
-        // Description (full test details)
-        if (testCase.description) {
-            doc.setFont('helvetica', 'bold');
-            doc.text('Description:', 20, yPos);
-            yPos += 5;
-            doc.setFont('helvetica', 'normal');
-            const descLines = doc.splitTextToSize(testCase.description, 170);
-            doc.text(descLines, 20, yPos);
-            yPos += descLines.length * 5 + 3;
-        }
+        // Footer metadata bar (Dates)
+        currentY += 1;
+        doc.setFillColor(250, 250, 250);
+        doc.rect(boxLeft, currentY, boxWidth, 6, 'F');
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        const footerText = `Created: ${formatDate(testCase.dateCreated)}  |  Modified: ${formatDate(testCase.lastModified)}  |  Last Run: ${testCase.lastRun ? formatDate(testCase.lastRun) : 'Never'}`;
+        doc.text(footerText, boxLeft + 3, currentY + 4);
+        currentY += 6;
 
-        yPos += 5;
+        // Draw final box border
+        doc.setDrawColor(200, 200, 200);
+        doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
+
+        yPos = currentY + 5;
     });
 
     return page;
@@ -706,58 +778,89 @@ function addInformationSection(doc: jsPDF, information: Information[], startPage
     let page = startPage;
 
     information.forEach(info => {
-        if (yPos > 250) {
+        // Check if we need a new page
+        if (yPos > 230) {
             doc.addPage();
             page++;
             yPos = 20;
         }
 
-        doc.setFontSize(12);
+        const boxLeft = 15;
+        const boxWidth = 180;
+        let boxTop = yPos;
+        let currentY = boxTop;
+
+        // Draw outer box border
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.5);
+
+        // Header section with shaded background
+        const headerHeight = 10;
+        doc.setFillColor(240, 240, 240);
+        doc.rect(boxLeft, currentY, boxWidth, headerHeight, 'FD');
+
+        // Information ID and Title
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
         const title = `${info.id} - ${info.title}`;
-        doc.text(title, 20, yPos);
+        doc.text(title, boxLeft + 3, currentY + 7);
 
         // Add to TOC
         tocEntries.push({ title: title, page: page, level: 1 });
 
-        yPos += 7;
+        currentY += headerHeight;
 
-        // Metadata table
-        doc.setFontSize(9);
-        autoTable(doc, {
-            startY: yPos,
-            head: [['Type', 'Created', 'Last Modified']],
-            body: [[
-                info.type.charAt(0).toUpperCase() + info.type.slice(1),
-                formatDate(info.dateCreated),
-                formatDate(info.lastModified)
-            ]],
-            theme: 'plain',
-            margin: { left: 20 },
-            tableWidth: 170,
-            styles: {
-                fontSize: 8,
-                textColor: [0, 0, 0],
-                lineColor: [0, 0, 0],
-                lineWidth: 0.1
-            },
-            headStyles: {
-                fillColor: [255, 255, 255],
-                textColor: [0, 0, 0],
-                fontStyle: 'bold'
-            }
-        });
+        // Metadata bar (Type)
+        doc.setFillColor(250, 250, 250);
+        doc.rect(boxLeft, currentY, boxWidth, 6, 'F');
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        const typeStr = info.type.charAt(0).toUpperCase() + info.type.slice(1);
+        const metadataText = `Type: ${typeStr}`;
+        doc.text(metadataText, boxLeft + 3, currentY + 4);
+        currentY += 6;
 
-        yPos = (doc as any).lastAutoTable.finalY + 5;
+        // Content sections
+        const contentLeft = boxLeft + 3;
+        const contentWidth = boxWidth - 6;
+        currentY += 3;
 
         // Content
         if (info.content) {
+            if (currentY > 260) {
+                doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
+                doc.addPage();
+                page++;
+                currentY = 20;
+                boxTop = 20;
+            }
+            // doc.setFontSize(9);
+            // doc.setFont('helvetica', 'bold');
+            // doc.text('Content:', contentLeft, currentY);
+            // currentY += 4;
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9);
-            const contentLines = doc.splitTextToSize(info.content, 170);
-            doc.text(contentLines, 20, yPos);
-            yPos += contentLines.length * 5 + 5;
+            doc.setFontSize(8);
+            const contentLines = doc.splitTextToSize(info.content, contentWidth);
+            doc.text(contentLines, contentLeft, currentY);
+            currentY += contentLines.length * 4 + 3;
         }
+
+        // Footer metadata bar (Dates)
+        currentY += 1;
+        doc.setFillColor(250, 250, 250);
+        doc.rect(boxLeft, currentY, boxWidth, 6, 'F');
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        const footerText = `Created: ${formatDate(info.dateCreated)}  |  Modified: ${formatDate(info.lastModified)}`;
+        doc.text(footerText, boxLeft + 3, currentY + 4);
+        currentY += 6;
+
+        // Draw final box border
+        doc.setDrawColor(200, 200, 200);
+        doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
+
+        yPos = currentY + 5;
     });
 
     return page;
