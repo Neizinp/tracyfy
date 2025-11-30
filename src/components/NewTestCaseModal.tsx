@@ -96,8 +96,9 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({ isOpen, requ
 
                 <form onSubmit={handleSubmit} style={{ padding: 'var(--spacing-lg)', overflow: 'auto' }}>
                     <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Title</label>
+                        <label htmlFor="new-test-case-title" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Title</label>
                         <input
+                            id="new-test-case-title"
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
@@ -116,8 +117,9 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({ isOpen, requ
                     </div>
 
                     <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Description</label>
+                        <label htmlFor="new-test-case-description" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Description</label>
                         <textarea
+                            id="new-test-case-description"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             rows={4}

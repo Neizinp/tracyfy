@@ -35,17 +35,20 @@ test('multi-project artifact support', async ({ page }) => {
     await expect(page.getByText('Shared Requirement')).not.toBeVisible();
 
     // 5. Open Global Library
-    await page.click('button:has-text("Library")');
+    await page.click('button:has-text("Import")');
+    await page.click('button:has-text("Import from Project")');
 
     // Wait for library modal
-    await expect(page.getByText('Global Library')).toBeVisible();
+    await expect(page.getByText('Global Artifact Library')).toBeVisible();
 
     // 6. Filter to show artifacts from Project A
-    await page.click('button:has-text("All Projects")');
-    await page.click('text=Project A');
+    // 6. Filter to show artifacts from Project A
+    await page.click('button:has-text("By Project")');
+    // Select Project A from the dropdown (we need to find the select element)
+    await page.locator('select').selectOption({ label: 'Project A' });
 
     // 7. Verify "Shared Requirement" appears in library
-    await expect(page.locator('.global-library-panel').getByText('Shared Requirement')).toBeVisible();
+    await expect(page.getByText('Shared Requirement')).toBeVisible();
 
     // 8. Add the requirement to Project B via drag-and-drop simulation
     // Since drag-and-drop is complex in Playwright, we'll click the add button if it exists
@@ -55,7 +58,7 @@ test('multi-project artifact support', async ({ page }) => {
     // In real implementation, you would drag-and-drop here
 
     // Close library modal
-    await page.locator('button:has(svg.lucide-x)').last().click();
+    await page.click('button:has-text("Cancel")');
 
     // 9. Switch back to Project A
     const projectSelector = page.locator('button').filter({ hasText: 'Project A' }).first();
@@ -73,7 +76,7 @@ test('multi-project artifact support', async ({ page }) => {
     await expect(page.locator('h3:has-text("Edit Requirement")')).toBeVisible();
 
     // Update title
-    const titleInput = page.locator('form#requirement-form input').first();
+    const titleInput = page.locator('form#edit-requirement-form input').first();
     await titleInput.fill('Updated Shared Requirement');
 
     await page.click('button:has-text("Save Changes")');

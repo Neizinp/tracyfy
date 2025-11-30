@@ -93,10 +93,11 @@ export const InformationModal: React.FC<InformationModalProps> = ({
 
                 <form onSubmit={handleSubmit} style={{ padding: 'var(--spacing-lg)' }}>
                     <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}>
+                        <label htmlFor="info-title" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}>
                             Title
                         </label>
                         <input
+                            id="info-title"
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
@@ -136,10 +137,11 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                     </div>
 
                     <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}>
+                        <label htmlFor="info-content" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}>
                             Content
                         </label>
                         <textarea
+                            id="info-content"
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                             required

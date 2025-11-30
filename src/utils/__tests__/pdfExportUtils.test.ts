@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { exportProjectToPDF } from '../pdfExportUtils';
-import type { Project, Requirement, UseCase } from '../../types';
+import type { Project, Requirement, UseCase, TestCase, Information } from '../../types';
+import { formatDate } from '../dateUtils';
 
 // Mock jsPDF
 const mockText = vi.fn();
@@ -9,7 +10,7 @@ const mockSetPage = vi.fn();
 const mockSetFont = vi.fn();
 const mockSetFontSize = vi.fn();
 const mockSave = vi.fn();
-const mockSplitTextToSize = vi.fn((text) => [text]);
+const mockSplitTextToSize = vi.fn((text) => [text]); // Simple mock: returns array with single text
 const mockGetTextWidth = vi.fn(() => 10);
 const mockInternal = {
     pageSize: {
@@ -17,6 +18,7 @@ const mockInternal = {
         getHeight: () => 297
     }
 };
+const mockOutput = vi.fn();
 
 vi.mock('jspdf', () => {
     return {
@@ -33,7 +35,7 @@ vi.mock('jspdf', () => {
                     getTextWidth: mockGetTextWidth,
                     internal: mockInternal,
                     getNumberOfPages: () => 5,
-                    output: vi.fn()
+                    output: mockOutput
                 };
             }
         }
@@ -53,87 +55,196 @@ describe('pdfExportUtils', () => {
         vi.clearAllMocks();
     });
 
-    it('should generate granular Table of Contents with artifacts', async () => {
-        const mockProject: Project = {
-            id: 'p1',
-            name: 'Test Project',
-            description: 'Desc',
-            requirementIds: ['r1'],
-            useCaseIds: ['u1'],
-            testCaseIds: [],
-            informationIds: [],
-            lastModified: 0,
-            currentBaseline: undefined
-        };
+    const mockProject: Project = {
+        id: 'p1',
+        name: 'Test Project',
+        description: 'Test Description',
+        requirementIds: ['r1'],
+        useCaseIds: ['u1'],
+        testCaseIds: ['t1'],
+        informationIds: ['i1'],
+        lastModified: 0,
+        currentBaseline: 'Baseline 1.0'
+    };
 
-        const mockReq: Requirement = {
-            id: 'r1',
-            title: 'My Requirement',
-            description: 'Desc',
-            text: 'Req text',
-            rationale: 'Rationale',
-            status: 'draft',
-            priority: 'high',
-            parentIds: [],
-            lastModified: 0,
-            revision: '01',
-            dateCreated: 0
-        };
+    const mockReq: Requirement = {
+        id: 'r1',
+        title: 'My Requirement',
+        description: 'Desc',
+        text: 'Req text',
+        rationale: 'Rationale',
+        status: 'draft',
+        priority: 'high',
+        parentIds: [],
+        lastModified: 0,
+        revision: '01',
+        dateCreated: 0
+    };
 
-        const mockUseCase: UseCase = {
-            id: 'u1',
-            title: 'My Use Case',
-            description: 'Desc',
-            actor: 'User',
-            preconditions: '',
-            postconditions: '',
-            mainFlow: 'Flow',
-            priority: 'medium',
-            status: 'draft',
-            lastModified: 0,
-            revision: '01'
-        };
+    const mockUseCase: UseCase = {
+        id: 'u1',
+        title: 'My Use Case',
+        description: 'Desc',
+        actor: 'User',
+        preconditions: '',
+        postconditions: '',
+        mainFlow: 'Step 1. Do this.',
+        priority: 'medium',
+        status: 'draft',
+        lastModified: 0,
+        revision: '01'
+    };
 
-        const globalState = {
-            requirements: [mockReq],
-            useCases: [mockUseCase],
-            testCases: [],
-            information: []
-        };
+    const mockTestCase: TestCase = {
+        id: 't1',
+        title: 'My Test Case',
+        description: 'Test Steps',
+        status: 'draft',
+        priority: 'high',
+        lastModified: 0,
+        revision: '01',
+        dateCreated: 0,
+        requirementIds: []
+    };
 
-        // Mock showSaveFilePicker
-        const mockHandle = {
+    const mockInfo: Information = {
+        id: 'i1',
+        title: 'My Info',
+        content: 'Info Content',
+        type: 'note',
+        lastModified: 0,
+        revision: '01',
+        dateCreated: 0
+    };
+
+    const globalState = {
+        requirements: [mockReq],
+        useCases: [mockUseCase],
+        testCases: [mockTestCase],
+        information: [mockInfo]
+    };
+
+    it('should generate Cover Page with correct details', async () => {
+        // Mock showSaveFilePicker to avoid error
+        (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
             createWritable: vi.fn().mockResolvedValue({
                 write: vi.fn(),
                 close: vi.fn()
             })
-        };
-        (window as any).showSaveFilePicker = vi.fn().mockResolvedValue(mockHandle);
+        });
 
         await exportProjectToPDF(
             mockProject,
             globalState,
             ['r1'],
             ['u1'],
+            ['t1'],
+            ['i1']
+        );
+
+        // Verify Title
+        expect(mockText).toHaveBeenCalledWith('Test Project', 105, 60, { align: 'center' });
+
+        // Verify Description
+        expect(mockText).toHaveBeenCalledWith(['Test Description'], 105, 95, { align: 'center', maxWidth: 170 });
+
+        // Verify Date (YYYY-MM-DD)
+        const expectedDate = formatDate(Date.now());
+        expect(mockText).toHaveBeenCalledWith(expect.stringContaining(`Export Date: ${expectedDate}`), 105, 140, { align: 'center' });
+
+        // Verify Baseline
+        expect(mockText).toHaveBeenCalledWith('Baseline: Baseline 1.0', 105, 155, { align: 'center' });
+    });
+
+    it('should generate granular Table of Contents', async () => {
+        (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+            createWritable: vi.fn().mockResolvedValue({
+                write: vi.fn(),
+                close: vi.fn()
+            })
+        });
+
+        await exportProjectToPDF(
+            mockProject,
+            globalState,
+            ['r1'],
+            ['u1'],
+            ['t1'],
+            ['i1']
+        );
+
+        // Header
+        expect(mockText).toHaveBeenCalledWith('Table of Contents', 20, 20);
+
+        // Sections
+        expect(mockText).toHaveBeenCalledWith('Requirements', expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('Use Cases', expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('Test Cases', expect.any(Number), expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('Information', expect.any(Number), expect.any(Number));
+
+        // Granular Items (indented)
+        expect(mockText).toHaveBeenCalledWith('r1 - My Requirement', 35, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('u1 - My Use Case', 35, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('t1 - My Test Case', 35, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('i1 - My Info', 35, expect.any(Number));
+    });
+
+    it('should include all artifact sections with correct content', async () => {
+        (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+            createWritable: vi.fn().mockResolvedValue({
+                write: vi.fn(),
+                close: vi.fn()
+            })
+        });
+
+        await exportProjectToPDF(
+            mockProject,
+            globalState,
+            ['r1'],
+            ['u1'],
+            ['t1'],
+            ['i1']
+        );
+
+        // Requirements Section
+        expect(mockText).toHaveBeenCalledWith('Requirements', 20, 20);
+        expect(mockText).toHaveBeenCalledWith('r1 - My Requirement', 20, 30);
+        expect(mockText).toHaveBeenCalledWith('Requirement Text:', 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Req text'], 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('Rationale:', 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Rationale'], 20, expect.any(Number));
+
+        // Use Cases Section
+        expect(mockText).toHaveBeenCalledWith('Use Cases', 20, 20);
+        expect(mockText).toHaveBeenCalledWith('u1 - My Use Case', 20, 30);
+        expect(mockText).toHaveBeenCalledWith('Main Flow:', 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Step 1. Do this.'], 20, expect.any(Number));
+
+        // Test Cases Section
+        expect(mockText).toHaveBeenCalledWith('Test Cases', 20, 20);
+        expect(mockText).toHaveBeenCalledWith('t1 - My Test Case', 20, 30);
+        expect(mockText).toHaveBeenCalledWith('Description:', 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Test Steps'], 20, expect.any(Number));
+
+        // Information Section
+        expect(mockText).toHaveBeenCalledWith('Information', 20, 20);
+        expect(mockText).toHaveBeenCalledWith('i1 - My Info', 20, 30);
+        expect(mockText).toHaveBeenCalledWith(['Info Content'], 20, expect.any(Number));
+    });
+
+    it('should fallback to doc.save if showSaveFilePicker is not available', async () => {
+        delete (window as any).showSaveFilePicker;
+
+        await exportProjectToPDF(
+            mockProject,
+            globalState,
+            ['r1'],
+            [],
             [],
             []
         );
 
-        // Verify showSaveFilePicker was called
-        expect((window as any).showSaveFilePicker).toHaveBeenCalled();
-
-        // Verify TOC generation
-        // We expect calls to doc.text with TOC entries
-
-        // 1. "Table of Contents" header
-        expect(mockText).toHaveBeenCalledWith('Table of Contents', 20, 20);
-
-        // 2. Main Sections
-        expect(mockText).toHaveBeenCalledWith('Requirements', expect.any(Number), expect.any(Number));
-        expect(mockText).toHaveBeenCalledWith('Use Cases', expect.any(Number), expect.any(Number));
-
-        // 3. Granular Artifacts (indented)
-        expect(mockText).toHaveBeenCalledWith('r1 - My Requirement', 35, expect.any(Number));
-        expect(mockText).toHaveBeenCalledWith('u1 - My Use Case', 35, expect.any(Number));
+        expect(mockSave).toHaveBeenCalledWith('Test_Project-export.pdf');
     });
 });
+

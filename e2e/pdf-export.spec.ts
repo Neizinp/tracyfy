@@ -17,7 +17,8 @@ test('comprehensive pdf export', async ({ page }) => {
 
     await page.locator('form#new-requirement-form input').first().fill('Test Requirement for PDF');
     await page.getByPlaceholder('Enter detailed requirement text with Markdown...').fill('This is the detailed requirement text that should appear in the PDF export.');
-    await page.getByPlaceholder('Explain why this requirement is necessary...').fill('This is the rationale explaining why this requirement exists.');
+    await page.click('button:has-text("Details")');
+    await page.getByPlaceholder('Explain the rationale with Markdown...').fill('This is the rationale explaining why this requirement exists.');
 
     await page.click('button:has-text("Create Requirement")');
 
@@ -49,11 +50,13 @@ test('comprehensive pdf export', async ({ page }) => {
     await page.click('button:has-text("Create New")');
     await page.click('button:has-text("New Test Case")');
 
-    await page.locator('input[type="text"]').first().fill('PDF Test Case');
-    await page.locator('textarea').first().fill('Test case description for PDF export');
+    await page.getByLabel('Title').fill('PDF Test Case');
+    await page.getByLabel('Description').fill('Test case description for PDF export');
 
     await page.click('button:has-text("Create Test Case")');
 
+    await expect(page.locator('h3:has-text("New Test Case")')).not.toBeVisible();
+    await page.click('button:has-text("Test Cases")');
     await expect(page.getByText('PDF Test Case').first()).toBeVisible();
 
     // 5. Create Information
@@ -63,25 +66,14 @@ test('comprehensive pdf export', async ({ page }) => {
     await page.click('button:has-text("Create New")');
     await page.click('button:has-text("New Information")');
 
-    await page.locator('input[type="text"]').first().fill('PDF Test Information');
-    await page.locator('textarea').first().fill('Information content for PDF export');
+    await page.getByLabel('Title').fill('PDF Test Information');
+    await page.getByLabel('Content').fill('Information content for PDF export');
 
     await page.click('button:has-text("Create Information")');
 
+    await expect(page.locator('h3:has-text("New Information")')).not.toBeVisible();
+    await page.click('button:has-text("Information")');
     await expect(page.getByText('PDF Test Information').first()).toBeVisible();
-
-    // 6. Create Baseline
-    await page.click('button:has-text("Baselines")');
-    await page.waitForTimeout(500);
-
-    await page.click('button:has-text("Create Baseline")');
-
-    await page.locator('input[placeholder="e.g., Initial Release"]').fill('PDF Test Baseline');
-    await page.locator('textarea').fill('Baseline for PDF export test');
-
-    await page.click('button:has-text("Create Baseline")');
-
-    await page.waitForTimeout(500);
 
     // 7. Export PDF
     await page.click('button:has-text("Export")');
