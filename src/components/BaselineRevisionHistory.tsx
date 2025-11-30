@@ -56,7 +56,6 @@ export function BaselineRevisionHistory({
                                     currentInfo.type === 'testcase' ? 'testcases' : 'information';
 
                             const history = await gitService.getArtifactHistory(
-                                projectName,
                                 typeParam as 'requirements' | 'usecases' | 'testcases' | 'information',
                                 artifactId
                             );

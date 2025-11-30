@@ -137,8 +137,9 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({ isOpen, requ
                     </div>
 
                     <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Priority</label>
+                        <label htmlFor="new-test-case-priority" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Priority</label>
                         <select
+                            id="new-test-case-priority"
                             value={priority}
                             onChange={(e) => setPriority(e.target.value as TestCase['priority'])}
                             style={{
@@ -158,8 +159,9 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({ isOpen, requ
                     </div>
 
                     <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                        <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Author</label>
+                        <label htmlFor="new-test-case-author" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Author</label>
                         <input
+                            id="new-test-case-author"
                             type="text"
                             value={author}
                             onChange={(e) => setAuthor(e.target.value)}

@@ -143,8 +143,9 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
                     {activeTab === 'overview' && (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
                             <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Title *</label>
+                                <label htmlFor="req-title" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Title *</label>
                                 <input
+                                    id="req-title"
                                     type="text"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
@@ -173,8 +174,9 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Priority</label>
+                                <label htmlFor="req-priority" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Priority</label>
                                 <select
+                                    id="req-priority"
                                     value={priority}
                                     onChange={(e) => setPriority(e.target.value as Requirement['priority'])}
                                     style={{
@@ -194,8 +196,9 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Author</label>
+                                <label htmlFor="req-author" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Author</label>
                                 <input
+                                    id="req-author"
                                     type="text"
                                     value={author}
                                     onChange={(e) => setAuthor(e.target.value)}
@@ -236,8 +239,9 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({ isOpen
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Verification Method</label>
+                                <label htmlFor="req-verification" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Verification Method</label>
                                 <input
+                                    id="req-verification"
                                     type="text"
                                     value={verificationMethod}
                                     onChange={(e) => setVerificationMethod(e.target.value)}

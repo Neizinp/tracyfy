@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { UseCase } from '../types';
+import { RevisionHistoryTab } from './RevisionHistoryTab';
 
 interface UseCaseModalProps {
     isOpen: boolean;
@@ -9,7 +10,7 @@ interface UseCaseModalProps {
     onSubmit: (useCase: Omit<UseCase, 'id' | 'lastModified'> | { id: string; updates: Partial<UseCase> }) => void;
 }
 
-type Tab = 'overview' | 'flows' | 'conditions';
+type Tab = 'overview' | 'flows' | 'conditions' | 'history';
 
 export const UseCaseModal: React.FC<UseCaseModalProps> = ({ isOpen, useCase, onClose, onSubmit }) => {
     const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -88,7 +89,8 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ isOpen, useCase, onC
     const tabs: { id: Tab; label: string }[] = [
         { id: 'overview', label: 'Overview' },
         { id: 'flows', label: 'Flows' },
-        { id: 'conditions', label: 'Conditions' }
+        { id: 'conditions', label: 'Conditions' },
+        { id: 'history', label: 'Revision History' }
     ];
 
     return (
@@ -175,8 +177,9 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ isOpen, useCase, onC
                     {activeTab === 'overview' && (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
                             <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Title *</label>
+                                <label htmlFor="use-case-title" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Title *</label>
                                 <input
+                                    id="use-case-title"
                                     type="text"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
@@ -196,8 +199,9 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ isOpen, useCase, onC
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Actor *</label>
+                                <label htmlFor="use-case-actor" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Actor *</label>
                                 <input
+                                    id="use-case-actor"
                                     type="text"
                                     value={actor}
                                     onChange={(e) => setActor(e.target.value)}
@@ -216,8 +220,9 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ isOpen, useCase, onC
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Priority</label>
+                                <label htmlFor="use-case-priority" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Priority</label>
                                 <select
+                                    id="use-case-priority"
                                     value={priority}
                                     onChange={(e) => setPriority(e.target.value as UseCase['priority'])}
                                     style={{
@@ -237,8 +242,9 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ isOpen, useCase, onC
                             </div>
 
                             <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Status</label>
+                                <label htmlFor="use-case-status" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Status</label>
                                 <select
+                                    id="use-case-status"
                                     value={status}
                                     onChange={(e) => setStatus(e.target.value as UseCase['status'])}
                                     style={{
@@ -259,8 +265,9 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ isOpen, useCase, onC
                             </div>
 
                             <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Description</label>
+                                <label htmlFor="use-case-description" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Description</label>
                                 <textarea
+                                    id="use-case-description"
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     rows={4}
@@ -283,8 +290,9 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ isOpen, useCase, onC
                     {activeTab === 'flows' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
                             <div>
-                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Main Flow *</label>
+                                <label htmlFor="use-case-main-flow" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Main Flow *</label>
                                 <textarea
+                                    id="use-case-main-flow"
                                     value={mainFlow}
                                     onChange={(e) => setMainFlow(e.target.value)}
                                     required
@@ -305,8 +313,9 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ isOpen, useCase, onC
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Alternative Flows</label>
+                                <label htmlFor="use-case-alternative-flows" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Alternative Flows</label>
                                 <textarea
+                                    id="use-case-alternative-flows"
                                     value={alternativeFlows}
                                     onChange={(e) => setAlternativeFlows(e.target.value)}
                                     rows={8}
@@ -330,8 +339,9 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ isOpen, useCase, onC
                     {activeTab === 'conditions' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
                             <div>
-                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Preconditions</label>
+                                <label htmlFor="use-case-preconditions" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Preconditions</label>
                                 <textarea
+                                    id="use-case-preconditions"
                                     value={preconditions}
                                     onChange={(e) => setPreconditions(e.target.value)}
                                     rows={8}
@@ -350,8 +360,9 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ isOpen, useCase, onC
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Postconditions</label>
+                                <label htmlFor="use-case-postconditions" style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>Postconditions</label>
                                 <textarea
+                                    id="use-case-postconditions"
                                     value={postconditions}
                                     onChange={(e) => setPostconditions(e.target.value)}
                                     rows={8}
@@ -369,6 +380,10 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ isOpen, useCase, onC
                                 />
                             </div>
                         </div>
+                    )}
+
+                    {activeTab === 'history' && useCase && (
+                        <RevisionHistoryTab artifactId={useCase.id} artifactType="usecases" />
                     )}
                 </form>
 

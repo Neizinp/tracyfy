@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import type { Requirement, Link, Project } from '../types';
 import { MarkdownEditor } from './MarkdownEditor';
 import { formatDateTime } from '../utils/dateUtils';
+import { RevisionHistoryTab } from './RevisionHistoryTab';
 
 interface EditRequirementModalProps {
     isOpen: boolean;
@@ -16,7 +17,7 @@ interface EditRequirementModalProps {
     onDelete: (id: string) => void;
 }
 
-type Tab = 'overview' | 'details' | 'relationships' | 'comments';
+type Tab = 'overview' | 'details' | 'relationships' | 'comments' | 'history';
 
 export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
     isOpen,
@@ -133,7 +134,8 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
         { id: 'overview', label: 'Overview' },
         { id: 'details', label: 'Details' },
         { id: 'relationships', label: 'Relationships' },
-        { id: 'comments', label: 'Comments' }
+        { id: 'comments', label: 'Comments' },
+        { id: 'history', label: 'Revision History' }
     ];
 
     return (
@@ -572,6 +574,9 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                                 </button>
                             </div>
                         </div>
+                    )}
+                    {activeTab === 'history' && requirement && (
+                        <RevisionHistoryTab artifactId={requirement.id} artifactType="requirements" />
                     )}
                 </form>
 
