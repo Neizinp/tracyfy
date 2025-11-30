@@ -257,5 +257,137 @@ describe('pdfExportUtils', () => {
 
         expect(mockSave).toHaveBeenCalledWith('Test_Project-export.pdf');
     });
+
+    it('should export all requirement attributes', async () => {
+        (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+            createWritable: vi.fn().mockResolvedValue({
+                write: vi.fn(),
+                close: vi.fn()
+            })
+        });
+
+        const fullReq: Requirement = {
+            ...mockReq,
+            description: 'Full description text',
+            author: 'John Doe',
+            verificationMethod: 'Test',
+            comments: 'Some comments here',
+            approvalDate: 1234567890000
+        };
+
+        await exportProjectToPDF(
+            mockProject,
+            { ...globalState, requirements: [fullReq] },
+            ['r1'],
+            [],
+            [],
+            [],
+            []
+        );
+
+        // Verify Description section
+        expect(mockText).toHaveBeenCalledWith('Description:', 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Full description text'], 20, expect.any(Number));
+
+        // Verify Comments section
+        expect(mockText).toHaveBeenCalledWith('Comments:', 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Some comments here'], 20, expect.any(Number));
+    });
+
+    it('should export all use case attributes', async () => {
+        (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+            createWritable: vi.fn().mockResolvedValue({
+                write: vi.fn(),
+                close: vi.fn()
+            })
+        });
+
+        const fullUseCase: UseCase = {
+            ...mockUseCase,
+            preconditions: 'User must be logged in',
+            postconditions: 'Data is saved',
+            alternativeFlows: 'Alternative path description'
+        };
+
+        await exportProjectToPDF(
+            mockProject,
+            { ...globalState, useCases: [fullUseCase] },
+            [],
+            ['u1'],
+            [],
+            [],
+            []
+        );
+
+        // Verify Preconditions section
+        expect(mockText).toHaveBeenCalledWith('Preconditions:', 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['User must be logged in'], 20, expect.any(Number));
+
+        // Verify Postconditions section
+        expect(mockText).toHaveBeenCalledWith('Postconditions:', 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Data is saved'], 20, expect.any(Number));
+
+        // Verify Alternative Flows section
+        expect(mockText).toHaveBeenCalledWith('Alternative Flows:', 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith(['Alternative path description'], 20, expect.any(Number));
+    });
+
+    it('should export all test case attributes', async () => {
+        (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+            createWritable: vi.fn().mockResolvedValue({
+                write: vi.fn(),
+                close: vi.fn()
+            })
+        });
+
+        const fullTestCase: TestCase = {
+            ...mockTestCase,
+            author: 'Jane Smith',
+            lastRun: 1234567890000,
+            requirementIds: ['r1', 'r2']
+        };
+
+        await exportProjectToPDF(
+            mockProject,
+            { ...globalState, testCases: [fullTestCase] },
+            [],
+            [],
+            ['t1'],
+            [],
+            []
+        );
+
+        // Verify Tests Requirements section (traceability)
+        expect(mockText).toHaveBeenCalledWith('Tests Requirements:', 20, expect.any(Number));
+        expect(mockText).toHaveBeenCalledWith('r1, r2', 20, expect.any(Number));
+    });
+
+    it('should export all information attributes', async () => {
+        (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+            createWritable: vi.fn().mockResolvedValue({
+                write: vi.fn(),
+                close: vi.fn()
+            })
+        });
+
+        const fullInfo: Information = {
+            ...mockInfo,
+            type: 'meeting'
+        };
+
+        await exportProjectToPDF(
+            mockProject,
+            { ...globalState, information: [fullInfo] },
+            [],
+            [],
+            [],
+            ['i1'],
+            []
+        );
+
+        // Verify Information section is created
+        expect(mockText).toHaveBeenCalledWith('Information', 20, 20);
+        expect(mockText).toHaveBeenCalledWith('i1 - My Info', 20, 30);
+    });
 });
 

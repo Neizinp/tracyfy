@@ -332,12 +332,13 @@ function addRequirementsSection(doc: jsPDF, requirements: Requirement[], startPa
         doc.setFont('helvetica', 'normal');
         autoTable(doc, {
             startY: yPos,
-            head: [['Status', 'Priority', 'Revision', 'Baseline']],
+            head: [['Status', 'Priority', 'Revision', 'Author', 'Verification']],
             body: [[
                 req.status,
                 req.priority,
                 req.revision || '01',
-                '-' // Baseline info not directly on artifact
+                req.author || '-',
+                req.verificationMethod || '-'
             ]],
             theme: 'plain',
             margin: { left: 20 },
@@ -357,8 +358,51 @@ function addRequirementsSection(doc: jsPDF, requirements: Requirement[], startPa
 
         yPos = (doc as any).lastAutoTable.finalY + 5;
 
+        // Dates table
+        autoTable(doc, {
+            startY: yPos,
+            head: [['Created', 'Last Modified', 'Approved']],
+            body: [[
+                formatDate(req.dateCreated),
+                formatDate(req.lastModified),
+                req.approvalDate ? formatDate(req.approvalDate) : '-'
+            ]],
+            theme: 'plain',
+            margin: { left: 20 },
+            tableWidth: 170,
+            styles: {
+                fontSize: 8,
+                textColor: [0, 0, 0],
+                lineColor: [0, 0, 0],
+                lineWidth: 0.1
+            },
+            headStyles: {
+                fillColor: [255, 255, 255],
+                textColor: [0, 0, 0],
+                fontStyle: 'bold'
+            }
+        });
+
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+
+        // Description
+        if (req.description) {
+            doc.setFont('helvetica', 'bold');
+            doc.text('Description:', 20, yPos);
+            yPos += 5;
+            doc.setFont('helvetica', 'normal');
+            const descLines = doc.splitTextToSize(req.description, 170);
+            doc.text(descLines, 20, yPos);
+            yPos += descLines.length * 5 + 3;
+        }
+
         // Requirement Text
         if (req.text) {
+            if (yPos > 250) {
+                doc.addPage();
+                page++;
+                yPos = 20;
+            }
             doc.setFont('helvetica', 'bold');
             doc.text('Requirement Text:', 20, yPos);
             yPos += 5;
@@ -382,6 +426,22 @@ function addRequirementsSection(doc: jsPDF, requirements: Requirement[], startPa
             const rationaleLines = doc.splitTextToSize(req.rationale, 170);
             doc.text(rationaleLines, 20, yPos);
             yPos += rationaleLines.length * 5 + 3;
+        }
+
+        // Comments
+        if (req.comments) {
+            if (yPos > 250) {
+                doc.addPage();
+                page++;
+                yPos = 20;
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.text('Comments:', 20, yPos);
+            yPos += 5;
+            doc.setFont('helvetica', 'normal');
+            const commentsLines = doc.splitTextToSize(req.comments, 170);
+            doc.text(commentsLines, 20, yPos);
+            yPos += commentsLines.length * 5 + 3;
         }
 
         yPos += 5; // Space between requirements
@@ -457,6 +517,22 @@ function addUseCasesSection(doc: jsPDF, useCases: UseCase[], startPage: number, 
             yPos += descLines.length * 5 + 3;
         }
 
+        // Preconditions
+        if (useCase.preconditions) {
+            if (yPos > 240) {
+                doc.addPage();
+                page++;
+                yPos = 20;
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.text('Preconditions:', 20, yPos);
+            yPos += 5;
+            doc.setFont('helvetica', 'normal');
+            const preLines = doc.splitTextToSize(useCase.preconditions, 170);
+            doc.text(preLines, 20, yPos);
+            yPos += preLines.length * 5 + 3;
+        }
+
         // Main Flow
         if (useCase.mainFlow) {
             if (yPos > 240) {
@@ -471,6 +547,38 @@ function addUseCasesSection(doc: jsPDF, useCases: UseCase[], startPage: number, 
             const flowLines = doc.splitTextToSize(useCase.mainFlow, 170);
             doc.text(flowLines, 20, yPos);
             yPos += flowLines.length * 5 + 3;
+        }
+
+        // Alternative Flows
+        if (useCase.alternativeFlows) {
+            if (yPos > 240) {
+                doc.addPage();
+                page++;
+                yPos = 20;
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.text('Alternative Flows:', 20, yPos);
+            yPos += 5;
+            doc.setFont('helvetica', 'normal');
+            const altLines = doc.splitTextToSize(useCase.alternativeFlows, 170);
+            doc.text(altLines, 20, yPos);
+            yPos += altLines.length * 5 + 3;
+        }
+
+        // Postconditions
+        if (useCase.postconditions) {
+            if (yPos > 240) {
+                doc.addPage();
+                page++;
+                yPos = 20;
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.text('Postconditions:', 20, yPos);
+            yPos += 5;
+            doc.setFont('helvetica', 'normal');
+            const postLines = doc.splitTextToSize(useCase.postconditions, 170);
+            doc.text(postLines, 20, yPos);
+            yPos += postLines.length * 5 + 3;
         }
 
         yPos += 5;
@@ -509,11 +617,12 @@ function addTestCasesSection(doc: jsPDF, testCases: TestCase[], startPage: numbe
         doc.setFontSize(9);
         autoTable(doc, {
             startY: yPos,
-            head: [['Status', 'Priority', 'Revision']],
+            head: [['Status', 'Priority', 'Revision', 'Author']],
             body: [[
                 testCase.status,
                 testCase.priority,
-                testCase.revision || '01'
+                testCase.revision || '01',
+                testCase.author || '-'
             ]],
             theme: 'plain',
             margin: { left: 20 },
@@ -532,6 +641,43 @@ function addTestCasesSection(doc: jsPDF, testCases: TestCase[], startPage: numbe
         });
 
         yPos = (doc as any).lastAutoTable.finalY + 5;
+
+        // Dates table
+        autoTable(doc, {
+            startY: yPos,
+            head: [['Created', 'Last Modified', 'Last Run']],
+            body: [[
+                formatDate(testCase.dateCreated),
+                formatDate(testCase.lastModified),
+                testCase.lastRun ? formatDate(testCase.lastRun) : '-'
+            ]],
+            theme: 'plain',
+            margin: { left: 20 },
+            tableWidth: 170,
+            styles: {
+                fontSize: 8,
+                textColor: [0, 0, 0],
+                lineColor: [0, 0, 0],
+                lineWidth: 0.1
+            },
+            headStyles: {
+                fillColor: [255, 255, 255],
+                textColor: [0, 0, 0],
+                fontStyle: 'bold'
+            }
+        });
+
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+
+        // Tests Requirements (traceability)
+        if (testCase.requirementIds && testCase.requirementIds.length > 0) {
+            doc.setFont('helvetica', 'bold');
+            doc.text('Tests Requirements:', 20, yPos);
+            yPos += 5;
+            doc.setFont('helvetica', 'normal');
+            doc.text(testCase.requirementIds.join(', '), 20, yPos);
+            yPos += 8;
+        }
 
         // Description (full test details)
         if (testCase.description) {
@@ -575,6 +721,34 @@ function addInformationSection(doc: jsPDF, information: Information[], startPage
         tocEntries.push({ title: title, page: page, level: 1 });
 
         yPos += 7;
+
+        // Metadata table
+        doc.setFontSize(9);
+        autoTable(doc, {
+            startY: yPos,
+            head: [['Type', 'Created', 'Last Modified']],
+            body: [[
+                info.type.charAt(0).toUpperCase() + info.type.slice(1),
+                formatDate(info.dateCreated),
+                formatDate(info.lastModified)
+            ]],
+            theme: 'plain',
+            margin: { left: 20 },
+            tableWidth: 170,
+            styles: {
+                fontSize: 8,
+                textColor: [0, 0, 0],
+                lineColor: [0, 0, 0],
+                lineWidth: 0.1
+            },
+            headStyles: {
+                fillColor: [255, 255, 255],
+                textColor: [0, 0, 0],
+                fontStyle: 'bold'
+            }
+        });
+
+        yPos = (doc as any).lastAutoTable.finalY + 5;
 
         // Content
         if (info.content) {
