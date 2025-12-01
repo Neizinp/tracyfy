@@ -32,6 +32,7 @@ import { mockRequirements, mockUseCases, mockTestCases, mockInformation, mockLin
 import * as XLSX from 'xlsx';
 import { exportProjectToPDF } from './utils/pdfExportUtils';
 import { exportProjectToExcel } from './utils/excelExportUtils';
+import { exportProjectToJSON } from './utils/jsonExportUtils';
 import { formatDateTime } from './utils/dateUtils';
 
 import { incrementRevision } from './utils/revisionUtils';
@@ -775,24 +776,25 @@ function App() {
   };
 
   // Export data as JSON file
-  const handleExport = () => {
-    const dataToExport = {
-      requirements,
-      useCases,
-      testCases,
-      information,
-      links,
-      exportedAt: new Date().toISOString()
-    };
-    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `requirements-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  // Export data as JSON file
+  const handleExport = async () => {
+    const currentProject = projects.find(p => p.id === currentProjectId);
+    if (!currentProject) return;
+
+    await exportProjectToJSON(
+      currentProject,
+      {
+        requirements: globalRequirements,
+        useCases: globalUseCases,
+        testCases: globalTestCases,
+        information: globalInformation,
+        links: links
+      },
+      currentProject.requirementIds,
+      currentProject.useCaseIds,
+      currentProject.testCaseIds,
+      currentProject.informationIds
+    );
   };
 
   // Import data from JSON
