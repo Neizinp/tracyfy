@@ -31,6 +31,7 @@ import type { Requirement, Link, UseCase, TestCase, Information, Version, Projec
 import { mockRequirements, mockUseCases, mockTestCases, mockInformation, mockLinks } from './mockData';
 import * as XLSX from 'xlsx';
 import { exportProjectToPDF } from './utils/pdfExportUtils';
+import { exportProjectToExcel } from './utils/excelExportUtils';
 import { formatDateTime } from './utils/dateUtils';
 
 import { incrementRevision } from './utils/revisionUtils';
@@ -1487,11 +1488,28 @@ function App() {
             baselines
           );
         }}
-        onExportExcel={() => {
-          const ws = XLSX.utils.json_to_sheet(requirements);
-          const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, "Requirements");
-          XLSX.writeFile(wb, "requirements.xlsx");
+        onExportExcel={async () => {
+          const currentProject = projects.find(p => p.id === currentProjectId);
+          if (!currentProject) {
+            alert('No project selected');
+            return;
+          }
+
+          await exportProjectToExcel(
+            currentProject,
+            {
+              requirements: globalRequirements,
+              useCases: globalUseCases,
+              testCases: globalTestCases,
+              information: globalInformation,
+              links: links
+            },
+            currentProject.requirementIds,
+            currentProject.useCaseIds,
+            currentProject.testCaseIds,
+            currentProject.informationIds,
+            baselines
+          );
         }}
         onSearch={setSearchQuery}
         onTrashOpen={() => setIsTrashModalOpen(true)}
