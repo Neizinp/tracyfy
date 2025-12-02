@@ -284,7 +284,10 @@ function App() {
     const project = projects.find(p => p.id === currentProjectId);
     if (project) {
       setRequirements(globalRequirements.filter(r => project.requirementIds.includes(r.id)));
-      setUseCases(globalUseCases.filter(u => project.useCaseIds.includes(u.id)));
+
+      const projectUseCases = globalUseCases.filter(u => project.useCaseIds.includes(u.id));
+      setUseCases(projectUseCases);
+
       setTestCases(globalTestCases.filter(t => project.testCaseIds.includes(t.id)));
       setInformation(globalInformation.filter(i => project.informationIds.includes(i.id)));
       // Links are global, so no need to filter for state, but views might filter
@@ -1296,8 +1299,6 @@ function App() {
       uc.actor.toLowerCase().includes(query)
     );
   });
-
-
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDragItem(event.active.data.current);

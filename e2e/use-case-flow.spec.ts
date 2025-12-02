@@ -52,18 +52,17 @@ test('use case workflow', async ({ page }) => {
     await page.click('button:has-text("Overview")');
     await page.waitForTimeout(200);
 
-    const titleInput = page.locator('input[type="text"]').first();
+    // Use specific selector for the modal input to avoid hitting the search bar
+    const titleInput = page.getByPlaceholder('e.g., User Login');
     await titleInput.fill('Login User - Updated');
     await page.click('button:has-text("Save Changes")');
 
     // Wait for modal to close
     await expect(page.locator('h3:has-text("Edit Use Case")')).not.toBeVisible();
 
-    // Wait for UI to update
-    await page.waitForTimeout(500);
-
-    // 6. Verify Use Case Still Visible (even if title didn't change)
-    await expect(page.getByText('Login User').first()).toBeVisible();
+    // 6. Verify Updated Use Case is Visible
+    // The title is displayed in an h3 element within the use case card
+    await expect(page.locator('h3:has-text("Login User - Updated")')).toBeVisible({ timeout: 10000 });
 
     // 7. Navigate Back to Requirements Tree
     await page.click('button:has-text("Requirements Tree")');
