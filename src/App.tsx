@@ -37,13 +37,12 @@ import { formatDateTime } from './utils/dateUtils';
 
 import { incrementRevision } from './utils/revisionUtils';
 import { gitService } from './services/gitService';
+import { generateNextReqId, generateNextUcId, generateNextTestCaseId, generateNextInfoId } from './utils/idGenerationUtils';
+import { createVersionSnapshot as createVersion, loadVersions, migrateLegacyVersions } from './utils/versionManagement';
 
 const PROJECTS_KEY = 'reqtrace-projects';
 const CURRENT_PROJECT_KEY = 'reqtrace-current-project-id';
 const USED_NUMBERS_KEY = 'reqtrace-used-numbers';
-const LEGACY_VERSIONS_KEY = 'reqtrace-versions';
-const getVersionsKey = (projectId: string) => `reqtrace-versions-${projectId}`;
-const MAX_VERSIONS = 50;
 
 
 
@@ -157,42 +156,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentProjectId, setCurrentProjectId] = useState<string>('');
-
-  // ... (rest of state) ...
-
-  // (We need to be careful not to replace too much, but the tool requires contiguous blocks)
-  // I will target the migrateToGit function and the start of App to be safe, 
-  // but the syntax error was further down.
-  // Actually, I can use multi_replace to fix both spots.
-
-  // Wait, I cannot use multi_replace for this tool call because I am using replace_file_content.
-  // I will split this into two replacement chunks using multi_replace_file_content if possible, 
-  // or just make two calls.
-  // The prompt says "Do NOT make multiple parallel calls to this tool".
-  // So I should use multi_replace_file_content.
-
-  // Let's switch to multi_replace_file_content.
-  // But wait, I'm already in the tool call generation.
-  // I'll just do the migrateToGit fix here, and then a separate call for the syntax error.
-  // Actually, the syntax error is critical.
-
-  // Let's use multi_replace_file_content.
-
-  // Wait, I can't switch tools mid-generation.
-  // I will cancel this generation and use multi_replace_file_content.
-  // Or I can just fix the syntax error first, as that is breaking the build.
-  // The syntax error is at line 561.
-  // The migrateToGit error is at line 179.
-
-  // I'll fix the syntax error first.
-
-  // Wait, I can fix both if I target the whole file? No, that's too big.
-  // I'll use multi_replace_file_content.
-
-  // Cancelling this tool call and switching to multi_replace_file_content.
-
-  // Wait, I am the model, I can just output the correct tool call.
-  // I will use multi_replace_file_content.
 
 
   // Global State
@@ -501,7 +464,7 @@ function App() {
     if (!baselineName) return;
 
     // Create the baseline using the version snapshot mechanism
-    await createVersionSnapshot(baselineName, 'baseline', baselineName);
+    await createBaselineSnapshot(baselineName, baselineName);
   };
 
   const handleViewBaselineHistory = (baselineId: string) => {
@@ -581,7 +544,7 @@ function App() {
     window.location.reload();
   };
 
-  const handleAddToProject = (
+  const handleAddToProject = async (
     artifacts: { requirements: string[], useCases: string[], testCases: string[], information: string[] },
     targetProjectId: string = currentProjectId
   ) => {
@@ -621,7 +584,19 @@ function App() {
 
     // The sync effect will then update the Project object.
 
-    createVersionSnapshot('Added artifacts from Global Library', 'auto-save');
+    const newVersion = await createVersion(
+      currentProjectId,
+      projects.find(p => p.id === currentProjectId)?.name || 'Unknown Project',
+      'Added artifacts from Global Library',
+      'auto-save',
+      requirements,
+      useCases,
+      testCases,
+      information,
+      links,
+      gitService
+    );
+    setVersions(prev => [newVersion, ...prev].slice(0, 50));
     // alert(`Added ${filteredArtifacts.requirements.length} Requirements, ${filteredArtifacts.useCases.length} Use Cases, ${filteredArtifacts.testCases.length} Test Cases, and ${filteredArtifacts.information.length} Information items to the project.`);
   };
 
@@ -657,90 +632,50 @@ function App() {
 
   // Migrate legacy global versions to current project (one-time migration)
   useEffect(() => {
-    const migrateGlobalVersions = () => {
-      const legacyVersions = localStorage.getItem(LEGACY_VERSIONS_KEY);
-      if (legacyVersions) {
-        try {
-          // Save to current project
-          localStorage.setItem(getVersionsKey(currentProjectId), legacyVersions);
-          // Remove legacy key
-          localStorage.removeItem(LEGACY_VERSIONS_KEY);
-          console.log('Migrated legacy versions to current project');
-        } catch (e) {
-          console.error('Failed to migrate legacy versions', e);
-        }
-      }
-    };
-    migrateGlobalVersions();
+    migrateLegacyVersions(currentProjectId);
   }, []); // Run once on mount
 
   // Load versions for current project
   useEffect(() => {
-    const loadVersions = (projectId: string) => {
-      const savedVersions = localStorage.getItem(getVersionsKey(projectId));
-      if (savedVersions) {
-        try {
-          setVersions(JSON.parse(savedVersions));
-        } catch (e) {
-          console.error('Failed to load versions', e);
-          setVersions([]);
-        }
-      } else {
-        setVersions([]);
-      }
-    };
-    loadVersions(currentProjectId);
+    setVersions(loadVersions(currentProjectId));
   }, [currentProjectId]);
   // Create version snapshot whenever data changes (debounced)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      createVersionSnapshot('Auto-save', 'auto-save');
+    const timer = setTimeout(async () => {
+      const newVersion = await createVersion(
+        currentProjectId,
+        projects.find(p => p.id === currentProjectId)?.name || 'Unknown Project',
+        'Auto-save',
+        'auto-save',
+        requirements,
+        useCases,
+        testCases,
+        information,
+        links,
+        gitService
+      );
+      setVersions(prev => [newVersion, ...prev].slice(0, 50));
     }, 2000); // Wait 2 seconds after last change
 
     return () => clearTimeout(timer);
-  }, [requirements, useCases, testCases, information, links]);
+  }, [requirements, useCases, testCases, information, links, currentProjectId, projects]);
 
-  // Create a version snapshot
-  const createVersionSnapshot = async (message: string, type: 'auto-save' | 'baseline' = 'auto-save', tag?: string) => {
-    try {
-      // 1. Create internal version object (for UI display)
-      const newVersion: Version = {
-        id: `v-${Date.now()}`,
-        timestamp: Date.now(),
-        message,
-        type,
-        tag,
-        data: {
-          requirements: JSON.parse(JSON.stringify(requirements)),
-          useCases: JSON.parse(JSON.stringify(useCases)),
-          links: JSON.parse(JSON.stringify(links)),
-          testCases: JSON.parse(JSON.stringify(testCases)),
-          information: JSON.parse(JSON.stringify(information))
-        }
-      };
-
-      // Read current project's versions from localStorage (keeping versions in localStorage for now as they are metadata)
-      // Ideally versions should come from Git log, but for hybrid approach we keep this.
-      // BUT, if type is 'baseline', we MUST commit to Git.
-
-      if (type === 'baseline') {
-        const project = projects.find(p => p.id === currentProjectId);
-        if (project) {
-          await gitService.commit(project.name, message);
-          console.log('Committed baseline to Git:', message);
-        }
-      }
-
-      const currentVersionsKey = getVersionsKey(currentProjectId);
-      const savedVersions = localStorage.getItem(currentVersionsKey);
-      const currentVersions = savedVersions ? JSON.parse(savedVersions) : [];
-
-      const updatedVersions = [newVersion, ...currentVersions].slice(0, MAX_VERSIONS);
-      setVersions(updatedVersions);
-      localStorage.setItem(currentVersionsKey, JSON.stringify(updatedVersions));
-    } catch (error) {
-      console.error('Failed to create version snapshot:', error);
-    }
+  // Baseline creation helper
+  const createBaselineSnapshot = async (message: string, tag: string) => {
+    const newVersion = await createVersion(
+      currentProjectId,
+      projects.find(p => p.id === currentProjectId)?.name || 'Unknown Project',
+      message,
+      'baseline',
+      requirements,
+      useCases,
+      testCases,
+      information,
+      links,
+      gitService,
+      tag
+    );
+    setVersions(prev => [newVersion, ...prev].slice(0, 50));
   };
   const handleDeleteRequirement = (id: string) => {
     // Soft delete: Mark as deleted instead of removing
@@ -760,7 +695,7 @@ function App() {
 
 
   // Restore a previous version
-  const handleRestoreVersion = (versionId: string) => {
+  const handleRestoreVersion = async (versionId: string) => {
     const version = versions.find(v => v.id === versionId);
     if (version) {
       setRequirements(version.data.requirements);
@@ -768,7 +703,19 @@ function App() {
       setTestCases(version.data.testCases || []);
       setInformation(version.data.information || []);
       setLinks(version.data.links);
-      createVersionSnapshot(`Restored from ${formatDateTime(version.timestamp)}`, 'auto-save');
+      const newVersion = await createVersion(
+        currentProjectId,
+        projects.find(p => p.id === currentProjectId)?.name || 'Unknown Project',
+        `Restored from ${formatDateTime(version.timestamp)}`,
+        'auto-save',
+        requirements,
+        useCases,
+        testCases,
+        information,
+        links,
+        gitService
+      );
+      setVersions(prev => [newVersion, ...prev].slice(0, 50));
     }
   };
 
@@ -809,7 +756,7 @@ function App() {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
           try {
             const data = JSON.parse(event.target?.result as string);
             if (data.requirements && Array.isArray(data.requirements)) {
@@ -818,7 +765,19 @@ function App() {
               setTestCases(data.testCases || []);
               setInformation(data.information || []);
               setLinks(data.links || []);
-              createVersionSnapshot('Imported from JSON', 'auto-save');
+              const newVersion = await createVersion(
+                currentProjectId,
+                projects.find(p => p.id === currentProjectId)?.name || 'Unknown Project',
+                'Imported from JSON',
+                'auto-save',
+                requirements,
+                useCases,
+                testCases,
+                information,
+                links,
+                gitService
+              );
+              setVersions(prev => [newVersion, ...prev].slice(0, 50));
               alert('Data imported successfully!');
             } else {
               alert('Invalid data format');
@@ -843,7 +802,7 @@ function App() {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
           try {
             const data = new Uint8Array(event.target?.result as ArrayBuffer);
             const workbook = XLSX.read(data, { type: 'array' });
@@ -903,7 +862,19 @@ function App() {
               setLinks(parsedLinks);
             }
 
-            createVersionSnapshot('Imported from Excel', 'auto-save');
+            const newVersion = await createVersion(
+              currentProjectId,
+              projects.find(p => p.id === currentProjectId)?.name || 'Unknown Project',
+              'Imported from Excel',
+              'auto-save',
+              requirements,
+              useCases,
+              testCases,
+              information,
+              links,
+              gitService
+            );
+            setVersions(prev => [newVersion, ...prev].slice(0, 50));
             alert('Excel data imported successfully!');
           } catch (error) {
             console.error('Excel Import error:', error);
@@ -920,13 +891,7 @@ function App() {
 
 
   const handleAddRequirement = async (newReqData: Omit<Requirement, 'id' | 'lastModified'>) => {
-    // Find next available number that hasn't been used
-    let nextIdNumber = 1;
-    while (usedReqNumbers.has(nextIdNumber)) {
-      nextIdNumber++;
-    }
-
-    const newId = `REQ-${String(nextIdNumber).padStart(3, '0')}`;
+    const newId = generateNextReqId(usedReqNumbers);
 
     const newRequirement: Requirement = {
       ...newReqData,
@@ -934,8 +899,9 @@ function App() {
       lastModified: Date.now()
     };
 
-    // Mark this number as used
-    setUsedReqNumbers(prev => new Set(prev).add(nextIdNumber));
+    // Mark this number as used (extract number from ID)
+    const idNumber = parseInt(newId.split('-')[1], 10);
+    setUsedReqNumbers(prev => new Set(prev).add(idNumber));
     setRequirements([...requirements, newRequirement]);
 
     // Save to git repository to make it appear in Pending Changes
@@ -1031,21 +997,16 @@ function App() {
       savedUseCase = finalUseCase;
       setEditingUseCase(null);
     } else {
-      // Create new - find next available number that hasn't been used
-      let nextIdNumber = 1;
-      while (usedUcNumbers.has(nextIdNumber)) {
-        nextIdNumber++;
-      }
-
-      const newId = `UC-${String(nextIdNumber).padStart(3, '0')}`;
+      const newId = generateNextUcId(usedUcNumbers);
       const newUseCase: UseCase = {
         ...data,
         id: newId,
         lastModified: Date.now()
       } as UseCase;
 
-      // Mark this number as used
-      setUsedUcNumbers(prev => new Set(prev).add(nextIdNumber));
+      // Mark this number as used (extract number from ID)
+      const idNumber = parseInt(newId.split('-')[1], 10);
+      setUsedUcNumbers(prev => new Set(prev).add(idNumber));
       setUseCases([...useCases, newUseCase]);
       savedUseCase = newUseCase;
     }
@@ -1089,21 +1050,17 @@ function App() {
 
   // Test Case Management
   const handleAddTestCase = async (newTestCaseData: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated'>) => {
-    // Find next available number
-    let nextNum = 1;
-    while (usedTestNumbers.has(nextNum)) {
-      nextNum++;
-    }
-
     const newTestCase: TestCase = {
       ...newTestCaseData,
-      id: `TC-${String(nextNum).padStart(3, '0')}`,
+      id: generateNextTestCaseId(usedTestNumbers),
       dateCreated: Date.now(),
       lastModified: Date.now()
     };
 
     setTestCases([...testCases, newTestCase]);
-    setUsedTestNumbers(new Set([...usedTestNumbers, nextNum]));
+    // Mark this number as used (extract number from ID)
+    const idNumber = parseInt(newTestCase.id.split('-')[1], 10);
+    setUsedTestNumbers(new Set([...usedTestNumbers, idNumber]));
 
     // Save to git repository to make it appear in Pending Changes
     try {
@@ -1179,21 +1136,17 @@ function App() {
       savedInformation = finalInfo;
       setSelectedInformation(null);
     } else {
-      // Create new
-      let nextNum = 1;
-      while (usedInfoNumbers.has(nextNum)) {
-        nextNum++;
-      }
-
       const newInformation: Information = {
         ...data,
-        id: `INFO-${String(nextNum).padStart(3, '0')}`,
+        id: generateNextInfoId(usedInfoNumbers),
         dateCreated: Date.now(),
         lastModified: Date.now()
       };
 
       setInformation([...information, newInformation]);
-      setUsedInfoNumbers(new Set([...usedInfoNumbers, nextNum]));
+      // Mark this number as used (extract number from ID)
+      const idNumber = parseInt(newInformation.id.split('-')[1], 10);
+      setUsedInfoNumbers(new Set([...usedInfoNumbers, idNumber]));
       savedInformation = newInformation;
     }
     setIsInformationModalOpen(false);
@@ -1304,7 +1257,7 @@ function App() {
     setActiveDragItem(event.active.data.current);
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDragItem(null);
 
@@ -1377,7 +1330,19 @@ function App() {
             : p
         ));
 
-        createVersionSnapshot(`Imported ${reqId} via drag-and-drop`, 'auto-save');
+        const newVersion = await createVersion(
+          currentProjectId,
+          projects.find(p => p.id === currentProjectId)?.name || 'Unknown Project',
+          `Imported ${reqId} via drag-and-drop`,
+          'auto-save',
+          requirements,
+          useCases,
+          testCases,
+          information,
+          links,
+          gitService
+        );
+        setVersions(prev => [newVersion, ...prev].slice(0, 50));
         console.log(`Successfully imported ${reqId}`);
       }
       return;
