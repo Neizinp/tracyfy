@@ -1,7 +1,6 @@
-import { AppRoutes } from './routes/AppRoutes';
-import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
-
 import type { ProjectBaseline, Version, Project } from './types';
+import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
+import { AppRoutes } from './routes/AppRoutes';
 
 import {
   ProjectProvider,
@@ -17,11 +16,14 @@ import {
   TestCasesProvider,
   useTestCases,
   InformationProvider,
-  useInformation
+  useInformation,
+  GitProvider,
+  useGit,
+  DragDropProvider,
+  useDragDrop,
+  ImportExportProvider,
+  useImportExport
 } from './app/providers';
-import { useGitOperations } from './hooks/useGitOperations';
-import { useDragAndDrop } from './hooks/useDragAndDrop';
-import { useImportExport } from './hooks/useImportExport';
 import { useAppHandlers } from './hooks/useAppHandlers';
 import { LoadingOverlay } from './components';
 
@@ -37,7 +39,6 @@ function AppContent() {
     deleteProject: handleDeleteProject,
     resetToDemo: handleResetToDemo,
     addToProject: handleAddToProjectInternal,
-    setProjects,  // Needed by useDragAndDrop
   } = useProject();
 
   // UI State
@@ -88,20 +89,7 @@ function AppContent() {
     handleRestoreVersion,
     versions,
     setVersions
-  } = useGitOperations({
-    currentProjectId,
-    projects,
-    requirements,
-    useCases,
-    testCases,
-    information,
-    links,
-    setRequirements,
-    setUseCases,
-    setTestCases,
-    setInformation,
-    setLinks
-  });
+  } = useGit();
 
   // App Handlers
   const {
@@ -177,43 +165,13 @@ function AppContent() {
     activeDragItem,
     handleDragStart,
     handleDragEnd
-  } = useDragAndDrop({
-    requirements,
-    setRequirements,
-    globalRequirements,
-    globalUseCases,
-    globalTestCases,
-    globalInformation,
-    globalLibrarySelection,
-    useCases,
-    testCases,
-    information,
-    links,
-    currentProjectId,
-    projects,
-    setProjects,
-    setVersions: setVersions as any,
-    handleAddToProject: handleAddToProjectInternal
-  });
+  } = useDragDrop();
 
   const {
     handleExport,
     handleImport,
     handleImportExcel
-  } = useImportExport({
-    currentProjectId,
-    projects,
-    requirements,
-    useCases,
-    testCases,
-    information,
-    links,
-    setRequirements,
-    setUseCases,
-    setTestCases,
-    setInformation,
-    setLinks
-  });
+  } = useImportExport();
 
   // Derived State
   const baselines = versions.filter((v: Version) => v.type === 'baseline').map((v: Version) => ({
@@ -416,7 +374,13 @@ export default function App() {
             <UseCasesProvider>
               <TestCasesProvider>
                 <InformationProvider>
-                  <AppContent />
+                  <GitProvider>
+                    <DragDropProvider>
+                      <ImportExportProvider>
+                        <AppContent />
+                      </ImportExportProvider>
+                    </DragDropProvider>
+                  </GitProvider>
                 </InformationProvider>
               </TestCasesProvider>
             </UseCasesProvider>

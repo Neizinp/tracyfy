@@ -11,3 +11,6 @@ export {
     InformationProvider,
     useInformation
 } from './ArtifactProviders';
+export { GitProvider, useGit } from './GitProvider';
+export { DragDropProvider, useDragDrop } from './DragDropProvider';
+export { ImportExportProvider, useImportExport } from './ImportExportProvider';
