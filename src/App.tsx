@@ -35,15 +35,14 @@ import { exportProjectToExcel } from './utils/excelExportUtils';
 import { exportProjectToJSON } from './utils/jsonExportUtils';
 import { formatDateTime } from './utils/dateUtils';
 
-import { incrementRevision } from './utils/revisionUtils';
 import { gitService } from './services/gitService';
-import { generateNextReqId, generateNextUcId, generateNextTestCaseId, generateNextInfoId } from './utils/idGenerationUtils';
 import { createVersionSnapshot as createVersion, loadVersions, migrateLegacyVersions } from './utils/versionManagement';
 import { initializeUsedNumbers, USED_NUMBERS_KEY } from './utils/appInitialization';
 import { useProjectManager } from './hooks/useProjectManager';
 import { useRequirements } from './hooks/useRequirements';
 import { useUseCases } from './hooks/useUseCases';
 import { useTestCases } from './hooks/useTestCases';
+import { useInformation } from './hooks/useInformation';
 
 
 
@@ -298,6 +297,23 @@ function App() {
     setUsedTestNumbers,
     projects,
     currentProjectId
+  });
+
+  const {
+    handleAddInformation,
+    handleEditInformation,
+    handleDeleteInformation,
+    handleRestoreInformation,
+    handlePermanentDeleteInformation
+  } = useInformation({
+    information,
+    setInformation,
+    usedInfoNumbers,
+    setUsedInfoNumbers,
+    projects,
+    currentProjectId,
+    setIsInformationModalOpen,
+    setSelectedInformation
   });
 
 
@@ -819,82 +835,7 @@ function App() {
 
 
 
-  // Information Management
-  const handleAddInformation = async (data: Omit<Information, 'id' | 'lastModified' | 'dateCreated'> | { id: string; updates: Partial<Information> }) => {
-    let savedInformation: Information | null = null;
 
-    if ('id' in data) {
-      // Update existing
-      const updatedInfo = information.find(info => info.id === data.id);
-      if (!updatedInfo) return;
-
-      // Increment revision
-      const newRevision = incrementRevision(updatedInfo.revision || '01');
-      const finalInfo = {
-        ...updatedInfo,
-        ...data.updates,
-        revision: newRevision,
-        lastModified: Date.now()
-      };
-
-      setInformation(prev => prev.map(i =>
-        i.id === finalInfo.id ? finalInfo : i
-      ));
-      savedInformation = finalInfo;
-      setSelectedInformation(null);
-    } else {
-      const newInformation: Information = {
-        ...data,
-        id: generateNextInfoId(usedInfoNumbers),
-        dateCreated: Date.now(),
-        lastModified: Date.now()
-      };
-
-      setInformation([...information, newInformation]);
-      // Mark this number as used (extract number from ID)
-      const idNumber = parseInt(newInformation.id.split('-')[1], 10);
-      setUsedInfoNumbers(new Set([...usedInfoNumbers, idNumber]));
-      savedInformation = newInformation;
-    }
-    setIsInformationModalOpen(false);
-
-    // Save to git repository to make it appear in Pending Changes
-    if (savedInformation) {
-      try {
-        const project = projects.find(p => p.id === currentProjectId);
-        if (project) {
-          await gitService.saveArtifact('information', savedInformation);
-        }
-      } catch (error) {
-        console.error('Failed to save information to git:', error);
-      }
-    }
-  };
-
-  const handleEditInformation = (info: Information) => {
-    setSelectedInformation(info);
-    setIsInformationModalOpen(true);
-  };
-
-  const handleDeleteInformation = (id: string) => {
-    setInformation(information.map(info =>
-      info.id === id ? { ...info, isDeleted: true, deletedAt: Date.now() } : info
-    ));
-  };
-
-  const handleRestoreInformation = (id: string) => {
-    setInformation(prev =>
-      prev.map(info =>
-        info.id === id
-          ? { ...info, isDeleted: false, deletedAt: undefined }
-          : info
-      )
-    );
-  };
-
-  const handlePermanentDeleteInformation = (id: string) => {
-    setInformation(prev => prev.filter(info => info.id !== id));
-  };
 
   const [isTrashModalOpen, setIsTrashModalOpen] = useState(false);
 
