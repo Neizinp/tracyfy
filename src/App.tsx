@@ -41,6 +41,7 @@ import { generateNextReqId, generateNextUcId, generateNextTestCaseId, generateNe
 import { createVersionSnapshot as createVersion, loadVersions, migrateLegacyVersions } from './utils/versionManagement';
 import { initializeUsedNumbers, USED_NUMBERS_KEY } from './utils/appInitialization';
 import { useProjectManager } from './hooks/useProjectManager';
+import { useRequirements } from './hooks/useRequirements';
 
 
 
@@ -244,6 +245,26 @@ function App() {
     removedArtifacts: []
   } as ProjectBaseline));
   const [selectedBaseline, setSelectedBaseline] = useState<string | null>(null);
+
+  // Custom hooks for artifact management
+  const {
+    handleAddRequirement,
+    handleUpdateRequirement,
+    handleDeleteRequirement,
+    handleRestoreRequirement,
+    handlePermanentDeleteRequirement
+  } = useRequirements({
+    requirements,
+    setRequirements,
+    usedReqNumbers,
+    setUsedReqNumbers,
+    links,
+    setLinks,
+    projects,
+    currentProjectId,
+    setIsEditModalOpen,
+    setEditingRequirement
+  });
 
 
   // Column visibility state with default all visible
@@ -537,21 +558,6 @@ function App() {
     );
     setVersions(prev => [newVersion, ...prev].slice(0, 50));
   };
-  const handleDeleteRequirement = (id: string) => {
-    // Soft delete: Mark as deleted instead of removing
-    setRequirements(prev =>
-      prev.map(req =>
-        req.id === id
-          ? { ...req, isDeleted: true, deletedAt: Date.now() }
-          : req
-      )
-    );
-
-    // Close modal if open
-    setIsEditModalOpen(false);
-    setEditingRequirement(null);
-  };
-
 
 
   // Restore a previous version
@@ -750,31 +756,6 @@ function App() {
 
 
 
-  const handleAddRequirement = async (newReqData: Omit<Requirement, 'id' | 'lastModified'>) => {
-    const newId = generateNextReqId(usedReqNumbers);
-
-    const newRequirement: Requirement = {
-      ...newReqData,
-      id: newId,
-      lastModified: Date.now()
-    };
-
-    // Mark this number as used (extract number from ID)
-    const idNumber = parseInt(newId.split('-')[1], 10);
-    setUsedReqNumbers(prev => new Set(prev).add(idNumber));
-    setRequirements([...requirements, newRequirement]);
-
-    // Save to git repository to make it appear in Pending Changes
-    try {
-      const project = projects.find(p => p.id === currentProjectId);
-      if (project) {
-        await gitService.saveArtifact('requirements', newRequirement);
-      }
-    } catch (error) {
-      console.error('Failed to save requirement to git:', error);
-    }
-  };
-
 
 
   const handleLink = (sourceId: string) => {
@@ -797,41 +778,6 @@ function App() {
     setIsEditModalOpen(true);
   };
 
-  const handleUpdateRequirement = async (id: string, updatedData: Partial<Requirement>) => {
-    const updatedReq = requirements.find(req => req.id === id);
-    if (!updatedReq) return;
-
-    // Increment revision
-    const newRevision = incrementRevision(updatedReq.revision || '01');
-    const finalRequirement = {
-      ...updatedReq,
-      ...updatedData,
-      revision: newRevision,
-      lastModified: Date.now()
-    };
-
-    // Update local state
-    setRequirements(prev => prev.map(r =>
-      r.id === finalRequirement.id ? finalRequirement : r
-    ));
-    setIsEditModalOpen(false);
-    setEditingRequirement(null);
-
-    // Save to git repository to make it appear in Pending Changes
-    try {
-      const project = projects.find(p => p.id === currentProjectId);
-      if (project) {
-        await gitService.saveArtifact('requirements', finalRequirement);
-        await gitService.commitArtifact(
-          'requirements',
-          finalRequirement.id,
-          `Update requirement ${finalRequirement.id}: ${finalRequirement.title} (Rev ${newRevision})`
-        );
-      }
-    } catch (error) {
-      console.error('Failed to save requirement to git:', error);
-    }
-  };
 
   // Use Case Handlers
   const handleAddUseCase = async (data: Omit<UseCase, 'id' | 'lastModified'> | { id: string; updates: Partial<UseCase> }) => {
@@ -1051,29 +997,7 @@ function App() {
 
   const [isTrashModalOpen, setIsTrashModalOpen] = useState(false);
 
-  const handleRestoreRequirement = (id: string) => {
-    setRequirements(prev =>
-      prev.map(req =>
-        req.id === id
-          ? { ...req, isDeleted: false, deletedAt: undefined }
-          : req
-      )
-    );
-  };
 
-  const handlePermanentDeleteRequirement = (id: string) => {
-    setRequirements(prev =>
-      prev
-        .filter(req => req.id !== id)
-        .map(req => ({
-          ...req,
-          parentIds: req.parentIds ? req.parentIds.filter(parentId => parentId !== id) : [],
-          lastModified: Date.now(),
-          revision: req.parentIds?.includes(id) ? incrementRevision(req.revision || "01") : req.revision
-        }))
-    );
-    setLinks(prev => prev.filter(link => link.sourceId !== id && link.targetId !== id));
-  };
 
   const handleRestoreUseCase = (id: string) => {
     setUseCases(prev =>
