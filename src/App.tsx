@@ -24,10 +24,9 @@ import {
   BaselineManager,
   BaselineRevisionHistory
 } from './components';
-import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor, KeyboardSensor, closestCenter } from '@dnd-kit/core';
-import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
-import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
-import type { Requirement, Link, UseCase, TestCase, Information, Version, Project, ColumnVisibility, ViewType, ProjectBaseline } from './types';
+import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
+
+import type { Requirement, Link, UseCase, TestCase, Information, Version, Project, ProjectBaseline } from './types';
 
 import { exportProjectToPDF } from './utils/pdfExportUtils';
 import { exportProjectToExcel } from './utils/excelExportUtils';
@@ -44,6 +43,7 @@ import { useInformation } from './hooks/useInformation';
 import { useGitOperations } from './hooks/useGitOperations';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useImportExport } from './hooks/useImportExport';
+import { useUIState } from './hooks/useUIState';
 
 
 
@@ -134,15 +134,33 @@ function App() {
 
 
 
-  // Project Settings State
-  const [isProjectSettingsOpen, setIsProjectSettingsOpen] = useState(false);
-  const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
-  const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
-
-  const [isLibraryPanelOpen, setIsLibraryPanelOpen] = useState(false);
-  const [isGlobalLibraryModalOpen, setIsGlobalLibraryModalOpen] = useState(false);
-  const [activeLibraryTab, setActiveLibraryTab] = useState<'requirements' | 'usecases' | 'testcases' | 'information'>('requirements');
-  const [globalLibrarySelection, setGlobalLibrarySelection] = useState<Set<string>>(new Set());
+  // UI State
+  const {
+    currentView, setCurrentView,
+    isNewRequirementModalOpen, setIsNewRequirementModalOpen,
+    isLinkModalOpen, setIsLinkModalOpen,
+    isEditRequirementModalOpen, setIsEditRequirementModalOpen,
+    isUseCaseModalOpen, setIsUseCaseModalOpen,
+    isTrashModalOpen, setIsTrashModalOpen,
+    isVersionHistoryOpen, setIsVersionHistoryOpen,
+    isProjectSettingsOpen, setIsProjectSettingsOpen,
+    isCreateProjectModalOpen, setIsCreateProjectModalOpen,
+    isNewTestCaseModalOpen, setIsNewTestCaseModalOpen,
+    isEditTestCaseModalOpen, setIsEditTestCaseModalOpen,
+    isInformationModalOpen, setIsInformationModalOpen,
+    isLibraryPanelOpen, setIsLibraryPanelOpen,
+    isGlobalLibraryModalOpen, setIsGlobalLibraryModalOpen,
+    selectedRequirementId, setSelectedRequirementId,
+    selectedTestCaseId, setSelectedTestCaseId,
+    selectedInformation, setSelectedInformation,
+    editingRequirement, setEditingRequirement,
+    editingUseCase, setEditingUseCase,
+    projectToEdit, setProjectToEdit,
+    activeLibraryTab, setActiveLibraryTab,
+    globalLibrarySelection, setGlobalLibrarySelection,
+    columnVisibility, setColumnVisibility,
+    getDefaultColumnVisibility
+  } = useUIState();
 
   // Ref to track if this is the initial mount
   const isInitialMount = useRef(true);
@@ -153,12 +171,6 @@ function App() {
   const currentProject = projects.find(p => p.id === currentProjectId) || projects[0];
 
   // Initialize local view state from Global State + Project IDs
-  // We use a key to force re-initialization when project changes, 
-  // but actually we want to maintain state.
-  // Better: Initialize once, then update when currentProject changes.
-  // But wait, if we use `useState(initial)`, it only runs once.
-  // We need `useEffect` to update local state when `currentProjectId` changes.
-
   const [requirements, setRequirements] = useState<Requirement[]>(() =>
     globalRequirements.filter(r => currentProject.requirementIds.includes(r.id))
   );
@@ -183,7 +195,6 @@ function App() {
 
       setTestCases(globalTestCases.filter(t => project.testCaseIds.includes(t.id)));
       setInformation(globalInformation.filter(i => project.informationIds.includes(i.id)));
-      // Links are global, so no need to filter for state, but views might filter
 
       // Update used numbers
       const newUsedNumbers = initializeUsedNumbers(
@@ -193,7 +204,17 @@ function App() {
       setUsedReqNumbers(newUsedNumbers.usedReqNumbers);
       setUsedUcNumbers(newUsedNumbers.usedUcNumbers);
 
-      setColumnVisibility(loadColumnVisibility(currentProjectId));
+      // Load column visibility
+      try {
+        const saved = localStorage.getItem(`column-visibility-${currentProjectId}`);
+        if (saved) {
+          setColumnVisibility({ ...getDefaultColumnVisibility(), ...JSON.parse(saved) });
+        } else {
+          setColumnVisibility(getDefaultColumnVisibility());
+        }
+      } catch (e) {
+        console.error('Failed to load column visibility', e);
+      }
     }
   }, [currentProjectId]); // eslint-disable-line react-hooks/exhaustive-deps
   // Be careful: if we update projects in the sync effect, this might loop if not careful.
@@ -205,20 +226,7 @@ function App() {
   const [usedUcNumbers, setUsedUcNumbers] = useState<Set<number>>(initialUsedNumbers.usedUcNumbers);
   const [usedTestNumbers, setUsedTestNumbers] = useState<Set<number>>(new Set());
   const [usedInfoNumbers, setUsedInfoNumbers] = useState<Set<number>>(new Set());
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isUseCaseModalOpen, setIsUseCaseModalOpen] = useState(false);
-  const [isNewTestCaseModalOpen, setIsNewTestCaseModalOpen] = useState(false);
-  const [isEditTestCaseModalOpen, setIsEditTestCaseModalOpen] = useState(false);
-  const [isInformationModalOpen, setIsInformationModalOpen] = useState(false);
-  const [selectedTestCase, setSelectedTestCase] = useState<TestCase | null>(null);
-  const [selectedInformation, setSelectedInformation] = useState<Information | null>(null);
-  const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
-  const [editingRequirement, setEditingRequirement] = useState<Requirement | null>(null);
-  const [editingUseCase, setEditingUseCase] = useState<UseCase | null>(null);
-  const [currentView, setCurrentView] = useState<ViewType>('tree');
-  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+
   const [versions, setVersions] = useState<Version[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -252,7 +260,7 @@ function App() {
     setLinks,
     projects,
     currentProjectId,
-    setIsEditModalOpen,
+    setIsEditModalOpen: setIsEditRequirementModalOpen,
     setEditingRequirement
   });
 
@@ -310,8 +318,7 @@ function App() {
     handleCommitArtifact,
     handleCreateBaseline,
     handleViewBaselineHistory,
-    handleRestoreVersion,
-    createBaselineSnapshot
+    handleRestoreVersion
   } = useGitOperations({
     currentProjectId,
     projects,
@@ -374,39 +381,6 @@ function App() {
     setLinks
   });
 
-
-  // Column visibility state with default all visible
-  const getDefaultColumnVisibility = (): ColumnVisibility => ({
-    idTitle: true,
-    description: true,
-    text: true,
-    rationale: true,
-    author: true,
-    verification: true,
-    priority: true,
-    status: true,
-    comments: true,
-    created: true,
-    approved: true
-  });
-
-  // Load column visibility from localStorage (scoped by project)
-  const loadColumnVisibility = (projectId: string): ColumnVisibility => {
-    try {
-      const saved = localStorage.getItem(`column-visibility-${projectId}`);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return { ...getDefaultColumnVisibility(), ...parsed };
-      }
-    } catch (error) {
-      console.error('Failed to load column visibility:', error);
-    }
-    return getDefaultColumnVisibility();
-  };
-
-  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>(
-    loadColumnVisibility(currentProjectId)
-  );
 
   // Sync local state back to Global State and Projects
   useEffect(() => {
@@ -614,7 +588,7 @@ function App() {
   const handleBreakDownUseCase = (_useCase: UseCase) => {
     // Open new requirement modal with use case pre-selected
     // For now, just open the modal - user can manually link
-    setIsModalOpen(true);
+    setIsNewRequirementModalOpen(true);
   };
 
 
@@ -635,7 +609,7 @@ function App() {
 
   const handleEdit = (requirement: Requirement) => {
     setEditingRequirement(requirement);
-    setIsEditModalOpen(true);
+    setIsEditRequirementModalOpen(true);
   };
 
 
@@ -647,7 +621,7 @@ function App() {
 
 
 
-  const [isTrashModalOpen, setIsTrashModalOpen] = useState(false);
+
 
 
 
@@ -722,7 +696,7 @@ function App() {
         onSwitchProject={handleSwitchProject}
         onCreateProject={handleCreateProject}
         onOpenProjectSettings={handleOpenProjectSettings}
-        onNewRequirement={() => setIsModalOpen(true)}
+        onNewRequirement={() => setIsNewRequirementModalOpen(true)}
         onNewUseCase={() => setIsUseCaseModalOpen(true)}
         onNewTestCase={() => setIsNewTestCaseModalOpen(true)}
         onNewInformation={() => setIsInformationModalOpen(true)}
@@ -895,7 +869,7 @@ function App() {
             <TestCaseList
               testCases={testCases.filter(tc => !tc.isDeleted)}
               onEdit={(tc) => {
-                setSelectedTestCase(tc);
+                setSelectedTestCaseId(tc.id);
                 setIsEditTestCaseModalOpen(true);
               }}
               onDelete={handleDeleteTestCase}
@@ -970,7 +944,7 @@ function App() {
             <TestCaseList
               testCases={globalTestCases.filter(t => !t.isDeleted)}
               onEdit={(tc) => {
-                setSelectedTestCase(tc);
+                setSelectedTestCaseId(tc.id);
                 setIsEditTestCaseModalOpen(true);
               }}
               onDelete={handleDeleteTestCase}
@@ -993,8 +967,8 @@ function App() {
         }
 
         <NewRequirementModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          isOpen={isNewRequirementModalOpen}
+          onClose={() => setIsNewRequirementModalOpen(false)}
           onSubmit={handleAddRequirement}
         />
 
@@ -1011,16 +985,16 @@ function App() {
         />
 
         {
-          isEditModalOpen && editingRequirement && (
+          isEditRequirementModalOpen && editingRequirement && (
             <EditRequirementModal
-              isOpen={isEditModalOpen}
+              isOpen={isEditRequirementModalOpen}
               requirement={editingRequirement}
               allRequirements={requirements}
               links={links}
               projects={projects}
               currentProjectId={currentProjectId}
               onClose={() => {
-                setIsEditModalOpen(false);
+                setIsEditRequirementModalOpen(false);
                 setEditingRequirement(null);
               }}
               onSubmit={handleUpdateRequirement}
@@ -1048,11 +1022,11 @@ function App() {
 
         <EditTestCaseModal
           isOpen={isEditTestCaseModalOpen}
-          testCase={selectedTestCase}
+          testCase={testCases.find(t => t.id === selectedTestCaseId) || null}
           requirements={requirements.filter(r => !r.isDeleted)}
           onClose={() => {
             setIsEditTestCaseModalOpen(false);
-            setSelectedTestCase(null);
+            setSelectedTestCaseId(null);
           }}
           onSubmit={handleUpdateTestCase}
           onDelete={handleDeleteTestCase}
