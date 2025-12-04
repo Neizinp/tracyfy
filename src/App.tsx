@@ -3,7 +3,14 @@ import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 
 import type { ProjectBaseline, Version, Project } from './types';
 
-import { ProjectProvider, useProject, UIProvider, useUI } from './app/providers';
+import {
+  ProjectProvider,
+  useProject,
+  UIProvider,
+  useUI,
+  GlobalStateProvider,
+  useGlobalState
+} from './app/providers';
 import { useRequirements } from './hooks/useRequirements';
 import { useUseCases } from './hooks/useUseCases';
 import { useTestCases } from './hooks/useTestCases';
@@ -11,7 +18,6 @@ import { useInformation } from './hooks/useInformation';
 import { useGitOperations } from './hooks/useGitOperations';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useImportExport } from './hooks/useImportExport';
-import { useGlobalState } from './hooks/useGlobalState';
 import { useAppHandlers } from './hooks/useAppHandlers';
 import { LoadingOverlay } from './components';
 
@@ -27,9 +33,7 @@ function AppContent() {
     deleteProject: handleDeleteProject,
     resetToDemo: handleResetToDemo,
     addToProject: handleAddToProjectInternal,
-    setProjects,
-    initialGlobalState,
-    setHasInitializedProjects
+    setProjects,  // Needed by useDragAndDrop
   } = useProject();
 
   // UI State
@@ -56,7 +60,6 @@ function AppContent() {
     activeLibraryTab, setActiveLibraryTab,
     globalLibrarySelection, setGlobalLibrarySelection,
     columnVisibility, setColumnVisibility,
-    getDefaultColumnVisibility
   } = useUI();
 
   // Global & Local State Management
@@ -74,15 +77,7 @@ function AppContent() {
     usedUcNumbers, setUsedUcNumbers,
     usedTestNumbers, setUsedTestNumbers,
     usedInfoNumbers, setUsedInfoNumbers
-  } = useGlobalState({
-    projects,
-    currentProjectId,
-    initialGlobalState,
-    setProjects,
-    setHasInitializedProjects,
-    getDefaultColumnVisibility,
-    setColumnVisibility
-  });
+  } = useGlobalState();
 
   // Git Operations
   const {
@@ -454,7 +449,9 @@ export default function App() {
   return (
     <ProjectProvider>
       <UIProvider>
-        <AppContent />
+        <GlobalStateProvider>
+          <AppContent />
+        </GlobalStateProvider>
       </UIProvider>
     </ProjectProvider>
   );
