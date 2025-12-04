@@ -11,11 +11,14 @@ import {
   GlobalStateProvider,
   useGlobalState,
   RequirementsProvider,
-  useRequirements
+  useRequirements,
+  UseCasesProvider,
+  useUseCases,
+  TestCasesProvider,
+  useTestCases,
+  InformationProvider,
+  useInformation
 } from './app/providers';
-import { useUseCases } from './hooks/useUseCases';
-import { useTestCases } from './hooks/useTestCases';
-import { useInformation } from './hooks/useInformation';
 import { useGitOperations } from './hooks/useGitOperations';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useImportExport } from './hooks/useImportExport';
@@ -74,9 +77,6 @@ function AppContent() {
     useCases, setUseCases,
     testCases, setTestCases,
     information, setInformation,
-    usedUcNumbers, setUsedUcNumbers,
-    usedTestNumbers, setUsedTestNumbers,
-    usedInfoNumbers, setUsedInfoNumbers
   } = useGlobalState();
 
   // Git Operations
@@ -156,31 +156,13 @@ function AppContent() {
     handleDeleteUseCase,
     handleRestoreUseCase,
     handlePermanentDeleteUseCase
-  } = useUseCases({
-    useCases,
-    setUseCases,
-    usedUcNumbers,
-    setUsedUcNumbers,
-    requirements,
-    setRequirements,
-    projects,
-    currentProjectId,
-    setIsUseCaseModalOpen,
-    setEditingUseCase
-  });
+  } = useUseCases();
 
   const {
     handleAddTestCase,
     handleUpdateTestCase,
     handleDeleteTestCase
-  } = useTestCases({
-    testCases,
-    setTestCases,
-    usedTestNumbers,
-    setUsedTestNumbers,
-    projects,
-    currentProjectId
-  });
+  } = useTestCases();
 
   const {
     handleAddInformation,
@@ -188,16 +170,7 @@ function AppContent() {
     handleDeleteInformation,
     handleRestoreInformation,
     handlePermanentDeleteInformation
-  } = useInformation({
-    information,
-    setInformation,
-    usedInfoNumbers,
-    setUsedInfoNumbers,
-    projects,
-    currentProjectId,
-    setIsInformationModalOpen,
-    setSelectedInformation
-  });
+  } = useInformation();
 
   const {
     sensors,
@@ -440,7 +413,13 @@ export default function App() {
       <UIProvider>
         <GlobalStateProvider>
           <RequirementsProvider>
-            <AppContent />
+            <UseCasesProvider>
+              <TestCasesProvider>
+                <InformationProvider>
+                  <AppContent />
+                </InformationProvider>
+              </TestCasesProvider>
+            </UseCasesProvider>
           </RequirementsProvider>
         </GlobalStateProvider>
       </UIProvider>
