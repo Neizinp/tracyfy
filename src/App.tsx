@@ -43,6 +43,7 @@ import { useRequirements } from './hooks/useRequirements';
 import { useUseCases } from './hooks/useUseCases';
 import { useTestCases } from './hooks/useTestCases';
 import { useInformation } from './hooks/useInformation';
+import { useGitOperations } from './hooks/useGitOperations';
 
 
 
@@ -316,6 +317,32 @@ function App() {
     setSelectedInformation
   });
 
+  const {
+    handlePendingChangesChange,
+    handleCommitArtifact,
+    handleCreateBaseline,
+    handleViewBaselineHistory,
+    handleRestoreVersion,
+    createBaselineSnapshot
+  } = useGitOperations({
+    currentProjectId,
+    projects,
+    requirements,
+    useCases,
+    testCases,
+    information,
+    links,
+    versions,
+    setRequirements,
+    setUseCases,
+    setTestCases,
+    setInformation,
+    setLinks,
+    setVersions,
+    setSelectedBaseline,
+    setCurrentView
+  });
+
 
   // Column visibility state with default all visible
   const getDefaultColumnVisibility = (): ColumnVisibility => ({
@@ -435,45 +462,6 @@ function App() {
   // - handleAddInformation (line ~1054)
 
   // Git Revision Control Handlers
-  const handlePendingChangesChange = (_changes: ArtifactChange[]) => {
-    // PendingChangesPanel manages its own state, this is just a callback for notifications
-  };
-
-  const handleCommitArtifact = async (artifactId: string, type: string, message: string) => {
-    try {
-      const project = projects.find(p => p.id === currentProjectId);
-      if (!project) return;
-
-      // Map singular type to plural folder name
-      let folderType: 'requirements' | 'usecases' | 'testcases' | 'information';
-      if (type === 'requirement') folderType = 'requirements';
-      else if (type === 'usecase') folderType = 'usecases';
-      else if (type === 'testcase') folderType = 'testcases';
-      else if (type === 'information') folderType = 'information';
-      else folderType = type as any;
-
-      await gitService.commitArtifact(folderType, artifactId, message);
-
-      // Refresh pending changes - PendingChangesPanel will auto-refresh via its own polling
-    } catch (error) {
-      console.error('Failed to commit artifact:', error);
-      alert('Failed to commit artifact: ' + error);
-    }
-  };
-
-  const handleCreateBaseline = async (name?: string) => {
-    // If name is not provided (e.g., from BaselineManager), prompt for it
-    const baselineName = name || prompt("Enter baseline name:");
-    if (!baselineName) return;
-
-    // Create the baseline using the version snapshot mechanism
-    await createBaselineSnapshot(baselineName, baselineName);
-  };
-
-  const handleViewBaselineHistory = (baselineId: string) => {
-    setSelectedBaseline(baselineId);
-    setCurrentView('baseline-history');
-  };
 
 
 
@@ -591,49 +579,6 @@ function App() {
     return () => clearTimeout(timer);
   }, [requirements, useCases, testCases, information, links, currentProjectId, projects]);
 
-  // Baseline creation helper
-  const createBaselineSnapshot = async (message: string, tag: string) => {
-    const newVersion = await createVersion(
-      currentProjectId,
-      projects.find(p => p.id === currentProjectId)?.name || 'Unknown Project',
-      message,
-      'baseline',
-      requirements,
-      useCases,
-      testCases,
-      information,
-      links,
-      gitService,
-      tag
-    );
-    setVersions(prev => [newVersion, ...prev].slice(0, 50));
-  };
-
-
-  // Restore a previous version
-  const handleRestoreVersion = async (versionId: string) => {
-    const version = versions.find(v => v.id === versionId);
-    if (version) {
-      setRequirements(version.data.requirements);
-      setUseCases(version.data.useCases);
-      setTestCases(version.data.testCases || []);
-      setInformation(version.data.information || []);
-      setLinks(version.data.links);
-      const newVersion = await createVersion(
-        currentProjectId,
-        projects.find(p => p.id === currentProjectId)?.name || 'Unknown Project',
-        `Restored from ${formatDateTime(version.timestamp)}`,
-        'auto-save',
-        requirements,
-        useCases,
-        testCases,
-        information,
-        links,
-        gitService
-      );
-      setVersions(prev => [newVersion, ...prev].slice(0, 50));
-    }
-  };
 
   const handleBreakDownUseCase = (_useCase: UseCase) => {
     // Open new requirement modal with use case pre-selected
