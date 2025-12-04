@@ -105,6 +105,11 @@ export const loadProjects = (): { projects: Project[], currentProjectId: string,
 
         // Fallback to demo
         const { project, globalState } = createDemoProject();
+
+        // Immediately persist to localStorage to avoid race conditions
+        localStorage.setItem(PROJECTS_KEY, JSON.stringify([project]));
+        localStorage.setItem(GLOBAL_STATE_KEY, JSON.stringify(globalState));
+
         return {
             projects: [project],
             currentProjectId: project.id,
@@ -113,6 +118,11 @@ export const loadProjects = (): { projects: Project[], currentProjectId: string,
     } catch (error) {
         console.error('Failed to load projects:', error);
         const { project, globalState } = createDemoProject();
+
+        // Immediately persist to localStorage to avoid race conditions
+        localStorage.setItem(PROJECTS_KEY, JSON.stringify([project]));
+        localStorage.setItem(GLOBAL_STATE_KEY, JSON.stringify(globalState));
+
         return {
             projects: [project],
             currentProjectId: project.id,

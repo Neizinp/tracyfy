@@ -501,6 +501,36 @@ class BrowserGitService {
             return [];
         }
     }
+
+    async clearData(): Promise<void> {
+        try {
+            // Delete the IndexedDB database used by lightning-fs
+            // The default name is the name passed to constructor
+            const dbName = 'reqtrace-fs';
+
+            // We can also try to remove files via fs, but wiping DB is cleaner for a full reset
+            await new Promise<void>((resolve, reject) => {
+                const req = window.indexedDB.deleteDatabase(dbName);
+                req.onsuccess = () => {
+                    console.log('✅ Deleted IndexedDB:', dbName);
+                    resolve();
+                };
+                req.onerror = (e) => {
+                    console.error('❌ Failed to delete IndexedDB:', e);
+                    reject(e);
+                };
+                req.onblocked = () => {
+                    console.warn('⚠️ Delete IndexedDB blocked');
+                    // Proceed anyway, maybe reload will help
+                    resolve();
+                };
+            });
+
+            this.initialized = false;
+        } catch (error) {
+            console.error('Failed to clear git data:', error);
+        }
+    }
 }
 
 export const gitService = new BrowserGitService();

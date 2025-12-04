@@ -39,16 +39,28 @@ import { incrementRevision } from './utils/revisionUtils';
 import { gitService } from './services/gitService';
 import { generateNextReqId, generateNextUcId, generateNextTestCaseId, generateNextInfoId } from './utils/idGenerationUtils';
 import { createVersionSnapshot as createVersion, loadVersions, migrateLegacyVersions } from './utils/versionManagement';
-import { loadProjects, initializeUsedNumbers, USED_NUMBERS_KEY } from './utils/appInitialization';
+import { initializeUsedNumbers, USED_NUMBERS_KEY } from './utils/appInitialization';
+import { useProjectManager } from './hooks/useProjectManager';
 
 
 
 
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [currentProjectId, setCurrentProjectId] = useState<string>('');
+  const {
+    projects,
+    currentProjectId,
+    isLoading,
+    handleSwitchProject,
+    handleCreateProjectSubmit,
+    handleUpdateProject,
+    handleDeleteProject,
+    handleResetToDemo,
+    handleAddToProject: handleAddToProjectInternal,
+    setProjects,
+    initialGlobalState,
+    setHasInitializedProjects
+  } = useProjectManager();
 
 
   // Global State
@@ -58,33 +70,66 @@ function App() {
   const [globalInformation, setGlobalInformation] = useState<Information[]>([]);
   const [links, setLinks] = useState<Link[]>([]); // Links are global
 
-  // Initialize Data (Async)
+  // Initialize Global State from ProjectManager (LocalStorage/Demo)
   useEffect(() => {
-    const initializeApp = async () => {
-      setIsLoading(true);
-      try {
-        // Run migration to global artifacts storage
-        await gitService.migrateToGlobalArtifacts();
+    if (initialGlobalState && !hasInitialized.current && projects.length > 0) {
+      const newGlobalReqs = initialGlobalState.requirements || [];
+      const newGlobalUCs = initialGlobalState.useCases || [];
+      const newGlobalTCs = initialGlobalState.testCases || [];
+      const newGlobalInfo = initialGlobalState.information || [];
+      const newLinks = initialGlobalState.links || [];
 
-        await gitService.init();
-        console.log('Git service initialized');
-        const { projects: initialProjects, currentProjectId: initialCurrentId, globalState: initialGlobal } = loadProjects();
-        setProjects(initialProjects);
-        setCurrentProjectId(initialCurrentId);
-        setGlobalRequirements(initialGlobal.requirements);
-        setGlobalUseCases(initialGlobal.useCases);
-        setGlobalTestCases(initialGlobal.testCases);
-        setGlobalInformation(initialGlobal.information);
-        setLinks(initialGlobal.links);
-      } catch (e) {
-        console.error("Initialization failed", e);
-      } finally {
-        setIsLoading(false);
+      setGlobalRequirements(newGlobalReqs);
+      setGlobalUseCases(newGlobalUCs);
+      setGlobalTestCases(newGlobalTCs);
+      setGlobalInformation(newGlobalInfo);
+      setLinks(newLinks);
+
+      // Also update local state for the current project immediately
+      // This ensures the view is populated on first load
+      const project = projects.find(p => p.id === currentProjectId);
+      if (project) {
+        setRequirements(newGlobalReqs.filter((r: Requirement) => project.requirementIds.includes(r.id)));
+        setUseCases(newGlobalUCs.filter((u: UseCase) => project.useCaseIds.includes(u.id)));
+        setTestCases(newGlobalTCs.filter((t: TestCase) => project.testCaseIds.includes(t.id)));
+        setInformation(newGlobalInfo.filter((i: Information) => project.informationIds.includes(i.id)));
+
+        // Initialize used numbers
+        const newUsedNumbers = initializeUsedNumbers(
+          newGlobalReqs.filter((r: Requirement) => project.requirementIds.includes(r.id)),
+          newGlobalUCs.filter((u: UseCase) => project.useCaseIds.includes(u.id))
+        );
+        setUsedReqNumbers(newUsedNumbers.usedReqNumbers);
+        setUsedUcNumbers(newUsedNumbers.usedUcNumbers);
+
+        // Explicitly update and save the current project with correct artifact IDs
+        // Use the IDs from the LOCAL arrays we just populated, not from the project object
+        const currentReqIds = newGlobalReqs.filter((r: Requirement) => project.requirementIds.includes(r.id)).map((r: Requirement) => r.id);
+        const currentUcIds = newGlobalUCs.filter((u: UseCase) => project.useCaseIds.includes(u.id)).map((u: UseCase) => u.id);
+        const currentTcIds = newGlobalTCs.filter((t: TestCase) => project.testCaseIds.includes(t.id)).map((t: TestCase) => t.id);
+        const currentInfoIds = newGlobalInfo.filter((i: Information) => project.informationIds.includes(i.id)).map((i: Information) => i.id);
+
+        const updatedProjects = projects.map(p =>
+          p.id === currentProjectId
+            ? {
+              ...p,
+              requirementIds: currentReqIds,
+              useCaseIds: currentUcIds,
+              testCaseIds: currentTcIds,
+              informationIds: currentInfoIds,
+              lastModified: Date.now()
+            }
+            : p
+        );
+        setProjects(updatedProjects);
+        localStorage.setItem('reqtrace-projects', JSON.stringify(updatedProjects));
       }
-    };
+      hasInitialized.current = true;
+      setHasInitializedProjects(true); // Signal that projects are now safe to persist
+    }
+  }, [initialGlobalState, projects, currentProjectId, setHasInitializedProjects]);
 
-    initializeApp();
-  }, []);
+
 
   // Project Settings State
   const [isProjectSettingsOpen, setIsProjectSettingsOpen] = useState(false);
@@ -111,6 +156,7 @@ function App() {
   // Ref to track if this is the initial mount
   const isInitialMount = useRef(true);
   const isResetting = useRef(false);
+  const hasInitialized = useRef(false);
 
   // Get current project data
   const currentProject = projects.find(p => p.id === currentProjectId) || projects[0];
@@ -241,6 +287,11 @@ function App() {
       return;
     }
 
+    // Also skip if we haven't initialized from globalState yet
+    if (!hasInitialized.current) {
+      return;
+    }
+
     // 1. Update Global State (Upsert)
     setGlobalRequirements(prev => {
       const map = new Map(prev.map(r => [r.id, r]));
@@ -279,50 +330,38 @@ function App() {
     ));
   }, [requirements, useCases, testCases, information, currentProjectId]);
 
-  // Persist to localStorage
-  // Persist to File System (Git Service)
+  // Persist Global State to localStorage
   useEffect(() => {
-    // Skip if resetting or loading
-    if (isResetting.current || isLoading) {
+    // Skip only if actively resetting
+    if (isResetting.current) {
       return;
     }
 
-    const saveChanges = async () => {
-      try {
-        const project = projects.find(p => p.id === currentProjectId);
-        if (!project) return;
+    // Only save if we have data
+    if (globalRequirements.length === 0 && globalUseCases.length === 0 &&
+      globalTestCases.length === 0 && globalInformation.length === 0) {
+      return;
+    }
 
-        // Save Project Metadata? 
-        // We don't have a specific file for project metadata in the plan, but we should probably save it.
-        // For now, let's assume artifacts are the source of truth.
-        // But we need to save the project list somewhere? 
-        // The plan says "Initialization: On load, check for a local project directory."
-        // We might need a `project.json` in the project root.
-
-        // Save Artifacts
-        const projReqs = globalRequirements.filter(r => project.requirementIds.includes(r.id));
-        const projUCs = globalUseCases.filter(u => project.useCaseIds.includes(u.id));
-        const projTCs = globalTestCases.filter(t => project.testCaseIds.includes(t.id));
-        const projInfo = globalInformation.filter(i => project.informationIds.includes(i.id));
-
-        // Save artifacts
-        for (const req of projReqs) await gitService.saveArtifact('requirements', req);
-        for (const uc of projUCs) await gitService.saveArtifact('usecases', uc);
-        for (const tc of projTCs) await gitService.saveArtifact('testcases', tc);
-        for (const info of projInfo) await gitService.saveArtifact('information', info);
-
-        // Save links
-        await gitService.saveFile(project.name, 'information', '_links.json', JSON.stringify(links, null, 2));
-
-      } catch (error) {
-        console.error('Failed to save data to file system:', error);
-      }
+    const globalState = {
+      requirements: globalRequirements,
+      useCases: globalUseCases,
+      testCases: globalTestCases,
+      information: globalInformation,
+      links: links
     };
+    localStorage.setItem('reqtrace-global-state', JSON.stringify(globalState));
+  }, [globalRequirements, globalUseCases, globalTestCases, globalInformation, links]);
 
-    const timer = setTimeout(saveChanges, 1000); // Debounce saves
-    return () => clearTimeout(timer);
-
-  }, [projects, currentProjectId, globalRequirements, globalUseCases, globalTestCases, globalInformation, links, isLoading]);
+  // NOTE: Auto-save to Git removed because individual handlers already save artifacts
+  // when they're created or modified. This prevents unnecessary file writes during
+  // drag-and-drop reordering which only changes array order, not file content.
+  // Individual handlers that save to Git:
+  // - handleAddRequirement (line ~806)
+  // - handleUpdateRequirement (line ~859)
+  // - handleAddUseCase (line ~915)
+  // - handleUpdateTestCase (line ~992)
+  // - handleAddInformation (line ~1054)
 
   // Git Revision Control Handlers
   const handlePendingChangesChange = (_changes: ArtifactChange[]) => {
@@ -365,101 +404,30 @@ function App() {
     setCurrentView('baseline-history');
   };
 
-  const handleSwitchProject = (projectId: string) => {
-    setCurrentProjectId(projectId);
-    // The useEffect [currentProjectId] will handle loading the data
-  };
+
 
   const handleCreateProject = () => {
     setIsCreateProjectModalOpen(true);
   };
 
-  const handleCreateProjectSubmit = async (name: string, description: string) => {
-    const newProject: Project = {
-      id: `proj-${Date.now()}`,
-      name,
-      description,
-      requirementIds: [],
-      useCaseIds: [],
-      testCaseIds: [],
-      informationIds: [],
-      lastModified: Date.now()
-    };
 
-    // Initialize git repository for the new project
-    try {
-      await gitService.initProject(newProject.name);
-      console.log(`Initialized git repository for project: ${newProject.name}`);
-    } catch (error) {
-      console.error('Failed to initialize git repository:', error);
-      // Continue anyway - project will work in localStorage-only mode
-    }
-
-    setProjects([...projects, newProject]);
-    handleSwitchProject(newProject.id);
-    setIsCreateProjectModalOpen(false);
-  };
 
   const handleOpenProjectSettings = (project: Project) => {
     setProjectToEdit(project);
     setIsProjectSettingsOpen(true);
   };
 
-  const handleUpdateProject = (projectId: string, name: string, description: string) => {
-    setProjects(prev => prev.map(p =>
-      p.id === projectId ? { ...p, name, description, lastModified: Date.now() } : p
-    ));
-  };
 
-  const handleDeleteProject = (projectId: string) => {
-    if (projects.length <= 1) {
-      alert("Cannot delete the last project.");
-      return;
-    }
 
-    const newProjects = projects.filter(p => p.id !== projectId);
-    setProjects(newProjects);
 
-    if (currentProjectId === projectId) {
-      handleSwitchProject(newProjects[0].id);
-    }
-  };
 
-  const handleResetToDemo = () => {
-    if (!confirm('This will replace all current projects with the Demo Project containing sample data and reload the page. Continue?')) {
-      return;
-    }
 
-    // Clear all storage
-    localStorage.clear();
-
-    // Reload the page to trigger demo project creation
-    window.location.reload();
-  };
 
   const handleAddToProject = async (
     artifacts: { requirements: string[], useCases: string[], testCases: string[], information: string[] },
     targetProjectId: string = currentProjectId
   ) => {
-
-    setProjects(prev => prev.map(p => {
-      if (p.id !== targetProjectId) return p;
-
-      // Add IDs if not already present
-      const newReqIds = Array.from(new Set([...p.requirementIds, ...artifacts.requirements]));
-      const newUcIds = Array.from(new Set([...p.useCaseIds, ...artifacts.useCases]));
-      const newTcIds = Array.from(new Set([...p.testCaseIds, ...artifacts.testCases]));
-      const newInfoIds = Array.from(new Set([...p.informationIds, ...artifacts.information]));
-
-      return {
-        ...p,
-        requirementIds: newReqIds,
-        useCaseIds: newUcIds,
-        testCaseIds: newTcIds,
-        informationIds: newInfoIds,
-        lastModified: Date.now()
-      };
-    }));
+    await handleAddToProjectInternal(artifacts, targetProjectId);
 
     // Also update local state to reflect changes immediately IF it's the current project
     if (targetProjectId === currentProjectId) {
@@ -475,8 +443,6 @@ function App() {
       setInformation(newInfo);
     }
 
-    // The sync effect will then update the Project object.
-
     const newVersion = await createVersion(
       currentProjectId,
       projects.find(p => p.id === currentProjectId)?.name || 'Unknown Project',
@@ -490,8 +456,9 @@ function App() {
       gitService
     );
     setVersions(prev => [newVersion, ...prev].slice(0, 50));
-    // alert(`Added ${filteredArtifacts.requirements.length} Requirements, ${filteredArtifacts.useCases.length} Use Cases, ${filteredArtifacts.testCases.length} Test Cases, and ${filteredArtifacts.information.length} Information items to the project.`);
   };
+
+
 
   const handleGlobalLibrarySelect = (id: string) => {
     setGlobalLibrarySelection(prev => {
