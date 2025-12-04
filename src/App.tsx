@@ -9,9 +9,10 @@ import {
   UIProvider,
   useUI,
   GlobalStateProvider,
-  useGlobalState
+  useGlobalState,
+  RequirementsProvider,
+  useRequirements
 } from './app/providers';
-import { useRequirements } from './hooks/useRequirements';
 import { useUseCases } from './hooks/useUseCases';
 import { useTestCases } from './hooks/useTestCases';
 import { useInformation } from './hooks/useInformation';
@@ -73,7 +74,6 @@ function AppContent() {
     useCases, setUseCases,
     testCases, setTestCases,
     information, setInformation,
-    usedReqNumbers, setUsedReqNumbers,
     usedUcNumbers, setUsedUcNumbers,
     usedTestNumbers, setUsedTestNumbers,
     usedInfoNumbers, setUsedInfoNumbers
@@ -148,18 +148,7 @@ function AppContent() {
     handleDeleteRequirement,
     handleRestoreRequirement,
     handlePermanentDeleteRequirement
-  } = useRequirements({
-    requirements,
-    setRequirements,
-    usedReqNumbers,
-    setUsedReqNumbers,
-    links,
-    setLinks,
-    projects,
-    currentProjectId,
-    setIsEditModalOpen: setIsEditRequirementModalOpen,
-    setEditingRequirement
-  });
+  } = useRequirements();
 
   const {
     handleAddUseCase,
@@ -450,7 +439,9 @@ export default function App() {
     <ProjectProvider>
       <UIProvider>
         <GlobalStateProvider>
-          <AppContent />
+          <RequirementsProvider>
+            <AppContent />
+          </RequirementsProvider>
         </GlobalStateProvider>
       </UIProvider>
     </ProjectProvider>
