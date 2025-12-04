@@ -3,7 +3,7 @@ import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 
 import type { ProjectBaseline, Version, Project } from './types';
 
-import { useProjectManager } from './hooks/useProjectManager';
+import { ProjectProvider, useProject } from './app/providers';
 import { useRequirements } from './hooks/useRequirements';
 import { useUseCases } from './hooks/useUseCases';
 import { useTestCases } from './hooks/useTestCases';
@@ -16,21 +16,22 @@ import { useGlobalState } from './hooks/useGlobalState';
 import { useAppHandlers } from './hooks/useAppHandlers';
 import { LoadingOverlay } from './components';
 
-function App() {
+function AppContent() {
   const {
     projects,
     currentProjectId,
     isLoading,
-    handleSwitchProject,
-    handleCreateProjectSubmit,
-    handleUpdateProject,
-    handleDeleteProject,
-    handleResetToDemo,
-    handleAddToProject: handleAddToProjectInternal,
+    currentProject,
+    switchProject: handleSwitchProject,
+    createProject: handleCreateProjectSubmit,
+    updateProject: handleUpdateProject,
+    deleteProject: handleDeleteProject,
+    resetToDemo: handleResetToDemo,
+    addToProject: handleAddToProjectInternal,
     setProjects,
     initialGlobalState,
     setHasInitializedProjects
-  } = useProjectManager();
+  } = useProject();
 
   // UI State
   const {
@@ -259,8 +260,6 @@ function App() {
   });
 
   // Derived State
-  const currentProject = projects.find(p => p.id === currentProjectId) || projects[0];
-
   const baselines = versions.filter((v: Version) => v.type === 'baseline').map((v: Version) => ({
     id: v.id,
     projectId: currentProjectId,
@@ -452,4 +451,10 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <ProjectProvider>
+      <AppContent />
+    </ProjectProvider>
+  );
+}
