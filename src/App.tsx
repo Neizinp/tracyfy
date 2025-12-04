@@ -3,7 +3,7 @@ import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 
 import type { ProjectBaseline, Version, Project } from './types';
 
-import { ProjectProvider, useProject } from './app/providers';
+import { ProjectProvider, useProject, UIProvider, useUI } from './app/providers';
 import { useRequirements } from './hooks/useRequirements';
 import { useUseCases } from './hooks/useUseCases';
 import { useTestCases } from './hooks/useTestCases';
@@ -11,7 +11,6 @@ import { useInformation } from './hooks/useInformation';
 import { useGitOperations } from './hooks/useGitOperations';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useImportExport } from './hooks/useImportExport';
-import { useUIState } from './hooks/useUIState';
 import { useGlobalState } from './hooks/useGlobalState';
 import { useAppHandlers } from './hooks/useAppHandlers';
 import { LoadingOverlay } from './components';
@@ -58,7 +57,7 @@ function AppContent() {
     globalLibrarySelection, setGlobalLibrarySelection,
     columnVisibility, setColumnVisibility,
     getDefaultColumnVisibility
-  } = useUIState();
+  } = useUI();
 
   // Global & Local State Management
   const {
@@ -454,7 +453,9 @@ function AppContent() {
 export default function App() {
   return (
     <ProjectProvider>
-      <AppContent />
+      <UIProvider>
+        <AppContent />
+      </UIProvider>
     </ProjectProvider>
   );
 }
