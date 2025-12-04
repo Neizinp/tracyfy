@@ -27,13 +27,11 @@ import {
 import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor, KeyboardSensor, closestCenter } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
-import type { Requirement, Link, UseCase, TestCase, Information, Version, Project, ColumnVisibility, ViewType, ArtifactChange, ProjectBaseline } from './types';
+import type { Requirement, Link, UseCase, TestCase, Information, Version, Project, ColumnVisibility, ViewType, ProjectBaseline } from './types';
 
-import * as XLSX from 'xlsx';
 import { exportProjectToPDF } from './utils/pdfExportUtils';
 import { exportProjectToExcel } from './utils/excelExportUtils';
-import { exportProjectToJSON } from './utils/jsonExportUtils';
-import { formatDateTime } from './utils/dateUtils';
+
 
 import { gitService } from './services/gitService';
 import { createVersionSnapshot as createVersion, loadVersions, migrateLegacyVersions } from './utils/versionManagement';
@@ -45,6 +43,7 @@ import { useTestCases } from './hooks/useTestCases';
 import { useInformation } from './hooks/useInformation';
 import { useGitOperations } from './hooks/useGitOperations';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
+import { useImportExport } from './hooks/useImportExport';
 
 
 
@@ -356,6 +355,25 @@ function App() {
     handleAddToProject: handleAddToProjectInternal
   });
 
+  const {
+    handleExport,
+    handleImport,
+    handleImportExcel
+  } = useImportExport({
+    currentProjectId,
+    projects,
+    requirements,
+    useCases,
+    testCases,
+    information,
+    links,
+    setRequirements,
+    setUseCases,
+    setTestCases,
+    setInformation,
+    setLinks
+  });
+
 
   // Column visibility state with default all visible
   const getDefaultColumnVisibility = (): ColumnVisibility => ({
@@ -598,172 +616,6 @@ function App() {
     // For now, just open the modal - user can manually link
     setIsModalOpen(true);
   };
-
-  // Export data as JSON file
-  // Export data as JSON file
-  const handleExport = async () => {
-    const currentProject = projects.find(p => p.id === currentProjectId);
-    if (!currentProject) return;
-
-    await exportProjectToJSON(
-      currentProject,
-      {
-        requirements: globalRequirements,
-        useCases: globalUseCases,
-        testCases: globalTestCases,
-        information: globalInformation,
-        links: links
-      },
-      currentProject.requirementIds,
-      currentProject.useCaseIds,
-      currentProject.testCaseIds,
-      currentProject.informationIds
-    );
-  };
-
-  // Import data from JSON
-  const handleImport = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'application/json';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          try {
-            const data = JSON.parse(event.target?.result as string);
-            if (data.requirements && Array.isArray(data.requirements)) {
-              setRequirements(data.requirements);
-              setUseCases(data.useCases || []);
-              setTestCases(data.testCases || []);
-              setInformation(data.information || []);
-              setLinks(data.links || []);
-              const newVersion = await createVersion(
-                currentProjectId,
-                projects.find(p => p.id === currentProjectId)?.name || 'Unknown Project',
-                'Imported from JSON',
-                'auto-save',
-                requirements,
-                useCases,
-                testCases,
-                information,
-                links,
-                gitService
-              );
-              setVersions(prev => [newVersion, ...prev].slice(0, 50));
-              alert('Data imported successfully!');
-            } else {
-              alert('Invalid data format');
-            }
-          } catch (error) {
-            console.error('Import error:', error);
-            alert('Error importing data');
-          }
-        };
-        reader.readAsText(file);
-      }
-    };
-    input.click();
-  };
-
-  // Import data from Excel
-  const handleImportExcel = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.xlsx, .xls';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          try {
-            const data = new Uint8Array(event.target?.result as ArrayBuffer);
-            const workbook = XLSX.read(data, { type: 'array' });
-
-            // Parse Requirements
-            const reqSheet = workbook.Sheets['Requirements'];
-            if (reqSheet) {
-              const reqData = XLSX.utils.sheet_to_json<any>(reqSheet);
-              const parsedReqs: Requirement[] = reqData.map((row: any) => ({
-                id: row['ID'],
-                title: row['Title'],
-                status: row['Status'] || 'draft',
-                priority: row['Priority'] || 'medium',
-                description: row['Description'] || '',
-                text: row['Requirement Text'] || '',
-                rationale: row['Rationale'] || '',
-                parentIds: row['Parents'] ? row['Parents'].split(',').map((id: string) => id.trim()).filter((id: string) => id) : [],
-                dateCreated: Date.now(),
-                lastModified: Date.now(),
-                revision: '01'
-              }));
-              setRequirements(parsedReqs);
-            }
-
-            // Parse Use Cases
-            const ucSheet = workbook.Sheets['Use Cases'];
-            if (ucSheet) {
-              const ucData = XLSX.utils.sheet_to_json<any>(ucSheet);
-              const parsedUCs: UseCase[] = ucData.map((row: any) => ({
-                id: row['ID'],
-                title: row['Title'],
-                actor: row['Actor'] || '',
-                description: row['Description'] || '',
-                preconditions: row['Preconditions'] || '',
-                mainFlow: row['Main Flow'] || '',
-                alternativeFlows: row['Alternative Flows'] || '',
-                postconditions: row['Postconditions'] || '',
-                priority: row['Priority'] || 'medium',
-                status: row['Status'] || 'draft',
-                lastModified: Date.now(),
-                revision: '01'
-              }));
-              setUseCases(parsedUCs);
-            }
-
-            // Parse Links
-            const linkSheet = workbook.Sheets['Links'];
-            if (linkSheet) {
-              const linkData = XLSX.utils.sheet_to_json<any>(linkSheet);
-              const parsedLinks: Link[] = linkData.map((row: any) => ({
-                id: crypto.randomUUID(),
-                sourceId: row['Source'],
-                targetId: row['Target'],
-                type: row['Type'],
-                description: row['Description'] || ''
-              }));
-              setLinks(parsedLinks);
-            }
-
-            const newVersion = await createVersion(
-              currentProjectId,
-              projects.find(p => p.id === currentProjectId)?.name || 'Unknown Project',
-              'Imported from Excel',
-              'auto-save',
-              requirements,
-              useCases,
-              testCases,
-              information,
-              links,
-              gitService
-            );
-            setVersions(prev => [newVersion, ...prev].slice(0, 50));
-            alert('Excel data imported successfully!');
-          } catch (error) {
-            console.error('Excel Import error:', error);
-            alert(`Error importing Excel data: ${error instanceof Error ? error.message : String(error)}`);
-          }
-        };
-        reader.readAsArrayBuffer(file);
-      }
-    };
-    input.click();
-  };
-
-
-
-
 
 
   const handleLink = (sourceId: string) => {
