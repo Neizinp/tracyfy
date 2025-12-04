@@ -122,6 +122,7 @@ interface AppRoutesProps {
     onDeleteProject: (id: string) => void;
     onCreateProjectSubmit: (name: string, description: string) => void;
     onAddToProject: (artifacts: { requirements: string[], useCases: string[], testCases: string[], information: string[] }, targetProjectId?: string) => Promise<void>;
+    onAddFromLibrary: (ids: string[]) => void;
 }
 
 export const AppRoutes: React.FC<AppRoutesProps> = (props) => {

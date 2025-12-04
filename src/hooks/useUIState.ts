@@ -60,7 +60,10 @@ export function useUIState() {
         }));
     };
 
+    const [searchQuery, setSearchQuery] = useState('');
+
     return {
+        searchQuery, setSearchQuery,
 
 
         // Modals

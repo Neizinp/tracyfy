@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { useDraggable } from '@dnd-kit/core';
-import { Search, FileText, BookOpen, CheckSquare, Info, GripVertical } from 'lucide-react';
+import { Search, FileText, BookOpen, CheckSquare, Info, Plus } from 'lucide-react';
 import type { Requirement, UseCase, TestCase, Information, Project } from '../types';
 
 interface GlobalLibraryPanelProps {
@@ -15,11 +14,12 @@ interface GlobalLibraryPanelProps {
     onToggleSelect: (id: string) => void;
     activeTab?: Tab;
     onTabChange?: (tab: Tab) => void;
+    onAddToProject?: (ids: string[]) => void;
 }
 
 type Tab = 'requirements' | 'usecases' | 'testcases' | 'information';
 
-const DraggableItem = ({
+const LibraryItem = ({
     id,
     title,
     type,
@@ -34,69 +34,36 @@ const DraggableItem = ({
     isSelected: boolean,
     onToggleSelect: (id: string) => void
 }) => {
-    const { attributes, listeners, setNodeRef, transform } = useDraggable({
-        id: `global-${type}-${id}`,
-        data: {
-            type: 'global-item',
-            itemType: type,
-            id: id,
-            title: title
-        }
-    });
-
-    const style = transform ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        zIndex: 1000,
-        opacity: 0.8,
-        position: 'relative' as const
-    } : undefined;
-
     return (
         <div
-            ref={setNodeRef}
             style={{
-                ...style,
                 padding: '12px',
                 backgroundColor: isSelected ? 'var(--color-bg-hover)' : 'var(--color-bg-card)',
                 border: isSelected ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
                 borderRadius: '6px',
                 marginBottom: '8px',
-                cursor: 'grab',
+                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: '8px',
-                boxShadow: transform ? '0 4px 12px rgba(0,0,0,0.2)' : 'none',
                 transition: 'all 0.2s ease'
             }}
-            {...listeners}
-            {...attributes}
+            onClick={() => onToggleSelect(id)}
         >
-            <div
-                style={{ marginTop: '4px', cursor: 'pointer', marginRight: '8px' }}
-                onPointerDown={(e) => {
-                    // Prevent drag when clicking checkbox
-                    e.stopPropagation();
-                }}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleSelect(id);
-                }}
-            >
-                <div style={{
-                    width: '16px',
-                    height: '16px',
-                    borderRadius: '4px',
-                    border: isSelected ? 'none' : '1px solid var(--color-text-muted)',
-                    backgroundColor: isSelected ? 'var(--color-accent)' : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                }}>
-                    {isSelected && <CheckSquare size={12} color="white" />}
-                </div>
+            <div style={{
+                marginTop: '4px',
+                width: '16px',
+                height: '16px',
+                borderRadius: '4px',
+                border: isSelected ? 'none' : '1px solid var(--color-text-muted)',
+                backgroundColor: isSelected ? 'var(--color-accent)' : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+            }}>
+                {isSelected && <CheckSquare size={12} color="white" />}
             </div>
-
-            <GripVertical size={16} style={{ color: 'var(--color-text-muted)', marginTop: '4px' }} />
 
             <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '0.9rem', fontWeight: 500, marginBottom: '4px' }}>{title}</div>
@@ -134,7 +101,8 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
     selectedItems,
     onToggleSelect,
     activeTab: propActiveTab,
-    onTabChange
+    onTabChange,
+    onAddToProject
 }) => {
     const [localActiveTab, setLocalActiveTab] = useState<Tab>('requirements');
     const activeTab = propActiveTab || localActiveTab;
@@ -177,7 +145,7 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
         switch (activeTab) {
             case 'requirements':
                 return filterItems(requirements).map(req => (
-                    <DraggableItem
+                    <LibraryItem
                         key={req.id}
                         id={req.id}
                         title={req.title}
@@ -189,7 +157,7 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
                 ));
             case 'usecases':
                 return filterItems(useCases).map(uc => (
-                    <DraggableItem
+                    <LibraryItem
                         key={uc.id}
                         id={uc.id}
                         title={uc.title}
@@ -201,7 +169,7 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
                 ));
             case 'testcases':
                 return filterItems(testCases).map(tc => (
-                    <DraggableItem
+                    <LibraryItem
                         key={tc.id}
                         id={tc.id}
                         title={tc.title}
@@ -213,7 +181,7 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
                 ));
             case 'information':
                 return filterItems(information).map(info => (
-                    <DraggableItem
+                    <LibraryItem
                         key={info.id}
                         id={info.id}
                         title={info.title}
@@ -308,6 +276,35 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
                 {renderContent()}
             </div>
+
+            {selectedItems.size > 0 && (
+                <div style={{
+                    padding: '16px',
+                    borderTop: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-bg-secondary)'
+                }}>
+                    <button
+                        onClick={() => onAddToProject?.(Array.from(selectedItems))}
+                        style={{
+                            width: '100%',
+                            padding: '10px',
+                            backgroundColor: 'var(--color-accent)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px'
+                        }}
+                    >
+                        <Plus size={16} />
+                        Add {selectedItems.size} Item{selectedItems.size !== 1 ? 's' : ''} to Project
+                    </button>
+                </div>
+            )}
         </div >
     );
 };

@@ -56,6 +56,9 @@ interface UIContextValue {
     columnVisibility: ColumnVisibility;
     setColumnVisibility: (cols: ColumnVisibility) => void;
     getDefaultColumnVisibility: () => ColumnVisibility;
+    // Search
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
 }
 
 const UIContext = createContext<UIContextValue | undefined>(undefined);

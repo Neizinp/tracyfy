@@ -22,8 +22,9 @@ interface LayoutProps {
     onExportPDF?: () => void;
     onExportExcel?: () => void;
     onImportExcel?: () => void;
-    onOpenGlobalLibrary?: () => void; // Added this line
-    onResetToDemo?: () => void; // Added for demo reset button
+    onOpenGlobalLibrary?: () => void;
+    onOpenLibraryTab?: (tab: 'requirements' | 'usecases' | 'testcases' | 'information') => void;
+    onResetToDemo?: () => void;
     onSearch?: (query: string) => void;
     onTrashOpen?: () => void;
     onNewInformation?: () => void;
@@ -49,7 +50,8 @@ export const Layout: React.FC<LayoutProps> = ({
     onExport,
     onImport,
     onImportExcel,
-    onOpenGlobalLibrary, // Added this line
+    onOpenGlobalLibrary,
+    onOpenLibraryTab,
     onResetToDemo,
     onViewHistory,
     onExportPDF,
@@ -253,6 +255,27 @@ export const Layout: React.FC<LayoutProps> = ({
                                 Traceability Matrix
                             </Link>
                             <Link
+                                to="/baselines"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--spacing-sm)',
+                                    padding: '8px 12px',
+                                    textDecoration: 'none',
+                                    background: isActive('/baselines') ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: isActive('/baselines') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    fontWeight: isActive('/baselines') ? 500 : 400
+                                }}
+                            >
+                                <Clock size={18} />
+                                Baselines
+                            </Link>
+
+
+                            <Link
                                 to="/use-cases"
                                 style={{
                                     display: 'flex',
@@ -324,82 +347,122 @@ export const Layout: React.FC<LayoutProps> = ({
                             Library
                         </h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <Link
-                                to="/library/requirements"
+                            <button
+                                onClick={() => onOpenLibraryTab?.('requirements')}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
-                                    textDecoration: 'none',
-                                    background: isActive('/library/requirements') ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: isActive('/library/requirements') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    color: 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: isActive('/library/requirements') ? 500 : 400
+                                    fontFamily: 'inherit',
+                                    fontSize: 'inherit',
+                                    width: '100%'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
+                                    e.currentTarget.style.color = 'var(--color-accent)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                    e.currentTarget.style.color = 'var(--color-text-secondary)';
                                 }}
                             >
                                 <BookOpen size={18} />
                                 Requirements
-                            </Link>
-                            <Link
-                                to="/library/use-cases"
+                            </button>
+                            <button
+                                onClick={() => onOpenLibraryTab?.('usecases')}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
-                                    textDecoration: 'none',
-                                    background: isActive('/library/use-cases') ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: isActive('/library/use-cases') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    color: 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: isActive('/library/use-cases') ? 500 : 400
+                                    fontFamily: 'inherit',
+                                    fontSize: 'inherit',
+                                    width: '100%'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
+                                    e.currentTarget.style.color = 'var(--color-accent)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                    e.currentTarget.style.color = 'var(--color-text-secondary)';
                                 }}
                             >
                                 <BookOpen size={18} />
                                 Use Cases
-                            </Link>
-                            <Link
-                                to="/library/test-cases"
+                            </button>
+                            <button
+                                onClick={() => onOpenLibraryTab?.('testcases')}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
-                                    textDecoration: 'none',
-                                    background: isActive('/library/test-cases') ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: isActive('/library/test-cases') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    color: 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: isActive('/library/test-cases') ? 500 : 400
+                                    fontFamily: 'inherit',
+                                    fontSize: 'inherit',
+                                    width: '100%'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
+                                    e.currentTarget.style.color = 'var(--color-accent)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                    e.currentTarget.style.color = 'var(--color-text-secondary)';
                                 }}
                             >
                                 <BookOpen size={18} />
                                 Test Cases
-                            </Link>
-                            <Link
-                                to="/library/information"
+                            </button>
+                            <button
+                                onClick={() => onOpenLibraryTab?.('information')}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
-                                    textDecoration: 'none',
-                                    background: isActive('/library/information') ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: isActive('/library/information') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    color: 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: isActive('/library/information') ? 500 : 400
+                                    fontFamily: 'inherit',
+                                    fontSize: 'inherit',
+                                    width: '100%'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
+                                    e.currentTarget.style.color = 'var(--color-accent)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                    e.currentTarget.style.color = 'var(--color-text-secondary)';
                                 }}
                             >
                                 <BookOpen size={18} />
                                 Information
-                            </Link>
+                            </button>
                         </div>
                     </div>
                 </nav>

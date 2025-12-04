@@ -57,5 +57,21 @@ export function useAppHandlers() {
             ui.setProjectToEdit(project);
             ui.setIsProjectSettingsOpen(true);
         },
+        onAddToProject: async (ids: string[]) => {
+            const reqIds = ids.filter(id => artifacts.global.requirements.some(r => r.id === id));
+            const ucIds = ids.filter(id => artifacts.global.useCases.some(u => u.id === id));
+            const tcIds = ids.filter(id => artifacts.global.testCases.some(t => t.id === id));
+            const infoIds = ids.filter(id => artifacts.global.information.some(i => i.id === id));
+
+            await appHandlers.handleAddToProject({
+                requirements: reqIds,
+                useCases: ucIds,
+                testCases: tcIds,
+                information: infoIds
+            });
+
+            // Clear selection after adding
+            ui.setGlobalLibrarySelection(new Set());
+        },
     };
 }

@@ -77,8 +77,10 @@ interface ProjectLayoutProps {
     projectToEdit: Project | null;
     setProjectToEdit: (project: Project | null) => void;
 
+    onAddFromLibrary: (ids: string[]) => void;
+
     // Handlers
-    onSwitchProject: (projectId: string) => void;
+    handleSwitchProject: (projectId: string) => void;
     onCreateProject: () => void;
     onOpenProjectSettings: (project: Project) => void;
     onExport: () => void;
@@ -145,7 +147,7 @@ export const ProjectLayout: React.FC<ProjectLayoutProps> = (props) => {
             currentProjectName={props.currentProjectName}
             projects={props.projects}
             currentProjectId={props.currentProjectId}
-            onSwitchProject={props.onSwitchProject}
+            onSwitchProject={props.handleSwitchProject}
             onCreateProject={props.onCreateProject}
             onOpenProjectSettings={props.onOpenProjectSettings}
             onNewRequirement={() => props.setIsNewRequirementModalOpen(true)}
@@ -155,7 +157,8 @@ export const ProjectLayout: React.FC<ProjectLayoutProps> = (props) => {
             onExport={props.onExport}
             onImport={props.onImport}
             onImportExcel={props.onImportExcel}
-            onOpenGlobalLibrary={() => props.setIsGlobalLibraryModalOpen(true)}
+            onOpenGlobalLibrary={() => props.setIsLibraryPanelOpen(true)}
+            onOpenLibraryTab={props.handleOpenLibrary}
             onResetToDemo={props.onResetToDemo}
             onViewHistory={() => props.setIsVersionHistoryOpen(true)}
             onPendingChangesChange={props.onPendingChangesChange}
@@ -221,6 +224,7 @@ export const ProjectLayout: React.FC<ProjectLayoutProps> = (props) => {
                     onToggleSelect={props.handleGlobalLibrarySelect}
                     activeTab={props.activeLibraryTab}
                     onTabChange={(tab) => props.setActiveLibraryTab(tab as any)}
+                    onAddToProject={props.onAddFromLibrary}
                 />
             ) : undefined}
         >
