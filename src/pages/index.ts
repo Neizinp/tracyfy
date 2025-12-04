@@ -1,0 +1,9 @@
+export { RequirementsTreePage } from './RequirementsTreePage';
+export { RequirementsDetailedPage } from './RequirementsDetailedPage';
+export { TraceabilityMatrixPage } from './TraceabilityMatrixPage';
+export { UseCasesPage } from './UseCasesPage';
+export { TestCasesPage } from './TestCasesPage';
+export { InformationPage } from './InformationPage';
+export { BaselinesPage } from './BaselinesPage';
+export { BaselineHistoryPage } from './BaselineHistoryPage';
+export { GlobalLibraryPage } from './GlobalLibraryPage';

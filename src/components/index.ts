@@ -22,5 +22,8 @@ export { GlobalLibraryPanel } from './GlobalLibraryPanel';
 export * from './MarkdownEditor';
 export * from './ProjectSidebarItem';
 export { PendingChangesPanel } from './PendingChangesPanel';
+export { ModalManager } from './ModalManager';
 export { BaselineManager } from './BaselineManager';
+
 export { BaselineRevisionHistory } from './BaselineRevisionHistory';
+export { LoadingOverlay } from './LoadingOverlay';

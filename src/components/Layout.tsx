@@ -2,7 +2,8 @@ import { LayoutGrid, FolderOpen, Plus, Download, Upload, Clock, FileText, FileSp
 import { ProjectSidebarItem } from './ProjectSidebarItem';
 import { PendingChangesPanel } from './PendingChangesPanel';
 import { useState, useRef, useEffect } from 'react';
-import type { Project, ViewType } from '../types';
+import { Link, useLocation } from 'react-router-dom';
+import type { Project } from '../types';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -26,10 +27,9 @@ interface LayoutProps {
     onSearch?: (query: string) => void;
     onTrashOpen?: () => void;
     onNewInformation?: () => void;
-    currentView: ViewType;
-    onSwitchView: (view: ViewType) => void;
+
     rightPanel?: React.ReactNode;
-    onOpenLibrary?: (tab: 'requirements' | 'usecases' | 'testcases' | 'information') => void;
+
     // Pending changes props
     onPendingChangesChange?: (changes: any[]) => void;
     onCommitArtifact?: (artifactId: string, type: string, message: string) => void;
@@ -57,10 +57,9 @@ export const Layout: React.FC<LayoutProps> = ({
     onSearch,
     onTrashOpen,
     onNewInformation,
-    currentView,
-    onSwitchView,
+
     rightPanel,
-    onOpenLibrary,
+
     onPendingChangesChange,
     onCommitArtifact
 }) => {
@@ -89,6 +88,9 @@ export const Layout: React.FC<LayoutProps> = ({
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    const location = useLocation();
+    const isActive = (path: string) => location.pathname.includes(path);
 
     return (
         <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -193,120 +195,120 @@ export const Layout: React.FC<LayoutProps> = ({
                             Views
                         </h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <button
-                                onClick={() => onSwitchView('tree')}
+                            <Link
+                                to="/requirements/tree"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
-                                    border: 'none',
-                                    background: currentView === 'tree' ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: currentView === 'tree' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    textDecoration: 'none',
+                                    background: isActive('/requirements/tree') ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: isActive('/requirements/tree') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: currentView === 'tree' ? 500 : 400
+                                    fontWeight: isActive('/requirements/tree') ? 500 : 400
                                 }}
                             >
                                 <LayoutGrid size={18} />
                                 Requirements Tree
-                            </button>
-                            <button
-                                onClick={() => onSwitchView('detailed')}
+                            </Link>
+                            <Link
+                                to="/requirements/detailed"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
-                                    border: 'none',
-                                    background: currentView === 'detailed' ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: currentView === 'detailed' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    textDecoration: 'none',
+                                    background: isActive('/requirements/detailed') ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: isActive('/requirements/detailed') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: currentView === 'detailed' ? 500 : 400
+                                    fontWeight: isActive('/requirements/detailed') ? 500 : 400
                                 }}
                             >
                                 <FileText size={18} />
                                 Detailed View
-                            </button>
-                            <button
-                                onClick={() => onSwitchView('matrix')}
+                            </Link>
+                            <Link
+                                to="/requirements/matrix"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
-                                    border: 'none',
-                                    background: currentView === 'matrix' ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: currentView === 'matrix' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    textDecoration: 'none',
+                                    background: isActive('/requirements/matrix') ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: isActive('/requirements/matrix') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: currentView === 'matrix' ? 500 : 400
+                                    fontWeight: isActive('/requirements/matrix') ? 500 : 400
                                 }}
                             >
                                 <LayoutGrid size={18} style={{ transform: 'rotate(45deg)' }} />
                                 Traceability Matrix
-                            </button>
-                            <button
-                                onClick={() => onSwitchView('usecases')}
+                            </Link>
+                            <Link
+                                to="/use-cases"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
-                                    border: 'none',
-                                    background: currentView === 'usecases' ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: currentView === 'usecases' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    textDecoration: 'none',
+                                    background: isActive('/use-cases') ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: isActive('/use-cases') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: currentView === 'usecases' ? 500 : 400
+                                    fontWeight: isActive('/use-cases') ? 500 : 400
                                 }}
                             >
                                 <FileText size={18} />
                                 Use Cases
-                            </button>
-                            <button
-                                onClick={() => onSwitchView('testcases')}
+                            </Link>
+                            <Link
+                                to="/test-cases"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
-                                    border: 'none',
-                                    background: currentView === 'testcases' ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: currentView === 'testcases' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    textDecoration: 'none',
+                                    background: isActive('/test-cases') ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: isActive('/test-cases') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: currentView === 'testcases' ? 500 : 400
+                                    fontWeight: isActive('/test-cases') ? 500 : 400
                                 }}
                             >
                                 <FileText size={18} />
                                 Test Cases
-                            </button>
-                            <button
-                                onClick={() => onSwitchView('information')}
+                            </Link>
+                            <Link
+                                to="/information"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
-                                    border: 'none',
-                                    background: currentView === 'information' ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: currentView === 'information' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                    textDecoration: 'none',
+                                    background: isActive('/information') ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: isActive('/information') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: currentView === 'information' ? 500 : 400
+                                    fontWeight: isActive('/information') ? 500 : 400
                                 }}
                             >
                                 <FileText size={18} />
                                 Information
-                            </button>
+                            </Link>
                         </div>
                     </div>
 
@@ -322,82 +324,82 @@ export const Layout: React.FC<LayoutProps> = ({
                             Library
                         </h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <button
-                                onClick={() => onOpenLibrary?.('requirements')}
+                            <Link
+                                to="/library/requirements"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
-                                    border: 'none',
-                                    background: 'transparent',
-                                    color: 'var(--color-text-secondary)',
+                                    textDecoration: 'none',
+                                    background: isActive('/library/requirements') ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: isActive('/library/requirements') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: 400
+                                    fontWeight: isActive('/library/requirements') ? 500 : 400
                                 }}
                             >
                                 <BookOpen size={18} />
                                 Requirements
-                            </button>
-                            <button
-                                onClick={() => onOpenLibrary?.('usecases')}
+                            </Link>
+                            <Link
+                                to="/library/use-cases"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
-                                    border: 'none',
-                                    background: 'transparent',
-                                    color: 'var(--color-text-secondary)',
+                                    textDecoration: 'none',
+                                    background: isActive('/library/use-cases') ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: isActive('/library/use-cases') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: 400
+                                    fontWeight: isActive('/library/use-cases') ? 500 : 400
                                 }}
                             >
                                 <BookOpen size={18} />
                                 Use Cases
-                            </button>
-                            <button
-                                onClick={() => onOpenLibrary?.('testcases')}
+                            </Link>
+                            <Link
+                                to="/library/test-cases"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
-                                    border: 'none',
-                                    background: 'transparent',
-                                    color: 'var(--color-text-secondary)',
+                                    textDecoration: 'none',
+                                    background: isActive('/library/test-cases') ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: isActive('/library/test-cases') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: 400
+                                    fontWeight: isActive('/library/test-cases') ? 500 : 400
                                 }}
                             >
                                 <BookOpen size={18} />
                                 Test Cases
-                            </button>
-                            <button
-                                onClick={() => onOpenLibrary?.('information')}
+                            </Link>
+                            <Link
+                                to="/library/information"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 'var(--spacing-sm)',
                                     padding: '8px 12px',
-                                    border: 'none',
-                                    background: 'transparent',
-                                    color: 'var(--color-text-secondary)',
+                                    textDecoration: 'none',
+                                    background: isActive('/library/information') ? 'var(--color-bg-hover)' : 'transparent',
+                                    color: isActive('/library/information') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                     textAlign: 'left',
-                                    fontWeight: 400
+                                    fontWeight: isActive('/library/information') ? 500 : 400
                                 }}
                             >
                                 <BookOpen size={18} />
                                 Information
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </nav>

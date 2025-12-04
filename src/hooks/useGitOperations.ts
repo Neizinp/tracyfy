@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react';
 import type { Requirement, UseCase, TestCase, Information, Link, Project, Version } from '../types';
 import { gitService } from '../services/gitService';
-import { createVersionSnapshot as createVersion } from '../utils/versionManagement';
+import { createVersionSnapshot as createVersion, loadVersions } from '../utils/versionManagement';
 import { formatDateTime } from '../utils/dateUtils';
+
+import { useNavigate } from 'react-router-dom';
 
 interface UseGitOperationsProps {
     currentProjectId: string;
@@ -11,15 +14,11 @@ interface UseGitOperationsProps {
     testCases: TestCase[];
     information: Information[];
     links: Link[];
-    versions: Version[];
     setRequirements: (reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])) => void;
     setUseCases: (ucs: UseCase[] | ((prev: UseCase[]) => UseCase[])) => void;
     setTestCases: (tcs: TestCase[] | ((prev: TestCase[]) => TestCase[])) => void;
     setInformation: (info: Information[] | ((prev: Information[]) => Information[])) => void;
     setLinks: (links: Link[] | ((prev: Link[]) => Link[])) => void;
-    setVersions: (versions: Version[] | ((prev: Version[]) => Version[])) => void;
-    setSelectedBaseline: (id: string | null) => void;
-    setCurrentView: (view: any) => void;
 }
 
 export function useGitOperations({
@@ -30,16 +29,40 @@ export function useGitOperations({
     testCases,
     information,
     links,
-    versions,
     setRequirements,
     setUseCases,
     setTestCases,
     setInformation,
-    setLinks,
-    setVersions,
-    setSelectedBaseline,
-    setCurrentView
+    setLinks
 }: UseGitOperationsProps) {
+    const navigate = useNavigate();
+    const [versions, setVersions] = useState<Version[]>([]);
+
+    // Load versions for current project
+    useEffect(() => {
+        setVersions(loadVersions(currentProjectId));
+    }, [currentProjectId]);
+
+    // Create version snapshot whenever data changes (debounced)
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            const newVersion = await createVersion(
+                currentProjectId,
+                projects.find(p => p.id === currentProjectId)?.name || 'Unknown Project',
+                'Auto-save',
+                'auto-save',
+                requirements,
+                useCases,
+                testCases,
+                information,
+                links,
+                gitService
+            );
+            setVersions(prev => [newVersion, ...prev].slice(0, 50));
+        }, 2000); // Wait 2 seconds after last change
+
+        return () => clearTimeout(timer);
+    }, [requirements, useCases, testCases, information, links, currentProjectId, projects]);
 
     const handlePendingChangesChange = (_changes: any[]) => {
         // PendingChangesPanel manages its own state, this is just a callback for notifications
@@ -94,8 +117,7 @@ export function useGitOperations({
     };
 
     const handleViewBaselineHistory = (baselineId: string) => {
-        setSelectedBaseline(baselineId);
-        setCurrentView('baseline-history');
+        navigate(`/baselines/${baselineId}`);
     };
 
     const handleRestoreVersion = async (versionId: string) => {
@@ -128,6 +150,8 @@ export function useGitOperations({
         handleCreateBaseline,
         handleViewBaselineHistory,
         handleRestoreVersion,
-        createBaselineSnapshot
+        createBaselineSnapshot,
+        versions,
+        setVersions
     };
 }

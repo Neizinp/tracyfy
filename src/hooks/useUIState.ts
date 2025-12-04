@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import type { Requirement, UseCase, TestCase, Information, Project, ColumnVisibility, ViewType } from '../types';
+import type { Requirement, UseCase, TestCase, Information, Project, ColumnVisibility } from '../types';
 
 export function useUIState() {
-    // View State
-    const [currentView, setCurrentView] = useState<ViewType>('tree');
+
 
     // Modal States
     const [isNewRequirementModalOpen, setIsNewRequirementModalOpen] = useState(false);
@@ -62,9 +61,7 @@ export function useUIState() {
     };
 
     return {
-        // View
-        currentView,
-        setCurrentView,
+
 
         // Modals
         isNewRequirementModalOpen, setIsNewRequirementModalOpen,
