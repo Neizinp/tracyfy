@@ -1,15 +1,15 @@
-import type { TestCase, Project } from '../types';
+import type { TestCase } from '../types';
 import { generateNextTestCaseId } from '../utils/idGenerationUtils';
 import { incrementRevision } from '../utils/revisionUtils';
-import { gitService } from '../services/gitService';
 
 interface UseTestCasesProps {
     testCases: TestCase[];
     setTestCases: (tcs: TestCase[] | ((prev: TestCase[]) => TestCase[])) => void;
     usedTestNumbers: Set<number>;
     setUsedTestNumbers: (nums: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
-    projects: Project[];
-    currentProjectId: string;
+
+    saveArtifact: (type: 'testcases', id: string, artifact: TestCase) => Promise<void>;
+    deleteArtifact: (type: 'testcases', id: string) => Promise<void>;
 }
 
 export function useTestCases({
@@ -17,8 +17,8 @@ export function useTestCases({
     setTestCases,
     usedTestNumbers,
     setUsedTestNumbers,
-    projects,
-    currentProjectId
+    saveArtifact,
+    deleteArtifact
 }: UseTestCasesProps) {
 
     const handleAddTestCase = async (newTestCaseData: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated'>) => {
@@ -34,14 +34,11 @@ export function useTestCases({
         const idNumber = parseInt(newTestCase.id.split('-')[1], 10);
         setUsedTestNumbers(new Set([...usedTestNumbers, idNumber]));
 
-        // Save to git repository to make it appear in Pending Changes
+        // Save to filesystem
         try {
-            const project = projects.find(p => p.id === currentProjectId);
-            if (project) {
-                await gitService.saveArtifact('testcases', newTestCase);
-            }
+            await saveArtifact('testcases', newTestCase.id, newTestCase);
         } catch (error) {
-            console.error('Failed to save test case to git:', error);
+            console.error('Failed to save test case:', error);
         }
     };
 
@@ -62,31 +59,44 @@ export function useTestCases({
             tc.id === finalTestCase.id ? finalTestCase : tc
         ));
 
-        // Save to git repository to make it appear in Pending Changes
+        // Save to filesystem
         try {
-            const project = projects.find(p => p.id === currentProjectId);
-            if (project) {
-                await gitService.saveArtifact('testcases', finalTestCase);
-                await gitService.commitArtifact(
-                    'testcases',
-                    finalTestCase.id,
-                    `Update test case ${finalTestCase.id}: ${finalTestCase.title} (Rev ${newRevision})`
-                );
-            }
+            await saveArtifact('testcases', finalTestCase.id, finalTestCase);
         } catch (error) {
-            console.error('Failed to save test case to git:', error);
+            console.error('Failed to save test case:', error);
         }
     };
 
     const handleDeleteTestCase = (id: string) => {
+        const updatedTestCase = testCases.find(tc => tc.id === id);
+        if (!updatedTestCase) return;
+
+        // Soft delete
+        const deletedTestCase = { ...updatedTestCase, isDeleted: true, deletedAt: Date.now() };
+
         setTestCases(testCases.map(tc =>
-            tc.id === id ? { ...tc, isDeleted: true, deletedAt: Date.now() } : tc
+            tc.id === id ? deletedTestCase : tc
         ));
+
+        // Save soft deleted state
+        saveArtifact('testcases', id, deletedTestCase).catch(err =>
+            console.error('Failed to save deleted test case:', err)
+        );
+    };
+
+    const handlePermanentDeleteTestCase = (id: string) => {
+        setTestCases(prev => prev.filter(tc => tc.id !== id));
+
+        // Delete from filesystem
+        deleteArtifact('testcases', id).catch(err =>
+            console.error('Failed to delete test case:', err)
+        );
     };
 
     return {
         handleAddTestCase,
         handleUpdateTestCase,
-        handleDeleteTestCase
+        handleDeleteTestCase,
+        handlePermanentDeleteTestCase
     };
 }

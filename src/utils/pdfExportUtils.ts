@@ -2,7 +2,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Requirement, UseCase, TestCase, Information, Project, ProjectBaseline } from '../types';
 import { formatDate } from './dateUtils';
-import { gitService, type CommitInfo } from '../services/gitService';
+import { realGitService } from '../services/realGitService';
+import type { CommitInfo } from '../types';
 
 // Additional types
 interface TOCEntry {
@@ -92,60 +93,68 @@ export async function exportProjectToPDF(
 
     // Fetch commits for each artifact type
     for (const req of projectRequirements) {
-        const history = await gitService.getArtifactHistory('requirements', req.id);
-        // Filter commits after last baseline
-        const filteredHistory = lastBaseline
-            ? history.filter(commit => commit.timestamp > lastBaseline.timestamp)
-            : history;
-        if (filteredHistory.length > 0) {
-            artifactCommits.push({
-                artifactId: req.id,
-                artifactType: 'requirement',
-                commits: filteredHistory
-            });
-        }
+        try {
+            const history = await realGitService.getHistory(`requirements/${req.id}.json`);
+            // Filter commits after last baseline
+            const filteredHistory = lastBaseline
+                ? history.filter(commit => commit.timestamp > lastBaseline.timestamp)
+                : history;
+            if (filteredHistory.length > 0) {
+                artifactCommits.push({
+                    artifactId: req.id,
+                    artifactType: 'requirement',
+                    commits: filteredHistory
+                });
+            }
+        } catch (e) { console.error(e); }
     }
 
     for (const uc of projectUseCases) {
-        const history = await gitService.getArtifactHistory('usecases', uc.id);
-        const filteredHistory = lastBaseline
-            ? history.filter(commit => commit.timestamp > lastBaseline.timestamp)
-            : history;
-        if (filteredHistory.length > 0) {
-            artifactCommits.push({
-                artifactId: uc.id,
-                artifactType: 'usecase',
-                commits: filteredHistory
-            });
-        }
+        try {
+            const history = await realGitService.getHistory(`usecases/${uc.id}.json`);
+            const filteredHistory = lastBaseline
+                ? history.filter(commit => commit.timestamp > lastBaseline.timestamp)
+                : history;
+            if (filteredHistory.length > 0) {
+                artifactCommits.push({
+                    artifactId: uc.id,
+                    artifactType: 'usecase',
+                    commits: filteredHistory
+                });
+            }
+        } catch (e) { console.error(e); }
     }
 
     for (const tc of projectTestCases) {
-        const history = await gitService.getArtifactHistory('testcases', tc.id);
-        const filteredHistory = lastBaseline
-            ? history.filter(commit => commit.timestamp > lastBaseline.timestamp)
-            : history;
-        if (filteredHistory.length > 0) {
-            artifactCommits.push({
-                artifactId: tc.id,
-                artifactType: 'testcase',
-                commits: filteredHistory
-            });
-        }
+        try {
+            const history = await realGitService.getHistory(`testcases/${tc.id}.json`);
+            const filteredHistory = lastBaseline
+                ? history.filter(commit => commit.timestamp > lastBaseline.timestamp)
+                : history;
+            if (filteredHistory.length > 0) {
+                artifactCommits.push({
+                    artifactId: tc.id,
+                    artifactType: 'testcase',
+                    commits: filteredHistory
+                });
+            }
+        } catch (e) { console.error(e); }
     }
 
     for (const info of projectInformation) {
-        const history = await gitService.getArtifactHistory('information', info.id);
-        const filteredHistory = lastBaseline
-            ? history.filter(commit => commit.timestamp > lastBaseline.timestamp)
-            : history;
-        if (filteredHistory.length > 0) {
-            artifactCommits.push({
-                artifactId: info.id,
-                artifactType: 'information',
-                commits: filteredHistory
-            });
-        }
+        try {
+            const history = await realGitService.getHistory(`information/${info.id}.json`);
+            const filteredHistory = lastBaseline
+                ? history.filter(commit => commit.timestamp > lastBaseline.timestamp)
+                : history;
+            if (filteredHistory.length > 0) {
+                artifactCommits.push({
+                    artifactId: info.id,
+                    artifactType: 'information',
+                    commits: filteredHistory
+                });
+            }
+        } catch (e) { console.error(e); }
     }
 
     // 4. Revision History (NEW POSITION - after TOC)

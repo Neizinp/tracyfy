@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import type { Requirement, UseCase, TestCase, Information, Project, ProjectBaseline, Link } from '../types';
 import { formatDate } from './dateUtils';
-import { gitService } from '../services/gitService';
+import { realGitService } from '../services/realGitService';
 
 // Helper to sanitize text for Excel (remove newlines if needed, or keep them)
 // Excel handles newlines in cells if wrapText is on.
@@ -46,22 +46,26 @@ export async function exportProjectToExcel(
 
     // Helper to fetch and format history
     const fetchHistory = async (type: 'requirements' | 'usecases' | 'testcases' | 'information', id: string, title: string) => {
-        const history = await gitService.getArtifactHistory(type, id);
-        const filteredHistory = lastBaseline
-            ? history.filter(commit => commit.timestamp > lastBaseline.timestamp)
-            : history;
+        try {
+            const history = await realGitService.getHistory(`${type}/${id}.json`);
+            const filteredHistory = lastBaseline
+                ? history.filter(commit => commit.timestamp > lastBaseline.timestamp)
+                : history;
 
-        filteredHistory.forEach(commit => {
-            historyData.push({
-                'Artifact Type': type.charAt(0).toUpperCase() + type.slice(1, -1), // Remove 's' and capitalize
-                'ID': id,
-                'Title': title,
-                'Date': formatDate(commit.timestamp),
-                'Author': commit.author,
-                'Message': commit.message,
-                'Hash': commit.hash.substring(0, 7)
+            filteredHistory.forEach(commit => {
+                historyData.push({
+                    'Artifact Type': type.charAt(0).toUpperCase() + type.slice(1, -1), // Remove 's' and capitalize
+                    'ID': id,
+                    'Title': title,
+                    'Date': formatDate(commit.timestamp),
+                    'Author': commit.author,
+                    'Message': commit.message,
+                    'Hash': commit.hash.substring(0, 7)
+                });
             });
-        });
+        } catch (error) {
+            console.error(`Failed to fetch history for ${id}`, error);
+        }
     };
 
     // Fetch history for all artifacts

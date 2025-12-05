@@ -30,10 +30,6 @@ interface LayoutProps {
     onNewInformation?: () => void;
 
     rightPanel?: React.ReactNode;
-
-    // Pending changes props
-    onPendingChangesChange?: (changes: any[]) => void;
-    onCommitArtifact?: (artifactId: string, type: string, message: string) => void;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -60,10 +56,9 @@ export const Layout: React.FC<LayoutProps> = ({
     onTrashOpen,
     onNewInformation,
 
-    rightPanel,
 
-    onPendingChangesChange,
-    onCommitArtifact
+
+    rightPanel
 }) => {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
@@ -163,27 +158,22 @@ export const Layout: React.FC<LayoutProps> = ({
                     </div>
 
                     {/* Pending Changes Section */}
-                    {onCommitArtifact && onPendingChangesChange && (
-                        <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                            <h2 style={{
-                                fontSize: '0.75rem',
-                                textTransform: 'uppercase',
-                                color: 'var(--color-text-muted)',
-                                letterSpacing: '0.05em',
-                                margin: '0 0 var(--spacing-sm) 0',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 'var(--spacing-xs)'
-                            }}>
-                                <GitBranch size={12} />
-                                Pending Changes
-                            </h2>
-                            <PendingChangesPanel
-                                onChange={onPendingChangesChange}
-                                onCommit={onCommitArtifact}
-                            />
-                        </div>
-                    )}
+                    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                        <h2 style={{
+                            fontSize: '0.75rem',
+                            textTransform: 'uppercase',
+                            color: 'var(--color-text-muted)',
+                            letterSpacing: '0.05em',
+                            margin: '0 0 var(--spacing-sm) 0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 'var(--spacing-xs)'
+                        }}>
+                            <GitBranch size={12} />
+                            Pending Changes
+                        </h2>
+                        <PendingChangesPanel />
+                    </div>
 
                     {/* Views Navigation */}
                     <div style={{ marginBottom: 'var(--spacing-lg)' }}>

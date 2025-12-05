@@ -1,82 +1,62 @@
 import { useState, useEffect } from 'react';
 import { FileText, GitCommit, AlertCircle } from 'lucide-react';
+import { useFileSystem } from '../app/providers/FileSystemProvider';
 import type { ArtifactChange } from '../types';
 
-interface PendingChangesPanelProps {
-    onChange: (changes: ArtifactChange[]) => void;
-    onCommit: (artifactId: string, type: string, message: string) => void;
-}
-
-export function PendingChangesPanel({ onChange, onCommit }: PendingChangesPanelProps) {
-    const [pendingChanges, setPendingChanges] = useState<ArtifactChange[]>([]);
+export function PendingChangesPanel() {
+    const { pendingChanges, commitFile } = useFileSystem();
     const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
     const [committing, setCommitting] = useState<Record<string, boolean>>({});
+    const [parsedChanges, setParsedChanges] = useState<ArtifactChange[]>([]);
 
     useEffect(() => {
-        const loadPendingChanges = async () => {
-            try {
-                const { gitService } = await import('../services/gitService');
-                const fileStatuses = await gitService.getPendingChanges();
+        // Convert file statuses to ArtifactChange objects
+        const changes: ArtifactChange[] = pendingChanges
+            .map(fs => {
+                // Parse path: {type}/{id}.md
+                const parts = fs.path.split('/');
+                if (parts.length < 2) return null;
 
-                // Convert file statuses to  ArtifactChange objects
-                const changes: ArtifactChange[] = fileStatuses
-                    .filter(fs => fs.path.endsWith('.md') && fs.status !== 'unchanged')
-                    .map(fs => {
-                        // Parse global artifact path: artifacts/{type}/{id}.md
-                        const parts = fs.path.split('/');
-                        if (parts.length < 3 || parts[0] !== 'artifacts') return null;
+                const typeStr = parts[0]; // 'requirements', 'usecases', etc.
+                const filename = parts[1];
+                const id = filename.replace('.md', '');
 
-                        const typeStr = parts[1]; // 'requirements', 'usecases', etc.
-                        const filename = parts[2];
-                        const id = filename.replace('.md', '');
+                // Map folder names to artifact types
+                let type: 'requirement' | 'usecase' | 'testcase' | 'information';
+                if (typeStr === 'requirements') type = 'requirement';
+                else if (typeStr === 'usecases') type = 'usecase';
+                else if (typeStr === 'testcases') type = 'testcase';
+                else if (typeStr === 'information') type = 'information';
+                else return null;
 
-                        // Map folder names to artifact types
-                        let type: 'requirement' | 'usecase' | 'testcase' | 'information';
-                        if (typeStr === 'requirements') type = 'requirement';
-                        else if (typeStr === 'usecases') type = 'usecase';
-                        else if (typeStr === 'testcases') type = 'testcase';
-                        else if (typeStr === 'information') type = 'information';
-                        else return null;
+                const status = fs.status === 'new' ? 'new' : 'modified';
 
-                        const status = fs.status === 'new' ? 'new' : 'modified';
+                return {
+                    id,
+                    type,
+                    title: id,
+                    status: status as 'new' | 'modified',
+                    path: fs.path,
+                    commitMessage: commitMessages[id] || ''
+                };
+            })
+            .filter(Boolean) as ArtifactChange[];
 
-                        return {
-                            id,
-                            type,
-                            title: id, // We'll update this with actual title if needed
-                            status: status as 'new' | 'modified',
-                            path: fs.path,
-                            commitMessage: commitMessages[id] || ''
-                        };
-                    })
-                    .filter(Boolean) as ArtifactChange[];
+        // Auto-fill "First commit" for new items
+        setCommitMessages(prev => {
+            const next = { ...prev };
+            let hasChanges = false;
+            changes.forEach(change => {
+                if (change.status === 'new' && !next[change.id]) {
+                    next[change.id] = 'First commit';
+                    hasChanges = true;
+                }
+            });
+            return hasChanges ? next : prev;
+        });
 
-                // Auto-fill "First commit" for new items
-                setCommitMessages(prev => {
-                    const next = { ...prev };
-                    let hasChanges = false;
-                    changes.forEach(change => {
-                        if (change.status === 'new' && !next[change.id]) {
-                            next[change.id] = 'First commit';
-                            hasChanges = true;
-                        }
-                    });
-                    return hasChanges ? next : prev;
-                });
-
-                setPendingChanges(changes);
-                onChange(changes);
-            } catch (error) {
-                console.error('Failed to load pending changes:', error);
-            }
-        };
-
-        loadPendingChanges();
-
-        // Refresh every 5 seconds
-        const interval = setInterval(loadPendingChanges, 5000);
-        return () => clearInterval(interval);
-    }, [commitMessages, onChange]);
+        setParsedChanges(changes);
+    }, [pendingChanges]);
 
     const handleCommitMessageChange = (id: string, message: string) => {
         setCommitMessages(prev => ({ ...prev, [id]: message }));
@@ -92,16 +72,14 @@ export function PendingChangesPanel({ onChange, onCommit }: PendingChangesPanelP
         setCommitting(prev => ({ ...prev, [change.id]: true }));
 
         try {
-            await onCommit(change.id, change.type, message);
+            await commitFile(change.path, message);
 
-            // Clear the commit message and remove from pending
+            // Clear the commit message
             setCommitMessages(prev => {
                 const updated = { ...prev };
                 delete updated[change.id];
                 return updated;
             });
-
-            setPendingChanges(prev => prev.filter(c => c.id !== change.id));
         } catch (error) {
             console.error('Failed to commit:', error);
             alert(`Failed to commit: ${error}`);
@@ -122,7 +100,7 @@ export function PendingChangesPanel({ onChange, onCommit }: PendingChangesPanelP
         return status === 'new' ? 'New' : 'Modified';
     };
 
-    if (pendingChanges.length === 0) {
+    if (parsedChanges.length === 0) {
         return (
             <div style={{ padding: 'var(--spacing-sm)', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
                 No pending changes
@@ -132,7 +110,7 @@ export function PendingChangesPanel({ onChange, onCommit }: PendingChangesPanelP
 
     // Group by type
     const groupedChanges: Record<string, ArtifactChange[]> = {};
-    pendingChanges.forEach(change => {
+    parsedChanges.forEach(change => {
         const typeName = change.type === 'requirement' ? 'Requirements' :
             change.type === 'usecase' ? 'Use Cases' :
                 change.type === 'testcase' ? 'Test Cases' : 'Information';
@@ -247,7 +225,7 @@ export function PendingChangesPanel({ onChange, onCommit }: PendingChangesPanelP
             }}>
                 <AlertCircle size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div>
-                    Each file requires its own commit message
+                    Changes are saved to disk automatically. Commit each file separately when ready.
                 </div>
             </div>
         </div>

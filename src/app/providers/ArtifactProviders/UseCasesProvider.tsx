@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useCallback } from 'react';
+import React, { createContext, useContext, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useUseCases as useUseCasesHook } from '../../../hooks/useUseCases';
 import { useGlobalState } from '../GlobalStateProvider';
-import { useProject } from '../ProjectProvider';
+
 import { useUI } from '../UIProvider';
+import { useFileSystem } from '../FileSystemProvider';
 import type { UseCase } from '../../../types';
 
 interface UseCasesContextValue {
@@ -25,8 +26,25 @@ const UseCasesContext = createContext<UseCasesContextValue | undefined>(undefine
 
 export const UseCasesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { useCases, setUseCases, usedUcNumbers, setUsedUcNumbers, requirements, setRequirements } = useGlobalState();
-    const { projects, currentProjectId } = useProject();
     const { setIsUseCaseModalOpen, setEditingUseCase, setIsNewRequirementModalOpen } = useUI();
+    const { saveArtifact, deleteArtifact, loadedData, isReady } = useFileSystem();
+
+    // Sync loaded data from filesystem
+    useEffect(() => {
+        if (isReady && loadedData && loadedData.useCases) {
+            setUseCases(loadedData.useCases);
+
+            // Update used numbers
+            const used = new Set<number>();
+            loadedData.useCases.forEach(uc => {
+                const match = uc.id.match(/-(\d+)$/);
+                if (match) {
+                    used.add(parseInt(match[1], 10));
+                }
+            });
+            setUsedUcNumbers(used);
+        }
+    }, [isReady, loadedData, setUseCases, setUsedUcNumbers]);
 
     const useCasesHook = useUseCasesHook({
         useCases,
@@ -35,10 +53,10 @@ export const UseCasesProvider: React.FC<{ children: ReactNode }> = ({ children }
         setUsedUcNumbers,
         requirements,
         setRequirements,
-        projects,
-        currentProjectId,
         setIsUseCaseModalOpen,
-        setEditingUseCase
+        setEditingUseCase,
+        saveArtifact,
+        deleteArtifact
     });
 
     const handleBreakDownUseCase = useCallback((_uc: UseCase) => {

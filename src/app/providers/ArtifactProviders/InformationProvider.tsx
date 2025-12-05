@@ -1,9 +1,10 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useInformation as useInformationHook } from '../../../hooks/useInformation';
 import { useGlobalState } from '../GlobalStateProvider';
-import { useProject } from '../ProjectProvider';
+
 import { useUI } from '../UIProvider';
+import { useFileSystem } from '../FileSystemProvider';
 import type { Information } from '../../../types';
 
 interface InformationContextValue {
@@ -22,18 +23,35 @@ const InformationContext = createContext<InformationContextValue | undefined>(un
 
 export const InformationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { information, setInformation, usedInfoNumbers, setUsedInfoNumbers } = useGlobalState();
-    const { projects, currentProjectId } = useProject();
     const { setIsInformationModalOpen, setSelectedInformation } = useUI();
+    const { saveArtifact, deleteArtifact, loadedData, isReady } = useFileSystem();
+
+    // Sync loaded data from filesystem
+    useEffect(() => {
+        if (isReady && loadedData && loadedData.information) {
+            setInformation(loadedData.information);
+
+            // Update used numbers
+            const used = new Set<number>();
+            loadedData.information.forEach(info => {
+                const match = info.id.match(/-(\d+)$/);
+                if (match) {
+                    used.add(parseInt(match[1], 10));
+                }
+            });
+            setUsedInfoNumbers(used);
+        }
+    }, [isReady, loadedData, setInformation, setUsedInfoNumbers]);
 
     const informationHook = useInformationHook({
         information,
         setInformation,
         usedInfoNumbers,
         setUsedInfoNumbers,
-        projects,
-        currentProjectId,
         setIsInformationModalOpen,
-        setSelectedInformation
+        setSelectedInformation,
+        saveArtifact,
+        deleteArtifact
     });
 
     const value: InformationContextValue = {

@@ -1,17 +1,17 @@
-import type { Information, Project } from '../types';
+import type { Information } from '../types';
 import { generateNextInfoId } from '../utils/idGenerationUtils';
 import { incrementRevision } from '../utils/revisionUtils';
-import { gitService } from '../services/gitService';
 
 interface UseInformationProps {
     information: Information[];
     setInformation: (info: Information[] | ((prev: Information[]) => Information[])) => void;
     usedInfoNumbers: Set<number>;
     setUsedInfoNumbers: (nums: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
-    projects: Project[];
-    currentProjectId: string;
+
     setIsInformationModalOpen: (open: boolean) => void;
     setSelectedInformation: (info: Information | null) => void;
+    saveArtifact: (type: 'information', id: string, artifact: Information) => Promise<void>;
+    deleteArtifact: (type: 'information', id: string) => Promise<void>;
 }
 
 export function useInformation({
@@ -19,10 +19,10 @@ export function useInformation({
     setInformation,
     usedInfoNumbers,
     setUsedInfoNumbers,
-    projects,
-    currentProjectId,
     setIsInformationModalOpen,
-    setSelectedInformation
+    setSelectedInformation,
+    saveArtifact,
+    deleteArtifact
 }: UseInformationProps) {
 
     const handleAddInformation = async (data: Omit<Information, 'id' | 'lastModified' | 'dateCreated'> | { id: string; updates: Partial<Information> }) => {
@@ -63,15 +63,12 @@ export function useInformation({
         }
         setIsInformationModalOpen(false);
 
-        // Save to git repository to make it appear in Pending Changes
+        // Save to filesystem
         if (savedInformation) {
             try {
-                const project = projects.find(p => p.id === currentProjectId);
-                if (project) {
-                    await gitService.saveArtifact('information', savedInformation);
-                }
+                await saveArtifact('information', savedInformation.id, savedInformation);
             } catch (error) {
-                console.error('Failed to save information to git:', error);
+                console.error('Failed to save information:', error);
             }
         }
     };
@@ -82,23 +79,49 @@ export function useInformation({
     };
 
     const handleDeleteInformation = (id: string) => {
+        const updatedInfo = information.find(info => info.id === id);
+        if (!updatedInfo) return;
+
+        // Soft delete
+        const deletedInfo = { ...updatedInfo, isDeleted: true, deletedAt: Date.now() };
+
         setInformation(information.map(info =>
-            info.id === id ? { ...info, isDeleted: true, deletedAt: Date.now() } : info
+            info.id === id ? deletedInfo : info
         ));
+
+        // Save soft deleted state
+        saveArtifact('information', id, deletedInfo).catch(err =>
+            console.error('Failed to save deleted information:', err)
+        );
     };
 
     const handleRestoreInformation = (id: string) => {
+        const updatedInfo = information.find(info => info.id === id);
+        if (!updatedInfo) return;
+
+        const restoredInfo = { ...updatedInfo, isDeleted: false, deletedAt: undefined };
+
         setInformation(prev =>
             prev.map(info =>
                 info.id === id
-                    ? { ...info, isDeleted: false, deletedAt: undefined }
+                    ? restoredInfo
                     : info
             )
+        );
+
+        // Save restored state
+        saveArtifact('information', id, restoredInfo).catch(err =>
+            console.error('Failed to save restored information:', err)
         );
     };
 
     const handlePermanentDeleteInformation = (id: string) => {
         setInformation(prev => prev.filter(info => info.id !== id));
+
+        // Delete from filesystem
+        deleteArtifact('information', id).catch(err =>
+            console.error('Failed to delete information:', err)
+        );
     };
 
     return {

@@ -5,8 +5,8 @@ import {
     useProject,
     useUI,
     useGlobalState,
-    useGit,
-    useImportExport
+    useImportExport,
+    useFileSystem
 } from '../app/providers';
 import { exportProjectToPDF } from '../utils/pdfExportUtils';
 import { exportProjectToExcel } from '../utils/excelExportUtils';
@@ -24,8 +24,8 @@ export const ProjectLayout: React.FC = () => {
     // Global state
     const { globalRequirements, globalUseCases, globalTestCases, globalInformation, links } = useGlobalState();
 
-    // Git context
-    const { baselines, handlePendingChangesChange, handleCommitArtifact } = useGit();
+    // FileSystem context
+    const { baselines } = useFileSystem();
 
     // Import/Export handlers
     const importExport = useImportExport();
@@ -91,8 +91,7 @@ export const ProjectLayout: React.FC = () => {
             onOpenLibraryTab={ui.handleOpenLibrary}
             onResetToDemo={resetToDemo}
             onViewHistory={() => ui.setIsVersionHistoryOpen(true)}
-            onPendingChangesChange={handlePendingChangesChange}
-            onCommitArtifact={handleCommitArtifact}
+
             onExportPDF={async () => {
                 if (!currentProject) {
                     alert('No project selected');

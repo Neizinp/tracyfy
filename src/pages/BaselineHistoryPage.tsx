@@ -1,11 +1,11 @@
 import React from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { BaselineRevisionHistory } from '../components';
-import { useGit, useProject } from '../app/providers';
+import { useFileSystem, useProject } from '../app/providers';
 
 export const BaselineHistoryPage: React.FC = () => {
-    const { baselines } = useGit();
-    const { projects } = useProject();
+    const { baselines } = useFileSystem();
+    const { currentProject } = useProject();
     const { baselineId } = useParams<{ baselineId: string }>();
 
     if (!baselineId) {
@@ -18,14 +18,14 @@ export const BaselineHistoryPage: React.FC = () => {
         return <Navigate to="/baselines" replace />;
     }
 
-    const project = projects.find(p => p.id === currentBaseline.projectId);
+
     const previousBaseline = baselines.find(
         b => b.version === (parseInt(currentBaseline.version || '0') - 1).toString().padStart(2, '0')
     ) || null;
 
     return (
         <BaselineRevisionHistory
-            projectName={project?.name || 'Unknown'}
+            projectName={currentProject?.name || 'Unknown'}
             currentBaseline={currentBaseline}
             previousBaseline={previousBaseline}
             onViewArtifact={(artifactId, commitHash) => {

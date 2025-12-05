@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Requirement, UseCase, TestCase, Information, Link, Project, ColumnVisibility } from '../types';
 import { initializeUsedNumbers, USED_NUMBERS_KEY } from '../utils/appInitialization';
-import { migrateLegacyVersions } from '../utils/versionManagement';
+
 
 interface UseGlobalStateProps {
     projects: Project[];
@@ -216,7 +216,7 @@ export function useGlobalState({
 
     // Migrate legacy versions
     useEffect(() => {
-        migrateLegacyVersions(currentProjectId);
+
     }, []);
 
     return {

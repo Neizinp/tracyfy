@@ -22,7 +22,7 @@ type Tab = 'requirements' | 'usecases' | 'testcases' | 'information';
 const LibraryItem = ({
     id,
     title,
-    type,
+
     projectNames,
     isSelected,
     onToggleSelect

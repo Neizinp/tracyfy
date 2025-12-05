@@ -1,13 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RevisionHistoryTab } from '../RevisionHistoryTab';
-import { gitService } from '../../services/gitService';
+import { useFileSystem } from '../../app/providers';
 
-// Mock gitService
-vi.mock('../../services/gitService', () => ({
-    gitService: {
-        getArtifactHistory: vi.fn()
-    }
+// Mock useFileSystem
+vi.mock('../../app/providers', () => ({
+    useFileSystem: vi.fn()
 }));
 
 describe('RevisionHistoryTab', () => {
@@ -16,13 +14,17 @@ describe('RevisionHistoryTab', () => {
     });
 
     it('should render loading state initially', () => {
-        (gitService.getArtifactHistory as any).mockReturnValue(new Promise(() => { })); // Never resolves
+        (useFileSystem as any).mockReturnValue({
+            getArtifactHistory: vi.fn().mockReturnValue(new Promise(() => { }))
+        });
         render(<RevisionHistoryTab artifactId="123" artifactType="requirements" />);
         expect(screen.getByText('Loading history...')).toBeInTheDocument();
     });
 
     it('should render empty state when no history', async () => {
-        (gitService.getArtifactHistory as any).mockResolvedValue([]);
+        (useFileSystem as any).mockReturnValue({
+            getArtifactHistory: vi.fn().mockResolvedValue([])
+        });
         render(<RevisionHistoryTab artifactId="123" artifactType="requirements" />);
 
         await waitFor(() => {
@@ -40,7 +42,9 @@ describe('RevisionHistoryTab', () => {
                 timestamp: 1678886400000 // 2023-03-15
             }
         ];
-        (gitService.getArtifactHistory as any).mockResolvedValue(mockCommits);
+        (useFileSystem as any).mockReturnValue({
+            getArtifactHistory: vi.fn().mockResolvedValue(mockCommits)
+        });
 
         render(<RevisionHistoryTab artifactId="123" artifactType="requirements" />);
 

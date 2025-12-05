@@ -207,13 +207,12 @@ class RealGitService {
     }
 
     /**
-     * Save an artifact to disk and commit
+     * Save an artifact to disk (no commit)
      */
     async saveArtifact(
         type: 'requirements' | 'usecases' | 'testcases' | 'information',
         id: string,
-        artifact: Requirement | UseCase | TestCase | Information,
-        isNew: boolean
+        artifact: Requirement | UseCase | TestCase | Information
     ): Promise<void> {
         if (!this.initialized) {
             throw new Error('Git service not initialized');
@@ -238,31 +237,12 @@ class RealGitService {
 
         const filePath = `${type}/${id}.md`;
 
-        // Write file
+        // Write file only - no git operations yet
         await fileSystemService.writeFile(filePath, markdown);
-
-        // Stage the file
-        await git.add({
-            fs: fsAdapter,
-            dir: this.rootDir,
-            filepath: filePath
-        });
-
-        // Commit
-        const action = isNew ? 'Add' : 'Update';
-        await git.commit({
-            fs: fsAdapter,
-            dir: this.rootDir,
-            message: `${action} ${id}`,
-            author: {
-                name: 'ReqTrace User',
-                email: 'user@reqtrace.local'
-            }
-        });
     }
 
     /**
-     * Delete an artifact and commit
+     * Delete an artifact from disk (no commit)
      */
     async deleteArtifact(
         type: 'requirements' | 'usecases' | 'testcases' | 'information',
@@ -275,29 +255,77 @@ class RealGitService {
         const filePath = `${type}/${id}.md`;
 
         try {
-            // Remove from git
-            await git.remove({
-                fs: fsAdapter,
-                dir: this.rootDir,
-                filepath: filePath
-            });
-
-            // Delete the file
+            // Delete the file only
             await fileSystemService.deleteFile(filePath);
-
-            // Commit
-            await git.commit({
-                fs: fsAdapter,
-                dir: this.rootDir,
-                message: `Delete ${id}`,
-                author: {
-                    name: 'ReqTrace User',
-                    email: 'user@reqtrace.local'
-                }
-            });
         } catch (error) {
             console.error('Failed to delete artifact:', error);
         }
+    }
+
+    /**
+     * Get git status
+     */
+    async getStatus(): Promise<FileStatus[]> {
+        if (!this.initialized) return [];
+
+        try {
+            const status = await git.statusMatrix({
+                fs: fsAdapter,
+                dir: this.rootDir,
+            });
+
+            return status.map(([filepath, head, workdir, stage]) => {
+                let statusStr = 'unchanged';
+                if (head === 1 && workdir === 2 && stage === 2) statusStr = 'modified';
+                if (head === 0 && workdir === 2 && stage === 0) statusStr = 'new'; // Untracked
+                if (head === 0 && workdir === 2 && stage === 2) statusStr = 'added'; // Staged new
+                if (head === 1 && workdir === 0) statusStr = 'deleted';
+
+                return {
+                    path: filepath,
+                    status: statusStr
+                };
+            }).filter(f => f.status !== 'unchanged');
+        } catch (error) {
+            console.error('Failed to get status:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Commit a single file (Atomic Commit)
+     */
+    async commitFile(filepath: string, message: string): Promise<void> {
+        if (!this.initialized) {
+            throw new Error('Git service not initialized');
+        }
+
+        // Check if file exists (for add/modify) or not (for delete)
+        const fileExists = await fileSystemService.readFile(filepath) !== null;
+
+        if (fileExists) {
+            await git.add({
+                fs: fsAdapter,
+                dir: this.rootDir,
+                filepath
+            });
+        } else {
+            await git.remove({
+                fs: fsAdapter,
+                dir: this.rootDir,
+                filepath
+            });
+        }
+
+        await git.commit({
+            fs: fsAdapter,
+            dir: this.rootDir,
+            message,
+            author: {
+                name: 'ReqTrace User',
+                email: 'user@reqtrace.local'
+            }
+        });
     }
 
     /**
@@ -396,15 +424,23 @@ class RealGitService {
     /**
      * Create a git tag (baseline)
      */
-    async createTag(tagName: string, _message: string): Promise<void> {
+    /**
+     * Create a git tag (baseline)
+     */
+    async createTag(tagName: string, message: string): Promise<void> {
         if (!this.initialized) {
             throw new Error('Git service not initialized');
         }
 
-        await git.tag({
+        await git.annotatedTag({
             fs: fsAdapter,
             dir: this.rootDir,
-            ref: tagName
+            ref: tagName,
+            message: message,
+            tagger: {
+                name: 'ReqTrace User',
+                email: 'user@reqtrace.local'
+            }
         });
     }
 
@@ -422,6 +458,53 @@ class RealGitService {
                 dir: this.rootDir
             });
         } catch {
+            return [];
+        }
+    }
+
+    /**
+     * Get all tags with their details (for baselines)
+     */
+    async getTagsWithDetails(): Promise<Array<{ name: string; message: string; timestamp: number; commit: string }>> {
+        if (!this.initialized) return [];
+
+        try {
+            const tagNames = await this.listTags();
+            const tags = [];
+
+            for (const name of tagNames) {
+                try {
+                    // Try to resolve as annotated tag first
+                    const oid = await git.resolveRef({ fs: fsAdapter, dir: this.rootDir, ref: name });
+                    const read = await git.readTag({ fs: fsAdapter, dir: this.rootDir, oid });
+
+                    tags.push({
+                        name,
+                        message: read.tag.message,
+                        timestamp: read.tag.tagger.timestamp * 1000,
+                        commit: read.tag.object
+                    });
+                } catch (e) {
+                    // Fallback for lightweight tags or if readTag fails
+                    // For lightweight tags, we'd need to read the commit it points to
+                    try {
+                        const oid = await git.resolveRef({ fs: fsAdapter, dir: this.rootDir, ref: name });
+                        const commit = await git.readCommit({ fs: fsAdapter, dir: this.rootDir, oid });
+                        tags.push({
+                            name,
+                            message: commit.commit.message, // Use commit message as fallback
+                            timestamp: commit.commit.author.timestamp * 1000,
+                            commit: oid
+                        });
+                    } catch (e2) {
+                        console.warn(`Failed to read tag ${name}:`, e2);
+                    }
+                }
+            }
+
+            return tags.sort((a, b) => b.timestamp - a.timestamp);
+        } catch (error) {
+            console.error('Failed to get tags with details:', error);
             return [];
         }
     }

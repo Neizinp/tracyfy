@@ -21,7 +21,7 @@ import {
     useUseCases,
     useTestCases,
     useInformation,
-    useGit
+    useFileSystem
 } from '../app/providers';
 
 export const ModalManager: React.FC = () => {
@@ -40,8 +40,8 @@ export const ModalManager: React.FC = () => {
     const { testCases, handleAddTestCase, handleUpdateTestCase, handleDeleteTestCase } = useTestCases();
     const { information, handleAddInformation, handleRestoreInformation, handlePermanentDeleteInformation } = useInformation();
 
-    // Git state
-    const { versions, handleRestoreVersion, handleCreateBaseline } = useGit();
+    // FileSystem state
+    const { baselines, createBaseline } = useFileSystem();
 
     return (
         <>
@@ -121,10 +121,9 @@ export const ModalManager: React.FC = () => {
 
             <VersionHistory
                 isOpen={ui.isVersionHistoryOpen}
-                versions={versions}
+                baselines={baselines}
                 onClose={() => ui.setIsVersionHistoryOpen(false)}
-                onRestore={handleRestoreVersion}
-                onCreateBaseline={handleCreateBaseline}
+                onCreateBaseline={createBaseline}
             />
 
             <TrashModal

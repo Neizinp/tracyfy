@@ -1,55 +1,43 @@
-import React, { useState, useMemo } from 'react';
-import { X, RotateCcw, Clock, Save, Tag } from 'lucide-react';
-import type { Version } from '../types';
+
+import React, { useState } from 'react';
+import { X, Clock, Save, Tag } from 'lucide-react';
+import type { ProjectBaseline } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 
 interface VersionHistoryProps {
     isOpen: boolean;
-    versions: Version[];
+    baselines: ProjectBaseline[];
     onClose: () => void;
-    onRestore: (versionId: string) => void;
-    onCreateBaseline: (name: string) => void;
+    onCreateBaseline: (name: string, message: string) => void;
 }
 
-export const VersionHistory: React.FC<VersionHistoryProps> = ({ isOpen, versions, onClose, onRestore, onCreateBaseline }) => {
+export const VersionHistory: React.FC<VersionHistoryProps> = ({ isOpen, baselines, onClose, onCreateBaseline }) => {
     const [isCreatingBaseline, setIsCreatingBaseline] = useState(false);
-    const [filter, setFilter] = useState<'all' | 'baseline'>('all');
 
-    // Calculate the next baseline number (1.0, 2.0, 3.0...)
-    const nextBaselineNumber = useMemo(() => {
-        const baselineVersions = versions.filter(v => v.type === 'baseline');
-        return `${baselineVersions.length + 1}.0`;
-    }, [versions]);
+    // Default name generation
+    const nextBaselineNumber = `v${baselines.length + 1} .0`;
 
     const [baselineName, setBaselineName] = useState(nextBaselineNumber);
+    const [baselineMessage, setBaselineMessage] = useState('');
 
     // Update default name when modal opens for creating
     const handleStartCreating = () => {
-        setBaselineName(nextBaselineNumber);
+        setBaselineName(`v${baselines.length + 1} .0`);
+        setBaselineMessage('');
         setIsCreatingBaseline(true);
     };
 
     if (!isOpen) return null;
 
-    const handleRestore = (versionId: string) => {
-        if (confirm('Are you sure you want to restore this version? Current unsaved changes will be lost.')) {
-            onRestore(versionId);
-            onClose();
-        }
-    };
-
     const handleCreateBaselineSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (baselineName.trim()) {
-            onCreateBaseline(baselineName.trim());
+            onCreateBaseline(baselineName.trim(), baselineMessage.trim() || `Baseline ${baselineName.trim()} `);
             setBaselineName('');
+            setBaselineMessage('');
             setIsCreatingBaseline(false);
         }
     };
-
-    const filteredVersions = filter === 'all'
-        ? versions
-        : versions.filter(v => v.type === 'baseline');
 
     return (
         <div style={{
@@ -85,7 +73,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({ isOpen, versions
                 }}>
                     <h3 style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Clock size={20} />
-                        Version History
+                        Baselines & History
                     </h3>
                     <button
                         onClick={onClose}
@@ -104,45 +92,10 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({ isOpen, versions
                     padding: 'var(--spacing-md)',
                     borderBottom: '1px solid var(--color-border)',
                     display: 'flex',
-                    justifyContent: 'space-between',
+                    justifyContent: 'flex-end',
                     alignItems: 'center',
                     gap: '16px'
                 }}>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                            onClick={() => setFilter('all')}
-                            style={{
-                                padding: '6px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid var(--color-border)',
-                                backgroundColor: filter === 'all' ? 'var(--color-accent)' : 'transparent',
-                                color: filter === 'all' ? 'white' : 'var(--color-text-primary)',
-                                cursor: 'pointer',
-                                fontSize: '0.875rem'
-                            }}
-                        >
-                            All History
-                        </button>
-                        <button
-                            onClick={() => setFilter('baseline')}
-                            style={{
-                                padding: '6px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid var(--color-border)',
-                                backgroundColor: filter === 'baseline' ? 'var(--color-accent)' : 'transparent',
-                                color: filter === 'baseline' ? 'white' : 'var(--color-text-primary)',
-                                cursor: 'pointer',
-                                fontSize: '0.875rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                            }}
-                        >
-                            <Tag size={14} />
-                            Baselines Only
-                        </button>
-                    </div>
-
                     {!isCreatingBaseline ? (
                         <button
                             onClick={handleStartCreating}
@@ -164,13 +117,28 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({ isOpen, versions
                             Create Baseline
                         </button>
                     ) : (
-                        <form onSubmit={handleCreateBaselineSubmit} style={{ display: 'flex', gap: '8px' }}>
+                        <form onSubmit={handleCreateBaselineSubmit} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                             <input
                                 type="text"
                                 value={baselineName}
                                 onChange={(e) => setBaselineName(e.target.value)}
-                                placeholder="Baseline Name (e.g. v1.0)"
+                                placeholder="Name (e.g. v1.0)"
                                 autoFocus
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--color-border)',
+                                    backgroundColor: 'var(--color-bg-app)',
+                                    color: 'var(--color-text-primary)',
+                                    fontSize: '0.875rem',
+                                    width: '120px'
+                                }}
+                            />
+                            <input
+                                type="text"
+                                value={baselineMessage}
+                                onChange={(e) => setBaselineMessage(e.target.value)}
+                                placeholder="Description (optional)"
                                 style={{
                                     padding: '6px 12px',
                                     borderRadius: '6px',
@@ -224,28 +192,26 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({ isOpen, versions
                     overflow: 'auto',
                     padding: 'var(--spacing-md)'
                 }}>
-                    {filteredVersions.length === 0 ? (
+                    {baselines.length === 0 ? (
                         <div style={{
                             textAlign: 'center',
                             padding: 'var(--spacing-xl)',
                             color: 'var(--color-text-muted)'
                         }}>
-                            <Clock size={48} style={{ opacity: 0.5, marginBottom: '12px' }} />
-                            <p>No history found.</p>
+                            <Tag size={48} style={{ opacity: 0.5, marginBottom: '12px' }} />
+                            <p>No baselines found.</p>
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {filteredVersions.map((version, index) => (
+                            {baselines.map((baseline) => (
                                 <div
-                                    key={version.id}
+                                    key={baseline.id}
                                     style={{
                                         padding: 'var(--spacing-md)',
                                         borderRadius: '6px',
                                         border: '1px solid var(--color-border)',
-                                        backgroundColor: version.type === 'baseline'
-                                            ? 'rgba(16, 185, 129, 0.05)'
-                                            : (index === 0 && filter === 'all' ? 'rgba(99, 102, 241, 0.05)' : 'var(--color-bg-app)'),
-                                        borderColor: version.type === 'baseline' ? 'var(--color-success)' : 'var(--color-border)',
+                                        backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                                        borderColor: 'var(--color-success)',
                                         transition: 'background-color 0.2s'
                                     }}
                                 >
@@ -264,72 +230,37 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({ isOpen, versions
                                                 alignItems: 'center',
                                                 gap: '8px'
                                             }}>
-                                                {formatDateTime(version.timestamp)}
-                                                {version.type === 'baseline' && (
-                                                    <span style={{
-                                                        padding: '2px 8px',
-                                                        borderRadius: '12px',
-                                                        backgroundColor: 'var(--color-success)',
-                                                        color: 'white',
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 500,
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '4px'
-                                                    }}>
-                                                        <Tag size={10} />
-                                                        {version.tag || 'Baseline'}
-                                                    </span>
-                                                )}
-                                                {index === 0 && filter === 'all' && (
-                                                    <span style={{
-                                                        padding: '2px 8px',
-                                                        borderRadius: '12px',
-                                                        backgroundColor: 'var(--color-accent)',
-                                                        color: 'white',
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 500
-                                                    }}>
-                                                        Current
-                                                    </span>
-                                                )}
+                                                {formatDateTime(baseline.timestamp)}
+                                                <span style={{
+                                                    padding: '2px 8px',
+                                                    borderRadius: '12px',
+                                                    backgroundColor: 'var(--color-success)',
+                                                    color: 'white',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 500,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px'
+                                                }}>
+                                                    <Tag size={10} />
+                                                    {baseline.version}
+                                                </span>
                                             </div>
                                             <div style={{
                                                 fontWeight: 500,
                                                 color: 'var(--color-text-primary)'
                                             }}>
-                                                {version.message}
-                                            </div>
-                                            <div style={{
-                                                fontSize: '0.75rem',
-                                                color: 'var(--color-text-muted)',
-                                                marginTop: '4px'
-                                            }}>
-                                                {version.data.requirements.length} requirements, {version.data.useCases.length} use cases, {version.data.links.length} links
+                                                {baseline.description || baseline.name}
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={() => handleRestore(version.id)}
-                                            style={{
-                                                padding: '6px 12px',
-                                                borderRadius: '6px',
-                                                border: '1px solid var(--color-border)',
-                                                backgroundColor: 'transparent',
-                                                color: 'var(--color-accent)',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '6px',
-                                                fontSize: '0.875rem',
-                                                fontWeight: 500,
-                                                transition: 'background-color 0.2s'
-                                            }}
-                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.1)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        {/* Restore button disabled for now as it requires complex git checkout logic */}
+                                        {/* <button
+                                            onClick={() => handleRestore(baseline.id)}
+                                            style={{ ... }}
                                         >
                                             <RotateCcw size={14} />
                                             Restore
-                                        </button>
+                                        </button> */}
                                     </div>
                                 </div>
                             ))}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { gitService, type CommitInfo } from '../services/gitService';
+import { useFileSystem } from '../app/providers/FileSystemProvider';
+import type { CommitInfo } from '../services/realGitService';
 import { formatDateTime } from '../utils/dateUtils';
 
 interface RevisionHistoryTabProps {
@@ -10,12 +11,15 @@ interface RevisionHistoryTabProps {
 export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({ artifactId, artifactType }) => {
     const [history, setHistory] = useState<CommitInfo[]>([]);
     const [loading, setLoading] = useState(true);
+    const { getArtifactHistory, isReady } = useFileSystem();
 
     useEffect(() => {
         const loadHistory = async () => {
+            if (!isReady) return;
+
             setLoading(true);
             try {
-                const commits = await gitService.getArtifactHistory(artifactType, artifactId);
+                const commits = await getArtifactHistory(artifactType, artifactId);
                 setHistory(commits);
             } catch (error) {
                 console.error('Failed to load history:', error);
@@ -24,12 +28,12 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({ artifact
             }
         };
 
-        if (artifactId) {
+        if (artifactId && isReady) {
             loadHistory();
         } else {
             setLoading(false);
         }
-    }, [artifactId, artifactType]);
+    }, [artifactId, artifactType, getArtifactHistory, isReady]);
 
     if (loading) {
         return <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>Loading history...</div>;

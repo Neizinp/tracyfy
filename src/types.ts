@@ -106,20 +106,7 @@ export interface GlobalState {
   links: Link[];
 }
 
-export interface Version {
-  id: string;
-  timestamp: number;
-  message: string;
-  type: 'auto-save' | 'baseline';
-  tag?: string;
-  data: {
-    requirements: Requirement[];
-    useCases: UseCase[];
-    links: Link[];
-    testCases: TestCase[];
-    information: Information[];
-  };
-}
+
 
 export interface ColumnVisibility {
   idTitle: boolean;       // Always true, not user-configurable
@@ -162,6 +149,13 @@ export interface ArtifactChange {
 
 export interface ArtifactRevision {
   commitHash: string;
+  message: string;
+  author: string;
+  timestamp: number;
+}
+
+export interface CommitInfo {
+  hash: string;
   message: string;
   author: string;
   timestamp: number;

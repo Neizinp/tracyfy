@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Project } from '../types';
-import { gitService } from '../services/gitService';
 import { loadProjects, PROJECTS_KEY, CURRENT_PROJECT_KEY } from '../utils/appInitialization';
 
 export const useProjectManager = () => {
@@ -16,12 +15,7 @@ export const useProjectManager = () => {
         const initializeApp = async () => {
             setIsLoading(true);
             try {
-                // Run migration to global artifacts storage
-                await gitService.migrateToGlobalArtifacts();
-
-                await gitService.init();
-                console.log('Git service initialized');
-
+                // Load projects from local storage or defaults
                 const { projects: initialProjects, currentProjectId: initialCurrentId, globalState } = loadProjects();
                 setProjects(initialProjects);
                 setCurrentProjectId(initialCurrentId);
@@ -71,12 +65,8 @@ export const useProjectManager = () => {
         };
 
         // Initialize git repository for the new project
-        try {
-            await gitService.initProject(newProject.name);
-            console.log(`Initialized git repository for project: ${newProject.name}`);
-        } catch (error) {
-            console.error('Failed to initialize git repository:', error);
-        }
+        // Note: With FileSystemProvider, we don't need to explicitly init a repo per project
+        // as we use the selected directory as the root.
 
         setProjects(prev => [...prev, newProject]);
         handleSwitchProject(newProject.id);
@@ -116,8 +106,7 @@ export const useProjectManager = () => {
             return;
         }
 
-        // Clear Git/FileSystem data
-        await gitService.clearData();
+        // Clear Git/FileSystem data - Not applicable for FileSystemProvider (user controlled)
 
         // Clear all storage
         localStorage.clear();

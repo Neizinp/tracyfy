@@ -1,19 +1,17 @@
-import type { Requirement, Link, Project } from '../types';
+import type { Requirement, Link } from '../types';
 import { generateNextReqId } from '../utils/idGenerationUtils';
 import { incrementRevision } from '../utils/revisionUtils';
-import { gitService } from '../services/gitService';
 
 interface UseRequirementsProps {
     requirements: Requirement[];
     setRequirements: (reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])) => void;
     usedReqNumbers: Set<number>;
     setUsedReqNumbers: (nums: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
-    links: Link[];
     setLinks: (links: Link[] | ((prev: Link[]) => Link[])) => void;
-    projects: Project[];
-    currentProjectId: string;
     setIsEditModalOpen: (open: boolean) => void;
     setEditingRequirement: (req: Requirement | null) => void;
+    saveArtifact: (type: 'requirements', id: string, artifact: Requirement) => Promise<void>;
+    deleteArtifact: (type: 'requirements', id: string) => Promise<void>;
 }
 
 export function useRequirements({
@@ -21,12 +19,11 @@ export function useRequirements({
     setRequirements,
     usedReqNumbers,
     setUsedReqNumbers,
-    links,
     setLinks,
-    projects,
-    currentProjectId,
     setIsEditModalOpen,
-    setEditingRequirement
+    setEditingRequirement,
+    saveArtifact,
+    deleteArtifact
 }: UseRequirementsProps) {
 
     const handleAddRequirement = async (newReqData: Omit<Requirement, 'id' | 'lastModified'>) => {
@@ -43,14 +40,11 @@ export function useRequirements({
         setUsedReqNumbers(prev => new Set(prev).add(idNumber));
         setRequirements([...requirements, newRequirement]);
 
-        // Save to git repository to make it appear in Pending Changes
+        // Save to filesystem
         try {
-            const project = projects.find(p => p.id === currentProjectId);
-            if (project) {
-                await gitService.saveArtifact('requirements', newRequirement);
-            }
+            await saveArtifact('requirements', newRequirement.id, newRequirement);
         } catch (error) {
-            console.error('Failed to save requirement to git:', error);
+            console.error('Failed to save requirement:', error);
         }
     };
 
@@ -74,28 +68,25 @@ export function useRequirements({
         setIsEditModalOpen(false);
         setEditingRequirement(null);
 
-        // Save to git repository to make it appear in Pending Changes
+        // Save to filesystem
         try {
-            const project = projects.find(p => p.id === currentProjectId);
-            if (project) {
-                await gitService.saveArtifact('requirements', finalRequirement);
-                await gitService.commitArtifact(
-                    'requirements',
-                    finalRequirement.id,
-                    `Update requirement ${finalRequirement.id}: ${finalRequirement.title} (Rev ${newRevision})`
-                );
-            }
+            await saveArtifact('requirements', finalRequirement.id, finalRequirement);
         } catch (error) {
-            console.error('Failed to save requirement to git:', error);
+            console.error('Failed to save requirement:', error);
         }
     };
 
     const handleDeleteRequirement = (id: string) => {
         // Soft delete: Mark as deleted instead of removing
+        const updatedReq = requirements.find(req => req.id === id);
+        if (!updatedReq) return;
+
+        const deletedReq = { ...updatedReq, isDeleted: true, deletedAt: Date.now() };
+
         setRequirements(prev =>
             prev.map(req =>
                 req.id === id
-                    ? { ...req, isDeleted: true, deletedAt: Date.now() }
+                    ? deletedReq
                     : req
             )
         );
@@ -103,15 +94,31 @@ export function useRequirements({
         // Close modal if open
         setIsEditModalOpen(false);
         setEditingRequirement(null);
+
+        // Save the soft-deleted state to filesystem
+        // We still save it because soft-delete is just a state change
+        saveArtifact('requirements', id, deletedReq).catch(err =>
+            console.error('Failed to save deleted requirement:', err)
+        );
     };
 
     const handleRestoreRequirement = (id: string) => {
+        const updatedReq = requirements.find(req => req.id === id);
+        if (!updatedReq) return;
+
+        const restoredReq = { ...updatedReq, isDeleted: false, deletedAt: undefined };
+
         setRequirements(prev =>
             prev.map(req =>
                 req.id === id
-                    ? { ...req, isDeleted: false, deletedAt: undefined }
+                    ? restoredReq
                     : req
             )
+        );
+
+        // Save restored state
+        saveArtifact('requirements', id, restoredReq).catch(err =>
+            console.error('Failed to save restored requirement:', err)
         );
     };
 
@@ -127,6 +134,11 @@ export function useRequirements({
                 }))
         );
         setLinks(prev => prev.filter(link => link.sourceId !== id && link.targetId !== id));
+
+        // Delete from filesystem
+        deleteArtifact('requirements', id).catch(err =>
+            console.error('Failed to delete requirement:', err)
+        );
     };
 
     return {

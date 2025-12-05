@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import type { Requirement, UseCase, TestCase, Information, Link, Project, Version } from '../types';
+import type { Requirement, UseCase, TestCase, Information, Project } from '../types';
 import { useSensor, useSensors, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
 import type { DragStartEvent, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { createVersionSnapshot as createVersion } from '../utils/versionManagement';
-import { gitService } from '../services/gitService';
 
 interface UseDragAndDropProps {
     requirements: Requirement[];
@@ -14,14 +12,8 @@ interface UseDragAndDropProps {
     globalTestCases: TestCase[];
     globalInformation: Information[];
     globalLibrarySelection: Set<string>;
-    useCases: UseCase[];
-    testCases: TestCase[];
-    information: Information[];
-    links: Link[];
     currentProjectId: string;
-    projects: Project[];
     setProjects: (projects: Project[] | ((prev: Project[]) => Project[])) => void;
-    setVersions: (versions: Version[] | ((prev: Version[]) => Version[])) => void;
     handleAddToProject: (artifacts: any, targetProjectId: string) => void;
 }
 
@@ -33,14 +25,8 @@ export function useDragAndDrop({
     globalTestCases,
     globalInformation,
     globalLibrarySelection,
-    useCases,
-    testCases,
-    information,
-    links,
     currentProjectId,
-    projects,
     setProjects,
-    setVersions,
     handleAddToProject
 }: UseDragAndDropProps) {
 
@@ -132,19 +118,6 @@ export function useDragAndDrop({
                         : p
                 ));
 
-                const newVersion = await createVersion(
-                    currentProjectId,
-                    projects.find(p => p.id === currentProjectId)?.name || 'Unknown Project',
-                    `Imported ${reqId} via drag-and-drop`,
-                    'auto-save',
-                    requirements,
-                    useCases,
-                    testCases,
-                    information,
-                    links,
-                    gitService
-                );
-                setVersions(prev => [newVersion, ...prev].slice(0, 50));
                 console.log(`Successfully imported ${reqId}`);
             }
             return;

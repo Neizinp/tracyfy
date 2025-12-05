@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FileText, GitCommit, Plus, Minus, Edit, Calendar, User } from 'lucide-react';
 import type { ProjectBaseline, ArtifactRevision } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
+import { realGitService } from '../services/realGitService';
 
 interface BaselineRevisionHistoryProps {
     currentBaseline: ProjectBaseline;
@@ -32,8 +33,6 @@ export function BaselineRevisionHistory({
         const loadRevisionHistory = async () => {
             setLoading(true);
             try {
-                const { gitService } = await import('../services/gitService');
-
                 // Determine added and removed artifacts
                 const added = currentBaseline.addedArtifacts || [];
                 const removed = currentBaseline.removedArtifacts || [];
@@ -50,30 +49,34 @@ export function BaselineRevisionHistory({
 
                         if (prevInfo && prevInfo.commitHash !== currentInfo.commitHash) {
                             // Artifact was modified - get its revision history
-                            // Map type to match gitService parameter format
-                            const typeParam = currentInfo.type === 'requirement' ? 'requirements' :
-                                currentInfo.type === 'usecase' ? 'usecases' :
-                                    currentInfo.type === 'testcase' ? 'testcases' : 'information';
+                            let folder = '';
+                            if (currentInfo.type === 'requirement') folder = 'requirements';
+                            else if (currentInfo.type === 'usecase') folder = 'usecases';
+                            else if (currentInfo.type === 'testcase') folder = 'testcases';
+                            else if (currentInfo.type === 'information') folder = 'information';
 
-                            const history = await gitService.getArtifactHistory(
-                                typeParam as 'requirements' | 'usecases' | 'testcases' | 'information',
-                                artifactId
-                            );
+                            if (folder) {
+                                try {
+                                    const history = await realGitService.getHistory(`${folder}/${artifactId}.json`);
 
-                            // Convert CommitInfo to ArtifactRevision format
-                            const relevantRevisions: ArtifactRevision[] = history.map(commit => ({
-                                commitHash: commit.hash,
-                                message: commit.message,
-                                author: commit.author,
-                                timestamp: commit.timestamp
-                            }));
+                                    // Convert CommitInfo to ArtifactRevision format
+                                    const relevantRevisions: ArtifactRevision[] = history.map(commit => ({
+                                        commitHash: commit.hash,
+                                        message: commit.message,
+                                        author: commit.author,
+                                        timestamp: commit.timestamp
+                                    }));
 
-                            modified.push({
-                                id: artifactId,
-                                type: currentInfo.type,
-                                commitHash: currentInfo.commitHash,
-                                revisions: relevantRevisions.slice(0, 5) // Show latest 5 commits
-                            });
+                                    modified.push({
+                                        id: artifactId,
+                                        type: currentInfo.type,
+                                        commitHash: currentInfo.commitHash,
+                                        revisions: relevantRevisions.slice(0, 5) // Show latest 5 commits
+                                    });
+                                } catch (err) {
+                                    console.error(`Failed to fetch history for ${artifactId}`, err);
+                                }
+                            }
                         }
                     }
                 }

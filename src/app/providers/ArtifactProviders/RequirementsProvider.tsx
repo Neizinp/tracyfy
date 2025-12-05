@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useCallback } from 'react';
+import React, { createContext, useContext, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useRequirements as useRequirementsHook } from '../../../hooks/useRequirements';
 import { useGlobalState } from '../GlobalStateProvider';
-import { useProject } from '../ProjectProvider';
+
 import { useUI } from '../UIProvider';
+import { useFileSystem } from '../FileSystemProvider';
 import type { Requirement, Link } from '../../../types';
 
 interface RequirementsContextValue {
@@ -30,20 +31,36 @@ const RequirementsContext = createContext<RequirementsContextValue | undefined>(
 
 export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { requirements, setRequirements, links, setLinks, usedReqNumbers, setUsedReqNumbers } = useGlobalState();
-    const { projects, currentProjectId } = useProject();
     const { setEditingRequirement, setIsEditRequirementModalOpen, setLinkSourceId, setIsLinkModalOpen, setSelectedRequirementId } = useUI();
+    const { saveArtifact, deleteArtifact, loadedData, isReady } = useFileSystem();
+
+    // Sync loaded data from filesystem
+    useEffect(() => {
+        if (isReady && loadedData && loadedData.requirements) {
+            setRequirements(loadedData.requirements);
+
+            // Update used numbers
+            const used = new Set<number>();
+            loadedData.requirements.forEach(req => {
+                const match = req.id.match(/-(\d+)$/);
+                if (match) {
+                    used.add(parseInt(match[1], 10));
+                }
+            });
+            setUsedReqNumbers(used);
+        }
+    }, [isReady, loadedData, setRequirements, setUsedReqNumbers]);
 
     const requirementsHook = useRequirementsHook({
         requirements,
         setRequirements,
         usedReqNumbers,
         setUsedReqNumbers,
-        links,
         setLinks,
-        projects,
-        currentProjectId,
         setIsEditModalOpen: setIsEditRequirementModalOpen,
-        setEditingRequirement
+        setEditingRequirement,
+        saveArtifact,
+        deleteArtifact
     });
 
     const handleEdit = useCallback((req: Requirement) => {

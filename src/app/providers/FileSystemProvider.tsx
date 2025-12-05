@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { fileSystemService } from '../../services/fileSystemService';
-import { realGitService } from '../../services/realGitService';
-import type { Requirement, UseCase, TestCase, Information } from '../../types';
+import { realGitService, type FileStatus, type CommitInfo } from '../../services/realGitService';
+import type { Requirement, UseCase, TestCase, Information, ProjectBaseline } from '../../types';
 
 interface FileSystemContextValue {
     isReady: boolean;
@@ -15,16 +15,22 @@ interface FileSystemContextValue {
         testCases: TestCase[];
         information: Information[];
     } | null;
+    pendingChanges: FileStatus[];
+    refreshStatus: () => Promise<void>;
     saveArtifact: (
         type: 'requirements' | 'usecases' | 'testcases' | 'information',
         id: string,
-        artifact: Requirement | UseCase | TestCase | Information,
-        isNew: boolean
+        artifact: Requirement | UseCase | TestCase | Information
     ) => Promise<void>;
     deleteArtifact: (
         type: 'requirements' | 'usecases' | 'testcases' | 'information',
         id: string
     ) => Promise<void>;
+    commitFile: (filepath: string, message: string) => Promise<void>;
+    getArtifactHistory: (type: 'requirements' | 'usecases' | 'testcases' | 'information', id: string) => Promise<CommitInfo[]>;
+    baselines: ProjectBaseline[];
+    createBaseline: (name: string, message: string) => Promise<void>;
+    refreshBaselines: () => Promise<void>;
 }
 
 const FileSystemContext = createContext<FileSystemContextValue | undefined>(undefined);
@@ -35,6 +41,33 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const [directoryName, setDirectoryName] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loadedData, setLoadedData] = useState<FileSystemContextValue['loadedData']>(null);
+    const [pendingChanges, setPendingChanges] = useState<FileStatus[]>([]);
+    const [baselines, setBaselines] = useState<ProjectBaseline[]>([]);
+
+    const refreshStatus = useCallback(async () => {
+        if (realGitService.isInitialized()) {
+            const status = await realGitService.getStatus();
+            setPendingChanges(status);
+        }
+    }, []);
+
+    const refreshBaselines = useCallback(async () => {
+        if (realGitService.isInitialized()) {
+            const tags = await realGitService.getTagsWithDetails();
+            const projectBaselines: ProjectBaseline[] = tags.map(tag => ({
+                id: tag.name,
+                projectId: 'global', // Filesystem is global
+                version: tag.name,
+                name: tag.name,
+                description: tag.message,
+                timestamp: tag.timestamp,
+                artifactCommits: {}, // TODO: Populate if needed
+                addedArtifacts: [],
+                removedArtifacts: []
+            }));
+            setBaselines(projectBaselines);
+        }
+    }, []);
 
     // Try to restore previously selected directory on mount
     useEffect(() => {
@@ -56,6 +89,25 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
                         // Load data from disk
                         const data = await realGitService.loadAllArtifacts();
                         setLoadedData(data);
+
+                        // Load status
+                        const status = await realGitService.getStatus();
+                        setPendingChanges(status);
+
+                        // Load baselines
+                        const tags = await realGitService.getTagsWithDetails();
+                        setBaselines(tags.map(tag => ({
+                            id: tag.name,
+                            projectId: 'global',
+                            version: tag.name,
+                            name: tag.name,
+                            description: tag.message,
+                            timestamp: tag.timestamp,
+                            artifactCommits: {},
+                            addedArtifacts: [],
+                            removedArtifacts: []
+                        })));
+
                         setIsReady(true);
                     }
                 }
@@ -89,6 +141,25 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             // Load existing data
             const data = await realGitService.loadAllArtifacts();
             setLoadedData(data);
+
+            // Load status
+            const status = await realGitService.getStatus();
+            setPendingChanges(status);
+
+            // Load baselines
+            const tags = await realGitService.getTagsWithDetails();
+            setBaselines(tags.map(tag => ({
+                id: tag.name,
+                projectId: 'global',
+                version: tag.name,
+                name: tag.name,
+                description: tag.message,
+                timestamp: tag.timestamp,
+                artifactCommits: {},
+                addedArtifacts: [],
+                removedArtifacts: []
+            })));
+
             setIsReady(true);
         } catch (err) {
             setError((err as Error).message);
@@ -100,14 +171,14 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const saveArtifact = useCallback(async (
         type: 'requirements' | 'usecases' | 'testcases' | 'information',
         id: string,
-        artifact: Requirement | UseCase | TestCase | Information,
-        isNew: boolean
+        artifact: Requirement | UseCase | TestCase | Information
     ) => {
         if (!isReady) {
             throw new Error('Filesystem not ready');
         }
-        await realGitService.saveArtifact(type, id, artifact, isNew);
-    }, [isReady]);
+        await realGitService.saveArtifact(type, id, artifact);
+        await refreshStatus();
+    }, [isReady, refreshStatus]);
 
     const deleteArtifact = useCallback(async (
         type: 'requirements' | 'usecases' | 'testcases' | 'information',
@@ -117,7 +188,32 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             throw new Error('Filesystem not ready');
         }
         await realGitService.deleteArtifact(type, id);
+        await refreshStatus();
+    }, [isReady, refreshStatus]);
+
+    const commitFile = useCallback(async (filepath: string, message: string) => {
+        if (!isReady) {
+            throw new Error('Filesystem not ready');
+        }
+        await realGitService.commitFile(filepath, message);
+        await refreshStatus();
+    }, [isReady, refreshStatus]);
+
+    const getArtifactHistory = useCallback(async (
+        type: 'requirements' | 'usecases' | 'testcases' | 'information',
+        id: string
+    ) => {
+        if (!isReady) return [];
+        return await realGitService.getHistory(`${type}/${id}.md`);
     }, [isReady]);
+
+    const createBaseline = useCallback(async (name: string, message: string) => {
+        if (!isReady) {
+            throw new Error('Filesystem not ready');
+        }
+        await realGitService.createTag(name, message);
+        await refreshBaselines();
+    }, [isReady, refreshBaselines]);
 
     return (
         <FileSystemContext.Provider value={{
@@ -127,8 +223,15 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             error,
             selectDirectory,
             loadedData,
+            pendingChanges,
+            refreshStatus,
             saveArtifact,
-            deleteArtifact
+            deleteArtifact,
+            commitFile,
+            getArtifactHistory,
+            baselines,
+            createBaseline,
+            refreshBaselines
         }}>
             {children}
         </FileSystemContext.Provider>

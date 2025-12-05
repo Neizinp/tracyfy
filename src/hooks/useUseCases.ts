@@ -1,7 +1,6 @@
-import type { UseCase, Requirement, Project } from '../types';
+import type { UseCase, Requirement } from '../types';
 import { generateNextUcId } from '../utils/idGenerationUtils';
 import { incrementRevision } from '../utils/revisionUtils';
-import { gitService } from '../services/gitService';
 
 interface UseUseCasesProps {
     useCases: UseCase[];
@@ -10,10 +9,11 @@ interface UseUseCasesProps {
     setUsedUcNumbers: (nums: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
     requirements: Requirement[];
     setRequirements: (reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])) => void;
-    projects: Project[];
-    currentProjectId: string;
+
     setIsUseCaseModalOpen: (open: boolean) => void;
     setEditingUseCase: (uc: UseCase | null) => void;
+    saveArtifact: (type: 'usecases', id: string, artifact: UseCase) => Promise<void>;
+    deleteArtifact: (type: 'usecases', id: string) => Promise<void>;
 }
 
 export function useUseCases({
@@ -23,10 +23,10 @@ export function useUseCases({
     setUsedUcNumbers,
     requirements,
     setRequirements,
-    projects,
-    currentProjectId,
     setIsUseCaseModalOpen,
-    setEditingUseCase
+    setEditingUseCase,
+    saveArtifact,
+    deleteArtifact
 }: UseUseCasesProps) {
 
     const handleAddUseCase = async (data: Omit<UseCase, 'id' | 'lastModified'> | { id: string; updates: Partial<UseCase> }) => {
@@ -67,20 +67,12 @@ export function useUseCases({
         }
         setIsUseCaseModalOpen(false);
 
-        // Save to git repository to make it appear in Pending Changes
+        // Save to filesystem
         if (savedUseCase) {
             try {
-                const project = projects.find(p => p.id === currentProjectId);
-                if (project) {
-                    await gitService.saveArtifact('usecases', savedUseCase);
-                    await gitService.commitArtifact(
-                        'usecases',
-                        savedUseCase.id,
-                        `Update use case ${savedUseCase.id}: ${savedUseCase.title} (Rev ${savedUseCase.revision})`
-                    );
-                }
+                await saveArtifact('usecases', savedUseCase.id, savedUseCase);
             } catch (error) {
-                console.error('Failed to save use case to git:', error);
+                console.error('Failed to save use case:', error);
             }
         }
     };
@@ -92,7 +84,14 @@ export function useUseCases({
 
     const handleDeleteUseCase = (id: string) => {
         if (confirm('Are you sure you want to delete this use case? Requirements linked to it will not be deleted.')) {
-            setUseCases(useCases.filter(uc => uc.id !== id));
+            const updatedUseCase = useCases.find(uc => uc.id === id);
+            if (!updatedUseCase) return;
+
+            // Soft delete
+            const deletedUseCase = { ...updatedUseCase, isDeleted: true, deletedAt: Date.now() };
+
+            setUseCases(prev => prev.map(uc => uc.id === id ? deletedUseCase : uc));
+
             // Remove use case references from requirements
             setRequirements(requirements.map(req => ({
                 ...req,
@@ -100,21 +99,41 @@ export function useUseCases({
                 lastModified: Date.now(),
                 revision: req.useCaseIds?.includes(id) ? incrementRevision(req.revision || "01") : req.revision
             })));
+
+            // Save soft deleted state
+            saveArtifact('usecases', id, deletedUseCase).catch(err =>
+                console.error('Failed to save deleted use case:', err)
+            );
         }
     };
 
     const handleRestoreUseCase = (id: string) => {
+        const updatedUseCase = useCases.find(uc => uc.id === id);
+        if (!updatedUseCase) return;
+
+        const restoredUseCase = { ...updatedUseCase, isDeleted: false, deletedAt: undefined };
+
         setUseCases(prev =>
             prev.map(uc =>
                 uc.id === id
-                    ? { ...uc, isDeleted: false, deletedAt: undefined }
+                    ? restoredUseCase
                     : uc
             )
+        );
+
+        // Save restored state
+        saveArtifact('usecases', id, restoredUseCase).catch(err =>
+            console.error('Failed to save restored use case:', err)
         );
     };
 
     const handlePermanentDeleteUseCase = (id: string) => {
         setUseCases(prev => prev.filter(uc => uc.id !== id));
+
+        // Delete from filesystem
+        deleteArtifact('usecases', id).catch(err =>
+            console.error('Failed to delete use case:', err)
+        );
     };
 
     return {

@@ -8,7 +8,6 @@ import {
     UseCasesProvider,
     TestCasesProvider,
     InformationProvider,
-    GitProvider,
     DragDropProvider,
     ImportExportProvider,
     FileSystemProvider
@@ -24,13 +23,11 @@ export const AppProviders: React.FC<{ children: ReactNode }> = ({ children }) =>
                             <UseCasesProvider>
                                 <TestCasesProvider>
                                     <InformationProvider>
-                                        <GitProvider>
-                                            <DragDropProvider>
-                                                <ImportExportProvider>
-                                                    {children}
-                                                </ImportExportProvider>
-                                            </DragDropProvider>
-                                        </GitProvider>
+                                        <DragDropProvider>
+                                            <ImportExportProvider>
+                                                {children}
+                                            </ImportExportProvider>
+                                        </DragDropProvider>
                                     </InformationProvider>
                                 </TestCasesProvider>
                             </UseCasesProvider>
