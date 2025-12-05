@@ -17,14 +17,7 @@ test('basic project and requirement flow', async ({ page }) => {
   // Verify project is created and active
   await expect(page.getByText('E2E Test Project').first()).toBeVisible();
 
-  // Close project manager
-  // The project manager closes automatically on create, or we might need to close it if we just switched?
-  // In ProjectManager.tsx: onCreateProject calls setIsCreating(false) but doesn't close the modal?
-  // Wait, ProjectManager is a modal.
-  // In App.tsx: handleCreateProjectSubmit calls setIsCreateProjectModalOpen(false).
-  // So it should close automatically.
-
-  // Create a new requirement
+  // Create a new requirement (goes to global repository)
   await page.click('button:has-text("Create New")');
   await page.click('button:has-text("New Requirement")');
 
@@ -34,6 +27,9 @@ test('basic project and requirement flow', async ({ page }) => {
     .fill('This is a test requirement');
   await page.click('button:has-text("Create Requirement")');
 
-  // Verify requirement is in the list
+  // Open the global repository to see the requirement
+  await page.click('button:has-text("Requirements")'); // In the Repository section
+
+  // Verify requirement is in the global repository
   await expect(page.locator('text=E2E Requirement')).toBeVisible();
 });

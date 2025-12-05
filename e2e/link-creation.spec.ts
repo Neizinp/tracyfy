@@ -28,9 +28,6 @@ test('link creation and traceability', async ({ page }) => {
     .fill('This is the source requirement');
   await page.click('button:has-text("Create Requirement")');
 
-  // Wait for requirement to appear in tree
-  await expect(page.getByText('Source Requirement').first()).toBeVisible();
-
   // 3. Create Second Requirement
   await page.click('button:has-text("Create New")');
   await page.click('button:has-text("New Requirement")');
@@ -41,6 +38,9 @@ test('link creation and traceability', async ({ page }) => {
     .fill('This is the target requirement');
   await page.click('button:has-text("Create Requirement")');
 
+  // Open global repository to verify requirements were created
+  await page.click('button:has-text("Requirements")'); // In Repository section
+  await expect(page.getByText('Source Requirement').first()).toBeVisible();
   await expect(page.getByText('Target Requirement').first()).toBeVisible();
 
   // Test passes on requirement creation - link and traceability simplified

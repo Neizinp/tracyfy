@@ -288,6 +288,28 @@ class FileSystemService {
   }
 
   /**
+   * List all entries (files AND directories) in a directory
+   */
+  async listEntries(path: string): Promise<string[]> {
+    if (!this.directoryHandle) {
+      throw new Error('No directory selected');
+    }
+
+    try {
+      const dir = await this.getOrCreateDirectory(path);
+      const entries: string[] = [];
+
+      for await (const [name] of dir.entries()) {
+        entries.push(name);
+      }
+
+      return entries;
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * Get the current directory path name
    */
   getDirectoryName(): string | null {

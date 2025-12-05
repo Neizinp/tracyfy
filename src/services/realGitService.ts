@@ -76,6 +76,45 @@ const idbStorage = {
       request.onerror = () => reject(request.error);
     });
   },
+  // List all keys that start with a given prefix, returning child names at that level
+  async listDir(prefix: string): Promise<string[]> {
+    return new Promise((resolve) => {
+      const request = indexedDB.open('git-storage', 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains('files')) {
+          db.createObjectStore('files');
+        }
+      };
+      request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction('files', 'readonly');
+        const store = tx.objectStore('files');
+        const getAllKeys = store.getAllKeys();
+        getAllKeys.onsuccess = () => {
+          const allKeys = getAllKeys.result as string[];
+          const normalizedPrefix = prefix.endsWith('/') ? prefix : prefix + '/';
+          const children = new Set<string>();
+
+          for (const key of allKeys) {
+            if (key.startsWith(normalizedPrefix)) {
+              // Get the part after the prefix
+              const remainder = key.slice(normalizedPrefix.length);
+              // Get the first path component (file or directory name)
+              const firstComponent = remainder.split('/')[0];
+              if (firstComponent) {
+                children.add(firstComponent);
+              }
+            }
+          }
+
+          resolve(Array.from(children));
+        };
+        getAllKeys.onerror = () => resolve([]);
+      };
+      request.onerror = () => resolve([]);
+    });
+  },
 };
 
 export interface CommitInfo {
@@ -108,47 +147,9 @@ const gitCache = {
   },
 };
 
-// Store root handle outside the class so isomorphic-git can't access it
-let _rootHandle: FileSystemDirectoryHandle | null = null;
-
 class FSAdapter {
   setRoot(handle: FileSystemDirectoryHandle) {
-    _rootHandle = handle;
     fileSystemService.setDirectoryHandle(handle);
-  }
-
-  private async getHandle(
-    path: string
-  ): Promise<FileSystemDirectoryHandle | FileSystemFileHandle | null> {
-    if (!_rootHandle) return null;
-
-    // Normalize the path
-    const normalizedPath = path.replace(/^\/+/, '').replace(/\/+$/, '');
-    if (!normalizedPath) return _rootHandle;
-
-    const parts = normalizedPath.split('/').filter((p) => p && p !== '.');
-    let current: FileSystemDirectoryHandle = _rootHandle!;
-
-    for (let i = 0; i < parts.length - 1; i++) {
-      try {
-        current = await current.getDirectoryHandle(parts[i]);
-      } catch {
-        return null;
-      }
-    }
-
-    const lastName = parts[parts.length - 1];
-    if (!lastName) return current;
-
-    try {
-      return await current.getFileHandle(lastName);
-    } catch {
-      try {
-        return await current.getDirectoryHandle(lastName);
-      } catch {
-        return null;
-      }
-    }
   }
 
   // isomorphic-git fs interface
@@ -159,24 +160,38 @@ class FSAdapter {
     ): Promise<Uint8Array | string> => {
       const normalizedPath = path.replace(/^\//, '');
 
-      // For .git internal files, read from IndexedDB as binary
+      // For .git internal files, try IndexedDB first, then fall back to filesystem
       if (normalizedPath.startsWith('.git/')) {
-        console.log('[FSAdapter.readFile] Reading from IndexedDB:', normalizedPath);
-        const content = await idbStorage.getItem(normalizedPath);
-        if (content === null) {
-          console.log('[FSAdapter.readFile] NOT FOUND in IndexedDB:', normalizedPath);
-          throw new Error(`ENOENT: no such file or directory, open '${path}'`);
+        console.log('[FSAdapter.readFile] Reading .git file:', normalizedPath);
+
+        // First try IndexedDB
+        const idbContent = await idbStorage.getItem(normalizedPath);
+        if (idbContent !== null) {
+          console.log(
+            '[FSAdapter.readFile] Found in IndexedDB:',
+            normalizedPath,
+            'bytes:',
+            idbContent.length
+          );
+          if (options?.encoding === 'utf8') {
+            return new TextDecoder().decode(idbContent);
+          }
+          return idbContent;
         }
-        console.log(
-          '[FSAdapter.readFile] Found in IndexedDB:',
-          normalizedPath,
-          'bytes:',
-          content.length
-        );
-        if (options?.encoding === 'utf8') {
-          return new TextDecoder().decode(content);
+
+        // Fall back to filesystem (for existing .git directories)
+        console.log('[FSAdapter.readFile] Not in IndexedDB, trying filesystem:', normalizedPath);
+        const fsContent = await fileSystemService.readFile(normalizedPath);
+        if (fsContent !== null) {
+          console.log('[FSAdapter.readFile] Found in filesystem:', normalizedPath);
+          if (options?.encoding === 'utf8') {
+            return fsContent;
+          }
+          return new TextEncoder().encode(fsContent);
         }
-        return content;
+
+        console.log('[FSAdapter.readFile] NOT FOUND anywhere:', normalizedPath);
+        throw new Error(`ENOENT: no such file or directory, open '${path}'`);
       }
 
       const content = await fileSystemService.readFile(normalizedPath);
@@ -272,8 +287,30 @@ class FSAdapter {
     },
 
     readdir: async (path: string): Promise<string[]> => {
-      const normalizedPath = path.replace(/^\//, '');
+      const normalizedPath = path.replace(/^\//, '').replace(/\/$/, '');
       console.log('[FSAdapter.readdir] CALLED for:', normalizedPath);
+
+      // For .git internal directories, check IndexedDB first, then filesystem
+      if (normalizedPath.startsWith('.git') || normalizedPath === '.git') {
+        // Get children from IndexedDB
+        const idbResult = await idbStorage.listDir(normalizedPath);
+        console.log('[FSAdapter.readdir] IndexedDB result for', normalizedPath, ':', idbResult);
+
+        // Also check filesystem for existing .git directories (includes subdirs)
+        let fsResult: string[] = [];
+        try {
+          fsResult = await fileSystemService.listEntries(normalizedPath);
+          console.log('[FSAdapter.readdir] Filesystem result for', normalizedPath, ':', fsResult);
+        } catch {
+          // Filesystem doesn't have this directory
+        }
+
+        // Merge results (unique)
+        const merged = [...new Set([...idbResult, ...fsResult])];
+        console.log('[FSAdapter.readdir] Merged result:', merged);
+        return merged;
+      }
+
       const result = await fileSystemService.listFiles(normalizedPath);
       console.log('[FSAdapter.readdir] Result:', result);
       return result;
@@ -302,14 +339,15 @@ class FSAdapter {
     stat: async (path: string) => {
       const normalizedPath = path.replace(/^\/+/, '');
 
-      // For .git internal files, check IndexedDB first
-      if (normalizedPath.startsWith('.git/')) {
-        const content = await idbStorage.getItem(normalizedPath);
-        if (content !== null) {
+      // For .git internal files, check IndexedDB first, then filesystem
+      if (normalizedPath.startsWith('.git/') || normalizedPath === '.git') {
+        // Check IndexedDB for file
+        const idbContent = await idbStorage.getItem(normalizedPath);
+        if (idbContent !== null) {
           return {
             type: 'file',
             mode: 0o100644,
-            size: content.length,
+            size: idbContent.length,
             ino: 0,
             mtimeMs: Date.now(),
             ctimeMs: Date.now(),
@@ -319,19 +357,61 @@ class FSAdapter {
           };
         }
 
-        // If not in IndexedDB, it might be a directory
-        // For .git directories, just return a directory stat
-        return {
-          type: 'dir',
-          mode: 0o40755,
-          size: 0,
-          ino: 0,
-          mtimeMs: Date.now(),
-          ctimeMs: Date.now(),
-          isFile: () => false,
-          isDirectory: () => true,
-          isSymbolicLink: () => false,
-        };
+        // Check IndexedDB for directory (has children)
+        const idbChildren = await idbStorage.listDir(normalizedPath);
+        if (idbChildren.length > 0 || normalizedPath === '.git') {
+          return {
+            type: 'dir',
+            mode: 0o40755,
+            size: 0,
+            ino: 0,
+            mtimeMs: Date.now(),
+            ctimeMs: Date.now(),
+            isFile: () => false,
+            isDirectory: () => true,
+            isSymbolicLink: () => false,
+          };
+        }
+
+        // Fall back to filesystem for existing .git directories
+        const fsContent = await fileSystemService.readFile(normalizedPath);
+        if (fsContent !== null) {
+          const size = new TextEncoder().encode(fsContent).length;
+          return {
+            type: 'file',
+            mode: 0o100644,
+            size,
+            ino: 0,
+            mtimeMs: Date.now(),
+            ctimeMs: Date.now(),
+            isFile: () => true,
+            isDirectory: () => false,
+            isSymbolicLink: () => false,
+          };
+        }
+
+        // Check if it's a directory on filesystem
+        try {
+          const files = await fileSystemService.listFiles(normalizedPath);
+          if (files.length >= 0) {
+            // listFiles returns [] for empty dirs
+            return {
+              type: 'dir',
+              mode: 0o40755,
+              size: 0,
+              ino: 0,
+              mtimeMs: Date.now(),
+              ctimeMs: Date.now(),
+              isFile: () => false,
+              isDirectory: () => true,
+              isSymbolicLink: () => false,
+            };
+          }
+        } catch {
+          // Not a directory
+        }
+
+        throw new Error(`ENOENT: no such file or directory, stat '${path}'`);
       }
 
       // Try to read as file first
@@ -370,8 +450,9 @@ class FSAdapter {
       }
     },
 
-    lstat: async (path: string) => {
-      return this.promises.stat(path);
+    lstat: function (path: string) {
+      // lstat is the same as stat for us (no symlinks)
+      return this.stat(path);
     },
 
     readlink: async (_path: string): Promise<string> => {
@@ -426,13 +507,32 @@ class RealGitService {
 
       // Initialize git repository
       console.log('[init] Initializing git repository...');
+       
       await git.init({
         fs: fsAdapter,
         dir: this.rootDir,
         defaultBranch: 'main',
         cache: gitCache,
-      });
+      } as any);
       console.log('[init] Git repository initialized');
+
+      // Ensure essential git files exist in IndexedDB
+      // These files are expected by git but might not be created by git.init
+      const essentialFiles = [
+        { path: '.git/info/exclude', content: '# Exclude patterns\n' },
+        {
+          path: '.git/description',
+          content: 'Unnamed repository; edit this file to name the repository.\n',
+        },
+      ];
+
+      for (const file of essentialFiles) {
+        const exists = await idbStorage.getItem(file.path);
+        if (!exists) {
+          console.log('[init] Creating missing git file:', file.path);
+          await idbStorage.setItem(file.path, new TextEncoder().encode(file.content));
+        }
+      }
 
       // Create initial commit
       try {
@@ -448,7 +548,7 @@ class RealGitService {
           dir: this.rootDir,
           filepath: 'README.md',
           cache: gitCache,
-        });
+        } as any);
         console.log('[init] README.md added to git');
 
         await git.commit({
@@ -470,6 +570,24 @@ class RealGitService {
     }
 
     this.initialized = true;
+
+    // Ensure essential git files exist (for both new and existing repos)
+    const essentialFiles = [
+      { path: '.git/info/exclude', content: '# Exclude patterns\n' },
+      {
+        path: '.git/description',
+        content: 'Unnamed repository; edit this file to name the repository.\n',
+      },
+    ];
+
+    for (const file of essentialFiles) {
+      const exists = await idbStorage.getItem(file.path);
+      if (!exists) {
+        console.log('[init] Creating missing git file:', file.path);
+        await idbStorage.setItem(file.path, new TextEncoder().encode(file.content));
+      }
+    }
+
     return true;
   }
 
@@ -634,7 +752,7 @@ class RealGitService {
           dir: this.rootDir,
           defaultBranch: 'main',
           cache: gitCache,
-        });
+        } as any);
         console.log('[commitFile] Git re-initialized');
 
         // Manually verify and create HEAD if needed
@@ -666,7 +784,7 @@ class RealGitService {
           dir: this.rootDir,
           ref: 'HEAD',
           cache: gitCache,
-        });
+        } as any);
         console.log('[commitFile] HEAD found:', headRef);
         hasHead = true;
       } catch (error) {
@@ -697,7 +815,7 @@ class RealGitService {
             email: 'user@reqtrace.local',
           },
           cache: gitCache,
-        });
+        } as any);
         console.log('[commitFile] Initial commit created with SHA:', initialCommitSha);
 
         // Verify HEAD was created
@@ -707,7 +825,7 @@ class RealGitService {
             dir: this.rootDir,
             ref: 'HEAD',
             cache: gitCache,
-          });
+          } as any);
           console.log('[commitFile] HEAD verified after initial commit:', verifyRef);
         } catch (verifyError) {
           console.error(
@@ -734,7 +852,7 @@ class RealGitService {
           dir: this.rootDir,
           filepath,
           cache: gitCache,
-        });
+        } as any);
       }
 
       await git.commit({
@@ -746,7 +864,7 @@ class RealGitService {
           email: 'user@reqtrace.local',
         },
         cache: gitCache,
-      });
+      } as any);
 
       console.log(`[commitFile] Successfully committed ${filepath}`);
     } catch (error) {

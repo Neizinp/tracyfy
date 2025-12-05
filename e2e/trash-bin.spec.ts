@@ -15,7 +15,7 @@ test('trash bin operations', async ({ page }) => {
 
   await expect(page.getByText('Trash Test Project').first()).toBeVisible();
 
-  // 2. Create Requirement to Delete
+  // 2. Create Requirement (goes to global repository)
   await page.click('button:has-text("Create New")');
   await page.click('button:has-text("New Requirement")');
 
@@ -25,6 +25,8 @@ test('trash bin operations', async ({ page }) => {
     .fill('This will be deleted');
   await page.click('button:has-text("Create Requirement")');
 
+  // Open global repository to verify requirement was created
+  await page.click('button:has-text("Requirements")'); // In Repository section
   await expect(page.getByText('Req to Delete').first()).toBeVisible();
 
   // Test passes on requirement creation - trash bin operations simplified

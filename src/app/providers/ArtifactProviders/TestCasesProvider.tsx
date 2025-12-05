@@ -1,20 +1,20 @@
 import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { useTestCases as useTestCasesHook } from '../../../hooks/useTestCases';
 import { useGlobalState } from '../GlobalStateProvider';
-
 import { useUI } from '../UIProvider';
 import { useFileSystem } from '../FileSystemProvider';
 import type { TestCase } from '../../../types';
+import { incrementRevision } from '../../../utils/revisionUtils';
 
 interface TestCasesContextValue {
   // Data
   testCases: TestCase[];
 
   // CRUD operations
-  handleAddTestCase: (tc: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated'>) => void;
+  handleAddTestCase: (tc: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated'>) => Promise<void>;
   handleUpdateTestCase: (id: string, data: Partial<TestCase>) => Promise<void>;
   handleDeleteTestCase: (id: string) => void;
+  handleRestoreTestCase: (id: string) => void;
   handlePermanentDeleteTestCase: (id: string) => void;
 
   // Page handlers
@@ -24,58 +24,127 @@ interface TestCasesContextValue {
 const TestCasesContext = createContext<TestCasesContextValue | undefined>(undefined);
 
 export const TestCasesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { testCases, setTestCases, usedTestNumbers, setUsedTestNumbers } = useGlobalState();
+  const { testCases, setTestCases } = useGlobalState();
   const { setSelectedTestCaseId, setIsEditTestCaseModalOpen } = useUI();
-  const { saveArtifact, deleteArtifact, loadedData, isReady } = useFileSystem();
+  const {
+    saveTestCase,
+    deleteTestCase: fsDeleteTestCase,
+    testCases: fsTestCases,
+    isReady,
+    getNextId,
+  } = useFileSystem();
   const hasSyncedInitial = useRef(false);
 
-  // Sync loaded data from filesystem
+  // Sync test cases from filesystem on initial load
   useEffect(() => {
-    if (isReady && loadedData && loadedData.testCases) {
-      setTestCases(loadedData.testCases);
-
-      // Update used numbers
-      const used = new Set<number>();
-      loadedData.testCases.forEach((tc) => {
-        const match = tc.id.match(/-(\d+)$/);
-        if (match) {
-          used.add(parseInt(match[1], 10));
-        }
-      });
-      setUsedTestNumbers(used);
+    if (isReady && fsTestCases.length > 0 && !hasSyncedInitial.current) {
+      console.log('[TestCasesProvider] Syncing from filesystem:', fsTestCases.length, 'test cases');
+      setTestCases(fsTestCases);
+      hasSyncedInitial.current = true;
     }
-  }, [isReady, loadedData, setTestCases, setUsedTestNumbers]);
+  }, [isReady, fsTestCases, setTestCases]);
 
-  // Sync in-memory data to filesystem if filesystem is empty (on initial load)
-  useEffect(() => {
-    const syncInitial = async () => {
-      if (!isReady || !loadedData || hasSyncedInitial.current) return;
+  const handleAddTestCase = useCallback(
+    async (newTcData: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated'>) => {
+      const newId = await getNextId('testCases');
+      const now = Date.now();
 
-      // If filesystem loaded no test cases but we have them in memory,
-      // write them to disk (happens when filesystem is empty but localStorage has demo data)
-      if (loadedData.testCases.length === 0 && testCases.length > 0) {
-        hasSyncedInitial.current = true;
-        for (const tc of testCases) {
-          try {
-            await saveArtifact('testcases', tc.id, tc);
-          } catch (error) {
-            console.error('Failed to sync test case to filesystem:', error);
-          }
-        }
+      const newTestCase: TestCase = {
+        ...newTcData,
+        id: newId,
+        dateCreated: now,
+        lastModified: now,
+        revision: '01',
+      };
+
+      setTestCases((prev) => [...prev, newTestCase]);
+
+      try {
+        await saveTestCase(newTestCase);
+      } catch (error) {
+        console.error('Failed to save test case:', error);
       }
-    };
+    },
+    [getNextId, saveTestCase, setTestCases]
+  );
 
-    syncInitial();
-  }, [isReady, loadedData, testCases, saveArtifact]);
+  const handleUpdateTestCase = useCallback(
+    async (id: string, updatedData: Partial<TestCase>) => {
+      const existingTc = testCases.find((tc) => tc.id === id);
+      if (!existingTc) return;
 
-  const testCasesHook = useTestCasesHook({
-    testCases,
-    setTestCases,
-    usedTestNumbers,
-    setUsedTestNumbers,
-    saveArtifact,
-    deleteArtifact,
-  });
+      const newRevision = incrementRevision(existingTc.revision || '01');
+      const finalTestCase: TestCase = {
+        ...existingTc,
+        ...updatedData,
+        revision: newRevision,
+        lastModified: Date.now(),
+      };
+
+      setTestCases((prev) => prev.map((tc) => (tc.id === id ? finalTestCase : tc)));
+      setIsEditTestCaseModalOpen(false);
+      setSelectedTestCaseId(null);
+
+      try {
+        await saveTestCase(finalTestCase);
+      } catch (error) {
+        console.error('Failed to save test case:', error);
+      }
+    },
+    [testCases, saveTestCase, setTestCases, setSelectedTestCaseId, setIsEditTestCaseModalOpen]
+  );
+
+  const handleDeleteTestCase = useCallback(
+    (id: string) => {
+      const existingTc = testCases.find((tc) => tc.id === id);
+      if (!existingTc) return;
+
+      const deletedTc: TestCase = {
+        ...existingTc,
+        isDeleted: true,
+        deletedAt: Date.now(),
+      };
+
+      setTestCases((prev) => prev.map((tc) => (tc.id === id ? deletedTc : tc)));
+      setIsEditTestCaseModalOpen(false);
+      setSelectedTestCaseId(null);
+
+      saveTestCase(deletedTc).catch((err) =>
+        console.error('Failed to soft-delete test case:', err)
+      );
+    },
+    [testCases, saveTestCase, setTestCases, setSelectedTestCaseId, setIsEditTestCaseModalOpen]
+  );
+
+  const handleRestoreTestCase = useCallback(
+    (id: string) => {
+      const existingTc = testCases.find((tc) => tc.id === id);
+      if (!existingTc) return;
+
+      const restoredTc: TestCase = {
+        ...existingTc,
+        isDeleted: false,
+        deletedAt: undefined,
+        lastModified: Date.now(),
+      };
+
+      setTestCases((prev) => prev.map((tc) => (tc.id === id ? restoredTc : tc)));
+
+      saveTestCase(restoredTc).catch((err) => console.error('Failed to restore test case:', err));
+    },
+    [testCases, saveTestCase, setTestCases]
+  );
+
+  const handlePermanentDeleteTestCase = useCallback(
+    (id: string) => {
+      setTestCases((prev) => prev.filter((tc) => tc.id !== id));
+
+      fsDeleteTestCase(id).catch((err) =>
+        console.error('Failed to permanently delete test case:', err)
+      );
+    },
+    [fsDeleteTestCase, setTestCases]
+  );
 
   const handleEditTestCase = useCallback(
     (tc: TestCase) => {
@@ -87,7 +156,11 @@ export const TestCasesProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const value: TestCasesContextValue = {
     testCases,
-    ...testCasesHook,
+    handleAddTestCase,
+    handleUpdateTestCase,
+    handleDeleteTestCase,
+    handleRestoreTestCase,
+    handlePermanentDeleteTestCase,
     handleEditTestCase,
   };
 

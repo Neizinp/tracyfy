@@ -1,11 +1,10 @@
 import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { useRequirements as useRequirementsHook } from '../../../hooks/useRequirements';
 import { useGlobalState } from '../GlobalStateProvider';
-
 import { useUI } from '../UIProvider';
 import { useFileSystem } from '../FileSystemProvider';
 import type { Requirement, Link } from '../../../types';
+import { incrementRevision } from '../../../utils/revisionUtils';
 
 interface RequirementsContextValue {
   // Data
@@ -30,8 +29,8 @@ interface RequirementsContextValue {
 const RequirementsContext = createContext<RequirementsContextValue | undefined>(undefined);
 
 export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { requirements, setRequirements, links, setLinks, usedReqNumbers, setUsedReqNumbers } =
-    useGlobalState();
+  const globalState = useGlobalState();
+  const { requirements, setRequirements, links, setLinks } = globalState;
   const {
     setEditingRequirement,
     setIsEditRequirementModalOpen,
@@ -39,60 +38,151 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
     setIsLinkModalOpen,
     setSelectedRequirementId,
   } = useUI();
-  const { saveArtifact, deleteArtifact, loadedData, isReady } = useFileSystem();
+  const {
+    saveRequirement,
+    deleteRequirement: fsDeleteRequirement,
+    requirements: fsRequirements,
+    links: fsLinks,
+    isReady,
+    getNextId,
+  } = useFileSystem();
   const hasSyncedInitial = useRef(false);
 
-  // Sync loaded data from filesystem
+  // Sync requirements from filesystem on initial load
   useEffect(() => {
-    if (isReady && loadedData && loadedData.requirements) {
-      setRequirements(loadedData.requirements);
-
-      // Update used numbers
-      const used = new Set<number>();
-      loadedData.requirements.forEach((req) => {
-        const match = req.id.match(/-(\d+)$/);
-        if (match) {
-          used.add(parseInt(match[1], 10));
-        }
-      });
-      setUsedReqNumbers(used);
+    if (isReady && fsRequirements.length > 0 && !hasSyncedInitial.current) {
+      console.log(
+        '[RequirementsProvider] Syncing from filesystem:',
+        fsRequirements.length,
+        'requirements'
+      );
+      setRequirements(fsRequirements);
+      hasSyncedInitial.current = true;
     }
-  }, [isReady, loadedData, setRequirements, setUsedReqNumbers]);
+  }, [isReady, fsRequirements, setRequirements]);
 
-  // Sync in-memory data to filesystem if filesystem is empty (on initial load)
+  // Sync links from filesystem
   useEffect(() => {
-    const syncInitial = async () => {
-      if (!isReady || !loadedData || hasSyncedInitial.current) return;
-      if (loadedData.requirements.length === 0 && requirements.length > 0) {
-        console.log(
-          '[SYNC] Writing requirements to filesystem:',
-          requirements.map((r) => r.id)
-        );
-        hasSyncedInitial.current = true;
-        for (const req of requirements) {
-          try {
-            await saveArtifact('requirements', req.id, req);
-            console.log(`[SYNC] Saved requirement ${req.id} to filesystem.`);
-          } catch (error) {
-            console.error('Failed to sync requirement to filesystem:', error);
-          }
-        }
-      }
-    };
-    syncInitial();
-  }, [isReady, loadedData, requirements, saveArtifact]);
+    if (isReady && fsLinks.length > 0) {
+      setLinks(fsLinks);
+    }
+  }, [isReady, fsLinks, setLinks]);
 
-  const requirementsHook = useRequirementsHook({
-    requirements,
-    setRequirements,
-    usedReqNumbers,
-    setUsedReqNumbers,
-    setLinks,
-    setIsEditModalOpen: setIsEditRequirementModalOpen,
-    setEditingRequirement,
-    saveArtifact,
-    deleteArtifact,
-  });
+  const handleAddRequirement = useCallback(
+    async (newReqData: Omit<Requirement, 'id' | 'lastModified'>) => {
+      const newId = await getNextId('requirements');
+
+      const newRequirement: Requirement = {
+        ...newReqData,
+        id: newId,
+        lastModified: Date.now(),
+        revision: '01',
+      };
+
+      setRequirements((prev) => [...prev, newRequirement]);
+
+      try {
+        await saveRequirement(newRequirement);
+      } catch (error) {
+        console.error('Failed to save requirement:', error);
+      }
+    },
+    [getNextId, saveRequirement, setRequirements]
+  );
+
+  const handleUpdateRequirement = useCallback(
+    async (id: string, updatedData: Partial<Requirement>) => {
+      const existingReq = requirements.find((req) => req.id === id);
+      if (!existingReq) return;
+
+      const newRevision = incrementRevision(existingReq.revision || '01');
+      const finalRequirement: Requirement = {
+        ...existingReq,
+        ...updatedData,
+        revision: newRevision,
+        lastModified: Date.now(),
+      };
+
+      setRequirements((prev) => prev.map((r) => (r.id === id ? finalRequirement : r)));
+      setIsEditRequirementModalOpen(false);
+      setEditingRequirement(null);
+
+      try {
+        await saveRequirement(finalRequirement);
+      } catch (error) {
+        console.error('Failed to save requirement:', error);
+      }
+    },
+    [
+      requirements,
+      saveRequirement,
+      setRequirements,
+      setEditingRequirement,
+      setIsEditRequirementModalOpen,
+    ]
+  );
+
+  const handleDeleteRequirement = useCallback(
+    (id: string) => {
+      const existingReq = requirements.find((req) => req.id === id);
+      if (!existingReq) return;
+
+      const deletedReq: Requirement = {
+        ...existingReq,
+        isDeleted: true,
+        deletedAt: Date.now(),
+      };
+
+      setRequirements((prev) => prev.map((req) => (req.id === id ? deletedReq : req)));
+      setIsEditRequirementModalOpen(false);
+      setEditingRequirement(null);
+
+      saveRequirement(deletedReq).catch((err) =>
+        console.error('Failed to soft-delete requirement:', err)
+      );
+    },
+    [
+      requirements,
+      saveRequirement,
+      setRequirements,
+      setEditingRequirement,
+      setIsEditRequirementModalOpen,
+    ]
+  );
+
+  const handleRestoreRequirement = useCallback(
+    (id: string) => {
+      const existingReq = requirements.find((req) => req.id === id);
+      if (!existingReq) return;
+
+      const restoredReq: Requirement = {
+        ...existingReq,
+        isDeleted: false,
+        deletedAt: undefined,
+        lastModified: Date.now(),
+      };
+
+      setRequirements((prev) => prev.map((req) => (req.id === id ? restoredReq : req)));
+
+      saveRequirement(restoredReq).catch((err) =>
+        console.error('Failed to restore requirement:', err)
+      );
+    },
+    [requirements, saveRequirement, setRequirements]
+  );
+
+  const handlePermanentDeleteRequirement = useCallback(
+    (id: string) => {
+      setRequirements((prev) => prev.filter((req) => req.id !== id));
+      // Remove any links associated with this requirement
+      setLinks((prev) => prev.filter((link) => link.sourceId !== id && link.targetId !== id));
+
+      fsDeleteRequirement(id).catch((err) =>
+        console.error('Failed to permanently delete requirement:', err)
+      );
+    },
+    [fsDeleteRequirement, setRequirements, setLinks]
+  );
 
   const handleEdit = useCallback(
     (req: Requirement) => {
@@ -128,7 +218,11 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
     setRequirements,
     links,
     setLinks,
-    ...requirementsHook,
+    handleAddRequirement,
+    handleUpdateRequirement,
+    handleDeleteRequirement,
+    handleRestoreRequirement,
+    handlePermanentDeleteRequirement,
     handleEdit,
     handleLink,
     handleAddLink,

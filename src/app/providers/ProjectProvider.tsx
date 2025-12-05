@@ -1,21 +1,20 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { useProjectManager } from '../../hooks/useProjectManager';
+import { useFileSystem } from './FileSystemProvider';
 import type { Project } from '../../types';
 
 interface ProjectContextValue {
   // State
   projects: Project[];
   currentProjectId: string;
-  currentProject: Project;
+  currentProject: Project | null;
   isLoading: boolean;
-  initialGlobalState: any;
 
   // Handlers
-  switchProject: (id: string) => void;
+  switchProject: (id: string) => Promise<void>;
   createProject: (name: string, description: string) => Promise<Project>;
-  updateProject: (id: string, name: string, description: string) => void;
-  deleteProject: (id: string) => void;
+  updateProject: (project: Project) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
   addToProject: (
     artifacts: {
       requirements: string[];
@@ -25,39 +24,101 @@ interface ProjectContextValue {
     },
     targetProjectId?: string
   ) => Promise<void>;
-
-  // Internal
-  setProjects: (projects: Project[] | ((prev: Project[]) => Project[])) => void;
-  setHasInitializedProjects: (initialized: boolean) => void;
 }
 
 const ProjectContext = createContext<ProjectContextValue | undefined>(undefined);
 
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const projectManager = useProjectManager();
+  const {
+    projects,
+    currentProjectId,
+    isLoading,
+    isReady,
+    createProject: fsCreateProject,
+    saveProject,
+    deleteProject: fsDeleteProject,
+    setCurrentProject,
+  } = useFileSystem();
 
-  const currentProject =
-    projectManager.projects.find((p) => p.id === projectManager.currentProjectId) ||
-    projectManager.projects[0];
+  const currentProject = projects.find((p) => p.id === currentProjectId) || projects[0] || null;
+
+  const switchProject = useCallback(
+    async (projectId: string) => {
+      await setCurrentProject(projectId);
+    },
+    [setCurrentProject]
+  );
+
+  const createProject = useCallback(
+    async (name: string, description: string): Promise<Project> => {
+      const project = await fsCreateProject(name, description);
+      await setCurrentProject(project.id);
+      return project;
+    },
+    [fsCreateProject, setCurrentProject]
+  );
+
+  const updateProject = useCallback(
+    async (project: Project) => {
+      await saveProject({ ...project, lastModified: Date.now() });
+    },
+    [saveProject]
+  );
+
+  const deleteProject = useCallback(
+    async (projectId: string) => {
+      await fsDeleteProject(projectId);
+
+      // If we deleted the current project, switch to another one
+      if (currentProjectId === projectId) {
+        const remainingProjects = projects.filter((p) => p.id !== projectId);
+        if (remainingProjects.length > 0) {
+          await setCurrentProject(remainingProjects[0].id);
+        } else {
+          await setCurrentProject('');
+        }
+      }
+    },
+    [fsDeleteProject, currentProjectId, projects, setCurrentProject]
+  );
+
+  const addToProject = useCallback(
+    async (
+      artifacts: {
+        requirements: string[];
+        useCases: string[];
+        testCases: string[];
+        information: string[];
+      },
+      targetProjectId: string = currentProjectId
+    ) => {
+      const project = projects.find((p) => p.id === targetProjectId);
+      if (!project) return;
+
+      const updatedProject: Project = {
+        ...project,
+        requirementIds: Array.from(new Set([...project.requirementIds, ...artifacts.requirements])),
+        useCaseIds: Array.from(new Set([...project.useCaseIds, ...artifacts.useCases])),
+        testCaseIds: Array.from(new Set([...project.testCaseIds, ...artifacts.testCases])),
+        informationIds: Array.from(new Set([...project.informationIds, ...artifacts.information])),
+        lastModified: Date.now(),
+      };
+
+      await saveProject(updatedProject);
+    },
+    [currentProjectId, projects, saveProject]
+  );
 
   const value: ProjectContextValue = {
-    // State
-    projects: projectManager.projects,
-    currentProjectId: projectManager.currentProjectId,
+    projects,
+    currentProjectId,
     currentProject,
-    isLoading: projectManager.isLoading,
-    initialGlobalState: projectManager.initialGlobalState,
-
-    // Handlers
-    switchProject: projectManager.handleSwitchProject,
-    createProject: projectManager.handleCreateProjectSubmit,
-    updateProject: projectManager.handleUpdateProject,
-    deleteProject: projectManager.handleDeleteProject,
-    addToProject: projectManager.handleAddToProject,
-
-    // Internal (for other providers)
-    setProjects: projectManager.setProjects,
-    setHasInitializedProjects: projectManager.setHasInitializedProjects,
+    isLoading: isLoading || !isReady,
+    switchProject,
+    createProject,
+    updateProject,
+    deleteProject,
+    addToProject,
   };
 
   return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>;

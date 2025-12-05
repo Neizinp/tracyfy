@@ -4,13 +4,7 @@
  */
 
 import type { Project, GlobalState, Requirement, UseCase } from '../types';
-import {
-  mockRequirements,
-  mockUseCases,
-  mockTestCases,
-  mockInformation,
-  mockLinks,
-} from '../mockData';
+// Note: mockData imports removed - no longer using localStorage fallbacks
 
 export const PROJECTS_KEY = 'reqtrace-projects';
 export const CURRENT_PROJECT_KEY = 'reqtrace-current-project-id';

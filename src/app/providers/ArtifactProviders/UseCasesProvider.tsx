@@ -1,19 +1,19 @@
 import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { useUseCases as useUseCasesHook } from '../../../hooks/useUseCases';
 import { useGlobalState } from '../GlobalStateProvider';
-
 import { useUI } from '../UIProvider';
 import { useFileSystem } from '../FileSystemProvider';
 import type { UseCase } from '../../../types';
+import { incrementRevision } from '../../../utils/revisionUtils';
 
 interface UseCasesContextValue {
   // Data
   useCases: UseCase[];
 
   // CRUD operations
-  handleAddUseCase: (uc: Omit<UseCase, 'id' | 'lastModified'> | any) => void;
+  handleAddUseCase: (uc: Omit<UseCase, 'id' | 'lastModified'> | any) => Promise<void>;
   handleEditUseCase: (uc: UseCase) => void;
+  handleUpdateUseCase: (id: string, data: Partial<UseCase>) => Promise<void>;
   handleDeleteUseCase: (id: string) => void;
   handleRestoreUseCase: (id: string) => void;
   handlePermanentDeleteUseCase: (id: string) => void;
@@ -25,77 +25,148 @@ interface UseCasesContextValue {
 const UseCasesContext = createContext<UseCasesContextValue | undefined>(undefined);
 
 export const UseCasesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { useCases, setUseCases, usedUcNumbers, setUsedUcNumbers, requirements, setRequirements } =
-    useGlobalState();
+  const { useCases, setUseCases } = useGlobalState();
   const { setIsUseCaseModalOpen, setEditingUseCase, setIsNewRequirementModalOpen } = useUI();
-  const { saveArtifact, deleteArtifact, loadedData, isReady } = useFileSystem();
+  const {
+    saveUseCase,
+    deleteUseCase: fsDeleteUseCase,
+    useCases: fsUseCases,
+    isReady,
+    getNextId,
+  } = useFileSystem();
   const hasSyncedInitial = useRef(false);
 
-  // Sync loaded data from filesystem
+  // Sync use cases from filesystem on initial load
   useEffect(() => {
-    if (isReady && loadedData && loadedData.useCases) {
-      setUseCases(loadedData.useCases);
-
-      // Update used numbers
-      const used = new Set<number>();
-      loadedData.useCases.forEach((uc) => {
-        const match = uc.id.match(/-(\d+)$/);
-        if (match) {
-          used.add(parseInt(match[1], 10));
-        }
-      });
-      setUsedUcNumbers(used);
+    if (isReady && fsUseCases.length > 0 && !hasSyncedInitial.current) {
+      console.log('[UseCasesProvider] Syncing from filesystem:', fsUseCases.length, 'use cases');
+      setUseCases(fsUseCases);
+      hasSyncedInitial.current = true;
     }
-  }, [isReady, loadedData, setUseCases, setUsedUcNumbers]);
+  }, [isReady, fsUseCases, setUseCases]);
 
-  // Sync in-memory data to filesystem if filesystem is empty (on initial load)
-  useEffect(() => {
-    const syncInitial = async () => {
-      if (!isReady || !loadedData || hasSyncedInitial.current) return;
+  const handleAddUseCase = useCallback(
+    async (newUcData: Omit<UseCase, 'id' | 'lastModified'>) => {
+      const newId = await getNextId('useCases');
 
-      // If filesystem loaded no use cases but we have them in memory,
-      // write them to disk (happens when filesystem is empty but localStorage has demo data)
-      if (loadedData.useCases.length === 0 && useCases.length > 0) {
-        hasSyncedInitial.current = true;
-        for (const uc of useCases) {
-          try {
-            await saveArtifact('usecases', uc.id, uc);
-          } catch (error) {
-            console.error('Failed to sync use case to filesystem:', error);
-          }
-        }
+      const newUseCase: UseCase = {
+        ...newUcData,
+        id: newId,
+        lastModified: Date.now(),
+        revision: '01',
+      };
+
+      setUseCases((prev) => [...prev, newUseCase]);
+
+      try {
+        await saveUseCase(newUseCase);
+      } catch (error) {
+        console.error('Failed to save use case:', error);
       }
-    };
+    },
+    [getNextId, saveUseCase, setUseCases]
+  );
 
-    syncInitial();
-  }, [isReady, loadedData, useCases, saveArtifact]);
+  const handleEditUseCase = useCallback(
+    (uc: UseCase) => {
+      setEditingUseCase(uc);
+      setIsUseCaseModalOpen(true);
+    },
+    [setEditingUseCase, setIsUseCaseModalOpen]
+  );
 
-  const useCasesHook = useUseCasesHook({
-    useCases,
-    setUseCases,
-    usedUcNumbers,
-    setUsedUcNumbers,
-    requirements,
-    setRequirements,
-    setIsUseCaseModalOpen,
-    setEditingUseCase,
-    saveArtifact,
-    deleteArtifact,
-  });
+  const handleUpdateUseCase = useCallback(
+    async (id: string, updatedData: Partial<UseCase>) => {
+      const existingUc = useCases.find((uc) => uc.id === id);
+      if (!existingUc) return;
+
+      const newRevision = incrementRevision(existingUc.revision || '01');
+      const finalUseCase: UseCase = {
+        ...existingUc,
+        ...updatedData,
+        revision: newRevision,
+        lastModified: Date.now(),
+      };
+
+      setUseCases((prev) => prev.map((uc) => (uc.id === id ? finalUseCase : uc)));
+      setIsUseCaseModalOpen(false);
+      setEditingUseCase(null);
+
+      try {
+        await saveUseCase(finalUseCase);
+      } catch (error) {
+        console.error('Failed to save use case:', error);
+      }
+    },
+    [useCases, saveUseCase, setUseCases, setEditingUseCase, setIsUseCaseModalOpen]
+  );
+
+  const handleDeleteUseCase = useCallback(
+    (id: string) => {
+      const existingUc = useCases.find((uc) => uc.id === id);
+      if (!existingUc) return;
+
+      const deletedUc: UseCase = {
+        ...existingUc,
+        isDeleted: true,
+        deletedAt: Date.now(),
+      };
+
+      setUseCases((prev) => prev.map((uc) => (uc.id === id ? deletedUc : uc)));
+      setIsUseCaseModalOpen(false);
+      setEditingUseCase(null);
+
+      saveUseCase(deletedUc).catch((err) => console.error('Failed to soft-delete use case:', err));
+    },
+    [useCases, saveUseCase, setUseCases, setEditingUseCase, setIsUseCaseModalOpen]
+  );
+
+  const handleRestoreUseCase = useCallback(
+    (id: string) => {
+      const existingUc = useCases.find((uc) => uc.id === id);
+      if (!existingUc) return;
+
+      const restoredUc: UseCase = {
+        ...existingUc,
+        isDeleted: false,
+        deletedAt: undefined,
+        lastModified: Date.now(),
+      };
+
+      setUseCases((prev) => prev.map((uc) => (uc.id === id ? restoredUc : uc)));
+
+      saveUseCase(restoredUc).catch((err) => console.error('Failed to restore use case:', err));
+    },
+    [useCases, saveUseCase, setUseCases]
+  );
+
+  const handlePermanentDeleteUseCase = useCallback(
+    (id: string) => {
+      setUseCases((prev) => prev.filter((uc) => uc.id !== id));
+
+      fsDeleteUseCase(id).catch((err) =>
+        console.error('Failed to permanently delete use case:', err)
+      );
+    },
+    [fsDeleteUseCase, setUseCases]
+  );
 
   const handleBreakDownUseCase = useCallback(
     (_uc: UseCase) => {
-      // Pre-fill a new requirement based on the use case
       setEditingUseCase(null);
       setIsNewRequirementModalOpen(true);
-      // The modal will need to detect this scenario - for now just open the modal
     },
     [setEditingUseCase, setIsNewRequirementModalOpen]
   );
 
   const value: UseCasesContextValue = {
     useCases,
-    ...useCasesHook,
+    handleAddUseCase,
+    handleEditUseCase,
+    handleUpdateUseCase,
+    handleDeleteUseCase,
+    handleRestoreUseCase,
+    handlePermanentDeleteUseCase,
     handleBreakDownUseCase,
   };
 
