@@ -355,7 +355,7 @@ export const Layout: React.FC<LayoutProps> = ({
             </div>
           </div>
 
-          {/* Library Navigation */}
+          {/* Repository Navigation */}
           <div style={{ marginBottom: 'var(--spacing-lg)' }}>
             <h2
               style={{
@@ -366,7 +366,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 margin: '0 0 var(--spacing-sm) 0',
               }}
             >
-              Library
+              Repository
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <button
