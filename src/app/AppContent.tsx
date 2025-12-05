@@ -1,9 +1,15 @@
 import { AppRoutes } from '../routes/AppRoutes';
-import { LoadingOverlay } from '../components';
-import { useProject } from './providers';
+import { LoadingOverlay, DirectorySelector } from '../components';
+import { useProject, useFileSystem } from './providers';
 
 export function AppContent() {
     const { isLoading } = useProject();
+    const fileSystem = useFileSystem();
+
+    // Show directory selector if filesystem not ready
+    if (!fileSystem.isReady) {
+        return <DirectorySelector />;
+    }
 
     if (isLoading) {
         return <LoadingOverlay isLoading={true} />;

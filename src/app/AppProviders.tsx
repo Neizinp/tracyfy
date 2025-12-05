@@ -10,31 +10,34 @@ import {
     InformationProvider,
     GitProvider,
     DragDropProvider,
-    ImportExportProvider
+    ImportExportProvider,
+    FileSystemProvider
 } from './providers';
 
 export const AppProviders: React.FC<{ children: ReactNode }> = ({ children }) => {
     return (
-        <ProjectProvider>
-            <UIProvider>
-                <GlobalStateProvider>
-                    <RequirementsProvider>
-                        <UseCasesProvider>
-                            <TestCasesProvider>
-                                <InformationProvider>
-                                    <GitProvider>
-                                        <DragDropProvider>
-                                            <ImportExportProvider>
-                                                {children}
-                                            </ImportExportProvider>
-                                        </DragDropProvider>
-                                    </GitProvider>
-                                </InformationProvider>
-                            </TestCasesProvider>
-                        </UseCasesProvider>
-                    </RequirementsProvider>
-                </GlobalStateProvider>
-            </UIProvider>
-        </ProjectProvider>
+        <FileSystemProvider>
+            <ProjectProvider>
+                <UIProvider>
+                    <GlobalStateProvider>
+                        <RequirementsProvider>
+                            <UseCasesProvider>
+                                <TestCasesProvider>
+                                    <InformationProvider>
+                                        <GitProvider>
+                                            <DragDropProvider>
+                                                <ImportExportProvider>
+                                                    {children}
+                                                </ImportExportProvider>
+                                            </DragDropProvider>
+                                        </GitProvider>
+                                    </InformationProvider>
+                                </TestCasesProvider>
+                            </UseCasesProvider>
+                        </RequirementsProvider>
+                    </GlobalStateProvider>
+                </UIProvider>
+            </ProjectProvider>
+        </FileSystemProvider>
     );
 };
