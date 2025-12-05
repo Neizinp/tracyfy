@@ -296,6 +296,7 @@ class RealGitService {
     if (!this.initialized) return [];
 
     try {
+      // Use git.statusMatrix first
       const status = await git.statusMatrix({
         fs: fsAdapter,
         dir: this.rootDir,
@@ -318,8 +319,31 @@ class RealGitService {
         })
         .filter((f) => f.status !== 'unchanged');
 
-      console.log('[getStatus] Filtered result:', result);
-      return result;
+      // Also check for untracked files by reading filesystem directly
+      // since statusMatrix doesn't reliably detect them
+      const trackedPaths = new Set(result.map((f) => f.path));
+      const untrackedFiles: FileStatus[] = [];
+
+      const artifactTypes = ['requirements', 'usecases', 'testcases', 'information'];
+      for (const type of artifactTypes) {
+        try {
+          const files = await fileSystemService.listFiles(type);
+          for (const file of files) {
+            if (file.endsWith('.md')) {
+              const filePath = `${type}/${file}`;
+              if (!trackedPaths.has(filePath)) {
+                untrackedFiles.push({ path: filePath, status: 'new' });
+              }
+            }
+          }
+        } catch (error) {
+          // Directory might not exist yet
+        }
+      }
+
+      const allFiles = [...result, ...untrackedFiles];
+      console.log('[getStatus] Filtered result with untracked:', allFiles);
+      return allFiles;
     } catch (error) {
       console.error('Failed to get status:', error);
       return [];

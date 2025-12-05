@@ -48,17 +48,11 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [baselines, setBaselines] = useState<ProjectBaseline[]>([]);
 
   const refreshStatus = useCallback(async () => {
+    console.log('[refreshStatus] Called');
     if (realGitService.isInitialized()) {
       const status = await realGitService.getStatus();
       console.log('[refreshStatus] Updated pendingChanges:', status);
-
-      // Merge git status with existing pending changes (don't overwrite manually added ones)
-      setPendingChanges((prev) => {
-        const gitPaths = new Set(status.map((s) => s.path));
-        const manualChanges = prev.filter((p) => !gitPaths.has(p.path));
-        const allChanges = [...status, ...manualChanges];
-        return allChanges;
-      });
+      setPendingChanges(status);
     }
   }, []);
 
@@ -155,8 +149,11 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const data = await realGitService.loadAllArtifacts();
       setLoadedData(data);
 
-      // Load status
+      setIsReady(true);
+
+      // Load pending changes (getStatus now includes untracked files)
       const status = await realGitService.getStatus();
+      console.log('[selectDirectory] Setting pendingChanges to:', status);
       setPendingChanges(status);
 
       // Load baselines
