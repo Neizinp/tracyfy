@@ -13,244 +13,165 @@ import {
     CreateProjectModal,
     GlobalLibraryModal
 } from './';
-import type { Requirement, Link, UseCase, TestCase, Information, Version, Project } from '../types';
+import {
+    useUI,
+    useProject,
+    useGlobalState,
+    useRequirements,
+    useUseCases,
+    useTestCases,
+    useInformation,
+    useGit
+} from '../app/providers';
 
-interface ModalManagerProps {
-    // UI State
-    isNewRequirementModalOpen: boolean;
-    setIsNewRequirementModalOpen: (isOpen: boolean) => void;
-    isLinkModalOpen: boolean;
-    setIsLinkModalOpen: (isOpen: boolean) => void;
-    isEditRequirementModalOpen: boolean;
-    setIsEditRequirementModalOpen: (isOpen: boolean) => void;
-    isUseCaseModalOpen: boolean;
-    setIsUseCaseModalOpen: (isOpen: boolean) => void;
-    isNewTestCaseModalOpen: boolean;
-    setIsNewTestCaseModalOpen: (isOpen: boolean) => void;
-    isEditTestCaseModalOpen: boolean;
-    setIsEditTestCaseModalOpen: (isOpen: boolean) => void;
-    isInformationModalOpen: boolean;
-    setIsInformationModalOpen: (isOpen: boolean) => void;
-    isVersionHistoryOpen: boolean;
-    setIsVersionHistoryOpen: (isOpen: boolean) => void;
-    isTrashModalOpen: boolean;
-    setIsTrashModalOpen: (isOpen: boolean) => void;
-    isProjectSettingsOpen: boolean;
-    setIsProjectSettingsOpen: (isOpen: boolean) => void;
-    isCreateProjectModalOpen: boolean;
-    setIsCreateProjectModalOpen: (isOpen: boolean) => void;
-    isGlobalLibraryModalOpen: boolean;
-    setIsGlobalLibraryModalOpen: (isOpen: boolean) => void;
+export const ModalManager: React.FC = () => {
+    // UI state
+    const ui = useUI();
 
-    // Selections & Editing
-    selectedRequirementId: string | null;
-    selectedTestCaseId: string | null;
-    setSelectedTestCaseId: (id: string | null) => void;
-    selectedInformation: Information | null;
-    setSelectedInformation: (info: Information | null) => void;
-    editingRequirement: Requirement | null;
-    setEditingRequirement: (req: Requirement | null) => void;
-    editingUseCase: UseCase | null;
-    setEditingUseCase: (uc: UseCase | null) => void;
-    projectToEdit: Project | null;
-    setProjectToEdit: (project: Project | null) => void;
+    // Project state
+    const { projects, currentProjectId, updateProject, deleteProject, createProject, addToProject } = useProject();
 
-    // Data
-    projects: Project[];
-    currentProjectId: string;
-    requirements: Requirement[];
-    useCases: UseCase[];
-    testCases: TestCase[];
-    information: Information[];
-    links: Link[];
-    versions: Version[];
-    globalRequirements: Requirement[];
-    globalUseCases: UseCase[];
-    globalTestCases: TestCase[];
-    globalInformation: Information[];
+    // Global state
+    const { globalRequirements, globalUseCases, globalTestCases, globalInformation } = useGlobalState();
 
-    // Handlers
-    onAddRequirement: (req: Omit<Requirement, 'id' | 'lastModified'>) => Promise<void>;
-    onUpdateRequirement: (id: string, data: Partial<Requirement>) => Promise<void>;
-    onDeleteRequirement: (id: string) => void;
-    onAddLink: (link: Omit<Link, 'id'>) => void;
-    onAddUseCase: (useCase: Omit<UseCase, 'id' | 'lastModified'> | { id: string; updates: Partial<UseCase> }) => void;
-    onAddTestCase: (testCase: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated'>) => void;
-    onUpdateTestCase: (id: string, data: Partial<TestCase>) => Promise<void>;
-    onDeleteTestCase: (id: string) => void;
-    onAddInformation: (data: Omit<Information, 'id' | 'lastModified' | 'dateCreated'> | { id: string; updates: Partial<Information> }) => void;
-    onRestoreVersion: (versionId: string) => Promise<void>;
-    onCreateBaseline: (name: string) => Promise<void>;
-    onRestoreRequirement: (id: string) => void;
-    onRestoreUseCase: (id: string) => void;
-    onPermanentDeleteRequirement: (id: string) => void;
-    onPermanentDeleteUseCase: (id: string) => void;
-    onRestoreInformation: (id: string) => void;
-    onPermanentDeleteInformation: (id: string) => void;
-    onUpdateProject: (projectId: string, name: string, description: string) => void;
-    onDeleteProject: (id: string) => void;
-    onCreateProjectSubmit: (name: string, description: string) => void;
-    onAddToProject: (artifacts: { requirements: string[], useCases: string[], testCases: string[], information: string[] }, targetProjectId?: string) => Promise<void>;
-}
+    // Artifact state and operations
+    const { requirements, links, handleAddRequirement, handleUpdateRequirement, handleDeleteRequirement, handleRestoreRequirement, handlePermanentDeleteRequirement, handleAddLink } = useRequirements();
+    const { useCases, handleAddUseCase, handleRestoreUseCase, handlePermanentDeleteUseCase } = useUseCases();
+    const { testCases, handleAddTestCase, handleUpdateTestCase, handleDeleteTestCase } = useTestCases();
+    const { information, handleAddInformation, handleRestoreInformation, handlePermanentDeleteInformation } = useInformation();
 
-export const ModalManager: React.FC<ModalManagerProps> = ({
-    isNewRequirementModalOpen, setIsNewRequirementModalOpen,
-    isLinkModalOpen, setIsLinkModalOpen,
-    isEditRequirementModalOpen, setIsEditRequirementModalOpen,
-    isUseCaseModalOpen, setIsUseCaseModalOpen,
-    isNewTestCaseModalOpen, setIsNewTestCaseModalOpen,
-    isEditTestCaseModalOpen, setIsEditTestCaseModalOpen,
-    isInformationModalOpen, setIsInformationModalOpen,
-    isVersionHistoryOpen, setIsVersionHistoryOpen,
-    isTrashModalOpen, setIsTrashModalOpen,
-    isProjectSettingsOpen, setIsProjectSettingsOpen,
-    isCreateProjectModalOpen, setIsCreateProjectModalOpen,
-    isGlobalLibraryModalOpen, setIsGlobalLibraryModalOpen,
-    selectedRequirementId,
-    selectedTestCaseId, setSelectedTestCaseId,
-    selectedInformation, setSelectedInformation,
-    editingRequirement, setEditingRequirement,
-    editingUseCase, setEditingUseCase,
-    projectToEdit, setProjectToEdit,
-    projects, currentProjectId,
-    requirements, useCases, testCases, information, links, versions,
-    globalRequirements, globalUseCases, globalTestCases, globalInformation,
-    onAddRequirement, onUpdateRequirement, onDeleteRequirement,
-    onAddLink, onAddUseCase, onAddTestCase, onUpdateTestCase, onDeleteTestCase,
-    onAddInformation, onRestoreVersion, onCreateBaseline,
-    onRestoreRequirement, onRestoreUseCase, onPermanentDeleteRequirement, onPermanentDeleteUseCase,
-    onRestoreInformation, onPermanentDeleteInformation,
-    onUpdateProject, onDeleteProject, onCreateProjectSubmit, onAddToProject
-}) => {
+    // Git state
+    const { versions, handleRestoreVersion, handleCreateBaseline } = useGit();
+
     return (
         <>
             <NewRequirementModal
-                isOpen={isNewRequirementModalOpen}
-                onClose={() => setIsNewRequirementModalOpen(false)}
-                onSubmit={onAddRequirement}
+                isOpen={ui.isNewRequirementModalOpen}
+                onClose={() => ui.setIsNewRequirementModalOpen(false)}
+                onSubmit={handleAddRequirement}
             />
 
             <LinkModal
-                isOpen={isLinkModalOpen}
-                sourceRequirementId={selectedRequirementId}
+                isOpen={ui.isLinkModalOpen}
+                sourceRequirementId={ui.selectedRequirementId}
                 projects={projects}
                 currentProjectId={currentProjectId}
                 globalRequirements={globalRequirements}
                 globalUseCases={globalUseCases}
                 globalTestCases={globalTestCases}
-                onClose={() => setIsLinkModalOpen(false)}
-                onSubmit={onAddLink}
+                onClose={() => ui.setIsLinkModalOpen(false)}
+                onSubmit={handleAddLink}
             />
 
-            {isEditRequirementModalOpen && editingRequirement && (
+            {ui.isEditRequirementModalOpen && ui.editingRequirement && (
                 <EditRequirementModal
-                    isOpen={isEditRequirementModalOpen}
-                    requirement={editingRequirement}
+                    isOpen={ui.isEditRequirementModalOpen}
+                    requirement={ui.editingRequirement}
                     allRequirements={requirements}
                     links={links}
                     projects={projects}
                     currentProjectId={currentProjectId}
                     onClose={() => {
-                        setIsEditRequirementModalOpen(false);
-                        setEditingRequirement(null);
+                        ui.setIsEditRequirementModalOpen(false);
+                        ui.setEditingRequirement(null);
                     }}
-                    onSubmit={onUpdateRequirement}
-                    onDelete={onDeleteRequirement}
+                    onSubmit={handleUpdateRequirement}
+                    onDelete={handleDeleteRequirement}
                 />
             )}
 
             <UseCaseModal
-                isOpen={isUseCaseModalOpen}
-                useCase={editingUseCase}
+                isOpen={ui.isUseCaseModalOpen}
+                useCase={ui.editingUseCase}
                 onClose={() => {
-                    setIsUseCaseModalOpen(false);
-                    setEditingUseCase(null);
+                    ui.setIsUseCaseModalOpen(false);
+                    ui.setEditingUseCase(null);
                 }}
-                onSubmit={onAddUseCase}
+                onSubmit={handleAddUseCase}
             />
 
             <NewTestCaseModal
-                isOpen={isNewTestCaseModalOpen}
+                isOpen={ui.isNewTestCaseModalOpen}
                 requirements={requirements.filter(r => !r.isDeleted)}
-                onClose={() => setIsNewTestCaseModalOpen(false)}
-                onSubmit={onAddTestCase}
+                onClose={() => ui.setIsNewTestCaseModalOpen(false)}
+                onSubmit={handleAddTestCase}
             />
 
             <EditTestCaseModal
-                isOpen={isEditTestCaseModalOpen}
-                testCase={testCases.find(t => t.id === selectedTestCaseId) || null}
+                isOpen={ui.isEditTestCaseModalOpen}
+                testCase={testCases.find(t => t.id === ui.selectedTestCaseId) || null}
                 requirements={requirements.filter(r => !r.isDeleted)}
                 onClose={() => {
-                    setIsEditTestCaseModalOpen(false);
-                    setSelectedTestCaseId(null);
+                    ui.setIsEditTestCaseModalOpen(false);
+                    ui.setSelectedTestCaseId(null);
                 }}
-                onSubmit={onUpdateTestCase}
-                onDelete={onDeleteTestCase}
+                onSubmit={handleUpdateTestCase}
+                onDelete={handleDeleteTestCase}
             />
 
             <InformationModal
-                isOpen={isInformationModalOpen}
-                information={selectedInformation}
+                isOpen={ui.isInformationModalOpen}
+                information={ui.selectedInformation}
                 onClose={() => {
-                    setIsInformationModalOpen(false);
-                    setSelectedInformation(null);
+                    ui.setIsInformationModalOpen(false);
+                    ui.setSelectedInformation(null);
                 }}
-                onSubmit={onAddInformation}
+                onSubmit={handleAddInformation}
             />
 
             <VersionHistory
-                isOpen={isVersionHistoryOpen}
+                isOpen={ui.isVersionHistoryOpen}
                 versions={versions}
-                onClose={() => setIsVersionHistoryOpen(false)}
-                onRestore={onRestoreVersion}
-                onCreateBaseline={onCreateBaseline}
+                onClose={() => ui.setIsVersionHistoryOpen(false)}
+                onRestore={handleRestoreVersion}
+                onCreateBaseline={handleCreateBaseline}
             />
 
             <TrashModal
-                isOpen={isTrashModalOpen}
-                onClose={() => setIsTrashModalOpen(false)}
+                isOpen={ui.isTrashModalOpen}
+                onClose={() => ui.setIsTrashModalOpen(false)}
                 deletedRequirements={requirements.filter(r => r.isDeleted)}
                 deletedUseCases={useCases.filter(u => u.isDeleted)}
-                onRestoreRequirement={onRestoreRequirement}
-                onRestoreUseCase={onRestoreUseCase}
-                onPermanentDeleteRequirement={onPermanentDeleteRequirement}
-                onPermanentDeleteUseCase={onPermanentDeleteUseCase}
+                onRestoreRequirement={handleRestoreRequirement}
+                onRestoreUseCase={handleRestoreUseCase}
+                onPermanentDeleteRequirement={handlePermanentDeleteRequirement}
+                onPermanentDeleteUseCase={handlePermanentDeleteUseCase}
                 deletedInformation={information.filter(i => i.isDeleted)}
-                onRestoreInformation={onRestoreInformation}
-                onPermanentDeleteInformation={onPermanentDeleteInformation}
+                onRestoreInformation={handleRestoreInformation}
+                onPermanentDeleteInformation={handlePermanentDeleteInformation}
             />
 
-            {isProjectSettingsOpen && projectToEdit && (
+            {ui.isProjectSettingsOpen && ui.projectToEdit && (
                 <ProjectSettingsModal
-                    isOpen={isProjectSettingsOpen}
-                    project={projectToEdit}
+                    isOpen={ui.isProjectSettingsOpen}
+                    project={ui.projectToEdit}
                     onClose={() => {
-                        setIsProjectSettingsOpen(false);
-                        setProjectToEdit(null);
+                        ui.setIsProjectSettingsOpen(false);
+                        ui.setProjectToEdit(null);
                     }}
-                    onUpdate={onUpdateProject}
-                    onDelete={onDeleteProject}
+                    onUpdate={updateProject}
+                    onDelete={deleteProject}
                 />
             )}
 
-            {isCreateProjectModalOpen && (
+            {ui.isCreateProjectModalOpen && (
                 <CreateProjectModal
-                    isOpen={isCreateProjectModalOpen}
-                    onClose={() => setIsCreateProjectModalOpen(false)}
-                    onSubmit={onCreateProjectSubmit}
+                    isOpen={ui.isCreateProjectModalOpen}
+                    onClose={() => ui.setIsCreateProjectModalOpen(false)}
+                    onSubmit={createProject}
                 />
             )}
 
             <GlobalLibraryModal
-                isOpen={isGlobalLibraryModalOpen}
-                onClose={() => setIsGlobalLibraryModalOpen(false)}
+                isOpen={ui.isGlobalLibraryModalOpen}
+                onClose={() => ui.setIsGlobalLibraryModalOpen(false)}
                 projects={projects}
                 currentProjectId={currentProjectId}
                 globalRequirements={globalRequirements}
                 globalUseCases={globalUseCases}
                 globalTestCases={globalTestCases}
                 globalInformation={globalInformation}
-                onAddToProject={onAddToProject}
+                onAddToProject={addToProject}
             />
         </>
     );
