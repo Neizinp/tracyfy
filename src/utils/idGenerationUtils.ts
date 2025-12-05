@@ -9,11 +9,11 @@
  * @returns The lowest available number (1-indexed)
  */
 export function findLowestAvailableNumber(usedNumbers: Set<number>): number {
-    let nextNumber = 1;
-    while (usedNumbers.has(nextNumber)) {
-        nextNumber++;
-    }
-    return nextNumber;
+  let nextNumber = 1;
+  while (usedNumbers.has(nextNumber)) {
+    nextNumber++;
+  }
+  return nextNumber;
 }
 
 /**
@@ -22,8 +22,8 @@ export function findLowestAvailableNumber(usedNumbers: Set<number>): number {
  * @returns New unique requirement ID
  */
 export function generateNextReqId(usedReqNumbers: Set<number>): string {
-    const nextNumber = findLowestAvailableNumber(usedReqNumbers);
-    return `REQ-${String(nextNumber).padStart(3, '0')}`;
+  const nextNumber = findLowestAvailableNumber(usedReqNumbers);
+  return `REQ-${String(nextNumber).padStart(3, '0')}`;
 }
 
 /**
@@ -32,8 +32,8 @@ export function generateNextReqId(usedReqNumbers: Set<number>): string {
  * @returns New unique use case ID
  */
 export function generateNextUcId(usedUcNumbers: Set<number>): string {
-    const nextNumber = findLowestAvailableNumber(usedUcNumbers);
-    return `UC-${String(nextNumber).padStart(3, '0')}`;
+  const nextNumber = findLowestAvailableNumber(usedUcNumbers);
+  return `UC-${String(nextNumber).padStart(3, '0')}`;
 }
 
 /**
@@ -42,8 +42,8 @@ export function generateNextUcId(usedUcNumbers: Set<number>): string {
  * @returns New unique test case ID
  */
 export function generateNextTestCaseId(usedTestNumbers: Set<number>): string {
-    const nextNumber = findLowestAvailableNumber(usedTestNumbers);
-    return `TC-${String(nextNumber).padStart(3, '0')}`;
+  const nextNumber = findLowestAvailableNumber(usedTestNumbers);
+  return `TC-${String(nextNumber).padStart(3, '0')}`;
 }
 
 /**
@@ -52,6 +52,6 @@ export function generateNextTestCaseId(usedTestNumbers: Set<number>): string {
  * @returns New unique information ID
  */
 export function generateNextInfoId(usedInfoNumbers: Set<number>): string {
-    const nextNumber = findLowestAvailableNumber(usedInfoNumbers);
-    return `INFO-${String(nextNumber).padStart(3, '0')}`;
+  const nextNumber = findLowestAvailableNumber(usedInfoNumbers);
+  return `INFO-${String(nextNumber).padStart(3, '0')}`;
 }
