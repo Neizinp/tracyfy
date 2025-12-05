@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, RotateCcw, Clock, Save, Tag } from 'lucide-react';
 import type { Version } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
@@ -13,8 +13,21 @@ interface VersionHistoryProps {
 
 export const VersionHistory: React.FC<VersionHistoryProps> = ({ isOpen, versions, onClose, onRestore, onCreateBaseline }) => {
     const [isCreatingBaseline, setIsCreatingBaseline] = useState(false);
-    const [baselineName, setBaselineName] = useState('');
     const [filter, setFilter] = useState<'all' | 'baseline'>('all');
+
+    // Calculate the next baseline number (1.0, 2.0, 3.0...)
+    const nextBaselineNumber = useMemo(() => {
+        const baselineVersions = versions.filter(v => v.type === 'baseline');
+        return `${baselineVersions.length + 1}.0`;
+    }, [versions]);
+
+    const [baselineName, setBaselineName] = useState(nextBaselineNumber);
+
+    // Update default name when modal opens for creating
+    const handleStartCreating = () => {
+        setBaselineName(nextBaselineNumber);
+        setIsCreatingBaseline(true);
+    };
 
     if (!isOpen) return null;
 
@@ -132,7 +145,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({ isOpen, versions
 
                     {!isCreatingBaseline ? (
                         <button
-                            onClick={() => setIsCreatingBaseline(true)}
+                            onClick={handleStartCreating}
                             style={{
                                 padding: '6px 12px',
                                 borderRadius: '6px',

@@ -254,25 +254,6 @@ export const Layout: React.FC<LayoutProps> = ({
                                 <LayoutGrid size={18} style={{ transform: 'rotate(45deg)' }} />
                                 Traceability Matrix
                             </Link>
-                            <Link
-                                to="/baselines"
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 'var(--spacing-sm)',
-                                    padding: '8px 12px',
-                                    textDecoration: 'none',
-                                    background: isActive('/baselines') ? 'var(--color-bg-hover)' : 'transparent',
-                                    color: isActive('/baselines') ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    textAlign: 'left',
-                                    fontWeight: isActive('/baselines') ? 500 : 400
-                                }}
-                            >
-                                <Clock size={18} />
-                                Baselines
-                            </Link>
 
 
                             <Link
