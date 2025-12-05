@@ -262,8 +262,10 @@ class RealGitService {
 
     const filePath = `${type}/${id}.md`;
 
-    // Write file only - no git operations yet
+    // Write file to disk
     await fileSystemService.writeFile(filePath, markdown);
+    // Note: We don't stage in git here because git.add() fails with File System API
+    // Pending changes are tracked separately in FileSystemProvider
   }
 
   /**
@@ -299,7 +301,9 @@ class RealGitService {
         dir: this.rootDir,
       });
 
-      return status
+      console.log('[getStatus] Raw statusMatrix:', status);
+
+      const result = status
         .map(([filepath, head, workdir, stage]) => {
           let statusStr = 'unchanged';
           if (head === 1 && workdir === 2 && stage === 2) statusStr = 'modified';
@@ -313,6 +317,9 @@ class RealGitService {
           };
         })
         .filter((f) => f.status !== 'unchanged');
+
+      console.log('[getStatus] Filtered result:', result);
+      return result;
     } catch (error) {
       console.error('Failed to get status:', error);
       return [];
