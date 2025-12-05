@@ -80,7 +80,7 @@ interface ProjectLayoutProps {
     onAddFromLibrary: (ids: string[]) => void;
 
     // Handlers
-    handleSwitchProject: (projectId: string) => void;
+    onSwitchProject: (projectId: string) => void;
     onCreateProject: () => void;
     onOpenProjectSettings: (project: Project) => void;
     onExport: () => void;
@@ -147,7 +147,7 @@ export const ProjectLayout: React.FC<ProjectLayoutProps> = (props) => {
             currentProjectName={props.currentProjectName}
             projects={props.projects}
             currentProjectId={props.currentProjectId}
-            onSwitchProject={props.handleSwitchProject}
+            onSwitchProject={props.onSwitchProject}
             onCreateProject={props.onCreateProject}
             onOpenProjectSettings={props.onOpenProjectSettings}
             onNewRequirement={() => props.setIsNewRequirementModalOpen(true)}

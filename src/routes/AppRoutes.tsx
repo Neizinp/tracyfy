@@ -128,7 +128,7 @@ interface AppRoutesProps {
 export const AppRoutes: React.FC<AppRoutesProps> = (props) => {
     return (
         <Routes>
-            <Route path="/" element={<ProjectLayout {...props} />}>
+            <Route path="/" element={<ProjectLayout {...props} onResetToDemo={props.onResetToDemo} />}>
                 <Route index element={<Navigate to="/requirements/tree" replace />} />
 
                 <Route
