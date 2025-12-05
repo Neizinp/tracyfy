@@ -1,0 +1,151 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+    - complementary [ref=e4]:
+        - heading "ReqTrace" [level=1] [ref=e6]:
+            - img [ref=e7]
+            - text: ReqTrace
+        - navigation [ref=e12]:
+            - generic [ref=e13]:
+                - generic [ref=e14]:
+                    - heading "Projects" [level=2] [ref=e15]
+                    - button "New Project" [ref=e16] [cursor=pointer]:
+                        - img [ref=e17]
+                - generic [ref=e19] [cursor=pointer]:
+                    - button "Revision Test Project" [ref=e20]:
+                        - img [ref=e21]
+                        - generic [ref=e23]: Revision Test Project
+                    - button "Project Settings" [ref=e24]:
+                        - img [ref=e25]
+            - generic [ref=e28]:
+                - heading "Pending Changes" [level=2] [ref=e29]:
+                    - img [ref=e30]
+                    - text: Pending Changes
+                - generic [ref=e34]: No pending changes
+            - generic [ref=e35]:
+                - heading "Views" [level=2] [ref=e36]
+                - generic [ref=e37]:
+                    - link "Requirements Tree" [ref=e38] [cursor=pointer]:
+                        - /url: /requirements/tree
+                        - img [ref=e39]
+                        - text: Requirements Tree
+                    - link "Detailed View" [ref=e44] [cursor=pointer]:
+                        - /url: /requirements/detailed
+                        - img [ref=e45]
+                        - text: Detailed View
+                    - link "Traceability Matrix" [ref=e48] [cursor=pointer]:
+                        - /url: /requirements/matrix
+                        - img [ref=e49]
+                        - text: Traceability Matrix
+                    - link "Use Cases" [ref=e54] [cursor=pointer]:
+                        - /url: /use-cases
+                        - img [ref=e55]
+                        - text: Use Cases
+                    - link "Test Cases" [ref=e58] [cursor=pointer]:
+                        - /url: /test-cases
+                        - img [ref=e59]
+                        - text: Test Cases
+                    - link "Information" [ref=e62] [cursor=pointer]:
+                        - /url: /information
+                        - img [ref=e63]
+                        - text: Information
+            - generic [ref=e66]:
+                - heading "Repository" [level=2] [ref=e67]
+                - generic [ref=e68]:
+                    - button "Requirements" [ref=e69] [cursor=pointer]:
+                        - img [ref=e70]
+                        - text: Requirements
+                    - button "Use Cases" [ref=e72] [cursor=pointer]:
+                        - img [ref=e73]
+                        - text: Use Cases
+                    - button "Test Cases" [ref=e75] [cursor=pointer]:
+                        - img [ref=e76]
+                        - text: Test Cases
+                    - button "Information" [ref=e78] [cursor=pointer]:
+                        - img [ref=e79]
+                        - text: Information
+    - main [ref=e82]:
+        - generic [ref=e83]:
+            - generic [ref=e84]:
+                - generic [ref=e85]: Projects / Revision Test Project /
+                - generic [ref=e86]: Requirements
+            - generic [ref=e87]:
+                - img [ref=e88]
+                - textbox "Search requirements..." [ref=e91]
+            - generic [ref=e92]:
+                - button "Create New" [ref=e94] [cursor=pointer]:
+                    - img [ref=e95]
+                    - text: Create New
+                    - img [ref=e96]
+                - button "History" [ref=e98] [cursor=pointer]:
+                    - img [ref=e99]
+                    - text: History
+                - button "Trash" [ref=e102] [cursor=pointer]:
+                    - img [ref=e103]
+                    - text: Trash
+                - button "Import" [ref=e107] [cursor=pointer]:
+                    - img [ref=e108]
+                    - text: Import
+                    - img [ref=e111]
+                - button "Export" [ref=e114] [cursor=pointer]:
+                    - img [ref=e115]
+                    - text: Export
+                    - img [ref=e118]
+        - generic [ref=e121]:
+            - generic [ref=e123]:
+                - heading "Detailed View" [level=2] [ref=e125]
+                - button "Columns" [ref=e128] [cursor=pointer]:
+                    - img [ref=e129]
+                    - text: Columns
+            - table [ref=e133]:
+                - rowgroup [ref=e134]:
+                    - row "ID / Title Rev Description Requirement Text Rationale Author Verification Priority Status Comments Created Approved" [ref=e135]:
+                        - columnheader "ID / Title" [ref=e136]
+                        - columnheader "Rev" [ref=e137]
+                        - columnheader "Description" [ref=e138]
+                        - columnheader "Requirement Text" [ref=e139]
+                        - columnheader "Rationale" [ref=e140]
+                        - columnheader "Author" [ref=e141]
+                        - columnheader "Verification" [ref=e142]
+                        - columnheader "Priority" [ref=e143]
+                        - columnheader "Status" [ref=e144]
+                        - columnheader "Comments" [ref=e145]
+                        - columnheader "Created" [ref=e146]
+                        - columnheader "Approved" [ref=e147]
+                - rowgroup [ref=e148]:
+                    - row "REQ-001 Rev Req 1 02 - Updated text - - Medium Draft - 2025-12-05 23:16:20 -" [ref=e149] [cursor=pointer]:
+                        - cell "REQ-001 Rev Req 1" [ref=e150]:
+                            - generic [ref=e151]: REQ-001
+                            - generic [ref=e152]: Rev Req 1
+                        - cell "02" [ref=e153]
+                        - cell "-" [ref=e154]
+                        - cell "Updated text" [ref=e155]:
+                            - paragraph [ref=e157]: Updated text
+                        - cell [ref=e158]:
+                            - list [ref=e160]:
+                                - listitem [ref=e161]
+                        - cell "-" [ref=e162]
+                        - cell "-" [ref=e163]
+                        - cell "Medium" [ref=e164]
+                        - cell "Draft" [ref=e165]
+                        - cell "-" [ref=e166]
+                        - cell "2025-12-05 23:16:20" [ref=e167]
+                        - cell "-" [ref=e168]
+            - generic [ref=e170]:
+                - generic [ref=e171]:
+                    - heading "Baselines & History" [level=3] [ref=e172]:
+                        - img [ref=e173]
+                        - text: Baselines & History
+                    - button [ref=e176] [cursor=pointer]:
+                        - img [ref=e177]
+                - generic [ref=e181]:
+                    - textbox "Name (e.g. v1.0)" [active] [ref=e182]: v1 .0
+                    - textbox "Description (optional)" [ref=e183]
+                    - button "Save" [ref=e184] [cursor=pointer]
+                    - button "Cancel" [ref=e185] [cursor=pointer]
+                - generic [ref=e187]:
+                    - img [ref=e188]
+                    - paragraph [ref=e191]: No baselines found.
+                - generic [ref=e192]: '💡 Tip: Create baselines to save named snapshots of your project (e.g., "v1.0 Release").'
+```

@@ -84,6 +84,15 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
 
       try {
+        // For e2e tests: if E2E_TEST_MODE is set, use in-memory storage
+        if (typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__) {
+          console.log('[FileSystemProvider] E2E test mode enabled');
+          setDirectoryName('E2E Test Directory');
+          setIsReady(true);
+          setIsLoading(false);
+          return;
+        }
+
         const result = await fileSystemService.restoreDirectory();
         if (result && result.handle) {
           // Initialize git with the restored directory

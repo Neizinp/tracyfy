@@ -1,96 +1,103 @@
 import { test, expect } from '@playwright/test';
 
 test('multi-project artifact support', async ({ page }) => {
-    await page.goto('http://localhost:5173');
+  await page.addInitScript(() => {
+    (window as any).__E2E_TEST_MODE__ = true;
+  });
 
-    // 1. Create Project A
-    await page.click('button[title="New Project"]');
-    await page.getByPlaceholder('e.g., Mars Rover 2030').fill('Project A');
-    await page.getByPlaceholder('Brief description of the project...').fill('First project');
-    await page.click('button:has-text("Create Project")');
+  await page.goto('http://localhost:5173');
+  await page.waitForLoadState('networkidle');
 
-    await expect(page.getByText('Project A').first()).toBeVisible();
+  // 1. Create Project A
+  await page.click('button[title="New Project"]');
+  await page.getByPlaceholder('e.g., Mars Rover 2030').fill('Project A');
+  await page.getByPlaceholder('Brief description of the project...').fill('First project');
+  await page.click('button:has-text("Create Project")');
 
-    // 2. Create a Requirement in Project A
-    await page.click('button:has-text("Create New")');
-    await page.click('button:has-text("New Requirement")');
+  await expect(page.getByText('Project A').first()).toBeVisible();
 
-    await page.locator('form#new-requirement-form input').first().fill('Shared Requirement');
-    await page.getByPlaceholder('Enter detailed requirement text with Markdown...').fill('This requirement will be shared');
-    await page.click('button:has-text("Create Requirement")');
+  // 2. Create a Requirement in Project A
+  await page.click('button:has-text("Create New")');
+  await page.click('button:has-text("New Requirement")');
 
-    // Verify requirement appears in Project A
-    await expect(page.getByText('Shared Requirement').first()).toBeVisible();
+  await page.locator('form#new-requirement-form input').first().fill('Shared Requirement');
+  await page
+    .getByPlaceholder('Enter detailed requirement text with Markdown...')
+    .fill('This requirement will be shared');
+  await page.click('button:has-text("Create Requirement")');
 
-    // 3. Create Project B
-    await page.click('button[title="New Project"]');
-    await page.getByPlaceholder('e.g., Mars Rover 2030').fill('Project B');
-    await page.getByPlaceholder('Brief description of the project...').fill('Second project');
-    await page.click('button:has-text("Create Project")');
+  // Verify requirement appears in Project A
+  await expect(page.getByText('Shared Requirement').first()).toBeVisible();
 
-    await expect(page.getByText('Project B').first()).toBeVisible();
+  // 3. Create Project B
+  await page.click('button[title="New Project"]');
+  await page.getByPlaceholder('e.g., Mars Rover 2030').fill('Project B');
+  await page.getByPlaceholder('Brief description of the project...').fill('Second project');
+  await page.click('button:has-text("Create Project")');
 
-    // 4. Verify we're now in Project B (Shared Requirement should NOT be visible)
-    await page.waitForTimeout(500);
-    await expect(page.getByText('Shared Requirement')).not.toBeVisible();
+  await expect(page.getByText('Project B').first()).toBeVisible();
 
-    // 5. Open Global Library
-    await page.click('button:has-text("Import")');
-    await page.click('button:has-text("Import from Project")');
+  // 4. Verify we're now in Project B (Shared Requirement should NOT be visible)
+  await page.waitForTimeout(500);
+  await expect(page.getByText('Shared Requirement')).not.toBeVisible();
 
-    // Wait for library modal
-    await expect(page.getByText('Global Artifact Library')).toBeVisible();
+  // 5. Open Global Library
+  await page.click('button:has-text("Import")');
+  await page.click('button:has-text("Import from Project")');
 
-    // 6. Filter to show artifacts from Project A
-    // 6. Filter to show artifacts from Project A
-    await page.click('button:has-text("By Project")');
-    // Select Project A from the dropdown (we need to find the select element)
-    await page.locator('select').selectOption({ label: 'Project A' });
+  // Wait for library modal
+  await expect(page.getByText('Global Artifact Library')).toBeVisible();
 
-    // 7. Verify "Shared Requirement" appears in library
-    await expect(page.getByText('Shared Requirement')).toBeVisible();
+  // 6. Filter to show artifacts from Project A
+  // 6. Filter to show artifacts from Project A
+  await page.click('button:has-text("By Project")');
+  // Select Project A from the dropdown (we need to find the select element)
+  await page.locator('select').selectOption({ label: 'Project A' });
 
-    // 8. Add the requirement to Project B via drag-and-drop simulation
-    // Since drag-and-drop is complex in Playwright, we'll click the add button if it exists
-    // or just close the library and verify via backend state
+  // 7. Verify "Shared Requirement" appears in library
+  await expect(page.getByText('Shared Requirement')).toBeVisible();
 
-    // For now, let's verify the requirement can be imported
-    // In real implementation, you would drag-and-drop here
+  // 8. Add the requirement to Project B via drag-and-drop simulation
+  // Since drag-and-drop is complex in Playwright, we'll click the add button if it exists
+  // or just close the library and verify via backend state
 
-    // Close library modal
-    await page.click('button:has-text("Cancel")');
+  // For now, let's verify the requirement can be imported
+  // In real implementation, you would drag-and-drop here
 
-    // 9. Switch back to Project A
-    const projectSelector = page.locator('button').filter({ hasText: 'Project A' }).first();
-    if (await projectSelector.isVisible()) {
-        await projectSelector.click();
-    }
+  // Close library modal
+  await page.click('button:has-text("Cancel")');
 
-    // 10. Verify requirement still exists in Project A
-    await expect(page.getByText('Shared Requirement').first()).toBeVisible();
+  // 9. Switch back to Project A
+  const projectSelector = page.locator('button').filter({ hasText: 'Project A' }).first();
+  if (await projectSelector.isVisible()) {
+    await projectSelector.click();
+  }
 
-    // 11. Edit the requirement in Project A
-    await page.getByText('Shared Requirement').first().click();
+  // 10. Verify requirement still exists in Project A
+  await expect(page.getByText('Shared Requirement').first()).toBeVisible();
 
-    // Wait for edit modal
-    await expect(page.locator('h3:has-text("Edit Requirement")')).toBeVisible();
+  // 11. Edit the requirement in Project A
+  await page.getByText('Shared Requirement').first().click();
 
-    // Update title
-    const titleInput = page.locator('form#edit-requirement-form input').first();
-    await titleInput.fill('Updated Shared Requirement');
+  // Wait for edit modal
+  await expect(page.locator('h3:has-text("Edit Requirement")')).toBeVisible();
 
-    await page.click('button:has-text("Save Changes")');
+  // Update title
+  const titleInput = page.locator('form#edit-requirement-form input').first();
+  await titleInput.fill('Updated Shared Requirement');
 
-    // 12. Wait for modal to close
-    await expect(page.locator('h3:has-text("Edit Requirement")')).not.toBeVisible();
+  await page.click('button:has-text("Save Changes")');
 
-    // 13. Verify updated title appears in Project A
-    await expect(page.getByText('Updated Shared Requirement').first()).toBeVisible();
+  // 12. Wait for modal to close
+  await expect(page.locator('h3:has-text("Edit Requirement")')).not.toBeVisible();
 
-    // 14. CRITICAL: Verify no "Pending Changes" notification appears when switching projects
-    // This was the original bug - shared artifacts shouldn't show as pending changes
-    await page.waitForTimeout(500);
+  // 13. Verify updated title appears in Project A
+  await expect(page.getByText('Updated Shared Requirement').first()).toBeVisible();
 
-    // The test passes if we get here without errors
-    // In the future, we can add more assertions about pending changes UI
+  // 14. CRITICAL: Verify no "Pending Changes" notification appears when switching projects
+  // This was the original bug - shared artifacts shouldn't show as pending changes
+  await page.waitForTimeout(500);
+
+  // The test passes if we get here without errors
+  // In the future, we can add more assertions about pending changes UI
 });
