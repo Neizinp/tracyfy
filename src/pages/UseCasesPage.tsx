@@ -3,30 +3,29 @@ import { UseCaseList } from '../components';
 import { useUseCases, useRequirements, useUI } from '../app/providers';
 
 export const UseCasesPage: React.FC = () => {
-  const { useCases, handleEditUseCase, handleDeleteUseCase, handleBreakDownUseCase } =
-    useUseCases();
-  const { requirements } = useRequirements();
-  const { searchQuery } = useUI();
+    const { useCases, handleEditUseCase, handleDeleteUseCase, handleBreakDownUseCase } = useUseCases();
+    const { requirements } = useRequirements();
+    const { searchQuery } = useUI();
 
-  const filteredUseCases = useCases.filter((uc) => {
-    if (uc.isDeleted) return false;
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
+    const filteredUseCases = useCases.filter(uc => {
+        if (uc.isDeleted) return false;
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        return (
+            uc.id.toLowerCase().includes(query) ||
+            uc.title.toLowerCase().includes(query) ||
+            uc.description.toLowerCase().includes(query) ||
+            uc.actor.toLowerCase().includes(query)
+        );
+    });
+
     return (
-      uc.id.toLowerCase().includes(query) ||
-      uc.title.toLowerCase().includes(query) ||
-      uc.description.toLowerCase().includes(query) ||
-      uc.actor.toLowerCase().includes(query)
+        <UseCaseList
+            useCases={filteredUseCases}
+            requirements={requirements}
+            onEdit={handleEditUseCase}
+            onDelete={handleDeleteUseCase}
+            onBreakDown={handleBreakDownUseCase}
+        />
     );
-  });
-
-  return (
-    <UseCaseList
-      useCases={filteredUseCases}
-      requirements={requirements}
-      onEdit={handleEditUseCase}
-      onDelete={handleDeleteUseCase}
-      onBreakDown={handleBreakDownUseCase}
-    />
-  );
 };

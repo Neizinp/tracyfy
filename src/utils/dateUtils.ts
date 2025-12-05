@@ -1,7 +1,7 @@
 /**
  * Date formatting utilities for consistent date/time display
  * throughout the application.
- *
+ * 
  * Format: YYYY-MM-DD HH:mm:ss (24-hour time)
  */
 
@@ -12,16 +12,16 @@
  * @example formatDateTime(1700000000000) // "2023-11-14 22:13:20"
  */
 export function formatDateTime(timestamp: number): string {
-  const date = new Date(timestamp);
+    const date = new Date(timestamp);
 
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
 
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 /**
@@ -31,11 +31,11 @@ export function formatDateTime(timestamp: number): string {
  * @example formatDate(1700000000000) // "2023-11-14"
  */
 export function formatDate(timestamp: number): string {
-  const date = new Date(timestamp);
+    const date = new Date(timestamp);
 
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
 
-  return `${year}-${month}-${day}`;
+    return `${year}-${month}-${day}`;
 }

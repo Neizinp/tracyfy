@@ -3,172 +3,158 @@ import { Folder, AlertCircle, Loader2 } from 'lucide-react';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 
 interface DirectorySelectorProps {
-  onReady?: () => void;
+    onReady?: () => void;
 }
 
 export const DirectorySelector: React.FC<DirectorySelectorProps> = ({ onReady }) => {
-  const { isReady, isLoading, error, selectDirectory, directoryName } = useFileSystem();
+    const { isReady, isLoading, error, selectDirectory, directoryName } = useFileSystem();
 
-  React.useEffect(() => {
-    if (isReady && onReady) {
-      onReady();
+    React.useEffect(() => {
+        if (isReady && onReady) {
+            onReady();
+        }
+    }, [isReady, onReady]);
+
+    if (isReady) {
+        return null; // Don't render anything when ready
     }
-  }, [isReady, onReady]);
 
-  if (isReady) {
-    return null; // Don't render anything when ready
-  }
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'var(--color-bg-app)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: 'var(--color-bg-card)',
-          borderRadius: '12px',
-          border: '1px solid var(--color-border)',
-          padding: '48px',
-          maxWidth: '500px',
-          textAlign: 'center',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        }}
-      >
-        <div
-          style={{
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    return (
+        <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'var(--color-bg-app)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 24px',
-          }}
-        >
-          <Folder size={40} style={{ color: 'var(--color-accent)' }} />
-        </div>
+            zIndex: 9999
+        }}>
+            <div style={{
+                backgroundColor: 'var(--color-bg-card)',
+                borderRadius: '12px',
+                border: '1px solid var(--color-border)',
+                padding: '48px',
+                maxWidth: '500px',
+                textAlign: 'center',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }}>
+                <div style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 24px'
+                }}>
+                    <Folder size={40} style={{ color: 'var(--color-accent)' }} />
+                </div>
 
-        <h1
-          style={{
-            fontSize: '1.5rem',
-            fontWeight: 600,
-            color: 'var(--color-text-primary)',
-            marginBottom: '12px',
-          }}
-        >
-          Select Project Directory
-        </h1>
+                <h1 style={{
+                    fontSize: '1.5rem',
+                    fontWeight: 600,
+                    color: 'var(--color-text-primary)',
+                    marginBottom: '12px'
+                }}>
+                    Select Project Directory
+                </h1>
 
-        <p
-          style={{
-            color: 'var(--color-text-secondary)',
-            marginBottom: '32px',
-            lineHeight: 1.6,
-          }}
-        >
-          Choose a folder to store your requirements data. All files will be saved as Markdown and
-          tracked with Git.
-        </p>
+                <p style={{
+                    color: 'var(--color-text-secondary)',
+                    marginBottom: '32px',
+                    lineHeight: 1.6
+                }}>
+                    Choose a folder to store your requirements data.
+                    All files will be saved as Markdown and tracked with Git.
+                </p>
 
-        {error && (
-          <div
-            style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid var(--color-danger)',
-              borderRadius: '8px',
-              padding: '12px 16px',
-              marginBottom: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              textAlign: 'left',
-            }}
-          >
-            <AlertCircle size={20} style={{ color: 'var(--color-danger)', flexShrink: 0 }} />
-            <span style={{ color: 'var(--color-danger)', fontSize: '0.875rem' }}>{error}</span>
-          </div>
-        )}
+                {error && (
+                    <div style={{
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid var(--color-danger)',
+                        borderRadius: '8px',
+                        padding: '12px 16px',
+                        marginBottom: '24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        textAlign: 'left'
+                    }}>
+                        <AlertCircle size={20} style={{ color: 'var(--color-danger)', flexShrink: 0 }} />
+                        <span style={{ color: 'var(--color-danger)', fontSize: '0.875rem' }}>
+                            {error}
+                        </span>
+                    </div>
+                )}
 
-        {directoryName && (
-          <div
-            style={{
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              borderRadius: '8px',
-              padding: '12px 16px',
-              marginBottom: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-            }}
-          >
-            <Folder size={20} style={{ color: 'var(--color-success)' }} />
-            <span style={{ color: 'var(--color-text-primary)', fontSize: '0.875rem' }}>
-              {directoryName}
-            </span>
-          </div>
-        )}
+                {directoryName && (
+                    <div style={{
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderRadius: '8px',
+                        padding: '12px 16px',
+                        marginBottom: '24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px'
+                    }}>
+                        <Folder size={20} style={{ color: 'var(--color-success)' }} />
+                        <span style={{ color: 'var(--color-text-primary)', fontSize: '0.875rem' }}>
+                            {directoryName}
+                        </span>
+                    </div>
+                )}
 
-        <button
-          onClick={selectDirectory}
-          disabled={isLoading}
-          style={{
-            padding: '14px 32px',
-            borderRadius: '8px',
-            backgroundColor: 'var(--color-accent)',
-            color: 'white',
-            border: 'none',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            fontSize: '1rem',
-            fontWeight: 500,
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            opacity: isLoading ? 0.7 : 1,
-            transition: 'all 0.2s',
-          }}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
-              Loading...
-            </>
-          ) : (
-            <>
-              <Folder size={20} />
-              Choose Folder
-            </>
-          )}
-        </button>
+                <button
+                    onClick={selectDirectory}
+                    disabled={isLoading}
+                    style={{
+                        padding: '14px 32px',
+                        borderRadius: '8px',
+                        backgroundColor: 'var(--color-accent)',
+                        color: 'white',
+                        border: 'none',
+                        cursor: isLoading ? 'not-allowed' : 'pointer',
+                        fontSize: '1rem',
+                        fontWeight: 500,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        opacity: isLoading ? 0.7 : 1,
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    {isLoading ? (
+                        <>
+                            <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
+                            Loading...
+                        </>
+                    ) : (
+                        <>
+                            <Folder size={20} />
+                            Choose Folder
+                        </>
+                    )}
+                </button>
 
-        <p
-          style={{
-            color: 'var(--color-text-muted)',
-            fontSize: '0.75rem',
-            marginTop: '24px',
-          }}
-        >
-          Tip: You can use an existing Git repository or we'll initialize one for you.
-        </p>
-      </div>
+                <p style={{
+                    color: 'var(--color-text-muted)',
+                    fontSize: '0.75rem',
+                    marginTop: '24px'
+                }}>
+                    Tip: You can use an existing Git repository or we'll initialize one for you.
+                </p>
+            </div>
 
-      <style>{`
+            <style>{`
                 @keyframes spin {
                     from { transform: rotate(0deg); }
                     to { transform: rotate(360deg); }
                 }
             `}</style>
-    </div>
-  );
+        </div>
+    );
 };

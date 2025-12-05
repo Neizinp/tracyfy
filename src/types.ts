@@ -89,11 +89,11 @@ export interface Project {
   informationIds: string[];
   baselines?: string[]; // IDs of baselines for this project
   currentBaseline?: string; // ID of current baseline
-  // Links are now global, so we don't strictly need them here,
+  // Links are now global, so we don't strictly need them here, 
   // but keeping a reference might be useful for project-specific views if we ever want to scope them tightly.
   // For now, let's remove them from Project as per plan, or keep them as IDs if we want "Project owns these links".
-  // The plan said "Links are now global", implying they exist outside of projects.
-  // However, usually links belong to the artifacts they link.
+  // The plan said "Links are now global", implying they exist outside of projects. 
+  // However, usually links belong to the artifacts they link. 
   // Let's keep it simple: Links are global. We can derive relevant links by checking if source/target is in the project.
   lastModified: number;
 }
@@ -106,10 +106,12 @@ export interface GlobalState {
   links: Link[];
 }
 
+
+
 export interface ColumnVisibility {
-  idTitle: boolean; // Always true, not user-configurable
+  idTitle: boolean;       // Always true, not user-configurable
   description: boolean;
-  text: boolean; // Requirement Text
+  text: boolean;          // Requirement Text
   rationale: boolean;
   author: boolean;
   verification: boolean;
