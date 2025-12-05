@@ -1,9 +1,0 @@
-node_modules
-dist
-build
-coverage
-.husky
-.git
-public
-playwright-report
-package-lock.json
