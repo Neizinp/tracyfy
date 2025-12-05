@@ -1,24 +1,12 @@
 import React from 'react';
 import { UseCaseList } from '../components';
-import type { UseCase, Requirement } from '../types';
+import { useUseCases, useRequirements, useUI } from '../app/providers';
 
-interface UseCasesPageProps {
-    useCases: UseCase[];
-    requirements: Requirement[];
-    searchQuery: string;
-    onEdit: (uc: UseCase) => void;
-    onDelete: (id: string) => void;
-    onBreakDown: (uc: UseCase) => void;
-}
+export const UseCasesPage: React.FC = () => {
+    const { useCases, handleEditUseCase, handleDeleteUseCase, handleBreakDownUseCase } = useUseCases();
+    const { requirements } = useRequirements();
+    const { searchQuery } = useUI();
 
-export const UseCasesPage: React.FC<UseCasesPageProps> = ({
-    useCases,
-    requirements,
-    searchQuery,
-    onEdit,
-    onDelete,
-    onBreakDown
-}) => {
     const filteredUseCases = useCases.filter(uc => {
         if (uc.isDeleted) return false;
         if (!searchQuery) return true;
@@ -35,9 +23,9 @@ export const UseCasesPage: React.FC<UseCasesPageProps> = ({
         <UseCaseList
             useCases={filteredUseCases}
             requirements={requirements}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onBreakDown={onBreakDown}
+            onEdit={handleEditUseCase}
+            onDelete={handleDeleteUseCase}
+            onBreakDown={handleBreakDownUseCase}
         />
     );
 };

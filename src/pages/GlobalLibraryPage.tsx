@@ -1,41 +1,25 @@
 import React from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { DetailedRequirementView, UseCaseList, TestCaseList, InformationList } from '../components';
-import type { Requirement, UseCase, TestCase, Information, Project, ColumnVisibility } from '../types';
+import {
+    useGlobalState,
+    useProject,
+    useUI,
+    useRequirements,
+    useUseCases,
+    useTestCases,
+    useInformation
+} from '../app/providers';
 
-interface GlobalLibraryPageProps {
-    globalRequirements: Requirement[];
-    globalUseCases: UseCase[];
-    globalTestCases: TestCase[];
-    globalInformation: Information[];
-    projects: Project[];
-    columnVisibility: ColumnVisibility;
-    onEditRequirement: (req: Requirement) => void;
-    onEditUseCase: (uc: UseCase) => void;
-    onDeleteUseCase: (id: string) => void;
-    onBreakDownUseCase: (uc: UseCase) => void;
-    onEditTestCase: (tc: TestCase) => void;
-    onDeleteTestCase: (id: string) => void;
-    onEditInformation: (info: Information) => void;
-    onDeleteInformation: (id: string) => void;
-}
+export const GlobalLibraryPage: React.FC = () => {
+    const { globalRequirements, globalUseCases, globalTestCases, globalInformation } = useGlobalState();
+    const { projects } = useProject();
+    const { columnVisibility } = useUI();
+    const { handleEdit: handleEditRequirement } = useRequirements();
+    const { handleEditUseCase, handleDeleteUseCase, handleBreakDownUseCase } = useUseCases();
+    const { handleEditTestCase, handleDeleteTestCase } = useTestCases();
+    const { handleEditInformation, handleDeleteInformation } = useInformation();
 
-export const GlobalLibraryPage: React.FC<GlobalLibraryPageProps> = ({
-    globalRequirements,
-    globalUseCases,
-    globalTestCases,
-    globalInformation,
-    projects,
-    columnVisibility,
-    onEditRequirement,
-    onEditUseCase,
-    onDeleteUseCase,
-    onBreakDownUseCase,
-    onEditTestCase,
-    onDeleteTestCase,
-    onEditInformation,
-    onDeleteInformation
-}) => {
     const { type } = useParams<{ type: string }>();
 
     switch (type) {
@@ -43,7 +27,7 @@ export const GlobalLibraryPage: React.FC<GlobalLibraryPageProps> = ({
             return (
                 <DetailedRequirementView
                     requirements={globalRequirements.filter(r => !r.isDeleted)}
-                    onEdit={onEditRequirement}
+                    onEdit={handleEditRequirement}
                     visibleColumns={columnVisibility}
                     showProjectColumn={true}
                     projects={projects}
@@ -55,9 +39,9 @@ export const GlobalLibraryPage: React.FC<GlobalLibraryPageProps> = ({
                 <UseCaseList
                     useCases={globalUseCases.filter(u => !u.isDeleted)}
                     requirements={globalRequirements}
-                    onEdit={onEditUseCase}
-                    onDelete={onDeleteUseCase}
-                    onBreakDown={onBreakDownUseCase}
+                    onEdit={handleEditUseCase}
+                    onDelete={handleDeleteUseCase}
+                    onBreakDown={handleBreakDownUseCase}
                     showProjectColumn={true}
                     projects={projects}
                 />
@@ -67,8 +51,8 @@ export const GlobalLibraryPage: React.FC<GlobalLibraryPageProps> = ({
             return (
                 <TestCaseList
                     testCases={globalTestCases.filter(t => !t.isDeleted)}
-                    onEdit={onEditTestCase}
-                    onDelete={onDeleteTestCase}
+                    onEdit={handleEditTestCase}
+                    onDelete={handleDeleteTestCase}
                     showProjectColumn={true}
                     projects={projects}
                 />
@@ -78,8 +62,8 @@ export const GlobalLibraryPage: React.FC<GlobalLibraryPageProps> = ({
             return (
                 <InformationList
                     information={globalInformation.filter(i => !i.isDeleted)}
-                    onEdit={onEditInformation}
-                    onDelete={onDeleteInformation}
+                    onEdit={handleEditInformation}
+                    onDelete={handleDeleteInformation}
                     showProjectColumn={true}
                     projects={projects}
                 />

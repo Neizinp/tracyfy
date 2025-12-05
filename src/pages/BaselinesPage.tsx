@@ -1,23 +1,15 @@
 import React from 'react';
 import { BaselineManager } from '../components';
-import type { ProjectBaseline } from '../types';
+import { useGit } from '../app/providers';
 
-interface BaselinesPageProps {
-    baselines: ProjectBaseline[];
-    onCreateBaseline: () => void;
-    onViewBaseline: (baselineId: string) => void;
-}
+export const BaselinesPage: React.FC = () => {
+    const { baselines, handleCreateBaseline, handleViewBaselineHistory } = useGit();
 
-export const BaselinesPage: React.FC<BaselinesPageProps> = ({
-    baselines,
-    onCreateBaseline,
-    onViewBaseline
-}) => {
     return (
         <BaselineManager
             baselines={baselines}
-            onCreateBaseline={onCreateBaseline}
-            onViewBaseline={onViewBaseline}
+            onCreateBaseline={handleCreateBaseline}
+            onViewBaseline={handleViewBaselineHistory}
         />
     );
 };

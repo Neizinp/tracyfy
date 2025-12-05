@@ -1,17 +1,11 @@
 import React from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { BaselineRevisionHistory } from '../components';
-import type { ProjectBaseline, Project } from '../types';
+import { useGit, useProject } from '../app/providers';
 
-interface BaselineHistoryPageProps {
-    baselines: ProjectBaseline[];
-    projects: Project[];
-}
-
-export const BaselineHistoryPage: React.FC<BaselineHistoryPageProps> = ({
-    baselines,
-    projects
-}) => {
+export const BaselineHistoryPage: React.FC = () => {
+    const { baselines } = useGit();
+    const { projects } = useProject();
     const { baselineId } = useParams<{ baselineId: string }>();
 
     if (!baselineId) {

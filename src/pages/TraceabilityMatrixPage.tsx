@@ -1,18 +1,11 @@
 import React from 'react';
 import { TraceabilityMatrix } from '../components';
-import type { Requirement, Link } from '../types';
+import { useRequirements, useUI } from '../app/providers';
 
-interface TraceabilityMatrixPageProps {
-    requirements: Requirement[];
-    links: Link[];
-    searchQuery: string;
-}
+export const TraceabilityMatrixPage: React.FC = () => {
+    const { requirements, links } = useRequirements();
+    const { searchQuery } = useUI();
 
-export const TraceabilityMatrixPage: React.FC<TraceabilityMatrixPageProps> = ({
-    requirements,
-    links,
-    searchQuery
-}) => {
     const filteredRequirements = requirements.filter(req => {
         if (req.isDeleted) return false;
         if (!searchQuery) return true;

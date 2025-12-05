@@ -1,9 +1,9 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useGitOperations as useGitOperationsHook } from '../../hooks/useGitOperations';
 import { useGlobalState } from './GlobalStateProvider';
 import { useProject } from './ProjectProvider';
-import type { Version } from '../../types';
+import type { Version, ProjectBaseline } from '../../types';
 
 interface GitContextValue {
     handlePendingChangesChange: (changes: any[]) => void;
@@ -13,6 +13,7 @@ interface GitContextValue {
     handleRestoreVersion: (versionId: string) => Promise<void>;
     versions: Version[];
     setVersions: React.Dispatch<React.SetStateAction<Version[]>>;
+    baselines: ProjectBaseline[];
 }
 
 const GitContext = createContext<GitContextValue | undefined>(undefined);
@@ -47,8 +48,31 @@ export const GitProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setLinks
     });
 
+    // Derive baselines from versions
+    const baselines = useMemo(() =>
+        gitOps.versions
+            .filter((v: Version) => v.type === 'baseline')
+            .map((v: Version) => ({
+                id: v.id,
+                projectId: currentProjectId,
+                version: v.tag || '01',
+                name: v.message,
+                description: '',
+                timestamp: v.timestamp,
+                artifactCommits: {},
+                addedArtifacts: [],
+                removedArtifacts: []
+            } as ProjectBaseline)),
+        [gitOps.versions, currentProjectId]
+    );
+
+    const value: GitContextValue = {
+        ...gitOps,
+        baselines
+    };
+
     return (
-        <GitContext.Provider value={gitOps}>
+        <GitContext.Provider value={value}>
             {children}
         </GitContext.Provider>
     );

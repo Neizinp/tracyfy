@@ -1,24 +1,12 @@
 import React from 'react';
 import { RequirementTree } from '../components';
-import type { Requirement, Link } from '../types';
+import { useRequirements } from '../app/providers';
+import { useUI } from '../app/providers';
 
-interface RequirementsTreePageProps {
-    requirements: Requirement[];
-    links: Link[];
-    searchQuery: string;
-    setRequirements: (reqs: Requirement[]) => void;
-    onLink: (sourceId: string) => void;
-    onEdit: (req: Requirement) => void;
-}
+export const RequirementsTreePage: React.FC = () => {
+    const { requirements, setRequirements, links, handleLink, handleEdit } = useRequirements();
+    const { searchQuery } = useUI();
 
-export const RequirementsTreePage: React.FC<RequirementsTreePageProps> = ({
-    requirements,
-    links,
-    searchQuery,
-    setRequirements,
-    onLink,
-    onEdit
-}) => {
     const filteredRequirements = requirements.filter(req => {
         if (req.isDeleted) return false;
         if (!searchQuery) return true;
@@ -47,8 +35,8 @@ export const RequirementsTreePage: React.FC<RequirementsTreePageProps> = ({
                     setRequirements(newRequirements);
                 }
             }}
-            onLink={onLink}
-            onEdit={onEdit}
+            onLink={handleLink}
+            onEdit={handleEdit}
         />
     );
 };

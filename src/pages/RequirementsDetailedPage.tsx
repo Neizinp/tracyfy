@@ -1,20 +1,11 @@
 import React from 'react';
 import { DetailedRequirementView } from '../components';
-import type { Requirement, ColumnVisibility } from '../types';
+import { useRequirements, useUI } from '../app/providers';
 
-interface RequirementsDetailedPageProps {
-    requirements: Requirement[];
-    searchQuery: string;
-    columnVisibility: ColumnVisibility;
-    onEdit: (req: Requirement) => void;
-}
+export const RequirementsDetailedPage: React.FC = () => {
+    const { requirements, handleEdit } = useRequirements();
+    const { searchQuery, columnVisibility } = useUI();
 
-export const RequirementsDetailedPage: React.FC<RequirementsDetailedPageProps> = ({
-    requirements,
-    searchQuery,
-    columnVisibility,
-    onEdit
-}) => {
     const filteredRequirements = requirements.filter(req => {
         if (req.isDeleted) return false;
         if (!searchQuery) return true;
@@ -30,7 +21,7 @@ export const RequirementsDetailedPage: React.FC<RequirementsDetailedPageProps> =
     return (
         <DetailedRequirementView
             requirements={filteredRequirements}
-            onEdit={onEdit}
+            onEdit={handleEdit}
             visibleColumns={columnVisibility}
         />
     );
