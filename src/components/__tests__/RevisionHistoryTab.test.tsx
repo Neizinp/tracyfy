@@ -1,11 +1,15 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RevisionHistoryTab } from '../RevisionHistoryTab';
-import { useFileSystem } from '../../app/providers';
 
-// Mock useFileSystem
-vi.mock('../../app/providers', () => ({
-    useFileSystem: vi.fn()
+// Mock the useFileSystem hook before importing component
+const mockGetArtifactHistory = vi.fn();
+vi.mock('../../app/providers/FileSystemProvider', () => ({
+    useFileSystem: vi.fn(() => ({
+        getArtifactHistory: mockGetArtifactHistory,
+        isReady: true,
+    })),
+    FileSystemProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 describe('RevisionHistoryTab', () => {
@@ -14,17 +18,13 @@ describe('RevisionHistoryTab', () => {
     });
 
     it('should render loading state initially', () => {
-        (useFileSystem as any).mockReturnValue({
-            getArtifactHistory: vi.fn().mockReturnValue(new Promise(() => { }))
-        });
+        mockGetArtifactHistory.mockReturnValue(new Promise(() => { }));
         render(<RevisionHistoryTab artifactId="123" artifactType="requirements" />);
         expect(screen.getByText('Loading history...')).toBeInTheDocument();
     });
 
     it('should render empty state when no history', async () => {
-        (useFileSystem as any).mockReturnValue({
-            getArtifactHistory: vi.fn().mockResolvedValue([])
-        });
+        mockGetArtifactHistory.mockResolvedValue([]);
         render(<RevisionHistoryTab artifactId="123" artifactType="requirements" />);
 
         await waitFor(() => {
@@ -42,9 +42,7 @@ describe('RevisionHistoryTab', () => {
                 timestamp: 1678886400000 // 2023-03-15
             }
         ];
-        (useFileSystem as any).mockReturnValue({
-            getArtifactHistory: vi.fn().mockResolvedValue(mockCommits)
-        });
+        mockGetArtifactHistory.mockResolvedValue(mockCommits);
 
         render(<RevisionHistoryTab artifactId="123" artifactType="requirements" />);
 

@@ -97,7 +97,7 @@ function parseYamlFrontmatter(content: string): { frontmatter: Record<string, an
             if (colonIndex === -1) continue;
 
             const key = line.substring(0, colonIndex).trim();
-            let value = line.substring(colonIndex + 1).trim();
+            const value = line.substring(colonIndex + 1).trim();
 
             if (value === '|') {
                 // Start of multiline string
