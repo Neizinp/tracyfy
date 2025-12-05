@@ -73,6 +73,13 @@ class FileSystemService {
   }
 
   /**
+   * Set the directory handle directly (used by git service)
+   */
+  setDirectoryHandle(handle: FileSystemDirectoryHandle): void {
+    this.directoryHandle = handle;
+  }
+
+  /**
    * Check if File System Access API is supported
    */
   isSupported(): boolean {

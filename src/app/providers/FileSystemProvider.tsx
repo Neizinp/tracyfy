@@ -234,17 +234,16 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (!isReady) {
         throw new Error('Filesystem not ready');
       }
-      console.log(`[commitFile] Committing ${filepath}`);
+      console.log(`[commitFile] Committing ${filepath} with message: ${message}`);
 
-      // Note: We don't call realGitService.commitFile() because git.add/commit fail with File System API
-      // Instead, we just remove the file from pendingChanges to simulate a successful commit
-      // The actual git operations should be done via command line or git UI
+      // Now git operations work because .git/ files are stored in IndexedDB
+      await realGitService.commitFile(filepath, message);
 
-      // Remove from pending changes
-      setPendingChanges((prev) => prev.filter((p) => p.path !== filepath));
-      console.log(`[commitFile] Removed ${filepath} from pendingChanges`);
+      // Refresh status to update pending changes
+      await refreshStatus();
+      console.log(`[commitFile] Committed ${filepath} successfully`);
     },
-    [isReady]
+    [isReady, refreshStatus]
   );
 
   const getArtifactHistory = useCallback(
