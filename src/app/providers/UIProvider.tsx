@@ -56,9 +56,18 @@ interface UIContextValue {
     columnVisibility: ColumnVisibility;
     setColumnVisibility: (cols: ColumnVisibility) => void;
     getDefaultColumnVisibility: () => ColumnVisibility;
+
     // Search
     searchQuery: string;
     setSearchQuery: (query: string) => void;
+
+    // Link source
+    linkSourceId: string | null;
+    setLinkSourceId: (id: string | null) => void;
+
+    // Helper functions
+    handleGlobalLibrarySelect: (id: string) => void;
+    handleOpenLibrary: (tab: 'requirements' | 'usecases' | 'testcases' | 'information') => void;
 }
 
 const UIContext = createContext<UIContextValue | undefined>(undefined);

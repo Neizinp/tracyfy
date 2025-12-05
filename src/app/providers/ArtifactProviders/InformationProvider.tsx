@@ -7,6 +7,10 @@ import { useUI } from '../UIProvider';
 import type { Information } from '../../../types';
 
 interface InformationContextValue {
+    // Data
+    information: Information[];
+
+    // CRUD operations
     handleAddInformation: (info: Omit<Information, 'id' | 'lastModified' | 'dateCreated'> | any) => void;
     handleEditInformation: (info: Information) => void;
     handleDeleteInformation: (id: string) => void;
@@ -32,8 +36,13 @@ export const InformationProvider: React.FC<{ children: ReactNode }> = ({ childre
         setSelectedInformation
     });
 
+    const value: InformationContextValue = {
+        information,
+        ...informationHook
+    };
+
     return (
-        <InformationContext.Provider value={informationHook}>
+        <InformationContext.Provider value={value}>
             {children}
         </InformationContext.Provider>
     );

@@ -102,6 +102,23 @@ export function useUIState() {
         columnVisibility,
         setColumnVisibility,
         handleColumnToggle,
-        getDefaultColumnVisibility
+        getDefaultColumnVisibility,
+
+        // Helper functions
+        handleGlobalLibrarySelect: (id: string) => {
+            setGlobalLibrarySelection(prev => {
+                const newSelection = new Set(prev);
+                if (newSelection.has(id)) {
+                    newSelection.delete(id);
+                } else {
+                    newSelection.add(id);
+                }
+                return newSelection;
+            });
+        },
+        handleOpenLibrary: (tab: 'requirements' | 'usecases' | 'testcases' | 'information') => {
+            setActiveLibraryTab(tab);
+            setIsLibraryPanelOpen(true);
+        }
     };
 }

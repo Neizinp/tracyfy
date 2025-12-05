@@ -1,18 +1,27 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useRequirements as useRequirementsHook } from '../../../hooks/useRequirements';
 import { useGlobalState } from '../GlobalStateProvider';
 import { useProject } from '../ProjectProvider';
 import { useUI } from '../UIProvider';
-import type { Requirement } from '../../../types';
+import type { Requirement, Link } from '../../../types';
 
 interface RequirementsContextValue {
-    // CRUD operations (matching useRequirements hook return names)
+    // Data
+    requirements: Requirement[];
+    setRequirements: (reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])) => void;
+    links: Link[];
+
+    // CRUD operations
     handleAddRequirement: (req: Omit<Requirement, 'id' | 'lastModified'>) => Promise<void>;
     handleUpdateRequirement: (id: string, data: Partial<Requirement>) => Promise<void>;
     handleDeleteRequirement: (id: string) => void;
     handleRestoreRequirement: (id: string) => void;
     handlePermanentDeleteRequirement: (id: string) => void;
+
+    // Page handlers
+    handleEdit: (req: Requirement) => void;
+    handleLink: (sourceId: string) => void;
 }
 
 const RequirementsContext = createContext<RequirementsContextValue | undefined>(undefined);
@@ -20,7 +29,7 @@ const RequirementsContext = createContext<RequirementsContextValue | undefined>(
 export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { requirements, setRequirements, links, setLinks, usedReqNumbers, setUsedReqNumbers } = useGlobalState();
     const { projects, currentProjectId } = useProject();
-    const { setEditingRequirement, setIsEditRequirementModalOpen } = useUI();
+    const { setEditingRequirement, setIsEditRequirementModalOpen, setLinkSourceId, setIsLinkModalOpen } = useUI();
 
     const requirementsHook = useRequirementsHook({
         requirements,
@@ -35,8 +44,27 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
         setEditingRequirement
     });
 
+    const handleEdit = useCallback((req: Requirement) => {
+        setEditingRequirement(req);
+        setIsEditRequirementModalOpen(true);
+    }, [setEditingRequirement, setIsEditRequirementModalOpen]);
+
+    const handleLink = useCallback((sourceId: string) => {
+        setLinkSourceId(sourceId);
+        setIsLinkModalOpen(true);
+    }, [setLinkSourceId, setIsLinkModalOpen]);
+
+    const value: RequirementsContextValue = {
+        requirements,
+        setRequirements,
+        links,
+        ...requirementsHook,
+        handleEdit,
+        handleLink
+    };
+
     return (
-        <RequirementsContext.Provider value={requirementsHook}>
+        <RequirementsContext.Provider value={value}>
             {children}
         </RequirementsContext.Provider>
     );
