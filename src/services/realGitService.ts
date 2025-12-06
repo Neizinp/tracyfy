@@ -52,13 +52,6 @@ declare global {
 }
 
 const isElectronEnv = () => typeof window !== 'undefined' && !!window.electronAPI?.isElectron;
-const requireElectron = () => {
-  if (!isElectronEnv()) {
-    throw new Error(
-      'Git operations require the Electron app. Run `npm run electron:dev` or `npm run electron:start`.'
-    );
-  }
-};
 
 export interface CommitInfo {
   hash: string;
@@ -498,16 +491,102 @@ class RealGitService {
   private rootDir = '.';
 
   /**
-   * Initialize git with the selected directory
+   * Get the root directory path (Electron uses absolute path, browser uses '.')
    */
-  async init(directoryHandle: FileSystemDirectoryHandle): Promise<boolean> {
-    fsAdapter.setRoot(directoryHandle);
+  private getRootDir(): string {
+    if (isElectronEnv()) {
+      const rootPath = fileSystemService.getRootPath();
+      return rootPath || '.';
+    }
+    return this.rootDir;
+  }
+
+  /**
+   * Initialize git with the selected directory
+   * In Electron, directoryHandle is ignored (we use rootPath from fileSystemService)
+   * In browser, directoryHandle is the FSA handle
+   */
+  async init(directoryHandle?: FileSystemDirectoryHandle): Promise<boolean> {
+    // Browser path: set FSA handle
+    if (!isElectronEnv() && directoryHandle) {
+      fsAdapter.setRoot(directoryHandle);
+    }
 
     // Check if .git exists
     const hasGit = await fileSystemService.checkGitExists();
 
-    if (!hasGit) {
-      // Ask user if they want to initialize git
+    // Check if HEAD exists (valid repo)
+    let hasValidRepo = false;
+    if (hasGit) {
+      try {
+        const headContent = await fileSystemService.readFile('.git/HEAD');
+        hasValidRepo = !!headContent;
+        console.log('[init] Existing .git folder found, HEAD exists:', hasValidRepo);
+      } catch {
+        hasValidRepo = false;
+      }
+    }
+
+    if (!hasGit || !hasValidRepo) {
+      if (hasGit && !hasValidRepo) {
+        console.warn('[init] Incomplete git repository detected - will reinitialize');
+
+        // Recreate HEAD pointing to main so git operations can proceed
+        try {
+          await fileSystemService.writeFile('.git/HEAD', 'ref: refs/heads/main\n');
+          await fileSystemService.writeFile('.git/refs/heads/main', '');
+          console.log('[init] Recreated HEAD -> refs/heads/main');
+        } catch (err) {
+          console.error('[init] Failed to recreate HEAD', err);
+        }
+      }
+      // In Electron, use IPC to initialize git
+      if (isElectronEnv()) {
+        const shouldInit = confirm(
+          'This directory is not a git repository.\n\n' +
+            'Would you like to initialize it as a git repository?\n\n' +
+            'This is required for version tracking.'
+        );
+
+        if (!shouldInit) {
+          return false;
+        }
+
+        const rootDir = this.getRootDir();
+        console.log('[init] Initializing git repository via IPC at:', rootDir);
+
+        const result = await window.electronAPI!.git.init(rootDir);
+        if (result.error) {
+          console.error('[init] Git init failed:', result.error);
+          return false;
+        }
+
+        console.log('[init] Git repository initialized via IPC');
+
+        // Create initial README and commit via IPC
+        try {
+          const readmePath = `${rootDir}/README.md`;
+          await window.electronAPI!.fs.writeFile(
+            readmePath,
+            '# Requirements Management\n\nThis repository contains requirements, use cases, test cases, and information managed by ReqTrace.\n'
+          );
+
+          await window.electronAPI!.git.add(rootDir, 'README.md');
+          await window.electronAPI!.git.commit(rootDir, 'Initial commit', {
+            name: 'ReqTrace User',
+            email: 'user@reqtrace.local',
+          });
+
+          console.log('[init] Initial commit created');
+        } catch (error) {
+          console.error('[init] Failed to create initial commit:', error);
+        }
+
+        this.initialized = true;
+        return true;
+      }
+
+      // Browser path: ask user if they want to initialize git
       const shouldInit = confirm(
         'This directory is not a git repository.\n\n' +
           'Would you like to initialize it as a git repository?\n\n' +
@@ -519,16 +598,16 @@ class RealGitService {
       }
 
       // Initialize git repository
-      console.log('[init] Initializing git repository...');
+      console.log('[init] Initializing git repository (browser)...');
 
       await git.init({
         fs: fsAdapter,
-        dir: this.rootDir,
+        dir: '.',
         defaultBranch: 'main',
-      } as any);
+      });
       console.log('[init] Git repository initialized');
 
-      // Create initial commit
+      // Create initial commit - REQUIRED for HEAD to exist
       try {
         console.log('[init] Creating initial commit...');
         await fileSystemService.writeFile(
@@ -539,14 +618,14 @@ class RealGitService {
 
         await git.add({
           fs: fsAdapter,
-          dir: this.rootDir,
+          dir: '.',
           filepath: 'README.md',
-        } as any);
+        });
         console.log('[init] README.md added to git');
 
-        await git.commit({
+        const sha = await git.commit({
           fs: fsAdapter,
-          dir: this.rootDir,
+          dir: '.',
           message: 'Initial commit',
           author: {
             name: 'ReqTrace User',
@@ -554,10 +633,10 @@ class RealGitService {
           },
         });
 
-        console.log('[init] Initial commit created successfully');
+        console.log('[init] Initial commit created successfully:', sha);
       } catch (error) {
         console.error('[init] Failed to create initial commit:', error);
-        // Don't throw - allow app to continue, we'll create initial commit later if needed
+        throw error; // MUST have initial commit for HEAD to exist
       }
     }
 
@@ -648,16 +727,35 @@ class RealGitService {
   async getStatus(): Promise<FileStatus[]> {
     if (!this.initialized) return [];
 
-    requireElectron();
-
     try {
       let result: FileStatus[] = [];
 
-      const status = await window.electronAPI!.git.statusMatrix(this.rootDir);
+      // Electron path: use IPC
+      if (isElectronEnv()) {
+        const status = await window.electronAPI!.git.statusMatrix(this.getRootDir());
+        console.log('[getStatus] Raw statusMatrix (Electron):', status);
 
-      console.log('[getStatus] Raw statusMatrix:', status);
+        if (Array.isArray(status)) {
+          result = status
+            .map(([filepath, head, workdir, stage]) => {
+              let statusStr = 'unchanged';
+              if (head === 1 && workdir === 2 && stage === 2) statusStr = 'modified';
+              if (head === 0 && workdir === 2 && stage === 0) statusStr = 'new';
+              if (head === 0 && workdir === 2 && stage === 2) statusStr = 'added';
+              if (head === 1 && workdir === 0) statusStr = 'deleted';
 
-      if (Array.isArray(status)) {
+              return {
+                path: filepath,
+                status: statusStr,
+              };
+            })
+            .filter((f) => f.status !== 'unchanged');
+        }
+      } else {
+        // Browser path: use fsAdapter
+        const status = await git.statusMatrix({ fs: fsAdapter, dir: this.getRootDir() });
+        console.log('[getStatus] Raw statusMatrix (Browser):', status);
+
         result = status
           .map(([filepath, head, workdir, stage]) => {
             let statusStr = 'unchanged';
@@ -701,7 +799,48 @@ class RealGitService {
       return allFiles;
     } catch (error) {
       console.error('Failed to get status:', error);
+
+      // Attempt self-repair if repository objects are missing
+      const errorMsg = (error as Error)?.message || '';
+      if (errorMsg.includes('Could not find') || errorMsg.includes('ENOENT')) {
+        console.warn('[getStatus] Detected corrupted git state, attempting repair...');
+        const repaired = await this.repairRepository();
+        if (repaired) {
+          console.log('[getStatus] Repair succeeded, retrying status');
+          return this.getStatus();
+        }
+      }
+
       return [];
+    }
+  }
+
+  /**
+   * Attempt to repair a corrupted repository by re-initializing and creating a baseline commit.
+   */
+  private async repairRepository(): Promise<boolean> {
+    try {
+      const dir = this.getRootDir();
+      await git.init({ fs: fsAdapter, dir, defaultBranch: 'main' });
+
+      // Ensure README exists to commit
+      const readmePath = 'README.md';
+      const readmeContent = '# Requirements Management\n\nRecovered repository baseline.\n';
+      await fileSystemService.writeFile(readmePath, readmeContent);
+
+      await git.add({ fs: fsAdapter, dir, filepath: readmePath });
+      await git.commit({
+        fs: fsAdapter,
+        dir,
+        message: 'Recover repository (recreated missing objects)',
+        author: { name: 'ReqTrace Repair', email: 'repair@reqtrace.local' },
+      });
+
+      console.log('[repairRepository] Repair commit created');
+      return true;
+    } catch (err) {
+      console.error('[repairRepository] Repair failed:', err);
+      return false;
     }
   }
 
@@ -719,11 +858,11 @@ class RealGitService {
         throw new Error(`File not found on disk: ${filepath}`);
       }
 
-      await git.add({ fs: fsAdapter, dir: this.rootDir, filepath });
+      await git.add({ fs: fsAdapter, dir: this.getRootDir(), filepath });
 
       const commitOid = await git.commit({
         fs: fsAdapter,
-        dir: this.rootDir,
+        dir: this.getRootDir(),
         message,
         author: { name: 'ReqTrace User', email: 'user@reqtrace.local' },
       });
@@ -809,10 +948,27 @@ class RealGitService {
       return [];
     }
 
-    requireElectron();
-
     try {
-      const commits = await window.electronAPI!.git.log(this.rootDir, 100, filepath);
+      let commits: any[];
+
+      // Electron path: use IPC
+      if (isElectronEnv()) {
+        commits = await window.electronAPI!.git.log(this.getRootDir(), 100, filepath);
+      } else {
+        // Browser path: use fsAdapter
+        const logs = await git.log({
+          fs: fsAdapter,
+          dir: this.getRootDir(),
+          depth: 100,
+          ref: 'HEAD',
+        });
+        commits = logs.map((log) => ({
+          oid: log.oid,
+          message: log.commit.message,
+          author: log.commit.author.name,
+          timestamp: log.commit.author.timestamp,
+        }));
+      }
 
       return Array.isArray(commits)
         ? commits.map((commit) => ({
@@ -836,13 +992,27 @@ class RealGitService {
       throw new Error('Git service not initialized');
     }
 
-    requireElectron();
+    const author = { name: 'ReqTrace User', email: 'user@reqtrace.local' };
 
-    const result = await window.electronAPI!.git.annotatedTag(this.rootDir, tagName, message, {
-      name: 'ReqTrace User',
-      email: 'user@reqtrace.local',
-    });
-    if (result.error) throw new Error(result.error);
+    // Electron path: use IPC
+    if (isElectronEnv()) {
+      const result = await window.electronAPI!.git.annotatedTag(
+        this.getRootDir(),
+        tagName,
+        message,
+        author
+      );
+      if (result.error) throw new Error(result.error);
+    } else {
+      // Browser path: use fsAdapter
+      await git.annotatedTag({
+        fs: fsAdapter,
+        dir: this.getRootDir(),
+        ref: tagName,
+        message,
+        tagger: author,
+      });
+    }
   }
 
   /**
@@ -853,10 +1023,14 @@ class RealGitService {
       return [];
     }
 
-    requireElectron();
-
     try {
-      return await window.electronAPI!.git.listTags(this.rootDir);
+      // Electron path: use IPC
+      if (isElectronEnv()) {
+        return await window.electronAPI!.git.listTags(this.getRootDir());
+      } else {
+        // Browser path: use fsAdapter
+        return await git.listTags({ fs: fsAdapter, dir: this.getRootDir() });
+      }
     } catch {
       return [];
     }
@@ -871,41 +1045,52 @@ class RealGitService {
     if (!this.initialized) return [];
 
     try {
-      requireElectron();
-
-      const tagNames = await window.electronAPI!.git.listTags(this.rootDir);
+      const tagNames = isElectronEnv()
+        ? await window.electronAPI!.git.listTags(this.getRootDir())
+        : await git.listTags({ fs: fsAdapter, dir: this.getRootDir() });
       const tags = [];
 
       for (const name of tagNames) {
         try {
-          // Try to resolve as annotated tag first
-          const oid = await window.electronAPI!.git.resolveRef(this.rootDir, name);
-          const read = await window.electronAPI!.git.readTag(this.rootDir, oid);
-
-          tags.push({
-            name,
-            message: read.message,
-            timestamp: read.timestamp,
-            commit: read.object,
-          });
-        } catch (e) {
-          // Fallback for lightweight tags or if readTag fails
-          // For lightweight tags, we'd need to read the commit it points to
-          try {
-            const oid = await window.electronAPI!.git.resolveRef(this.rootDir, name);
-            const logResult = await window.electronAPI!.git.log(this.rootDir, 1);
-            const commit = Array.isArray(logResult) ? logResult[0] : undefined;
-            if (commit) {
+          if (isElectronEnv()) {
+            // Electron path: use IPC
+            const oid = await window.electronAPI!.git.resolveRef(this.getRootDir(), name);
+            const read = await window.electronAPI!.git.readTag(this.getRootDir(), oid);
+            tags.push({
+              name,
+              message: read.message,
+              timestamp: read.timestamp,
+              commit: read.object,
+            });
+          } else {
+            // Browser path: use fsAdapter
+            const oid = await git.resolveRef({ fs: fsAdapter, dir: this.getRootDir(), ref: name });
+            try {
+              const tagObject = await git.readTag({ fs: fsAdapter, dir: this.getRootDir(), oid });
               tags.push({
                 name,
-                message: commit.message,
-                timestamp: commit.timestamp,
+                message: tagObject.tag.message,
+                timestamp: tagObject.tag.tagger.timestamp,
+                commit: tagObject.tag.object,
+              });
+            } catch {
+              // Lightweight tag - get commit info
+              const [log] = await git.log({
+                fs: fsAdapter,
+                dir: this.getRootDir(),
+                ref: oid,
+                depth: 1,
+              });
+              tags.push({
+                name,
+                message: log.commit.message,
+                timestamp: log.commit.committer.timestamp,
                 commit: oid,
               });
             }
-          } catch (e2) {
-            console.warn(`Failed to read tag ${name}:`, e2);
           }
+        } catch (e) {
+          console.warn(`Failed to read tag ${name}:`, e);
         }
       }
 

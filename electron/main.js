@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promises as fs } from 'node:fs';
@@ -169,6 +169,121 @@ ipcMain.handle('git:readTag', async (_event, dir, oid) => {
       timestamp: tag.tag.tagger.timestamp * 1000,
       object: tag.tag.object,
     };
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+// Filesystem IPC handlers - use Node fs for real disk access
+ipcMain.handle('fs:selectDirectory', async () => {
+  try {
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    if (result.canceled || !result.filePaths.length) {
+      return { canceled: true };
+    }
+    return { path: result.filePaths[0] };
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('fs:readFile', async (_event, fullPath) => {
+  try {
+    const content = await fs.readFile(fullPath, 'utf8');
+    return { content };
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return { notFound: true };
+    }
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('fs:readFileBinary', async (_event, fullPath) => {
+  try {
+    const buffer = await fs.readFile(fullPath);
+    return { data: Array.from(buffer) };
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return { notFound: true };
+    }
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('fs:writeFile', async (_event, fullPath, content) => {
+  try {
+    await fs.mkdir(path.dirname(fullPath), { recursive: true });
+    await fs.writeFile(fullPath, content, 'utf8');
+    return { ok: true };
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('fs:writeFileBinary', async (_event, fullPath, dataArray) => {
+  try {
+    await fs.mkdir(path.dirname(fullPath), { recursive: true });
+    const buffer = Buffer.from(dataArray);
+    await fs.writeFile(fullPath, buffer);
+    return { ok: true };
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('fs:deleteFile', async (_event, fullPath) => {
+  try {
+    await fs.unlink(fullPath);
+    return { ok: true };
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return { ok: true };
+    }
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('fs:listFiles', async (_event, dirPath) => {
+  try {
+    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    const files = entries.filter((e) => e.isFile()).map((e) => e.name);
+    return { files };
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return { files: [] };
+    }
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('fs:listEntries', async (_event, dirPath) => {
+  try {
+    const entries = await fs.readdir(dirPath);
+    return { entries };
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return { entries: [] };
+    }
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('fs:checkExists', async (_event, fullPath) => {
+  try {
+    await fs.access(fullPath);
+    return { exists: true };
+  } catch {
+    return { exists: false };
+  }
+});
+
+ipcMain.handle('fs:mkdir', async (_event, dirPath) => {
+  try {
+    await fs.mkdir(dirPath, { recursive: true });
+    return { ok: true };
   } catch (error) {
     return { error: error.message };
   }

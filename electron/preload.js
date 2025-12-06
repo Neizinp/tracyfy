@@ -18,4 +18,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     listTags: (dir) => ipcRenderer.invoke('git:listTags', dir),
     readTag: (dir, oid) => ipcRenderer.invoke('git:readTag', dir, oid),
   },
+  fs: {
+    selectDirectory: () => ipcRenderer.invoke('fs:selectDirectory'),
+    readFile: (fullPath) => ipcRenderer.invoke('fs:readFile', fullPath),
+    readFileBinary: (fullPath) => ipcRenderer.invoke('fs:readFileBinary', fullPath),
+    writeFile: (fullPath, content) => ipcRenderer.invoke('fs:writeFile', fullPath, content),
+    writeFileBinary: (fullPath, dataArray) =>
+      ipcRenderer.invoke('fs:writeFileBinary', fullPath, dataArray),
+    deleteFile: (fullPath) => ipcRenderer.invoke('fs:deleteFile', fullPath),
+    listFiles: (dirPath) => ipcRenderer.invoke('fs:listFiles', dirPath),
+    listEntries: (dirPath) => ipcRenderer.invoke('fs:listEntries', dirPath),
+    checkExists: (fullPath) => ipcRenderer.invoke('fs:checkExists', fullPath),
+    mkdir: (dirPath) => ipcRenderer.invoke('fs:mkdir', dirPath),
+  },
 });

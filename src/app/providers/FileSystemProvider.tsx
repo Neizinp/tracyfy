@@ -161,8 +161,8 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
 
         const result = await fileSystemService.restoreDirectory();
-        if (result && result.handle) {
-          // Initialize git with the restored directory
+        if (result && (result.handle || result.path)) {
+          // Initialize git with the restored directory (handle for browser, path for Electron)
           const gitInitialized = await realGitService.init(result.handle);
           if (gitInitialized) {
             setDirectoryName(fileSystemService.getDirectoryName());
@@ -200,7 +200,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     try {
       const result = await fileSystemService.selectDirectory();
 
-      // Initialize git
+      // Initialize git (handle for browser, path for Electron)
       const gitInitialized = await realGitService.init(result.handle);
       if (!gitInitialized) {
         setError('Git initialization was cancelled. A git repository is required.');

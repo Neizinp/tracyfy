@@ -16,6 +16,9 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
+    "test:git": "node test-handlers.mjs",
+    "test:missing-head": "node test-missing-head.mjs",
+    "test:pending": "node test-pending-changes.mjs",
     "electron:dev": "concurrently -k \"npm:dev:electron\" \"npm:electron:launch\"",
     "electron:launch": "wait-on http://localhost:5181 && VITE_DEV_SERVER_URL=http://localhost:5181 electron .",
     "electron:start": "npm run build && electron ."

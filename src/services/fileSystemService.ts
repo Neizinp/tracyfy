@@ -1,8 +1,9 @@
 /**
- * File System Service - Real disk storage using File System Access API
+ * File System Service - Real disk storage using Electron IPC or File System Access API
  *
  * This service handles reading/writing to a real directory on disk,
  * with git integration for version control.
+ * In Electron, uses Node fs via IPC. In browser, uses File System Access API.
  */
 
 // Store the directory handle in IndexedDB for persistence
@@ -10,13 +11,25 @@ const DB_NAME = 'reqtrace-fs-handles';
 const STORE_NAME = 'handles';
 
 interface DirectoryState {
-  handle: FileSystemDirectoryHandle;
+  handle?: FileSystemDirectoryHandle;
   hasGit: boolean;
+  path?: string;
+}
+
+// Check if running in Electron
+function isElectron(): boolean {
+  return typeof window !== 'undefined' && !!(window as any).electronAPI?.isElectron;
+}
+
+// Get Electron API if available
+function getElectronAPI(): any {
+  return (window as any).electronAPI;
 }
 
 class FileSystemService {
   private directoryHandle: FileSystemDirectoryHandle | null = null;
   private db: IDBDatabase | null = null;
+  private rootPath: string | null = null; // For Electron: absolute path to root dir
 
   /**
    * Initialize the IndexedDB for storing directory handles
@@ -83,13 +96,32 @@ class FileSystemService {
    * Check if File System Access API is supported
    */
   isSupported(): boolean {
-    return 'showDirectoryPicker' in window;
+    return isElectron() || 'showDirectoryPicker' in window;
   }
 
   /**
    * Prompt user to select a directory
    */
   async selectDirectory(): Promise<DirectoryState> {
+    // Electron path: use native dialog
+    if (isElectron()) {
+      const api = getElectronAPI();
+      const result = await api.fs.selectDirectory();
+
+      if (result.canceled) {
+        throw new Error('Directory selection was cancelled');
+      }
+
+      this.rootPath = result.path;
+
+      // Check if .git exists
+      const gitPath = `${this.rootPath}/.git`;
+      const gitExists = await api.fs.checkExists(gitPath);
+
+      return { path: this.rootPath, hasGit: gitExists.exists };
+    }
+
+    // Browser path: use File System Access API
     if (!this.isSupported()) {
       throw new Error(
         'File System Access API is not supported in this browser. Please use Chrome, Edge, or Opera.'
@@ -122,6 +154,12 @@ class FileSystemService {
    * Returns null if no permission or handle not found
    */
   async restoreDirectory(): Promise<DirectoryState | null> {
+    // Electron: no restore needed, directory is always accessible via IPC
+    if (isElectron()) {
+      return null;
+    }
+
+    // Browser: try to restore FSA handle
     try {
       const handle = await this.getStoredHandle();
       if (!handle) return null;
@@ -152,6 +190,14 @@ class FileSystemService {
    * Check if .git directory exists
    */
   async checkGitExists(): Promise<boolean> {
+    if (isElectron()) {
+      if (!this.rootPath) return false;
+      const api = getElectronAPI();
+      const gitPath = `${this.rootPath}/.git`;
+      const result = await api.fs.checkExists(gitPath);
+      return result.exists;
+    }
+
     if (!this.directoryHandle) return false;
 
     try {
@@ -184,6 +230,21 @@ class FileSystemService {
    * Read a file as text
    */
   async readFile(path: string): Promise<string | null> {
+    // Electron path: use IPC
+    if (isElectron()) {
+      if (!this.rootPath) {
+        throw new Error('No directory selected');
+      }
+      const api = getElectronAPI();
+      const fullPath = `${this.rootPath}/${path}`;
+      const result = await api.fs.readFile(fullPath);
+
+      if (result.notFound) return null;
+      if (result.error) throw new Error(result.error);
+      return result.content;
+    }
+
+    // Browser path: use FSA
     if (!this.directoryHandle) {
       throw new Error('No directory selected');
     }
@@ -210,6 +271,21 @@ class FileSystemService {
    * Read a file as binary data
    */
   async readFileBinary(path: string): Promise<Uint8Array | null> {
+    // Electron path: use IPC
+    if (isElectron()) {
+      if (!this.rootPath) {
+        throw new Error('No directory selected');
+      }
+      const api = getElectronAPI();
+      const fullPath = `${this.rootPath}/${path}`;
+      const result = await api.fs.readFileBinary(fullPath);
+
+      if (result.notFound) return null;
+      if (result.error) throw new Error(result.error);
+      return new Uint8Array(result.data);
+    }
+
+    // Browser path: use FSA
     if (!this.directoryHandle) {
       throw new Error('No directory selected');
     }
@@ -238,6 +314,34 @@ class FileSystemService {
    */
   async writeFile(path: string, content: string): Promise<void> {
     console.log(`[writeFile] Called for path: ${path}`);
+
+    // Electron path: use IPC
+    if (isElectron()) {
+      if (!this.rootPath) {
+        console.error('[writeFile] No directory selected');
+        throw new Error('No directory selected');
+      }
+      const api = getElectronAPI();
+      const fullPath = `${this.rootPath}/${path}`;
+
+      // Create parent directories if needed
+      const parts = path.split('/');
+      if (parts.length > 1) {
+        const dirPath = `${this.rootPath}/${parts.slice(0, -1).join('/')}`;
+        await api.fs.mkdir(dirPath);
+      }
+
+      const result = await api.fs.writeFile(fullPath, content);
+
+      if (result.error) {
+        console.error(`[writeFile] Error writing file: ${path}`, result.error);
+        throw new Error(result.error);
+      }
+      console.log(`[writeFile] Successfully wrote file: ${path}`);
+      return;
+    }
+
+    // Browser path: use FSA
     if (!this.directoryHandle) {
       console.error('[writeFile] No directory selected');
       throw new Error('No directory selected');
@@ -286,6 +390,38 @@ class FileSystemService {
    */
   async writeFileBinary(path: string, content: Uint8Array | ArrayBuffer): Promise<void> {
     console.log(`[writeFileBinary] Called for path: ${path}`);
+
+    // Electron path: use IPC
+    if (isElectron()) {
+      if (!this.rootPath) {
+        console.error('[writeFileBinary] No directory selected');
+        throw new Error('No directory selected');
+      }
+      const api = getElectronAPI();
+      const fullPath = `${this.rootPath}/${path}`;
+
+      // Create parent directories if needed
+      const parts = path.split('/');
+      if (parts.length > 1) {
+        const dirPath = `${this.rootPath}/${parts.slice(0, -1).join('/')}`;
+        await api.fs.mkdir(dirPath);
+      }
+
+      // Convert to plain array for IPC
+      const dataArray = Array.from(
+        content instanceof ArrayBuffer ? new Uint8Array(content) : content
+      );
+      const result = await api.fs.writeFileBinary(fullPath, dataArray);
+
+      if (result.error) {
+        console.error(`[writeFileBinary] Error writing binary file: ${path}`, result.error);
+        throw new Error(result.error);
+      }
+      console.log(`[writeFileBinary] Successfully wrote binary file: ${path}`);
+      return;
+    }
+
+    // Browser path: use FSA
     if (!this.directoryHandle) {
       console.error('[writeFileBinary] No directory selected');
       throw new Error('No directory selected');
@@ -342,6 +478,18 @@ class FileSystemService {
    * Delete a file
    */
   async deleteFile(path: string): Promise<void> {
+    // Electron path: use IPC
+    if (isElectron()) {
+      if (!this.rootPath) {
+        throw new Error('No directory selected');
+      }
+      const api = getElectronAPI();
+      const fullPath = `${this.rootPath}/${path}`;
+      await api.fs.deleteFile(fullPath);
+      return;
+    }
+
+    // Browser path: use FSA
     if (!this.directoryHandle) {
       throw new Error('No directory selected');
     }
@@ -368,6 +516,20 @@ class FileSystemService {
    * List files in a directory
    */
   async listFiles(path: string): Promise<string[]> {
+    // Electron path: use IPC
+    if (isElectron()) {
+      if (!this.rootPath) {
+        throw new Error('No directory selected');
+      }
+      const api = getElectronAPI();
+      const fullPath = path ? `${this.rootPath}/${path}` : this.rootPath;
+      const result = await api.fs.listFiles(fullPath);
+
+      if (result.error) return [];
+      return result.files;
+    }
+
+    // Browser path: use FSA
     if (!this.directoryHandle) {
       throw new Error('No directory selected');
     }
@@ -392,6 +554,20 @@ class FileSystemService {
    * List all entries (files AND directories) in a directory
    */
   async listEntries(path: string): Promise<string[]> {
+    // Electron path: use IPC
+    if (isElectron()) {
+      if (!this.rootPath) {
+        throw new Error('No directory selected');
+      }
+      const api = getElectronAPI();
+      const fullPath = path ? `${this.rootPath}/${path}` : this.rootPath;
+      const result = await api.fs.listEntries(fullPath);
+
+      if (result.error) return [];
+      return result.entries;
+    }
+
+    // Browser path: use FSA
     if (!this.directoryHandle) {
       throw new Error('No directory selected');
     }
@@ -414,13 +590,26 @@ class FileSystemService {
    * Get the current directory path name
    */
   getDirectoryName(): string | null {
+    if (isElectron()) {
+      return this.rootPath ? this.rootPath.split('/').pop() || null : null;
+    }
     return this.directoryHandle?.name || null;
+  }
+
+  /**
+   * Get the full root path (Electron only)
+   */
+  getRootPath(): string | null {
+    return this.rootPath;
   }
 
   /**
    * Check if a directory is currently selected and accessible
    */
   hasDirectory(): boolean {
+    if (isElectron()) {
+      return this.rootPath !== null;
+    }
     return this.directoryHandle !== null;
   }
 }
