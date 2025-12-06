@@ -149,10 +149,13 @@ class FSAdapter {
       const normalizedPath = path.replace(/^\//, '');
 
       // Special logging for objects
-      if (normalizedPath.includes('/objects/')) {
+      if (normalizedPath.includes('/objects/') || normalizedPath.includes('objects/')) {
         console.log('[FSAdapter.writeFile] *** GIT OBJECT WRITE ***:', normalizedPath);
         console.log('[FSAdapter.writeFile] Object data length:', data.length);
-        console.log('[FSAdapter.writeFile] Stack:', new Error().stack);
+        console.log(
+          '[FSAdapter.writeFile] Data preview:',
+          typeof data === 'string' ? data.substring(0, 100) : 'binary, ' + data.length + ' bytes'
+        );
       }
 
       console.log(
@@ -586,6 +589,14 @@ class RealGitService {
         defaultBranch: 'main',
       });
       console.log('[init] Git repository initialized');
+
+      // Create HEAD pointing to main branch (required before first commit)
+      try {
+        await fsAdapter.promises.writeFile('.git/HEAD', 'ref: refs/heads/main\n');
+        console.log('[init] Created .git/HEAD');
+      } catch (err) {
+        console.error('[init] Failed to create HEAD:', err);
+      }
     }
 
     this.initialized = true;
@@ -671,6 +682,8 @@ class RealGitService {
 
   /**
    * Get git status
+   * Browser: enumerate files directly (git.statusMatrix has issues with object persistence)
+   * Electron: use git.statusMatrix via IPC
    */
   async getStatus(): Promise<FileStatus[]> {
     if (!this.initialized) return [];
@@ -678,7 +691,7 @@ class RealGitService {
     try {
       let result: FileStatus[] = [];
 
-      // Electron path: use IPC
+      // Electron path: use IPC for proper git status
       if (isElectronEnv()) {
         const status = await window.electronAPI!.git.statusMatrix(this.getRootDir());
         console.log('[getStatus] Raw statusMatrix (Electron):', status);
@@ -700,28 +713,13 @@ class RealGitService {
             .filter((f) => f.status !== 'unchanged');
         }
       } else {
-        // Browser path: use fsAdapter
-        const status = await git.statusMatrix({ fs: fsAdapter, dir: this.getRootDir() });
-        console.log('[getStatus] Raw statusMatrix (Browser):', status);
-
-        result = status
-          .map(([filepath, head, workdir, stage]) => {
-            let statusStr = 'unchanged';
-            if (head === 1 && workdir === 2 && stage === 2) statusStr = 'modified';
-            if (head === 0 && workdir === 2 && stage === 0) statusStr = 'new';
-            if (head === 0 && workdir === 2 && stage === 2) statusStr = 'added';
-            if (head === 1 && workdir === 0) statusStr = 'deleted';
-
-            return {
-              path: filepath,
-              status: statusStr,
-            };
-          })
-          .filter((f) => f.status !== 'unchanged');
+        // Browser path: Skip git.statusMatrix entirely and enumerate files directly
+        // (isomorphic-git doesn't persist git objects in browser reliably)
+        console.log('[getStatus] Using file enumeration (browser)');
       }
 
-      // Also check for untracked files by reading filesystem directly
-      // since statusMatrix doesn't reliably detect them
+      // Always enumerate artifact files directly
+      // For Electron, this supplements git status; for Browser, this is the primary method
       const trackedPaths = new Set(result.map((f) => f.path));
       const untrackedFiles: FileStatus[] = [];
 
@@ -743,7 +741,7 @@ class RealGitService {
       }
 
       const allFiles = [...result, ...untrackedFiles];
-      console.log('[getStatus] Filtered result with untracked:', allFiles);
+      console.log('[getStatus] Final result:', allFiles);
       return allFiles;
     } catch (error) {
       console.error('Failed to get status:', error);
