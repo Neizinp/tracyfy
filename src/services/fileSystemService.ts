@@ -207,6 +207,33 @@ class FileSystemService {
   }
 
   /**
+   * Read a file as binary data
+   */
+  async readFileBinary(path: string): Promise<Uint8Array | null> {
+    if (!this.directoryHandle) {
+      throw new Error('No directory selected');
+    }
+
+    try {
+      const parts = path.split('/');
+      const fileName = parts.pop()!;
+      const dirPath = parts.join('/');
+
+      let dir = this.directoryHandle;
+      if (dirPath) {
+        dir = await this.getOrCreateDirectory(dirPath);
+      }
+
+      const fileHandle = await dir.getFileHandle(fileName);
+      const file = await fileHandle.getFile();
+      const arrayBuffer = await file.arrayBuffer();
+      return new Uint8Array(arrayBuffer);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Write text to a file
    */
   async writeFile(path: string, content: string): Promise<void> {
@@ -232,7 +259,81 @@ class FileSystemService {
       await writable.close();
       console.log(`[writeFile] Successfully wrote file: ${path}`);
     } catch (error) {
+      // If path exists as directory instead of file, remove it and retry
+      if (error instanceof DOMException && error.name === 'TypeMismatchError') {
+        console.warn(`[writeFile] ${fileName} exists as directory, removing it...`);
+        try {
+          await dir.removeEntry(fileName, { recursive: true });
+          // Retry write
+          const fileHandle = await dir.getFileHandle(fileName, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(content);
+          await writable.close();
+          console.log(`[writeFile] Successfully wrote file after cleanup: ${path}`);
+          return;
+        } catch (retryError) {
+          console.error(`[writeFile] Retry failed for: ${path}`, retryError);
+          throw retryError;
+        }
+      }
       console.error(`[writeFile] Error writing file: ${path}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Write binary data to a file
+   */
+  async writeFileBinary(path: string, content: Uint8Array | ArrayBuffer): Promise<void> {
+    console.log(`[writeFileBinary] Called for path: ${path}`);
+    if (!this.directoryHandle) {
+      console.error('[writeFileBinary] No directory selected');
+      throw new Error('No directory selected');
+    }
+
+    const parts = path.split('/');
+    const fileName = parts.pop()!;
+    const dirPath = parts.join('/');
+
+    let dir = this.directoryHandle;
+    if (dirPath) {
+      dir = await this.getOrCreateDirectory(dirPath);
+    }
+
+    try {
+      const fileHandle = await dir.getFileHandle(fileName, { create: true });
+      const writable = await fileHandle.createWritable();
+      // Slice exactly the bytes we need in case this view does not start at offset 0
+      const buffer =
+        content instanceof ArrayBuffer
+          ? content
+          : content.buffer.slice(content.byteOffset, content.byteOffset + content.byteLength);
+      await writable.write(buffer as ArrayBuffer);
+      await writable.close();
+      console.log(`[writeFileBinary] Successfully wrote binary file: ${path}`);
+    } catch (error) {
+      // If path exists as directory instead of file, remove it and retry
+      if (error instanceof DOMException && error.name === 'TypeMismatchError') {
+        console.warn(`[writeFileBinary] ${fileName} exists as directory, removing it...`);
+        try {
+          await dir.removeEntry(fileName, { recursive: true });
+          // Retry write
+          const fileHandle = await dir.getFileHandle(fileName, { create: true });
+          const writable = await fileHandle.createWritable();
+          const buffer =
+            content instanceof ArrayBuffer
+              ? content
+              : content.buffer.slice(content.byteOffset, content.byteOffset + content.byteLength);
+          await writable.write(buffer as ArrayBuffer);
+          await writable.close();
+          console.log(`[writeFileBinary] Successfully wrote binary file after cleanup: ${path}`);
+          return;
+        } catch (retryError) {
+          console.error(`[writeFileBinary] Retry failed for: ${path}`, retryError);
+          throw retryError;
+        }
+      }
+      console.error(`[writeFileBinary] Error writing binary file: ${path}`, error);
       throw error;
     }
   }

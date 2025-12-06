@@ -3,8 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
+    "dev:electron": "vite --port 5181 --strictPort",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -13,7 +15,10 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "electron:dev": "concurrently -k \"npm:dev:electron\" \"npm:electron:launch\"",
+    "electron:launch": "wait-on http://localhost:5181 && VITE_DEV_SERVER_URL=http://localhost:5181 electron .",
+    "electron:start": "npm run build && electron ."
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -45,6 +50,8 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/coverage-v8": "^4.0.14",
+    "concurrently": "^9.1.2",
+    "electron": "^33.2.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
@@ -56,7 +63,8 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4",
-    "vitest": "^4.0.14"
+    "vitest": "^4.0.14",
+    "wait-on": "^8.0.2"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,css,md}": [

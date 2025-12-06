@@ -1,8 +1,8 @@
 /**
- * Real Git Service - Uses isomorphic-git with File System Access API
+ * Real Git Service - Uses isomorphic-git with File System Access API or Electron IPC
  *
- * This service wraps isomorphic-git to work with the real filesystem
- * via the File System Access API adapter.
+ * In Electron, routes git operations through IPC to the main process (which uses Node fs).
+ * In browsers, uses an adapter over the File System Access API.
  */
 
 import git from 'isomorphic-git';
@@ -19,102 +19,45 @@ import {
   markdownToInformation,
 } from '../utils/markdownUtils';
 
-// IndexedDB storage for git internal files (since File System API can't handle .git/)
-// Store as Uint8Array to preserve binary data integrity
-const idbStorage = {
-  async getItem(key: string): Promise<Uint8Array | null> {
-    return new Promise((resolve) => {
-      const request = indexedDB.open('git-storage', 1);
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        if (!db.objectStoreNames.contains('files')) {
-          db.createObjectStore('files');
-        }
+// Type for electron API
+declare global {
+  interface Window {
+    electronAPI?: {
+      isElectron: boolean;
+      git: {
+        status: (dir: string, filepath: string) => Promise<string>;
+        statusMatrix: (dir: string) => Promise<any[]>;
+        add: (dir: string, filepath: string) => Promise<{ ok?: boolean; error?: string }>;
+        remove: (dir: string, filepath: string) => Promise<{ ok?: boolean; error?: string }>;
+        commit: (
+          dir: string,
+          message: string,
+          author?: any
+        ) => Promise<{ oid?: string; error?: string }>;
+        log: (dir: string, depth?: number, filepath?: string) => Promise<any>;
+        listFiles: (dir: string) => Promise<string[]>;
+        resolveRef: (dir: string, ref: string) => Promise<string>;
+        init: (dir: string) => Promise<{ ok?: boolean; error?: string }>;
+        annotatedTag: (
+          dir: string,
+          ref: string,
+          message: string,
+          tagger?: any
+        ) => Promise<{ ok?: boolean; error?: string }>;
+        listTags: (dir: string) => Promise<string[]>;
+        readTag: (dir: string, oid: string) => Promise<any>;
       };
-      request.onsuccess = () => {
-        const db = request.result;
-        const tx = db.transaction('files', 'readonly');
-        const store = tx.objectStore('files');
-        const get = store.get(key);
-        get.onsuccess = () => resolve(get.result || null);
-        get.onerror = () => resolve(null);
-      };
-      request.onerror = () => resolve(null);
-    });
-  },
-  async setItem(key: string, value: Uint8Array): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open('git-storage', 1);
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        if (!db.objectStoreNames.contains('files')) {
-          db.createObjectStore('files');
-        }
-      };
-      request.onsuccess = () => {
-        const db = request.result;
-        const tx = db.transaction('files', 'readwrite');
-        const store = tx.objectStore('files');
-        const put = store.put(value, key);
-        put.onsuccess = () => resolve();
-        put.onerror = () => reject(put.error);
-      };
-      request.onerror = () => reject(request.error);
-    });
-  },
-  async removeItem(key: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open('git-storage', 1);
-      request.onsuccess = () => {
-        const db = request.result;
-        const tx = db.transaction('files', 'readwrite');
-        const store = tx.objectStore('files');
-        const del = store.delete(key);
-        del.onsuccess = () => resolve();
-        del.onerror = () => reject(del.error);
-      };
-      request.onerror = () => reject(request.error);
-    });
-  },
-  // List all keys that start with a given prefix, returning child names at that level
-  async listDir(prefix: string): Promise<string[]> {
-    return new Promise((resolve) => {
-      const request = indexedDB.open('git-storage', 1);
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        if (!db.objectStoreNames.contains('files')) {
-          db.createObjectStore('files');
-        }
-      };
-      request.onsuccess = () => {
-        const db = request.result;
-        const tx = db.transaction('files', 'readonly');
-        const store = tx.objectStore('files');
-        const getAllKeys = store.getAllKeys();
-        getAllKeys.onsuccess = () => {
-          const allKeys = getAllKeys.result as string[];
-          const normalizedPrefix = prefix.endsWith('/') ? prefix : prefix + '/';
-          const children = new Set<string>();
+    };
+  }
+}
 
-          for (const key of allKeys) {
-            if (key.startsWith(normalizedPrefix)) {
-              // Get the part after the prefix
-              const remainder = key.slice(normalizedPrefix.length);
-              // Get the first path component (file or directory name)
-              const firstComponent = remainder.split('/')[0];
-              if (firstComponent) {
-                children.add(firstComponent);
-              }
-            }
-          }
-
-          resolve(Array.from(children));
-        };
-        getAllKeys.onerror = () => resolve([]);
-      };
-      request.onerror = () => resolve([]);
-    });
-  },
+const isElectronEnv = () => typeof window !== 'undefined' && !!window.electronAPI?.isElectron;
+const requireElectron = () => {
+  if (!isElectronEnv()) {
+    throw new Error(
+      'Git operations require the Electron app. Run `npm run electron:dev` or `npm run electron:start`.'
+    );
+  }
 };
 
 export interface CommitInfo {
@@ -133,64 +76,69 @@ export interface FileStatus {
  * File System Access API adapter for isomorphic-git
  * Adapts the File System Access API to the fs interface expected by isomorphic-git
  */
-// Custom cache for isomorphic-git to store objects in IndexedDB
-const gitCache = {
-  async get(key: string) {
-    console.log('[gitCache.get] key:', key);
-    const value = await idbStorage.getItem(`.git/objects/${key}`);
-    console.log('[gitCache.get] result:', value ? 'found' : 'not found');
-    return value;
-  },
-  async set(key: string, value: Uint8Array) {
-    console.log('[gitCache.set] key:', key, 'bytes:', value.length);
-    await idbStorage.setItem(`.git/objects/${key}`, value);
-  },
-};
+// Removed gitCache - not used anymore as we write objects directly to filesystem
 
 class FSAdapter {
+  private fdCounter = 3; // 0,1,2 reserved
+  private openFiles = new Map<number, { path: string; position: number; flags: string }>();
+
   setRoot(handle: FileSystemDirectoryHandle) {
     fileSystemService.setDirectoryHandle(handle);
   }
 
   // isomorphic-git fs interface
   promises = {
+    open: async (path: string, flags: string) => {
+      const normalizedPath = path.replace(/^\/+/, '');
+      // Ensure parent directories exist for write modes
+      if (
+        flags.includes('w') ||
+        flags.includes('a') ||
+        flags.includes('+') ||
+        flags.includes('x')
+      ) {
+        const parts = normalizedPath.split('/');
+        parts.pop();
+        const dirPath = parts.join('/');
+        if (dirPath) {
+          await fileSystemService.getOrCreateDirectory(dirPath);
+        }
+      }
+
+      const fd = this.fdCounter++;
+      this.openFiles.set(fd, { path: normalizedPath, position: 0, flags });
+      return fd;
+    },
+
+    close: async (fd: number) => {
+      this.openFiles.delete(fd);
+    },
+
     readFile: async (
       path: string,
       options?: { encoding?: string }
     ): Promise<Uint8Array | string> => {
       const normalizedPath = path.replace(/^\//, '');
 
-      // For .git internal files, try IndexedDB first, then fall back to filesystem
+      // For .git internal files, read from filesystem only
       if (normalizedPath.startsWith('.git/')) {
-        console.log('[FSAdapter.readFile] Reading .git file:', normalizedPath);
+        console.log('[FSAdapter.readFile] Reading .git file from disk:', normalizedPath);
 
-        // First try IndexedDB
-        const idbContent = await idbStorage.getItem(normalizedPath);
-        if (idbContent !== null) {
+        const fsBinaryContent = await fileSystemService.readFileBinary(normalizedPath);
+        if (fsBinaryContent !== null) {
           console.log(
-            '[FSAdapter.readFile] Found in IndexedDB:',
+            '[FSAdapter.readFile] Found:',
             normalizedPath,
             'bytes:',
-            idbContent.length
+            fsBinaryContent.length
           );
           if (options?.encoding === 'utf8') {
-            return new TextDecoder().decode(idbContent);
+            return new TextDecoder().decode(fsBinaryContent);
           }
-          return idbContent;
+          return fsBinaryContent;
         }
 
-        // Fall back to filesystem (for existing .git directories)
-        console.log('[FSAdapter.readFile] Not in IndexedDB, trying filesystem:', normalizedPath);
-        const fsContent = await fileSystemService.readFile(normalizedPath);
-        if (fsContent !== null) {
-          console.log('[FSAdapter.readFile] Found in filesystem:', normalizedPath);
-          if (options?.encoding === 'utf8') {
-            return fsContent;
-          }
-          return new TextEncoder().encode(fsContent);
-        }
-
-        console.log('[FSAdapter.readFile] NOT FOUND anywhere:', normalizedPath);
+        console.log('[FSAdapter.readFile] NOT FOUND:', normalizedPath);
         throw new Error(`ENOENT: no such file or directory, open '${path}'`);
       }
 
@@ -207,6 +155,13 @@ class FSAdapter {
     writeFile: async (path: string, data: string | Uint8Array): Promise<void> => {
       const normalizedPath = path.replace(/^\//, '');
 
+      // Special logging for objects
+      if (normalizedPath.includes('/objects/')) {
+        console.log('[FSAdapter.writeFile] *** GIT OBJECT WRITE ***:', normalizedPath);
+        console.log('[FSAdapter.writeFile] Object data length:', data.length);
+        console.log('[FSAdapter.writeFile] Stack:', new Error().stack);
+      }
+
       console.log(
         '[FSAdapter.writeFile] CALLED for:',
         normalizedPath,
@@ -215,9 +170,9 @@ class FSAdapter {
         'dataLength:',
         data.length
       );
-      console.log('[FSAdapter.writeFile] Stack trace:', new Error().stack);
 
-      // For .git internal files, store in IndexedDB as binary
+      // Write ALL files (including .git internals) directly to filesystem
+      // No IndexedDB caching - causes git objects to not persist
       if (
         normalizedPath.startsWith('.git/') ||
         normalizedPath.startsWith('objects/') ||
@@ -227,14 +182,15 @@ class FSAdapter {
         const finalPath = normalizedPath.startsWith('.git/')
           ? normalizedPath
           : `.git/${normalizedPath}`;
+
         console.log(
-          '[FSAdapter.writeFile] Storing in IndexedDB:',
+          '[FSAdapter.writeFile] Writing .git file to disk:',
           finalPath,
           'bytes:',
           binaryData.length
         );
-        await idbStorage.setItem(finalPath, binaryData);
-        console.log('[FSAdapter.writeFile] Stored successfully:', finalPath);
+        await fileSystemService.writeFileBinary(finalPath, binaryData);
+        console.log('[FSAdapter.writeFile] Wrote successfully:', finalPath);
         return;
       }
 
@@ -243,46 +199,149 @@ class FSAdapter {
       await fileSystemService.writeFile(normalizedPath, content);
     },
 
-    // Alias for writeFile - isomorphic-git uses fs.write() for writing git objects
-    write: async (path: string, data: string | Uint8Array): Promise<void> => {
-      console.log('[FSAdapter.write] Redirecting to writeFile for:', path);
-      return fsAdapter.promises.writeFile(path, data);
+    // Node-style write(fd, buffer, offset, length, position?)
+    write: async (
+      fdOrPath: number | string,
+      buffer: Uint8Array,
+      offset?: number,
+      length?: number,
+      position?: number | null
+    ): Promise<{ bytesWritten: number }> => {
+      // Handle path writes by redirecting to writeFile for compatibility
+      if (typeof fdOrPath === 'string') {
+        await fsAdapter.promises.writeFile(fdOrPath, buffer);
+        return { bytesWritten: buffer.length };
+      }
+
+      const fd = fdOrPath;
+      const open = this.openFiles.get(fd);
+      if (!open) throw new Error(`Bad file descriptor: ${fd}`);
+
+      console.log('[FSAdapter.write(fd)]', {
+        path: open.path,
+        flags: open.flags,
+        offset,
+        length,
+        position,
+        bufferLength: buffer.length,
+      });
+
+      const start = offset ?? 0;
+      const end = length !== undefined ? start + length : buffer.byteLength;
+      const slice = buffer.subarray(start, end);
+
+      const normalizedPath = open.path;
+      // For append, move position to end
+      if (open.flags.includes('a')) {
+        const existing = await fileSystemService.readFileBinary(normalizedPath);
+        const merged = new Uint8Array((existing?.length || 0) + slice.length);
+        if (existing) merged.set(existing, 0);
+        merged.set(slice, existing?.length || 0);
+        await fsAdapter.promises.writeFile(normalizedPath, merged);
+        open.position = merged.length;
+        return { bytesWritten: slice.length };
+      }
+
+      // Position null means append to current position
+      const pos = position == null ? open.position : position;
+      if (pos !== 0) {
+        const existing =
+          (await fileSystemService.readFileBinary(normalizedPath)) || new Uint8Array();
+        const needed = Math.max(existing.length, pos + slice.length);
+        const merged = new Uint8Array(needed);
+        merged.set(existing, 0);
+        merged.set(slice, pos);
+        await fsAdapter.promises.writeFile(normalizedPath, merged);
+        open.position = pos + slice.length;
+        return { bytesWritten: slice.length };
+      }
+
+      await fsAdapter.promises.writeFile(normalizedPath, slice);
+      open.position = slice.length;
+      return { bytesWritten: slice.length };
     },
 
-    // Read method for binary data - isomorphic-git uses fs.read() for git objects
-    read: async (path: string): Promise<Uint8Array> => {
-      console.log('[FSAdapter.read] CALLED for:', path);
-      return fsAdapter.promises.readFile(path) as Promise<Uint8Array>;
+    // Node-style read(fd, buffer, offset, length, position?) or path alias
+    read: async (
+      fdOrPath: number | string,
+      buffer?: Uint8Array,
+      offset?: number,
+      length?: number,
+      position?: number | null
+    ): Promise<{ bytesRead: number; buffer: Uint8Array }> => {
+      if (typeof fdOrPath === 'string') {
+        const data = (await fsAdapter.promises.readFile(fdOrPath)) as Uint8Array;
+        const slice = data.subarray(0, length ?? data.length);
+        if (buffer) {
+          const start = offset ?? 0;
+          buffer.set(slice, start);
+          return { bytesRead: slice.length, buffer };
+        }
+        return { bytesRead: slice.length, buffer: slice };
+      }
+
+      const fd = fdOrPath;
+      const open = this.openFiles.get(fd);
+      if (!open) throw new Error(`Bad file descriptor: ${fd}`);
+
+      console.log('[FSAdapter.read(fd)]', {
+        path: open.path,
+        flags: open.flags,
+        offset,
+        length,
+        position,
+      });
+
+      const data = (await fileSystemService.readFileBinary(open.path)) || new Uint8Array();
+      const startPos = position ?? open.position;
+      const slice = data.subarray(startPos, startPos + (length ?? data.length));
+
+      if (buffer) {
+        const destStart = offset ?? 0;
+        buffer.set(slice, destStart);
+        open.position = startPos + slice.length;
+        return { bytesRead: slice.length, buffer };
+      }
+
+      open.position = startPos + slice.length;
+      return { bytesRead: slice.length, buffer: slice };
     },
 
     // Exists check - used by isomorphic-git to avoid overwriting objects
     exists: async (path: string): Promise<boolean> => {
       const normalizedPath = path.replace(/^\//, '');
-      console.log('[FSAdapter.exists] Checking:', normalizedPath);
 
-      // For .git internal files, check IndexedDB
+      console.log('[FSAdapter.exists] Checking:', normalizedPath);
+      console.log(
+        '[FSAdapter.exists] Stack:',
+        new Error().stack?.split('\n').slice(0, 5).join('\n')
+      );
+
+      // For .git internal files, check filesystem only
       if (normalizedPath.startsWith('.git/')) {
-        const content = await idbStorage.getItem(normalizedPath);
-        const exists = content !== null;
-        console.log('[FSAdapter.exists] Result:', exists);
-        return exists;
+        try {
+          const fsContent = await fileSystemService.readFileBinary(normalizedPath);
+          const exists = fsContent !== null;
+          console.log('[FSAdapter.exists] Result for', normalizedPath, ':', exists);
+          return exists;
+        } catch {
+          console.log('[FSAdapter.exists] Result for', normalizedPath, ': false');
+          return false;
+        }
       }
 
       // For regular files, check filesystem
       const content = await fileSystemService.readFile(normalizedPath);
-      return content !== null;
+      const exists = content !== null;
+      console.log('[FSAdapter.exists] Result for', normalizedPath, ':', exists);
+      return exists;
     },
 
     unlink: async (path: string): Promise<void> => {
       const normalizedPath = path.replace(/^\//, '');
       console.log('[FSAdapter.unlink] CALLED for:', normalizedPath);
 
-      // For .git internal files, delete from IndexedDB
-      if (normalizedPath.startsWith('.git/')) {
-        await idbStorage.removeItem(normalizedPath);
-        return;
-      }
-
+      // Delete from filesystem
       await fileSystemService.deleteFile(normalizedPath);
     },
 
@@ -290,25 +349,16 @@ class FSAdapter {
       const normalizedPath = path.replace(/^\//, '').replace(/\/$/, '');
       console.log('[FSAdapter.readdir] CALLED for:', normalizedPath);
 
-      // For .git internal directories, check IndexedDB first, then filesystem
+      // For .git internal directories, check filesystem only
       if (normalizedPath.startsWith('.git') || normalizedPath === '.git') {
-        // Get children from IndexedDB
-        const idbResult = await idbStorage.listDir(normalizedPath);
-        console.log('[FSAdapter.readdir] IndexedDB result for', normalizedPath, ':', idbResult);
-
-        // Also check filesystem for existing .git directories (includes subdirs)
-        let fsResult: string[] = [];
         try {
-          fsResult = await fileSystemService.listEntries(normalizedPath);
-          console.log('[FSAdapter.readdir] Filesystem result for', normalizedPath, ':', fsResult);
+          const result = await fileSystemService.listEntries(normalizedPath);
+          console.log('[FSAdapter.readdir] Result for', normalizedPath, ':', result);
+          return result;
         } catch {
-          // Filesystem doesn't have this directory
+          console.log('[FSAdapter.readdir] Directory not found:', normalizedPath);
+          return [];
         }
-
-        // Merge results (unique)
-        const merged = [...new Set([...idbResult, ...fsResult])];
-        console.log('[FSAdapter.readdir] Merged result:', merged);
-        return merged;
       }
 
       const result = await fileSystemService.listFiles(normalizedPath);
@@ -319,17 +369,12 @@ class FSAdapter {
     mkdir: async (path: string): Promise<void> => {
       const normalizedPath = path.replace(/^\//, '');
 
-      // For .git internal directories, we don't need to create them in IndexedDB
-      // But we need to return success so isomorphic-git can proceed with writeFile
-      if (normalizedPath.startsWith('.git/')) {
-        console.log(
-          '[FSAdapter.mkdir] Allowing .git directory (no-op for IndexedDB):',
-          normalizedPath
-        );
-        return Promise.resolve();
-      }
+      console.log('[FSAdapter.mkdir] Creating directory:', normalizedPath);
+      console.log('[FSAdapter.mkdir] Stack:', new Error().stack);
 
+      // For ALL directories (including .git), create them on filesystem
       await fileSystemService.getOrCreateDirectory(normalizedPath);
+      console.log('[FSAdapter.mkdir] Created:', normalizedPath);
     },
 
     rmdir: async (_path: string): Promise<void> => {
@@ -339,41 +384,9 @@ class FSAdapter {
     stat: async (path: string) => {
       const normalizedPath = path.replace(/^\/+/, '');
 
-      // For .git internal files, check IndexedDB first, then filesystem
+      // For .git internal files, check filesystem only
       if (normalizedPath.startsWith('.git/') || normalizedPath === '.git') {
-        // Check IndexedDB for file
-        const idbContent = await idbStorage.getItem(normalizedPath);
-        if (idbContent !== null) {
-          return {
-            type: 'file',
-            mode: 0o100644,
-            size: idbContent.length,
-            ino: 0,
-            mtimeMs: Date.now(),
-            ctimeMs: Date.now(),
-            isFile: () => true,
-            isDirectory: () => false,
-            isSymbolicLink: () => false,
-          };
-        }
-
-        // Check IndexedDB for directory (has children)
-        const idbChildren = await idbStorage.listDir(normalizedPath);
-        if (idbChildren.length > 0 || normalizedPath === '.git') {
-          return {
-            type: 'dir',
-            mode: 0o40755,
-            size: 0,
-            ino: 0,
-            mtimeMs: Date.now(),
-            ctimeMs: Date.now(),
-            isFile: () => false,
-            isDirectory: () => true,
-            isSymbolicLink: () => false,
-          };
-        }
-
-        // Fall back to filesystem for existing .git directories
+        // Try to read as file
         const fsContent = await fileSystemService.readFile(normalizedPath);
         if (fsContent !== null) {
           const size = new TextEncoder().encode(fsContent).length;
@@ -507,32 +520,13 @@ class RealGitService {
 
       // Initialize git repository
       console.log('[init] Initializing git repository...');
-       
+
       await git.init({
         fs: fsAdapter,
         dir: this.rootDir,
         defaultBranch: 'main',
-        cache: gitCache,
       } as any);
       console.log('[init] Git repository initialized');
-
-      // Ensure essential git files exist in IndexedDB
-      // These files are expected by git but might not be created by git.init
-      const essentialFiles = [
-        { path: '.git/info/exclude', content: '# Exclude patterns\n' },
-        {
-          path: '.git/description',
-          content: 'Unnamed repository; edit this file to name the repository.\n',
-        },
-      ];
-
-      for (const file of essentialFiles) {
-        const exists = await idbStorage.getItem(file.path);
-        if (!exists) {
-          console.log('[init] Creating missing git file:', file.path);
-          await idbStorage.setItem(file.path, new TextEncoder().encode(file.content));
-        }
-      }
 
       // Create initial commit
       try {
@@ -547,7 +541,6 @@ class RealGitService {
           fs: fsAdapter,
           dir: this.rootDir,
           filepath: 'README.md',
-          cache: gitCache,
         } as any);
         console.log('[init] README.md added to git');
 
@@ -559,7 +552,6 @@ class RealGitService {
             name: 'ReqTrace User',
             email: 'user@reqtrace.local',
           },
-          cache: gitCache,
         });
 
         console.log('[init] Initial commit created successfully');
@@ -581,10 +573,11 @@ class RealGitService {
     ];
 
     for (const file of essentialFiles) {
-      const exists = await idbStorage.getItem(file.path);
-      if (!exists) {
+      try {
+        await fsAdapter.promises.readFile(file.path, { encoding: 'utf8' });
+      } catch {
         console.log('[init] Creating missing git file:', file.path);
-        await idbStorage.setItem(file.path, new TextEncoder().encode(file.content));
+        await fsAdapter.promises.writeFile(file.path, file.content);
       }
     }
 
@@ -655,25 +648,22 @@ class RealGitService {
   async getStatus(): Promise<FileStatus[]> {
     if (!this.initialized) return [];
 
+    requireElectron();
+
     try {
       let result: FileStatus[] = [];
 
-      // Try to use git.statusMatrix, but if it fails (missing objects), fall back to filesystem scan
-      try {
-        const status = await git.statusMatrix({
-          fs: fsAdapter,
-          dir: this.rootDir,
-          cache: gitCache,
-        });
+      const status = await window.electronAPI!.git.statusMatrix(this.rootDir);
 
-        console.log('[getStatus] Raw statusMatrix:', status);
+      console.log('[getStatus] Raw statusMatrix:', status);
 
+      if (Array.isArray(status)) {
         result = status
           .map(([filepath, head, workdir, stage]) => {
             let statusStr = 'unchanged';
             if (head === 1 && workdir === 2 && stage === 2) statusStr = 'modified';
-            if (head === 0 && workdir === 2 && stage === 0) statusStr = 'new'; // Untracked
-            if (head === 0 && workdir === 2 && stage === 2) statusStr = 'added'; // Staged new
+            if (head === 0 && workdir === 2 && stage === 0) statusStr = 'new';
+            if (head === 0 && workdir === 2 && stage === 2) statusStr = 'added';
             if (head === 1 && workdir === 0) statusStr = 'deleted';
 
             return {
@@ -682,12 +672,6 @@ class RealGitService {
             };
           })
           .filter((f) => f.status !== 'unchanged');
-      } catch (statusError) {
-        console.warn(
-          '[getStatus] statusMatrix failed, falling back to filesystem scan:',
-          statusError
-        );
-        // If git operations fail, we'll just scan the filesystem below
       }
 
       // Also check for untracked files by reading filesystem directly
@@ -728,147 +712,26 @@ class RealGitService {
     if (!this.initialized) {
       throw new Error('Git service not initialized');
     }
-
     try {
-      // First, ensure git repository is initialized
-      const hasGit = await fileSystemService.checkGitExists();
-      console.log('[commitFile] Git exists on disk:', hasGit);
-
-      // Check if HEAD exists in IndexedDB (not just .git folder on disk)
-      let headInIDB = false;
-      try {
-        const headContent = await idbStorage.getItem('.git/HEAD');
-        headInIDB = headContent !== null;
-        console.log('[commitFile] HEAD in IndexedDB:', headInIDB, 'content:', headContent);
-      } catch (error) {
-        console.log('[commitFile] HEAD check error:', error);
-        headInIDB = false;
-      }
-
-      if (!headInIDB) {
-        console.log('[commitFile] Re-initializing git to write to IndexedDB...');
-        await git.init({
-          fs: fsAdapter,
-          dir: this.rootDir,
-          defaultBranch: 'main',
-          cache: gitCache,
-        } as any);
-        console.log('[commitFile] Git re-initialized');
-
-        // Manually verify and create HEAD if needed
-        const headCheck = await idbStorage.getItem('.git/HEAD');
-        console.log('[commitFile] HEAD after re-init:', headCheck);
-        if (!headCheck) {
-          console.log('[commitFile] Manually creating HEAD...');
-          const headContent = 'ref: refs/heads/main\n';
-          await idbStorage.setItem('.git/HEAD', new TextEncoder().encode(headContent));
-          console.log('[commitFile] HEAD manually created');
-        }
-
-        // Also ensure config exists
-        const configCheck = await idbStorage.getItem('.git/config');
-        if (!configCheck) {
-          console.log('[commitFile] Manually creating config...');
-          const configContent =
-            '[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n';
-          await idbStorage.setItem('.git/config', new TextEncoder().encode(configContent));
-          console.log('[commitFile] config manually created');
-        }
-      }
-
-      // Check if HEAD exists (repository has at least one commit)
-      let hasHead = false;
-      try {
-        const headRef = await git.resolveRef({
-          fs: fsAdapter,
-          dir: this.rootDir,
-          ref: 'HEAD',
-          cache: gitCache,
-        } as any);
-        console.log('[commitFile] HEAD found:', headRef);
-        hasHead = true;
-      } catch (error) {
-        console.log('[commitFile] No HEAD found, error:', error);
-      }
-
-      if (!hasHead) {
-        // No HEAD means no initial commit - create one first
-        console.log('[commitFile] Creating initial commit...');
-
-        await fileSystemService.writeFile('.gitkeep', 'Initial commit placeholder\n');
-        console.log('[commitFile] .gitkeep written');
-
-        await git.add({
-          fs: fsAdapter,
-          dir: this.rootDir,
-          filepath: '.gitkeep',
-          cache: gitCache,
-        });
-        console.log('[commitFile] .gitkeep added');
-
-        const initialCommitSha = await git.commit({
-          fs: fsAdapter,
-          dir: this.rootDir,
-          message: 'Initial commit',
-          author: {
-            name: 'ReqTrace User',
-            email: 'user@reqtrace.local',
-          },
-          cache: gitCache,
-        } as any);
-        console.log('[commitFile] Initial commit created with SHA:', initialCommitSha);
-
-        // Verify HEAD was created
-        try {
-          const verifyRef = await git.resolveRef({
-            fs: fsAdapter,
-            dir: this.rootDir,
-            ref: 'HEAD',
-            cache: gitCache,
-          } as any);
-          console.log('[commitFile] HEAD verified after initial commit:', verifyRef);
-        } catch (verifyError) {
-          console.error(
-            '[commitFile] CRITICAL: HEAD still not found after initial commit!',
-            verifyError
-          );
-          throw new Error('Failed to create initial commit - HEAD still not found');
-        }
-      }
-
-      // Check if file exists (for add/modify) or not (for delete)
+      // Stage file (guard for missing file)
       const fileExists = (await fileSystemService.readFile(filepath)) !== null;
-
-      if (fileExists) {
-        await git.add({
-          fs: fsAdapter,
-          dir: this.rootDir,
-          filepath,
-          cache: gitCache,
-        });
-      } else {
-        await git.remove({
-          fs: fsAdapter,
-          dir: this.rootDir,
-          filepath,
-          cache: gitCache,
-        } as any);
+      if (!fileExists) {
+        throw new Error(`File not found on disk: ${filepath}`);
       }
 
-      await git.commit({
+      await git.add({ fs: fsAdapter, dir: this.rootDir, filepath });
+
+      const commitOid = await git.commit({
         fs: fsAdapter,
         dir: this.rootDir,
         message,
-        author: {
-          name: 'ReqTrace User',
-          email: 'user@reqtrace.local',
-        },
-        cache: gitCache,
-      } as any);
+        author: { name: 'ReqTrace User', email: 'user@reqtrace.local' },
+      });
 
+      console.log('[commitFile] Commit SHA (fsAdapter):', commitOid);
       console.log(`[commitFile] Successfully committed ${filepath}`);
     } catch (error) {
-      console.error('[commitFile] Error:', error);
+      console.error('[commitFile] Commit error:', error);
       throw error;
     }
   }
@@ -946,20 +809,19 @@ class RealGitService {
       return [];
     }
 
-    try {
-      const commits = await git.log({
-        fs: fsAdapter,
-        dir: this.rootDir,
-        depth: 100,
-        filepath,
-      });
+    requireElectron();
 
-      return commits.map((commit) => ({
-        hash: commit.oid,
-        message: commit.commit.message,
-        author: commit.commit.author.name,
-        timestamp: commit.commit.author.timestamp * 1000,
-      }));
+    try {
+      const commits = await window.electronAPI!.git.log(this.rootDir, 100, filepath);
+
+      return Array.isArray(commits)
+        ? commits.map((commit) => ({
+            hash: commit.oid,
+            message: commit.message,
+            author: commit.author,
+            timestamp: commit.timestamp,
+          }))
+        : [];
     } catch (error) {
       console.error('Failed to get git history:', error);
       return [];
@@ -969,24 +831,18 @@ class RealGitService {
   /**
    * Create a git tag (baseline)
    */
-  /**
-   * Create a git tag (baseline)
-   */
   async createTag(tagName: string, message: string): Promise<void> {
     if (!this.initialized) {
       throw new Error('Git service not initialized');
     }
 
-    await git.annotatedTag({
-      fs: fsAdapter,
-      dir: this.rootDir,
-      ref: tagName,
-      message: message,
-      tagger: {
-        name: 'ReqTrace User',
-        email: 'user@reqtrace.local',
-      },
+    requireElectron();
+
+    const result = await window.electronAPI!.git.annotatedTag(this.rootDir, tagName, message, {
+      name: 'ReqTrace User',
+      email: 'user@reqtrace.local',
     });
+    if (result.error) throw new Error(result.error);
   }
 
   /**
@@ -997,11 +853,10 @@ class RealGitService {
       return [];
     }
 
+    requireElectron();
+
     try {
-      return await git.listTags({
-        fs: fsAdapter,
-        dir: this.rootDir,
-      });
+      return await window.electronAPI!.git.listTags(this.rootDir);
     } catch {
       return [];
     }
@@ -1016,33 +871,38 @@ class RealGitService {
     if (!this.initialized) return [];
 
     try {
-      const tagNames = await this.listTags();
+      requireElectron();
+
+      const tagNames = await window.electronAPI!.git.listTags(this.rootDir);
       const tags = [];
 
       for (const name of tagNames) {
         try {
           // Try to resolve as annotated tag first
-          const oid = await git.resolveRef({ fs: fsAdapter, dir: this.rootDir, ref: name });
-          const read = await git.readTag({ fs: fsAdapter, dir: this.rootDir, oid });
+          const oid = await window.electronAPI!.git.resolveRef(this.rootDir, name);
+          const read = await window.electronAPI!.git.readTag(this.rootDir, oid);
 
           tags.push({
             name,
-            message: read.tag.message,
-            timestamp: read.tag.tagger.timestamp * 1000,
-            commit: read.tag.object,
+            message: read.message,
+            timestamp: read.timestamp,
+            commit: read.object,
           });
         } catch (e) {
           // Fallback for lightweight tags or if readTag fails
           // For lightweight tags, we'd need to read the commit it points to
           try {
-            const oid = await git.resolveRef({ fs: fsAdapter, dir: this.rootDir, ref: name });
-            const commit = await git.readCommit({ fs: fsAdapter, dir: this.rootDir, oid });
-            tags.push({
-              name,
-              message: commit.commit.message, // Use commit message as fallback
-              timestamp: commit.commit.author.timestamp * 1000,
-              commit: oid,
-            });
+            const oid = await window.electronAPI!.git.resolveRef(this.rootDir, name);
+            const logResult = await window.electronAPI!.git.log(this.rootDir, 1);
+            const commit = Array.isArray(logResult) ? logResult[0] : undefined;
+            if (commit) {
+              tags.push({
+                name,
+                message: commit.message,
+                timestamp: commit.timestamp,
+                commit: oid,
+              });
+            }
           } catch (e2) {
             console.warn(`Failed to read tag ${name}:`, e2);
           }
