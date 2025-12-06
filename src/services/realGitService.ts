@@ -562,26 +562,6 @@ class RealGitService {
         }
 
         console.log('[init] Git repository initialized via IPC');
-
-        // Create initial README and commit via IPC
-        try {
-          const readmePath = `${rootDir}/README.md`;
-          await window.electronAPI!.fs.writeFile(
-            readmePath,
-            '# Requirements Management\n\nThis repository contains requirements, use cases, test cases, and information managed by ReqTrace.\n'
-          );
-
-          await window.electronAPI!.git.add(rootDir, 'README.md');
-          await window.electronAPI!.git.commit(rootDir, 'Initial commit', {
-            name: 'ReqTrace User',
-            email: 'user@reqtrace.local',
-          });
-
-          console.log('[init] Initial commit created');
-        } catch (error) {
-          console.error('[init] Failed to create initial commit:', error);
-        }
-
         this.initialized = true;
         return true;
       }
@@ -606,38 +586,6 @@ class RealGitService {
         defaultBranch: 'main',
       });
       console.log('[init] Git repository initialized');
-
-      // Create initial commit - REQUIRED for HEAD to exist
-      try {
-        console.log('[init] Creating initial commit...');
-        await fileSystemService.writeFile(
-          'README.md',
-          '# Requirements Management\n\nThis repository contains requirements, use cases, test cases, and information managed by ReqTrace.\n'
-        );
-        console.log('[init] README.md written');
-
-        await git.add({
-          fs: fsAdapter,
-          dir: '.',
-          filepath: 'README.md',
-        });
-        console.log('[init] README.md added to git');
-
-        const sha = await git.commit({
-          fs: fsAdapter,
-          dir: '.',
-          message: 'Initial commit',
-          author: {
-            name: 'ReqTrace User',
-            email: 'user@reqtrace.local',
-          },
-        });
-
-        console.log('[init] Initial commit created successfully:', sha);
-      } catch (error) {
-        console.error('[init] Failed to create initial commit:', error);
-        throw error; // MUST have initial commit for HEAD to exist
-      }
     }
 
     this.initialized = true;
@@ -799,48 +747,7 @@ class RealGitService {
       return allFiles;
     } catch (error) {
       console.error('Failed to get status:', error);
-
-      // Attempt self-repair if repository objects are missing
-      const errorMsg = (error as Error)?.message || '';
-      if (errorMsg.includes('Could not find') || errorMsg.includes('ENOENT')) {
-        console.warn('[getStatus] Detected corrupted git state, attempting repair...');
-        const repaired = await this.repairRepository();
-        if (repaired) {
-          console.log('[getStatus] Repair succeeded, retrying status');
-          return this.getStatus();
-        }
-      }
-
       return [];
-    }
-  }
-
-  /**
-   * Attempt to repair a corrupted repository by re-initializing and creating a baseline commit.
-   */
-  private async repairRepository(): Promise<boolean> {
-    try {
-      const dir = this.getRootDir();
-      await git.init({ fs: fsAdapter, dir, defaultBranch: 'main' });
-
-      // Ensure README exists to commit
-      const readmePath = 'README.md';
-      const readmeContent = '# Requirements Management\n\nRecovered repository baseline.\n';
-      await fileSystemService.writeFile(readmePath, readmeContent);
-
-      await git.add({ fs: fsAdapter, dir, filepath: readmePath });
-      await git.commit({
-        fs: fsAdapter,
-        dir,
-        message: 'Recover repository (recreated missing objects)',
-        author: { name: 'ReqTrace Repair', email: 'repair@reqtrace.local' },
-      });
-
-      console.log('[repairRepository] Repair commit created');
-      return true;
-    } catch (err) {
-      console.error('[repairRepository] Repair failed:', err);
-      return false;
     }
   }
 
