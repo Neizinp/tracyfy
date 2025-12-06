@@ -227,6 +227,64 @@ class FileSystemService {
   }
 
   /**
+   * Check if a directory exists WITHOUT creating it
+   */
+  async directoryExists(path: string): Promise<boolean> {
+    // Electron path: use IPC
+    if (isElectron()) {
+      if (!this.rootPath) {
+        return false;
+      }
+      const api = getElectronAPI();
+      const fullPath = path ? `${this.rootPath}/${path}` : this.rootPath;
+      const result = await api.fs.listEntries(fullPath);
+      return !result.error;
+    }
+
+    // Browser path: use FSA
+    if (!this.directoryHandle) {
+      return false;
+    }
+
+    try {
+      const parts = path.split('/').filter((p) => p.length > 0);
+      let current = this.directoryHandle;
+
+      for (const part of parts) {
+        // Use { create: false } to NOT create missing directories
+        current = await current.getDirectoryHandle(part, { create: false });
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Navigate to a directory WITHOUT creating it (returns null if not found)
+   */
+  async getDirectory(path: string): Promise<FileSystemDirectoryHandle | null> {
+    if (!this.directoryHandle) {
+      return null;
+    }
+
+    try {
+      const parts = path.split('/').filter((p) => p.length > 0);
+      let current = this.directoryHandle;
+
+      for (const part of parts) {
+        // Use { create: false } to NOT create missing directories
+        current = await current.getDirectoryHandle(part, { create: false });
+      }
+
+      return current;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Read a file as text
    */
   async readFile(path: string): Promise<string | null> {
@@ -256,7 +314,10 @@ class FileSystemService {
 
       let dir = this.directoryHandle;
       if (dirPath) {
-        dir = await this.getOrCreateDirectory(dirPath);
+        // Use getDirectory (doesn't create) instead of getOrCreateDirectory
+        const existingDir = await this.getDirectory(dirPath);
+        if (!existingDir) return null;
+        dir = existingDir;
       }
 
       const fileHandle = await dir.getFileHandle(fileName);
@@ -271,6 +332,8 @@ class FileSystemService {
    * Read a file as binary data
    */
   async readFileBinary(path: string): Promise<Uint8Array | null> {
+    console.log('[readFileBinary] Called for path:', path);
+
     // Electron path: use IPC
     if (isElectron()) {
       if (!this.rootPath) {
@@ -295,16 +358,26 @@ class FileSystemService {
       const fileName = parts.pop()!;
       const dirPath = parts.join('/');
 
+      console.log('[readFileBinary] fileName:', fileName, 'dirPath:', dirPath);
+
       let dir = this.directoryHandle;
       if (dirPath) {
-        dir = await this.getOrCreateDirectory(dirPath);
+        // Use getDirectory (doesn't create) instead of getOrCreateDirectory
+        const existingDir = await this.getDirectory(dirPath);
+        if (!existingDir) {
+          console.log('[readFileBinary] Directory not found:', dirPath);
+          return null;
+        }
+        dir = existingDir;
       }
 
       const fileHandle = await dir.getFileHandle(fileName);
       const file = await fileHandle.getFile();
       const arrayBuffer = await file.arrayBuffer();
+      console.log('[readFileBinary] Success, bytes:', arrayBuffer.byteLength);
       return new Uint8Array(arrayBuffer);
-    } catch {
+    } catch (e) {
+      console.log('[readFileBinary] Error reading file:', path, e);
       return null;
     }
   }
@@ -560,7 +633,7 @@ class FileSystemService {
         throw new Error('No directory selected');
       }
       const api = getElectronAPI();
-      const fullPath = path ? `${this.rootPath}/${path}` : this.rootPath;
+      const fullPath = path && path !== '.' ? `${this.rootPath}/${path}` : this.rootPath;
       const result = await api.fs.listEntries(fullPath);
 
       if (result.error) return [];
@@ -573,7 +646,18 @@ class FileSystemService {
     }
 
     try {
-      const dir = await this.getOrCreateDirectory(path);
+      // Handle root directory specially
+      let dir: FileSystemDirectoryHandle;
+      if (!path || path === '.' || path === '') {
+        dir = this.directoryHandle;
+      } else {
+        const maybeDir = await this.getDirectory(path);
+        if (!maybeDir) {
+          return [];
+        }
+        dir = maybeDir;
+      }
+
       const entries: string[] = [];
 
       for await (const [name] of dir.entries()) {

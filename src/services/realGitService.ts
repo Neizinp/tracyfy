@@ -83,6 +83,13 @@ class FSAdapter {
   promises = {
     open: async (path: string, flags: string) => {
       const normalizedPath = path.replace(/^\/+/, '');
+      console.log('[FSAdapter.open] path:', normalizedPath, 'flags:', flags);
+
+      // Special log for object files
+      if (normalizedPath.includes('objects')) {
+        console.log('[FSAdapter.open] *** OPENING OBJECT FILE ***:', normalizedPath);
+      }
+
       // Ensure parent directories exist for write modes
       if (
         flags.includes('w') ||
@@ -94,12 +101,14 @@ class FSAdapter {
         parts.pop();
         const dirPath = parts.join('/');
         if (dirPath) {
+          console.log('[FSAdapter.open] Creating parent dir:', dirPath);
           await fileSystemService.getOrCreateDirectory(dirPath);
         }
       }
 
       const fd = this.fdCounter++;
       this.openFiles.set(fd, { path: normalizedPath, position: 0, flags });
+      console.log('[FSAdapter.open] Assigned fd:', fd);
       return fd;
     },
 
@@ -111,7 +120,26 @@ class FSAdapter {
       path: string,
       options?: { encoding?: string }
     ): Promise<Uint8Array | string> => {
-      const normalizedPath = path.replace(/^\//, '');
+      // Normalize path: remove leading / and ./ prefixes
+      const normalizedPath = path.replace(/^\//, '').replace(/^\.\//, '');
+
+      console.log(
+        '[FSAdapter.readFile] ENTRY path:',
+        path,
+        'normalized:',
+        normalizedPath,
+        'options:',
+        options
+      );
+
+      // Helper to create proper ENOENT error with code property
+      const createENOENT = (filePath: string): Error => {
+        const err: Error & { code?: string } = new Error(
+          `ENOENT: no such file or directory, open '${filePath}'`
+        );
+        err.code = 'ENOENT';
+        return err;
+      };
 
       // For .git internal files, read from filesystem only
       if (normalizedPath.startsWith('.git/')) {
@@ -131,33 +159,38 @@ class FSAdapter {
           return fsBinaryContent;
         }
 
-        console.log('[FSAdapter.readFile] NOT FOUND:', normalizedPath);
-        throw new Error(`ENOENT: no such file or directory, open '${path}'`);
+        console.log('[FSAdapter.readFile] NOT FOUND (throwing ENOENT):', normalizedPath);
+        throw createENOENT(path);
       }
 
-      const content = await fileSystemService.readFile(normalizedPath);
-      if (content === null) {
-        throw new Error(`ENOENT: no such file or directory, open '${path}'`);
+      // For working directory files, always return binary (Uint8Array)
+      // This is critical for isomorphic-git's GitWalkerFs.content() which expects bytes
+      console.log('[FSAdapter.readFile] Reading working dir file:', normalizedPath);
+
+      const binaryContent = await fileSystemService.readFileBinary(normalizedPath);
+      if (binaryContent !== null) {
+        console.log(
+          '[FSAdapter.readFile] Found (binary):',
+          normalizedPath,
+          'bytes:',
+          binaryContent.length
+        );
+        if (options?.encoding === 'utf8') {
+          return new TextDecoder().decode(binaryContent);
+        }
+        return binaryContent;
       }
-      if (options?.encoding === 'utf8') {
-        return content;
-      }
-      return new TextEncoder().encode(content);
+
+      // File not found - MUST throw ENOENT, never return null
+      console.log('[FSAdapter.readFile] NOT FOUND (throwing ENOENT):', normalizedPath);
+      throw createENOENT(path);
     },
 
     writeFile: async (path: string, data: string | Uint8Array): Promise<void> => {
-      const normalizedPath = path.replace(/^\//, '');
+      // Normalize path: remove leading / and ./ prefixes
+      const normalizedPath = path.replace(/^\//, '').replace(/^\.\//, '');
 
-      // Special logging for objects
-      if (normalizedPath.includes('/objects/') || normalizedPath.includes('objects/')) {
-        console.log('[FSAdapter.writeFile] *** GIT OBJECT WRITE ***:', normalizedPath);
-        console.log('[FSAdapter.writeFile] Object data length:', data.length);
-        console.log(
-          '[FSAdapter.writeFile] Data preview:',
-          typeof data === 'string' ? data.substring(0, 100) : 'binary, ' + data.length + ' bytes'
-        );
-      }
-
+      // Log ALL writes to see what isomorphic-git is doing
       console.log(
         '[FSAdapter.writeFile] CALLED for:',
         normalizedPath,
@@ -166,33 +199,44 @@ class FSAdapter {
         'dataLength:',
         data.length
       );
+      console.log('[FSAdapter.writeFile] Stack trace:', new Error().stack);
 
-      // Write ALL files (including .git internals) directly to filesystem
-      // No IndexedDB caching - causes git objects to not persist
-      if (
-        normalizedPath.startsWith('.git/') ||
-        normalizedPath.startsWith('objects/') ||
-        normalizedPath.includes('/objects/')
-      ) {
-        const binaryData = typeof data === 'string' ? new TextEncoder().encode(data) : data;
-        const finalPath = normalizedPath.startsWith('.git/')
-          ? normalizedPath
-          : `.git/${normalizedPath}`;
-
-        console.log(
-          '[FSAdapter.writeFile] Writing .git file to disk:',
-          finalPath,
-          'bytes:',
-          binaryData.length
-        );
-        await fileSystemService.writeFileBinary(finalPath, binaryData);
-        console.log('[FSAdapter.writeFile] Wrote successfully:', finalPath);
-        return;
+      // Special logging for objects
+      if (normalizedPath.includes('objects')) {
+        console.log('[FSAdapter.writeFile] *** GIT OBJECT WRITE ***:', normalizedPath);
+        console.log('[FSAdapter.writeFile] Object data length:', data.length);
       }
 
-      // For regular files, convert to string and write to filesystem
-      const content = typeof data === 'string' ? data : new TextDecoder().decode(data);
-      await fileSystemService.writeFile(normalizedPath, content);
+      try {
+        // Write ALL files (including .git internals) directly to filesystem
+        if (
+          normalizedPath.startsWith('.git/') ||
+          normalizedPath.startsWith('objects/') ||
+          normalizedPath.includes('/objects/')
+        ) {
+          const binaryData = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+          const finalPath = normalizedPath.startsWith('.git/')
+            ? normalizedPath
+            : `.git/${normalizedPath}`;
+
+          console.log(
+            '[FSAdapter.writeFile] Writing .git file to disk:',
+            finalPath,
+            'bytes:',
+            binaryData.length
+          );
+          await fileSystemService.writeFileBinary(finalPath, binaryData);
+          console.log('[FSAdapter.writeFile] Wrote successfully:', finalPath);
+          return;
+        }
+
+        // For regular files, convert to string and write to filesystem
+        const content = typeof data === 'string' ? data : new TextDecoder().decode(data);
+        await fileSystemService.writeFile(normalizedPath, content);
+      } catch (err) {
+        console.error('[FSAdapter.writeFile] ERROR writing:', normalizedPath, err);
+        throw err;
+      }
     },
 
     // Node-style write(fd, buffer, offset, length, position?)
@@ -305,7 +349,8 @@ class FSAdapter {
 
     // Exists check - used by isomorphic-git to avoid overwriting objects
     exists: async (path: string): Promise<boolean> => {
-      const normalizedPath = path.replace(/^\//, '');
+      // Normalize path: remove leading / and ./ prefixes
+      const normalizedPath = path.replace(/^\//, '').replace(/^\.\//, '');
 
       console.log('[FSAdapter.exists] Checking:', normalizedPath);
       console.log(
@@ -334,7 +379,8 @@ class FSAdapter {
     },
 
     unlink: async (path: string): Promise<void> => {
-      const normalizedPath = path.replace(/^\//, '');
+      // Normalize path: remove leading / and ./ prefixes
+      const normalizedPath = path.replace(/^\//, '').replace(/^\.\//, '');
       console.log('[FSAdapter.unlink] CALLED for:', normalizedPath);
 
       // Delete from filesystem
@@ -342,33 +388,57 @@ class FSAdapter {
     },
 
     readdir: async (path: string): Promise<string[]> => {
-      const normalizedPath = path.replace(/^\//, '').replace(/\/$/, '');
-      console.log('[FSAdapter.readdir] CALLED for:', normalizedPath);
+      // Normalize path - handle ./ prefix and trailing slashes
+      let normalizedPath = path.replace(/^\//, '').replace(/\/$/, '').replace(/^\.\//, '');
+      if (normalizedPath === '.') normalizedPath = '';
+
+      console.log('[FSAdapter.readdir] CALLED for:', normalizedPath || '(root)');
+
+      // Filter out temporary/swap files that can cause race conditions
+      const filterTempFiles = (entries: string[]): string[] => {
+        return entries.filter((entry) => {
+          // Filter out swap files and other temporary files
+          if (entry.endsWith('.crswap')) return false;
+          if (entry.endsWith('.swp')) return false;
+          if (entry.endsWith('.tmp')) return false;
+          if (entry.endsWith('~')) return false;
+          if (entry.startsWith('.#')) return false;
+          return true;
+        });
+      };
 
       // For .git internal directories, check filesystem only
       if (normalizedPath.startsWith('.git') || normalizedPath === '.git') {
         try {
           const result = await fileSystemService.listEntries(normalizedPath);
           console.log('[FSAdapter.readdir] Result for', normalizedPath, ':', result);
-          return result;
+          return result; // Don't filter .git internal files
         } catch {
           console.log('[FSAdapter.readdir] Directory not found:', normalizedPath);
           return [];
         }
       }
 
-      const result = await fileSystemService.listFiles(normalizedPath);
-      console.log('[FSAdapter.readdir] Result:', result);
-      return result;
+      // For root or other directories, list ALL entries (files and directories)
+      try {
+        const result = await fileSystemService.listEntries(normalizedPath || '.');
+        const filtered = filterTempFiles(result);
+        console.log('[FSAdapter.readdir] Result:', filtered);
+        return filtered;
+      } catch (e) {
+        console.log('[FSAdapter.readdir] Error listing:', normalizedPath, e);
+        return [];
+      }
     },
 
-    mkdir: async (path: string): Promise<void> => {
-      const normalizedPath = path.replace(/^\//, '');
+    mkdir: async (path: string, _options?: { recursive?: boolean }): Promise<void> => {
+      // Normalize path: remove leading / and ./ prefixes
+      const normalizedPath = path.replace(/^\//, '').replace(/^\.\//, '');
 
       console.log('[FSAdapter.mkdir] Creating directory:', normalizedPath);
-      console.log('[FSAdapter.mkdir] Stack:', new Error().stack);
 
       // For ALL directories (including .git), create them on filesystem
+      // Note: getOrCreateDirectory already creates parent dirs recursively
       await fileSystemService.getOrCreateDirectory(normalizedPath);
       console.log('[FSAdapter.mkdir] Created:', normalizedPath);
     },
@@ -378,18 +448,38 @@ class FSAdapter {
     },
 
     stat: async (path: string) => {
-      const normalizedPath = path.replace(/^\/+/, '');
+      // Normalize path - remove leading slashes and handle . and ./
+      const normalizedPath = path.replace(/^\/+/, '').replace(/^\.\//, '');
+
+      // Handle root directory special case
+      if (normalizedPath === '' || normalizedPath === '.') {
+        console.log('[FSAdapter.stat] Root directory, returning dir stat');
+        return {
+          type: 'dir',
+          mode: 0o40755,
+          size: 0,
+          ino: 0,
+          mtimeMs: Date.now(),
+          ctimeMs: Date.now(),
+          isFile: () => false,
+          isDirectory: () => true,
+          isSymbolicLink: () => false,
+        };
+      }
+
+      // Log all stat calls to debug object existence checks
+      console.log('[FSAdapter.stat] Called for:', normalizedPath);
 
       // For .git internal files, check filesystem only
       if (normalizedPath.startsWith('.git/') || normalizedPath === '.git') {
-        // Try to read as file
-        const fsContent = await fileSystemService.readFile(normalizedPath);
+        // Try to read as file first (use binary for .git files)
+        const fsContent = await fileSystemService.readFileBinary(normalizedPath);
         if (fsContent !== null) {
-          const size = new TextEncoder().encode(fsContent).length;
+          console.log('[FSAdapter.stat] Found file:', normalizedPath, 'bytes:', fsContent.length);
           return {
             type: 'file',
             mode: 0o100644,
-            size,
+            size: fsContent.length,
             ino: 0,
             mtimeMs: Date.now(),
             ctimeMs: Date.now(),
@@ -399,28 +489,28 @@ class FSAdapter {
           };
         }
 
-        // Check if it's a directory on filesystem
-        try {
-          const files = await fileSystemService.listFiles(normalizedPath);
-          if (files.length >= 0) {
-            // listFiles returns [] for empty dirs
-            return {
-              type: 'dir',
-              mode: 0o40755,
-              size: 0,
-              ino: 0,
-              mtimeMs: Date.now(),
-              ctimeMs: Date.now(),
-              isFile: () => false,
-              isDirectory: () => true,
-              isSymbolicLink: () => false,
-            };
-          }
-        } catch {
-          // Not a directory
+        // Check if it's a directory on filesystem (WITHOUT creating it!)
+        const dirExists = await fileSystemService.directoryExists(normalizedPath);
+        if (dirExists) {
+          console.log('[FSAdapter.stat] Found directory:', normalizedPath);
+          return {
+            type: 'dir',
+            mode: 0o40755,
+            size: 0,
+            ino: 0,
+            mtimeMs: Date.now(),
+            ctimeMs: Date.now(),
+            isFile: () => false,
+            isDirectory: () => true,
+            isSymbolicLink: () => false,
+          };
         }
 
-        throw new Error(`ENOENT: no such file or directory, stat '${path}'`);
+        // Throw error with .code property for isomorphic-git
+        console.log('[FSAdapter.stat] NOT FOUND:', normalizedPath);
+        const err = new Error(`ENOENT: no such file or directory, stat '${path}'`);
+        (err as NodeJS.ErrnoException).code = 'ENOENT';
+        throw err;
       }
 
       // Try to read as file first
@@ -440,9 +530,9 @@ class FSAdapter {
         };
       }
 
-      // Check if it's a directory by trying to list it
-      try {
-        await fileSystemService.listFiles(normalizedPath);
+      // Check if it's a directory (WITHOUT creating it!)
+      const dirExists = await fileSystemService.directoryExists(normalizedPath);
+      if (dirExists) {
         return {
           type: 'dir',
           mode: 0o40755,
@@ -454,9 +544,12 @@ class FSAdapter {
           isDirectory: () => true,
           isSymbolicLink: () => false,
         };
-      } catch {
-        throw new Error(`ENOENT: no such file or directory, stat '${path}'`);
       }
+
+      // Throw error with .code property for isomorphic-git
+      const err = new Error(`ENOENT: no such file or directory, stat '${path}'`);
+      (err as NodeJS.ErrnoException).code = 'ENOENT';
+      throw err;
     },
 
     lstat: function (path: string) {
@@ -476,13 +569,26 @@ class FSAdapter {
       // No-op - permissions not supported
     },
   };
+
+  // isomorphic-git also calls these directly on fs (not fs.promises) for object storage
+  exists = async (path: string): Promise<boolean> => {
+    return this.promises.exists(path);
+  };
+
+  write = async (path: string, data: Uint8Array): Promise<void> => {
+    console.log('[FSAdapter.write] DIRECT CALL for:', path, 'bytes:', data.length);
+    // This is the method isomorphic-git uses for writing git objects!
+    await this.promises.writeFile(path, data);
+  };
 }
 
 const fsAdapter = new FSAdapter();
 
-// Debug: Check if promises is enumerable
+// Debug: Check if promises is enumerable (isomorphic-git requires this)
 console.log('[FSAdapter] Has promises property:', 'promises' in fsAdapter);
-console.log('[FSAdapter] promises is enumerable:', Object.keys(fsAdapter).includes('promises'));
+const promisesDescriptor = Object.getOwnPropertyDescriptor(fsAdapter, 'promises');
+console.log('[FSAdapter] promises descriptor:', promisesDescriptor);
+console.log('[FSAdapter] promises.enumerable:', promisesDescriptor?.enumerable);
 console.log('[FSAdapter] All fsAdapter keys:', Object.keys(fsAdapter));
 console.log(
   '[FSAdapter] promises methods:',
@@ -682,7 +788,7 @@ class RealGitService {
 
   /**
    * Get git status
-   * Browser: enumerate files directly (git.statusMatrix has issues with object persistence)
+   * Browser: use git.statusMatrix with fsAdapter (now that FSAdapter correctly throws ENOENT)
    * Electron: use git.statusMatrix via IPC
    */
   async getStatus(): Promise<FileStatus[]> {
@@ -690,6 +796,9 @@ class RealGitService {
 
     try {
       let result: FileStatus[] = [];
+      // Track ALL files from statusMatrix (including unchanged) to avoid
+      // re-adding committed files as 'new' during file enumeration
+      const statusMatrixFiles = new Set<string>();
 
       // Electron path: use IPC for proper git status
       if (isElectronEnv()) {
@@ -699,6 +808,9 @@ class RealGitService {
         if (Array.isArray(status)) {
           result = status
             .map(([filepath, head, workdir, stage]) => {
+              // Track all files from statusMatrix
+              statusMatrixFiles.add(filepath);
+
               let statusStr = 'unchanged';
               if (head === 1 && workdir === 2 && stage === 2) statusStr = 'modified';
               if (head === 0 && workdir === 2 && stage === 0) statusStr = 'new';
@@ -713,14 +825,71 @@ class RealGitService {
             .filter((f) => f.status !== 'unchanged');
         }
       } else {
-        // Browser path: Skip git.statusMatrix entirely and enumerate files directly
-        // (isomorphic-git doesn't persist git objects in browser reliably)
-        console.log('[getStatus] Using file enumeration (browser)');
+        // Browser path: Use git.statusMatrix directly with fsAdapter
+        // (Now that FSAdapter correctly throws ENOENT, git objects persist properly)
+        console.log('[getStatus] Using git.statusMatrix (browser)');
+        try {
+          const status = await git.statusMatrix({ fs: fsAdapter, dir: this.getRootDir() });
+          console.log('[getStatus] Raw statusMatrix (browser):', status);
+
+          if (Array.isArray(status)) {
+            result = status
+              .map(([filepath, head, workdir, stage]) => {
+                let statusStr = 'unchanged';
+                // [HEAD, WORKDIR, STAGE]
+                // [0, 2, 0] = new file, not staged
+                // [0, 2, 2] = new file, staged
+                // [1, 2, 1] = modified, not staged
+                // [1, 2, 2] = modified, staged
+                // [1, 0, 0] = deleted, not staged
+                // [1, 1, 1] = unchanged (committed)
+                // [1, 2, 3] = modified in workdir (stage has old version)
+                console.log(
+                  `[getStatus] File: ${filepath} HEAD=${head} WORKDIR=${workdir} STAGE=${stage}`
+                );
+
+                // Track this file regardless of status
+                statusMatrixFiles.add(filepath);
+
+                if (head === 1 && workdir === 1 && stage === 1) {
+                  statusStr = 'unchanged'; // File is committed and unchanged
+                } else if (head === 1 && workdir === 2 && stage === 2) {
+                  statusStr = 'modified';
+                } else if (head === 0 && workdir === 2 && stage === 0) {
+                  statusStr = 'new';
+                } else if (head === 0 && workdir === 2 && stage === 2) {
+                  statusStr = 'added';
+                } else if (head === 1 && workdir === 0) {
+                  statusStr = 'deleted';
+                } else if (head === 1 && workdir === 2 && stage === 1) {
+                  statusStr = 'modified';
+                } else if (head === 1 && workdir === 2 && stage === 3) {
+                  // stage === 3 means the staged version differs from workdir
+                  statusStr = 'modified';
+                }
+
+                return {
+                  path: filepath,
+                  status: statusStr,
+                };
+              })
+              .filter((f) => f.status !== 'unchanged');
+          }
+        } catch (statusError) {
+          console.error(
+            '[getStatus] statusMatrix failed, falling back to file enumeration:',
+            statusError
+          );
+          // Fall through to file enumeration below
+        }
       }
 
       // Always enumerate artifact files directly
       // For Electron, this supplements git status; for Browser, this is the primary method
-      const trackedPaths = new Set(result.map((f) => f.path));
+      // Use statusMatrixFiles to avoid re-adding committed files as 'new'
+      // Fall back to result paths if statusMatrix failed or wasn't available
+      const trackedPaths =
+        statusMatrixFiles.size > 0 ? statusMatrixFiles : new Set(result.map((f) => f.path));
       const untrackedFiles: FileStatus[] = [];
 
       const artifactTypes = ['requirements', 'usecases', 'testcases', 'information'];
@@ -763,13 +932,17 @@ class RealGitService {
         throw new Error(`File not found on disk: ${filepath}`);
       }
 
-      await git.add({ fs: fsAdapter, dir: this.getRootDir(), filepath });
+      // Use empty cache object to force disk writes (no in-memory caching)
+      const cache = {};
+
+      await git.add({ fs: fsAdapter, dir: this.getRootDir(), filepath, cache });
 
       const commitOid = await git.commit({
         fs: fsAdapter,
         dir: this.getRootDir(),
         message,
         author: { name: 'ReqTrace User', email: 'user@reqtrace.local' },
+        cache,
       });
 
       console.log('[commitFile] Commit SHA (fsAdapter):', commitOid);
