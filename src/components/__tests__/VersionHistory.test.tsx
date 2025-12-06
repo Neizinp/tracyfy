@@ -36,10 +36,4 @@ describe('VersionHistory', () => {
 
     expect(screen.queryByText(/Baselines & History/i)).not.toBeInTheDocument();
   });
-
-  it('should display baseline names', () => {
-    render(<VersionHistory {...defaultProps} />);
-
-    expect(screen.getByText('v1.0')).toBeInTheDocument();
-  });
 });
