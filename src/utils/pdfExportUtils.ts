@@ -32,7 +32,8 @@ export async function exportProjectToPDF(
   projectUseCaseIds: string[],
   projectTestCaseIds: string[],
   projectInformationIds: string[],
-  baselines: ProjectBaseline[]
+  baselines: ProjectBaseline[],
+  selectedBaseline: ProjectBaseline | null // null = Current State
 ): Promise<void> {
   // 0. Request File Handle FIRST (to ensure user activation is valid)
   let fileHandle: any = null;
@@ -65,7 +66,7 @@ export async function exportProjectToPDF(
   const tocEntries: TOCEntry[] = [];
 
   // 1. Cover Page
-  addCoverPage(doc, project);
+  addCoverPage(doc, project, selectedBaseline);
   currentPage++;
 
   // 2. Table of Contents (placeholder, will update after)
@@ -235,7 +236,11 @@ export async function exportProjectToPDF(
 }
 
 // Cover Page
-function addCoverPage(doc: jsPDF, project: Project): void {
+function addCoverPage(
+  doc: jsPDF,
+  project: Project,
+  selectedBaseline: ProjectBaseline | null
+): void {
   const pageWidth = doc.internal.pageSize.getWidth();
 
   // Title
@@ -259,10 +264,17 @@ function addCoverPage(doc: jsPDF, project: Project): void {
   doc.setFontSize(10);
   doc.text(`Export Date: ${formatDate(Date.now())}`, pageWidth / 2, 140, { align: 'center' });
 
-  // Baseline info if available
-  if (project.currentBaseline) {
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Baseline: ${project.currentBaseline}`, pageWidth / 2, 155, { align: 'center' });
+  // Baseline or Current State info
+  doc.setFont('helvetica', 'bold');
+  if (selectedBaseline) {
+    doc.text(
+      `Baseline: ${selectedBaseline.name} (v${selectedBaseline.version})`,
+      pageWidth / 2,
+      155,
+      { align: 'center' }
+    );
+  } else {
+    doc.text('Current State', pageWidth / 2, 155, { align: 'center' });
   }
 }
 

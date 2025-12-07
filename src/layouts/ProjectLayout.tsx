@@ -110,7 +110,8 @@ export const ProjectLayout: React.FC = () => {
           currentProject.useCaseIds,
           currentProject.testCaseIds,
           currentProject.informationIds,
-          baselines
+          baselines,
+          null // selectedBaseline: null = Current State
         );
       }}
       onExportExcel={async () => {
