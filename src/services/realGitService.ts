@@ -1044,7 +1044,7 @@ class RealGitService {
           oid: log.oid,
           message: log.commit.message,
           author: log.commit.author.name,
-          timestamp: log.commit.author.timestamp,
+          timestamp: log.commit.author.timestamp * 1000, // Convert seconds to ms
         }));
       }
 

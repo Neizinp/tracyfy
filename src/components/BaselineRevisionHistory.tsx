@@ -201,7 +201,7 @@ export function BaselineRevisionHistory({
                             </span>
                             <span className="flex items-center gap-1">
                               <Calendar size={12} />
-                              {formatDateTime(revision.timestamp * 1000)}
+                              {formatDateTime(revision.timestamp)}
                             </span>
                           </div>
                         </div>
