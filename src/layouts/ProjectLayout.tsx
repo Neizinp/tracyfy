@@ -92,7 +92,8 @@ export const ProjectLayout: React.FC = () => {
       onOpenGlobalLibrary={() => ui.setIsLibraryPanelOpen(true)}
       onOpenLibraryTab={ui.handleOpenLibrary}
       onViewHistory={() => ui.setIsVersionHistoryOpen(true)}
-      onExportPDF={async () => {
+      baselines={baselines}
+      onExportPDF={async (selectedBaseline) => {
         if (!currentProject) {
           alert('No project selected');
           return;
@@ -111,7 +112,7 @@ export const ProjectLayout: React.FC = () => {
           currentProject.testCaseIds,
           currentProject.informationIds,
           baselines,
-          null // selectedBaseline: null = Current State
+          selectedBaseline // selectedBaseline: ProjectBaseline | null
         );
       }}
       onExportExcel={async () => {

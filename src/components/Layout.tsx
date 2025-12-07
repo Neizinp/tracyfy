@@ -33,7 +33,7 @@ interface LayoutProps {
   onExport?: () => void;
   onImport?: () => void;
   onViewHistory?: () => void;
-  onExportPDF?: () => void;
+  onExportPDF?: (selectedBaseline: ProjectBaseline | null) => void;
   onExportExcel?: () => void;
   onImportExcel?: () => void;
   onOpenGlobalLibrary?: () => void;
@@ -63,6 +63,7 @@ export const Layout: React.FC<LayoutProps> = ({
   onOpenLibraryTab,
   onViewHistory,
   onExportPDF,
+  baselines = [],
   onExportExcel,
   onSearch,
   onTrashOpen,
@@ -71,6 +72,7 @@ export const Layout: React.FC<LayoutProps> = ({
   rightPanel,
 }) => {
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [selectedBaselineId, setSelectedBaselineId] = useState<string>('current');
   const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -970,52 +972,90 @@ export const Layout: React.FC<LayoutProps> = ({
                     (window as any).__E2E_TEST_MODE__ &&
                     console.log('E2E: Export dropdown rendered')}
                   {onExportPDF && (
-                    <button
-                      onClick={() => {
-                        if (typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__) {
-                          // E2E fallback: always trigger a dummy PDF download
-                          const blob = new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d])], {
-                            type: 'application/pdf',
-                          }); // "%PDF-" header
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = 'project.pdf';
-                          document.body.appendChild(a);
-                          a.click();
-                          setTimeout(() => {
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
-                          }, 100);
+                    <div style={{ padding: '0.5rem 1rem' }}>
+                      <label
+                        htmlFor="baseline-select"
+                        style={{
+                          fontSize: '0.9rem',
+                          fontWeight: 500,
+                          display: 'block',
+                          marginBottom: 4,
+                        }}
+                      >
+                        Export Version:
+                      </label>
+                      <select
+                        id="baseline-select"
+                        value={selectedBaselineId}
+                        onChange={(e) => setSelectedBaselineId(e.target.value)}
+                        style={{
+                          width: '100%',
+                          marginBottom: 8,
+                          padding: '0.25rem',
+                          borderRadius: 4,
+                        }}
+                      >
+                        <option value="current">Current State</option>
+                        {baselines.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name} (v{b.version})
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => {
+                          if (typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__) {
+                            // E2E fallback: always trigger a dummy PDF download
+                            const blob = new Blob(
+                              [new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d])],
+                              {
+                                type: 'application/pdf',
+                              }
+                            ); // "%PDF-" header
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'project.pdf';
+                            document.body.appendChild(a);
+                            a.click();
+                            setTimeout(() => {
+                              document.body.removeChild(a);
+                              URL.revokeObjectURL(url);
+                            }, 100);
+                            setIsExportMenuOpen(false);
+                            return;
+                          }
+                          const selected =
+                            selectedBaselineId === 'current'
+                              ? null
+                              : baselines.find((b) => b.id === selectedBaselineId) || null;
+                          onExportPDF(selected);
                           setIsExportMenuOpen(false);
-                          return;
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 'var(--spacing-sm)',
+                          width: '100%',
+                          padding: '0.75rem 1rem',
+                          border: 'none',
+                          background: 'var(--color-bg-card)',
+                          color: 'var(--color-text-primary)',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          fontSize: '0.9rem',
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)')
                         }
-                        onExportPDF();
-                        setIsExportMenuOpen(false);
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--spacing-sm)',
-                        width: '100%',
-                        padding: '0.75rem 1rem',
-                        border: 'none',
-                        background: 'var(--color-bg-card)',
-                        color: 'var(--color-text-primary)',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        fontSize: '0.9rem',
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)')
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')
-                      }
-                    >
-                      <FileText size={16} />
-                      Export to PDF
-                    </button>
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')
+                        }
+                      >
+                        <FileText size={16} />
+                        Export to PDF
+                      </button>
+                    </div>
                   )}
                   {onExportExcel && (
                     <button
