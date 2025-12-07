@@ -93,11 +93,22 @@ test('comprehensive pdf export', async ({ page }) => {
   await expect(page.getByText('PDF Test Information').first()).toBeVisible();
 
   // 7. Export PDF
-  await page.click('button:has-text("Export")');
-  await page.waitForTimeout(200);
 
+  await page.click('button:has-text("Export")');
+  // Wait for the export dropdown to appear
+  const exportDropdown = page.locator('[data-testid="export-dropdown"]');
+  try {
+    await exportDropdown.waitFor({ state: 'visible', timeout: 3000 });
+  } catch (e) {
+    await page.screenshot({ path: 'playwright-export-dropdown-NOT-OPEN.png', fullPage: true });
+    throw new Error('Export dropdown did not open. See screenshot.');
+  }
+  // Debug: screenshot and log all export buttons
+  await page.screenshot({ path: 'playwright-export-dropdown-debug.png', fullPage: true });
+  const allButtons = await page.locator('button').allTextContents();
+  console.log('DEBUG: All buttons:', allButtons);
   // Verify Export to PDF button is visible
-  await expect(page.locator('button:has-text("Export to PDF")')).toBeVisible();
+  await expect(page.locator('button:has-text("Export to PDF")')).toBeVisible({ timeout: 2000 });
 
   // NOTE: Actual file download testing is complex in Playwright
   // The test verifies the UI works and the button is clickable
