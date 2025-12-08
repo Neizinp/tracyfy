@@ -1,7 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import type { CommitInfo } from '../services/realGitService';
 import { formatDateTime } from '../utils/dateUtils';
+import { realGitService } from '../services/realGitService';
+import { markdownToRequirement, markdownToUseCase, markdownToTestCase, markdownToInformation } from '../utils/markdownUtils';
 
 interface RevisionHistoryTabProps {
     artifactId: string;
@@ -10,19 +13,59 @@ interface RevisionHistoryTabProps {
 
 export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({ artifactId, artifactType }) => {
     const [history, setHistory] = useState<CommitInfo[]>([]);
+    const [revisions, setRevisions] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true);
     const { getArtifactHistory, isReady } = useFileSystem();
 
     useEffect(() => {
         const loadHistory = async () => {
             if (!isReady) return;
-
             setLoading(true);
             try {
                 const commits = await getArtifactHistory(artifactType, artifactId);
                 setHistory(commits);
+                const filePath = `${artifactType}/${artifactId}.md`;
+                const revs: Record<string, string> = {};
+                for (const commit of commits) {
+                    try {
+                        // Extra debug logging
+                        // eslint-disable-next-line no-console
+                        console.log('[RevisionHistoryTab][DEBUG] filePath:', filePath, 'commit:', commit.hash);
+                        const content = await realGitService.readFileAtCommit(filePath, commit.hash);
+                        // eslint-disable-next-line no-console
+                        console.log('[RevisionHistoryTab][DEBUG] Content for', filePath, 'at', commit.hash, ':', (typeof content === 'string' ? content.slice(0, 200) : content));
+                        let revision = '—';
+                        let parsed = undefined;
+                        if (content) {
+                            if (artifactType === 'requirements') {
+                                parsed = markdownToRequirement(content);
+                            } else if (artifactType === 'usecases') {
+                                parsed = markdownToUseCase(content);
+                            } else if (artifactType === 'testcases') {
+                                parsed = markdownToTestCase(content);
+                            } else if (artifactType === 'information') {
+                                parsed = markdownToInformation(content);
+                            }
+                            // Extra debug log
+                            // eslint-disable-next-line no-console
+                            console.log('[RevisionHistoryTab][DEBUG] commit:', commit.hash, 'parsed:', parsed, 'parsed.revision:', parsed?.revision);
+                            if (parsed) {
+                                revision = parsed.revision || '—';
+                            }
+                        } else {
+                            // eslint-disable-next-line no-console
+                            console.warn('[RevisionHistoryTab][DEBUG] No content for commit', commit.hash, 'at path', filePath);
+                        }
+                        revs[commit.hash] = revision;
+                    } catch (err) {
+                        // eslint-disable-next-line no-console
+                        console.error('[RevisionHistoryTab][DEBUG] Error reading/parsing at commit', commit.hash, 'for file', filePath, err);
+                        revs[commit.hash] = '—';
+                    }
+                }
+                setRevisions(revs);
             } catch (error) {
-                console.error('Failed to load history:', error);
+                console.error('[RevisionHistoryTab][DEBUG] Failed to load history:', error);
             } finally {
                 setLoading(false);
             }
@@ -62,10 +105,9 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({ artifact
                     </thead>
                     <tbody>
                         {history.map((commit) => {
-                            // Extract revision from message if present (e.g. "(Rev 02)")
-                            const revMatch = commit.message.match(/\(Rev (\d+)\)/);
-                            const revision = revMatch ? revMatch[1] : '-';
-
+                            const revision = revisions[commit.hash] || '—';
+                            // eslint-disable-next-line no-console
+                            console.log('[RevisionHistoryTab] UI row commit', commit.hash, 'revision:', revision);
                             return (
                                 <tr key={commit.hash} style={{
                                     borderBottom: '1px solid var(--color-border)',

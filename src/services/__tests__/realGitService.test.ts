@@ -1,3 +1,45 @@
+describe('readFileAtCommit', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Ensure service is initialized for these tests
+    realGitService['initialized'] = true;
+    vi.spyOn(realGitService, 'getRootDir').mockReturnValue('.');
+  });
+
+  it('returns file content when readBlob succeeds', async () => {
+    const mockContent = new TextEncoder().encode('hello world');
+    vi.mocked(git.readBlob).mockResolvedValue({ object: mockContent });
+    const result = await realGitService.readFileAtCommit('foo.md', 'abc123');
+    expect(result).toBe('hello world');
+  });
+
+  it('returns null and does not log error for NotFoundError', async () => {
+    const notFoundError = { code: 'NotFoundError', message: 'Could not find file or directory' };
+    vi.mocked(git.readBlob).mockRejectedValue(notFoundError);
+    const errorSpy = vi.spyOn(console, 'error');
+    const infoSpy = vi.spyOn(console, 'info');
+    const result = await realGitService.readFileAtCommit('missing.md', 'deadbeef');
+    expect(result).toBeNull();
+    expect(errorSpy).not.toHaveBeenCalled();
+    // If you uncomment the info log in realGitService, check for info log here
+    // expect(infoSpy).toHaveBeenCalledWith(expect.stringContaining('File not found'));
+  });
+
+  it('returns null and logs error for unexpected error', async () => {
+    const unexpectedError = new Error('Something went wrong');
+    vi.mocked(git.readBlob).mockRejectedValue(unexpectedError);
+    const errorSpy = vi.spyOn(console, 'error');
+    const result = await realGitService.readFileAtCommit('foo.md', 'abc123');
+    expect(result).toBeNull();
+    expect(errorSpy).toHaveBeenCalledWith(
+      '[readFileAtCommit] Unexpected error reading',
+      'foo.md',
+      'at',
+      'abc123',
+      unexpectedError
+    );
+  });
+});
 /**
  * RealGitService Tests
  *
@@ -796,6 +838,60 @@ Rationale
       // The filepath parameter is only used in Electron mode via IPC
       expect(git.log).toHaveBeenCalled();
       expect(history).toHaveLength(1);
+    });
+
+    it('should extract revision from file at each commit and not return em dash', async () => {
+      // Simulate two commits with different revisions
+      vi.mocked(git.log).mockResolvedValue([
+        {
+          oid: 'cmt1',
+          commit: {
+            message: 'Initial',
+            author: {
+              name: 'User',
+              email: 'user@test.com',
+              timestamp: 1700000000,
+              timezoneOffset: 0,
+            },
+          },
+        },
+        {
+          oid: 'cmt2',
+          commit: {
+            message: 'Update',
+            author: {
+              name: 'User',
+              email: 'user@test.com',
+              timestamp: 1700000100,
+              timezoneOffset: 0,
+            },
+          },
+        },
+      ] as any);
+
+      // Mock file contents at each commit
+      vi.spyOn(realGitService, 'readFileAtCommit').mockImplementation(async (file, hash) => {
+        if (hash === 'cmt1') {
+          return `---\nid: REQ-001\nrevision: '01'\n---\n# REQ-001\nDescription`;
+        } else if (hash === 'cmt2') {
+          return `---\nid: REQ-001\nrevision: '02'\n---\n# REQ-001\nDescription updated`;
+        }
+        return null;
+      });
+
+      const history = await realGitService.getHistory('requirements/REQ-001.md');
+      expect(history).toHaveLength(2);
+
+      // Import markdownToRequirement directly for parsing
+      const { markdownToRequirement } = await import('../../utils/markdownUtils');
+
+      for (const commit of history) {
+        const content = await realGitService.readFileAtCommit('requirements/REQ-001.md', commit.hash);
+        expect(content).toBeTruthy();
+        const parsed = markdownToRequirement(content!);
+        expect(parsed.revision).not.toBe('—');
+        expect(parsed.revision).toMatch(/^0[12]$/); // '01' or '02'
+      }
     });
   });
 

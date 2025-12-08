@@ -151,8 +151,12 @@ function parseYamlFrontmatter(content: string): { frontmatter: Record<string, an
         frontmatter[key] = value === 'true';
       } else if (!isNaN(Number(value)) && value !== '') {
         frontmatter[key] = Number(value);
-      } else if (value.startsWith('"') && value.endsWith('"')) {
-        frontmatter[key] = value.slice(1, -1).replace(/\\"/g, '"');
+      } else if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        // Remove both double and single quotes around the value
+        frontmatter[key] = value.slice(1, -1).replace(/\\"/g, '"').replace(/\\'/g, "'");
       } else if (value.startsWith('{') && value.endsWith('}')) {
         // Object in JSON format
         try {

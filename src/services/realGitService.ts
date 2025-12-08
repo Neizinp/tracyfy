@@ -1,3 +1,4 @@
+// ...existing code...
 /**
  * Real Git Service - Uses isomorphic-git with File System Access API or Electron IPC
  *
@@ -596,6 +597,64 @@ console.log(
 );
 
 class RealGitService {
+    /**
+     * Read a file at a specific commit (by SHA)
+     */
+    async readFileAtCommit(filepath: string, commitSha: string): Promise<string | null> {
+      if (!this.initialized) {
+        throw new Error('Git service not initialized');
+      }
+      try {
+        const result = await git.readBlob({
+          fs: fsAdapter,
+          dir: this.getRootDir(),
+          oid: commitSha,
+          filepath,
+        });
+        // Log the full result for diagnosis
+        console.log('[readFileAtCommit] raw result:', result);
+        let blob = result?.object || result?.blob;
+        if (!blob) {
+          console.warn('[readFileAtCommit] No blob found for', filepath, 'at', commitSha, 'result:', result);
+          return null;
+        }
+        // Log type and length
+        console.log('[readFileAtCommit] blob type:', typeof blob, 'instanceof Uint8Array:', blob instanceof Uint8Array, 'length:', blob?.length);
+        // Defensive: check if blob is Uint8Array
+        if (!(blob instanceof Uint8Array)) {
+          // Try to convert if possible
+          if (Array.isArray(blob)) {
+            blob = new Uint8Array(blob);
+            console.log('[readFileAtCommit] Converted array to Uint8Array');
+          } else {
+            console.error('[readFileAtCommit] Blob is not Uint8Array or array for', filepath, 'at', commitSha, 'blob:', blob);
+            return null;
+          }
+        }
+        const decoded = new TextDecoder().decode(blob);
+        // Log the full decoded content (up to 500 chars)
+        console.log('[readFileAtCommit] Decoded file', filepath, 'at', commitSha, 'blob.length:', blob?.length, 'decoded.length:', decoded.length, 'preview:', decoded.slice(0, 500));
+        if (!decoded || decoded.trim().length === 0) {
+          console.warn('[readFileAtCommit] Decoded content is empty for', filepath, 'at', commitSha);
+          return null;
+        }
+        // Defensive: check if content looks like markdown (starts with --- or #)
+        if (!decoded.startsWith('---') && !decoded.startsWith('#')) {
+          console.warn('[readFileAtCommit] Decoded content does not look like markdown for', filepath, 'at', commitSha, 'content preview:', decoded.slice(0, 80));
+        }
+        return decoded;
+      } catch (err: any) {
+        // Suppress stack trace for expected missing files
+        if (err && (err.code === 'NotFoundError' || (typeof err.message === 'string' && err.message.includes('Could not find file or directory'))) ) {
+          // Optionally, log a concise info message
+          console.info(`[readFileAtCommit] File not found: ${filepath} at ${commitSha}`);
+          return null;
+        }
+        // Unexpected error: log full error
+        console.error('[readFileAtCommit] Unexpected error reading', filepath, 'at', commitSha, err);
+        return null;
+      }
+    }
   private initialized = false;
   private rootDir = '.';
 
@@ -1039,6 +1098,7 @@ class RealGitService {
           dir: this.getRootDir(),
           depth: 100,
           ref: 'HEAD',
+          filepath: filepath || undefined,
         });
         commits = logs.map((log) => ({
           oid: log.oid,
