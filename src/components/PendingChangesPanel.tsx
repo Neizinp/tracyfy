@@ -56,7 +56,7 @@ export function PendingChangesPanel() {
     });
 
     setParsedChanges(changes);
-  }, [pendingChanges]);
+  }, [pendingChanges, commitMessages]);
 
   const handleCommitMessageChange = (id: string, message: string) => {
     setCommitMessages((prev) => ({ ...prev, [id]: message }));

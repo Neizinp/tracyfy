@@ -43,7 +43,7 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
   onLink,
   onEdit,
 }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: req.id,
   });
 

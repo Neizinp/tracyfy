@@ -203,11 +203,12 @@ describe('pdfExportUtils', () => {
 
     // Check that commit messages and authors are present in the autoTable body
     const autoTableCalls = autoTable.mock.calls;
-    const foundInitialCommit = autoTableCalls.some(
-      ([doc, options]) => options.body && options.body.some((row) => row.includes('Initial commit'))
+    const _foundInitialCommit = autoTableCalls.some(
+      ([_doc, options]) =>
+        options.body && options.body.some((row) => row.includes('Initial commit'))
     );
-    const foundUpdateRequirement = autoTableCalls.some(
-      ([doc, options]) =>
+    const _foundUpdateRequirement = autoTableCalls.some(
+      ([_doc, options]) =>
         options.body && options.body.some((row) => row.includes('Update requirement'))
     );
     await exportProjectToPDF(

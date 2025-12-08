@@ -2,44 +2,19 @@ import React, { useMemo, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { BaselineRevisionHistory } from '../components';
 import { useFileSystem, useProject } from '../app/providers';
-import { realGitService } from '../services/realGitService';
 import type { ProjectBaseline } from '../types';
 
 export const BaselineHistoryPage: React.FC = () => {
-  const { baselines, requirements, useCases, testCases, information } = useFileSystem();
+  const { baselines } = useFileSystem();
   const { currentProject } = useProject();
   const { baselineId } = useParams<{ baselineId: string }>();
   const [compareToCurrent, setCompareToCurrent] = useState(false);
 
-  if (!baselineId) {
-    return <Navigate to="/baselines" replace />;
-  }
-
-  const selectedBaseline = baselines.find((b) => b.id === baselineId);
-  if (!selectedBaseline) {
-    return <Navigate to="/baselines" replace />;
-  }
-
   // Generate a pseudo-baseline for the current state
-  const currentStateBaseline: ProjectBaseline = useMemo(() => {
+  // Moved before conditional returns to avoid conditional hook call
+  const currentStateBaseline: ProjectBaseline | null = useMemo(() => {
     if (!currentProject) return null;
     const artifactCommits: ProjectBaseline['artifactCommits'] = {};
-    // Helper to get latest commit hash for an artifact
-    const getLatestCommit = async (type: string, id: string) => {
-      const folder =
-        type === 'requirement'
-          ? 'requirements'
-          : type === 'usecase'
-            ? 'usecases'
-            : type === 'testcase'
-              ? 'testcases'
-              : type === 'information'
-                ? 'information'
-                : '';
-      if (!folder) return '';
-      const history = await realGitService.getHistory(`${folder}/${id}.json`);
-      return history[0]?.hash || '';
-    };
     // Build artifactCommits for all artifacts in the project
     currentProject.requirementIds.forEach((id) => {
       artifactCommits[id] = { commitHash: '', type: 'requirement' };
@@ -66,6 +41,15 @@ export const BaselineHistoryPage: React.FC = () => {
       removedArtifacts: [],
     };
   }, [currentProject]);
+
+  if (!baselineId) {
+    return <Navigate to="/baselines" replace />;
+  }
+
+  const selectedBaseline = baselines.find((b) => b.id === baselineId);
+  if (!selectedBaseline) {
+    return <Navigate to="/baselines" replace />;
+  }
 
   // Allow user to select comparison target
   return (
@@ -100,7 +84,7 @@ export const BaselineHistoryPage: React.FC = () => {
       </div>
       <BaselineRevisionHistory
         projectName={currentProject?.name || 'Unknown'}
-        currentBaseline={compareToCurrent ? currentStateBaseline : selectedBaseline}
+        currentBaseline={compareToCurrent ? currentStateBaseline! : selectedBaseline}
         previousBaseline={
           compareToCurrent
             ? selectedBaseline
