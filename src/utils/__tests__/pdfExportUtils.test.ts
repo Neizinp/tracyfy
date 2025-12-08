@@ -1,3 +1,71 @@
+const mockBaseline = {
+  id: 'b1',
+  projectId: 'p1',
+  version: '1.0',
+  name: 'Baseline 1.0',
+  description: 'Test Baseline',
+  timestamp: Date.now(),
+  artifactCommits: {},
+};
+import autoTable from 'jspdf-autotable';
+
+// Add shared mock artifacts for all tests
+const mockReq: Requirement = {
+  id: 'r1',
+  title: 'My Requirement',
+  description: 'Desc',
+  text: 'Req text',
+  rationale: 'Rationale',
+  status: 'draft',
+  priority: 'high',
+  author: 'N/A',
+  created: 0,
+  modified: 0,
+  approved: null,
+  version: '01',
+  verification: 'N/A',
+  deleted: false,
+  isDeleted: false,
+};
+
+const mockUseCase: UseCase = {
+  id: 'u1',
+  title: 'My Use Case',
+  description: 'Desc',
+  actor: 'User',
+  preconditions: '',
+  postconditions: '',
+  mainFlow: 'Step 1. Do this.',
+  priority: 'medium',
+  status: 'draft',
+  lastModified: 0,
+  revision: '01',
+  isDeleted: false,
+};
+
+const mockTestCase: TestCase = {
+  id: 't1',
+  title: 'My Test Case',
+  description: 'Test Steps',
+  status: 'draft',
+  priority: 'high',
+  lastModified: 0,
+  revision: '01',
+  dateCreated: 0,
+  requirementIds: [],
+  isDeleted: false,
+};
+
+const mockInfo: Information = {
+  id: 'i1',
+  title: 'My Info',
+  content: 'Info Content',
+  type: 'note',
+  lastModified: 0,
+  revision: '01',
+  dateCreated: 0,
+  isDeleted: false,
+};
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { exportProjectToPDF } from '../pdfExportUtils';
 import type { Project, Requirement, UseCase, TestCase, Information } from '../../types';
@@ -61,9 +129,27 @@ vi.mock('jspdf-autotable', () => ({
 }));
 
 // Mock gitService
-vi.mock('../../services/gitService', () => ({
-  gitService: {
-    getArtifactHistory: vi.fn().mockResolvedValue([]),
+vi.mock('../../services/realGitService', () => ({
+  realGitService: {
+    getHistory: vi.fn().mockImplementation((filepath) => {
+      if (filepath === 'requirements/r1.md') {
+        return Promise.resolve([
+          {
+            hash: 'abc123',
+            message: 'Initial commit',
+            author: 'Alice',
+            timestamp: 1700000000000,
+          },
+          {
+            hash: 'def456',
+            message: 'Update requirement',
+            author: 'Bob',
+            timestamp: 1700001000000,
+          },
+        ]);
+      }
+      return Promise.resolve([]);
+    }),
   },
 }));
 
@@ -76,62 +162,18 @@ describe('pdfExportUtils', () => {
     id: 'p1',
     name: 'Test Project',
     description: 'Test Description',
+    requirements: [mockReq],
+    useCases: [mockUseCase],
+    testCases: [mockTestCase],
+    information: [mockInfo],
     requirementIds: ['r1'],
     useCaseIds: ['u1'],
     testCaseIds: ['t1'],
     informationIds: ['i1'],
+    baseline: null,
+    globalRepository: null,
     lastModified: 0,
     currentBaseline: 'Baseline 1.0',
-  };
-
-  const mockReq: Requirement = {
-    id: 'r1',
-    title: 'My Requirement',
-    description: 'Desc',
-    text: 'Req text',
-    rationale: 'Rationale',
-    status: 'draft',
-    priority: 'high',
-    parentIds: [],
-    lastModified: 0,
-    revision: '01',
-    dateCreated: 0,
-  };
-
-  const mockUseCase: UseCase = {
-    id: 'u1',
-    title: 'My Use Case',
-    description: 'Desc',
-    actor: 'User',
-    preconditions: '',
-    postconditions: '',
-    mainFlow: 'Step 1. Do this.',
-    priority: 'medium',
-    status: 'draft',
-    lastModified: 0,
-    revision: '01',
-  };
-
-  const mockTestCase: TestCase = {
-    id: 't1',
-    title: 'My Test Case',
-    description: 'Test Steps',
-    status: 'draft',
-    priority: 'high',
-    lastModified: 0,
-    revision: '01',
-    dateCreated: 0,
-    requirementIds: [],
-  };
-
-  const mockInfo: Information = {
-    id: 'i1',
-    title: 'My Info',
-    content: 'Info Content',
-    type: 'note',
-    lastModified: 0,
-    revision: '01',
-    dateCreated: 0,
   };
 
   const globalState = {
@@ -141,8 +183,48 @@ describe('pdfExportUtils', () => {
     information: [mockInfo],
   };
 
+  it('should include revision history from git in PDF export', async () => {
+    (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+      createWritable: vi.fn().mockResolvedValue({
+        write: vi.fn(),
+        close: vi.fn(),
+      }),
+    });
+
+    await exportProjectToPDF(
+      mockProject,
+      globalState,
+      mockProject.requirementIds,
+      mockProject.useCaseIds,
+      mockProject.testCaseIds,
+      mockProject.informationIds,
+      []
+    );
+
+    // Check that commit messages and authors are present in the autoTable body
+    const autoTableCalls = autoTable.mock.calls;
+    const foundInitialCommit = autoTableCalls.some(
+      ([doc, options]) => options.body && options.body.some((row) => row.includes('Initial commit'))
+    );
+    const foundUpdateRequirement = autoTableCalls.some(
+      ([doc, options]) =>
+        options.body && options.body.some((row) => row.includes('Update requirement'))
+    );
+    await exportProjectToPDF(
+      mockProject,
+      globalState,
+      mockProject.requirementIds,
+      mockProject.useCaseIds,
+      mockProject.testCaseIds,
+      mockProject.informationIds,
+      [],
+      mockBaseline
+    );
+  });
+
   it('should generate Cover Page with correct details', async () => {
     // Mock showSaveFilePicker to avoid error
+
     (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
       createWritable: vi.fn().mockResolvedValue({
         write: vi.fn(),

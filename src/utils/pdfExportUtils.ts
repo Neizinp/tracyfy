@@ -104,7 +104,7 @@ export async function exportProjectToPDF(
   // Fetch commits for each artifact type
   for (const req of projectRequirements) {
     try {
-      const history = await realGitService.getHistory(`requirements/${req.id}.json`);
+      const history = await realGitService.getHistory(`requirements/${req.id}.md`);
       // Filter commits after last baseline
       const filteredHistory = lastBaseline
         ? history.filter((commit) => commit.timestamp > lastBaseline.timestamp)
@@ -123,7 +123,7 @@ export async function exportProjectToPDF(
 
   for (const uc of projectUseCases) {
     try {
-      const history = await realGitService.getHistory(`usecases/${uc.id}.json`);
+      const history = await realGitService.getHistory(`usecases/${uc.id}.md`);
       const filteredHistory = lastBaseline
         ? history.filter((commit) => commit.timestamp > lastBaseline.timestamp)
         : history;
