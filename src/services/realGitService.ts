@@ -1093,11 +1093,18 @@ class RealGitService {
    */
   async getHistory(filepath?: string): Promise<CommitInfo[]> {
     if (!this.initialized) {
+      console.warn('[realGitService][getHistory] Not initialized');
       return [];
     }
 
     try {
       let commits: any[];
+      console.log(
+        '[realGitService][getHistory] Called for filepath:',
+        filepath,
+        'repo:',
+        this.getRootDir()
+      );
 
       // Electron path: use IPC
       if (isElectronEnv()) {
@@ -1119,6 +1126,15 @@ class RealGitService {
         }));
       }
 
+      if (!commits || commits.length === 0) {
+        console.warn('[realGitService][getHistory] No commits found for filepath:', filepath);
+      } else {
+        console.log(
+          '[realGitService][getHistory] Found commits:',
+          commits.map((c) => c.oid || c.hash)
+        );
+      }
+
       return Array.isArray(commits)
         ? commits.map((commit) => ({
             hash: commit.oid,
@@ -1128,8 +1144,75 @@ class RealGitService {
           }))
         : [];
     } catch (error) {
-      console.error('Failed to get git history:', error);
+      console.error(
+        '[realGitService][getHistory] Failed to get git history:',
+        error,
+        'filepath:',
+        filepath
+      );
       return [];
+    }
+  }
+
+  /**
+   * Read file content at a specific commit
+   */
+  async readFileAtCommit(filepath: string, commitHash: string): Promise<string | null> {
+    try {
+      console.log(
+        '[realGitService][readFileAtCommit] Called for filepath:',
+        filepath,
+        'commitHash:',
+        commitHash,
+        'repo:',
+        this.getRootDir()
+      );
+      // Use isomorphic-git to read file at commit
+      const { blob } = await git.readBlob({
+        fs: fsAdapter,
+        dir: this.getRootDir(),
+        oid: commitHash,
+        filepath,
+      });
+      if (!blob) {
+        console.warn(
+          '[realGitService][readFileAtCommit] No blob found for filepath:',
+          filepath,
+          'commitHash:',
+          commitHash
+        );
+        return null;
+      }
+      const content = new TextDecoder().decode(blob);
+      console.log(
+        '[realGitService][readFileAtCommit] Content for',
+        filepath,
+        'at',
+        commitHash,
+        ':',
+        content.slice(0, 200)
+      );
+      // Try to extract revision for debug
+      try {
+        // Use markdownToRequirement for requirements
+        if (filepath.startsWith('requirements/')) {
+          const parsed = markdownToRequirement(content);
+          console.log('[realGitService][readFileAtCommit] Parsed revision:', parsed?.revision);
+        }
+      } catch (e) {
+        console.warn('[realGitService][readFileAtCommit] Error extracting revision:', e);
+      }
+      return content;
+    } catch (error) {
+      console.error(
+        '[realGitService][readFileAtCommit] Error reading file at commit:',
+        error,
+        'filepath:',
+        filepath,
+        'commitHash:',
+        commitHash
+      );
+      return null;
     }
   }
 
