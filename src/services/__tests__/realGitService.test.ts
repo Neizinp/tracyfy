@@ -3,7 +3,6 @@ describe('readFileAtCommit', () => {
     vi.clearAllMocks();
     // Ensure service is initialized for these tests
     realGitService['initialized'] = true;
-    vi.spyOn(realGitService, 'getRootDir').mockReturnValue('.');
   });
 
   it('returns file content when readBlob succeeds', async () => {
@@ -17,7 +16,6 @@ describe('readFileAtCommit', () => {
     const notFoundError = { code: 'NotFoundError', message: 'Could not find file or directory' };
     vi.mocked(git.readBlob).mockRejectedValue(notFoundError);
     const errorSpy = vi.spyOn(console, 'error');
-    const infoSpy = vi.spyOn(console, 'info');
     const result = await realGitService.readFileAtCommit('missing.md', 'deadbeef');
     expect(result).toBeNull();
     expect(errorSpy).not.toHaveBeenCalled();
@@ -870,7 +868,7 @@ Rationale
       ] as any);
 
       // Mock file contents at each commit
-      vi.spyOn(realGitService, 'readFileAtCommit').mockImplementation(async (file, hash) => {
+      vi.spyOn(realGitService, 'readFileAtCommit').mockImplementation(async (_file, hash) => {
         if (hash === 'cmt1') {
           return `---\nid: REQ-001\nrevision: '01'\n---\n# REQ-001\nDescription`;
         } else if (hash === 'cmt2') {
