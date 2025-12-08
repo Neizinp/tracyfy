@@ -584,7 +584,7 @@ class RealGitService {
             tags.push({
               name,
               message: read.message,
-              timestamp: read.timestamp,
+              timestamp: read.timestamp * 1000,
               commit: read.object,
             });
           } else {
@@ -594,7 +594,7 @@ class RealGitService {
               tags.push({
                 name,
                 message: tagObject.tag.message,
-                timestamp: tagObject.tag.tagger.timestamp,
+                timestamp: tagObject.tag.tagger.timestamp * 1000,
                 commit: tagObject.tag.object,
               });
             } catch {
@@ -608,7 +608,7 @@ class RealGitService {
               tags.push({
                 name,
                 message: log.commit.message,
-                timestamp: log.commit.committer.timestamp,
+                timestamp: log.commit.committer.timestamp * 1000,
                 commit: oid,
               });
             }
