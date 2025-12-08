@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { LinkModal } from '../LinkModal';
-import type { Requirement, Project, UseCase, TestCase } from '../../types';
+import type { Requirement, Project, UseCase, TestCase, Information } from '../../types';
 
 describe('LinkModal', () => {
   const mockOnClose = vi.fn();
@@ -77,14 +77,26 @@ describe('LinkModal', () => {
     revision: '01',
   };
 
+  const mockInformation: Information = {
+    id: 'INFO-001',
+    title: 'Test Info',
+    content: 'Info content',
+    type: 'note',
+    dateCreated: 1000000,
+    lastModified: 1000000,
+    revision: '01',
+  };
+
   const defaultProps = {
     isOpen: true,
-    sourceRequirementId: 'REQ-001',
+    sourceArtifactId: 'REQ-001',
+    sourceArtifactType: 'requirement' as const,
     projects: [mockProject],
     currentProjectId: 'PROJ-001',
     globalRequirements: [mockReq1, mockReq2],
     globalUseCases: [mockUseCase],
     globalTestCases: [mockTestCase],
+    globalInformation: [mockInformation],
     onClose: mockOnClose,
     onSubmit: mockOnSubmit,
   };
@@ -105,8 +117,8 @@ describe('LinkModal', () => {
     expect(screen.queryByText(/Create Link/i)).not.toBeInTheDocument();
   });
 
-  it('should not render without sourceRequirementId', () => {
-    render(<LinkModal {...defaultProps} sourceRequirementId={null} />);
+  it('should not render without sourceArtifactId', () => {
+    render(<LinkModal {...defaultProps} sourceArtifactId={null} />);
 
     expect(screen.queryByText(/Create Link/i)).not.toBeInTheDocument();
   });
@@ -125,9 +137,7 @@ describe('LinkModal', () => {
     render(<LinkModal {...defaultProps} />);
 
     // Should see REQ-002 but not REQ-001 in the target list
-    // Note: 'Source Requirement' appears as a label, but REQ-001 shouldn't be in targets
     expect(screen.getByText('Target Requirement')).toBeInTheDocument();
-    // Check that REQ-002 is shown but REQ-001 is filtered
     expect(screen.getByText('REQ-002')).toBeInTheDocument();
   });
 
@@ -143,8 +153,9 @@ describe('LinkModal', () => {
   it('should show use cases when use case type is selected', () => {
     render(<LinkModal {...defaultProps} />);
 
-    const useCaseButton = screen.getByText(/Use Case/i);
-    fireEvent.click(useCaseButton);
+    // Button now says "UC" instead of "Use Case"
+    const ucButton = screen.getByText('UC');
+    fireEvent.click(ucButton);
 
     expect(screen.getByText('Test Use Case')).toBeInTheDocument();
   });
@@ -152,8 +163,9 @@ describe('LinkModal', () => {
   it('should show test cases when test case type is selected', () => {
     render(<LinkModal {...defaultProps} />);
 
-    const testCaseButton = screen.getByText(/Test Case/i);
-    fireEvent.click(testCaseButton);
+    // Button now says "TC" instead of "Test Case"
+    const tcButton = screen.getByText('TC');
+    fireEvent.click(tcButton);
 
     expect(screen.getByText('Test Test Case')).toBeInTheDocument();
   });

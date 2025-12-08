@@ -4,6 +4,7 @@ import type { Requirement, Link, Project } from '../types';
 import { MarkdownEditor } from './MarkdownEditor';
 import { formatDateTime } from '../utils/dateUtils';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
+import { useUI } from '../app/providers';
 
 interface EditRequirementModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
   onSubmit,
   onDelete,
 }) => {
+  const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -571,10 +573,33 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                         fontSize: '0.875rem',
                       }}
                     >
-                      No links found. Use the "Link" button in the main view to create links.
+                      No linked items.
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div
+                        style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLinkSourceId(requirement.id);
+                            setLinkSourceType('requirement');
+                            setIsLinkModalOpen(true);
+                          }}
+                          style={{
+                            fontSize: '0.75rem',
+                            color: 'var(--color-accent)',
+                            background: 'none',
+                            border: '1px solid var(--color-accent)',
+                            borderRadius: '4px',
+                            padding: '2px 8px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          + Add Link
+                        </button>
+                      </div>
                       {links
                         .filter(
                           (l) => l.sourceId === requirement.id || l.targetId === requirement.id

@@ -1,28 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import type { TestCase, Requirement } from '../types';
+import type { TestCase, Requirement, Link, Project } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
+import { useUI } from '../app/providers';
 
 interface EditTestCaseModalProps {
   isOpen: boolean;
   testCase: TestCase | null;
   requirements: Requirement[];
+  links: Link[];
+  projects: Project[];
+  currentProjectId: string;
   onClose: () => void;
   onSubmit: (id: string, updates: Partial<TestCase>) => void;
   onDelete: (id: string) => void;
 }
 
-type Tab = 'overview' | 'history';
+type Tab = 'overview' | 'relationships' | 'history';
 
 export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
   isOpen,
   testCase,
   requirements,
+  links = [],
+  projects = [],
+  currentProjectId,
   onClose,
   onSubmit,
   onDelete,
 }) => {
+  const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -163,6 +171,28 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
             }}
           >
             Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('relationships')}
+            style={{
+              padding: '12px 24px',
+              border: 'none',
+              backgroundColor:
+                activeTab === 'relationships' ? 'var(--color-bg-card)' : 'transparent',
+              color:
+                activeTab === 'relationships'
+                  ? 'var(--color-accent)'
+                  : 'var(--color-text-secondary)',
+              cursor: 'pointer',
+              fontWeight: activeTab === 'relationships' ? 600 : 400,
+              borderBottom:
+                activeTab === 'relationships'
+                  ? '2px solid var(--color-accent)'
+                  : '2px solid transparent',
+              transition: 'all 0.2s',
+            }}
+          >
+            Relationships
           </button>
           <button
             onClick={() => setActiveTab('history')}
@@ -588,6 +618,164 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                 </div>
               </div>
             </>
+          )}
+
+          {activeTab === 'relationships' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: 'var(--spacing-xs)',
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  Linked Items
+                </label>
+                <div
+                  style={{
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '6px',
+                    padding: '8px',
+                    backgroundColor: 'var(--color-bg-app)',
+                    minHeight: '100px',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                  }}
+                >
+                  {links.filter((l) => l.sourceId === testCase.id || l.targetId === testCase.id)
+                    .length === 0 ? (
+                    <div
+                      style={{
+                        padding: '8px',
+                        color: 'var(--color-text-muted)',
+                        fontSize: '0.875rem',
+                      }}
+                    >
+                      No links found.
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLinkSourceId(testCase.id);
+                          setLinkSourceType('testcase');
+                          setIsLinkModalOpen(true);
+                        }}
+                        style={{
+                          display: 'block',
+                          marginTop: '8px',
+                          color: 'var(--color-accent)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontWeight: 500,
+                        }}
+                      >
+                        + Create Link
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div
+                        style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLinkSourceId(testCase.id);
+                            setLinkSourceType('testcase');
+                            setIsLinkModalOpen(true);
+                          }}
+                          style={{
+                            fontSize: '0.75rem',
+                            color: 'var(--color-accent)',
+                            background: 'none',
+                            border: '1px solid var(--color-accent)',
+                            borderRadius: '4px',
+                            padding: '2px 8px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          + Add Link
+                        </button>
+                      </div>
+                      {links
+                        .filter((l) => l.sourceId === testCase.id || l.targetId === testCase.id)
+                        .map((link) => {
+                          const isSource = link.sourceId === testCase.id;
+                          const otherId = isSource ? link.targetId : link.sourceId;
+                          const otherProjectId = isSource
+                            ? link.targetProjectId
+                            : link.sourceProjectId;
+
+                          const otherProject = otherProjectId
+                            ? projects.find((p) => p.id === otherProjectId)
+                            : null;
+                          const projectName = otherProject
+                            ? otherProject.name
+                            : otherProjectId
+                              ? 'Unknown Project'
+                              : 'Current Project';
+                          const isExternal =
+                            !!otherProjectId && otherProjectId !== currentProjectId;
+
+                          return (
+                            <div
+                              key={link.id}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                backgroundColor: 'var(--color-bg-card)',
+                                borderRadius: '4px',
+                                border: '1px solid var(--color-border)',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  fontSize: '0.875rem',
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    backgroundColor: 'var(--color-bg-secondary)',
+                                    fontSize: '0.75rem',
+                                    fontFamily: 'monospace',
+                                  }}
+                                >
+                                  {link.type.replace('_', ' ')}
+                                </span>
+                                <span style={{ color: 'var(--color-text-secondary)' }}>
+                                  {isSource ? '→' : '←'}
+                                </span>
+                                <span style={{ fontWeight: 500 }}>{otherId}</span>
+                                {isExternal && (
+                                  <span
+                                    style={{
+                                      fontSize: '0.75rem',
+                                      color: 'var(--color-accent)',
+                                      backgroundColor: 'var(--color-bg-secondary)',
+                                      padding: '2px 6px',
+                                      borderRadius: '10px',
+                                    }}
+                                  >
+                                    {projectName}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           )}
 
           {activeTab === 'history' && testCase && (

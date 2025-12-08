@@ -1,246 +1,511 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Link as LinkIcon } from 'lucide-react';
-import type { Requirement, Link, Project, UseCase, TestCase } from '../types';
+import type { Requirement, Link, Project, UseCase, TestCase, Information } from '../types';
 
 interface LinkModalProps {
-    isOpen: boolean;
-    sourceRequirementId: string | null;
-    projects: Project[];
-    currentProjectId: string;
-    globalRequirements: Requirement[];
-    globalUseCases: UseCase[];
-    globalTestCases: TestCase[];
-    onClose: () => void;
-    onSubmit: (link: Omit<Link, 'id'>) => void;
+  isOpen: boolean;
+  sourceArtifactId: string | null;
+  sourceArtifactType: 'requirement' | 'usecase' | 'testcase' | 'information';
+  projects: Project[];
+  currentProjectId: string;
+  globalRequirements: Requirement[];
+  globalUseCases: UseCase[];
+  globalTestCases: TestCase[];
+  globalInformation: Information[];
+  onClose: () => void;
+  onSubmit: (link: Omit<Link, 'id'>) => void;
 }
 
-type ArtifactType = 'requirement' | 'usecase' | 'testcase';
+type ArtifactType = 'requirement' | 'usecase' | 'testcase' | 'information';
 
 export const LinkModal: React.FC<LinkModalProps> = ({
-    isOpen,
-    sourceRequirementId,
-    projects,
-    currentProjectId,
-    globalRequirements,
-    globalUseCases,
-    globalTestCases,
-    onClose,
-    onSubmit
+  isOpen,
+  sourceArtifactId,
+  sourceArtifactType,
+  projects,
+  currentProjectId,
+  globalRequirements,
+  globalUseCases,
+  globalTestCases,
+  globalInformation,
+  onClose,
+  onSubmit,
 }) => {
-    const [targetType, setTargetType] = useState<ArtifactType>('requirement');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedTargetId, setSelectedTargetId] = useState('');
-    const [linkType, setLinkType] = useState<Link['type']>('relates_to');
+  const [targetType, setTargetType] = useState<ArtifactType>('requirement');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTargetId, setSelectedTargetId] = useState('');
+  const [linkType, setLinkType] = useState<Link['type']>('relates_to');
 
-    useEffect(() => {
-        if (isOpen) {
-            setTargetType('requirement');
-            setSearchQuery('');
-            setSelectedTargetId('');
-            setLinkType('relates_to');
-        }
-    }, [isOpen]);
+  useEffect(() => {
+    if (isOpen) {
+      setTargetType('requirement');
+      setSearchQuery('');
+      setSelectedTargetId('');
+      setLinkType('relates_to');
+    }
+  }, [isOpen]);
 
-    if (!isOpen || !sourceRequirementId) return null;
+  if (!isOpen || !sourceArtifactId) return null;
 
-    // Helper to find which project an artifact belongs to
-    const findProjectForArtifact = (id: string): Project | undefined => {
-        return projects.find(p =>
-            p.requirementIds.includes(id) ||
-            p.useCaseIds.includes(id) ||
-            p.testCaseIds.includes(id)
-        );
-    };
-
-    // Filter artifacts based on type and search
-    const getFilteredArtifacts = () => {
-        let artifacts: { id: string, title: string, description?: string }[] = [];
-
-        if (targetType === 'requirement') artifacts = globalRequirements;
-        else if (targetType === 'usecase') artifacts = globalUseCases;
-        else if (targetType === 'testcase') artifacts = globalTestCases;
-
-        // Filter out source requirement (can't link to self)
-        artifacts = artifacts.filter(a => a.id !== sourceRequirementId);
-
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            artifacts = artifacts.filter(a =>
-                a.id.toLowerCase().includes(query) ||
-                a.title.toLowerCase().includes(query) ||
-                (a.description && a.description.toLowerCase().includes(query))
-            );
-        }
-
-        return artifacts;
-    };
-
-    const filteredArtifacts = getFilteredArtifacts();
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (selectedTargetId) {
-            const targetProject = findProjectForArtifact(selectedTargetId);
-
-            onSubmit({
-                sourceId: sourceRequirementId,
-                targetId: selectedTargetId,
-                targetProjectId: targetProject?.id, // Optional, but good for context
-                type: linkType
-            });
-            onClose();
-        }
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-            <div className="bg-gray-900 rounded-lg w-full max-w-2xl shadow-2xl border border-gray-700 flex flex-col max-h-[90vh]">
-                <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-800 rounded-t-lg">
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                        <LinkIcon size={20} className="text-blue-400" />
-                        Create Link
-                    </h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-                        <X size={20} />
-                    </button>
-                </div>
-
-                <div className="p-6 flex-1 overflow-y-auto">
-                    <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Source Requirement</label>
-                        <div className="px-3 py-2 bg-gray-800 rounded border border-gray-700 text-blue-300 font-mono text-sm">
-                            {sourceRequirementId}
-                        </div>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Target Type</label>
-                            <div className="flex bg-gray-800 rounded p-1 border border-gray-700">
-                                <button
-                                    type="button"
-                                    onClick={() => { setTargetType('requirement'); setSelectedTargetId(''); }}
-                                    className={`flex-1 py-1.5 rounded text-sm font-medium transition-colors ${targetType === 'requirement' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-                                >
-                                    Requirement
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => { setTargetType('usecase'); setSelectedTargetId(''); }}
-                                    className={`flex-1 py-1.5 rounded text-sm font-medium transition-colors ${targetType === 'usecase' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}
-                                >
-                                    Use Case
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => { setTargetType('testcase'); setSelectedTargetId(''); }}
-                                    className={`flex-1 py-1.5 rounded text-sm font-medium transition-colors ${targetType === 'testcase' ? 'bg-green-600 text-white' : 'text-gray-400 hover:text-white'}`}
-                                >
-                                    Test Case
-                                </button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Select Target</label>
-                            <div className="relative mb-2">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={16} />
-                                <input
-                                    type="text"
-                                    placeholder="Search..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full bg-gray-800 border border-gray-700 rounded pl-9 pr-4 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
-                                />
-                            </div>
-
-                            <div className="border border-gray-700 rounded-lg bg-gray-800 max-h-60 overflow-y-auto">
-                                {filteredArtifacts.length === 0 ? (
-                                    <div className="p-4 text-center text-gray-500 text-sm italic">No artifacts found</div>
-                                ) : (
-                                    filteredArtifacts.map(artifact => {
-                                        const project = findProjectForArtifact(artifact.id);
-                                        const isCurrentProject = project?.id === currentProjectId;
-
-                                        return (
-                                            <div
-                                                key={artifact.id}
-                                                onClick={() => setSelectedTargetId(artifact.id)}
-                                                className={`p-3 border-b border-gray-700 last:border-0 cursor-pointer transition-colors flex items-center justify-between ${selectedTargetId === artifact.id
-                                                        ? 'bg-blue-900/30 border-blue-500/30'
-                                                        : 'hover:bg-gray-700'
-                                                    }`}
-                                            >
-                                                <div className="min-w-0 flex-1 mr-3">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${targetType === 'requirement' ? 'bg-blue-900/50 text-blue-300' :
-                                                                targetType === 'usecase' ? 'bg-purple-900/50 text-purple-300' :
-                                                                    'bg-green-900/50 text-green-300'
-                                                            }`}>
-                                                            {artifact.id}
-                                                        </span>
-                                                        <span className="text-sm font-medium text-gray-200 truncate">
-                                                            {artifact.title}
-                                                        </span>
-                                                    </div>
-                                                    {artifact.description && (
-                                                        <div className="text-xs text-gray-400 truncate pl-1">
-                                                            {artifact.description}
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {project ? (
-                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap ${isCurrentProject
-                                                            ? 'bg-gray-700 text-gray-300'
-                                                            : 'bg-indigo-900/50 text-indigo-300 border border-indigo-500/30'
-                                                        }`}>
-                                                        {isCurrentProject ? 'Current Project' : project.name}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-500 border border-gray-700">
-                                                        Unassigned
-                                                    </span>
-                                                )}
-                                            </div>
-                                        );
-                                    })
-                                )}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Link Type</label>
-                            <select
-                                value={linkType}
-                                onChange={(e) => setLinkType(e.target.value as Link['type'])}
-                                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
-                            >
-                                <option value="relates_to">Relates To</option>
-                                <option value="depends_on">Depends On</option>
-                                <option value="conflicts_with">Conflicts With</option>
-                            </select>
-                        </div>
-
-                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={!selectedTargetId}
-                                className="px-6 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                                Create Link
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+  // Helper to find which project an artifact belongs to
+  const findProjectForArtifact = (id: string): Project | undefined => {
+    return projects.find(
+      (p) =>
+        p.requirementIds.includes(id) ||
+        p.useCaseIds.includes(id) ||
+        p.testCaseIds.includes(id) ||
+        p.informationIds.includes(id)
     );
+  };
+
+  // Filter artifacts based on type and search
+  const getFilteredArtifacts = () => {
+    let artifacts: { id: string; title: string; description?: string }[] = [];
+
+    if (targetType === 'requirement') artifacts = globalRequirements;
+    else if (targetType === 'usecase') artifacts = globalUseCases;
+    else if (targetType === 'testcase') artifacts = globalTestCases;
+    else if (targetType === 'information')
+      artifacts = globalInformation.map((i) => ({
+        id: i.id,
+        title: i.title,
+        // Information has 'content' but usually strict 'description' is displayed.
+        // We can map content to description or just use title.
+        description: i.content.length > 100 ? i.content.substring(0, 100) + '...' : i.content,
+      }));
+
+    // Filter out source artifact (can't link to self)
+    artifacts = artifacts.filter((a) => a.id !== sourceArtifactId);
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      artifacts = artifacts.filter(
+        (a) =>
+          a.id.toLowerCase().includes(query) ||
+          a.title.toLowerCase().includes(query) ||
+          (a.description && a.description.toLowerCase().includes(query))
+      );
+    }
+
+    return artifacts;
+  };
+
+  const filteredArtifacts = getFilteredArtifacts();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedTargetId) {
+      const targetProject = findProjectForArtifact(selectedTargetId);
+      const sourceProject = findProjectForArtifact(sourceArtifactId);
+
+      onSubmit({
+        sourceId: sourceArtifactId,
+        targetId: selectedTargetId,
+        targetProjectId: targetProject?.id,
+        sourceProjectId: sourceProject?.id,
+        type: linkType,
+      });
+      onClose();
+    }
+  };
+
+  const getSourceLabel = () => {
+    switch (sourceArtifactType) {
+      case 'requirement':
+        return 'Source Requirement';
+      case 'usecase':
+        return 'Source Use Case';
+      case 'testcase':
+        return 'Source Test Case';
+      case 'information':
+        return 'Source Information';
+      default:
+        return 'Source Artifact';
+    }
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 2000,
+        backdropFilter: 'blur(4px)',
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: '#1a1a2e',
+          borderRadius: '8px',
+          width: '100%',
+          maxWidth: '42rem',
+          border: '1px solid var(--color-border)',
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: '90vh',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: '1rem',
+            borderBottom: '1px solid var(--color-border)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            backgroundColor: 'var(--color-bg-card)',
+            borderRadius: '8px 8px 0 0',
+          }}
+        >
+          <h3 style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <LinkIcon size={20} style={{ color: 'var(--color-accent)' }} />
+            Create Link
+          </h3>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--color-text-muted)',
+              cursor: 'pointer',
+            }}
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div style={{ padding: '1.5rem', flex: 1, overflowY: 'auto' }}>
+          {/* Source Artifact */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                color: 'var(--color-text-muted)',
+                marginBottom: '0.25rem',
+              }}
+            >
+              {getSourceLabel()}
+            </label>
+            <div
+              style={{
+                padding: '0.5rem 0.75rem',
+                backgroundColor: 'var(--color-bg-secondary)',
+                borderRadius: '6px',
+                border: '1px solid var(--color-border)',
+                fontFamily: 'monospace',
+                fontSize: '0.875rem',
+                color: 'var(--color-accent)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '0.625rem',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                  backgroundColor:
+                    sourceArtifactType === 'requirement'
+                      ? '#1e3a5f'
+                      : sourceArtifactType === 'usecase'
+                        ? '#3a1e5f'
+                        : sourceArtifactType === 'testcase'
+                          ? '#1e5f3a'
+                          : '#5f5f1e',
+                  color: '#fff',
+                }}
+              >
+                {sourceArtifactType.substring(0, 3)}
+              </span>
+              {sourceArtifactId}
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            {/* Target Type */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                Target Type
+              </label>
+              <div
+                style={{
+                  display: 'flex',
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  borderRadius: '6px',
+                  padding: '4px',
+                  border: '1px solid var(--color-border)',
+                  gap: '4px',
+                }}
+              >
+                {(['requirement', 'usecase', 'testcase', 'information'] as ArtifactType[]).map(
+                  (type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => {
+                        setTargetType(type);
+                        setSelectedTargetId('');
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '0.375rem 0.5rem',
+                        borderRadius: '4px',
+                        border: 'none',
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        backgroundColor:
+                          targetType === type ? 'var(--color-accent)' : 'transparent',
+                        color: targetType === type ? '#fff' : 'var(--color-text-secondary)',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      {type === 'requirement'
+                        ? 'Req'
+                        : type === 'usecase'
+                          ? 'UC'
+                          : type === 'testcase'
+                            ? 'TC'
+                            : 'Info'}
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+
+            {/* Search & Select Target */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                Select Target
+              </label>
+              <div style={{ position: 'relative', marginBottom: '0.5rem' }}>
+                <Search
+                  size={16}
+                  style={{
+                    position: 'absolute',
+                    left: '0.75rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--color-text-muted)',
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem 0.75rem 0.5rem 2.25rem',
+                    borderRadius: '6px',
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-bg-app)',
+                    color: 'var(--color-text-primary)',
+                    outline: 'none',
+                    fontSize: '0.875rem',
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '6px',
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                }}
+              >
+                {filteredArtifacts.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '1rem',
+                      textAlign: 'center',
+                      color: 'var(--color-text-muted)',
+                      fontStyle: 'italic',
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    No artifacts found
+                  </div>
+                ) : (
+                  filteredArtifacts.map((artifact) => {
+                    const project = findProjectForArtifact(artifact.id);
+                    const isCurrentProject = project?.id === currentProjectId;
+                    const isSelected = selectedTargetId === artifact.id;
+
+                    return (
+                      <div
+                        key={artifact.id}
+                        onClick={() => setSelectedTargetId(artifact.id)}
+                        style={{
+                          padding: '0.75rem',
+                          borderBottom: '1px solid var(--color-border)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                          transition: 'background-color 0.15s',
+                        }}
+                      >
+                        <div style={{ minWidth: 0, flex: 1, marginRight: '0.75rem' }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              marginBottom: '0.25rem',
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: '0.75rem',
+                                fontFamily: 'monospace',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                backgroundColor: 'var(--color-bg-card)',
+                              }}
+                            >
+                              {artifact.id}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: '0.875rem',
+                                fontWeight: 500,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
+                              {artifact.title}
+                            </span>
+                          </div>
+                          {artifact.description && (
+                            <div
+                              style={{
+                                fontSize: '0.75rem',
+                                color: 'var(--color-text-muted)',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
+                              {artifact.description}
+                            </div>
+                          )}
+                        </div>
+                        {project && (
+                          <span
+                            style={{
+                              fontSize: '0.625rem',
+                              padding: '2px 8px',
+                              borderRadius: '10px',
+                              whiteSpace: 'nowrap',
+                              backgroundColor: isCurrentProject
+                                ? 'var(--color-bg-card)'
+                                : 'rgba(99, 102, 241, 0.2)',
+                              color: isCurrentProject
+                                ? 'var(--color-text-muted)'
+                                : 'var(--color-accent)',
+                              border: isCurrentProject
+                                ? 'none'
+                                : '1px solid rgba(99, 102, 241, 0.3)',
+                            }}
+                          >
+                            {isCurrentProject ? 'Current Project' : project.name}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Link Type */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                Link Type
+              </label>
+              <select
+                value={linkType}
+                onChange={(e) => setLinkType(e.target.value as Link['type'])}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '6px',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-bg-app)',
+                  color: 'var(--color-text-primary)',
+                  outline: 'none',
+                  fontSize: '0.875rem',
+                }}
+              >
+                <option value="relates_to">Relates To</option>
+                <option value="depends_on">Depends On</option>
+                <option value="conflicts_with">Conflicts With</option>
+              </select>
+            </div>
+
+            {/* Footer Buttons */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '0.75rem',
+                paddingTop: '1rem',
+                borderTop: '1px solid var(--color-border)',
+              }}
+            >
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '6px',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-bg-card)',
+                  color: 'var(--color-text-primary)',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={!selectedTargetId}
+                style={{
+                  padding: '0.5rem 1.5rem',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: selectedTargetId
+                    ? 'var(--color-accent)'
+                    : 'var(--color-bg-secondary)',
+                  color: selectedTargetId ? '#fff' : 'var(--color-text-muted)',
+                  cursor: selectedTargetId ? 'pointer' : 'not-allowed',
+                  fontWeight: 500,
+                }}
+              >
+                Create Link
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 };

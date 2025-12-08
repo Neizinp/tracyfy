@@ -88,12 +88,14 @@ export const ModalManager: React.FC = () => {
 
       <LinkModal
         isOpen={ui.isLinkModalOpen}
-        sourceRequirementId={ui.selectedRequirementId}
+        sourceArtifactId={ui.linkSourceId || ui.selectedRequirementId} // Fallback for backward compatibility
+        sourceArtifactType={ui.linkSourceType || 'requirement'}
         projects={projects}
         currentProjectId={currentProjectId}
         globalRequirements={globalRequirements}
         globalUseCases={globalUseCases}
         globalTestCases={globalTestCases}
+        globalInformation={globalInformation}
         onClose={() => ui.setIsLinkModalOpen(false)}
         onSubmit={handleAddLink}
       />
@@ -118,6 +120,9 @@ export const ModalManager: React.FC = () => {
       <UseCaseModal
         isOpen={ui.isUseCaseModalOpen}
         useCase={ui.editingUseCase}
+        links={links}
+        projects={projects}
+        currentProjectId={currentProjectId}
         onClose={() => {
           ui.setIsUseCaseModalOpen(false);
           ui.setEditingUseCase(null);
@@ -136,6 +141,9 @@ export const ModalManager: React.FC = () => {
         isOpen={ui.isEditTestCaseModalOpen}
         testCase={testCases.find((t) => t.id === ui.selectedTestCaseId) || null}
         requirements={requirements.filter((r) => !r.isDeleted)}
+        links={links}
+        projects={projects}
+        currentProjectId={currentProjectId}
         onClose={() => {
           ui.setIsEditTestCaseModalOpen(false);
           ui.setSelectedTestCaseId(null);
@@ -147,6 +155,9 @@ export const ModalManager: React.FC = () => {
       <InformationModal
         isOpen={ui.isInformationModalOpen}
         information={ui.selectedInformation}
+        links={links}
+        projects={projects}
+        currentProjectId={currentProjectId}
         onClose={() => {
           ui.setIsInformationModalOpen(false);
           ui.setSelectedInformation(null);

@@ -8,7 +8,7 @@ describe('readFileAtCommit', () => {
 
   it('returns file content when readBlob succeeds', async () => {
     const mockContent = new TextEncoder().encode('hello world');
-    vi.mocked(git.readBlob).mockResolvedValue({ object: mockContent });
+    vi.mocked(git.readBlob).mockResolvedValue({ blob: mockContent } as any);
     const result = await realGitService.readFileAtCommit('foo.md', 'abc123');
     expect(result).toBe('hello world');
   });
@@ -886,7 +886,10 @@ Rationale
       const { markdownToRequirement } = await import('../../utils/markdownUtils');
 
       for (const commit of history) {
-        const content = await realGitService.readFileAtCommit('requirements/REQ-001.md', commit.hash);
+        const content = await realGitService.readFileAtCommit(
+          'requirements/REQ-001.md',
+          commit.hash
+        );
         expect(content).toBeTruthy();
         const parsed = markdownToRequirement(content!);
         expect(parsed.revision).not.toBe('—');
