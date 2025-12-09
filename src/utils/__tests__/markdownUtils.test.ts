@@ -22,8 +22,10 @@ import {
   markdownToTestCase,
   informationToMarkdown,
   markdownToInformation,
+  userToMarkdown,
+  markdownToUser,
 } from '../markdownUtils';
-import type { Requirement, UseCase, TestCase, Information } from '../../types';
+import type { Requirement, UseCase, TestCase, Information, User } from '../../types';
 
 describe('Requirement Markdown Conversion', () => {
   describe('requirementToMarkdown', () => {
@@ -784,5 +786,159 @@ Desc
     const requirement = markdownToRequirement(markdown);
     // Behavior may vary - test current behavior
     expect(requirement).toBeDefined();
+  });
+});
+
+describe('User Markdown Conversion', () => {
+  describe('userToMarkdown', () => {
+    it('should serialize all user fields', () => {
+      const user: User = {
+        id: 'USER-001',
+        name: 'John Doe',
+        dateCreated: 1700000000000,
+        lastModified: 1700000100000,
+      };
+
+      const markdown = userToMarkdown(user);
+
+      expect(markdown).toContain('id: "USER-001"');
+      expect(markdown).toContain('name: "John Doe"');
+      expect(markdown).toContain('dateCreated: 1700000000000');
+      expect(markdown).toContain('lastModified: 1700000100000');
+    });
+
+    it('should handle special characters in user name', () => {
+      const user: User = {
+        id: 'USER-001',
+        name: 'John "The Expert" O\'Connor',
+        dateCreated: 1700000000000,
+        lastModified: 1700000000000,
+      };
+
+      const markdown = userToMarkdown(user);
+
+      // Should escape quotes properly
+      expect(markdown).toContain('USER-001');
+      expect(markdown).toContain('John');
+    });
+
+    it('should handle unicode in user name', () => {
+      const user: User = {
+        id: 'USER-001',
+        name: 'José García 日本語',
+        dateCreated: 1700000000000,
+        lastModified: 1700000000000,
+      };
+
+      const markdown = userToMarkdown(user);
+      const parsed = markdownToUser(markdown);
+
+      expect(parsed?.name).toBe(user.name);
+    });
+  });
+
+  describe('markdownToUser', () => {
+    it('should parse valid user markdown', () => {
+      const markdown = `---
+id: "USER-001"
+name: "John Doe"
+dateCreated: 1700000000000
+lastModified: 1700000100000
+---
+
+# John Doe
+`;
+
+      const user = markdownToUser(markdown);
+
+      expect(user).not.toBeNull();
+      expect(user?.id).toBe('USER-001');
+      expect(user?.name).toBe('John Doe');
+      expect(user?.dateCreated).toBe(1700000000000);
+      expect(user?.lastModified).toBe(1700000100000);
+    });
+
+    it('should return user with empty id for invalid markdown', () => {
+      const markdown = `Not valid YAML frontmatter`;
+
+      const user = markdownToUser(markdown);
+
+      // Returns object with empty id for invalid markdown
+      expect(user?.id).toBe('');
+    });
+    it('should return user with empty id for missing id field', () => {
+      const markdown = `---
+name: "No ID"
+---
+
+# No ID
+`;
+
+      const user = markdownToUser(markdown);
+
+      // Returns object with empty id
+      expect(user?.id).toBe('');
+      expect(user?.name).toBe('No ID');
+    });
+
+    it('should handle missing optional fields with defaults', () => {
+      const markdown = `---
+id: "USER-001"
+name: "John"
+---
+
+# John
+`;
+
+      const user = markdownToUser(markdown);
+
+      expect(user).not.toBeNull();
+      expect(user?.id).toBe('USER-001');
+      expect(user?.name).toBe('John');
+      // dateCreated and lastModified should have defaults
+      expect(user?.dateCreated).toBeDefined();
+      expect(user?.lastModified).toBeDefined();
+    });
+  });
+
+  describe('round-trip', () => {
+    it('should round-trip without data loss', () => {
+      const original: User = {
+        id: 'USER-001',
+        name: 'Test User',
+        dateCreated: 1700000000000,
+        lastModified: 1700000100000,
+      };
+
+      const markdown = userToMarkdown(original);
+      const parsed = markdownToUser(markdown);
+
+      expect(parsed).not.toBeNull();
+      expect(parsed?.id).toBe(original.id);
+      expect(parsed?.name).toBe(original.name);
+      expect(parsed?.dateCreated).toBe(original.dateCreated);
+      expect(parsed?.lastModified).toBe(original.lastModified);
+    });
+
+    it('should handle multiple round-trips', () => {
+      const original: User = {
+        id: 'USER-123',
+        name: 'Multiple Round Trip User',
+        dateCreated: 1700000000000,
+        lastModified: 1700000000000,
+      };
+
+      // Round trip 1
+      const markdown1 = userToMarkdown(original);
+      const parsed1 = markdownToUser(markdown1);
+      expect(parsed1).not.toBeNull();
+
+      // Round trip 2
+      const markdown2 = userToMarkdown(parsed1!);
+      const parsed2 = markdownToUser(markdown2);
+
+      expect(parsed2?.id).toBe(original.id);
+      expect(parsed2?.name).toBe(original.name);
+    });
   });
 });

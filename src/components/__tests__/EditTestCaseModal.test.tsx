@@ -111,7 +111,8 @@ describe('EditTestCaseModal', () => {
 
     expect(screen.getByDisplayValue('Login Test')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Test user login functionality')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Test Author')).toBeInTheDocument();
+    // Author is displayed as read-only text, not an input
+    expect(screen.getByText('Test Author')).toBeInTheDocument();
   });
 
   it('should update title field', () => {

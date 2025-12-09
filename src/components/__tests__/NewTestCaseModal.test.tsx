@@ -3,6 +3,14 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { NewTestCaseModal } from '../NewTestCaseModal';
 import type { Requirement } from '../../types';
 
+// Mock UserProvider
+vi.mock('../../app/providers', () => ({
+  useUser: () => ({
+    currentUser: { id: 'USER-001', name: 'Test User' },
+    users: [{ id: 'USER-001', name: 'Test User' }],
+  }),
+}));
+
 describe('NewTestCaseModal', () => {
   const mockRequirements: Requirement[] = [
     {
@@ -56,7 +64,8 @@ describe('NewTestCaseModal', () => {
     expect(screen.getByLabelText(/Title/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Description/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Priority/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Author/i)).toBeInTheDocument();
+    // Author is now read-only, just check the label exists
+    expect(screen.getByText('Author')).toBeInTheDocument();
   });
 
   it('should validate required title field', () => {
@@ -79,17 +88,16 @@ describe('NewTestCaseModal', () => {
     const titleInput = screen.getByLabelText(/Title/i) as HTMLInputElement;
     const descriptionInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
     const prioritySelect = screen.getByLabelText(/Priority/i) as HTMLSelectElement;
-    const authorInput = screen.getByLabelText(/Author/i) as HTMLInputElement;
 
     fireEvent.change(titleInput, { target: { value: 'Test Login Flow' } });
     fireEvent.change(descriptionInput, { target: { value: 'Verify login functionality' } });
     fireEvent.change(prioritySelect, { target: { value: 'high' } });
-    fireEvent.change(authorInput, { target: { value: 'Test Engineer' } });
 
     expect(titleInput.value).toBe('Test Login Flow');
     expect(descriptionInput.value).toBe('Verify login functionality');
     expect(prioritySelect.value).toBe('high');
-    expect(authorInput.value).toBe('Test Engineer');
+    // Author is read-only and shows current user
+    expect(screen.getByText('Test User')).toBeInTheDocument();
   });
 
   it('should display available requirements for selection', () => {
@@ -120,12 +128,10 @@ describe('NewTestCaseModal', () => {
     const titleInput = screen.getByLabelText(/Title/i);
     const descriptionInput = screen.getByLabelText(/Description/i);
     const prioritySelect = screen.getByLabelText(/Priority/i);
-    const authorInput = screen.getByLabelText(/Author/i);
 
     fireEvent.change(titleInput, { target: { value: 'Login Test' } });
     fireEvent.change(descriptionInput, { target: { value: 'Test description' } });
     fireEvent.change(prioritySelect, { target: { value: 'high' } });
-    fireEvent.change(authorInput, { target: { value: 'QA Team' } });
 
     // Select a requirement
     const checkboxes = screen.getAllByRole('checkbox');
@@ -138,7 +144,7 @@ describe('NewTestCaseModal', () => {
       title: 'Login Test',
       description: 'Test description',
       priority: 'high',
-      author: 'QA Team',
+      author: 'Test User', // Now auto-populated from current user
       requirementIds: ['REQ-001'],
       status: 'draft',
       revision: '01',

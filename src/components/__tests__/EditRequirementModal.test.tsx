@@ -96,8 +96,8 @@ describe('EditRequirementModal', () => {
     const titleInput = screen.getByDisplayValue('Test Requirement');
     expect(titleInput).toBeInTheDocument();
 
-    const authorInput = screen.getByDisplayValue('Test Author');
-    expect(authorInput).toBeInTheDocument();
+    // Author is displayed as read-only text, not an input
+    expect(screen.getByText('Test Author')).toBeInTheDocument();
   });
 
   it('should call onSubmit with updated values when saved', () => {
