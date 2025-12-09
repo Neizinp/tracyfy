@@ -90,8 +90,28 @@ export async function exportProjectToPDF(
   );
 
   // Get last baseline commit hash to filter commits
+  // When exporting a specific baseline, we want commits BETWEEN that baseline and the previous one
+  // When exporting current state (selectedBaseline = null), we want commits since the most recent baseline
   const sortedBaselines = [...baselines].sort((a, b) => b.timestamp - a.timestamp);
-  const lastBaseline = sortedBaselines.length > 0 ? sortedBaselines[0] : null;
+
+  let previousBaseline: ProjectBaseline | null = null;
+  let upperBoundTimestamp: number | null = null; // Upper bound for commit timestamps
+
+  if (selectedBaseline) {
+    // Exporting a specific baseline - find the baseline BEFORE it
+    const selectedIndex = sortedBaselines.findIndex((b) => b.id === selectedBaseline.id);
+    if (selectedIndex >= 0 && selectedIndex < sortedBaselines.length - 1) {
+      // There's a baseline before the selected one
+      previousBaseline = sortedBaselines[selectedIndex + 1];
+    }
+    // Upper bound is the selected baseline's timestamp
+    upperBoundTimestamp = selectedBaseline.timestamp;
+  } else {
+    // Exporting current state - show commits since the most recent baseline
+    previousBaseline = sortedBaselines.length > 0 ? sortedBaselines[0] : null;
+    // No upper bound - include all commits up to now
+    upperBoundTimestamp = null;
+  }
 
   // Fetch commit history for all artifacts since last baseline
   interface ArtifactCommit {
@@ -104,13 +124,27 @@ export async function exportProjectToPDF(
   const artifactCommits: ArtifactCommit[] = [];
 
   // Fetch commits for each artifact type
+  // Filter function to get commits between previousBaseline and selectedBaseline (or now)
+  const filterCommits = (history: CommitInfo[]): CommitInfo[] => {
+    // If exporting a specific baseline (upperBoundTimestamp set) but no previous baseline,
+    // this is the first baseline - no revision history to show
+    if (upperBoundTimestamp && !previousBaseline) {
+      return [];
+    }
+
+    return history.filter((commit) => {
+      // Lower bound: must be after previous baseline (if exists)
+      const afterPrevious = previousBaseline ? commit.timestamp > previousBaseline.timestamp : true;
+      // Upper bound: must be at or before selected baseline (if exists)
+      const beforeUpper = upperBoundTimestamp ? commit.timestamp <= upperBoundTimestamp : true;
+      return afterPrevious && beforeUpper;
+    });
+  };
+
   for (const req of projectRequirements) {
     try {
       const history = await realGitService.getHistory(`requirements/${req.id}.md`);
-      // Filter commits after last baseline
-      const filteredHistory = lastBaseline
-        ? history.filter((commit) => commit.timestamp > lastBaseline.timestamp)
-        : history;
+      const filteredHistory = filterCommits(history);
       if (filteredHistory.length > 0) {
         artifactCommits.push({
           artifactId: req.id,
@@ -127,9 +161,7 @@ export async function exportProjectToPDF(
   for (const uc of projectUseCases) {
     try {
       const history = await realGitService.getHistory(`usecases/${uc.id}.md`);
-      const filteredHistory = lastBaseline
-        ? history.filter((commit) => commit.timestamp > lastBaseline.timestamp)
-        : history;
+      const filteredHistory = filterCommits(history);
       if (filteredHistory.length > 0) {
         artifactCommits.push({
           artifactId: uc.id,
@@ -146,9 +178,7 @@ export async function exportProjectToPDF(
   for (const tc of projectTestCases) {
     try {
       const history = await realGitService.getHistory(`testcases/${tc.id}.json`);
-      const filteredHistory = lastBaseline
-        ? history.filter((commit) => commit.timestamp > lastBaseline.timestamp)
-        : history;
+      const filteredHistory = filterCommits(history);
       if (filteredHistory.length > 0) {
         artifactCommits.push({
           artifactId: tc.id,
@@ -165,9 +195,7 @@ export async function exportProjectToPDF(
   for (const info of projectInformation) {
     try {
       const history = await realGitService.getHistory(`information/${info.id}.json`);
-      const filteredHistory = lastBaseline
-        ? history.filter((commit) => commit.timestamp > lastBaseline.timestamp)
-        : history;
+      const filteredHistory = filterCommits(history);
       if (filteredHistory.length > 0) {
         artifactCommits.push({
           artifactId: info.id,
