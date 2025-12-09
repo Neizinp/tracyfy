@@ -1,4 +1,4 @@
-import type { Requirement, UseCase, TestCase, Information } from '../types';
+import type { Requirement, UseCase, TestCase, Information, User } from '../types';
 
 /**
  * Convert a JavaScript object to YAML frontmatter string
@@ -489,5 +489,37 @@ export function markdownToInformation(markdown: string): Information {
     isDeleted: frontmatter.isDeleted || false,
     deletedAt: frontmatter.deletedAt || undefined,
     revision: frontmatter.revision || '01',
+  };
+}
+
+/**
+ * Convert a User to Markdown with YAML frontmatter
+ */
+export function userToMarkdown(user: User): string {
+  const frontmatter = {
+    id: user.id,
+    name: user.name,
+    dateCreated: user.dateCreated,
+    lastModified: user.lastModified,
+  };
+
+  const yaml = objectToYaml(frontmatter);
+
+  const body = `# ${user.name}`.trim();
+
+  return `${yaml}\n\n${body}`;
+}
+
+/**
+ * Parse Markdown content into a User object
+ */
+export function markdownToUser(markdown: string): User {
+  const { frontmatter } = parseYamlFrontmatter(markdown);
+
+  return {
+    id: frontmatter.id || '',
+    name: frontmatter.name || '',
+    dateCreated: frontmatter.dateCreated || Date.now(),
+    lastModified: frontmatter.lastModified || Date.now(),
   };
 }

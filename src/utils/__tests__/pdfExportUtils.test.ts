@@ -198,7 +198,8 @@ describe('pdfExportUtils', () => {
       mockProject.useCaseIds,
       mockProject.testCaseIds,
       mockProject.informationIds,
-      []
+      [],
+      null
     );
 
     // Check that commit messages and authors are present in the autoTable body
@@ -286,7 +287,7 @@ describe('pdfExportUtils', () => {
       }),
     });
 
-    await exportProjectToPDF(mockProject, globalState, ['r1'], ['u1'], ['t1'], ['i1'], []);
+    await exportProjectToPDF(mockProject, globalState, ['r1'], ['u1'], ['t1'], ['i1'], [], null);
 
     // Header
     expect(mockText).toHaveBeenCalledWith('Table of Contents', 20, 20);
@@ -312,7 +313,7 @@ describe('pdfExportUtils', () => {
       }),
     });
 
-    await exportProjectToPDF(mockProject, globalState, ['r1'], ['u1'], ['t1'], ['i1'], []);
+    await exportProjectToPDF(mockProject, globalState, ['r1'], ['u1'], ['t1'], ['i1'], [], null);
 
     // Requirements Section
     expect(mockText).toHaveBeenCalledWith('Requirements', 20, 20);
@@ -376,7 +377,7 @@ describe('pdfExportUtils', () => {
   it('should fallback to doc.save if showSaveFilePicker is not available', async () => {
     delete (window as any).showSaveFilePicker;
 
-    await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], []);
+    await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
     expect(mockSave).toHaveBeenCalledWith('Test_Project-export.pdf');
   });
 
@@ -412,7 +413,8 @@ describe('pdfExportUtils', () => {
       [], // projectUseCaseIds
       [], // projectTestCaseIds
       [], // projectInformationIds
-      [] // baselines
+      [], // baselines
+      null // selectedBaseline
     );
 
     // Check for all attributes
@@ -497,7 +499,8 @@ describe('pdfExportUtils', () => {
       [],
       [],
       [],
-      []
+      [],
+      null
     );
 
     // Should include active req
@@ -538,7 +541,8 @@ describe('pdfExportUtils', () => {
       ['u1'],
       [],
       [],
-      []
+      [],
+      null
     );
 
     // Verify Preconditions section
@@ -596,7 +600,8 @@ describe('pdfExportUtils', () => {
       [],
       ['t1'],
       [],
-      []
+      [],
+      null
     );
 
     // Verify Tests Requirements section (traceability)
@@ -628,7 +633,8 @@ describe('pdfExportUtils', () => {
       [],
       [],
       ['i1'],
-      []
+      [],
+      null
     );
 
     // Verify Information section is created

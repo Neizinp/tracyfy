@@ -10,6 +10,7 @@ import {
   Search,
   Trash2,
   FolderOpen,
+  User,
 } from 'lucide-react';
 import type { ProjectBaseline } from '../../types';
 import { DropdownMenuItem } from './DropdownMenuItem';
@@ -40,6 +41,8 @@ export interface HeaderBarProps {
   onExportPDF?: (selectedBaseline: ProjectBaseline | null) => void;
   onExportExcel?: () => void;
   baselines?: ProjectBaseline[];
+  onOpenUserSettings?: () => void;
+  currentUserName?: string;
 }
 
 /**
@@ -65,6 +68,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onExportPDF,
   onExportExcel,
   baselines = [],
+  onOpenUserSettings,
+  currentUserName,
 }) => {
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [selectedBaselineId, setSelectedBaselineId] = useState<string>('current');
@@ -291,6 +296,14 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           <button onClick={onTrashOpen} style={headerButtonStyle}>
             <Trash2 size={18} />
             Trash
+          </button>
+        )}
+
+        {/* User Settings Button */}
+        {onOpenUserSettings && (
+          <button onClick={onOpenUserSettings} style={headerButtonStyle} title="User Settings">
+            <User size={18} />
+            {currentUserName || 'User'}
           </button>
         )}
 

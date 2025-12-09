@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import type { Requirement } from '../types';
 import { MarkdownEditor } from './MarkdownEditor';
+import { useUser } from '../app/providers';
 
 interface NewRequirementModalProps {
   isOpen: boolean;
@@ -22,9 +23,10 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({
   const [text, setText] = useState('');
   const [rationale, setRationale] = useState('');
   const [priority, setPriority] = useState<Requirement['priority']>('medium');
-  const [author, setAuthor] = useState('');
   const [verificationMethod, setVerificationMethod] = useState('');
   const [comments, setComments] = useState('');
+
+  const { currentUser } = useUser();
 
   if (!isOpen) return null;
 
@@ -36,7 +38,7 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({
       text,
       rationale,
       priority,
-      author: author || undefined,
+      author: currentUser?.name || undefined,
       verificationMethod: verificationMethod || undefined,
       comments: comments || undefined,
       dateCreated: Date.now(),
@@ -50,7 +52,6 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({
     setText('');
     setRationale('');
     setPriority('medium');
-    setAuthor('');
     setVerificationMethod('');
     setComments('');
     setActiveTab('overview');
@@ -243,21 +244,17 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({
                 >
                   Author
                 </label>
-                <input
-                  id="req-author"
-                  type="text"
-                  value={author}
-                  onChange={(e) => setAuthor(e.target.value)}
+                <div
                   style={{
-                    width: '100%',
                     padding: '8px 12px',
                     borderRadius: '6px',
                     border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    outline: 'none',
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    color: currentUser ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
                   }}
-                />
+                >
+                  {currentUser?.name || 'No user selected'}
+                </div>
               </div>
             </div>
           )}

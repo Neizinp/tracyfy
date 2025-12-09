@@ -7,6 +7,7 @@ import {
   useGlobalState,
   useImportExport,
   useFileSystem,
+  useUser,
 } from '../app/providers';
 import { exportProjectToPDF } from '../utils/pdfExportUtils';
 import { exportProjectToExcel } from '../utils/excelExportUtils';
@@ -28,6 +29,9 @@ export const ProjectLayout: React.FC = () => {
 
   // Import/Export handlers
   const importExport = useImportExport();
+
+  // User context
+  const { currentUser } = useUser();
 
   // Project action handlers
   const handleCreateProject = useCallback(() => {
@@ -92,6 +96,8 @@ export const ProjectLayout: React.FC = () => {
       onOpenGlobalLibrary={() => ui.setIsLibraryPanelOpen(true)}
       onOpenLibraryTab={ui.handleOpenLibrary}
       onViewHistory={() => ui.setIsVersionHistoryOpen(true)}
+      onOpenUserSettings={() => ui.setIsUserSettingsModalOpen(true)}
+      currentUserName={currentUser?.name}
       baselines={baselines}
       onExportPDF={async (selectedBaseline) => {
         if (!currentProject) {
@@ -112,7 +118,8 @@ export const ProjectLayout: React.FC = () => {
           currentProject.testCaseIds,
           currentProject.informationIds,
           baselines,
-          selectedBaseline // selectedBaseline: ProjectBaseline | null
+          selectedBaseline, // selectedBaseline: ProjectBaseline | null
+          currentUser?.name
         );
       }}
       onExportExcel={async () => {

@@ -36,7 +36,6 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TestCase['priority']>('medium');
   const [status, setStatus] = useState<TestCase['status']>('draft');
-  const [author, setAuthor] = useState('');
   const [requirementIds, setRequirementIds] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -46,7 +45,6 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
       setDescription(testCase.description);
       setPriority(testCase.priority);
       setStatus(testCase.status);
-      setAuthor(testCase.author || '');
       setRequirementIds(testCase.requirementIds || []);
     }
   }, [testCase]);
@@ -60,7 +58,6 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
       description,
       priority,
       status,
-      author: author || undefined,
       requirementIds,
       lastModified: Date.now(),
     };
@@ -358,21 +355,17 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                 >
                   Author
                 </label>
-                <input
-                  id="edit-test-case-author"
-                  type="text"
-                  value={author}
-                  onChange={(e) => setAuthor(e.target.value)}
+                <div
                   style={{
-                    width: '100%',
                     padding: '8px 12px',
                     borderRadius: '6px',
                     border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    outline: 'none',
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    color: 'var(--color-text-muted)',
                   }}
-                />
+                >
+                  {testCase.author || 'Not specified'}
+                </div>
               </div>
 
               <div style={{ marginBottom: 'var(--spacing-md)' }}>

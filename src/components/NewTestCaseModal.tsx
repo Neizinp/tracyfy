@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import type { TestCase, Requirement } from '../types';
+import { useUser } from '../app/providers';
 
 interface NewTestCaseModalProps {
   isOpen: boolean;
@@ -18,8 +19,9 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TestCase['priority']>('medium');
-  const [author, setAuthor] = useState('');
   const [requirementIds, setRequirementIds] = useState<string[]>([]);
+
+  const { currentUser } = useUser();
 
   if (!isOpen) return null;
 
@@ -29,7 +31,7 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
       title,
       description,
       priority,
-      author: author || undefined,
+      author: currentUser?.name || undefined,
       requirementIds,
       status: 'draft',
       revision: '01',
@@ -38,7 +40,6 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
     setTitle('');
     setDescription('');
     setPriority('medium');
-    setAuthor('');
     setRequirementIds([]);
     onClose();
   };
@@ -189,21 +190,17 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
             >
               Author
             </label>
-            <input
-              id="new-test-case-author"
-              type="text"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
+            <div
               style={{
-                width: '100%',
                 padding: '8px 12px',
                 borderRadius: '6px',
                 border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-bg-app)',
-                color: 'var(--color-text-primary)',
-                outline: 'none',
+                backgroundColor: 'var(--color-bg-secondary)',
+                color: currentUser ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
               }}
-            />
+            >
+              {currentUser?.name || 'No user selected'}
+            </div>
           </div>
 
           <div style={{ marginBottom: 'var(--spacing-lg)' }}>

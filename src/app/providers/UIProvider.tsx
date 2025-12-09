@@ -31,6 +31,8 @@ interface UIContextValue {
   setIsLibraryPanelOpen: (isOpen: boolean) => void;
   isGlobalLibraryModalOpen: boolean;
   setIsGlobalLibraryModalOpen: (isOpen: boolean) => void;
+  isUserSettingsModalOpen: boolean;
+  setIsUserSettingsModalOpen: (isOpen: boolean) => void;
 
   // Selections
   selectedRequirementId: string | null;

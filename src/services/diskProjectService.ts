@@ -22,7 +22,7 @@
  */
 
 import { fileSystemService } from './fileSystemService';
-import type { Project, Requirement, UseCase, TestCase, Information, Link } from '../types';
+import type { Project, Requirement, UseCase, TestCase, Information, Link, User } from '../types';
 import {
   requirementToMarkdown,
   markdownToRequirement,
@@ -32,6 +32,8 @@ import {
   markdownToTestCase,
   informationToMarkdown,
   markdownToInformation,
+  userToMarkdown,
+  markdownToUser,
 } from '../utils/markdownUtils';
 
 const REQUIREMENTS_DIR = 'requirements';
@@ -39,8 +41,10 @@ const USECASES_DIR = 'usecases';
 const TESTCASES_DIR = 'testcases';
 const INFORMATION_DIR = 'information';
 const PROJECTS_DIR = 'projects';
+const USERS_DIR = 'users';
 const COUNTERS_DIR = 'counters';
 const CURRENT_PROJECT_FILE = 'current-project.md';
+const CURRENT_USER_FILE = 'current-user.md';
 const LINKS_FILE = 'links.json';
 
 interface ProjectFile {
@@ -64,6 +68,7 @@ class DiskProjectService {
     await fileSystemService.getOrCreateDirectory(TESTCASES_DIR);
     await fileSystemService.getOrCreateDirectory(INFORMATION_DIR);
     await fileSystemService.getOrCreateDirectory(PROJECTS_DIR);
+    await fileSystemService.getOrCreateDirectory(USERS_DIR);
     await fileSystemService.getOrCreateDirectory(COUNTERS_DIR);
   }
 
@@ -74,7 +79,7 @@ class DiskProjectService {
    * File format: just the number, e.g., "42"
    */
   private async getCounter(
-    type: 'requirements' | 'useCases' | 'testCases' | 'information'
+    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users'
   ): Promise<number> {
     const filename = `${COUNTERS_DIR}/${type}.md`;
     try {
@@ -92,7 +97,7 @@ class DiskProjectService {
    * Set counter value
    */
   private async setCounter(
-    type: 'requirements' | 'useCases' | 'testCases' | 'information',
+    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users',
     value: number
   ): Promise<void> {
     const filename = `${COUNTERS_DIR}/${type}.md`;
@@ -122,10 +127,32 @@ class DiskProjectService {
   }
 
   /**
+   * Get current user ID
+   */
+  async getCurrentUserId(): Promise<string> {
+    try {
+      const content = await fileSystemService.readFile(CURRENT_USER_FILE);
+      if (content) {
+        return content.trim();
+      }
+    } catch {
+      // File doesn't exist
+    }
+    return '';
+  }
+
+  /**
+   * Set current user ID
+   */
+  async setCurrentUserId(userId: string): Promise<void> {
+    await fileSystemService.writeFile(CURRENT_USER_FILE, userId);
+  }
+
+  /**
    * Get next artifact ID and increment counter
    */
   async getNextId(
-    type: 'requirements' | 'useCases' | 'testCases' | 'information'
+    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users'
   ): Promise<string> {
     const current = await this.getCounter(type);
     const next = current + 1;
@@ -136,6 +163,7 @@ class DiskProjectService {
       useCases: 'UC',
       testCases: 'TC',
       information: 'INFO',
+      users: 'USER',
     };
 
     return `${prefixMap[type]}-${String(next).padStart(3, '0')}`;
@@ -462,6 +490,50 @@ class DiskProjectService {
    */
   async saveLinks(links: Link[]): Promise<void> {
     await fileSystemService.writeFile(LINKS_FILE, JSON.stringify(links, null, 2));
+  }
+
+  // ============ USER OPERATIONS ============
+
+  /**
+   * Save a user to disk
+   */
+  async saveUser(user: User): Promise<void> {
+    const markdown = userToMarkdown(user);
+    await fileSystemService.writeFile(`${USERS_DIR}/${user.id}.md`, markdown);
+  }
+
+  /**
+   * Load all users
+   */
+  async loadAllUsers(): Promise<User[]> {
+    const users: User[] = [];
+
+    try {
+      const files = await fileSystemService.listFiles(USERS_DIR);
+
+      for (const file of files) {
+        if (file.endsWith('.md')) {
+          const content = await fileSystemService.readFile(`${USERS_DIR}/${file}`);
+          if (content) {
+            const user = markdownToUser(content);
+            if (user) {
+              users.push(user);
+            }
+          }
+        }
+      }
+    } catch {
+      // Directory might not exist
+    }
+
+    return users;
+  }
+
+  /**
+   * Delete a user from disk
+   */
+  async deleteUser(userId: string): Promise<void> {
+    await fileSystemService.deleteFile(`${USERS_DIR}/${userId}.md`);
   }
 
   // ============ BULK OPERATIONS ============

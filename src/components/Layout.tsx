@@ -26,6 +26,8 @@ export interface LayoutProps {
   onNewInformation?: () => void;
   baselines?: ProjectBaseline[];
   rightPanel?: React.ReactNode;
+  onOpenUserSettings?: () => void;
+  currentUserName?: string;
 }
 
 /**
@@ -56,6 +58,8 @@ export const Layout: React.FC<LayoutProps> = ({
   onNewInformation,
   baselines = [],
   rightPanel,
+  onOpenUserSettings,
+  currentUserName,
 }) => {
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -85,6 +89,8 @@ export const Layout: React.FC<LayoutProps> = ({
           onExportPDF={onExportPDF}
           onExportExcel={onExportExcel}
           baselines={baselines}
+          onOpenUserSettings={onOpenUserSettings}
+          currentUserName={currentUserName}
         />
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>

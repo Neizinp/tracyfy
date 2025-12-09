@@ -40,7 +40,6 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
   const [priority, setPriority] = useState<Requirement['priority']>('medium');
   const [status, setStatus] = useState<Requirement['status']>('draft');
   const [parentIds, setParentIds] = useState<string[]>([]);
-  const [author, setAuthor] = useState('');
   const [verificationMethod, setVerificationMethod] = useState('');
   const [comments, setComments] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -54,7 +53,6 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
       setPriority(requirement.priority);
       setStatus(requirement.status);
       setParentIds(requirement.parentIds || []);
-      setAuthor(requirement.author || '');
       setVerificationMethod(requirement.verificationMethod || '');
       setComments(requirement.comments || '');
     }
@@ -72,7 +70,6 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
       priority,
       status,
       parentIds,
-      author,
       verificationMethod,
       comments,
     });
@@ -335,20 +332,17 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                 >
                   Author
                 </label>
-                <input
-                  type="text"
-                  value={author}
-                  onChange={(e) => setAuthor(e.target.value)}
+                <div
                   style={{
-                    width: '100%',
                     padding: '8px 12px',
                     borderRadius: '6px',
                     border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    outline: 'none',
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    color: 'var(--color-text-muted)',
                   }}
-                />
+                >
+                  {requirement.author || 'Not specified'}
+                </div>
               </div>
 
               <div>

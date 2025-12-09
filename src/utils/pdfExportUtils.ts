@@ -33,7 +33,8 @@ export async function exportProjectToPDF(
   projectTestCaseIds: string[],
   projectInformationIds: string[],
   baselines: ProjectBaseline[],
-  selectedBaseline: ProjectBaseline | null // null = Current State
+  selectedBaseline: ProjectBaseline | null, // null = Current State
+  currentUserName?: string
 ): Promise<void> {
   // 0. Request File Handle FIRST (to ensure user activation is valid)
   let fileHandle: any = null;
@@ -66,7 +67,7 @@ export async function exportProjectToPDF(
   const tocEntries: TOCEntry[] = [];
 
   // 1. Cover Page
-  addCoverPage(doc, project, selectedBaseline);
+  addCoverPage(doc, project, selectedBaseline, currentUserName);
   currentPage++;
 
   // 2. Table of Contents (placeholder, will update after)
@@ -239,7 +240,8 @@ export async function exportProjectToPDF(
 function addCoverPage(
   doc: jsPDF,
   project: Project,
-  selectedBaseline: ProjectBaseline | null
+  selectedBaseline: ProjectBaseline | null,
+  currentUserName?: string
 ): void {
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -275,6 +277,12 @@ function addCoverPage(
     );
   } else {
     doc.text('Current State', pageWidth / 2, 155, { align: 'center' });
+  }
+
+  // Exported By
+  if (currentUserName) {
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Exported by: ${currentUserName}`, pageWidth / 2, 170, { align: 'center' });
   }
 }
 

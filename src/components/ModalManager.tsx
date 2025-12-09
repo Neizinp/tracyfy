@@ -13,6 +13,7 @@ import {
   CreateProjectModal,
   GlobalLibraryModal,
 } from './';
+import { UserSettingsModal } from './UserSettingsModal';
 import {
   useUI,
   useProject,
@@ -222,6 +223,11 @@ export const ModalManager: React.FC = () => {
         globalTestCases={globalTestCases}
         globalInformation={globalInformation}
         onAddToProject={addToProject}
+      />
+
+      <UserSettingsModal
+        isOpen={ui.isUserSettingsModalOpen}
+        onClose={() => ui.setIsUserSettingsModalOpen(false)}
       />
     </>
   );
