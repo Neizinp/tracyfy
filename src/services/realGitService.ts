@@ -12,7 +12,7 @@ import type { Requirement, UseCase, TestCase, Information } from '../types';
 import {
   requirementToMarkdown,
   markdownToRequirement,
-  useCaseToMarkdown,
+  convertUseCaseToMarkdown,
   markdownToUseCase,
   testCaseToMarkdown,
   markdownToTestCase,
@@ -250,7 +250,7 @@ class RealGitService {
         markdown = requirementToMarkdown(artifact as Requirement);
         break;
       case 'usecases':
-        markdown = useCaseToMarkdown(artifact as UseCase);
+        markdown = convertUseCaseToMarkdown(artifact as UseCase);
         break;
       case 'testcases':
         markdown = testCaseToMarkdown(artifact as TestCase);

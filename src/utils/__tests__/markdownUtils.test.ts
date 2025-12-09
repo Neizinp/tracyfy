@@ -16,7 +16,7 @@ import { describe, it, expect } from 'vitest';
 import {
   requirementToMarkdown,
   markdownToRequirement,
-  useCaseToMarkdown,
+  convertUseCaseToMarkdown,
   markdownToUseCase,
   testCaseToMarkdown,
   markdownToTestCase,
@@ -314,7 +314,7 @@ Rationale
 });
 
 describe('UseCase Markdown Conversion', () => {
-  describe('useCaseToMarkdown', () => {
+  describe('convertUseCaseToMarkdown', () => {
     it('should serialize all fields', () => {
       const useCase: UseCase = {
         id: 'UC-001',
@@ -331,7 +331,7 @@ describe('UseCase Markdown Conversion', () => {
         revision: '01',
       };
 
-      const markdown = useCaseToMarkdown(useCase);
+      const markdown = convertUseCaseToMarkdown(useCase);
 
       expect(markdown).toContain('id: "UC-001"');
       expect(markdown).toContain('title: "User Login"');
@@ -405,7 +405,7 @@ User is logged in
         revision: '01',
       };
 
-      const markdown = useCaseToMarkdown(original);
+      const markdown = convertUseCaseToMarkdown(original);
       const parsed = markdownToUseCase(markdown);
 
       expect(parsed.id).toBe(original.id);

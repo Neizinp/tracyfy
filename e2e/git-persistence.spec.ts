@@ -16,7 +16,7 @@
 import { test, expect, Page } from '@playwright/test';
 
 // Helper to wait for console messages
-async function waitForConsoleMessage(
+async function _waitForConsoleMessage(
   page: Page,
   pattern: RegExp,
   timeout = 10000
@@ -67,7 +67,7 @@ test.describe('Git Object Persistence', () => {
 
   test.skip('should show pending changes for new files', async ({ page }) => {
     // Enable E2E test mode but capture console logs
-    const logs = collectConsoleLogs(page);
+    const _logs = collectConsoleLogs(page);
 
     await page.addInitScript(() => {
       (window as any).__E2E_TEST_MODE__ = true;
@@ -192,7 +192,7 @@ test.describe('Console Log Verification', () => {
 
     // Check that we have the expected structure
     const hasPromises = logs.some((log) => log.includes('Has promises property: true'));
-    const isEnumerable = logs.some((log) => log.includes('enumerable: true'));
+    const _isEnumerable = logs.some((log) => log.includes('enumerable: true'));
 
     // These are critical for isomorphic-git to work
     expect(hasPromises || logs.length === 0).toBeTruthy(); // May not have logs in E2E mode
