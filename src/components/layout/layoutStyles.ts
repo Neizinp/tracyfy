@@ -120,13 +120,17 @@ export const dropdownItemWithBorderStyle: CSSProperties = {
   borderTop: '1px solid var(--color-border)',
 };
 
-// Hover handlers for buttons/items
+// Hover handlers for dropdown menu items
 export const hoverHandlers = {
   onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
     e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)';
+    e.currentTarget.style.boxShadow = 'none';
+    e.currentTarget.style.color = 'var(--color-text-primary)';
   },
   onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
     e.currentTarget.style.backgroundColor = 'var(--color-bg-card)';
+    e.currentTarget.style.boxShadow = 'none';
+    e.currentTarget.style.color = 'var(--color-text-primary)';
   },
 };
 

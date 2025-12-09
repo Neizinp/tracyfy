@@ -3,6 +3,7 @@
   --color-bg-app: #0f172a;
   --color-bg-sidebar: #1e293b;
   --color-bg-card: #1e293b;
+  --color-bg-secondary: #283548;
   --color-bg-hover: #334155;
 
   --color-text-primary: #f8fafc;
@@ -45,7 +46,10 @@ body {
 
 button {
   font-family: inherit;
-  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 button:hover,
@@ -53,6 +57,16 @@ button:focus {
   background-color: var(--color-bg-hover);
   color: var(--color-accent);
   box-shadow: 0 0 8px var(--color-accent);
+}
+
+/* Dropdown menu items should not have the glowing hover effect */
+[data-testid='export-dropdown'] button:hover,
+[data-testid='export-dropdown'] button:focus,
+div[style*='position: absolute'] button:hover,
+div[style*='position: absolute'] button:focus {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  box-shadow: none;
 }
 
 /* Scrollbar Styling */
