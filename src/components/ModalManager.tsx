@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   NewRequirementModal,
   LinkModal,
@@ -24,7 +24,7 @@ import {
   useInformation,
   useFileSystem,
 } from '../app/providers';
-import type { Information } from '../types';
+import type { Information, ArtifactLink } from '../types';
 
 export const ModalManager: React.FC = () => {
   // UI state
@@ -47,10 +47,14 @@ export const ModalManager: React.FC = () => {
     handleDeleteRequirement,
     handleRestoreRequirement,
     handlePermanentDeleteRequirement,
-    handleAddLink,
   } = useRequirements();
-  const { useCases, handleAddUseCase, handleRestoreUseCase, handlePermanentDeleteUseCase } =
-    useUseCases();
+  const {
+    useCases,
+    handleAddUseCase,
+    handleUpdateUseCase,
+    handleRestoreUseCase,
+    handlePermanentDeleteUseCase,
+  } = useUseCases();
   const { testCases, handleAddTestCase, handleUpdateTestCase, handleDeleteTestCase } =
     useTestCases();
   const {
@@ -63,6 +67,65 @@ export const ModalManager: React.FC = () => {
 
   // FileSystem state
   const { baselines, createBaseline } = useFileSystem();
+
+  // Handler for adding a link to an artifact's linkedArtifacts array
+  const handleAddArtifactLink = useCallback(
+    (newLink: ArtifactLink) => {
+      const sourceId = ui.linkSourceId || ui.selectedRequirementId;
+      const sourceType = ui.linkSourceType || 'requirement';
+
+      if (!sourceId) return;
+
+      // Find and update the source artifact based on type
+      switch (sourceType) {
+        case 'requirement': {
+          const req = requirements.find((r) => r.id === sourceId);
+          if (req) {
+            const updatedLinks = [...(req.linkedArtifacts || []), newLink];
+            handleUpdateRequirement(sourceId, { linkedArtifacts: updatedLinks });
+          }
+          break;
+        }
+        case 'usecase': {
+          const uc = useCases.find((u) => u.id === sourceId);
+          if (uc) {
+            const updatedLinks = [...(uc.linkedArtifacts || []), newLink];
+            handleUpdateUseCase(sourceId, { linkedArtifacts: updatedLinks });
+          }
+          break;
+        }
+        case 'testcase': {
+          const tc = testCases.find((t) => t.id === sourceId);
+          if (tc) {
+            const updatedLinks = [...(tc.linkedArtifacts || []), newLink];
+            handleUpdateTestCase(sourceId, { linkedArtifacts: updatedLinks });
+          }
+          break;
+        }
+        case 'information': {
+          const info = information.find((i) => i.id === sourceId);
+          if (info) {
+            const updatedLinks = [...(info.linkedArtifacts || []), newLink];
+            handleUpdateInformation(sourceId, { linkedArtifacts: updatedLinks });
+          }
+          break;
+        }
+      }
+
+      ui.setIsLinkModalOpen(false);
+    },
+    [
+      ui,
+      requirements,
+      useCases,
+      testCases,
+      information,
+      handleUpdateRequirement,
+      handleUpdateUseCase,
+      handleUpdateTestCase,
+      handleUpdateInformation,
+    ]
+  );
 
   // Combined handler for InformationModal - handles both add and update
   const handleInformationSubmit = (
@@ -98,7 +161,7 @@ export const ModalManager: React.FC = () => {
         globalTestCases={globalTestCases}
         globalInformation={globalInformation}
         onClose={() => ui.setIsLinkModalOpen(false)}
-        onSubmit={handleAddLink}
+        onAddLink={handleAddArtifactLink}
       />
 
       {ui.isEditRequirementModalOpen && ui.editingRequirement && (

@@ -5,7 +5,7 @@ import type { Requirement, Project, UseCase, TestCase, Information } from '../..
 
 describe('LinkModal', () => {
   const mockOnClose = vi.fn();
-  const mockOnSubmit = vi.fn();
+  const mockOnAddLink = vi.fn();
 
   const mockProject: Project = {
     id: 'PROJ-001',
@@ -98,7 +98,7 @@ describe('LinkModal', () => {
     globalTestCases: [mockTestCase],
     globalInformation: [mockInformation],
     onClose: mockOnClose,
-    onSubmit: mockOnSubmit,
+    onAddLink: mockOnAddLink,
   };
 
   beforeEach(() => {
@@ -184,9 +184,8 @@ describe('LinkModal', () => {
     );
     if (submitButton) fireEvent.click(submitButton);
 
-    expect(mockOnSubmit).toHaveBeenCalledWith(
+    expect(mockOnAddLink).toHaveBeenCalledWith(
       expect.objectContaining({
-        sourceId: 'REQ-001',
         targetId: 'REQ-002',
         type: 'relates_to',
       })

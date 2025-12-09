@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Link as LinkIcon } from 'lucide-react';
-import type { Requirement, Link, Project, UseCase, TestCase, Information } from '../types';
+import type { Requirement, ArtifactLink, Project, UseCase, TestCase, Information } from '../types';
 
 interface LinkModalProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ interface LinkModalProps {
   globalTestCases: TestCase[];
   globalInformation: Information[];
   onClose: () => void;
-  onSubmit: (link: Omit<Link, 'id'>) => void;
+  onAddLink: (link: ArtifactLink) => void;
 }
 
 type ArtifactType = 'requirement' | 'usecase' | 'testcase' | 'information';
@@ -29,12 +29,12 @@ export const LinkModal: React.FC<LinkModalProps> = ({
   globalTestCases,
   globalInformation,
   onClose,
-  onSubmit,
+  onAddLink,
 }) => {
   const [targetType, setTargetType] = useState<ArtifactType>('requirement');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
-  const [linkType, setLinkType] = useState<Link['type']>('relates_to');
+  const [linkType, setLinkType] = useState<ArtifactLink['type']>('relates_to');
 
   useEffect(() => {
     if (isOpen) {
@@ -95,14 +95,8 @@ export const LinkModal: React.FC<LinkModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedTargetId) {
-      const targetProject = findProjectForArtifact(selectedTargetId);
-      const sourceProject = findProjectForArtifact(sourceArtifactId);
-
-      onSubmit({
-        sourceId: sourceArtifactId,
+      onAddLink({
         targetId: selectedTargetId,
-        targetProjectId: targetProject?.id,
-        sourceProjectId: sourceProject?.id,
         type: linkType,
       });
       onClose();
@@ -443,7 +437,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
               </label>
               <select
                 value={linkType}
-                onChange={(e) => setLinkType(e.target.value as Link['type'])}
+                onChange={(e) => setLinkType(e.target.value as ArtifactLink['type'])}
                 style={{
                   width: '100%',
                   padding: '0.5rem 0.75rem',
