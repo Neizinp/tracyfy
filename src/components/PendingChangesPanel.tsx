@@ -213,6 +213,15 @@ export function PendingChangesPanel() {
                   placeholder="Commit message (required)"
                   value={commitMessages[change.id] || ''}
                   onChange={(e) => handleCommitMessageChange(change.id, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (
+                      e.key === 'Enter' &&
+                      !committing[change.id] &&
+                      commitMessages[change.id]?.trim()
+                    ) {
+                      handleCommit(change);
+                    }
+                  }}
                   style={{
                     width: '100%',
                     padding: '4px 8px',
