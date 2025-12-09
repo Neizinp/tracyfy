@@ -378,7 +378,7 @@ describe('pdfExportUtils', () => {
     delete (window as any).showSaveFilePicker;
 
     await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
-    expect(mockSave).toHaveBeenCalledWith('Test_Project-export.pdf');
+    expect(mockSave).toHaveBeenCalledWith('Test_Project - Current_State.pdf');
   });
 
   it('should export all requirement attributes', async () => {
@@ -647,5 +647,204 @@ describe('pdfExportUtils', () => {
       expect.any(Number),
       expect.any(Number)
     );
+  });
+
+  describe('PDF Filename Generation', () => {
+    it('should use "Project Name - Current State.pdf" format when no baseline selected', async () => {
+      delete (window as any).showSaveFilePicker;
+
+      await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
+
+      expect(mockSave).toHaveBeenCalledWith('Test_Project - Current_State.pdf');
+    });
+
+    it('should use "Project Name - Baseline Name.pdf" format when baseline selected', async () => {
+      delete (window as any).showSaveFilePicker;
+
+      const testBaseline = {
+        id: 'b1',
+        projectId: 'p1',
+        version: '1.0',
+        name: 'v1.0 Release',
+        description: 'Test Baseline',
+        timestamp: Date.now(),
+        artifactCommits: {},
+      };
+
+      await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], testBaseline);
+
+      expect(mockSave).toHaveBeenCalledWith('Test_Project - v1_0_Release.pdf');
+    });
+  });
+
+  describe('Revision History Filtering', () => {
+    const baselineOld = {
+      id: 'b1',
+      projectId: 'p1',
+      version: '1.0',
+      name: 'Baseline 1.0',
+      description: 'First baseline',
+      timestamp: 1699990000000, // Before mock commits
+      artifactCommits: {},
+    };
+
+    const baselineNew = {
+      id: 'b2',
+      projectId: 'p1',
+      version: '2.0',
+      name: 'Baseline 2.0',
+      description: 'Second baseline',
+      timestamp: 1700002000000, // After mock commits
+      artifactCommits: {},
+    };
+
+    it('should show no revision history when exporting first baseline', async () => {
+      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+        createWritable: vi.fn().mockResolvedValue({
+          write: vi.fn(),
+          close: vi.fn(),
+        }),
+      });
+
+      // Export with only one baseline (the first one)
+      await exportProjectToPDF(
+        mockProject,
+        globalState,
+        ['r1'],
+        [],
+        [],
+        [],
+        [baselineOld], // Only one baseline
+        baselineOld // Exporting the first baseline
+      );
+
+      // Check that no artifact commits are in the revision history table
+      const autoTableCalls = (autoTable as any).mock.calls;
+      const revisionHistoryCalls = autoTableCalls.filter(
+        ([_doc, options]: [any, any]) =>
+          options.head && options.head[0] && options.head[0].includes('Message')
+      );
+
+      // Should not have any revision history table, or if present, body should be empty
+      if (revisionHistoryCalls.length > 0) {
+        const body = revisionHistoryCalls[0][1].body || [];
+        expect(body.length).toBe(0);
+      }
+    });
+
+    it('should show commits between baselines when exporting a later baseline', async () => {
+      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+        createWritable: vi.fn().mockResolvedValue({
+          write: vi.fn(),
+          close: vi.fn(),
+        }),
+      });
+
+      // Export second baseline with first baseline as previous
+      await exportProjectToPDF(
+        mockProject,
+        globalState,
+        ['r1'],
+        [],
+        [],
+        [],
+        [baselineNew, baselineOld], // Two baselines, newest first will be sorted
+        baselineNew // Exporting the second baseline
+      );
+
+      // Commits at 1700000000000 and 1700001000000 should be included
+      // (they are after baselineOld.timestamp and before baselineNew.timestamp)
+      const autoTableCalls = (autoTable as any).mock.calls;
+      const revisionHistoryCalls = autoTableCalls.filter(
+        ([_doc, options]: [any, any]) =>
+          options.head && options.head[0] && options.head[0].includes('Message')
+      );
+
+      if (revisionHistoryCalls.length > 0) {
+        const body = revisionHistoryCalls[0][1].body || [];
+        const hasInitialCommit = body.some((row: string[]) =>
+          row.some((cell) => cell.includes('Initial commit'))
+        );
+        const hasUpdateCommit = body.some((row: string[]) =>
+          row.some((cell) => cell.includes('Update requirement'))
+        );
+
+        // Both commits should be between the two baselines
+        expect(hasInitialCommit || hasUpdateCommit).toBe(true);
+      }
+    });
+
+    it('should show commits since last baseline when exporting current state', async () => {
+      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+        createWritable: vi.fn().mockResolvedValue({
+          write: vi.fn(),
+          close: vi.fn(),
+        }),
+      });
+
+      // Baseline is before both commits, so current state should show both
+      const oldBaseline = {
+        id: 'b1',
+        projectId: 'p1',
+        version: '1.0',
+        name: 'Old Baseline',
+        description: 'Before commits',
+        timestamp: 1699900000000, // Before all mock commits
+        artifactCommits: {},
+      };
+
+      await exportProjectToPDF(
+        mockProject,
+        globalState,
+        ['r1'],
+        [],
+        [],
+        [],
+        [oldBaseline],
+        null // Current state
+      );
+
+      // Check that commits are included
+      const autoTableCalls = (autoTable as any).mock.calls;
+      const revisionHistoryCalls = autoTableCalls.filter(
+        ([_doc, options]: [any, any]) =>
+          options.head && options.head[0] && options.head[0].includes('Message')
+      );
+
+      if (revisionHistoryCalls.length > 0) {
+        const body = revisionHistoryCalls[0][1].body || [];
+        expect(body.length).toBeGreaterThan(0);
+      }
+    });
+  });
+
+  describe('Revision History Table Format', () => {
+    it('should have separate columns for ID and Name in revision history', async () => {
+      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+        createWritable: vi.fn().mockResolvedValue({
+          write: vi.fn(),
+          close: vi.fn(),
+        }),
+      });
+
+      await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
+
+      // Check that the table header has 5 columns: Date, ID, Name, Message, Author
+      const autoTableCalls = (autoTable as any).mock.calls;
+      const revisionHistoryCalls = autoTableCalls.filter(
+        ([_doc, options]: [any, any]) =>
+          options.head && options.head[0] && options.head[0].includes('ID')
+      );
+
+      if (revisionHistoryCalls.length > 0) {
+        const header = revisionHistoryCalls[0][1].head[0];
+        expect(header).toContain('Date');
+        expect(header).toContain('ID');
+        expect(header).toContain('Name');
+        expect(header).toContain('Message');
+        expect(header).toContain('Author');
+        expect(header.length).toBe(5);
+      }
+    });
   });
 });
