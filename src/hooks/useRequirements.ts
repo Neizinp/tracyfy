@@ -3,149 +3,138 @@ import { generateNextReqId } from '../utils/idGenerationUtils';
 import { incrementRevision } from '../utils/revisionUtils';
 
 interface UseRequirementsProps {
-    requirements: Requirement[];
-    setRequirements: (reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])) => void;
-    usedReqNumbers: Set<number>;
-    setUsedReqNumbers: (nums: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
-    setLinks: (links: Link[] | ((prev: Link[]) => Link[])) => void;
-    setIsEditModalOpen: (open: boolean) => void;
-    setEditingRequirement: (req: Requirement | null) => void;
-    saveArtifact: (type: 'requirements', id: string, artifact: Requirement) => Promise<void>;
-    deleteArtifact: (type: 'requirements', id: string) => Promise<void>;
+  requirements: Requirement[];
+  setRequirements: (reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])) => void;
+  usedReqNumbers: Set<number>;
+  setUsedReqNumbers: (nums: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
+  setLinks: (links: Link[] | ((prev: Link[]) => Link[])) => void;
+  setIsEditModalOpen: (open: boolean) => void;
+  setEditingRequirement: (req: Requirement | null) => void;
+  saveArtifact: (type: 'requirements', id: string, artifact: Requirement) => Promise<void>;
+  deleteArtifact: (type: 'requirements', id: string) => Promise<void>;
 }
 
 export function useRequirements({
-    requirements,
-    setRequirements,
-    usedReqNumbers,
-    setUsedReqNumbers,
-    setLinks,
-    setIsEditModalOpen,
-    setEditingRequirement,
-    saveArtifact,
-    deleteArtifact
+  requirements,
+  setRequirements,
+  usedReqNumbers,
+  setUsedReqNumbers,
+  setLinks,
+  setIsEditModalOpen,
+  setEditingRequirement,
+  saveArtifact,
+  deleteArtifact,
 }: UseRequirementsProps) {
+  const handleAddRequirement = async (newReqData: Omit<Requirement, 'id' | 'lastModified'>) => {
+    const newId = generateNextReqId(usedReqNumbers);
 
-    const handleAddRequirement = async (newReqData: Omit<Requirement, 'id' | 'lastModified'>) => {
-        const newId = generateNextReqId(usedReqNumbers);
-
-        const newRequirement: Requirement = {
-            ...newReqData,
-            id: newId,
-            lastModified: Date.now()
-        };
-
-        // Mark this number as used (extract number from ID)
-        const idNumber = parseInt(newId.split('-')[1], 10);
-        setUsedReqNumbers(prev => new Set(prev).add(idNumber));
-        setRequirements([...requirements, newRequirement]);
-
-        // Save to filesystem
-        try {
-            await saveArtifact('requirements', newRequirement.id, newRequirement);
-        } catch (error) {
-            console.error('Failed to save requirement:', error);
-        }
+    const newRequirement: Requirement = {
+      ...newReqData,
+      id: newId,
+      lastModified: Date.now(),
     };
 
-    const handleUpdateRequirement = async (id: string, updatedData: Partial<Requirement>) => {
-        const updatedReq = requirements.find(req => req.id === id);
-        if (!updatedReq) return;
+    // Mark this number as used (extract number from ID)
+    const idNumber = parseInt(newId.split('-')[1], 10);
+    setUsedReqNumbers((prev) => new Set(prev).add(idNumber));
+    setRequirements([...requirements, newRequirement]);
 
-        // Increment revision
-        const newRevision = incrementRevision(updatedReq.revision || '01');
-        const finalRequirement = {
-            ...updatedReq,
-            ...updatedData,
-            revision: newRevision,
-            lastModified: Date.now()
-        };
+    // Save to filesystem
+    try {
+      await saveArtifact('requirements', newRequirement.id, newRequirement);
+    } catch (error) {
+      console.error('Failed to save requirement:', error);
+    }
+  };
 
-        // Update local state
-        setRequirements(prev => prev.map(r =>
-            r.id === finalRequirement.id ? finalRequirement : r
-        ));
-        setIsEditModalOpen(false);
-        setEditingRequirement(null);
+  const handleUpdateRequirement = async (id: string, updatedData: Partial<Requirement>) => {
+    const updatedReq = requirements.find((req) => req.id === id);
+    if (!updatedReq) return;
 
-        // Save to filesystem
-        try {
-            await saveArtifact('requirements', finalRequirement.id, finalRequirement);
-        } catch (error) {
-            console.error('Failed to save requirement:', error);
-        }
+    // Increment revision
+    const newRevision = incrementRevision(updatedReq.revision || '01');
+    const finalRequirement = {
+      ...updatedReq,
+      ...updatedData,
+      revision: newRevision,
+      lastModified: Date.now(),
     };
 
-    const handleDeleteRequirement = (id: string) => {
-        // Soft delete: Mark as deleted instead of removing
-        const updatedReq = requirements.find(req => req.id === id);
-        if (!updatedReq) return;
+    // Update local state
+    setRequirements((prev) =>
+      prev.map((r) => (r.id === finalRequirement.id ? finalRequirement : r))
+    );
+    setIsEditModalOpen(false);
+    setEditingRequirement(null);
 
-        const deletedReq = { ...updatedReq, isDeleted: true, deletedAt: Date.now() };
+    // Save to filesystem
+    try {
+      await saveArtifact('requirements', finalRequirement.id, finalRequirement);
+    } catch (error) {
+      console.error('Failed to save requirement:', error);
+    }
+  };
 
-        setRequirements(prev =>
-            prev.map(req =>
-                req.id === id
-                    ? deletedReq
-                    : req
-            )
-        );
+  const handleDeleteRequirement = (id: string) => {
+    // Soft delete: Mark as deleted instead of removing
+    const updatedReq = requirements.find((req) => req.id === id);
+    if (!updatedReq) return;
 
-        // Close modal if open
-        setIsEditModalOpen(false);
-        setEditingRequirement(null);
+    const deletedReq = { ...updatedReq, isDeleted: true, deletedAt: Date.now() };
 
-        // Save the soft-deleted state to filesystem
-        // We still save it because soft-delete is just a state change
-        saveArtifact('requirements', id, deletedReq).catch(err =>
-            console.error('Failed to save deleted requirement:', err)
-        );
-    };
+    setRequirements((prev) => prev.map((req) => (req.id === id ? deletedReq : req)));
 
-    const handleRestoreRequirement = (id: string) => {
-        const updatedReq = requirements.find(req => req.id === id);
-        if (!updatedReq) return;
+    // Close modal if open
+    setIsEditModalOpen(false);
+    setEditingRequirement(null);
 
-        const restoredReq = { ...updatedReq, isDeleted: false, deletedAt: undefined };
+    // Save the soft-deleted state to filesystem
+    // We still save it because soft-delete is just a state change
+    saveArtifact('requirements', id, deletedReq).catch((err) =>
+      console.error('Failed to save deleted requirement:', err)
+    );
+  };
 
-        setRequirements(prev =>
-            prev.map(req =>
-                req.id === id
-                    ? restoredReq
-                    : req
-            )
-        );
+  const handleRestoreRequirement = (id: string) => {
+    const updatedReq = requirements.find((req) => req.id === id);
+    if (!updatedReq) return;
 
-        // Save restored state
-        saveArtifact('requirements', id, restoredReq).catch(err =>
-            console.error('Failed to save restored requirement:', err)
-        );
-    };
+    const restoredReq = { ...updatedReq, isDeleted: false, deletedAt: undefined };
 
-    const handlePermanentDeleteRequirement = (id: string) => {
-        setRequirements(prev =>
-            prev
-                .filter(req => req.id !== id)
-                .map(req => ({
-                    ...req,
-                    parentIds: req.parentIds ? req.parentIds.filter(parentId => parentId !== id) : [],
-                    lastModified: Date.now(),
-                    revision: req.parentIds?.includes(id) ? incrementRevision(req.revision || "01") : req.revision
-                }))
-        );
-        setLinks(prev => prev.filter(link => link.sourceId !== id && link.targetId !== id));
+    setRequirements((prev) => prev.map((req) => (req.id === id ? restoredReq : req)));
 
-        // Delete from filesystem
-        deleteArtifact('requirements', id).catch(err =>
-            console.error('Failed to delete requirement:', err)
-        );
-    };
+    // Save restored state
+    saveArtifact('requirements', id, restoredReq).catch((err) =>
+      console.error('Failed to save restored requirement:', err)
+    );
+  };
 
-    return {
-        handleAddRequirement,
-        handleUpdateRequirement,
-        handleDeleteRequirement,
-        handleRestoreRequirement,
-        handlePermanentDeleteRequirement
-    };
+  const handlePermanentDeleteRequirement = (id: string) => {
+    setRequirements((prev) =>
+      prev
+        .filter((req) => req.id !== id)
+        .map((req) => ({
+          ...req,
+          parentIds: req.parentIds ? req.parentIds.filter((parentId) => parentId !== id) : [],
+          lastModified: Date.now(),
+          revision: req.parentIds?.includes(id)
+            ? incrementRevision(req.revision || '01')
+            : req.revision,
+        }))
+    );
+    setLinks((prev) => prev.filter((link) => link.sourceId !== id && link.targetId !== id));
+
+    // Delete from filesystem
+    deleteArtifact('requirements', id).catch((err) =>
+      console.error('Failed to delete requirement:', err)
+    );
+  };
+
+  return {
+    handleAddRequirement,
+    handleUpdateRequirement,
+    handleDeleteRequirement,
+    handleRestoreRequirement,
+    handlePermanentDeleteRequirement,
+  };
 }

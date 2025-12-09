@@ -134,6 +134,12 @@ vi.mock('../../services/realGitService', () => ({
       if (filepath === 'requirements/r1.md') {
         return Promise.resolve([
           {
+            hash: 'xyz000',
+            message: 'Created requirement',
+            author: 'Admin',
+            timestamp: 1699900000000, // Before baselineOld (1699990000000)
+          },
+          {
             hash: 'abc123',
             message: 'Initial commit',
             author: 'Alice',
@@ -679,7 +685,9 @@ describe('pdfExportUtils', () => {
       name: 'Baseline 1.0',
       description: 'First baseline',
       timestamp: 1699990000000, // Before mock commits
-      artifactCommits: {},
+      artifactCommits: {
+        r1: { commitHash: 'old123', type: 'requirement' as const },
+      },
     };
 
     const baselineNew = {
@@ -689,7 +697,9 @@ describe('pdfExportUtils', () => {
       name: 'Baseline 2.0',
       description: 'Second baseline',
       timestamp: 1700002000000, // After mock commits
-      artifactCommits: {},
+      artifactCommits: {
+        r1: { commitHash: 'new456', type: 'requirement' as const },
+      },
     };
 
     it('should show no revision history when exporting first baseline', async () => {
@@ -716,7 +726,7 @@ describe('pdfExportUtils', () => {
       const autoTableCalls = (autoTable as any).mock.calls;
       const revisionHistoryCalls = autoTableCalls.filter(
         ([_doc, options]: [any, any]) =>
-          options.head && options.head[0] && options.head[0].includes('Message')
+          options.head && options.head[0] && options.head[0].includes('Changes')
       );
 
       // Should not have any revision history table, or if present, body should be empty
@@ -751,7 +761,7 @@ describe('pdfExportUtils', () => {
       const autoTableCalls = (autoTable as any).mock.calls;
       const revisionHistoryCalls = autoTableCalls.filter(
         ([_doc, options]: [any, any]) =>
-          options.head && options.head[0] && options.head[0].includes('Message')
+          options.head && options.head[0] && options.head[0].includes('Changes')
       );
 
       if (revisionHistoryCalls.length > 0) {
@@ -802,7 +812,7 @@ describe('pdfExportUtils', () => {
       const autoTableCalls = (autoTable as any).mock.calls;
       const revisionHistoryCalls = autoTableCalls.filter(
         ([_doc, options]: [any, any]) =>
-          options.head && options.head[0] && options.head[0].includes('Message')
+          options.head && options.head[0] && options.head[0].includes('Changes')
       );
 
       if (revisionHistoryCalls.length > 0) {
@@ -835,13 +845,13 @@ describe('pdfExportUtils', () => {
         expect(header).toContain('Date');
         expect(header).toContain('ID');
         expect(header).toContain('Name');
-        expect(header).toContain('Message');
+        expect(header).toContain('Changes');
         expect(header).toContain('Author');
         expect(header.length).toBe(5);
       }
     });
 
-    it('should show multiple commits for the same artifact as separate rows', async () => {
+    it('should show multiple commits for the same artifact as a bulleted list', async () => {
       (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
         createWritable: vi.fn().mockResolvedValue({
           write: vi.fn(),
@@ -852,26 +862,22 @@ describe('pdfExportUtils', () => {
       // The mock returns 2 commits for r1.md (Initial commit and Update requirement)
       await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
 
-      // Check that both commits appear in the revision history table body
+      // Check that commits appear as a bulleted list in the revision history table body
       const autoTableCalls = (autoTable as any).mock.calls;
       const revisionHistoryCalls = autoTableCalls.filter(
         ([_doc, options]: [any, any]) =>
-          options.head && options.head[0] && options.head[0].includes('Message')
+          options.head && options.head[0] && options.head[0].includes('Changes')
       );
 
       if (revisionHistoryCalls.length > 0) {
         const body = revisionHistoryCalls[0][1].body || [];
-        // Should have 2 rows - one for each commit
-        expect(body.length).toBe(2);
+        // Should have 1 row with bulleted list
+        expect(body.length).toBe(1);
 
-        // Check that both commit messages are present
-        const messages = body.map((row: string[]) => row[3]); // Message is at index 3
-        expect(messages).toContain('Initial commit');
-        expect(messages).toContain('Update requirement');
-
-        // Both rows should reference the same artifact ID
-        const ids = body.map((row: string[]) => row[1]); // ID is at index 1
-        expect(ids.every((id: string) => id === 'r1')).toBe(true);
+        // The changes column should contain both commit messages as bullets
+        const changesCell = body[0][3]; // Changes is at index 3
+        expect(changesCell).toContain('• Update requirement');
+        expect(changesCell).toContain('• Initial commit');
       }
     });
   });

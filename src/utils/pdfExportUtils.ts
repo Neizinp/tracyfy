@@ -115,14 +115,24 @@ export async function exportProjectToPDF(
   }
 
   // Fetch commit history for all artifacts since last baseline
-  interface ArtifactCommit {
+  interface ArtifactCommitLocal {
     artifactId: string;
     artifactTitle: string;
     artifactType: 'requirement' | 'usecase' | 'testcase' | 'information';
     commits: CommitInfo[];
+    isNew?: boolean;
   }
 
-  const artifactCommits: ArtifactCommit[] = [];
+  interface RemovedArtifactLocal {
+    artifactId: string;
+    artifactType: 'requirement' | 'usecase' | 'testcase' | 'information';
+  }
+
+  const artifactCommits: ArtifactCommitLocal[] = [];
+  const removedArtifacts: RemovedArtifactLocal[] = [];
+
+  // We'll detect "new" artifacts by checking if their oldest commit is after the previous baseline
+  // For removed artifacts, we would need to know what was in the previous baseline - skip for now
 
   // Fetch commits for each artifact type
   // Filter function to get commits between previousBaseline and selectedBaseline (or now)
@@ -142,16 +152,29 @@ export async function exportProjectToPDF(
     });
   };
 
+  // Helper to check if artifact was created after the previous baseline
+  const isArtifactNew = (fullHistory: CommitInfo[]): boolean => {
+    if (!previousBaseline || fullHistory.length === 0) return false;
+    // Find the oldest commit (first commit for this artifact)
+    const oldestCommit = fullHistory.reduce((oldest, commit) =>
+      commit.timestamp < oldest.timestamp ? commit : oldest
+    );
+    // If the oldest commit is after the previous baseline, it's new
+    return oldestCommit.timestamp > previousBaseline.timestamp;
+  };
+
   for (const req of projectRequirements) {
     try {
       const history = await realGitService.getHistory(`requirements/${req.id}.md`);
       const filteredHistory = filterCommits(history);
-      if (filteredHistory.length > 0) {
+      const isNew = isArtifactNew(history);
+      if (filteredHistory.length > 0 || isNew) {
         artifactCommits.push({
           artifactId: req.id,
           artifactTitle: req.title,
           artifactType: 'requirement',
           commits: filteredHistory,
+          isNew,
         });
       }
     } catch (e) {
@@ -163,12 +186,14 @@ export async function exportProjectToPDF(
     try {
       const history = await realGitService.getHistory(`usecases/${uc.id}.md`);
       const filteredHistory = filterCommits(history);
-      if (filteredHistory.length > 0) {
+      const isNew = isArtifactNew(history);
+      if (filteredHistory.length > 0 || isNew) {
         artifactCommits.push({
           artifactId: uc.id,
           artifactTitle: uc.title,
           artifactType: 'usecase',
           commits: filteredHistory,
+          isNew,
         });
       }
     } catch (e) {
@@ -178,14 +203,16 @@ export async function exportProjectToPDF(
 
   for (const tc of projectTestCases) {
     try {
-      const history = await realGitService.getHistory(`testcases/${tc.id}.json`);
+      const history = await realGitService.getHistory(`testcases/${tc.id}.md`);
       const filteredHistory = filterCommits(history);
-      if (filteredHistory.length > 0) {
+      const isNew = isArtifactNew(history);
+      if (filteredHistory.length > 0 || isNew) {
         artifactCommits.push({
           artifactId: tc.id,
           artifactTitle: tc.title,
           artifactType: 'testcase',
           commits: filteredHistory,
+          isNew,
         });
       }
     } catch (e) {
@@ -195,14 +222,16 @@ export async function exportProjectToPDF(
 
   for (const info of projectInformation) {
     try {
-      const history = await realGitService.getHistory(`information/${info.id}.json`);
+      const history = await realGitService.getHistory(`information/${info.id}.md`);
       const filteredHistory = filterCommits(history);
-      if (filteredHistory.length > 0) {
+      const isNew = isArtifactNew(history);
+      if (filteredHistory.length > 0 || isNew) {
         artifactCommits.push({
           artifactId: info.id,
           artifactTitle: info.title,
           artifactType: 'information',
           commits: filteredHistory,
+          isNew,
         });
       }
     } catch (e) {
@@ -211,10 +240,10 @@ export async function exportProjectToPDF(
   }
 
   // 4. Revision History (NEW POSITION - after TOC)
-  if (artifactCommits.length > 0) {
+  if (artifactCommits.length > 0 || removedArtifacts.length > 0) {
     doc.addPage();
     tocEntries.push({ title: 'Revision History', page: currentPage, level: 0 });
-    addRevisionHistory(doc, artifactCommits);
+    addRevisionHistory(doc, artifactCommits, removedArtifacts);
     currentPage++;
   }
 
@@ -967,9 +996,19 @@ interface ArtifactCommit {
   artifactTitle: string;
   artifactType: 'requirement' | 'usecase' | 'testcase' | 'information';
   commits: CommitInfo[];
+  isNew?: boolean; // Added since last baseline
 }
 
-function addRevisionHistory(doc: jsPDF, artifactCommits: ArtifactCommit[]): void {
+interface RemovedArtifact {
+  artifactId: string;
+  artifactType: 'requirement' | 'usecase' | 'testcase' | 'information';
+}
+
+function addRevisionHistory(
+  doc: jsPDF,
+  artifactCommits: ArtifactCommit[],
+  removedArtifacts: RemovedArtifact[]
+): void {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text('Revision History', 20, 20);
@@ -980,40 +1019,68 @@ function addRevisionHistory(doc: jsPDF, artifactCommits: ArtifactCommit[]): void
 
   const rows: any[] = [];
 
-  // Flatten all commits from all artifacts
-  const allCommits: Array<{
-    artifactId: string;
-    artifactTitle: string;
-    artifactType: string;
-    commit: CommitInfo;
-  }> = [];
+  // Helper to get human-readable type name
+  const getTypeName = (type: string): string => {
+    switch (type) {
+      case 'requirement':
+        return 'Requirement';
+      case 'usecase':
+        return 'Use case';
+      case 'testcase':
+        return 'Test case';
+      case 'information':
+        return 'Information';
+      default:
+        return type;
+    }
+  };
 
-  artifactCommits.forEach((ac) => {
-    ac.commits.forEach((commit) => {
-      allCommits.push({
-        artifactId: ac.artifactId,
-        artifactTitle: ac.artifactTitle,
-        artifactType: ac.artifactType,
-        commit,
-      });
-    });
-  });
-
-  // Sort by timestamp (newest first)
-  allCommits.sort((a, b) => b.commit.timestamp - a.commit.timestamp);
-
-  // Build table rows
-  allCommits.forEach((item) => {
+  // Add removed artifacts first (most important to highlight)
+  removedArtifacts.forEach((removed) => {
     rows.push([
-      formatDate(item.commit.timestamp),
-      item.artifactId,
-      item.artifactTitle,
-      item.commit.message,
-      item.commit.author,
+      '-', // No date for removed items
+      removed.artifactId,
+      '-', // No title available
+      `${getTypeName(removed.artifactType)} removed`,
+      '-',
     ]);
   });
 
-  // If no commits, show message
+  // Group commits by artifact
+  artifactCommits.forEach((ac) => {
+    if (ac.isNew) {
+      // New artifact - show "added" message
+      rows.push([
+        formatDate(ac.commits[0]?.timestamp || Date.now()),
+        ac.artifactId,
+        ac.artifactTitle,
+        `${getTypeName(ac.artifactType)} added`,
+        ac.commits[0]?.author || '-',
+      ]);
+    } else if (ac.commits.length === 1) {
+      // Single commit - show message directly
+      rows.push([
+        formatDate(ac.commits[0].timestamp),
+        ac.artifactId,
+        ac.artifactTitle,
+        ac.commits[0].message,
+        ac.commits[0].author,
+      ]);
+    } else if (ac.commits.length > 1) {
+      // Multiple commits - format as bulleted list (newest first)
+      const sortedCommits = [...ac.commits].sort((a, b) => b.timestamp - a.timestamp);
+      const bulletList = sortedCommits.map((c) => `• ${c.message}`).join('\n');
+      rows.push([
+        formatDate(sortedCommits[0].timestamp),
+        ac.artifactId,
+        ac.artifactTitle,
+        bulletList,
+        sortedCommits[0].author,
+      ]);
+    }
+  });
+
+  // If no changes, show message
   if (rows.length === 0) {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'italic');
@@ -1023,7 +1090,7 @@ function addRevisionHistory(doc: jsPDF, artifactCommits: ArtifactCommit[]): void
 
   autoTable(doc, {
     startY: 40,
-    head: [['Date', 'ID', 'Name', 'Message', 'Author']],
+    head: [['Date', 'ID', 'Name', 'Changes', 'Author']],
     body: rows,
     theme: 'plain',
     margin: { left: 20 },
@@ -1044,7 +1111,7 @@ function addRevisionHistory(doc: jsPDF, artifactCommits: ArtifactCommit[]): void
       0: { cellWidth: 22 }, // Date
       1: { cellWidth: 20 }, // ID
       2: { cellWidth: 35 }, // Name
-      3: { cellWidth: 68 }, // Message
+      3: { cellWidth: 68 }, // Changes
       4: { cellWidth: 25 }, // Author
     },
   });
