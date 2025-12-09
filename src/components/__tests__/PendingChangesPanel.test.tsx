@@ -7,6 +7,14 @@ vi.mock('../../app/providers/FileSystemProvider', () => ({
   useFileSystem: vi.fn(),
 }));
 
+// Mock the useUser hook
+vi.mock('../../app/providers/UserProvider', () => ({
+  useUser: () => ({
+    currentUser: { id: 'USER-001', name: 'Test User' },
+    users: [],
+  }),
+}));
+
 import { useFileSystem } from '../../app/providers/FileSystemProvider';
 
 describe('PendingChangesPanel', () => {

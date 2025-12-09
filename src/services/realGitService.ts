@@ -347,8 +347,9 @@ class RealGitService {
 
   /**
    * Commit a single file (Atomic Commit)
+   * @param authorName - Optional author name, defaults to 'ReqTrace User'
    */
-  async commitFile(filepath: string, message: string): Promise<void> {
+  async commitFile(filepath: string, message: string, authorName?: string): Promise<void> {
     if (!this.initialized) {
       throw new Error('Git service not initialized');
     }
@@ -362,15 +363,18 @@ class RealGitService {
 
     await git.add({ fs: fsAdapter, dir: this.getRootDir(), filepath, cache });
 
+    const authorNameToUse = authorName || 'ReqTrace User';
     const commitOid = await git.commit({
       fs: fsAdapter,
       dir: this.getRootDir(),
       message,
-      author: { name: 'ReqTrace User', email: 'user@reqtrace.local' },
+      author: { name: authorNameToUse, email: 'user@reqtrace.local' },
       cache,
     });
 
-    console.log(`[commitFile] Successfully committed ${filepath}, SHA: ${commitOid}`);
+    console.log(
+      `[commitFile] Successfully committed ${filepath} by ${authorNameToUse}, SHA: ${commitOid}`
+    );
   }
 
   /**

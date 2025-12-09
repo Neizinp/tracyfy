@@ -47,7 +47,7 @@ interface FileSystemContextValue {
   // Reload from disk
   reloadData: () => Promise<void>;
   // Git operations
-  commitFile: (filepath: string, message: string) => Promise<void>;
+  commitFile: (filepath: string, message: string, authorName?: string) => Promise<void>;
   getArtifactHistory: (
     type: 'requirements' | 'usecases' | 'testcases' | 'information',
     id: string
@@ -477,11 +477,13 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Git operations
   const commitFile = useCallback(
-    async (filepath: string, message: string) => {
+    async (filepath: string, message: string, authorName?: string) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (isE2EMode()) return; // Skip git operations in E2E mode
-      console.log(`[commitFile] Committing ${filepath} with message: ${message}`);
-      await realGitService.commitFile(filepath, message);
+      console.log(
+        `[commitFile] Committing ${filepath} with message: ${message} by ${authorName || 'ReqTrace User'}`
+      );
+      await realGitService.commitFile(filepath, message, authorName);
       await refreshStatus();
       console.log(`[commitFile] Committed ${filepath} successfully`);
     },

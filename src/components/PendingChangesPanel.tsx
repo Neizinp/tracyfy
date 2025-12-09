@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { FileText, GitCommit, AlertCircle } from 'lucide-react';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
+import { useUser } from '../app/providers/UserProvider';
 import type { ArtifactChange } from '../types';
 
 export function PendingChangesPanel() {
   const { pendingChanges, commitFile, projects } = useFileSystem();
+  const { currentUser } = useUser();
   const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
   const [committing, setCommitting] = useState<Record<string, boolean>>({});
   const [parsedChanges, setParsedChanges] = useState<ArtifactChange[]>([]);
@@ -80,7 +82,7 @@ export function PendingChangesPanel() {
     setCommitting((prev) => ({ ...prev, [change.id]: true }));
 
     try {
-      await commitFile(change.path, message);
+      await commitFile(change.path, message, currentUser?.name);
 
       // Clear the commit message
       setCommitMessages((prev) => {
