@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { X, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
 import type { Requirement, UseCase, Information } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
@@ -17,6 +17,15 @@ interface TrashModalProps {
   onPermanentDeleteInformation: (id: string) => void;
 }
 
+interface DeletedItem {
+  id: string;
+  title: string;
+  type: 'requirement' | 'usecase' | 'information';
+  deletedAt?: number;
+  onRestore: () => void;
+  onDelete: () => void;
+}
+
 export const TrashModal: React.FC<TrashModalProps> = ({
   isOpen,
   onClose,
@@ -30,16 +39,40 @@ export const TrashModal: React.FC<TrashModalProps> = ({
   onPermanentDeleteUseCase,
   onPermanentDeleteInformation,
 }) => {
-  const [activeTab, setActiveTab] = useState<'requirements' | 'usecases' | 'information'>(
-    'requirements'
-  );
-
   if (!isOpen) return null;
 
   const formatDate = (timestamp?: number) => {
     if (!timestamp) return 'Unknown date';
     return formatDateTime(timestamp);
   };
+
+  // Combine all deleted items into a single list
+  const allDeletedItems: DeletedItem[] = [
+    ...deletedRequirements.map((req) => ({
+      id: req.id,
+      title: req.title,
+      type: 'requirement' as const,
+      deletedAt: req.deletedAt,
+      onRestore: () => onRestoreRequirement(req.id),
+      onDelete: () => onPermanentDeleteRequirement(req.id),
+    })),
+    ...deletedUseCases.map((uc) => ({
+      id: uc.id,
+      title: uc.title,
+      type: 'usecase' as const,
+      deletedAt: uc.deletedAt,
+      onRestore: () => onRestoreUseCase(uc.id),
+      onDelete: () => onPermanentDeleteUseCase(uc.id),
+    })),
+    ...deletedInformation.map((info) => ({
+      id: info.id,
+      title: info.title,
+      type: 'information' as const,
+      deletedAt: info.deletedAt,
+      onRestore: () => onRestoreInformation(info.id),
+      onDelete: () => onPermanentDeleteInformation(info.id),
+    })),
+  ].sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0)); // Sort by most recently deleted
 
   return (
     <div
@@ -54,7 +87,6 @@ export const TrashModal: React.FC<TrashModalProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
-        // no blur
       }}
     >
       <div
@@ -82,7 +114,9 @@ export const TrashModal: React.FC<TrashModalProps> = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
             <Trash2 size={20} color="var(--color-text-secondary)" />
-            <h3 style={{ fontWeight: 600, fontSize: '1.125rem' }}>Trash Bin</h3>
+            <h3 style={{ fontWeight: 600, fontSize: '1.125rem' }}>
+              Trash Bin ({allDeletedItems.length})
+            </h3>
           </div>
           <button
             onClick={onClose}
@@ -97,349 +131,96 @@ export const TrashModal: React.FC<TrashModalProps> = ({
           </button>
         </div>
 
-        {/* Tabs */}
-        <div
-          style={{
-            display: 'flex',
-            borderBottom: '1px solid var(--color-border)',
-            padding: '0 var(--spacing-md)',
-          }}
-        >
-          <button
-            onClick={() => setActiveTab('requirements')}
-            style={{
-              padding: '12px 16px',
-              background: 'none',
-              border: 'none',
-              borderBottom:
-                activeTab === 'requirements'
-                  ? '2px solid var(--color-accent)'
-                  : '2px solid transparent',
-              color:
-                activeTab === 'requirements'
-                  ? 'var(--color-accent)'
-                  : 'var(--color-text-secondary)',
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            Requirements ({deletedRequirements.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('usecases')}
-            style={{
-              padding: '12px 16px',
-              background: 'none',
-              border: 'none',
-              borderBottom:
-                activeTab === 'usecases'
-                  ? '2px solid var(--color-accent)'
-                  : '2px solid transparent',
-              color:
-                activeTab === 'usecases' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            Use Cases ({deletedUseCases.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('information')}
-            style={{
-              padding: '12px 16px',
-              background: 'none',
-              border: 'none',
-              borderBottom:
-                activeTab === 'information'
-                  ? '2px solid var(--color-accent)'
-                  : '2px solid transparent',
-              color:
-                activeTab === 'information' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            Information ({deletedInformation.length})
-          </button>
-        </div>
-
-        {/* Content */}
+        {/* Content - Single list of all deleted items */}
         <div style={{ flex: 1, overflow: 'auto', padding: 'var(--spacing-md)' }}>
-          {activeTab === 'requirements' &&
-            (deletedRequirements.length === 0 ? (
-              <div
-                style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-muted)' }}
-              >
-                No deleted requirements
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
-                {deletedRequirements.map((req) => (
-                  <div
-                    key={req.id}
-                    style={{
-                      padding: 'var(--spacing-md)',
-                      border: '1px solid var(--color-border)',
-                      borderRadius: '6px',
-                      backgroundColor: 'var(--color-bg-app)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <div>
-                      <div
+          {allDeletedItems.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-muted)' }}>
+              Trash is empty
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+              {allDeletedItems.map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    padding: 'var(--spacing-md)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '6px',
+                    backgroundColor: 'var(--color-bg-app)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '4px',
+                      }}
+                    >
+                      <span
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          marginBottom: '4px',
+                          fontFamily: 'monospace',
+                          fontWeight: 600,
+                          color: 'var(--color-accent)',
                         }}
                       >
-                        <span
-                          style={{
-                            fontFamily: 'monospace',
-                            fontWeight: 600,
-                            color: 'var(--color-accent)',
-                          }}
-                        >
-                          {req.id}
-                        </span>
-                        <span style={{ fontWeight: 500 }}>{req.title}</span>
-                      </div>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                        Deleted: {formatDate(req.deletedAt)}
-                      </div>
+                        {item.id}
+                      </span>
+                      <span style={{ fontWeight: 500 }}>{item.title}</span>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => onRestoreRequirement(req.id)}
-                        title="Restore"
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: '4px',
-                          border: '1px solid #bbf7d0',
-                          backgroundColor: '#f0fdf4',
-                          color: '#15803d',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontWeight: 500,
-                        }}
-                      >
-                        <RefreshCw size={14} /> Restore
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm('Delete permanently? This cannot be undone.')) {
-                            onPermanentDeleteRequirement(req.id);
-                          }
-                        }}
-                        title="Delete Forever"
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: '4px',
-                          border: '1px solid #fecaca',
-                          backgroundColor: '#fef2f2',
-                          color: '#dc2626',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        <Trash2 size={14} /> Delete Forever
-                      </button>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                      Deleted: {formatDate(item.deletedAt)}
                     </div>
                   </div>
-                ))}
-              </div>
-            ))}
-
-          {activeTab === 'usecases' &&
-            (deletedUseCases.length === 0 ? (
-              <div
-                style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-muted)' }}
-              >
-                No deleted use cases
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
-                {deletedUseCases.map((uc) => (
-                  <div
-                    key={uc.id}
-                    style={{
-                      padding: 'var(--spacing-md)',
-                      border: '1px solid var(--color-border)',
-                      borderRadius: '6px',
-                      backgroundColor: 'var(--color-bg-app)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          marginBottom: '4px',
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontFamily: 'monospace',
-                            fontWeight: 600,
-                            color: 'var(--color-accent)',
-                          }}
-                        >
-                          {uc.id}
-                        </span>
-                        <span style={{ fontWeight: 500 }}>{uc.title}</span>
-                      </div>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                        Deleted: {formatDate(uc.deletedAt)}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => onRestoreUseCase(uc.id)}
-                        title="Restore"
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: '4px',
-                          border: '1px solid #bbf7d0',
-                          backgroundColor: '#f0fdf4',
-                          color: '#15803d',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontWeight: 500,
-                        }}
-                      >
-                        <RefreshCw size={14} /> Restore
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm('Delete permanently? This cannot be undone.')) {
-                            onPermanentDeleteUseCase(uc.id);
-                          }
-                        }}
-                        title="Delete Forever"
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: '4px',
-                          border: '1px solid #fecaca',
-                          backgroundColor: '#fef2f2',
-                          color: '#dc2626',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        <Trash2 size={14} /> Delete Forever
-                      </button>
-                    </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={item.onRestore}
+                      title="Restore"
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        border: '1px solid #bbf7d0',
+                        backgroundColor: '#f0fdf4',
+                        color: '#15803d',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontWeight: 500,
+                      }}
+                    >
+                      <RefreshCw size={14} /> Restore
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm('Delete permanently? This cannot be undone.')) {
+                          item.onDelete();
+                        }
+                      }}
+                      title="Delete Forever"
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        border: '1px solid #fecaca',
+                        backgroundColor: '#fef2f2',
+                        color: '#dc2626',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <Trash2 size={14} /> Delete Forever
+                    </button>
                   </div>
-                ))}
-              </div>
-            ))}
-
-          {activeTab === 'information' &&
-            (deletedInformation.length === 0 ? (
-              <div
-                style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-muted)' }}
-              >
-                No deleted information
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
-                {deletedInformation.map((info) => (
-                  <div
-                    key={info.id}
-                    style={{
-                      padding: 'var(--spacing-md)',
-                      border: '1px solid var(--color-border)',
-                      borderRadius: '6px',
-                      backgroundColor: 'var(--color-bg-app)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          marginBottom: '4px',
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontFamily: 'monospace',
-                            fontWeight: 600,
-                            color: 'var(--color-accent)',
-                          }}
-                        >
-                          {info.id}
-                        </span>
-                        <span style={{ fontWeight: 500 }}>{info.title}</span>
-                      </div>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                        Deleted: {formatDate(info.deletedAt)}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => onRestoreInformation(info.id)}
-                        title="Restore"
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: '4px',
-                          border: '1px solid #bbf7d0',
-                          backgroundColor: '#f0fdf4',
-                          color: '#15803d',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontWeight: 500,
-                        }}
-                      >
-                        <RefreshCw size={14} /> Restore
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm('Delete permanently? This cannot be undone.')) {
-                            onPermanentDeleteInformation(info.id);
-                          }
-                        }}
-                        title="Delete Forever"
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: '4px',
-                          border: '1px solid #fecaca',
-                          backgroundColor: '#fef2f2',
-                          color: '#dc2626',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        <Trash2 size={14} /> Delete Forever
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div

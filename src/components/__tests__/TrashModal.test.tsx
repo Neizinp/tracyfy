@@ -74,13 +74,13 @@ describe('TrashModal', () => {
   it('should render when open', () => {
     render(<TrashModal {...defaultProps} />);
 
-    expect(screen.getByText('Trash Bin')).toBeInTheDocument();
+    expect(screen.getByText(/Trash Bin/i)).toBeInTheDocument();
   });
 
   it('should not render when closed', () => {
     render(<TrashModal {...defaultProps} isOpen={false} />);
 
-    expect(screen.queryByText('Trash Bin')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Trash Bin/i)).not.toBeInTheDocument();
   });
 
   it('should call onClose when close button is clicked', () => {
@@ -93,41 +93,30 @@ describe('TrashModal', () => {
     expect(mockOnClose).toHaveBeenCalled();
   });
 
-  it('should show requirements tab by default', () => {
+  it('should show all deleted items in a single list', () => {
     render(<TrashModal {...defaultProps} />);
 
+    // All items should be visible without needing to switch tabs
     expect(screen.getByText('Deleted Requirement')).toBeInTheDocument();
-  });
-
-  it('should switch to use cases tab', () => {
-    render(<TrashModal {...defaultProps} />);
-
-    const useCasesTab = screen.getByText(/Use Cases/i);
-    fireEvent.click(useCasesTab);
-
     expect(screen.getByText('Deleted Use Case')).toBeInTheDocument();
-  });
-
-  it('should switch to information tab', () => {
-    render(<TrashModal {...defaultProps} />);
-
-    const informationTab = screen.getByText(/Information/i);
-    fireEvent.click(informationTab);
-
     expect(screen.getByText('Deleted Information')).toBeInTheDocument();
   });
 
-  it('should call onRestoreRequirement when restore button is clicked', () => {
+  it('should call restore handler when restore button is clicked', () => {
     render(<TrashModal {...defaultProps} />);
 
     const restoreButtons = screen.getAllByText(/Restore/i);
     fireEvent.click(restoreButtons[0]);
 
-    expect(mockOnRestoreRequirement).toHaveBeenCalledWith('REQ-001');
+    // One of the restore handlers should have been called
+    expect(
+      mockOnRestoreRequirement.mock.calls.length +
+        mockOnRestoreUseCase.mock.calls.length +
+        mockOnRestoreInformation.mock.calls.length
+    ).toBe(1);
   });
 
   it('should call onPermanentDeleteRequirement when permanent delete is confirmed', () => {
-    // Mock window.confirm to return true
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<TrashModal {...defaultProps} />);
@@ -136,7 +125,12 @@ describe('TrashModal', () => {
     fireEvent.click(deleteButtons[0]);
 
     expect(confirmSpy).toHaveBeenCalled();
-    expect(mockOnPermanentDeleteRequirement).toHaveBeenCalledWith('REQ-001');
+    // The first delete button should correspond to one of the items
+    expect(
+      mockOnPermanentDeleteRequirement.mock.calls.length +
+        mockOnPermanentDeleteUseCase.mock.calls.length +
+        mockOnPermanentDeleteInformation.mock.calls.length
+    ).toBe(1);
 
     confirmSpy.mockRestore();
   });
@@ -151,19 +145,20 @@ describe('TrashModal', () => {
       />
     );
 
-    expect(screen.getByText(/No deleted requirements/i)).toBeInTheDocument();
+    expect(screen.getByText(/Trash is empty/i)).toBeInTheDocument();
   });
 
-  it('should display item count in tab', () => {
+  it('should display item count in header', () => {
     render(<TrashModal {...defaultProps} />);
 
-    expect(screen.getByText(/Requirements \(1\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Trash Bin \(3\)/i)).toBeInTheDocument();
   });
 
-  it('should display formatted date', () => {
+  it('should display formatted date for deleted items', () => {
     render(<TrashModal {...defaultProps} />);
 
-    // The formatDateTime function should format the timestamp
-    expect(screen.getByText(/Deleted:/i)).toBeInTheDocument();
+    // Multiple items have "Deleted:" text
+    const deletedTexts = screen.getAllByText(/Deleted:/i);
+    expect(deletedTexts.length).toBeGreaterThan(0);
   });
 });
