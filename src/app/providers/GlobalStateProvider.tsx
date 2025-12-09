@@ -25,16 +25,6 @@ interface GlobalStateContextValue {
   information: Information[];
   setInformation: (info: Information[] | ((prev: Information[]) => Information[])) => void;
 
-  // Used numbers (deprecated - counters now in diskProjectService)
-  usedReqNumbers: Set<number>;
-  setUsedReqNumbers: (nums: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
-  usedUcNumbers: Set<number>;
-  setUsedUcNumbers: (nums: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
-  usedTestNumbers: Set<number>;
-  setUsedTestNumbers: (nums: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
-  usedInfoNumbers: Set<number>;
-  setUsedInfoNumbers: (nums: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
-
   // Internal ref
   isResetting: React.MutableRefObject<boolean>;
 }
@@ -65,12 +55,6 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [useCases, setUseCasesState] = useState<UseCase[]>([]);
   const [testCases, setTestCasesState] = useState<TestCase[]>([]);
   const [information, setInformationState] = useState<Information[]>([]);
-
-  // Legacy used numbers (still needed for compatibility)
-  const [usedReqNumbers, setUsedReqNumbers] = useState<Set<number>>(new Set());
-  const [usedUcNumbers, setUsedUcNumbers] = useState<Set<number>>(new Set());
-  const [usedTestNumbers, setUsedTestNumbers] = useState<Set<number>>(new Set());
-  const [usedInfoNumbers, setUsedInfoNumbers] = useState<Set<number>>(new Set());
 
   const isResetting = useRef(false);
 
@@ -178,14 +162,6 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     setTestCases,
     information,
     setInformation,
-    usedReqNumbers,
-    setUsedReqNumbers,
-    usedUcNumbers,
-    setUsedUcNumbers,
-    usedTestNumbers,
-    setUsedTestNumbers,
-    usedInfoNumbers,
-    setUsedInfoNumbers,
     isResetting,
   };
 
