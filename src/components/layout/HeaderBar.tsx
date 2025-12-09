@@ -187,8 +187,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     >
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-        <span style={{ color: 'var(--color-text-muted)' }}>Projects / {currentProjectName} /</span>
-        <span style={{ fontWeight: 500 }}>Requirements</span>
+        <span style={{ color: 'var(--color-text-muted)' }}>Projects /</span>
+        <span style={{ fontWeight: 500 }}>{currentProjectName}</span>
       </div>
 
       {/* Search Bar */}
@@ -212,7 +212,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           />
           <input
             type="text"
-            placeholder="Search requirements..."
+            placeholder="Search..."
             onChange={(e) => onSearch(e.target.value)}
             style={{
               width: '100%',
