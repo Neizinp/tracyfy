@@ -1,3 +1,9 @@
+// Link stored within an artifact
+export interface ArtifactLink {
+  targetId: string;
+  type: 'relates_to' | 'depends_on' | 'conflicts_with';
+}
+
 export interface Requirement {
   id: string;
   title: string;
@@ -6,6 +12,7 @@ export interface Requirement {
   rationale: string;
   parentIds: string[];
   useCaseIds?: string[]; // Which use cases this requirement supports
+  linkedArtifacts?: ArtifactLink[]; // Links to other artifacts
   status: 'draft' | 'approved' | 'implemented' | 'verified';
   priority: 'low' | 'medium' | 'high';
   author?: string;
@@ -33,6 +40,7 @@ export interface UseCase {
   postconditions: string;
   mainFlow: string;
   alternativeFlows?: string;
+  linkedArtifacts?: ArtifactLink[]; // Links to other artifacts
   priority: 'low' | 'medium' | 'high';
   status: 'draft' | 'approved' | 'implemented' | 'verified';
   lastModified: number;
@@ -46,6 +54,7 @@ export interface TestCase {
   title: string;
   description: string;
   requirementIds: string[]; // Which requirements this test verifies
+  linkedArtifacts?: ArtifactLink[]; // Links to other artifacts
   status: 'draft' | 'approved' | 'passed' | 'failed' | 'blocked';
   priority: 'low' | 'medium' | 'high';
   author?: string;
@@ -62,6 +71,7 @@ export interface Information {
   title: string;
   content: string;
   type: 'note' | 'meeting' | 'decision' | 'other';
+  linkedArtifacts?: ArtifactLink[]; // Links to other artifacts
   dateCreated: number;
   lastModified: number;
   isDeleted?: boolean;
@@ -69,6 +79,9 @@ export interface Information {
   revision: string;
 }
 
+/**
+ * @deprecated Use linkedArtifacts in artifacts instead. Will be removed in future version.
+ */
 export interface Link {
   id: string;
   sourceId: string;
