@@ -38,7 +38,8 @@ export async function exportProjectToPDF(
 ): Promise<void> {
   // 0. Request File Handle FIRST (to ensure user activation is valid)
   let fileHandle: any = null;
-  const defaultFilename = `${project.name.replace(/[^a-z0-9]/gi, '_')}-export.pdf`;
+  const baselineSuffix = selectedBaseline ? selectedBaseline.name : 'Current State';
+  const defaultFilename = `${project.name.replace(/[^a-z0-9]/gi, '_')} - ${baselineSuffix.replace(/[^a-z0-9]/gi, '_')}.pdf`;
 
   try {
     if ('showSaveFilePicker' in window) {
