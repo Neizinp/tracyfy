@@ -34,6 +34,8 @@ import {
   markdownToInformation,
   userToMarkdown,
   markdownToUser,
+  projectToMarkdown,
+  markdownToProject,
 } from '../utils/markdownUtils';
 
 const REQUIREMENTS_DIR = 'requirements';
@@ -46,17 +48,6 @@ const COUNTERS_DIR = 'counters';
 const CURRENT_PROJECT_FILE = 'current-project.md';
 const CURRENT_USER_FILE = 'current-user.md';
 const LINKS_FILE = 'links.json';
-
-interface ProjectFile {
-  id: string;
-  name: string;
-  description: string;
-  requirementIds: string[];
-  useCaseIds: string[];
-  testCaseIds: string[];
-  informationIds: string[];
-  lastModified: number;
-}
 
 class DiskProjectService {
   /**
@@ -181,20 +172,13 @@ class DiskProjectService {
       const files = await fileSystemService.listFiles(PROJECTS_DIR);
 
       for (const file of files) {
-        if (file.endsWith('.json')) {
+        if (file.endsWith('.md')) {
           const content = await fileSystemService.readFile(`${PROJECTS_DIR}/${file}`);
           if (content) {
-            const projectFile: ProjectFile = JSON.parse(content);
-            projects.push({
-              id: projectFile.id,
-              name: projectFile.name,
-              description: projectFile.description,
-              requirementIds: projectFile.requirementIds,
-              useCaseIds: projectFile.useCaseIds,
-              testCaseIds: projectFile.testCaseIds,
-              informationIds: projectFile.informationIds,
-              lastModified: projectFile.lastModified,
-            });
+            const project = markdownToProject(content);
+            if (project) {
+              projects.push(project);
+            }
           }
         }
       }
@@ -211,7 +195,7 @@ class DiskProjectService {
   async createProject(name: string, description: string): Promise<Project> {
     const id = `proj-${Date.now()}`;
 
-    const projectFile: ProjectFile = {
+    const project: Project = {
       id,
       name,
       description,
@@ -222,10 +206,8 @@ class DiskProjectService {
       lastModified: Date.now(),
     };
 
-    await fileSystemService.writeFile(
-      `${PROJECTS_DIR}/${id}.json`,
-      JSON.stringify(projectFile, null, 2)
-    );
+    const markdown = projectToMarkdown(project);
+    await fileSystemService.writeFile(`${PROJECTS_DIR}/${id}.md`, markdown);
 
     // Set as current project if none set
     const currentId = await this.getCurrentProjectId();
@@ -233,44 +215,27 @@ class DiskProjectService {
       await this.setCurrentProjectId(id);
     }
 
-    return {
-      id,
-      name,
-      description,
-      requirementIds: [],
-      useCaseIds: [],
-      testCaseIds: [],
-      informationIds: [],
-      lastModified: projectFile.lastModified,
-    };
+    return project;
   }
 
   /**
    * Update project metadata
    */
   async updateProject(project: Project): Promise<void> {
-    const projectFile: ProjectFile = {
-      id: project.id,
-      name: project.name,
-      description: project.description,
-      requirementIds: project.requirementIds,
-      useCaseIds: project.useCaseIds,
-      testCaseIds: project.testCaseIds,
-      informationIds: project.informationIds,
+    const updatedProject: Project = {
+      ...project,
       lastModified: Date.now(),
     };
 
-    await fileSystemService.writeFile(
-      `${PROJECTS_DIR}/${project.id}.json`,
-      JSON.stringify(projectFile, null, 2)
-    );
+    const markdown = projectToMarkdown(updatedProject);
+    await fileSystemService.writeFile(`${PROJECTS_DIR}/${project.id}.md`, markdown);
   }
 
   /**
    * Delete a project (does not delete artifacts)
    */
   async deleteProject(projectId: string): Promise<void> {
-    await fileSystemService.deleteFile(`${PROJECTS_DIR}/${projectId}.json`);
+    await fileSystemService.deleteFile(`${PROJECTS_DIR}/${projectId}.md`);
   }
 
   /**
@@ -278,19 +243,9 @@ class DiskProjectService {
    */
   async loadProject(projectId: string): Promise<Project | null> {
     try {
-      const content = await fileSystemService.readFile(`${PROJECTS_DIR}/${projectId}.json`);
+      const content = await fileSystemService.readFile(`${PROJECTS_DIR}/${projectId}.md`);
       if (content) {
-        const projectFile: ProjectFile = JSON.parse(content);
-        return {
-          id: projectFile.id,
-          name: projectFile.name,
-          description: projectFile.description,
-          requirementIds: projectFile.requirementIds,
-          useCaseIds: projectFile.useCaseIds,
-          testCaseIds: projectFile.testCaseIds,
-          informationIds: projectFile.informationIds,
-          lastModified: projectFile.lastModified,
-        };
+        return markdownToProject(content);
       }
     } catch {
       // Project not found

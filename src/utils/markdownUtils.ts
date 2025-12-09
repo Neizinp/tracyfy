@@ -1,4 +1,4 @@
-import type { Requirement, UseCase, TestCase, Information, User } from '../types';
+import type { Requirement, UseCase, TestCase, Information, User, Project } from '../types';
 
 /**
  * Convert a JavaScript object to YAML frontmatter string
@@ -520,6 +520,58 @@ export function markdownToUser(markdown: string): User {
     id: frontmatter.id || '',
     name: frontmatter.name || '',
     dateCreated: frontmatter.dateCreated || Date.now(),
+    lastModified: frontmatter.lastModified || Date.now(),
+  };
+}
+
+/**
+ * Convert a Project to Markdown with YAML frontmatter
+ */
+export function projectToMarkdown(project: Project): string {
+  const frontmatter = {
+    id: project.id,
+    name: project.name,
+    description: project.description,
+    lastModified: project.lastModified,
+    requirementIds: project.requirementIds,
+    useCaseIds: project.useCaseIds,
+    testCaseIds: project.testCaseIds,
+    informationIds: project.informationIds,
+  };
+
+  const yaml = objectToYaml(frontmatter);
+
+  const body = `# ${project.name}
+
+${project.description}
+`.trim();
+
+  return `${yaml}\n\n${body}`;
+}
+
+/**
+ * Parse Markdown content into a Project object
+ */
+export function markdownToProject(markdown: string): Project | null {
+  const { frontmatter, body } = parseYamlFrontmatter(markdown);
+
+  if (!frontmatter.id) {
+    return null;
+  }
+
+  // Extract description from body (skip title line)
+  const lines = body.split('\n');
+  const descriptionLines = lines.filter((line) => !line.startsWith('# '));
+  const description = descriptionLines.join('\n').trim() || frontmatter.description || '';
+
+  return {
+    id: frontmatter.id,
+    name: frontmatter.name || '',
+    description: description,
+    requirementIds: frontmatter.requirementIds || [],
+    useCaseIds: frontmatter.useCaseIds || [],
+    testCaseIds: frontmatter.testCaseIds || [],
+    informationIds: frontmatter.informationIds || [],
     lastModified: frontmatter.lastModified || Date.now(),
   };
 }

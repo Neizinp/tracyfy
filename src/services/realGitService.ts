@@ -321,7 +321,7 @@ class RealGitService {
         statusMatrixFiles.size > 0 ? statusMatrixFiles : new Set(result.map((f) => f.path));
       const untrackedFiles: FileStatus[] = [];
 
-      const artifactTypes = ['requirements', 'usecases', 'testcases', 'information'];
+      const artifactTypes = ['requirements', 'usecases', 'testcases', 'information', 'projects'];
       for (const type of artifactTypes) {
         try {
           const files = await fileSystemService.listFiles(type);

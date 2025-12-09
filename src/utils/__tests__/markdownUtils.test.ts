@@ -24,8 +24,10 @@ import {
   markdownToInformation,
   userToMarkdown,
   markdownToUser,
+  projectToMarkdown,
+  markdownToProject,
 } from '../markdownUtils';
-import type { Requirement, UseCase, TestCase, Information, User } from '../../types';
+import type { Requirement, UseCase, TestCase, Information, User, Project } from '../../types';
 
 describe('Requirement Markdown Conversion', () => {
   describe('requirementToMarkdown', () => {
@@ -939,6 +941,189 @@ name: "John"
 
       expect(parsed2?.id).toBe(original.id);
       expect(parsed2?.name).toBe(original.name);
+    });
+  });
+});
+
+describe('Project Markdown Conversion', () => {
+  describe('projectToMarkdown', () => {
+    it('should serialize all project fields', () => {
+      const project: Project = {
+        id: 'proj-123',
+        name: 'Test Project',
+        description: 'A test project description',
+        requirementIds: ['REQ-001', 'REQ-002'],
+        useCaseIds: ['UC-001'],
+        testCaseIds: ['TC-001', 'TC-002'],
+        informationIds: [],
+        lastModified: 1700000000000,
+      };
+
+      const markdown = projectToMarkdown(project);
+
+      expect(markdown).toContain('id: "proj-123"');
+      expect(markdown).toContain('name: "Test Project"');
+      expect(markdown).toContain('description: "A test project description"');
+      expect(markdown).toContain('lastModified: 1700000000000');
+      expect(markdown).toContain('requirementIds:');
+      expect(markdown).toContain('- "REQ-001"');
+      expect(markdown).toContain('- "REQ-002"');
+      expect(markdown).toContain('useCaseIds:');
+      expect(markdown).toContain('- "UC-001"');
+      expect(markdown).toContain('testCaseIds:');
+      expect(markdown).toContain('- "TC-001"');
+      expect(markdown).toContain('informationIds: []');
+    });
+
+    it('should handle empty arrays', () => {
+      const project: Project = {
+        id: 'proj-123',
+        name: 'Empty Project',
+        description: '',
+        requirementIds: [],
+        useCaseIds: [],
+        testCaseIds: [],
+        informationIds: [],
+        lastModified: 1700000000000,
+      };
+
+      const markdown = projectToMarkdown(project);
+
+      expect(markdown).toContain('requirementIds: []');
+      expect(markdown).toContain('useCaseIds: []');
+      expect(markdown).toContain('testCaseIds: []');
+      expect(markdown).toContain('informationIds: []');
+    });
+
+    it('should include project name and description in body', () => {
+      const project: Project = {
+        id: 'proj-123',
+        name: 'My Project',
+        description: 'This is the description',
+        requirementIds: [],
+        useCaseIds: [],
+        testCaseIds: [],
+        informationIds: [],
+        lastModified: 1700000000000,
+      };
+
+      const markdown = projectToMarkdown(project);
+
+      expect(markdown).toContain('# My Project');
+      expect(markdown).toContain('This is the description');
+    });
+  });
+
+  describe('markdownToProject', () => {
+    it('should parse valid project markdown', () => {
+      const markdown = `---
+id: "proj-123"
+name: "Test Project"
+description: "A test project"
+lastModified: 1700000000000
+requirementIds:
+  - "REQ-001"
+  - "REQ-002"
+useCaseIds:
+  - "UC-001"
+testCaseIds: []
+informationIds: []
+---
+
+# Test Project
+
+A test project
+`;
+
+      const project = markdownToProject(markdown);
+
+      expect(project).not.toBeNull();
+      expect(project?.id).toBe('proj-123');
+      expect(project?.name).toBe('Test Project');
+      expect(project?.description).toBe('A test project');
+      expect(project?.requirementIds).toEqual(['REQ-001', 'REQ-002']);
+      expect(project?.useCaseIds).toEqual(['UC-001']);
+      expect(project?.testCaseIds).toEqual([]);
+      expect(project?.informationIds).toEqual([]);
+    });
+
+    it('should return null for missing id field', () => {
+      const markdown = `---
+name: "No ID Project"
+---
+
+# No ID Project
+`;
+
+      const project = markdownToProject(markdown);
+
+      expect(project).toBeNull();
+    });
+
+    it('should handle missing optional fields with defaults', () => {
+      const markdown = `---
+id: "proj-123"
+name: "Minimal Project"
+---
+
+# Minimal Project
+`;
+
+      const project = markdownToProject(markdown);
+
+      expect(project).not.toBeNull();
+      expect(project?.id).toBe('proj-123');
+      expect(project?.name).toBe('Minimal Project');
+      expect(project?.description).toBe('');
+      expect(project?.requirementIds).toEqual([]);
+      expect(project?.useCaseIds).toEqual([]);
+      expect(project?.testCaseIds).toEqual([]);
+      expect(project?.informationIds).toEqual([]);
+    });
+
+    it('should round-trip without data loss', () => {
+      const original: Project = {
+        id: 'proj-test',
+        name: 'Round Trip Project',
+        description: 'Testing round trip functionality',
+        requirementIds: ['REQ-001', 'REQ-002', 'REQ-003'],
+        useCaseIds: ['UC-001'],
+        testCaseIds: ['TC-001', 'TC-002'],
+        informationIds: ['INF-001'],
+        lastModified: 1700000000000,
+      };
+
+      const markdown = projectToMarkdown(original);
+      const parsed = markdownToProject(markdown);
+
+      expect(parsed).not.toBeNull();
+      expect(parsed?.id).toBe(original.id);
+      expect(parsed?.name).toBe(original.name);
+      expect(parsed?.description).toBe(original.description);
+      expect(parsed?.requirementIds).toEqual(original.requirementIds);
+      expect(parsed?.useCaseIds).toEqual(original.useCaseIds);
+      expect(parsed?.testCaseIds).toEqual(original.testCaseIds);
+      expect(parsed?.informationIds).toEqual(original.informationIds);
+      expect(parsed?.lastModified).toBe(original.lastModified);
+    });
+
+    it('should handle special characters in project name and description', () => {
+      const original: Project = {
+        id: 'proj-special',
+        name: 'Project with "quotes" and: colons',
+        description: 'Description with special chars @ # $ %',
+        requirementIds: [],
+        useCaseIds: [],
+        testCaseIds: [],
+        informationIds: [],
+        lastModified: 1700000000000,
+      };
+
+      const markdown = projectToMarkdown(original);
+      const parsed = markdownToProject(markdown);
+
+      expect(parsed).not.toBeNull();
+      expect(parsed?.name).toBe(original.name);
     });
   });
 });

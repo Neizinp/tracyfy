@@ -4,7 +4,7 @@ import { useFileSystem } from '../app/providers/FileSystemProvider';
 import type { ArtifactChange } from '../types';
 
 export function PendingChangesPanel() {
-  const { pendingChanges, commitFile } = useFileSystem();
+  const { pendingChanges, commitFile, projects } = useFileSystem();
   const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
   const [committing, setCommitting] = useState<Record<string, boolean>>({});
   const [parsedChanges, setParsedChanges] = useState<ArtifactChange[]>([]);
@@ -22,19 +22,27 @@ export function PendingChangesPanel() {
         const id = filename.replace('.md', '');
 
         // Map folder names to artifact types
-        let type: 'requirement' | 'usecase' | 'testcase' | 'information';
+        let type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'project';
         if (typeStr === 'requirements') type = 'requirement';
         else if (typeStr === 'usecases') type = 'usecase';
         else if (typeStr === 'testcases') type = 'testcase';
         else if (typeStr === 'information') type = 'information';
+        else if (typeStr === 'projects') type = 'project';
         else return null;
 
         const status = fs.status === 'new' ? 'new' : 'modified';
 
+        // For projects, use the project name instead of ID
+        let title = id;
+        if (type === 'project') {
+          const project = projects.find((p) => p.id === id);
+          title = project?.name || id;
+        }
+
         return {
           id,
           type,
-          title: id,
+          title,
           status: status as 'new' | 'modified',
           path: fs.path,
           commitMessage: commitMessages[id] || '',
@@ -56,7 +64,7 @@ export function PendingChangesPanel() {
     });
 
     setParsedChanges(changes);
-  }, [pendingChanges, commitMessages]);
+  }, [pendingChanges, commitMessages, projects]);
 
   const handleCommitMessageChange = (id: string, message: string) => {
     setCommitMessages((prev) => ({ ...prev, [id]: message }));
@@ -124,7 +132,9 @@ export function PendingChangesPanel() {
           ? 'Use Cases'
           : change.type === 'testcase'
             ? 'Test Cases'
-            : 'Information';
+            : change.type === 'project'
+              ? 'Projects'
+              : 'Information';
     if (!groupedChanges[typeName]) {
       groupedChanges[typeName] = [];
     }
@@ -184,7 +194,7 @@ export function PendingChangesPanel() {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {change.id}
+                    {change.title}
                   </span>
                   <span
                     style={{
