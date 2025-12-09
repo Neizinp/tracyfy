@@ -96,6 +96,7 @@ export async function exportProjectToPDF(
   // Fetch commit history for all artifacts since last baseline
   interface ArtifactCommit {
     artifactId: string;
+    artifactTitle: string;
     artifactType: 'requirement' | 'usecase' | 'testcase' | 'information';
     commits: CommitInfo[];
   }
@@ -113,6 +114,7 @@ export async function exportProjectToPDF(
       if (filteredHistory.length > 0) {
         artifactCommits.push({
           artifactId: req.id,
+          artifactTitle: req.title,
           artifactType: 'requirement',
           commits: filteredHistory,
         });
@@ -131,6 +133,7 @@ export async function exportProjectToPDF(
       if (filteredHistory.length > 0) {
         artifactCommits.push({
           artifactId: uc.id,
+          artifactTitle: uc.title,
           artifactType: 'usecase',
           commits: filteredHistory,
         });
@@ -149,6 +152,7 @@ export async function exportProjectToPDF(
       if (filteredHistory.length > 0) {
         artifactCommits.push({
           artifactId: tc.id,
+          artifactTitle: tc.title,
           artifactType: 'testcase',
           commits: filteredHistory,
         });
@@ -167,6 +171,7 @@ export async function exportProjectToPDF(
       if (filteredHistory.length > 0) {
         artifactCommits.push({
           artifactId: info.id,
+          artifactTitle: info.title,
           artifactType: 'information',
           commits: filteredHistory,
         });
@@ -930,6 +935,7 @@ function addInformationSection(
 // Revision History
 interface ArtifactCommit {
   artifactId: string;
+  artifactTitle: string;
   artifactType: 'requirement' | 'usecase' | 'testcase' | 'information';
   commits: CommitInfo[];
 }
@@ -946,12 +952,18 @@ function addRevisionHistory(doc: jsPDF, artifactCommits: ArtifactCommit[]): void
   const rows: any[] = [];
 
   // Flatten all commits from all artifacts
-  const allCommits: Array<{ artifactId: string; artifactType: string; commit: CommitInfo }> = [];
+  const allCommits: Array<{
+    artifactId: string;
+    artifactTitle: string;
+    artifactType: string;
+    commit: CommitInfo;
+  }> = [];
 
   artifactCommits.forEach((ac) => {
     ac.commits.forEach((commit) => {
       allCommits.push({
         artifactId: ac.artifactId,
+        artifactTitle: ac.artifactTitle,
         artifactType: ac.artifactType,
         commit,
       });
@@ -966,6 +978,7 @@ function addRevisionHistory(doc: jsPDF, artifactCommits: ArtifactCommit[]): void
     rows.push([
       formatDate(item.commit.timestamp),
       item.artifactId,
+      item.artifactTitle,
       item.commit.message,
       item.commit.author,
     ]);
@@ -981,7 +994,7 @@ function addRevisionHistory(doc: jsPDF, artifactCommits: ArtifactCommit[]): void
 
   autoTable(doc, {
     startY: 40,
-    head: [['Date', 'Artifact', 'Message', 'Author']],
+    head: [['Date', 'ID', 'Name', 'Message', 'Author']],
     body: rows,
     theme: 'plain',
     margin: { left: 20 },
@@ -999,10 +1012,11 @@ function addRevisionHistory(doc: jsPDF, artifactCommits: ArtifactCommit[]): void
       fontStyle: 'bold',
     },
     columnStyles: {
-      0: { cellWidth: 25 }, // Date
-      1: { cellWidth: 25 }, // Artifact ID
-      2: { cellWidth: 90 }, // Message (wider)
-      3: { cellWidth: 30 }, // Author
+      0: { cellWidth: 22 }, // Date
+      1: { cellWidth: 20 }, // ID
+      2: { cellWidth: 35 }, // Name
+      3: { cellWidth: 68 }, // Message
+      4: { cellWidth: 25 }, // Author
     },
   });
 }
