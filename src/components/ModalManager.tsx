@@ -169,6 +169,7 @@ export const ModalManager: React.FC = () => {
       <VersionHistory
         isOpen={ui.isVersionHistoryOpen}
         baselines={baselines}
+        projectId={currentProjectId}
         onClose={() => ui.setIsVersionHistoryOpen(false)}
         onCreateBaseline={createBaseline}
       />

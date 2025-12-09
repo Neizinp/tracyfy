@@ -21,19 +21,19 @@ describe('VersionHistory', () => {
     isOpen: true,
     onClose: mockOnClose,
     baselines: [mockBaseline],
-    projectName: 'Test Project',
+    projectId: 'PROJ-001',
     onCreateBaseline: mockOnCreateBaseline,
   };
 
   it('should render when open', () => {
     render(<VersionHistory {...defaultProps} />);
 
-    expect(screen.getByText(/Baselines & History/i)).toBeInTheDocument();
+    expect(screen.getByText(/Project History/i)).toBeInTheDocument();
   });
 
   it('should not render when closed', () => {
     render(<VersionHistory {...defaultProps} isOpen={false} />);
 
-    expect(screen.queryByText(/Baselines & History/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Project History/i)).not.toBeInTheDocument();
   });
 });
