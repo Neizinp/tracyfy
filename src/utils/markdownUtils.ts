@@ -280,7 +280,7 @@ export function markdownToRequirement(markdown: string): Requirement {
 /**
  * Convert a Use Case to Markdown with YAML frontmatter
  */
-export function useCaseToMarkdown(useCase: UseCase): string {
+export function convertUseCaseToMarkdown(useCase: UseCase): string {
   const frontmatter = {
     id: useCase.id,
     title: useCase.title,

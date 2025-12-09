@@ -407,7 +407,7 @@ test.describe('Pending Changes Commit Flow', () => {
   });
 
   test('documents expected behavior: pending changes panel should clear after commit', async ({
-    page,
+    page: _page,
   }) => {
     /**
      * This test documents the expected behavior:

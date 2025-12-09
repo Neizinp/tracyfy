@@ -299,12 +299,12 @@ test.describe('In-Browser Git Operations', () => {
       // Test that stat throws ENOENT properly
       const testStat = async (path: string) => {
         // This mimics the WRONG behavior (returning truthy instead of throwing)
-        const wrongStat = async (p: string) => {
+        const wrongStat = async (_p: string) => {
           return { type: 'file', size: 0 }; // WRONG - should throw!
         };
 
         // This mimics the CORRECT behavior
-        const correctStat = async (p: string) => {
+        const _correctStat = async (p: string) => {
           const err = new Error(`ENOENT: no such file or directory, stat '${p}'`);
           (err as any).code = 'ENOENT';
           throw err;

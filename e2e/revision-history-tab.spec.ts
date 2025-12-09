@@ -32,15 +32,15 @@ test.describe('Revision History Tab', () => {
     expect(true).toBe(true);
   });
 
-  test('should show revision history tab in use case modal', async ({ page }) => {
+  test('should show revision history tab in use case modal', async ({ page: _page }) => {
     // Test implementation skipped - covered by manual testing
   });
 
-  test('should show revision history tab in test case modal', async ({ page }) => {
+  test('should show revision history tab in test case modal', async ({ page: _page }) => {
     // Test implementation skipped - covered by manual testing
   });
 
-  test('should show revision history tab in information modal', async ({ page }) => {
+  test('should show revision history tab in information modal', async ({ page: _page }) => {
     // Test implementation skipped - covered by manual testing
   });
 });

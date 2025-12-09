@@ -54,7 +54,7 @@ async function createRequirement(
  * 5. Large datasets work correctly
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 test.describe('Import/Export Roundtrip', () => {
   test.beforeEach(async ({ page }) => {

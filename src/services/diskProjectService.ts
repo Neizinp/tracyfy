@@ -26,7 +26,7 @@ import type { Project, Requirement, UseCase, TestCase, Information, Link } from 
 import {
   requirementToMarkdown,
   markdownToRequirement,
-  useCaseToMarkdown,
+  convertUseCaseToMarkdown,
   markdownToUseCase,
   testCaseToMarkdown,
   markdownToTestCase,
@@ -318,7 +318,7 @@ class DiskProjectService {
    * Save a use case to disk (global)
    */
   async saveUseCase(useCase: UseCase): Promise<void> {
-    const markdown = useCaseToMarkdown(useCase);
+    const markdown = convertUseCaseToMarkdown(useCase);
     await fileSystemService.writeFile(`${USECASES_DIR}/${useCase.id}.md`, markdown);
   }
 
