@@ -54,7 +54,6 @@ export const ProjectLayout: React.FC = () => {
     if (location.pathname.includes('/use-cases')) return 'Use Cases';
     if (location.pathname.includes('/test-cases')) return 'Test Cases';
     if (location.pathname.includes('/information')) return 'Information';
-    if (location.pathname.includes('/baselines')) return 'Baselines';
     if (location.pathname.includes('/library/requirements')) return 'Requirements';
     if (location.pathname.includes('/library/use-cases')) return 'Use Cases';
     if (location.pathname.includes('/library/test-cases')) return 'Test Cases';
