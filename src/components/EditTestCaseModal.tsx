@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import type { TestCase, Requirement, Link, Project } from '../types';
+import type { TestCase, Requirement } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI } from '../app/providers';
@@ -9,9 +9,6 @@ interface EditTestCaseModalProps {
   isOpen: boolean;
   testCase: TestCase | null;
   requirements: Requirement[];
-  links: Link[];
-  projects: Project[];
-  currentProjectId: string;
   onClose: () => void;
   onSubmit: (id: string, updates: Partial<TestCase>) => void;
   onDelete: (id: string) => void;
@@ -23,9 +20,6 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
   isOpen,
   testCase,
   requirements,
-  links = [],
-  projects = [],
-  currentProjectId,
   onClose,
   onSubmit,
   onDelete,
@@ -636,8 +630,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                     overflowY: 'auto',
                   }}
                 >
-                  {links.filter((l) => l.sourceId === testCase.id || l.targetId === testCase.id)
-                    .length === 0 ? (
+                  {(testCase.linkedArtifacts || []).length === 0 ? (
                     <div
                       style={{
                         padding: '8px',
@@ -691,79 +684,43 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                           + Add Link
                         </button>
                       </div>
-                      {links
-                        .filter((l) => l.sourceId === testCase.id || l.targetId === testCase.id)
-                        .map((link) => {
-                          const isSource = link.sourceId === testCase.id;
-                          const otherId = isSource ? link.targetId : link.sourceId;
-                          const otherProjectId = isSource
-                            ? link.targetProjectId
-                            : link.sourceProjectId;
-
-                          const otherProject = otherProjectId
-                            ? projects.find((p) => p.id === otherProjectId)
-                            : null;
-                          const projectName = otherProject
-                            ? otherProject.name
-                            : otherProjectId
-                              ? 'Unknown Project'
-                              : 'Current Project';
-                          const isExternal =
-                            !!otherProjectId && otherProjectId !== currentProjectId;
-
-                          return (
-                            <div
-                              key={link.id}
+                      {(testCase.linkedArtifacts || []).map((link, index) => (
+                        <div
+                          key={`${link.targetId}-${index}`}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 8px',
+                            backgroundColor: 'var(--color-bg-card)',
+                            borderRadius: '4px',
+                            border: '1px solid var(--color-border)',
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              fontSize: '0.875rem',
+                            }}
+                          >
+                            <span
                               style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: '6px 8px',
-                                backgroundColor: 'var(--color-bg-card)',
+                                padding: '2px 6px',
                                 borderRadius: '4px',
-                                border: '1px solid var(--color-border)',
+                                backgroundColor: 'var(--color-bg-secondary)',
+                                fontSize: '0.75rem',
+                                fontFamily: 'monospace',
                               }}
                             >
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '8px',
-                                  fontSize: '0.875rem',
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    padding: '2px 6px',
-                                    borderRadius: '4px',
-                                    backgroundColor: 'var(--color-bg-secondary)',
-                                    fontSize: '0.75rem',
-                                    fontFamily: 'monospace',
-                                  }}
-                                >
-                                  {link.type.replace('_', ' ')}
-                                </span>
-                                <span style={{ color: 'var(--color-text-secondary)' }}>
-                                  {isSource ? '→' : '←'}
-                                </span>
-                                <span style={{ fontWeight: 500 }}>{otherId}</span>
-                                {isExternal && (
-                                  <span
-                                    style={{
-                                      fontSize: '0.75rem',
-                                      color: 'var(--color-accent)',
-                                      backgroundColor: 'var(--color-bg-secondary)',
-                                      padding: '2px 6px',
-                                      borderRadius: '10px',
-                                    }}
-                                  >
-                                    {projectName}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+                              {link.type.replace('_', ' ')}
+                            </span>
+                            <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
+                            <span style={{ fontWeight: 500 }}>{link.targetId}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

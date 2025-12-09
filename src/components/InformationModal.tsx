@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import type { Information, Link, Project } from '../types';
+import type { Information } from '../types';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI } from '../app/providers';
 
 interface InformationModalProps {
   isOpen: boolean;
   information: Information | null;
-  links?: Link[];
-  projects?: Project[];
-  currentProjectId?: string;
   onClose: () => void;
   onSubmit: (
     data:
@@ -23,9 +20,6 @@ type Tab = 'overview' | 'relationships' | 'history';
 export const InformationModal: React.FC<InformationModalProps> = ({
   isOpen,
   information,
-  links = [],
-  projects = [],
-  currentProjectId = '',
   onClose,
   onSubmit,
 }) => {
@@ -61,11 +55,6 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     }
     onClose();
   };
-
-  // Get links for this information
-  const relatedLinks = information
-    ? links.filter((l) => l.sourceId === information.id || l.targetId === information.id)
-    : [];
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
@@ -299,7 +288,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                     overflowY: 'auto',
                   }}
                 >
-                  {relatedLinks.length === 0 ? (
+                  {(information.linkedArtifacts || []).length === 0 ? (
                     <div
                       style={{
                         padding: '8px',
@@ -353,76 +342,43 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                           + Add Link
                         </button>
                       </div>
-                      {relatedLinks.map((link) => {
-                        const isSource = link.sourceId === information.id;
-                        const otherId = isSource ? link.targetId : link.sourceId;
-                        const otherProjectId = isSource
-                          ? link.targetProjectId
-                          : link.sourceProjectId;
-
-                        const otherProject = otherProjectId
-                          ? projects.find((p) => p.id === otherProjectId)
-                          : null;
-                        const projectName = otherProject
-                          ? otherProject.name
-                          : otherProjectId
-                            ? 'Unknown Project'
-                            : 'Current Project';
-                        const isExternal = !!otherProjectId && otherProjectId !== currentProjectId;
-
-                        return (
+                      {(information.linkedArtifacts || []).map((link, index) => (
+                        <div
+                          key={`${link.targetId}-${index}`}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 8px',
+                            backgroundColor: 'var(--color-bg-card)',
+                            borderRadius: '4px',
+                            border: '1px solid var(--color-border)',
+                          }}
+                        >
                           <div
-                            key={link.id}
                             style={{
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '6px 8px',
-                              backgroundColor: 'var(--color-bg-card)',
-                              borderRadius: '4px',
-                              border: '1px solid var(--color-border)',
+                              gap: '8px',
+                              fontSize: '0.875rem',
                             }}
                           >
-                            <div
+                            <span
                               style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                fontSize: '0.875rem',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                backgroundColor: 'var(--color-bg-secondary)',
+                                fontSize: '0.75rem',
+                                fontFamily: 'monospace',
                               }}
                             >
-                              <span
-                                style={{
-                                  padding: '2px 6px',
-                                  borderRadius: '4px',
-                                  backgroundColor: 'var(--color-bg-secondary)',
-                                  fontSize: '0.75rem',
-                                  fontFamily: 'monospace',
-                                }}
-                              >
-                                {link.type.replace('_', ' ')}
-                              </span>
-                              <span style={{ color: 'var(--color-text-secondary)' }}>
-                                {isSource ? '→' : '←'}
-                              </span>
-                              <span style={{ fontWeight: 500 }}>{otherId}</span>
-                              {isExternal && (
-                                <span
-                                  style={{
-                                    fontSize: '0.75rem',
-                                    color: 'var(--color-accent)',
-                                    backgroundColor: 'var(--color-bg-secondary)',
-                                    padding: '2px 6px',
-                                    borderRadius: '10px',
-                                  }}
-                                >
-                                  {projectName}
-                                </span>
-                              )}
-                            </div>
+                              {link.type.replace('_', ' ')}
+                            </span>
+                            <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
+                            <span style={{ fontWeight: 500 }}>{link.targetId}</span>
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

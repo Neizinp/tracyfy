@@ -3,15 +3,13 @@ import type { ReactNode } from 'react';
 import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
 import { useFileSystem } from '../FileSystemProvider';
-import type { Requirement, Link } from '../../../types';
+import type { Requirement } from '../../../types';
 import { incrementRevision } from '../../../utils/revisionUtils';
 
 interface RequirementsContextValue {
   // Data
   requirements: Requirement[];
   setRequirements: (reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])) => void;
-  links: Link[];
-  setLinks: (links: Link[] | ((prev: Link[]) => Link[])) => void;
 
   // CRUD operations
   handleAddRequirement: (req: Omit<Requirement, 'id' | 'lastModified'>) => Promise<void>;
@@ -23,26 +21,23 @@ interface RequirementsContextValue {
   // Page handlers
   handleEdit: (req: Requirement) => void;
   handleLink: (sourceId: string) => void;
-  handleAddLink: (linkData: Omit<Link, 'id'>) => void;
 }
 
 const RequirementsContext = createContext<RequirementsContextValue | undefined>(undefined);
 
 export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const globalState = useGlobalState();
-  const { requirements, setRequirements, links, setLinks } = globalState;
+  const { requirements, setRequirements } = globalState;
   const {
     setEditingRequirement,
     setIsEditRequirementModalOpen,
     setLinkSourceId,
     setIsLinkModalOpen,
-    setSelectedRequirementId,
   } = useUI();
   const {
     saveRequirement,
     deleteRequirement: fsDeleteRequirement,
     requirements: fsRequirements,
-    links: fsLinks,
     isReady,
     getNextId,
   } = useFileSystem();
@@ -60,13 +55,6 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
       hasSyncedInitial.current = true;
     }
   }, [isReady, fsRequirements, setRequirements]);
-
-  // Sync links from filesystem
-  useEffect(() => {
-    if (isReady && fsLinks.length > 0) {
-      setLinks(fsLinks);
-    }
-  }, [isReady, fsLinks, setLinks]);
 
   const handleAddRequirement = useCallback(
     async (newReqData: Omit<Requirement, 'id' | 'lastModified'>) => {
@@ -174,14 +162,12 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
   const handlePermanentDeleteRequirement = useCallback(
     (id: string) => {
       setRequirements((prev) => prev.filter((req) => req.id !== id));
-      // Remove any links associated with this requirement
-      setLinks((prev) => prev.filter((link) => link.sourceId !== id && link.targetId !== id));
 
       fsDeleteRequirement(id).catch((err) =>
         console.error('Failed to permanently delete requirement:', err)
       );
     },
-    [fsDeleteRequirement, setRequirements, setLinks]
+    [fsDeleteRequirement, setRequirements]
   );
 
   const handleEdit = useCallback(
@@ -200,24 +186,9 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
     [setLinkSourceId, setIsLinkModalOpen]
   );
 
-  const handleAddLink = useCallback(
-    (linkData: Omit<Link, 'id'>) => {
-      const newLink: Link = {
-        ...linkData,
-        id: `LINK-${Date.now()}`,
-      };
-      setLinks((prev) => [...prev, newLink]);
-      setIsLinkModalOpen(false);
-      setSelectedRequirementId(null);
-    },
-    [setLinks, setIsLinkModalOpen, setSelectedRequirementId]
-  );
-
   const value: RequirementsContextValue = {
     requirements,
     setRequirements,
-    links,
-    setLinks,
     handleAddRequirement,
     handleUpdateRequirement,
     handleDeleteRequirement,
@@ -225,7 +196,6 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
     handlePermanentDeleteRequirement,
     handleEdit,
     handleLink,
-    handleAddLink,
   };
 
   return <RequirementsContext.Provider value={value}>{children}</RequirementsContext.Provider>;
