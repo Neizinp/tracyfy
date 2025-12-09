@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Clock, Save, Tag, GitCommit } from 'lucide-react';
 import type { ProjectBaseline, CommitInfo } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
@@ -33,14 +33,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   const [baselineName, setBaselineName] = useState(nextBaselineNumber);
   const [baselineMessage, setBaselineMessage] = useState('');
 
-  // Load commits when tab is active
-  useEffect(() => {
-    if (isOpen && activeTab === 'commits') {
-      loadCommits();
-    }
-  }, [isOpen, activeTab]);
-
-  const loadCommits = async () => {
+  const loadCommits = useCallback(async () => {
     if (!projectId) {
       console.log('[VersionHistory] No projectId, skipping commit load');
       return;
@@ -71,7 +64,14 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     } finally {
       setIsLoadingCommits(false);
     }
-  };
+  }, [projectId]);
+
+  // Load commits when tab is active
+  useEffect(() => {
+    if (isOpen && activeTab === 'commits') {
+      loadCommits();
+    }
+  }, [isOpen, activeTab, loadCommits]);
 
   // Update default name when modal opens for creating
   const handleStartCreating = () => {

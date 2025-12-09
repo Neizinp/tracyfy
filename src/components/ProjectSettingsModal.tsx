@@ -5,7 +5,7 @@ interface ProjectSettingsModalProps {
   project: Project;
   isOpen: boolean;
   onClose: () => void;
-  onUpdate: (projectId: string, name: string, description: string) => void;
+  onUpdate: (projectId: string, name: string, description: string) => Promise<void>;
   onDelete: (projectId: string) => void;
 }
 
@@ -19,21 +19,34 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setName(project.name);
       setDescription(project.description);
       setShowDeleteConfirm(false);
+      setError(null);
+      setIsSubmitting(false);
     }
   }, [isOpen, project]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdate(project.id, name, description);
-    onClose();
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await onUpdate(project.id, name, description);
+      onClose();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -146,6 +159,22 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
             />
           </div>
 
+          {error && (
+            <div
+              style={{
+                marginBottom: 'var(--spacing-md)',
+                padding: 'var(--spacing-sm)',
+                backgroundColor: '#fef2f2',
+                color: '#991b1b',
+                borderRadius: '6px',
+                border: '1px solid #fecaca',
+                fontSize: '0.875rem',
+              }}
+            >
+              {error}
+            </div>
+          )}
+
           <div
             style={{
               marginTop: 'var(--spacing-lg)',
@@ -171,17 +200,21 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
               </button>
               <button
                 type="submit"
+                disabled={isSubmitting}
                 style={{
                   padding: '8px 16px',
                   borderRadius: '6px',
                   border: 'none',
-                  backgroundColor: 'var(--color-accent)',
+                  backgroundColor: isSubmitting
+                    ? 'var(--color-bg-disabled)'
+                    : 'var(--color-accent)',
                   color: 'white',
-                  cursor: 'pointer',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   fontWeight: 500,
+                  opacity: isSubmitting ? 0.7 : 1,
                 }}
               >
-                Save Changes
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
 

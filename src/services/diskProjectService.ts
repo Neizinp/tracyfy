@@ -61,6 +61,53 @@ class DiskProjectService {
     await fileSystemService.getOrCreateDirectory(PROJECTS_DIR);
     await fileSystemService.getOrCreateDirectory(USERS_DIR);
     await fileSystemService.getOrCreateDirectory(COUNTERS_DIR);
+
+    // Auto-migrate legacy files
+    await this.migrateLegacyProjectFiles();
+  }
+
+  /**
+   * Migrate legacy project files (ID-based filenames) to Name-based filenames
+   */
+  async migrateLegacyProjectFiles(): Promise<void> {
+    try {
+      const files = await fileSystemService.listFiles(PROJECTS_DIR);
+
+      for (const file of files) {
+        if (!file.endsWith('.md')) continue;
+
+        const content = await fileSystemService.readFile(`${PROJECTS_DIR}/${file}`);
+        if (!content) continue;
+
+        const project = markdownToProject(content);
+        if (!project) continue;
+
+        const expectedFilename = `${project.name}.md`;
+
+        // If the current filename is NOT the expected filename
+        // This handles cases where filename is the ID, or anything else mismatching
+        if (file !== expectedFilename) {
+          console.log(`Migrating project file: ${file} -> ${expectedFilename}`);
+
+          // Check if target already differs to avoid overwrite if we have duplicates?
+          // For now assume safe migration, or check existence
+          if (await this.checkProjectNameExists(project.name, project.id)) {
+            console.warn(
+              `Cannot migrate ${file} to ${expectedFilename}: Target file already exists`
+            );
+            continue;
+          }
+
+          // Write new file
+          await fileSystemService.writeFile(`${PROJECTS_DIR}/${expectedFilename}`, content);
+
+          // Delete old file
+          await fileSystemService.deleteFile(`${PROJECTS_DIR}/${file}`);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to migrate project files:', err);
+    }
   }
 
   // ============ COUNTER OPERATIONS ============
@@ -190,9 +237,62 @@ class DiskProjectService {
   }
 
   /**
+   * Helper: Find project filename by ID
+   */
+  private async findProjectFilenameById(id: string): Promise<string | null> {
+    try {
+      const files = await fileSystemService.listFiles(PROJECTS_DIR);
+      for (const file of files) {
+        if (file.endsWith('.md')) {
+          const content = await fileSystemService.readFile(`${PROJECTS_DIR}/${file}`);
+          if (content) {
+            const project = markdownToProject(content);
+            if (project && project.id === id) {
+              return file;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to search project files:', err);
+    }
+    return null;
+  }
+
+  /**
+   * Helper: Check if project name exists
+   */
+  private async checkProjectNameExists(name: string, excludeId?: string): Promise<boolean> {
+    try {
+      const files = await fileSystemService.listFiles(PROJECTS_DIR);
+      for (const file of files) {
+        if (file.endsWith('.md')) {
+          const content = await fileSystemService.readFile(`${PROJECTS_DIR}/${file}`);
+          if (content) {
+            const project = markdownToProject(content);
+            if (project && project.name === name) {
+              if (excludeId && project.id === excludeId) {
+                continue; // It's the same project
+              }
+              return true;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to check project names:', err);
+    }
+    return false;
+  }
+
+  /**
    * Create a new project
    */
   async createProject(name: string, description: string): Promise<Project> {
+    if (await this.checkProjectNameExists(name)) {
+      throw new Error(`Project with name "${name}" already exists`);
+    }
+
     const id = `proj-${Date.now()}`;
 
     const project: Project = {
@@ -207,7 +307,7 @@ class DiskProjectService {
     };
 
     const markdown = projectToMarkdown(project);
-    await fileSystemService.writeFile(`${PROJECTS_DIR}/${id}.md`, markdown);
+    await fileSystemService.writeFile(`${PROJECTS_DIR}/${name}.md`, markdown);
 
     // Set as current project if none set
     const currentId = await this.getCurrentProjectId();
@@ -222,20 +322,38 @@ class DiskProjectService {
    * Update project metadata
    */
   async updateProject(project: Project): Promise<void> {
+    if (await this.checkProjectNameExists(project.name, project.id)) {
+      throw new Error(`Project with name "${project.name}" already exists`);
+    }
+
+    const oldFilename = await this.findProjectFilenameById(project.id);
+
     const updatedProject: Project = {
       ...project,
       lastModified: Date.now(),
     };
 
     const markdown = projectToMarkdown(updatedProject);
-    await fileSystemService.writeFile(`${PROJECTS_DIR}/${project.id}.md`, markdown);
+    const newFilename = `${project.name}.md`;
+
+    await fileSystemService.writeFile(`${PROJECTS_DIR}/${newFilename}`, markdown);
+
+    // If filename changed (and we found the old one), delete the old one
+    if (oldFilename && oldFilename !== newFilename) {
+      await fileSystemService.deleteFile(`${PROJECTS_DIR}/${oldFilename}`);
+    }
   }
 
   /**
    * Delete a project (does not delete artifacts)
    */
   async deleteProject(projectId: string): Promise<void> {
-    await fileSystemService.deleteFile(`${PROJECTS_DIR}/${projectId}.md`);
+    const filename = await this.findProjectFilenameById(projectId);
+    if (filename) {
+      await fileSystemService.deleteFile(`${PROJECTS_DIR}/${filename}`);
+    } else {
+      console.warn(`Could not find file for project ${projectId} to delete`);
+    }
   }
 
   /**
@@ -243,7 +361,10 @@ class DiskProjectService {
    */
   async loadProject(projectId: string): Promise<Project | null> {
     try {
-      const content = await fileSystemService.readFile(`${PROJECTS_DIR}/${projectId}.md`);
+      const filename = await this.findProjectFilenameById(projectId);
+      if (!filename) return null;
+
+      const content = await fileSystemService.readFile(`${PROJECTS_DIR}/${filename}`);
       if (content) {
         return markdownToProject(content);
       }

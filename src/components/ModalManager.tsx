@@ -196,10 +196,10 @@ export const ModalManager: React.FC = () => {
             ui.setIsProjectSettingsOpen(false);
             ui.setProjectToEdit(null);
           }}
-          onUpdate={(projectId, name, description) => {
+          onUpdate={async (projectId, name, description) => {
             const project = projects.find((p) => p.id === projectId);
             if (project) {
-              updateProject({ ...project, name, description });
+              await updateProject({ ...project, name, description });
             }
           }}
           onDelete={deleteProject}

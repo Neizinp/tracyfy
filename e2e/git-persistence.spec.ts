@@ -16,29 +16,6 @@
 import { test, expect, Page } from '@playwright/test';
 
 // Helper to wait for console messages
-async function _waitForConsoleMessage(
-  page: Page,
-  pattern: RegExp,
-  timeout = 10000
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(
-      () => reject(new Error(`Timeout waiting for console message: ${pattern}`)),
-      timeout
-    );
-
-    const handler = (msg: any) => {
-      const text = msg.text();
-      if (pattern.test(text)) {
-        clearTimeout(timer);
-        page.off('console', handler);
-        resolve(text);
-      }
-    };
-
-    page.on('console', handler);
-  });
-}
 
 // Helper to collect console messages
 function collectConsoleLogs(page: Page): string[] {
@@ -67,7 +44,8 @@ test.describe('Git Object Persistence', () => {
 
   test.skip('should show pending changes for new files', async ({ page }) => {
     // Enable E2E test mode but capture console logs
-    const _logs = collectConsoleLogs(page);
+    // Enable E2E test mode but capture console logs
+    collectConsoleLogs(page);
 
     await page.addInitScript(() => {
       (window as any).__E2E_TEST_MODE__ = true;
@@ -192,7 +170,7 @@ test.describe('Console Log Verification', () => {
 
     // Check that we have the expected structure
     const hasPromises = logs.some((log) => log.includes('Has promises property: true'));
-    const _isEnumerable = logs.some((log) => log.includes('enumerable: true'));
+    // const isEnumerable = logs.some((log) => log.includes('enumerable: true'));
 
     // These are critical for isomorphic-git to work
     expect(hasPromises || logs.length === 0).toBeTruthy(); // May not have logs in E2E mode

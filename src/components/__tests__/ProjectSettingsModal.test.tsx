@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ProjectSettingsModal } from '../ProjectSettingsModal';
 import type { Project } from '../../types';
 
@@ -73,7 +73,7 @@ describe('ProjectSettingsModal', () => {
     expect(descInput.value).toBe('Updated Description');
   });
 
-  it('should call onUpdate when form is submitted', () => {
+  it('should call onUpdate when form is submitted', async () => {
     render(<ProjectSettingsModal {...defaultProps} />);
 
     const nameInput = screen.getByDisplayValue('Test Project');
@@ -85,8 +85,10 @@ describe('ProjectSettingsModal', () => {
     const saveButton = screen.getByText(/Save Changes/i);
     fireEvent.click(saveButton);
 
-    expect(mockOnUpdate).toHaveBeenCalledWith('PROJ-001', 'New Name', 'New Desc');
-    expect(mockOnClose).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockOnUpdate).toHaveBeenCalledWith('PROJ-001', 'New Name', 'New Desc');
+      expect(mockOnClose).toHaveBeenCalled();
+    });
   });
 
   it('should show delete confirmation when delete button clicked', () => {

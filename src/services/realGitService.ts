@@ -355,13 +355,14 @@ class RealGitService {
     }
 
     const fileExists = (await fileSystemService.readFile(filepath)) !== null;
-    if (!fileExists) {
-      throw new Error(`File not found on disk: ${filepath}`);
-    }
-
     const cache = {};
 
-    await git.add({ fs: fsAdapter, dir: this.getRootDir(), filepath, cache });
+    if (fileExists) {
+      await git.add({ fs: fsAdapter, dir: this.getRootDir(), filepath, cache });
+    } else {
+      // File doesn't exist, assume it's a deletion
+      await git.remove({ fs: fsAdapter, dir: this.getRootDir(), filepath, cache });
+    }
 
     const authorNameToUse = authorName || 'ReqTrace User';
     const commitOid = await git.commit({

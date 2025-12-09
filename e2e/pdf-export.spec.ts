@@ -99,7 +99,7 @@ test('comprehensive pdf export', async ({ page }) => {
   const exportDropdown = page.locator('[data-testid="export-dropdown"]');
   try {
     await exportDropdown.waitFor({ state: 'visible', timeout: 3000 });
-  } catch (_e) {
+  } catch {
     await page.screenshot({ path: 'playwright-export-dropdown-NOT-OPEN.png', fullPage: true });
     throw new Error('Export dropdown did not open. See screenshot.');
   }

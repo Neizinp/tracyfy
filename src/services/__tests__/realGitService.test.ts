@@ -347,15 +347,19 @@ describe('RealGitService', () => {
       );
     });
 
-    it('should throw error if file does not exist', async () => {
+    it('should assume deletion if file does not exist', async () => {
       vi.mocked(fileSystemService.readFile).mockImplementation(async (path: string) => {
         if (path === '.git/HEAD') return 'ref: refs/heads/main\n';
         return null; // File doesn't exist
       });
 
-      await expect(
-        realGitService.commitFile('requirements/NONEXISTENT.md', 'Test commit')
-      ).rejects.toThrow('File not found on disk');
+      await realGitService.commitFile('requirements/NONEXISTENT.md', 'Test commit');
+
+      expect(git.remove).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filepath: 'requirements/NONEXISTENT.md',
+        })
+      );
     });
 
     it('should handle concurrent commits gracefully', async () => {

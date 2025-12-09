@@ -304,11 +304,11 @@ test.describe('In-Browser Git Operations', () => {
         };
 
         // This mimics the CORRECT behavior
-        const _correctStat = async (p: string) => {
-          const err = new Error(`ENOENT: no such file or directory, stat '${p}'`);
-          (err as any).code = 'ENOENT';
-          throw err;
-        };
+        // const correctStat = async (p: string) => {
+        //   const err = new Error(`ENOENT: no such file or directory, stat '${p}'`);
+        //   (err as any).code = 'ENOENT';
+        //   throw err;
+        // };
 
         // Test wrong behavior
         try {
