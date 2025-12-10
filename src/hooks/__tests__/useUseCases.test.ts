@@ -71,15 +71,15 @@ describe('useUseCases', () => {
   const createHook = () =>
     useUseCases({
       useCases: mockUseCases,
-      setUseCases: mockSetUseCases,
+      setUseCases: mockSetUseCases as any,
       usedUcNumbers,
-      setUsedUcNumbers: mockSetUsedUcNumbers,
+      setUsedUcNumbers: mockSetUsedUcNumbers as any,
       requirements: mockRequirements,
-      setRequirements: mockSetRequirements,
-      setIsUseCaseModalOpen: mockSetIsUseCaseModalOpen,
-      setEditingUseCase: mockSetEditingUseCase,
-      saveArtifact: mockSaveArtifact,
-      deleteArtifact: mockDeleteArtifact,
+      setRequirements: mockSetRequirements as any,
+      setIsUseCaseModalOpen: mockSetIsUseCaseModalOpen as any,
+      setEditingUseCase: mockSetEditingUseCase as any,
+      saveArtifact: mockSaveArtifact as any,
+      deleteArtifact: mockDeleteArtifact as any,
     });
 
   describe('handleAddUseCase', () => {

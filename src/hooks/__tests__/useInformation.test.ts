@@ -39,13 +39,13 @@ describe('useInformation', () => {
   const createHook = () =>
     useInformation({
       information: mockInformation,
-      setInformation: mockSetInformation,
+      setInformation: mockSetInformation as any,
       usedInfoNumbers,
-      setUsedInfoNumbers: mockSetUsedInfoNumbers,
-      setIsInformationModalOpen: mockSetIsInformationModalOpen,
-      setSelectedInformation: mockSetSelectedInformation,
-      saveArtifact: mockSaveArtifact,
-      deleteArtifact: mockDeleteArtifact,
+      setUsedInfoNumbers: mockSetUsedInfoNumbers as any,
+      setIsInformationModalOpen: mockSetIsInformationModalOpen as any,
+      setSelectedInformation: mockSetSelectedInformation as any,
+      saveArtifact: mockSaveArtifact as any,
+      deleteArtifact: mockDeleteArtifact as any,
     });
 
   describe('handleAddInformation', () => {

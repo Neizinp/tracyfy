@@ -123,10 +123,10 @@ describe('useImportExport', () => {
       useCases: mockUseCases,
       testCases: mockTestCases,
       information: mockInformation,
-      setRequirements: mockSetRequirements,
-      setUseCases: mockSetUseCases,
-      setTestCases: mockSetTestCases,
-      setInformation: mockSetInformation,
+      setRequirements: mockSetRequirements as any,
+      setUseCases: mockSetUseCases as any,
+      setTestCases: mockSetTestCases as any,
+      setInformation: mockSetInformation as any,
     });
 
   describe('handleExport', () => {
