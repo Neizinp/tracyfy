@@ -97,8 +97,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
               cursor: 'pointer',
             }}
           >
-            <span className="sr-only">Close</span>
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -233,16 +232,6 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                 marginTop: 'var(--spacing-sm)',
               }}
             >
-              <h4
-                style={{
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 500,
-                  color: 'var(--color-error)',
-                  marginBottom: 'var(--spacing-sm)',
-                }}
-              >
-                Danger Zone
-              </h4>
               {!showDeleteConfirm ? (
                 <button
                   type="button"
