@@ -36,14 +36,14 @@ export const LinkModal: React.FC<LinkModalProps> = ({
   const [targetType, setTargetType] = useState<ArtifactType>('requirement');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
-  const [linkType, setLinkType] = useState<ArtifactLink['type']>('relates_to');
+  const [linkType, setLinkType] = useState<ArtifactLink['type']>('related_to');
 
   useEffect(() => {
     if (isOpen) {
       setTargetType('requirement');
       setSearchQuery('');
       setSelectedTargetId('');
-      setLinkType('relates_to');
+      setLinkType('related_to');
     }
   }, [isOpen]);
 
@@ -474,9 +474,18 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                   fontSize: 'var(--font-size-sm)',
                 }}
               >
-                <option value="relates_to">Relates To</option>
-                <option value="depends_on">Depends On</option>
-                <option value="conflicts_with">Conflicts With</option>
+                <option value="parent">Parent (hierarchical decomposition)</option>
+                <option value="child">Child (hierarchical decomposition)</option>
+                <option value="derived_from">Derived From (logical derivation)</option>
+                <option value="depends_on">Depends On (dependency)</option>
+                <option value="conflicts_with">Conflicts With (mutual exclusivity)</option>
+                <option value="duplicates">Duplicates / Similar To (redundancy)</option>
+                <option value="refines">Refines (adds detail)</option>
+                <option value="satisfies">Satisfies / Implements (design link)</option>
+                <option value="verifies">Verifies (test/validation link)</option>
+                <option value="constrains">Constrains (imposes restrictions)</option>
+                <option value="requires">Requires (precondition)</option>
+                <option value="related_to">Related To (generic association)</option>
               </select>
             </div>
 

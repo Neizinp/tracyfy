@@ -42,20 +42,38 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({ requirem
     const link = getLink(rowReq.id, colReq.id);
 
     if (link) {
-      const linkSymbols = {
-        relates_to: '↔',
+      const linkSymbols: Record<string, string> = {
+        parent: '↑',
+        child: '↓',
+        derived_from: '⊳',
         depends_on: '→',
         conflicts_with: '⚠',
+        duplicates: '≈',
+        refines: '⊕',
+        satisfies: '✓',
+        verifies: '✔',
+        constrains: '⊂',
+        requires: '⟶',
+        related_to: '↔',
       };
-      const colors = {
-        relates_to: 'rgba(168, 85, 247, 0.2)',
+      const colors: Record<string, string> = {
+        parent: 'rgba(59, 130, 246, 0.2)',
+        child: 'rgba(59, 130, 246, 0.2)',
+        derived_from: 'rgba(99, 102, 241, 0.2)',
         depends_on: 'rgba(251, 146, 60, 0.2)',
         conflicts_with: 'rgba(239, 68, 68, 0.2)',
+        duplicates: 'rgba(234, 179, 8, 0.2)',
+        refines: 'rgba(34, 197, 94, 0.2)',
+        satisfies: 'rgba(16, 185, 129, 0.2)',
+        verifies: 'rgba(6, 182, 212, 0.2)',
+        constrains: 'rgba(244, 63, 94, 0.2)',
+        requires: 'rgba(249, 115, 22, 0.2)',
+        related_to: 'rgba(168, 85, 247, 0.2)',
       };
       return {
-        text: linkSymbols[link.type],
-        color: colors[link.type],
-        tooltip: `${link.type.replace('_', ' ')}: ${link.sourceId} → ${link.targetId}`,
+        text: linkSymbols[link.type] || '•',
+        color: colors[link.type] || 'rgba(100, 100, 100, 0.2)',
+        tooltip: `${link.type.replace(/_/g, ' ')}: ${link.sourceId} → ${link.targetId}`,
       };
     }
 

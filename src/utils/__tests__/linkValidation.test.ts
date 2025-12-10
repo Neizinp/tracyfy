@@ -55,8 +55,8 @@ describe('Link Validation Logic', () => {
 
   describe('Link Integrity', () => {
     it('should validate link types', () => {
-      const validLinkTypes = ['relates_to', 'depends_on', 'conflicts_with'];
-      const testLinks = [{ type: 'relates_to' }, { type: 'invalid_type' }];
+      const validLinkTypes = ['related_to', 'depends_on', 'conflicts_with'];
+      const testLinks = [{ type: 'related_to' }, { type: 'invalid_type' }];
 
       const isValidType = (type: string): boolean => validLinkTypes.includes(type);
 
@@ -65,9 +65,9 @@ describe('Link Validation Logic', () => {
     });
 
     it('should prevent duplicate links', () => {
-      const links: LinkLike[] = [{ sourceId: 'REQ-001', targetId: 'REQ-002', type: 'relates_to' }];
+      const links: LinkLike[] = [{ sourceId: 'REQ-001', targetId: 'REQ-002', type: 'related_to' }];
 
-      const newLink = { sourceId: 'REQ-001', targetId: 'REQ-002', type: 'relates_to' };
+      const newLink = { sourceId: 'REQ-001', targetId: 'REQ-002', type: 'related_to' };
 
       const isDuplicate = links.some(
         (existing) =>
@@ -80,7 +80,7 @@ describe('Link Validation Logic', () => {
     });
 
     it('should handle bidirectional link checking', () => {
-      const links: LinkLike[] = [{ sourceId: 'REQ-001', targetId: 'REQ-002', type: 'relates_to' }];
+      const links: LinkLike[] = [{ sourceId: 'REQ-001', targetId: 'REQ-002', type: 'related_to' }];
 
       // Check if a reverse link exists
       const hasReverseLink = (sourceId: string, targetId: string): boolean => {
@@ -90,7 +90,7 @@ describe('Link Validation Logic', () => {
       expect(hasReverseLink('REQ-001', 'REQ-002')).toBe(false);
 
       // Add reverse link
-      links.push({ sourceId: 'REQ-002', targetId: 'REQ-001', type: 'relates_to' });
+      links.push({ sourceId: 'REQ-002', targetId: 'REQ-001', type: 'related_to' });
       expect(hasReverseLink('REQ-001', 'REQ-002')).toBe(true);
     });
   });

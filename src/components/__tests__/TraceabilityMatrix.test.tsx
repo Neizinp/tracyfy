@@ -17,7 +17,7 @@ describe('TraceabilityMatrix', () => {
 
       text: '',
       rationale: '',
-      linkedArtifacts: [{ targetId: 'REQ-003', type: 'relates_to' }],
+      linkedArtifacts: [{ targetId: 'REQ-003', type: 'related_to' }],
     },
     {
       id: 'REQ-002',
@@ -60,8 +60,8 @@ describe('TraceabilityMatrix', () => {
   it('renders linkedArtifacts relationships', () => {
     render(<TraceabilityMatrix requirements={mockRequirements} />);
 
-    // REQ-001 relates_to REQ-003 (via linkedArtifacts)
-    // Should show the relates_to symbol
+    // REQ-001 related_to REQ-003 (via linkedArtifacts)
+    // Should show the related_to symbol
     const linkCells = screen.getAllByText('↔');
     expect(linkCells.length).toBeGreaterThan(0);
   });

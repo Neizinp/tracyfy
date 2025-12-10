@@ -26,7 +26,20 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
   onSubmit,
   onDelete,
 }) => {
-  const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
+  const {
+    setIsLinkModalOpen,
+    setLinkSourceId,
+    setLinkSourceType,
+    // For navigating to other artifacts
+    setEditingRequirement,
+    setIsEditRequirementModalOpen,
+    setEditingUseCase,
+    setIsUseCaseModalOpen,
+    setSelectedTestCaseId,
+    setIsEditTestCaseModalOpen,
+    setSelectedInformation,
+    setIsInformationModalOpen,
+  } = useUI();
   const { requirements, useCases, testCases, information } = useGlobalState();
 
   // Compute incoming links (artifacts that link TO this requirement)
@@ -100,6 +113,43 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
 
   const cancelDelete = () => {
     setShowDeleteConfirm(false);
+  };
+
+  // Navigate to a linked artifact by opening its edit modal
+  const handleNavigateToArtifact = (sourceId: string, sourceType: string) => {
+    onClose(); // Close current modal first
+
+    switch (sourceType) {
+      case 'requirement': {
+        const req = requirements.find((r) => r.id === sourceId);
+        if (req) {
+          setEditingRequirement(req);
+          setIsEditRequirementModalOpen(true);
+        }
+        break;
+      }
+      case 'useCase': {
+        const uc = useCases.find((u) => u.id === sourceId);
+        if (uc) {
+          setEditingUseCase(uc);
+          setIsUseCaseModalOpen(true);
+        }
+        break;
+      }
+      case 'testCase': {
+        setSelectedTestCaseId(sourceId);
+        setIsEditTestCaseModalOpen(true);
+        break;
+      }
+      case 'information': {
+        const info = information.find((i) => i.id === sourceId);
+        if (info) {
+          setSelectedInformation(info);
+          setIsInformationModalOpen(true);
+        }
+        break;
+      }
+    }
   };
 
   if (!isOpen || !requirement) return null;
@@ -474,6 +524,15 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                       {(requirement.linkedArtifacts || []).map((link, index) => (
                         <div
                           key={`${link.targetId}-${index}`}
+                          onClick={() => {
+                            // Determine artifact type from ID prefix
+                            const id = link.targetId;
+                            let type = 'requirement';
+                            if (id.startsWith('UC-')) type = 'useCase';
+                            else if (id.startsWith('TC-')) type = 'testCase';
+                            else if (id.startsWith('INFO-')) type = 'information';
+                            handleNavigateToArtifact(id, type);
+                          }}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -482,6 +541,14 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                             backgroundColor: 'var(--color-bg-card)',
                             borderRadius: '4px',
                             border: '1px solid var(--color-border)',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--color-bg-card)';
                           }}
                         >
                           <div
@@ -504,7 +571,9 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                               {link.type.replace('_', ' ')}
                             </span>
                             <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
-                            <span style={{ fontWeight: 500 }}>{link.targetId}</span>
+                            <span style={{ fontWeight: 500, color: 'var(--color-accent)' }}>
+                              {link.targetId}
+                            </span>
                           </div>
                         </div>
                       ))}
@@ -559,6 +628,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                       {incomingLinks.map((link, index) => (
                         <div
                           key={`${link.sourceId}-${index}`}
+                          onClick={() => handleNavigateToArtifact(link.sourceId, link.sourceType)}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -568,9 +638,19 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                             border: '1px solid var(--color-border)',
                             fontSize: 'var(--font-size-sm)',
                             gap: '8px',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--color-bg-card)';
                           }}
                         >
-                          <span style={{ fontWeight: 500 }}>{link.sourceId}</span>
+                          <span style={{ fontWeight: 500, color: 'var(--color-accent)' }}>
+                            {link.sourceId}
+                          </span>
                           <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
                           <span
                             style={{

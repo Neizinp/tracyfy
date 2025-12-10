@@ -187,7 +187,7 @@ describe('LinkModal', () => {
     expect(mockOnAddLink).toHaveBeenCalledWith(
       expect.objectContaining({
         targetId: 'REQ-002',
-        type: 'relates_to',
+        type: 'related_to',
       })
     );
   });
