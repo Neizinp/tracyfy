@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 
 // Section header style used in sidebar
 export const sectionHeaderStyle: CSSProperties = {
-  fontSize: '0.75rem',
+  fontSize: 'var(--font-size-xs)',
   textTransform: 'uppercase',
   color: 'var(--color-text-muted)',
   letterSpacing: '0.05em',
@@ -14,7 +14,7 @@ const navLinkBaseStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: 'var(--spacing-sm)',
-  padding: '8px 12px',
+  padding: 'var(--spacing-sm) var(--spacing-md)',
   textDecoration: 'none',
   borderRadius: '6px',
   cursor: 'pointer',
@@ -42,7 +42,7 @@ export const sidebarButtonStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: 'var(--spacing-sm)',
-  padding: '8px 12px',
+  padding: 'var(--spacing-sm) var(--spacing-md)',
   border: 'none',
   background: 'var(--color-bg-card)',
   color: 'var(--color-text-secondary)',
@@ -111,7 +111,7 @@ export const dropdownItemStyle: CSSProperties = {
   color: 'var(--color-text-primary)',
   cursor: 'pointer',
   textAlign: 'left',
-  fontSize: '0.9rem',
+  fontSize: 'var(--font-size-sm)',
 };
 
 // Dropdown item with top border
