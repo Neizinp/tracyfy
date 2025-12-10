@@ -50,6 +50,7 @@ export const InformationList: React.FC<InformationListProps> = ({
       {information.map((info) => (
         <div
           key={info.id}
+          onClick={() => onEdit(info)}
           style={{
             backgroundColor: 'var(--color-bg-primary)',
             border: '1px solid var(--color-border)',
@@ -58,7 +59,11 @@ export const InformationList: React.FC<InformationListProps> = ({
             display: 'flex',
             flexDirection: 'column',
             gap: 'var(--spacing-sm)',
+            cursor: 'pointer',
+            transition: 'background-color 0.15s',
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-primary)')}
         >
           <div
             style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}

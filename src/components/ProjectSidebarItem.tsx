@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { FolderOpen, Settings } from 'lucide-react';
+import { FolderOpen } from 'lucide-react';
 import type { Project } from '../types';
 
 interface ProjectSidebarItemProps {
@@ -25,13 +25,22 @@ export const ProjectSidebarItem: React.FC<ProjectSidebarItemProps> = ({
     },
   });
 
+  const handleClick = () => {
+    if (isActive) {
+      onOpenProjectSettings(project);
+    } else {
+      onSwitchProject(project.id);
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
+      onClick={handleClick}
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 'var(--spacing-xs)',
+        gap: 'var(--spacing-sm)',
         padding: 'var(--spacing-sm)',
         backgroundColor: isOver
           ? 'var(--color-bg-tertiary)'
@@ -42,56 +51,20 @@ export const ProjectSidebarItem: React.FC<ProjectSidebarItemProps> = ({
         cursor: 'pointer',
         position: 'relative',
         border: isOver ? '2px dashed var(--color-accent)' : '2px solid transparent',
+        color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+        fontWeight: isActive ? 600 : 400,
+        transition: 'background-color 0.15s',
       }}
-      className="group"
+      onMouseEnter={(e) =>
+        !isActive && (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
+      }
+      onMouseLeave={(e) => !isActive && (e.currentTarget.style.backgroundColor = 'transparent')}
+      title={isActive ? 'Click to open settings' : 'Click to switch project'}
     >
-      <button
-        onClick={() => onSwitchProject(project.id)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--spacing-sm)',
-          border: 'none',
-          background: 'none',
-          color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-          flex: 1,
-          textAlign: 'left',
-          cursor: 'pointer',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          fontWeight: isActive ? 600 : 400,
-        }}
-      >
-        <FolderOpen size={18} />
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{project.name}</span>
-      </button>
-
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onOpenProjectSettings(project);
-        }}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          color: 'var(--color-text-muted)',
-          padding: '4px',
-          borderRadius: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: isActive ? 1 : 0,
-          transition: 'opacity 0.2s',
-        }}
-        className="group-hover:opacity-100"
-        title="Project Settings"
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')}
-      >
-        <Settings size={14} />
-      </button>
+      <FolderOpen size={18} />
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+        {project.name}
+      </span>
     </div>
   );
 };
