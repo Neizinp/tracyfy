@@ -78,25 +78,19 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
     return (
       <div
         style={{
-          backgroundColor: 'var(--color-bg-card)',
-          borderRadius: '8px',
-          border: '1px solid var(--color-border)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
           padding: 'var(--spacing-xl)',
+          color: 'var(--color-text-muted)',
           textAlign: 'center',
+          gap: 'var(--spacing-md)',
         }}
       >
-        <FileText size={48} style={{ margin: '0 auto', color: 'var(--color-text-muted)' }} />
-        <h3
-          style={{
-            marginTop: 'var(--spacing-md)',
-            fontSize: 'var(--font-size-lg)',
-            fontWeight: 600,
-          }}
-        >
-          No Use Cases Yet
-        </h3>
-        <p style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-xs)' }}>
-          Create your first use case to start capturing user requirements.
+        <FileText size={48} />
+        <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+          No use cases found. Create one to get started.
         </p>
       </div>
     );

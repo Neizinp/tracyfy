@@ -162,9 +162,13 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
               <tr>
                 <td
                   colSpan={showProjectColumn ? 8 : 7}
-                  style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}
+                  style={{
+                    padding: 'var(--spacing-xl)',
+                    textAlign: 'center',
+                    color: 'var(--color-text-muted)',
+                  }}
                 >
-                  No test cases found.
+                  No test cases found. Create one to get started.
                 </td>
               </tr>
             ) : (

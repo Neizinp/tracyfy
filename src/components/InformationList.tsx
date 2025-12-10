@@ -34,13 +34,16 @@ export const InformationList: React.FC<InformationListProps> = ({
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          height: '400px',
-          color: 'var(--color-text-secondary)',
+          padding: 'var(--spacing-xl)',
+          color: 'var(--color-text-muted)',
+          textAlign: 'center',
           gap: 'var(--spacing-md)',
         }}
       >
-        <FileText size={48} style={{ opacity: 1 }} />
-        <p>No information artifacts found. Create one to get started.</p>
+        <FileText size={48} />
+        <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+          No information artifacts found. Create one to get started.
+        </p>
       </div>
     );
   }
