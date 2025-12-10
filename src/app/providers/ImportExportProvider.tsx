@@ -19,12 +19,10 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
     useCases,
     testCases,
     information,
-    links,
     setRequirements,
     setUseCases,
     setTestCases,
     setInformation,
-    setLinks,
   } = useGlobalState();
 
   const importExport = useImportExportHook({
@@ -34,12 +32,10 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
     useCases,
     testCases,
     information,
-    links,
     setRequirements,
     setUseCases,
     setTestCases,
     setInformation,
-    setLinks,
   });
 
   return (

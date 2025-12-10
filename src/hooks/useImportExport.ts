@@ -1,4 +1,4 @@
-import type { Requirement, UseCase, TestCase, Information, Link, Project } from '../types';
+import type { Requirement, UseCase, TestCase, Information, Project } from '../types';
 import { exportProjectToJSON } from '../utils/jsonExportUtils';
 import * as XLSX from 'xlsx';
 
@@ -9,12 +9,10 @@ interface UseImportExportProps {
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
-  links: Link[];
   setRequirements: (reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])) => void;
   setUseCases: (ucs: UseCase[] | ((prev: UseCase[]) => UseCase[])) => void;
   setTestCases: (tcs: TestCase[] | ((prev: TestCase[]) => TestCase[])) => void;
   setInformation: (info: Information[] | ((prev: Information[]) => Information[])) => void;
-  setLinks: (links: Link[] | ((prev: Link[]) => Link[])) => void;
 }
 
 export function useImportExport({
@@ -24,12 +22,10 @@ export function useImportExport({
   useCases,
   testCases,
   information,
-  links,
   setRequirements,
   setUseCases,
   setTestCases,
   setInformation,
-  setLinks,
 }: UseImportExportProps) {
   const handleExport = async () => {
     const project = projects.find((p) => p.id === currentProjectId);
@@ -46,7 +42,6 @@ export function useImportExport({
           useCases,
           testCases,
           information,
-          links,
         },
         project.requirementIds,
         project.useCaseIds,
@@ -70,11 +65,11 @@ export function useImportExport({
         reader.onload = (event) => {
           try {
             const json = JSON.parse(event.target?.result as string);
+            // Links are now stored in each artifact's linkedArtifacts field
             setRequirements(json.requirements || []);
             setUseCases(json.useCases || []);
             setTestCases(json.testCases || []);
             setInformation(json.information || []);
-            setLinks(json.links || []);
           } catch {
             alert('Failed to parse JSON file');
           }
@@ -119,6 +114,7 @@ export function useImportExport({
                 dateCreated: Date.now(),
                 lastModified: Date.now(),
                 revision: '01',
+                linkedArtifacts: [], // Links are now per-artifact
               }));
               setRequirements(parsedReqs);
             }
@@ -140,22 +136,12 @@ export function useImportExport({
                 status: row['Status'] || 'draft',
                 lastModified: Date.now(),
                 revision: '01',
+                linkedArtifacts: [], // Links are now per-artifact
               }));
               setUseCases(parsedUCs);
             }
 
-            // Parse Links
-            const linkSheet = workbook.Sheets['Links'];
-            if (linkSheet) {
-              const linkData = XLSX.utils.sheet_to_json<any>(linkSheet);
-              const parsedLinks: Link[] = linkData.map((row: any) => ({
-                id: crypto.randomUUID(),
-                sourceId: row['Source ID'],
-                targetId: row['Target ID'],
-                type: row['Type'] || 'related',
-              }));
-              setLinks(parsedLinks);
-            }
+            // Note: Links sheet is deprecated - links are now stored in each artifact's linkedArtifacts
 
             alert('Excel file imported successfully');
           } catch (error) {

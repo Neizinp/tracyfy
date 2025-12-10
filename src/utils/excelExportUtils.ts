@@ -6,7 +6,7 @@ import type {
   Information,
   Project,
   ProjectBaseline,
-  Link,
+  ArtifactLink,
 } from '../types';
 import { formatDate } from './dateUtils';
 import { realGitService } from '../services/realGitService';
@@ -22,7 +22,6 @@ export async function exportProjectToExcel(
     useCases: UseCase[];
     testCases: TestCase[];
     information: Information[];
-    links: Link[];
   },
   projectRequirementIds: string[],
   projectUseCaseIds: string[],
@@ -246,13 +245,31 @@ export async function exportProjectToExcel(
       return child ? child.parentIds.includes(parentId) : false;
     };
 
-    // Helper to find link
-    const getLink = (fromId: string, toId: string): Link | undefined => {
-      return globalState.links.find(
-        (l) =>
-          (l.sourceId === fromId && l.targetId === toId) ||
-          (l.sourceId === toId && l.targetId === fromId)
-      );
+    // Helper to find link between two artifacts
+    // Now built from each artifact's linkedArtifacts array
+    const getLink = (fromId: string, toId: string): ArtifactLink | undefined => {
+      // Check all artifacts for a link between fromId and toId
+      const allArtifacts = [
+        ...projectRequirements,
+        ...projectUseCases,
+        ...projectTestCases,
+        ...projectInformation,
+      ];
+
+      for (const artifact of allArtifacts) {
+        const linkedArtifacts = artifact.linkedArtifacts || [];
+        // Check if this artifact links from fromId to toId
+        if (artifact.id === fromId) {
+          const link = linkedArtifacts.find((l) => l.targetId === toId);
+          if (link) return link;
+        }
+        // Check if this artifact links from toId to fromId (reverse)
+        if (artifact.id === toId) {
+          const link = linkedArtifacts.find((l) => l.targetId === fromId);
+          if (link) return link;
+        }
+      }
+      return undefined;
     };
 
     projectRequirements.forEach((rowReq) => {

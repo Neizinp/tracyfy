@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { exportProjectToJSON } from '../jsonExportUtils';
-import type { Project, Requirement, UseCase, TestCase, Information, Link } from '../../types';
+import type { Project, Requirement, UseCase, TestCase, Information } from '../../types';
 
 // Mock window.showSaveFilePicker
 const mockShowSaveFilePicker = vi.fn();
@@ -70,6 +70,11 @@ describe('jsonExportUtils', () => {
     lastModified: 0,
     revision: '01',
     dateCreated: 0,
+    // Links are now stored in linkedArtifacts
+    linkedArtifacts: [
+      { targetId: 'u1', type: 'relates_to' },
+      { targetId: 'external-id', type: 'depends_on' },
+    ],
   };
 
   const mockUseCase: UseCase = {
@@ -108,33 +113,12 @@ describe('jsonExportUtils', () => {
     dateCreated: 0,
   };
 
-  const mockLink1: Link = {
-    id: 'link1',
-    sourceId: 'r1',
-    targetId: 'u1',
-    type: 'relates_to',
-  };
-
-  const mockLink2: Link = {
-    id: 'link2',
-    sourceId: 'r1',
-    targetId: 'external-id', // Should be included because r1 is included
-    type: 'depends_on',
-  };
-
-  const mockLink3: Link = {
-    id: 'link3',
-    sourceId: 'external-id-1',
-    targetId: 'external-id-2', // Should be excluded
-    type: 'conflicts_with',
-  };
-
   const globalState = {
-    requirements: [mockReq, { ...mockReq, id: 'r2' }], // r2 not in project
+    requirements: [mockReq, { ...mockReq, id: 'r2', linkedArtifacts: [] }], // r2 not in project
     useCases: [mockUseCase],
     testCases: [mockTestCase],
     information: [mockInfo],
-    links: [mockLink1, mockLink2, mockLink3],
+    // Note: links are no longer a separate array, they're in each artifact's linkedArtifacts
   };
 
   it('should export filtered data correctly', async () => {
@@ -144,12 +128,6 @@ describe('jsonExportUtils', () => {
     const callArg = mockWrite.mock.calls[0][0];
 
     // The write call receives a Blob, we need to read it
-    // In tests, we can extract the contents from the Blob constructor call
-    // But Blob is already constructed. Let's capture what was written.
-    // Since we're writing a Blob, we can read its content using FileReader or text() in modern environments
-    // But in test env, Blob.text() might not exist. Let's spy on Blob constructor instead.
-
-    // Alternative: Check the mock calls to write and verify the structure
     expect(callArg).toBeInstanceOf(Blob);
 
     // Read Blob using FileReader (available in test environment)
@@ -164,10 +142,11 @@ describe('jsonExportUtils', () => {
     expect(data.project.id).toBe('p1');
     expect(data.requirements).toHaveLength(1);
     expect(data.requirements[0].id).toBe('r1');
-    expect(data.links).toHaveLength(2); // mockLink1 and mockLink2
-    expect(data.links).toContainEqual(mockLink1);
-    expect(data.links).toContainEqual(mockLink2);
-    expect(data.links).not.toContainEqual(mockLink3);
+    // Links are now in each artifact's linkedArtifacts, not a separate array
+    expect(data.requirements[0].linkedArtifacts).toHaveLength(2);
+    expect(data.requirements[0].linkedArtifacts[0].targetId).toBe('u1');
+    // Links are no longer exported as a separate array
+    expect(data.links).toBeUndefined();
   });
 
   it('should use showSaveFilePicker if available', async () => {
@@ -195,15 +174,5 @@ describe('jsonExportUtils', () => {
     expect(mockAppendChild).toHaveBeenCalled();
     expect(mockClick).toHaveBeenCalled();
     expect(mockRemoveChild).toHaveBeenCalled();
-    // Check filename assignment (mocked element)
-    // Since we mocked createElement to return an object, we can't easily check the property assignment unless we spy on the object returned.
-    // But we can check if download attribute was set if we kept a reference.
-    // The mockCreateElement returns a new object each time or the same one?
-    // In beforeEach: mockCreateElement.mockReturnValue({...}) -> returns same object reference if defined outside, or new if defined inside.
-    // It returns a new object literal each time in the current setup? No, mockReturnValue returns the SAME value every time.
-
-    // Let's improve the mock to capture the element
-    // Actually, the current test setup might not capture the property assignment on the returned object.
-    // But we can verify the flow.
   });
 });
