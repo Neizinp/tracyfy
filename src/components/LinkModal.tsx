@@ -136,7 +136,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     >
       <div
         style={{
-          backgroundColor: '#1a1a2e',
+          backgroundColor: 'var(--color-bg-card)',
           borderRadius: '8px',
           width: '100%',
           maxWidth: '42rem',
@@ -213,12 +213,12 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                   fontWeight: 700,
                   backgroundColor:
                     sourceArtifactType === 'requirement'
-                      ? '#1e3a5f'
+                      ? 'var(--color-info-bg)'
                       : sourceArtifactType === 'usecase'
-                        ? '#3a1e5f'
+                        ? 'var(--color-accent-bg, rgba(99, 102, 241, 0.3))'
                         : sourceArtifactType === 'testcase'
-                          ? '#1e5f3a'
-                          : '#5f5f1e',
+                          ? 'var(--color-success-bg)'
+                          : 'var(--color-warning-bg)',
                   color: '#fff',
                 }}
               >
