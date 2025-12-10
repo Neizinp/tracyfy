@@ -18,11 +18,10 @@
  *   ProjectA.json        # {name, description, requirementIds: [...], ...}
  *   ProjectB.json
  * config.json            # {currentProjectId, counters: {req, uc, tc, info}}
- * links.json             # Global links
  */
 
 import { fileSystemService } from './fileSystemService';
-import type { Project, Requirement, UseCase, TestCase, Information, Link, User } from '../types';
+import type { Project, Requirement, UseCase, TestCase, Information, User } from '../types';
 import {
   requirementToMarkdown,
   markdownToRequirement,
@@ -47,7 +46,6 @@ const USERS_DIR = 'users';
 const COUNTERS_DIR = 'counters';
 const CURRENT_PROJECT_FILE = 'current-project.md';
 const CURRENT_USER_FILE = 'current-user.md';
-const LINKS_FILE = 'links.json';
 
 class DiskProjectService {
   /**
@@ -544,30 +542,6 @@ class DiskProjectService {
     await fileSystemService.deleteFile(`${INFORMATION_DIR}/${infoId}.md`);
   }
 
-  // ============ LINKS ============
-
-  /**
-   * Load global links
-   */
-  async loadLinks(): Promise<Link[]> {
-    try {
-      const content = await fileSystemService.readFile(LINKS_FILE);
-      if (content) {
-        return JSON.parse(content);
-      }
-    } catch {
-      // File doesn't exist
-    }
-    return [];
-  }
-
-  /**
-   * Save global links
-   */
-  async saveLinks(links: Link[]): Promise<void> {
-    await fileSystemService.writeFile(LINKS_FILE, JSON.stringify(links, null, 2));
-  }
-
   // ============ USER OPERATIONS ============
 
   /**
@@ -624,16 +598,14 @@ class DiskProjectService {
     useCases: UseCase[];
     testCases: TestCase[];
     information: Information[];
-    links: Link[];
   }> {
-    const [projects, requirements, useCases, testCases, information, links, currentProjectId] =
+    const [projects, requirements, useCases, testCases, information, currentProjectId] =
       await Promise.all([
         this.listProjects(),
         this.loadAllRequirements(),
         this.loadAllUseCases(),
         this.loadAllTestCases(),
         this.loadAllInformation(),
-        this.loadLinks(),
         this.getCurrentProjectId(),
       ]);
 
@@ -644,7 +616,6 @@ class DiskProjectService {
       useCases,
       testCases,
       information,
-      links,
     };
   }
 
