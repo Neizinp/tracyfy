@@ -20,7 +20,17 @@ export const NavLink: React.FC<NavLinkProps> = ({ to, icon: Icon, label, iconSty
   const isActive = location.pathname.includes(to);
 
   return (
-    <Link to={to} style={isActive ? navLinkActiveStyle : navLinkInactiveStyle}>
+    <Link
+      to={to}
+      style={{
+        ...(isActive ? navLinkActiveStyle : navLinkInactiveStyle),
+        transition: 'background-color 0.15s',
+      }}
+      onMouseEnter={(e) =>
+        !isActive && (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
+      }
+      onMouseLeave={(e) => !isActive && (e.currentTarget.style.backgroundColor = 'transparent')}
+    >
       <Icon size={18} style={iconStyle} />
       {label}
     </Link>
