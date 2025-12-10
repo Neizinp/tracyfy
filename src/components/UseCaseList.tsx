@@ -158,7 +158,7 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
                       border: '1px solid var(--color-border)',
                     }}
                   >
-                    v{useCase.revision || '01'}
+                    {useCase.revision || '01'}
                   </span>
                   <h3 style={{ fontSize: 'var(--font-size-base)', fontWeight: 600, margin: 0 }}>
                     {useCase.title}

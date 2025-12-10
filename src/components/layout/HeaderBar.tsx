@@ -417,7 +417,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                     <option value="current">Current State</option>
                     {baselines.map((b) => (
                       <option key={b.id} value={b.id}>
-                        {b.name} (v{b.version})
+                        {b.name} ({b.version})
                       </option>
                     ))}
                   </select>

@@ -216,7 +216,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                           border: '1px solid var(--color-border)',
                         }}
                       >
-                        v{tc.revision || '01'}
+                        {tc.revision || '01'}
                       </span>
                     </div>
                     <span style={{ fontWeight: 500 }}>{tc.title}</span>

@@ -94,7 +94,7 @@ export const InformationList: React.FC<InformationListProps> = ({
                   border: '1px solid var(--color-border)',
                 }}
               >
-                v{info.revision || '01'}
+                {info.revision || '01'}
               </span>
               <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)', fontWeight: 600 }}>
                 {info.title}

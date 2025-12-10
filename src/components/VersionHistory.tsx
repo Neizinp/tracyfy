@@ -28,7 +28,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   const [isLoadingCommits, setIsLoadingCommits] = useState(false);
 
   // Default name generation
-  const nextBaselineNumber = `v${baselines.length + 1} .0`;
+  const nextBaselineNumber = `${baselines.length + 1}.0`;
 
   const [baselineName, setBaselineName] = useState(nextBaselineNumber);
   const [baselineMessage, setBaselineMessage] = useState('');
@@ -75,7 +75,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
 
   // Update default name when modal opens for creating
   const handleStartCreating = () => {
-    setBaselineName(`v${baselines.length + 1} .0`);
+    setBaselineName(`${baselines.length + 1}.0`);
     setBaselineMessage('');
     setIsCreatingBaseline(true);
   };
@@ -233,7 +233,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                   type="text"
                   value={baselineName}
                   onChange={(e) => setBaselineName(e.target.value)}
-                  placeholder="Name (e.g. v1.0)"
+                  placeholder="Name (e.g. 1.0)"
                   autoFocus
                   style={{
                     padding: '6px 12px',

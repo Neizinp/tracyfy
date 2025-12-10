@@ -251,7 +251,7 @@ describe('HeaderBar', () => {
 
       expect(screen.getByText('Export Version:')).toBeInTheDocument();
       expect(screen.getByText('Current State')).toBeInTheDocument();
-      expect(screen.getByText('Release 1.0 (v1.0)')).toBeInTheDocument();
+      expect(screen.getByText('Release 1.0 (1.0)')).toBeInTheDocument();
     });
 
     it('should call onExportPDF with selected baseline', () => {
