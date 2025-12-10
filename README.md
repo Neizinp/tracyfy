@@ -1,12 +1,13 @@
 # ReqTrace - Requirement Management Tool
 
-A modern, web-based requirement management tool inspired by IBM Rational Doors. Built with React, TypeScript, and Vite for managing system requirements, use cases, test cases, and comprehensive documentation with multi-project support.
+A modern, web-based requirement management tool inspired by IBM Rational Doors. Built with React, TypeScript, and Vite for managing system requirements, use cases, test cases, and comprehensive documentation with multi-project support and Git-based version control.
 
 ## ✨ Features
 
 ### Project Management
 
 - **Multi-Project Support** - Manage multiple independent projects in a single workspace
+- **Repository Selection** - Select local Git repositories as project storage
 - **Global Artifact Library** - Reuse artifacts (requirements, use cases, test cases, information) across projects
 - **Project Switching** - Seamlessly switch between projects with independent artifact sets
 - **Demo Project** - Pre-populated example project for quick exploration
@@ -18,31 +19,31 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 - **Use Cases** - Define and manage use cases with actors, flows, preconditions, and postconditions
 - **Test Cases** - Create test cases linked to requirements for verification tracking
 - **Information Management** - Store project notes, meeting minutes, and decisions
-- **Requirement Links** - Create relationships between requirements (relates to, depends on, conflicts with)
-- **Traceability Matrix** - Visualize requirement relationships and dependencies across projects
+- **Artifact Links** - Create relationships between artifacts (relates to, depends on, conflicts with) - stored directly within each artifact
+- **Traceability Matrix** - Visualize requirement relationships and dependencies
 - **Trash Bin** - Soft delete with restore capability for all artifact types
 
 ### Revision Control & Baselines
 
+- **Git Integration** - All artifacts stored as Markdown files in Git repositories
 - **Revision Tracking** - Automatic revision numbering for all artifacts (starts at "01", increments on changes)
-- **Baseline Management** - Create project baselines to snapshot artifact states
-- **Baseline Comparison** - Compare current state against baselines
+- **Baseline Management** - Create project baselines as Git tags to snapshot artifact states
+- **Baseline History** - View and compare baselines with revision history
 - **Pending Changes** - Git-style pending changes view showing new/modified artifacts
-- **Commit System** - Commit artifact changes with messages
+- **Commit System** - Commit artifact changes with messages directly to Git
 
 ### Data Management
 
-- **Auto-Save** - All changes automatically saved to browser LocalStorage
+- **Markdown Storage** - All artifacts stored as human-readable Markdown files with YAML frontmatter
 - **Export/Import** - Backup and restore data as JSON files
 - **Comprehensive PDF Export** - Professional PDF documents with:
   - Cover page with project metadata
-  - Table of contents with page numbers
+  - Table of contents with page numbers for each artifact
   - All artifact types with full details (text, rationale, flows, etc.)
   - Revision history
   - Baseline information
-  - **File Save Dialog** - Choose where to save PDFs using modern browser API
-- **Excel Export** - Download structured spreadsheets with multi-sheet support
-- **Persistent Storage** - Data survives page refreshes and browser restarts
+- **Excel Export** - Download structured spreadsheets with multi-sheet support including traceability matrix
+- **File System Access** - Direct access to local file system via File System Access API
 
 ### Views & Interfaces
 
@@ -52,28 +53,25 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 - **Use Cases View** - Dedicated use case management interface
 - **Test Cases View** - Test management and requirement traceability
 - **Information View** - Notes and documentation management
-- **Baselines View** - Baseline creation and management
+- **Baselines View** - Baseline creation and history viewing
 - **Global Library** - Browse and add artifacts from any project
 
-### Requirement Fields
+### Artifact Fields
 
-- ID (auto-generated, sequential: REQ-001, REQ-002, etc.)
-- Title
-- Description
-- Requirement Text (full details with Markdown support)
-- Rationale (why the requirement exists)
-- Status (draft, approved, implemented, verified)
-- Priority (low, medium, high)
-- Revision (auto-incremented: 01, 02, 03, etc.)
-- Parent relationships (multi-parent support)
-- Use case associations
-- Baseline version (if baselined)
+**Requirements** - ID (REQ-001), Title, Description, Requirement Text, Rationale, Status, Priority, Revision, Parent relationships, Linked artifacts
+
+**Use Cases** - ID (UC-001), Title, Description, Actor, Preconditions, Main Flow, Alternative Flows, Postconditions, Status, Priority, Revision
+
+**Test Cases** - ID (TC-001), Title, Description, Requirement coverage, Status (draft/passed/failed/blocked), Priority, Revision
+
+**Information** - ID (INFO-001), Title, Content (Markdown), Type (meeting/decision/note/other), Revision
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ and npm
+- A modern browser with File System Access API support (Chrome, Edge)
 
 ### Installation
 
@@ -87,9 +85,6 @@ npm install
 
 # Start development server
 npm run dev
-
-# Start Electron (runs Vite dev server + Electron shell)
-npm run electron:dev
 ```
 
 The application will be available at `http://localhost:5173`
@@ -98,204 +93,149 @@ The application will be available at `http://localhost:5173`
 
 ```bash
 npm run build
-
-# Launch Electron against the production build
-npm run electron:start
+npm run preview  # Preview the production build
 ```
 
 ## 📖 Usage
 
-### Managing Projects
+### Getting Started with a Repository
 
-1. Click **"New Project"** to create a new project
-2. Switch between projects using the project selector
-3. Each project maintains its own set of artifacts
-4. Delete projects that are no longer needed
+1. Click **"Select Repository"** to choose a local Git repository
+2. The application will load all artifacts from the repository
+3. Create new artifacts or edit existing ones
+4. Changes appear in the **Pending Changes** panel
+5. Commit changes to save them to Git
 
 ### Creating Requirements
 
 1. Select a project
 2. Click **"Create New"** → **"New Requirement"**
 3. Fill in title, requirement text, rationale, and other fields
-4. Submit to create - data auto-saves immediately
-5. Revision automatically set to "01"
+4. Submit to create - revision automatically set to "01"
+5. The file is saved as Markdown in `requirements/REQ-XXX.md`
 
 ### Managing Hierarchy
 
 - **Drag and drop** requirements to reorganize
 - Requirements can have multiple parents
-- Visual indicators show multi-parent relationships
+- Visual indicators show parent-child relationships
 
 ### Creating Links
 
-1. Click the **link icon** on any requirement
-2. Select target requirement (can be from any project)
+1. Click the **link icon** on any artifact
+2. Select target artifact from the modal
 3. Choose link type (relates to, depends on, conflicts with)
-
-### Use Cases
-
-1. Switch to **"Use Cases"** view
-2. Click **"Create New"** → **"New Use Case"**
-3. Define actors, preconditions, main flow, alternative flows, and postconditions
-4. Link to related requirements
-
-### Test Cases
-
-1. Switch to **"Test Cases"** view
-2. Click **"Create New"** → **"New Test Case"**
-3. Define test description and link to requirements
-4. Track verification status
+4. Links are stored in the source artifact's `linkedArtifacts` field
 
 ### Creating Baselines
 
 1. Switch to **"Baselines"** view
 2. Click **"Create Baseline"**
-3. Provide version name and description
-4. All current artifact revisions are captured
-
-### Global Library (Multi-Project)
-
-1. Click **"Library"** button
-2. Filter by project to see available artifacts
-3. Drag artifacts from library into current project
-4. Artifacts can be used in multiple projects simultaneously
-5. Editing an artifact updates it across all projects (global state)
-
-### Trash Bin
-
-1. Delete any artifact (moves to trash)
-2. Click **"Trash"** button to view deleted items
-3. Restore items or permanently delete
+3. Provide version name (e.g., "v1.0") and description
+4. A Git tag is created capturing all current artifact states
 
 ### Export Options
 
-- **PDF**: Comprehensive document with cover page, table of contents, all artifacts, revision history
-  - Prompts for save location using modern file picker
-  - Includes project metadata and baseline information
-- **Excel**: Structured spreadsheet data
+- **PDF**: Comprehensive document with cover page, granular table of contents, all artifacts
+- **Excel**: Structured spreadsheet with Requirements, Use Cases, Test Cases, Information, and Traceability Matrix sheets
 - **JSON**: Full data backup/restore
 
 ## 🏗️ Architecture
 
 ### Tech Stack
 
-- **React 18** - UI framework
-- **TypeScript** - Type safety
+- **React 18** - UI framework with hooks and context
+- **TypeScript** - Type safety throughout
 - **Vite** - Build tool and dev server
+- **isomorphic-git** - Git operations in the browser
 - **@dnd-kit** - Drag and drop functionality
 - **Lucide React** - Icon library
-- **jsPDF** - PDF generation
-- **jsPDF-AutoTable** - PDF table formatting
+- **jsPDF + jsPDF-AutoTable** - PDF generation
 - **SheetJS (xlsx)** - Excel export
+- **gray-matter** - YAML frontmatter parsing
 
 ### Testing
 
-- **Vitest** - Unit and component testing (15 tests)
-- **Playwright** - End-to-end testing (3 passing, 3 deferred)
+- **Vitest** - 440+ unit and component tests
+- **Playwright** - End-to-end testing
 - **React Testing Library** - Component testing utilities
+
+Run tests:
+
+```bash
+npm test              # Run unit tests
+npm run typecheck     # TypeScript type checking
+npm run lint          # ESLint
+npx playwright test   # E2E tests
+```
 
 ### Project Structure
 
 ```
 src/
+├── app/
+│   └── providers/           # React context providers
+│       ├── FileSystemProvider.tsx    # File system & Git operations
+│       ├── GlobalStateProvider.tsx   # Global artifact state
+│       ├── ArtifactProviders/        # Per-artifact type providers
+│       └── ...
 ├── components/
-│   ├── Layout.tsx              # Main layout with sidebar
 │   ├── RequirementTree.tsx     # Hierarchical tree view
-│   ├── NewRequirementModal.tsx # Create requirement form
-│   ├── EditRequirementModal.tsx # Edit requirement form
-│   ├── LinkModal.tsx           # Create links between requirements
 │   ├── TraceabilityMatrix.tsx  # Relationship visualization
-│   ├── UseCaseModal.tsx        # Create/edit use cases
-│   ├── UseCaseList.tsx         # Use case management
-│   ├── TestCaseList.tsx        # Test case management
-│   ├── InformationList.tsx     # Information management
-│   ├── ProjectManager.tsx      # Multi-project management
-│   ├── TrashModal.tsx          # Soft delete management
-│   ├── GlobalLibraryPanel.tsx  # Global artifact library
-│   └── VersionHistory.tsx      # Baseline and revision history
+│   ├── PendingChangesPanel.tsx # Git-style changes view
+│   ├── ModalManager.tsx        # Centralized modal handling
+│   └── ...
+├── layouts/
+│   └── ProjectLayout.tsx       # Main layout with sidebar
+├── pages/                      # Route pages
+├── services/
+│   ├── diskProjectService.ts   # Project file operations
+│   ├── realGitService.ts       # Git operations
+│   └── fileSystemService.ts    # File system access
 ├── utils/
-│   ├── pdfExportUtils.ts       # Comprehensive PDF generation
-│   ├── revisionUtils.ts        # Revision number management
-│   ├── dateUtils.ts            # Date formatting utilities
-│   └── markdownUtils.ts        # Markdown processing
+│   ├── markdownUtils.ts        # Artifact ↔ Markdown conversion
+│   ├── pdfExportUtils.ts       # PDF generation
+│   ├── excelExportUtils.ts     # Excel generation
+│   └── ...
+├── hooks/                      # Custom React hooks
 ├── types.ts                    # TypeScript type definitions
-├── App.tsx                     # Main application component
-└── index.css                   # Global styles
+└── index.css                   # Global styles (CSS variables)
 ```
 
-### Data Model
+### Data Storage
 
-**Project**
+Artifacts are stored as Markdown files with YAML frontmatter:
 
-```typescript
-{
-  id: string;
-  name: string;
-  description: string;
-  requirementIds: string[];    // IDs of requirements in this project
-  useCaseIds: string[];        // IDs of use cases in this project
-  testCaseIds: string[];       // IDs of test cases in this project
-  informationIds: string[];    // IDs of information items
-  currentBaseline?: string;    // Current baseline ID
-  lastModified: number;
-}
-```
+```markdown
+---
+id: 'REQ-001'
+title: 'User Authentication'
+status: 'approved'
+priority: 'high'
+revision: '02'
+linkedArtifacts:
+  - targetId: 'UC-001'
+    type: 'relates_to'
+---
 
-**Requirement**
+# User Authentication
 
-```typescript
-{
-  id: string;              // REQ-001, REQ-002, etc.
-  title: string;
-  description: string;
-  text: string;            // Full requirement text
-  rationale: string;       // Why this requirement exists
-  parentIds: string[];     // Array of parent requirement IDs
-  useCaseIds?: string[];   // Associated use cases
-  status: 'draft' | 'approved' | 'implemented' | 'verified';
-  priority: 'low' | 'medium' | 'high';
-  revision: string;        // "01", "02", "03", etc.
-  lastModified: number;
-}
-```
+## Description
 
-**Use Case**
+The system shall provide secure user authentication.
 
-```typescript
-{
-  id: string;              // UC-001, UC-002, etc.
-  title: string;
-  description: string;
-  actor: string;           // Who performs this use case
-  preconditions: string;
-  postconditions: string;
-  mainFlow: string;
-  alternativeFlows?: string;
-  priority: 'low' | 'medium' | 'high';
-  status: 'draft' | 'approved' | 'implemented' | 'verified';
-  revision: string;
-  lastModified: number;
-}
-```
+## Requirement Text
 
-**Test Case**
+Users must authenticate using email and password...
 
-```typescript
-{
-  id: string;              // TC-001, TC-002, etc.
-  title: string;
-  description: string;
-  requirementIds: string[]; // Requirements this test verifies
-  status: 'draft' | 'approved' | 'passed' | 'failed' | 'blocked';
-  priority: 'low' | 'medium' | 'high';
-  revision: string;
-  lastModified: number;
-}
+## Rationale
+
+Security is a core requirement for the system.
 ```
 
 ## 🎨 Design
 
-- **Dark Theme** - Modern dark UI with glassmorphism effects
+- **Dark Theme** - Modern dark UI with CSS custom properties
 - **Responsive** - Works on desktop and tablet devices
 - **Accessible** - Semantic HTML and keyboard navigation
 - **Visual Feedback** - Hover states, transitions, and animations
@@ -303,60 +243,53 @@ src/
 
 ## 🔒 Data Privacy
 
-- All data stored locally in browser LocalStorage
-- No external servers or cloud storage
+- All data stored locally in your Git repositories
+- No external servers or cloud storage required
 - Export feature allows manual backups
-- Private GitHub repository for code
+- Works entirely offline after initial load
 
 ## 🛠️ Development
 
 ### Available Scripts
 
 ```bash
-npm run dev      # Start development server
-npm run build    # Build for production
-npm run preview  # Preview production build
-npm run lint     # Run ESLint
-npm test         # Run Vitest unit/component tests
+npm run dev       # Start development server
+npm run build     # Build for production
+npm run preview   # Preview production build
+npm run lint      # Run ESLint
+npm run typecheck # TypeScript type checking
+npm test          # Run Vitest unit/component tests
+npm test -- --run # Run tests once (no watch)
 npx playwright test  # Run E2E tests
 ```
 
-### Testing
-
-**Unit/Component Tests** (Vitest)
-
-- `src/utils/__tests__/revisionUtils.test.ts` - Revision numbering logic
-- `src/components/__tests__/ProjectManager.test.tsx` - Project management
-- `src/components/__tests__/MarkdownEditor.test.tsx` - Markdown editor
-
-**E2E Tests** (Playwright)
-
-- `e2e/basic-flow.spec.ts` - Core CRUD operations
-- `e2e/revision-baseline.spec.ts` - Revision tracking and baselines
-- `e2e/use-case-flow.spec.ts` - Use case workflow
-- `e2e/multi-project-artifacts.spec.ts` - Multi-project artifact sharing
-- `e2e/pdf-export.spec.ts` - Comprehensive PDF export
-
 ### Code Quality
 
-- TypeScript for type safety
+- TypeScript strict mode enabled
 - ESLint for code quality
-- Strict mode enabled
-- Comprehensive test coverage for critical paths
+- Prettier for formatting (via ESLint)
+- Pre-commit hooks via lint-staged
+- 440+ unit tests with comprehensive coverage
 
 ## 📝 Recent Updates
 
-### Version 2.0 (November 2024)
+### December 2024
+
+- ✅ **Links embedded in artifacts** - Links now stored in each artifact's `linkedArtifacts` field instead of separate `links.json`
+- ✅ **Improved repository selection** - Better UX for selecting Git repositories
+- ✅ **TraceabilityMatrix refactored** - Now builds links from artifact data
+- ✅ **Test cleanup** - Removed outdated tests, 440+ tests passing
+- ✅ **Code cleanup** - Removed `mockLinks` export and deprecated `Link` interface
+
+### November 2024
 
 - ✅ **Multi-project support** with global artifact library
-- ✅ **Comprehensive PDF export** with file save dialog, table of contents, and all artifact types
+- ✅ **Comprehensive PDF export** with granular table of contents
 - ✅ **Revision tracking** with automatic numbering (01, 02, 03...)
-- ✅ **Baseline management** for version control
+- ✅ **Baseline management** as Git tags
 - ✅ **Trash bin** with soft delete and restore
 - ✅ **Testing infrastructure** (Vitest + Playwright)
-- ✅ **Global artifact sharing** - artifacts can be used in multiple projects
-- ✅ Fixed critical multi-project artifact bug
-- ✅ E2E test coverage for critical workflows
+- ✅ **Markdown storage** for all artifacts
 
 ## 📝 License
 
