@@ -18,6 +18,8 @@ interface LinkModalProps {
 
 type ArtifactType = 'requirement' | 'usecase' | 'testcase' | 'information';
 
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
 export const LinkModal: React.FC<LinkModalProps> = ({
   isOpen,
   sourceArtifactId,
@@ -44,8 +46,6 @@ export const LinkModal: React.FC<LinkModalProps> = ({
       setLinkType('relates_to');
     }
   }, [isOpen]);
-
-  if (!isOpen || !sourceArtifactId) return null;
 
   // Helper to find which project an artifact belongs to
   const findProjectForArtifact = (id: string): Project | undefined => {
@@ -92,8 +92,8 @@ export const LinkModal: React.FC<LinkModalProps> = ({
 
   const filteredArtifacts = getFilteredArtifacts();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (selectedTargetId) {
       onAddLink({
         targetId: selectedTargetId,
@@ -102,6 +102,13 @@ export const LinkModal: React.FC<LinkModalProps> = ({
       onClose();
     }
   };
+
+  useKeyboardShortcuts({
+    onSave: handleSubmit,
+    onClose: onClose,
+  });
+
+  if (!isOpen || !sourceArtifactId) return null;
 
   const getSourceLabel = () => {
     switch (sourceArtifactType) {

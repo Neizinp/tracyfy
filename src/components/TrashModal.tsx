@@ -26,6 +26,8 @@ interface DeletedItem {
   onDelete: () => void;
 }
 
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
 export const TrashModal: React.FC<TrashModalProps> = ({
   isOpen,
   onClose,
@@ -39,6 +41,10 @@ export const TrashModal: React.FC<TrashModalProps> = ({
   onPermanentDeleteUseCase,
   onPermanentDeleteInformation,
 }) => {
+  useKeyboardShortcuts({
+    onClose: onClose,
+  });
+
   if (!isOpen) return null;
 
   const formatDate = (timestamp?: number) => {

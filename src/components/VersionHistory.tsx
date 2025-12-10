@@ -12,6 +12,8 @@ interface VersionHistoryProps {
   onCreateBaseline: (name: string, message: string) => void;
 }
 
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
 export const VersionHistory: React.FC<VersionHistoryProps> = ({
   isOpen,
   baselines,
@@ -80,10 +82,8 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     setIsCreatingBaseline(true);
   };
 
-  if (!isOpen) return null;
-
-  const handleCreateBaselineSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateBaselineSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (baselineName.trim()) {
       onCreateBaseline(
         baselineName.trim(),
@@ -94,6 +94,13 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
       setIsCreatingBaseline(false);
     }
   };
+
+  useKeyboardShortcuts({
+    onSave: isCreatingBaseline ? handleCreateBaselineSubmit : undefined,
+    onClose: onClose,
+  });
+
+  if (!isOpen) return null;
 
   return (
     <div

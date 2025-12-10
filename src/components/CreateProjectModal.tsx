@@ -7,6 +7,8 @@ interface CreateProjectModalProps {
   onSubmit: (name: string, description: string) => void;
 }
 
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
 export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   isOpen,
   onClose,
@@ -15,10 +17,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
 
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (name.trim()) {
       onSubmit(name, description);
       setName('');
@@ -26,6 +26,13 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
       onClose();
     }
   };
+
+  useKeyboardShortcuts({
+    onSave: handleSubmit,
+    onClose: onClose,
+  });
+
+  if (!isOpen) return null;
 
   return (
     <div

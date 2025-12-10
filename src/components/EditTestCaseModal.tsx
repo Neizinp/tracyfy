@@ -16,6 +16,8 @@ interface EditTestCaseModalProps {
 
 type Tab = 'overview' | 'relationships' | 'history';
 
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
 export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
   isOpen,
   testCase,
@@ -43,10 +45,10 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
     }
   }, [testCase]);
 
-  if (!isOpen || !testCase) return null;
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!testCase) return;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
     const updates: Partial<TestCase> = {
       title,
       description,
@@ -64,6 +66,13 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
     onSubmit(testCase.id, updates);
     onClose();
   };
+
+  useKeyboardShortcuts({
+    onSave: handleSubmit,
+    onClose: onClose,
+  });
+
+  if (!isOpen || !testCase) return null;
 
   const handleRequirementToggle = (reqId: string) => {
     setRequirementIds((prev) =>

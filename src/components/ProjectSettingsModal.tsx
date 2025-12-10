@@ -9,6 +9,8 @@ interface ProjectSettingsModalProps {
   onDelete: (projectId: string) => void;
 }
 
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
 export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   project,
   isOpen,
@@ -32,10 +34,8 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
     }
   }, [isOpen, project]);
 
-  if (!isOpen) return null;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setError(null);
     setIsSubmitting(true);
 
@@ -48,6 +48,13 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       setIsSubmitting(false);
     }
   };
+
+  useKeyboardShortcuts({
+    onSave: handleSubmit,
+    onClose: onClose,
+  });
+
+  if (!isOpen) return null;
 
   return (
     <div

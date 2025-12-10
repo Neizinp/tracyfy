@@ -104,6 +104,8 @@ const LibraryItem = ({
   );
 };
 
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
 export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
   isOpen,
   onClose,
@@ -129,6 +131,10 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
   };
 
   const [searchQuery, setSearchQuery] = useState('');
+
+  useKeyboardShortcuts({
+    onClose: onClose,
+  });
 
   if (!isOpen) return null;
 

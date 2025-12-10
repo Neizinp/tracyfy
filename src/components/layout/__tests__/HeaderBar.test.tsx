@@ -31,13 +31,13 @@ describe('HeaderBar', () => {
       const onSearch = vi.fn();
       render(<HeaderBar {...defaultProps} onSearch={onSearch} />);
 
-      expect(screen.getByPlaceholderText('Search...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Search... (Ctrl+K)')).toBeInTheDocument();
     });
 
     it('should not render search bar when onSearch is not provided', () => {
       render(<HeaderBar {...defaultProps} />);
 
-      expect(screen.queryByPlaceholderText('Search...')).not.toBeInTheDocument();
+      expect(screen.queryByPlaceholderText('Search... (Ctrl+K)')).not.toBeInTheDocument();
     });
 
     it('should render History button when onViewHistory is provided', () => {
@@ -80,7 +80,7 @@ describe('HeaderBar', () => {
       const onSearch = vi.fn();
       render(<HeaderBar {...defaultProps} onSearch={onSearch} />);
 
-      const searchInput = screen.getByPlaceholderText('Search...');
+      const searchInput = screen.getByPlaceholderText('Search... (Ctrl+K)');
       fireEvent.change(searchInput, { target: { value: 'test query' } });
 
       expect(onSearch).toHaveBeenCalledWith('test query');

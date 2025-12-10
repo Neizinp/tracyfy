@@ -7,6 +7,8 @@ interface UserSettingsModalProps {
   onClose: () => void;
 }
 
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
 export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }) => {
   const { users, currentUserId, currentUser, createUser, deleteUser, switchUser, updateUser } =
     useUser();
@@ -16,6 +18,10 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
   const [editName, setEditName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+
+  useKeyboardShortcuts({
+    onClose: onClose,
+  });
 
   useEffect(() => {
     if (isOpen) {

@@ -17,6 +17,8 @@ interface InformationModalProps {
 
 type Tab = 'overview' | 'relationships' | 'history';
 
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
 export const InformationModal: React.FC<InformationModalProps> = ({
   isOpen,
   information,
@@ -41,10 +43,8 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     }
   }, [information, isOpen]);
 
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (information) {
       onSubmit({
         id: information.id,
@@ -55,6 +55,13 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     }
     onClose();
   };
+
+  useKeyboardShortcuts({
+    onSave: handleSubmit,
+    onClose: onClose,
+  });
+
+  if (!isOpen) return null;
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },

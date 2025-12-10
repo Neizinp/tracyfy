@@ -10,6 +10,8 @@ interface NewTestCaseModalProps {
   onSubmit: (testCase: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated'>) => void;
 }
 
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
 export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
   isOpen,
   requirements,
@@ -23,10 +25,8 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
 
   const { currentUser } = useUser();
 
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     onSubmit({
       title,
       description,
@@ -43,6 +43,13 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
     setRequirementIds([]);
     onClose();
   };
+
+  useKeyboardShortcuts({
+    onSave: handleSubmit,
+    onClose: onClose,
+  });
+
+  if (!isOpen) return null;
 
   const handleRequirementToggle = (reqId: string) => {
     setRequirementIds((prev) =>

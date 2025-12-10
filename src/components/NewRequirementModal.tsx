@@ -12,6 +12,8 @@ interface NewRequirementModalProps {
 
 type Tab = 'overview' | 'details' | 'comments';
 
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
 export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({
   isOpen,
   onClose,
@@ -28,10 +30,8 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({
 
   const { currentUser } = useUser();
 
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     onSubmit({
       title,
       description,
@@ -57,6 +57,13 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({
     setActiveTab('overview');
     onClose();
   };
+
+  useKeyboardShortcuts({
+    onSave: handleSubmit,
+    onClose: onClose,
+  });
+
+  if (!isOpen) return null;
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },

@@ -21,6 +21,7 @@ import {
   dropdownItemStyle,
   hoverHandlers,
 } from './layoutStyles';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 
 export interface HeaderBarProps {
   currentProjectName: string;
@@ -110,6 +111,25 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       if (e2eInterval) clearInterval(e2eInterval);
     };
   }, []);
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useKeyboardShortcuts({
+    onSearch: () => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    },
+    onClose: () => {
+      // Blur search and close menus on Esc
+      if (searchInputRef.current && document.activeElement === searchInputRef.current) {
+        searchInputRef.current.blur();
+      }
+      setIsExportMenuOpen(false);
+      setIsImportMenuOpen(false);
+      setIsCreateMenuOpen(false);
+    },
+  });
 
   const handleExportPDF = () => {
     if (typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__) {
@@ -211,8 +231,9 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             }}
           />
           <input
+            ref={searchInputRef}
             type="text"
-            placeholder="Search..."
+            placeholder="Search... (Ctrl+K)"
             onChange={(e) => onSearch(e.target.value)}
             style={{
               width: '100%',

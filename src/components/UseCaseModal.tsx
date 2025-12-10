@@ -15,6 +15,8 @@ interface UseCaseModalProps {
 
 type Tab = 'overview' | 'flows' | 'conditions' | 'relationships' | 'history';
 
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
 export const UseCaseModal: React.FC<UseCaseModalProps> = ({
   isOpen,
   useCase,
@@ -58,10 +60,8 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     }
   }, [useCase, isOpen]);
 
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
 
     if (useCase) {
       onSubmit({
@@ -94,6 +94,13 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     }
     onClose();
   };
+
+  useKeyboardShortcuts({
+    onSave: handleSubmit,
+    onClose: onClose,
+  });
+
+  if (!isOpen) return null;
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },

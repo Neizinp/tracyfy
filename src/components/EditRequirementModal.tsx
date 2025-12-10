@@ -17,6 +17,8 @@ interface EditRequirementModalProps {
 
 type Tab = 'overview' | 'details' | 'relationships' | 'comments' | 'history';
 
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
 export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
   isOpen,
   requirement,
@@ -52,8 +54,8 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
     }
   }, [requirement]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!requirement) return;
 
     onSubmit(requirement.id, {
@@ -69,6 +71,11 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
     });
     onClose();
   };
+
+  useKeyboardShortcuts({
+    onSave: handleSubmit,
+    onClose: onClose,
+  });
 
   const handleDelete = () => {
     setShowDeleteConfirm(true);
