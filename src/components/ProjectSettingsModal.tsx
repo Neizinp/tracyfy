@@ -67,7 +67,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
     >
       <div
         style={{
-          backgroundColor: '#222',
+          backgroundColor: 'var(--color-bg-card)',
           borderRadius: '8px',
           border: '1px solid var(--color-border)',
           width: '500px',
@@ -164,10 +164,10 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
               style={{
                 marginBottom: 'var(--spacing-md)',
                 padding: 'var(--spacing-sm)',
-                backgroundColor: '#fef2f2',
-                color: '#991b1b',
+                backgroundColor: 'var(--color-error-bg)',
+                color: 'var(--color-error)',
                 borderRadius: '6px',
-                border: '1px solid #fecaca',
+                border: '1px solid var(--color-error-light)',
                 fontSize: '0.875rem',
               }}
             >
@@ -229,7 +229,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                 style={{
                   fontSize: '0.875rem',
                   fontWeight: 500,
-                  color: '#ef4444',
+                  color: 'var(--color-error)',
                   marginBottom: 'var(--spacing-sm)',
                 }}
               >
@@ -243,9 +243,9 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                     width: '100%',
                     padding: '8px 16px',
                     borderRadius: '6px',
-                    border: '1px solid #fca5a5',
-                    backgroundColor: 'white',
-                    color: '#b91c1c',
+                    border: '1px solid var(--color-error-light)',
+                    backgroundColor: 'var(--color-bg-card)',
+                    color: 'var(--color-error)',
                     cursor: 'pointer',
                     display: 'flex',
                     justifyContent: 'center',
@@ -272,16 +272,16 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
               ) : (
                 <div
                   style={{
-                    backgroundColor: '#fef2f2',
+                    backgroundColor: 'var(--color-error-bg)',
                     padding: 'var(--spacing-md)',
                     borderRadius: '6px',
-                    border: '1px solid #fecaca',
+                    border: '1px solid var(--color-error-light)',
                   }}
                 >
                   <p
                     style={{
                       fontSize: '0.875rem',
-                      color: '#991b1b',
+                      color: 'var(--color-error)',
                       marginBottom: 'var(--spacing-sm)',
                     }}
                   >
@@ -296,9 +296,9 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                         flex: 1,
                         padding: '6px 12px',
                         borderRadius: '6px',
-                        border: '1px solid #d1d5db',
-                        backgroundColor: 'white',
-                        color: '#374151',
+                        border: '1px solid var(--color-border)',
+                        backgroundColor: 'var(--color-bg-card)',
+                        color: 'var(--color-text-secondary)',
                         cursor: 'pointer',
                         fontSize: '0.875rem',
                         fontWeight: 500,
@@ -317,7 +317,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                         padding: '6px 12px',
                         borderRadius: '6px',
                         border: 'none',
-                        backgroundColor: '#dc2626',
+                        backgroundColor: 'var(--color-error)',
                         color: 'white',
                         cursor: 'pointer',
                         fontSize: '0.875rem',

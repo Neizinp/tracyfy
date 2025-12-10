@@ -81,7 +81,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             <label
               style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}
             >
-              Project Name <span style={{ color: '#ef4444' }}>*</span>
+              Project Name <span style={{ color: 'var(--color-error)' }}>*</span>
             </label>
             <input
               type="text"

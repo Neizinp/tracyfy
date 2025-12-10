@@ -91,7 +91,7 @@ export const TrashModal: React.FC<TrashModalProps> = ({
     >
       <div
         style={{
-          backgroundColor: '#222',
+          backgroundColor: 'var(--color-bg-card)',
           borderRadius: '8px',
           border: '1px solid var(--color-border)',
           width: '800px',
@@ -183,9 +183,9 @@ export const TrashModal: React.FC<TrashModalProps> = ({
                       style={{
                         padding: '6px 12px',
                         borderRadius: '4px',
-                        border: '1px solid #bbf7d0',
-                        backgroundColor: '#f0fdf4',
-                        color: '#15803d',
+                        border: '1px solid var(--color-success)',
+                        backgroundColor: 'var(--color-success-bg)',
+                        color: 'var(--color-success)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -205,9 +205,9 @@ export const TrashModal: React.FC<TrashModalProps> = ({
                       style={{
                         padding: '6px 12px',
                         borderRadius: '4px',
-                        border: '1px solid #fecaca',
-                        backgroundColor: '#fef2f2',
-                        color: '#dc2626',
+                        border: '1px solid var(--color-error)',
+                        backgroundColor: 'var(--color-error-bg)',
+                        color: 'var(--color-error)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
