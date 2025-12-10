@@ -18,6 +18,21 @@ vi.mock('../RevisionHistoryTab', () => ({
   RevisionHistoryTab: () => <div data-testid="revision-history">Revision History</div>,
 }));
 
+// Mock useGlobalState to avoid provider chain
+vi.mock('../../app/providers/GlobalStateProvider', () => ({
+  useGlobalState: () => ({
+    requirements: [],
+    useCases: [],
+    testCases: [],
+    information: [],
+  }),
+}));
+
+// Mock useIncomingLinks to return empty array
+vi.mock('../../hooks/useIncomingLinks', () => ({
+  useIncomingLinks: () => [],
+}));
+
 const renderWithProvider = (ui: React.ReactElement) => {
   return render(<UIProvider>{ui}</UIProvider>);
 };
