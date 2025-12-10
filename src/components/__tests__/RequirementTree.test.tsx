@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RequirementTree } from '../RequirementTree';
-import type { Requirement, Link } from '../../types';
+import type { Requirement } from '../../types';
 
 // Mock dnd-kit because it relies on browser APIs not fully present in jsdom
 vi.mock('@dnd-kit/core', async () => {
@@ -62,7 +62,6 @@ describe('RequirementTree', () => {
     },
   ];
 
-  const mockLinks: Link[] = [];
   const mockOnReorder = vi.fn();
   const mockOnLink = vi.fn();
   const mockOnEdit = vi.fn();
@@ -71,7 +70,6 @@ describe('RequirementTree', () => {
     render(
       <RequirementTree
         requirements={mockRequirements}
-        links={mockLinks}
         allRequirements={mockRequirements}
         onReorder={mockOnReorder}
         onLink={mockOnLink}
@@ -89,7 +87,6 @@ describe('RequirementTree', () => {
     render(
       <RequirementTree
         requirements={mockRequirements}
-        links={mockLinks}
         allRequirements={mockRequirements}
         onReorder={mockOnReorder}
         onLink={mockOnLink}
@@ -105,7 +102,6 @@ describe('RequirementTree', () => {
     render(
       <RequirementTree
         requirements={mockRequirements}
-        links={mockLinks}
         allRequirements={mockRequirements}
         onReorder={mockOnReorder}
         onLink={mockOnLink}
@@ -122,7 +118,6 @@ describe('RequirementTree', () => {
     render(
       <RequirementTree
         requirements={[]}
-        links={mockLinks}
         allRequirements={[]}
         onReorder={mockOnReorder}
         onLink={mockOnLink}

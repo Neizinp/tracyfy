@@ -1,12 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useRequirements } from '../useRequirements';
-import type { Requirement, Link } from '../../types';
+import type { Requirement } from '../../types';
 
 describe('useRequirements', () => {
   let mockRequirements: Requirement[];
   let mockSetRequirements: ReturnType<typeof vi.fn>;
   let mockSetUsedReqNumbers: ReturnType<typeof vi.fn>;
-  let mockSetLinks: ReturnType<typeof vi.fn>;
   let mockSetIsEditModalOpen: ReturnType<typeof vi.fn>;
   let mockSetEditingRequirement: ReturnType<typeof vi.fn>;
   let mockSaveArtifact: ReturnType<typeof vi.fn>;
@@ -32,7 +31,6 @@ describe('useRequirements', () => {
     usedReqNumbers = new Set([1]);
     mockSetRequirements = vi.fn() as any;
     mockSetUsedReqNumbers = vi.fn() as any;
-    mockSetLinks = vi.fn() as any;
     mockSetIsEditModalOpen = vi.fn() as any;
     mockSetEditingRequirement = vi.fn() as any;
     mockSaveArtifact = vi.fn().mockResolvedValue(undefined) as any;
@@ -46,12 +44,11 @@ describe('useRequirements', () => {
         setRequirements: mockSetRequirements,
         usedReqNumbers,
         setUsedReqNumbers: mockSetUsedReqNumbers,
-        setLinks: mockSetLinks,
         setIsEditModalOpen: mockSetIsEditModalOpen,
         setEditingRequirement: mockSetEditingRequirement,
         saveArtifact: mockSaveArtifact,
         deleteArtifact: mockDeleteArtifact,
-      } as any);
+      });
 
       await hook.handleAddRequirement({
         title: 'New Requirement',
@@ -94,12 +91,11 @@ describe('useRequirements', () => {
         setRequirements: mockSetRequirements,
         usedReqNumbers,
         setUsedReqNumbers: mockSetUsedReqNumbers,
-        setLinks: mockSetLinks,
         setIsEditModalOpen: mockSetIsEditModalOpen,
         setEditingRequirement: mockSetEditingRequirement,
         saveArtifact: mockSaveArtifact,
         deleteArtifact: mockDeleteArtifact,
-      } as any);
+      });
 
       await hook.handleAddRequirement({
         title: 'New Requirement',
@@ -125,12 +121,11 @@ describe('useRequirements', () => {
         setRequirements: mockSetRequirements,
         usedReqNumbers,
         setUsedReqNumbers: mockSetUsedReqNumbers,
-        setLinks: mockSetLinks,
         setIsEditModalOpen: mockSetIsEditModalOpen,
         setEditingRequirement: mockSetEditingRequirement,
         saveArtifact: mockSaveArtifact,
         deleteArtifact: mockDeleteArtifact,
-      } as any);
+      });
 
       await hook.handleUpdateRequirement('REQ-001', {
         title: 'Updated Title',
@@ -157,12 +152,11 @@ describe('useRequirements', () => {
         setRequirements: mockSetRequirements,
         usedReqNumbers,
         setUsedReqNumbers: mockSetUsedReqNumbers,
-        setLinks: mockSetLinks,
         setIsEditModalOpen: mockSetIsEditModalOpen,
         setEditingRequirement: mockSetEditingRequirement,
         saveArtifact: mockSaveArtifact,
         deleteArtifact: mockDeleteArtifact,
-      } as any);
+      });
 
       await hook.handleUpdateRequirement('REQ-999', {
         title: 'Updated Title',
@@ -180,12 +174,11 @@ describe('useRequirements', () => {
         setRequirements: mockSetRequirements,
         usedReqNumbers,
         setUsedReqNumbers: mockSetUsedReqNumbers,
-        setLinks: mockSetLinks,
         setIsEditModalOpen: mockSetIsEditModalOpen,
         setEditingRequirement: mockSetEditingRequirement,
         saveArtifact: mockSaveArtifact,
         deleteArtifact: mockDeleteArtifact,
-      } as any);
+      });
 
       hook.handleDeleteRequirement('REQ-001');
 
@@ -208,12 +201,11 @@ describe('useRequirements', () => {
         setRequirements: mockSetRequirements,
         usedReqNumbers,
         setUsedReqNumbers: mockSetUsedReqNumbers,
-        setLinks: mockSetLinks,
         setIsEditModalOpen: mockSetIsEditModalOpen,
         setEditingRequirement: mockSetEditingRequirement,
         saveArtifact: mockSaveArtifact,
         deleteArtifact: mockDeleteArtifact,
-      } as any);
+      });
 
       hook.handleDeleteRequirement('REQ-999');
 
@@ -235,12 +227,11 @@ describe('useRequirements', () => {
         setRequirements: mockSetRequirements,
         usedReqNumbers,
         setUsedReqNumbers: mockSetUsedReqNumbers,
-        setLinks: mockSetLinks,
         setIsEditModalOpen: mockSetIsEditModalOpen,
         setEditingRequirement: mockSetEditingRequirement,
         saveArtifact: mockSaveArtifact,
         deleteArtifact: mockDeleteArtifact,
-      } as any);
+      });
 
       hook.handleRestoreRequirement('REQ-001');
 
@@ -261,12 +252,11 @@ describe('useRequirements', () => {
         setRequirements: mockSetRequirements,
         usedReqNumbers,
         setUsedReqNumbers: mockSetUsedReqNumbers,
-        setLinks: mockSetLinks,
         setIsEditModalOpen: mockSetIsEditModalOpen,
         setEditingRequirement: mockSetEditingRequirement,
         saveArtifact: mockSaveArtifact,
         deleteArtifact: mockDeleteArtifact,
-      } as any);
+      });
 
       hook.handleRestoreRequirement('REQ-999');
 
@@ -311,17 +301,15 @@ describe('useRequirements', () => {
         setRequirements: mockSetRequirements,
         usedReqNumbers,
         setUsedReqNumbers: mockSetUsedReqNumbers,
-        setLinks: mockSetLinks,
         setIsEditModalOpen: mockSetIsEditModalOpen,
         setEditingRequirement: mockSetEditingRequirement,
         saveArtifact: mockSaveArtifact,
         deleteArtifact: mockDeleteArtifact,
-      } as any);
+      });
 
       hook.handlePermanentDeleteRequirement('REQ-001');
 
       expect(mockSetRequirements).toHaveBeenCalledWith(expect.any(Function));
-      expect(mockSetLinks).toHaveBeenCalledWith(expect.any(Function));
       expect(mockDeleteArtifact).toHaveBeenCalledWith('requirements', 'REQ-001');
     });
 
@@ -378,12 +366,11 @@ describe('useRequirements', () => {
         setRequirements: mockSetRequirements,
         usedReqNumbers,
         setUsedReqNumbers: mockSetUsedReqNumbers,
-        setLinks: mockSetLinks,
         setIsEditModalOpen: mockSetIsEditModalOpen,
         setEditingRequirement: mockSetEditingRequirement,
         saveArtifact: mockSaveArtifact,
         deleteArtifact: mockDeleteArtifact,
-      } as any);
+      });
 
       hook.handlePermanentDeleteRequirement('REQ-001');
 
@@ -393,38 +380,6 @@ describe('useRequirements', () => {
       expect(result.find((r: Requirement) => r.id === 'REQ-003')?.parentIds).toEqual([]);
       expect(result.find((r: Requirement) => r.id === 'REQ-002')?.revision).toBe('02');
       expect(result.find((r: Requirement) => r.id === 'REQ-003')?.revision).toBe('02');
-    });
-
-    it('should remove links associated with deleted requirement', () => {
-      let capturedLinksUpdater: any;
-      mockSetLinks.mockImplementation((updater) => {
-        capturedLinksUpdater = updater;
-      });
-
-      const hook = useRequirements({
-        requirements: mockRequirements,
-        setRequirements: mockSetRequirements,
-        usedReqNumbers,
-        setUsedReqNumbers: mockSetUsedReqNumbers,
-        setLinks: mockSetLinks,
-        setIsEditModalOpen: mockSetIsEditModalOpen,
-        setEditingRequirement: mockSetEditingRequirement,
-        saveArtifact: mockSaveArtifact,
-        deleteArtifact: mockDeleteArtifact,
-      } as any);
-
-      hook.handlePermanentDeleteRequirement('REQ-001');
-
-      const links: Link[] = [
-        { id: '1', sourceId: 'REQ-001', targetId: 'UC-001', type: 'relates_to' },
-        { id: '2', sourceId: 'REQ-002', targetId: 'UC-001', type: 'relates_to' },
-        { id: '3', sourceId: 'UC-002', targetId: 'REQ-001', type: 'relates_to' },
-      ];
-
-      const result = capturedLinksUpdater(links);
-      expect(result).toEqual([
-        { id: '2', sourceId: 'REQ-002', targetId: 'UC-001', type: 'relates_to' },
-      ]);
     });
   });
 });

@@ -1,12 +1,23 @@
 import React from 'react';
-import type { Requirement, Link } from '../types';
+import type { Requirement, ArtifactLink } from '../types';
 
 interface TraceabilityMatrixProps {
   requirements: Requirement[];
-  links: Link[];
 }
 
-export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({ requirements, links }) => {
+export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({ requirements }) => {
+  // Build a flat list of all links from requirements' linkedArtifacts
+  const allLinks: { sourceId: string; targetId: string; type: ArtifactLink['type'] }[] = [];
+  requirements.forEach((req) => {
+    (req.linkedArtifacts || []).forEach((link) => {
+      allLinks.push({
+        sourceId: req.id,
+        targetId: link.targetId,
+        type: link.type,
+      });
+    });
+  });
+
   // Helper to check if req1 is a parent of req2
   const isParent = (parentId: string, childId: string): boolean => {
     const child = requirements.find((r) => r.id === childId);
@@ -14,8 +25,11 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({ requirem
   };
 
   // Helper to find link between two requirements
-  const getLink = (fromId: string, toId: string): Link | undefined => {
-    return links.find(
+  const getLink = (
+    fromId: string,
+    toId: string
+  ): { sourceId: string; targetId: string; type: ArtifactLink['type'] } | undefined => {
+    return allLinks.find(
       (l) =>
         (l.sourceId === fromId && l.targetId === toId) ||
         (l.sourceId === toId && l.targetId === fromId)

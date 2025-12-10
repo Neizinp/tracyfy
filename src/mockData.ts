@@ -1,4 +1,4 @@
-import type { Requirement, UseCase, TestCase, Information, Link } from './types';
+import type { Requirement, UseCase, TestCase, Information } from './types';
 
 // Comprehensive mock data for a sample project
 export const mockRequirements: Requirement[] = [
@@ -795,84 +795,5 @@ We will use JWT tokens stored in httpOnly cookies with the following characteris
     dateCreated: Date.now() - 25 * 24 * 60 * 60 * 1000,
     lastModified: Date.now(),
     revision: '01',
-  },
-];
-
-export const mockLinks: Link[] = [
-  // Authentication requirements links
-  {
-    id: crypto.randomUUID(),
-    sourceId: 'REQ-002',
-    targetId: 'REQ-003',
-    type: 'relates_to',
-    description: 'Password security and session management work together for authentication',
-  },
-  {
-    id: crypto.randomUUID(),
-    sourceId: 'REQ-003',
-    targetId: 'REQ-004',
-    type: 'relates_to',
-    description: 'Both are authentication mechanisms',
-  },
-
-  // Data encryption links
-  {
-    id: crypto.randomUUID(),
-    sourceId: 'REQ-006',
-    targetId: 'REQ-007',
-    type: 'relates_to',
-    description: 'Backups must also be encrypted',
-  },
-
-  // UI requirements links
-  {
-    id: crypto.randomUUID(),
-    sourceId: 'REQ-009',
-    targetId: 'REQ-010',
-    type: 'relates_to',
-    description: 'Both are UI/UX requirements',
-  },
-
-  // Performance dependencies
-  {
-    id: crypto.randomUUID(),
-    sourceId: 'REQ-012',
-    targetId: 'REQ-011',
-    type: 'depends_on',
-    description: 'Fast API responses are required for good page load performance',
-  },
-
-  // Notification system
-  {
-    id: crypto.randomUUID(),
-    sourceId: 'REQ-014',
-    targetId: 'REQ-013',
-    type: 'depends_on',
-    description: 'In-app notifications complement email notifications',
-  },
-
-  // Security and audit
-  {
-    id: crypto.randomUUID(),
-    sourceId: 'REQ-015',
-    targetId: 'REQ-001',
-    type: 'relates_to',
-    description: 'Authentication events must be logged',
-  },
-  {
-    id: crypto.randomUUID(),
-    sourceId: 'REQ-015',
-    targetId: 'REQ-005',
-    type: 'relates_to',
-    description: 'Data access must be logged',
-  },
-
-  // Potential conflicts
-  {
-    id: crypto.randomUUID(),
-    sourceId: 'REQ-011',
-    targetId: 'REQ-005',
-    type: 'conflicts_with',
-    description: 'Encryption overhead may impact performance targets',
   },
 ];

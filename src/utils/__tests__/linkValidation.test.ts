@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import type { Requirement, Link } from '../../types';
+import type { Requirement } from '../../types';
+
+// Type for link-shaped objects used in tests (links are now embedded in artifacts)
+type LinkLike = { id?: string; sourceId: string; targetId: string; type?: string };
 
 describe('Link Validation Logic', () => {
   describe('Circular Dependency Detection', () => {
@@ -125,9 +128,7 @@ describe('Link Validation Logic', () => {
         { id: 'REQ-002', isDeleted: true },
       ];
 
-      const links: Pick<Link, 'sourceId' | 'targetId'>[] = [
-        { sourceId: 'REQ-001', targetId: 'REQ-002' },
-      ];
+      const links: LinkLike[] = [{ sourceId: 'REQ-001', targetId: 'REQ-002' }];
 
       const orphanedLinks = links.filter((link) => {
         const source = requirements.find((r) => r.id === link.sourceId);
@@ -141,9 +142,7 @@ describe('Link Validation Logic', () => {
     it('should detect links to non-existent artifacts', () => {
       const requirements = [{ id: 'REQ-001' }, { id: 'REQ-002' }];
 
-      const links: Pick<Link, 'sourceId' | 'targetId'>[] = [
-        { sourceId: 'REQ-001', targetId: 'REQ-999' },
-      ];
+      const links: LinkLike[] = [{ sourceId: 'REQ-001', targetId: 'REQ-999' }];
 
       const validIds = new Set(requirements.map((r) => r.id));
       const orphanedLinks = links.filter(
@@ -154,7 +153,7 @@ describe('Link Validation Logic', () => {
     });
 
     it('should find all links for a specific artifact', () => {
-      const links: Pick<Link, 'id' | 'sourceId' | 'targetId'>[] = [
+      const links: LinkLike[] = [
         { id: 'link1', sourceId: 'REQ-001', targetId: 'REQ-002' },
         { id: 'link2', sourceId: 'REQ-002', targetId: 'REQ-003' },
         { id: 'link3', sourceId: 'REQ-003', targetId: 'REQ-001' },
@@ -183,9 +182,7 @@ describe('Link Validation Logic', () => {
     });
 
     it('should prevent duplicate links', () => {
-      const links: Pick<Link, 'sourceId' | 'targetId' | 'type'>[] = [
-        { sourceId: 'REQ-001', targetId: 'REQ-002', type: 'relates_to' },
-      ];
+      const links: LinkLike[] = [{ sourceId: 'REQ-001', targetId: 'REQ-002', type: 'relates_to' }];
 
       const newLink = { sourceId: 'REQ-001', targetId: 'REQ-002', type: 'relates_to' };
 
@@ -200,9 +197,7 @@ describe('Link Validation Logic', () => {
     });
 
     it('should handle bidirectional link checking', () => {
-      const links: Pick<Link, 'sourceId' | 'targetId' | 'type'>[] = [
-        { sourceId: 'REQ-001', targetId: 'REQ-002', type: 'relates_to' },
-      ];
+      const links: LinkLike[] = [{ sourceId: 'REQ-001', targetId: 'REQ-002', type: 'relates_to' }];
 
       // Check if a reverse link exists
       const hasReverseLink = (sourceId: string, targetId: string): boolean => {
@@ -219,7 +214,7 @@ describe('Link Validation Logic', () => {
 
   describe('Link Cleanup', () => {
     it('should identify links to remove when artifact is deleted', () => {
-      const links: Pick<Link, 'id' | 'sourceId' | 'targetId'>[] = [
+      const links: LinkLike[] = [
         { id: 'link1', sourceId: 'REQ-001', targetId: 'REQ-002' },
         { id: 'link2', sourceId: 'REQ-002', targetId: 'REQ-003' },
         { id: 'link3', sourceId: 'REQ-003', targetId: 'REQ-001' },

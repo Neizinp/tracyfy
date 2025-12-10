@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TraceabilityMatrix } from '../TraceabilityMatrix';
-import type { Requirement, Link } from '../../types';
+import type { Requirement } from '../../types';
 
 describe('TraceabilityMatrix', () => {
   const mockRequirements: Requirement[] = [
@@ -17,6 +17,7 @@ describe('TraceabilityMatrix', () => {
       parentIds: [],
       text: '',
       rationale: '',
+      linkedArtifacts: [{ targetId: 'REQ-003', type: 'relates_to' }],
     },
     {
       id: 'REQ-002',
@@ -46,18 +47,8 @@ describe('TraceabilityMatrix', () => {
     },
   ];
 
-  const mockLinks: Link[] = [
-    {
-      id: 'link-1',
-      sourceId: 'REQ-001',
-      targetId: 'REQ-003',
-      type: 'relates_to',
-      description: '',
-    },
-  ];
-
   it('renders matrix structure correctly', () => {
-    render(<TraceabilityMatrix requirements={mockRequirements} links={mockLinks} />);
+    render(<TraceabilityMatrix requirements={mockRequirements} />);
 
     expect(screen.getByText('Traceability Matrix')).toBeInTheDocument();
     // Check row headers
@@ -67,7 +58,7 @@ describe('TraceabilityMatrix', () => {
   });
 
   it('renders parent/child relationships', () => {
-    render(<TraceabilityMatrix requirements={mockRequirements} links={mockLinks} />);
+    render(<TraceabilityMatrix requirements={mockRequirements} />);
 
     // REQ-001 is parent of REQ-002
     // Row REQ-001, Col REQ-002 -> Parent indicator
@@ -86,15 +77,15 @@ describe('TraceabilityMatrix', () => {
   });
 
   it('renders explicit links', () => {
-    render(<TraceabilityMatrix requirements={mockRequirements} links={mockLinks} />);
+    render(<TraceabilityMatrix requirements={mockRequirements} />);
 
-    // REQ-001 relates to REQ-003
+    // REQ-001 relates to REQ-003 (via linkedArtifacts)
     const linkCells = screen.getAllByText('↔');
     expect(linkCells.length).toBeGreaterThanOrEqual(2);
   });
 
   it('renders self-reference cells as empty/dash', () => {
-    render(<TraceabilityMatrix requirements={mockRequirements} links={mockLinks} />);
+    render(<TraceabilityMatrix requirements={mockRequirements} />);
 
     // There should be dashes for diagonal cells (same req)
     const dashes = screen.getAllByText('-');

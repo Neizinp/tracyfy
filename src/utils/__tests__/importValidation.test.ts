@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import * as XLSX from 'xlsx';
-import type { Link } from '../../types';
+
+// Type for link-shaped objects used in tests (links are now embedded in artifacts)
+type LinkLike = { sourceId: string; targetId: string };
 
 describe('Import Validation', () => {
   describe('JSON Import', () => {
@@ -79,11 +81,11 @@ describe('Import Validation', () => {
 
     it('should validate link integrity', () => {
       const requirements = [{ id: 'REQ-001' }, { id: 'REQ-002' }];
-      const validLink: Pick<Link, 'sourceId' | 'targetId'> = {
+      const validLink: LinkLike = {
         sourceId: 'REQ-001',
         targetId: 'REQ-002',
       };
-      const invalidLink: Pick<Link, 'sourceId' | 'targetId'> = {
+      const invalidLink: LinkLike = {
         sourceId: 'REQ-001',
         targetId: 'REQ-999', // Non-existent
       };

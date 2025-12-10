@@ -3,7 +3,7 @@ import { TraceabilityMatrix } from '../components';
 import { useRequirements, useUI } from '../app/providers';
 
 export const TraceabilityMatrixPage: React.FC = () => {
-  const { requirements, links } = useRequirements();
+  const { requirements } = useRequirements();
   const { searchQuery } = useUI();
 
   const filteredRequirements = requirements.filter((req) => {
@@ -18,5 +18,5 @@ export const TraceabilityMatrixPage: React.FC = () => {
     );
   });
 
-  return <TraceabilityMatrix requirements={filteredRequirements} links={links} />;
+  return <TraceabilityMatrix requirements={filteredRequirements} />;
 };

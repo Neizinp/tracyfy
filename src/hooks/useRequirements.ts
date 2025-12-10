@@ -1,4 +1,4 @@
-import type { Requirement, Link } from '../types';
+import type { Requirement } from '../types';
 import { generateNextReqId } from '../utils/idGenerationUtils';
 import { incrementRevision } from '../utils/revisionUtils';
 
@@ -7,7 +7,6 @@ interface UseRequirementsProps {
   setRequirements: (reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])) => void;
   usedReqNumbers: Set<number>;
   setUsedReqNumbers: (nums: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
-  setLinks: (links: Link[] | ((prev: Link[]) => Link[])) => void;
   setIsEditModalOpen: (open: boolean) => void;
   setEditingRequirement: (req: Requirement | null) => void;
   saveArtifact: (type: 'requirements', id: string, artifact: Requirement) => Promise<void>;
@@ -19,7 +18,6 @@ export function useRequirements({
   setRequirements,
   usedReqNumbers,
   setUsedReqNumbers,
-  setLinks,
   setIsEditModalOpen,
   setEditingRequirement,
   saveArtifact,
@@ -122,7 +120,6 @@ export function useRequirements({
             : req.revision,
         }))
     );
-    setLinks((prev) => prev.filter((link) => link.sourceId !== id && link.targetId !== id));
 
     // Delete from filesystem
     deleteArtifact('requirements', id).catch((err) =>
