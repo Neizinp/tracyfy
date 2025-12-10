@@ -111,7 +111,7 @@ describe('browserGitService', () => {
         rationale: '',
         status: 'draft',
         priority: 'medium',
-        parentIds: [],
+
         lastModified: Date.now(),
         revision: '01',
         dateCreated: Date.now(),

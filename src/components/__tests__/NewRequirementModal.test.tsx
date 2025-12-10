@@ -108,7 +108,7 @@ describe('NewRequirementModal', () => {
         text: 'Detailed requirement text',
         status: 'draft',
         priority: 'medium',
-        parentIds: [],
+
         revision: '01',
         dateCreated: expect.any(Number),
       })
@@ -224,10 +224,6 @@ describe('NewRequirementModal', () => {
     const submitButton = screen.getByText('Create Requirement');
     fireEvent.click(submitButton);
 
-    expect(defaultProps.onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({
-        parentIds: [],
-      })
-    );
+    expect(defaultProps.onSubmit).toHaveBeenCalledWith(expect.objectContaining({}));
   });
 });

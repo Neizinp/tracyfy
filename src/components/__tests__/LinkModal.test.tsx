@@ -24,7 +24,7 @@ describe('LinkModal', () => {
     description: 'Source',
     text: '',
     rationale: '',
-    parentIds: [],
+
     status: 'draft',
     priority: 'medium',
     dateCreated: 1000000,
@@ -39,7 +39,7 @@ describe('LinkModal', () => {
     description: 'Target',
     text: '',
     rationale: '',
-    parentIds: [],
+
     status: 'draft',
     priority: 'medium',
     dateCreated: 1000000,

@@ -51,7 +51,7 @@ describe('excelExportUtils', () => {
     rationale: 'Rationale',
     status: 'draft',
     priority: 'high',
-    parentIds: [],
+
     lastModified: 0,
     revision: '01',
     dateCreated: 0,

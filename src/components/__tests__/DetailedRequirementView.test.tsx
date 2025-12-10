@@ -22,7 +22,7 @@ describe('DetailedRequirementView', () => {
       revision: '01',
       lastModified: Date.now(),
       dateCreated: Date.now(),
-      parentIds: [],
+
       text: '',
       rationale: '',
     },
@@ -35,7 +35,7 @@ describe('DetailedRequirementView', () => {
       revision: '02',
       lastModified: Date.now(),
       dateCreated: Date.now(),
-      parentIds: [],
+
       text: '',
       rationale: '',
     },

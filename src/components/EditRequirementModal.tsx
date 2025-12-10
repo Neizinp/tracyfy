@@ -9,7 +9,6 @@ import { useUI } from '../app/providers';
 interface EditRequirementModalProps {
   isOpen: boolean;
   requirement: Requirement | null;
-  allRequirements: Requirement[];
   onClose: () => void;
   onSubmit: (id: string, updates: Partial<Requirement>) => void;
   onDelete: (id: string) => void;
@@ -22,7 +21,6 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
   isOpen,
   requirement,
-  allRequirements,
   onClose,
   onSubmit,
   onDelete,
@@ -35,7 +33,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
   const [rationale, setRationale] = useState('');
   const [priority, setPriority] = useState<Requirement['priority']>('medium');
   const [status, setStatus] = useState<Requirement['status']>('draft');
-  const [parentIds, setParentIds] = useState<string[]>([]);
+
   const [verificationMethod, setVerificationMethod] = useState('');
   const [comments, setComments] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -48,7 +46,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
       setRationale(requirement.rationale);
       setPriority(requirement.priority);
       setStatus(requirement.status);
-      setParentIds(requirement.parentIds || []);
+
       setVerificationMethod(requirement.verificationMethod || '');
       setComments(requirement.comments || '');
     }
@@ -65,7 +63,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
       rationale,
       priority,
       status,
-      parentIds,
+
       verificationMethod,
       comments,
     });
@@ -91,42 +89,6 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
   const cancelDelete = () => {
     setShowDeleteConfirm(false);
   };
-
-  const handleParentToggle = (parentId: string) => {
-    setParentIds((prev) =>
-      prev.includes(parentId) ? prev.filter((id) => id !== parentId) : [...prev, parentId]
-    );
-  };
-
-  const canBeParent = (potentialParentId: string): boolean => {
-    if (!requirement) return true;
-
-    const getAllDescendants = (reqId: string): Set<string> => {
-      const descendants = new Set<string>();
-      const queue = [reqId];
-
-      while (queue.length > 0) {
-        const currentId = queue.shift()!;
-        allRequirements
-          .filter((r) => r.parentIds?.includes(currentId))
-          .forEach((child) => {
-            if (!descendants.has(child.id)) {
-              descendants.add(child.id);
-              queue.push(child.id);
-            }
-          });
-      }
-
-      return descendants;
-    };
-
-    const descendants = getAllDescendants(requirement.id);
-    return !descendants.has(potentialParentId);
-  };
-
-  const availableParents = allRequirements.filter(
-    (req) => req.id !== requirement?.id && !req.isDeleted
-  );
 
   if (!isOpen || !requirement) return null;
 
@@ -438,115 +400,41 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
           {activeTab === 'relationships' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
               <div>
-                <label
-                  style={{
-                    display: 'block',
-                    marginBottom: 'var(--spacing-xs)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Parent Requirements ({parentIds.length} selected)
-                </label>
                 <div
                   style={{
-                    maxHeight: '250px',
-                    overflowY: 'auto',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '6px',
-                    padding: '8px',
-                    backgroundColor: 'var(--color-bg-app)',
-                  }}
-                >
-                  {availableParents.length === 0 ? (
-                    <div
-                      style={{
-                        padding: '8px',
-                        color: 'var(--color-text-muted)',
-                        fontSize: 'var(--font-size-sm)',
-                      }}
-                    >
-                      No other requirements available
-                    </div>
-                  ) : (
-                    availableParents.map((req) => {
-                      const isDescendant = !canBeParent(req.id);
-                      const isDisabled = isDescendant;
-
-                      return (
-                        <label
-                          key={req.id}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '6px 8px',
-                            cursor: isDisabled ? 'not-allowed' : 'pointer',
-                            borderRadius: '4px',
-                            marginBottom: '2px',
-                            transition: 'background-color 0.1s',
-                            opacity: isDisabled ? 0.5 : 1,
-                          }}
-                          onMouseEnter={(e) =>
-                            !isDisabled &&
-                            (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')
-                          }
-                          title={
-                            isDisabled
-                              ? `Cannot select: ${req.id} is a descendant of this requirement (would create circular dependency)`
-                              : ''
-                          }
-                        >
-                          <input
-                            type="checkbox"
-                            checked={parentIds.includes(req.id)}
-                            onChange={() => handleParentToggle(req.id)}
-                            disabled={isDisabled}
-                            style={{
-                              marginRight: '8px',
-                              cursor: isDisabled ? 'not-allowed' : 'pointer',
-                            }}
-                          />
-                          <span
-                            style={{
-                              fontFamily: 'monospace',
-                              fontSize: 'var(--font-size-sm)',
-                              color: 'var(--color-accent-light)',
-                              marginRight: '8px',
-                            }}
-                          >
-                            {req.id}
-                          </span>
-                          <span style={{ fontSize: 'var(--font-size-sm)' }}>{req.title}</span>
-                          {isDescendant && (
-                            <span
-                              style={{
-                                marginLeft: 'auto',
-                                fontSize: 'var(--font-size-xs)',
-                                color: 'var(--color-text-muted)',
-                              }}
-                            >
-                              (descendant)
-                            </span>
-                          )}
-                        </label>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: 'block',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
-                  Linked Items
-                </label>
+                  <label
+                    style={{
+                      fontSize: 'var(--font-size-sm)',
+                    }}
+                  >
+                    Linked Items
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLinkSourceId(requirement.id);
+                      setLinkSourceType('requirement');
+                      setIsLinkModalOpen(true);
+                    }}
+                    style={{
+                      fontSize: 'var(--font-size-xs)',
+                      color: 'var(--color-accent)',
+                      background: 'none',
+                      border: '1px solid var(--color-accent)',
+                      borderRadius: '4px',
+                      padding: '2px 8px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    + Add Link
+                  </button>
+                </div>
                 <div
                   style={{
                     border: '1px solid var(--color-border)',
@@ -566,33 +454,11 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                         fontSize: 'var(--font-size-sm)',
                       }}
                     >
-                      No linked items.
+                      No linked items. Click "+ Add Link" to create relationships with other
+                      artifacts.
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <div
-                        style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setLinkSourceId(requirement.id);
-                            setLinkSourceType('requirement');
-                            setIsLinkModalOpen(true);
-                          }}
-                          style={{
-                            fontSize: 'var(--font-size-xs)',
-                            color: 'var(--color-accent)',
-                            background: 'none',
-                            border: '1px solid var(--color-accent)',
-                            borderRadius: '4px',
-                            padding: '2px 8px',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          + Add Link
-                        </button>
-                      </div>
                       {(requirement.linkedArtifacts || []).map((link, index) => (
                         <div
                           key={`${link.targetId}-${index}`}

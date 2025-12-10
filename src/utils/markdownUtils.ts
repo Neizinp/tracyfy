@@ -196,7 +196,7 @@ export function requirementToMarkdown(requirement: Requirement): string {
     revision: requirement.revision,
     dateCreated: requirement.dateCreated,
     lastModified: requirement.lastModified,
-    parentIds: requirement.parentIds,
+
     useCaseIds: requirement.useCaseIds || [],
     linkedArtifacts: requirement.linkedArtifacts || [],
     author: requirement.author || '',
@@ -262,7 +262,7 @@ export function markdownToRequirement(markdown: string): Requirement {
     description: sections['Description'] || '',
     text: sections['Requirement Text'] || '',
     rationale: sections['Rationale'] || '',
-    parentIds: frontmatter.parentIds || [],
+
     useCaseIds: frontmatter.useCaseIds || [],
     linkedArtifacts: frontmatter.linkedArtifacts || [],
     status: frontmatter.status || 'draft',

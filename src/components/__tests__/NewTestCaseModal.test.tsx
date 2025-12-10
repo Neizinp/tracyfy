@@ -21,7 +21,7 @@ describe('NewTestCaseModal', () => {
       rationale: 'Security',
       status: 'approved',
       priority: 'high',
-      parentIds: [],
+
       lastModified: Date.now(),
       revision: '01',
       dateCreated: Date.now(),
@@ -34,7 +34,7 @@ describe('NewTestCaseModal', () => {
       rationale: 'User needs',
       status: 'draft',
       priority: 'medium',
-      parentIds: [],
+
       lastModified: Date.now(),
       revision: '01',
       dateCreated: Date.now(),
@@ -198,7 +198,7 @@ describe('NewTestCaseModal', () => {
         rationale: '',
         status: 'draft',
         priority: 'low',
-        parentIds: [],
+
         lastModified: Date.now(),
         revision: '01',
         dateCreated: Date.now(),

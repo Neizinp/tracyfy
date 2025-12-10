@@ -1,126 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import type { Requirement } from '../../types';
 
 // Type for link-shaped objects used in tests (links are now embedded in artifacts)
 type LinkLike = { id?: string; sourceId: string; targetId: string; type?: string };
 
 describe('Link Validation Logic', () => {
-  describe('Circular Dependency Detection', () => {
-    it('should detect direct circular dependencies', () => {
-      const requirements: Pick<Requirement, 'id' | 'parentIds'>[] = [
-        { id: 'REQ-001', parentIds: ['REQ-002'] },
-        { id: 'REQ-002', parentIds: ['REQ-001'] },
-      ];
-
-      const hasCircularDependency = (): boolean => {
-        const visited = new Set<string>();
-        const recursionStack = new Set<string>();
-
-        const dfs = (id: string): boolean => {
-          if (recursionStack.has(id)) return true;
-          if (visited.has(id)) return false;
-
-          visited.add(id);
-          recursionStack.add(id);
-
-          const req = requirements.find((r) => r.id === id);
-          if (req) {
-            for (const parentId of req.parentIds) {
-              if (dfs(parentId)) return true;
-            }
-          }
-
-          recursionStack.delete(id);
-          return false;
-        };
-
-        return requirements.some((req) => dfs(req.id));
-      };
-
-      expect(hasCircularDependency()).toBe(true);
-    });
-
-    it('should detect indirect circular dependencies', () => {
-      const requirements: Pick<Requirement, 'id' | 'parentIds'>[] = [
-        { id: 'REQ-001', parentIds: ['REQ-002'] },
-        { id: 'REQ-002', parentIds: ['REQ-003'] },
-        { id: 'REQ-003', parentIds: ['REQ-001'] },
-      ];
-
-      const hasCircularDependency = (): boolean => {
-        const visited = new Set<string>();
-        const recursionStack = new Set<string>();
-
-        const dfs = (id: string): boolean => {
-          if (recursionStack.has(id)) return true;
-          if (visited.has(id)) return false;
-
-          visited.add(id);
-          recursionStack.add(id);
-
-          const req = requirements.find((r) => r.id === id);
-          if (req) {
-            for (const parentId of req.parentIds) {
-              if (dfs(parentId)) return true;
-            }
-          }
-
-          recursionStack.delete(id);
-          return false;
-        };
-
-        return requirements.some((req) => dfs(req.id));
-      };
-
-      expect(hasCircularDependency()).toBe(true);
-    });
-
-    it('should not report false positives for valid hierarchies', () => {
-      const requirements: Pick<Requirement, 'id' | 'parentIds'>[] = [
-        { id: 'REQ-001', parentIds: [] },
-        { id: 'REQ-002', parentIds: ['REQ-001'] },
-        { id: 'REQ-003', parentIds: ['REQ-002'] },
-      ];
-
-      const hasCircularDependency = (): boolean => {
-        const visited = new Set<string>();
-        const recursionStack = new Set<string>();
-
-        const dfs = (id: string): boolean => {
-          if (recursionStack.has(id)) return true;
-          if (visited.has(id)) return false;
-
-          visited.add(id);
-          recursionStack.add(id);
-
-          const req = requirements.find((r) => r.id === id);
-          if (req) {
-            for (const parentId of req.parentIds) {
-              if (dfs(parentId)) return true;
-            }
-          }
-
-          recursionStack.delete(id);
-          return false;
-        };
-
-        return requirements.some((req) => dfs(req.id));
-      };
-
-      expect(hasCircularDependency()).toBe(false);
-    });
-
-    it('should detect self-references', () => {
-      const requirements: Pick<Requirement, 'id' | 'parentIds'>[] = [
-        { id: 'REQ-001', parentIds: ['REQ-001'] },
-      ];
-
-      const hasSelfReference = requirements.some((req) => req.parentIds.includes(req.id));
-
-      expect(hasSelfReference).toBe(true);
-    });
-  });
-
   describe('Orphaned Links Detection', () => {
     it('should detect links to deleted artifacts', () => {
       const requirements = [
@@ -228,27 +111,6 @@ describe('Link Validation Logic', () => {
       expect(linksToRemove).toHaveLength(2);
       expect(linksToRemove.map((l) => l.id)).toContain('link1');
       expect(linksToRemove.map((l) => l.id)).toContain('link2');
-    });
-
-    it('should cascade parent removal from children', () => {
-      const requirements: Pick<Requirement, 'id' | 'parentIds'>[] = [
-        { id: 'REQ-001', parentIds: [] },
-        { id: 'REQ-002', parentIds: ['REQ-001'] },
-        { id: 'REQ-003', parentIds: ['REQ-001', 'REQ-002'] },
-      ];
-
-      const deletedId = 'REQ-001';
-
-      requirements.forEach((req) => {
-        req.parentIds = req.parentIds.filter((pid) => pid !== deletedId);
-      });
-
-      const req2 = requirements.find((r) => r.id === 'REQ-002');
-      const req3 = requirements.find((r) => r.id === 'REQ-003');
-
-      expect(req2?.parentIds).toHaveLength(0);
-      expect(req3?.parentIds).toHaveLength(1);
-      expect(req3?.parentIds).toContain('REQ-002');
     });
   });
 });

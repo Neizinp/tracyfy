@@ -43,7 +43,6 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({
       comments: comments || undefined,
       dateCreated: Date.now(),
       status: 'draft',
-      parentIds: [], // New requirements start with no parents
       revision: '01',
     });
     // Reset form

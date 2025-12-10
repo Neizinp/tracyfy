@@ -22,7 +22,6 @@ export const RequirementsTreePage: React.FC = () => {
   return (
     <RequirementTree
       requirements={filteredRequirements}
-      allRequirements={requirements}
       onReorder={(activeId, overId) => {
         const oldIndex = requirements.findIndex((r) => r.id === activeId);
         const newIndex = requirements.findIndex((r) => r.id === overId);

@@ -18,7 +18,7 @@ describe('TrashModal', () => {
     description: 'This is deleted',
     text: '',
     rationale: '',
-    parentIds: [],
+
     status: 'draft',
     priority: 'medium',
     dateCreated: 1000000,

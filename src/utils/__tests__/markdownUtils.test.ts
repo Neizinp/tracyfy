@@ -38,7 +38,7 @@ describe('Requirement Markdown Conversion', () => {
         description: 'A test description',
         text: 'The system shall do something',
         rationale: 'Because it is needed',
-        parentIds: ['REQ-000'],
+
         useCaseIds: ['UC-001', 'UC-002'],
         status: 'draft',
         priority: 'high',
@@ -69,7 +69,7 @@ describe('Requirement Markdown Conversion', () => {
         description: '',
         text: '',
         rationale: '',
-        parentIds: [],
+
         status: 'draft',
         priority: 'medium',
         dateCreated: 1700000000000,
@@ -79,7 +79,7 @@ describe('Requirement Markdown Conversion', () => {
 
       const markdown = requirementToMarkdown(requirement);
 
-      expect(markdown).toContain('parentIds: []');
+      expect(markdown).toContain('');
       expect(markdown).toContain('useCaseIds: []');
     });
 
@@ -90,7 +90,7 @@ describe('Requirement Markdown Conversion', () => {
         description: 'Description with "special" chars',
         text: 'Text',
         rationale: 'Rationale',
-        parentIds: [],
+
         status: 'draft',
         priority: 'medium',
         dateCreated: 1700000000000,
@@ -111,7 +111,7 @@ describe('Requirement Markdown Conversion', () => {
         description: 'Line 1\nLine 2\nLine 3',
         text: 'Text',
         rationale: 'Rationale',
-        parentIds: [],
+
         status: 'draft',
         priority: 'medium',
         dateCreated: 1700000000000,
@@ -132,7 +132,6 @@ describe('Requirement Markdown Conversion', () => {
         description: 'Desc',
         text: 'Text',
         rationale: 'Rationale',
-        parentIds: ['REQ-000', 'REQ-001'],
         useCaseIds: ['UC-001', 'UC-002', 'UC-003'],
         status: 'draft',
         priority: 'medium',
@@ -143,11 +142,10 @@ describe('Requirement Markdown Conversion', () => {
 
       const markdown = requirementToMarkdown(requirement);
 
-      expect(markdown).toContain('parentIds:');
-      expect(markdown).toContain('- "REQ-000"');
-      expect(markdown).toContain('- "REQ-001"');
       expect(markdown).toContain('useCaseIds:');
       expect(markdown).toContain('- "UC-001"');
+      expect(markdown).toContain('- "UC-002"');
+      expect(markdown).toContain('- "UC-003"');
     });
   });
 
@@ -161,7 +159,7 @@ priority: "high"
 revision: "01"
 dateCreated: 1700000000000
 lastModified: 1700000000000
-parentIds: []
+
 useCaseIds: []
 ---
 
@@ -211,7 +209,6 @@ Rationale
       expect(requirement.id).toBe('REQ-001');
       expect(requirement.status).toBe('draft'); // default
       expect(requirement.priority).toBe('medium'); // default
-      expect(requirement.parentIds).toEqual([]); // default
       expect(requirement.revision).toBe('01'); // default
     });
 
@@ -253,7 +250,7 @@ Test
         description: 'A test description',
         text: 'The system shall do something',
         rationale: 'Because it is needed',
-        parentIds: ['REQ-000'],
+
         useCaseIds: ['UC-001'],
         status: 'approved',
         priority: 'high',
@@ -273,7 +270,6 @@ Test
       expect(parsed.description).toBe(original.description);
       expect(parsed.text).toBe(original.text);
       expect(parsed.rationale).toBe(original.rationale);
-      expect(parsed.parentIds).toEqual(original.parentIds);
       expect(parsed.useCaseIds).toEqual(original.useCaseIds);
       expect(parsed.status).toBe(original.status);
       expect(parsed.priority).toBe(original.priority);
@@ -290,7 +286,6 @@ priority: "high"
 revision: "01"
 dateCreated: 1700000000000
 lastModified: 1700000000000
-parentIds:
   - "REQ-000"
   - "REQ-001"
 useCaseIds:
@@ -311,7 +306,6 @@ Rationale
 
       const requirement = markdownToRequirement(markdown);
 
-      expect(requirement.parentIds).toEqual(['REQ-000', 'REQ-001']);
       expect(requirement.useCaseIds).toEqual(['UC-001']);
     });
   });
@@ -577,7 +571,7 @@ describe('Edge Cases and Special Characters', () => {
       description: 'Описание на русском',
       text: '中文文本',
       rationale: 'Emoji: 👍 ✅ 🎉',
-      parentIds: [],
+
       status: 'draft',
       priority: 'medium',
       dateCreated: 1700000000000,
@@ -602,7 +596,7 @@ describe('Edge Cases and Special Characters', () => {
       description: longText,
       text: 'Text',
       rationale: 'Rationale',
-      parentIds: [],
+
       status: 'draft',
       priority: 'medium',
       dateCreated: 1700000000000,
@@ -623,7 +617,7 @@ describe('Edge Cases and Special Characters', () => {
       description: 'Contains @mention and $variable',
       text: 'Uses [brackets] and {braces}',
       rationale: 'Has backslash \\ and pipe |',
-      parentIds: [],
+
       status: 'draft',
       priority: 'medium',
       dateCreated: 1700000000000,
@@ -648,7 +642,7 @@ priority: "medium"
 revision: "01"
 dateCreated: 1700000000000
 lastModified: 1700000000000
-parentIds: []
+
 ---
 
 # 
@@ -676,7 +670,7 @@ parentIds: []
       description: '**Bold** and *italic* and `code`',
       text: '- List item 1\n- List item 2',
       rationale: '[Link](http://example.com)',
-      parentIds: [],
+
       status: 'draft',
       priority: 'medium',
       dateCreated: 1700000000000,
@@ -699,7 +693,7 @@ parentIds: []
       description: 'Desc',
       text: 'Text',
       rationale: 'Rationale',
-      parentIds: [],
+
       status: 'draft',
       priority: 'medium',
       dateCreated: 1700000000000,

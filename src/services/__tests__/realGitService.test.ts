@@ -399,7 +399,7 @@ describe('RealGitService', () => {
         description: 'A test description',
         text: 'The system shall do something',
         rationale: 'Because it is needed',
-        parentIds: [],
+
         useCaseIds: [],
         status: 'draft',
         priority: 'high',
@@ -554,7 +554,7 @@ priority: "high"
 revision: "01"
 dateCreated: 1700000000000
 lastModified: 1700000000000
-parentIds: []
+
 useCaseIds: []
 ---
 
@@ -598,7 +598,7 @@ priority: "high"
 revision: "01"
 dateCreated: 1700000000000
 lastModified: 1700000000000
-parentIds: []
+
 ---
 
 # Requirement
@@ -736,7 +736,7 @@ priority: "high"
 revision: "01"
 dateCreated: 1700000000000
 lastModified: 1700000000000
-parentIds: []
+
 ---
 
 # Test

@@ -10,7 +10,6 @@ export interface Requirement {
   description: string;
   text: string;
   rationale: string;
-  parentIds: string[];
   useCaseIds?: string[]; // Which use cases this requirement supports
   linkedArtifacts?: ArtifactLink[]; // Links to other artifacts
   status: 'draft' | 'approved' | 'implemented' | 'verified';
@@ -24,11 +23,6 @@ export interface Requirement {
   isDeleted?: boolean;
   deletedAt?: number;
   revision: string;
-}
-
-// Tree node type for rendering (computed from flat requirements)
-export interface RequirementTreeNode extends Requirement {
-  children: RequirementTreeNode[];
 }
 
 export interface UseCase {

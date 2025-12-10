@@ -14,7 +14,7 @@ describe('TraceabilityMatrix', () => {
       revision: '01',
       lastModified: Date.now(),
       dateCreated: Date.now(),
-      parentIds: [],
+
       text: '',
       rationale: '',
       linkedArtifacts: [{ targetId: 'REQ-003', type: 'relates_to' }],
@@ -28,7 +28,7 @@ describe('TraceabilityMatrix', () => {
       revision: '01',
       lastModified: Date.now(),
       dateCreated: Date.now(),
-      parentIds: ['REQ-001'],
+
       text: '',
       rationale: '',
     },
@@ -41,7 +41,7 @@ describe('TraceabilityMatrix', () => {
       revision: '01',
       lastModified: Date.now(),
       dateCreated: Date.now(),
-      parentIds: [],
+
       text: '',
       rationale: '',
     },
@@ -57,23 +57,13 @@ describe('TraceabilityMatrix', () => {
     expect(screen.getAllByText('REQ-003')).toHaveLength(2);
   });
 
-  it('renders parent/child relationships', () => {
+  it('renders linkedArtifacts relationships', () => {
     render(<TraceabilityMatrix requirements={mockRequirements} />);
 
-    // REQ-001 is parent of REQ-002
-    // Row REQ-001, Col REQ-002 -> Parent indicator
-    // Note: getAllByText because it appears in the table AND the legend
-    const parentCells = screen.getAllByText('↓ P');
-    expect(parentCells.length).toBeGreaterThanOrEqual(2);
-
-    // Check that at least one is in the table (we could be more specific but this is enough for now)
-    const tableCell = parentCells.find((el) => el.tagName === 'TD');
-    expect(tableCell).toBeInTheDocument();
-    expect(tableCell).toHaveStyle({ backgroundColor: 'rgba(34, 197, 94, 0.2)' }); // Greenish
-
-    // Row REQ-002, Col REQ-001 -> Child indicator
-    const childCells = screen.getAllByText('↑ C');
-    expect(childCells.length).toBeGreaterThanOrEqual(2);
+    // REQ-001 relates_to REQ-003 (via linkedArtifacts)
+    // Should show the relates_to symbol
+    const linkCells = screen.getAllByText('↔');
+    expect(linkCells.length).toBeGreaterThan(0);
   });
 
   it('renders explicit links', () => {

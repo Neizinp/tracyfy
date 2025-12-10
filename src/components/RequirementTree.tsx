@@ -20,7 +20,6 @@ import type { Requirement } from '../types';
 
 interface RequirementTreeProps {
   requirements: Requirement[];
-  allRequirements: Requirement[];
   onReorder: (activeId: string, overId: string) => void;
   onLink: (requirementId: string) => void;
   onEdit: (requirement: Requirement) => void;
@@ -28,7 +27,6 @@ interface RequirementTreeProps {
 
 interface SortableRequirementItemProps {
   req: Requirement;
-  allRequirements: Requirement[];
   onReorder: (activeId: string, overId: string) => void;
   onLink: (requirementId: string) => void;
   onEdit: (requirement: Requirement) => void;
@@ -36,7 +34,6 @@ interface SortableRequirementItemProps {
 
 const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
   req,
-  allRequirements,
   onLink,
   onEdit,
 }) => {
@@ -50,10 +47,6 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
     opacity: 1,
     marginBottom: '2px',
   };
-
-  // Check if this requirement has multiple parents
-  const originalReq = allRequirements.find((r) => r.id === req.id);
-  const hasMultipleParents = originalReq && originalReq.parentIds.length > 1;
 
   // Get linked artifacts count from the requirement's linkedArtifacts
   const linkedArtifacts = req.linkedArtifacts || [];
@@ -154,7 +147,7 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
           <Link2 size={16} />
         </button>
 
-        {/* Link Badge - now uses linkedArtifacts from the requirement */}
+        {/* Link Badge - uses linkedArtifacts from the requirement */}
         {linkedArtifacts.length > 0 && (
           <div
             style={{
@@ -177,26 +170,6 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
           </div>
         )}
 
-        {/* Multi-Parent Indicator */}
-        {hasMultipleParents && originalReq && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              marginRight: '8px',
-              padding: '2px 6px',
-              borderRadius: '10px',
-              backgroundColor: 'var(--color-bg-secondary)',
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-warning-light)',
-            }}
-            title={`Multiple parents: ${originalReq.parentIds.join(', ')}`}
-          >
-            ⚡ {originalReq.parentIds.length}
-          </div>
-        )}
-
         <div style={{ color: 'var(--color-text-muted)' }}>
           <FileText size={16} />
         </div>
@@ -207,7 +180,6 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
 
 export const RequirementTree: React.FC<RequirementTreeProps> = ({
   requirements,
-  allRequirements,
   onReorder,
   onLink,
   onEdit,
@@ -244,7 +216,6 @@ export const RequirementTree: React.FC<RequirementTreeProps> = ({
             <SortableRequirementItem
               key={req.id}
               req={req}
-              allRequirements={allRequirements}
               onReorder={onReorder}
               onLink={onLink}
               onEdit={onEdit}

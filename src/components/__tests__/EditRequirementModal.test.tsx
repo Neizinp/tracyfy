@@ -31,7 +31,7 @@ describe('EditRequirementModal', () => {
     rationale: 'Test rationale',
     status: 'draft',
     priority: 'high',
-    parentIds: [],
+
     lastModified: Date.now(),
     revision: '01',
     dateCreated: Date.now(),
@@ -52,7 +52,6 @@ describe('EditRequirementModal', () => {
   const defaultProps = {
     isOpen: true,
     requirement: mockRequirement,
-    allRequirements: [mockRequirement],
     links: [],
     projects: [mockProject],
     currentProjectId: 'p1',
@@ -159,34 +158,5 @@ describe('EditRequirementModal', () => {
     fireEvent.click(historyTab);
 
     expect(screen.getByTestId('revision-history')).toBeInTheDocument();
-  });
-
-  it('should prevent circular dependencies in parent selection', () => {
-    const childReq: Requirement = {
-      ...mockRequirement,
-      id: 'REQ-002',
-      parentIds: ['REQ-001'],
-    };
-
-    const grandchildReq: Requirement = {
-      ...mockRequirement,
-      id: 'REQ-003',
-      parentIds: ['REQ-002'],
-    };
-
-    renderWithProvider(
-      <EditRequirementModal
-        {...defaultProps}
-        allRequirements={[mockRequirement, childReq, grandchildReq]}
-      />
-    );
-
-    // Switch to relationships tab
-    const relationshipsTab = screen.getByText('Relationships');
-    fireEvent.click(relationshipsTab);
-
-    // Should show descendant labels in the relationships tab
-    const descendants = screen.queryAllByText('(descendant)');
-    expect(descendants.length).toBeGreaterThan(0);
   });
 });

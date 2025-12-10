@@ -25,7 +25,6 @@ describe('useRequirements', () => {
         revision: '01',
         dateCreated: 1000000,
         lastModified: 1000000,
-        parentIds: [],
       },
     ];
     usedReqNumbers = new Set([1]);
@@ -59,7 +58,6 @@ describe('useRequirements', () => {
         priority: 'medium',
         revision: '01',
         dateCreated: Date.now(),
-        parentIds: [],
       });
 
       expect(mockSetUsedReqNumbers).toHaveBeenCalledWith(expect.any(Function));
@@ -106,7 +104,6 @@ describe('useRequirements', () => {
         priority: 'medium',
         revision: '01',
         dateCreated: Date.now(),
-        parentIds: [],
       });
 
       expect(consoleError).toHaveBeenCalledWith('Failed to save requirement:', expect.any(Error));
@@ -279,7 +276,6 @@ describe('useRequirements', () => {
           revision: '01',
           dateCreated: 1000000,
           lastModified: 1000000,
-          parentIds: [],
         },
         {
           id: 'REQ-002',
@@ -292,7 +288,6 @@ describe('useRequirements', () => {
           revision: '01',
           dateCreated: 1000000,
           lastModified: 1000000,
-          parentIds: ['REQ-001'],
         },
       ];
 
@@ -313,7 +308,7 @@ describe('useRequirements', () => {
       expect(mockDeleteArtifact).toHaveBeenCalledWith('requirements', 'REQ-001');
     });
 
-    it('should filter out deleted requirement from all parent references', () => {
+    it('should filter out deleted requirement from state', () => {
       const reqs: Requirement[] = [
         {
           id: 'REQ-001',
@@ -326,11 +321,10 @@ describe('useRequirements', () => {
           revision: '01',
           dateCreated: 1000000,
           lastModified: 1000000,
-          parentIds: [],
         },
         {
           id: 'REQ-002',
-          title: 'Child 1',
+          title: 'Keep',
           description: '',
           text: '',
           rationale: '',
@@ -339,20 +333,6 @@ describe('useRequirements', () => {
           revision: '01',
           dateCreated: 1000000,
           lastModified: 1000000,
-          parentIds: ['REQ-001'],
-        },
-        {
-          id: 'REQ-003',
-          title: 'Child 2',
-          description: '',
-          text: '',
-          rationale: '',
-          status: 'draft',
-          priority: 'low',
-          revision: '01',
-          dateCreated: 1000000,
-          lastModified: 1000000,
-          parentIds: ['REQ-001'],
         },
       ];
 
@@ -375,11 +355,8 @@ describe('useRequirements', () => {
       hook.handlePermanentDeleteRequirement('REQ-001');
 
       const result = capturedUpdater(reqs);
-      expect(result).toHaveLength(2);
-      expect(result.find((r: Requirement) => r.id === 'REQ-002')?.parentIds).toEqual([]);
-      expect(result.find((r: Requirement) => r.id === 'REQ-003')?.parentIds).toEqual([]);
-      expect(result.find((r: Requirement) => r.id === 'REQ-002')?.revision).toBe('02');
-      expect(result.find((r: Requirement) => r.id === 'REQ-003')?.revision).toBe('02');
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('REQ-002');
     });
   });
 });

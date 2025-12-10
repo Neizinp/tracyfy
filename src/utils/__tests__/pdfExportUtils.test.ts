@@ -24,7 +24,6 @@ const mockReq: Requirement = {
   revision: '01',
   verificationMethod: 'N/A',
   isDeleted: false,
-  parentIds: [],
 };
 
 const mockUseCase: UseCase = {
@@ -397,7 +396,6 @@ describe('pdfExportUtils', () => {
         dateCreated: 1234567890,
         lastModified: 1234567890,
         revision: '02',
-        parentIds: [],
       },
     ];
 
@@ -468,7 +466,7 @@ describe('pdfExportUtils', () => {
         description: '',
         text: '',
         rationale: '',
-        parentIds: [],
+
         revision: '01',
       },
       {
@@ -482,7 +480,7 @@ describe('pdfExportUtils', () => {
         description: '',
         text: '',
         rationale: '',
-        parentIds: [],
+
         revision: '01',
       },
     ];

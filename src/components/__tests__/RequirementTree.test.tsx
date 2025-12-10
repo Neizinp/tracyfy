@@ -43,7 +43,7 @@ describe('RequirementTree', () => {
       revision: '01',
       lastModified: Date.now(),
       dateCreated: Date.now(),
-      parentIds: [],
+
       text: '',
       rationale: '',
     },
@@ -56,7 +56,7 @@ describe('RequirementTree', () => {
       revision: '01',
       lastModified: Date.now(),
       dateCreated: Date.now(),
-      parentIds: ['REQ-001'],
+
       text: '',
       rationale: '',
     },
@@ -70,7 +70,6 @@ describe('RequirementTree', () => {
     render(
       <RequirementTree
         requirements={mockRequirements}
-        allRequirements={mockRequirements}
         onReorder={mockOnReorder}
         onLink={mockOnLink}
         onEdit={mockOnEdit}
@@ -87,7 +86,6 @@ describe('RequirementTree', () => {
     render(
       <RequirementTree
         requirements={mockRequirements}
-        allRequirements={mockRequirements}
         onReorder={mockOnReorder}
         onLink={mockOnLink}
         onEdit={mockOnEdit}
@@ -102,7 +100,6 @@ describe('RequirementTree', () => {
     render(
       <RequirementTree
         requirements={mockRequirements}
-        allRequirements={mockRequirements}
         onReorder={mockOnReorder}
         onLink={mockOnLink}
         onEdit={mockOnEdit}
@@ -118,7 +115,6 @@ describe('RequirementTree', () => {
     render(
       <RequirementTree
         requirements={[]}
-        allRequirements={[]}
         onReorder={mockOnReorder}
         onLink={mockOnLink}
         onEdit={mockOnEdit}

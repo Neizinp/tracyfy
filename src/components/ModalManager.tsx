@@ -167,7 +167,6 @@ export const ModalManager: React.FC = () => {
         <EditRequirementModal
           isOpen={ui.isEditRequirementModalOpen}
           requirement={ui.editingRequirement}
-          allRequirements={requirements}
           onClose={() => {
             ui.setIsEditRequirementModalOpen(false);
             ui.setEditingRequirement(null);

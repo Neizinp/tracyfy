@@ -27,7 +27,7 @@ describe('EditTestCaseModal', () => {
       rationale: 'Security',
       status: 'approved',
       priority: 'high',
-      parentIds: [],
+
       lastModified: Date.now(),
       revision: '01',
       dateCreated: Date.now(),
@@ -42,7 +42,7 @@ describe('EditTestCaseModal', () => {
       rationale: 'Data integrity',
       status: 'draft',
       priority: 'medium',
-      parentIds: [],
+
       lastModified: Date.now(),
       revision: '01',
       dateCreated: Date.now(),

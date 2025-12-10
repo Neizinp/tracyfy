@@ -16,7 +16,7 @@ describe('Import Validation', () => {
             text: '',
             status: 'draft',
             priority: 'high',
-            parentIds: [],
+
             lastModified: Date.now(),
             revision: '01',
             dateCreated: Date.now(),
@@ -41,7 +41,7 @@ describe('Import Validation', () => {
             title: 'Test',
             status: 'draft',
             priority: 'medium',
-            parentIds: [],
+
             lastModified: Date.now(),
             revision: '01',
             dateCreated: Date.now(),
@@ -94,41 +94,6 @@ describe('Import Validation', () => {
 
       expect(reqIds.has(validLink.sourceId) && reqIds.has(validLink.targetId)).toBe(true);
       expect(reqIds.has(invalidLink.sourceId) && reqIds.has(invalidLink.targetId)).toBe(false);
-    });
-
-    it('should handle circular parent references', () => {
-      const requirements = [
-        { id: 'REQ-001', parentIds: ['REQ-002'] },
-        { id: 'REQ-002', parentIds: ['REQ-001'] },
-      ];
-
-      // Function to detect circular dependencies
-      const hasCircularDependency = (reqs: typeof requirements): boolean => {
-        const visited = new Set<string>();
-        const recursionStack = new Set<string>();
-
-        const dfs = (id: string): boolean => {
-          if (recursionStack.has(id)) return true;
-          if (visited.has(id)) return false;
-
-          visited.add(id);
-          recursionStack.add(id);
-
-          const req = reqs.find((r) => r.id === id);
-          if (req) {
-            for (const parentId of req.parentIds) {
-              if (dfs(parentId)) return true;
-            }
-          }
-
-          recursionStack.delete(id);
-          return false;
-        };
-
-        return reqs.some((req) => dfs(req.id));
-      };
-
-      expect(hasCircularDependency(requirements)).toBe(true);
     });
   });
 

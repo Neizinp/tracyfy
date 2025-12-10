@@ -239,12 +239,6 @@ export async function exportProjectToExcel(
   if (projectRequirements.length > 0) {
     const matrixData: any[] = [];
 
-    // Helper to check parent/child
-    const isParent = (parentId: string, childId: string): boolean => {
-      const child = projectRequirements.find((r) => r.id === childId);
-      return child ? child.parentIds.includes(parentId) : false;
-    };
-
     // Helper to find link between two artifacts
     // Now built from each artifact's linkedArtifacts array
     const getLink = (fromId: string, toId: string): ArtifactLink | undefined => {
@@ -283,20 +277,14 @@ export async function exportProjectToExcel(
 
         let symbol = '';
 
-        if (isParent(rowReq.id, colReq.id)) {
-          symbol = '↓ P'; // Parent
-        } else if (isParent(colReq.id, rowReq.id)) {
-          symbol = '↑ C'; // Child
-        } else {
-          const link = getLink(rowReq.id, colReq.id);
-          if (link) {
-            const linkSymbols: Record<string, string> = {
-              relates_to: '↔',
-              depends_on: '→',
-              conflicts_with: '⚠',
-            };
-            symbol = linkSymbols[link.type] || '?';
-          }
+        const link = getLink(rowReq.id, colReq.id);
+        if (link) {
+          const linkSymbols: Record<string, string> = {
+            relates_to: '↔',
+            depends_on: '→',
+            conflicts_with: '⚠',
+          };
+          symbol = linkSymbols[link.type] || '?';
         }
 
         row[colReq.id] = symbol;

@@ -18,12 +18,6 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({ requirem
     });
   });
 
-  // Helper to check if req1 is a parent of req2
-  const isParent = (parentId: string, childId: string): boolean => {
-    const child = requirements.find((r) => r.id === childId);
-    return child ? child.parentIds.includes(parentId) : false;
-  };
-
   // Helper to find link between two requirements
   const getLink = (
     fromId: string,
@@ -46,24 +40,6 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({ requirem
     }
 
     const link = getLink(rowReq.id, colReq.id);
-    const isRowParentOfCol = isParent(rowReq.id, colReq.id);
-    const isColParentOfRow = isParent(colReq.id, rowReq.id);
-
-    if (isRowParentOfCol) {
-      return {
-        text: '↓ P',
-        color: 'rgba(34, 197, 94, 0.2)',
-        tooltip: `${rowReq.id} is parent of ${colReq.id}`,
-      };
-    }
-
-    if (isColParentOfRow) {
-      return {
-        text: '↑ C',
-        color: 'rgba(59, 130, 246, 0.2)',
-        tooltip: `${rowReq.id} is child of ${colReq.id}`,
-      };
-    }
 
     if (link) {
       const linkSymbols = {
@@ -107,8 +83,7 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({ requirem
           Traceability Matrix
         </h3>
         <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
-          Shows relationships between requirements. ↓P=Parent, ↑C=Child, ↔=Relates, →=Depends,
-          ⚠=Conflicts
+          Shows relationships between requirements. ↔=Relates, →=Depends, ⚠=Conflicts
         </p>
       </div>
 
@@ -224,31 +199,7 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({ requirem
             <span
               style={{
                 padding: '2px 6px',
-                backgroundColor: 'var(--color-bg-secondary)',
-                borderRadius: '4px',
-              }}
-            >
-              ↓ P
-            </span>
-            Parent
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span
-              style={{
-                padding: '2px 6px',
-                backgroundColor: 'var(--color-bg-secondary)',
-                borderRadius: '4px',
-              }}
-            >
-              ↑ C
-            </span>
-            Child
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span
-              style={{
-                padding: '2px 6px',
-                backgroundColor: 'var(--color-bg-secondary)',
+                backgroundColor: 'rgba(168, 85, 247, 0.2)',
                 borderRadius: '4px',
               }}
             >
@@ -260,7 +211,7 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({ requirem
             <span
               style={{
                 padding: '2px 6px',
-                backgroundColor: 'var(--color-bg-secondary)',
+                backgroundColor: 'rgba(251, 146, 60, 0.2)',
                 borderRadius: '4px',
               }}
             >
@@ -272,7 +223,7 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({ requirem
             <span
               style={{
                 padding: '2px 6px',
-                backgroundColor: 'var(--color-bg-secondary)',
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
                 borderRadius: '4px',
               }}
             >
