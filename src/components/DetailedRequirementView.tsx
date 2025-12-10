@@ -50,7 +50,7 @@ const MarkdownCell: React.FC<{ content: string }> = ({ content }) => {
           h3: ({ ...props }) => (
             <h3
               style={{
-                fontSize: '0.95rem',
+                fontSize: 'var(--font-size-sm)',
                 fontWeight: 'bold',
                 margin: '3px 0',
                 color: 'var(--color-text-primary)',

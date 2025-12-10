@@ -93,7 +93,7 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
             marginRight: '12px',
             color: 'var(--color-accent-light)',
             fontFamily: 'monospace',
-            fontSize: '0.9em',
+            fontSize: 'var(--font-size-sm)',
           }}
         >
           {req.id}

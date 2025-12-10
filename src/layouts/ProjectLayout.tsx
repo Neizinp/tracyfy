@@ -173,7 +173,7 @@ export const ProjectLayout: React.FC = () => {
           }}
         >
           <div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>{getPageTitle()}</h2>
+            <h2 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 600 }}>{getPageTitle()}</h2>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             {location.pathname.includes('/requirements/detailed') && (

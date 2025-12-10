@@ -206,7 +206,8 @@ export const LinkModal: React.FC<LinkModalProps> = ({
             >
               <span
                 style={{
-                  fontSize: '0.625rem',
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-inverse)',
                   padding: '2px 6px',
                   borderRadius: '4px',
                   textTransform: 'uppercase',
@@ -219,7 +220,6 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                         : sourceArtifactType === 'testcase'
                           ? 'var(--color-success-bg)'
                           : 'var(--color-warning-bg)',
-                  color: '#fff',
                 }}
               >
                 {sourceArtifactType.substring(0, 3)}
@@ -417,7 +417,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                         {project && (
                           <span
                             style={{
-                              fontSize: '0.625rem',
+                              fontSize: 'var(--font-size-xs)',
                               padding: '2px 8px',
                               borderRadius: '10px',
                               whiteSpace: 'nowrap',

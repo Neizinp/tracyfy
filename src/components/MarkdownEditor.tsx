@@ -222,7 +222,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                         backgroundColor: 'var(--color-bg-secondary)',
                         padding: '2px 6px',
                         borderRadius: '3px',
-                        fontSize: '0.8125rem',
+                        fontSize: 'var(--font-size-sm)',
                         color: 'var(--color-accent-light)',
                       }}
                       {...props}
@@ -236,7 +236,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                         backgroundColor: 'var(--color-bg-secondary)',
                         padding: '8px 12px',
                         borderRadius: '4px',
-                        fontSize: '0.8125rem',
+                        fontSize: 'var(--font-size-sm)',
                         overflowX: 'auto',
                         margin: '8px 0',
                         color: 'var(--color-text-secondary)',
@@ -265,7 +265,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                       style={{
                         minWidth: '100%',
                         border: '1px solid var(--color-border)',
-                        fontSize: '0.8125rem',
+                        fontSize: 'var(--font-size-sm)',
                       }}
                       {...props}
                     />

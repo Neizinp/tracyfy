@@ -62,7 +62,7 @@ export const DirectorySelector: React.FC<DirectorySelectorProps> = ({ onReady })
 
         <h1
           style={{
-            fontSize: '1.5rem',
+            fontSize: 'var(--font-size-2xl)',
             fontWeight: 600,
             color: 'var(--color-text-primary)',
             marginBottom: '12px',

@@ -25,7 +25,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isLoading }) => 
       <div style={{ textAlign: 'center' }}>
         <div
           style={{
-            fontSize: '1.5rem',
+            fontSize: 'var(--font-size-2xl)',
             color: 'var(--color-text-primary)',
             marginBottom: '16px',
           }}
