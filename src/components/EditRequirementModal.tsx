@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import type { Requirement } from '../types';
+import { X, Trash2 } from 'lucide-react';
+import type { Requirement, ArtifactLink } from '../types';
 import { MarkdownEditor } from './MarkdownEditor';
 import { formatDateTime } from '../utils/dateUtils';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
@@ -62,6 +62,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
   const [verificationMethod, setVerificationMethod] = useState('');
   const [comments, setComments] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [linkedArtifacts, setLinkedArtifacts] = useState<ArtifactLink[]>([]);
 
   useEffect(() => {
     if (requirement) {
@@ -74,6 +75,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
 
       setVerificationMethod(requirement.verificationMethod || '');
       setComments(requirement.comments || '');
+      setLinkedArtifacts(requirement.linkedArtifacts || []);
     }
   }, [requirement]);
 
@@ -88,11 +90,15 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
       rationale,
       priority,
       status,
-
+      linkedArtifacts,
       verificationMethod,
       comments,
     });
     onClose();
+  };
+
+  const handleRemoveLink = (targetId: string) => {
+    setLinkedArtifacts((prev) => prev.filter((link) => link.targetId !== targetId));
   };
 
   useKeyboardShortcuts({
@@ -508,7 +514,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                     overflowY: 'auto',
                   }}
                 >
-                  {(requirement.linkedArtifacts || []).length === 0 ? (
+                  {linkedArtifacts.length === 0 ? (
                     <div
                       style={{
                         padding: '8px',
@@ -521,18 +527,9 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      {(requirement.linkedArtifacts || []).map((link, index) => (
+                      {linkedArtifacts.map((link, index) => (
                         <div
                           key={`${link.targetId}-${index}`}
-                          onClick={() => {
-                            // Determine artifact type from ID prefix
-                            const id = link.targetId;
-                            let type = 'requirement';
-                            if (id.startsWith('UC-')) type = 'useCase';
-                            else if (id.startsWith('TC-')) type = 'testCase';
-                            else if (id.startsWith('INFO-')) type = 'information';
-                            handleNavigateToArtifact(id, type);
-                          }}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -541,7 +538,6 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                             backgroundColor: 'var(--color-bg-card)',
                             borderRadius: '4px',
                             border: '1px solid var(--color-border)',
-                            cursor: 'pointer',
                             transition: 'background-color 0.15s ease',
                           }}
                           onMouseEnter={(e) => {
@@ -552,11 +548,22 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                           }}
                         >
                           <div
+                            onClick={() => {
+                              // Determine artifact type from ID prefix
+                              const id = link.targetId;
+                              let type = 'requirement';
+                              if (id.startsWith('UC-')) type = 'useCase';
+                              else if (id.startsWith('TC-')) type = 'testCase';
+                              else if (id.startsWith('INFO-')) type = 'information';
+                              handleNavigateToArtifact(id, type);
+                            }}
                             style={{
                               display: 'flex',
                               alignItems: 'center',
                               gap: '8px',
                               fontSize: 'var(--font-size-sm)',
+                              cursor: 'pointer',
+                              flex: 1,
                             }}
                           >
                             <span
@@ -575,6 +582,34 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                               {link.targetId}
                             </span>
                           </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveLink(link.targetId);
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--color-text-muted)',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'color 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = 'var(--color-error)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = 'var(--color-text-muted)';
+                            }}
+                            title="Remove link"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       ))}
                     </div>
