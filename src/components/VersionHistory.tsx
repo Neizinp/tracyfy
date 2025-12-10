@@ -13,6 +13,7 @@ interface VersionHistoryProps {
 }
 
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { SnapshotViewer } from './SnapshotViewer';
 
 export const VersionHistory: React.FC<VersionHistoryProps> = ({
   isOpen,
@@ -35,32 +36,49 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   const [baselineName, setBaselineName] = useState(nextBaselineNumber);
   const [baselineMessage, setBaselineMessage] = useState('');
 
-  const loadCommits = useCallback(async () => {
-    if (!projectId) {
-      console.log('[VersionHistory] No projectId, skipping commit load');
-      return;
+  const [viewingSnapshot, setViewingSnapshot] = useState<{
+    commitHash: string;
+    name: string;
+    timestamp: number;
+  } | null>(null);
+
+  const [tagToCommitHash, setTagToCommitHash] = useState<Map<string, string>>(new Map());
+
+  const loadTags = useCallback(async () => {
+    try {
+      const tags = await realGitService.getTagsWithDetails();
+      console.log('[VersionHistory] Tags loaded:', tags);
+
+      // Map commit hash to array of tag names for the commits view
+      const hashToTags = new Map<string, string[]>();
+      // Map tag name to commit hash for baseline view lookup
+      const tagToHash = new Map<string, string>();
+
+      tags.forEach((tag) => {
+        // hash -> tags
+        const existing = hashToTags.get(tag.commit) || [];
+        existing.push(tag.name);
+        hashToTags.set(tag.commit, existing);
+
+        // tag -> hash
+        tagToHash.set(tag.name, tag.commit);
+      });
+
+      setBaselineCommitHashes(hashToTags);
+      setTagToCommitHash(tagToHash);
+    } catch (error) {
+      console.error('Failed to load tags:', error);
     }
+  }, []);
+
+  const loadCommits = useCallback(async () => {
+    if (!projectId) return;
 
     setIsLoadingCommits(true);
     try {
-      // Get commits ONLY for the current project file
       const projectFilePath = `projects/${projectId}.md`;
-      console.log('[VersionHistory] Loading commits for project file:', projectFilePath);
       const history = await realGitService.getHistory(projectFilePath);
-      console.log('[VersionHistory] Commits loaded for project:', history.length, history);
       setCommits(history);
-
-      const tags = await realGitService.getTagsWithDetails();
-      console.log('[VersionHistory] Tags loaded:', tags);
-      // Map commit hash to array of tag names (multiple tags can point to same commit)
-      const hashToTagNames = new Map<string, string[]>();
-      tags.forEach((tag) => {
-        const existing = hashToTagNames.get(tag.commit) || [];
-        existing.push(tag.name);
-        hashToTagNames.set(tag.commit, existing);
-      });
-      console.log('[VersionHistory] Hash to tags map:', hashToTagNames);
-      setBaselineCommitHashes(hashToTagNames);
     } catch (error) {
       console.error('Failed to load commits:', error);
     } finally {
@@ -68,7 +86,14 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     }
   }, [projectId]);
 
-  // Load commits when tab is active
+  // Load tags on open (needed for baseline view buttons)
+  useEffect(() => {
+    if (isOpen) {
+      loadTags();
+    }
+  }, [isOpen, loadTags]);
+
+  // Load commits only when tab is active
   useEffect(() => {
     if (isOpen && activeTab === 'commits') {
       loadCommits();
@@ -386,6 +411,31 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                           {baseline.description || baseline.name}
                         </div>
                       </div>
+                      <button
+                        onClick={() => {
+                          // Try to find commit hash from tag map first
+                          const commitFromTag = tagToCommitHash.get(baseline.version);
+                          // Fallback to artifact commit if tag not found (legacy or untagged?)
+                          const fallbackCommit = Object.keys(baseline.artifactCommits)[0] || '';
+
+                          setViewingSnapshot({
+                            commitHash: commitFromTag || fallbackCommit,
+                            name: baseline.version,
+                            timestamp: baseline.timestamp,
+                          });
+                        }}
+                        style={{
+                          padding: '4px 12px',
+                          borderRadius: '4px',
+                          border: '1px solid var(--color-border)',
+                          backgroundColor: 'var(--color-bg-tertiary)',
+                          color: 'var(--color-text-primary)',
+                          fontSize: 'var(--font-size-xs)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        View
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -533,6 +583,16 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
             : '💡 Tip: Commits with a tag badge are also baselines.'}
         </div>
       </div>
+
+      {viewingSnapshot && (
+        <SnapshotViewer
+          isOpen={true}
+          onClose={() => setViewingSnapshot(null)}
+          commitHash={viewingSnapshot.commitHash}
+          baselineName={viewingSnapshot.name}
+          timestamp={viewingSnapshot.timestamp}
+        />
+      )}
     </div>
   );
 };
