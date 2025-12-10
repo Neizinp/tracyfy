@@ -8,7 +8,7 @@
  * @param usedNumbers - Set of already-used numbers
  * @returns The lowest available number (1-indexed)
  */
-export function findLowestAvailableNumber(usedNumbers: Set<number>): number {
+function findLowestAvailableNumber(usedNumbers: Set<number>): number {
   let nextNumber = 1;
   while (usedNumbers.has(nextNumber)) {
     nextNumber++;

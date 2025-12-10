@@ -9,8 +9,8 @@ export const sectionHeaderStyle: CSSProperties = {
   margin: 0,
 };
 
-// Base style for nav links in sidebar
-export const navLinkBaseStyle: CSSProperties = {
+// Base style for nav links in sidebar (internal use only)
+const navLinkBaseStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: 'var(--spacing-sm)',

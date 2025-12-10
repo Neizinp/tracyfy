@@ -12,7 +12,7 @@ export {
   useInformation,
 } from './ArtifactProviders';
 
-export { DragDropProvider, useDragDrop } from './DragDropProvider';
+export { DragDropProvider } from './DragDropProvider';
 export { ImportExportProvider, useImportExport } from './ImportExportProvider';
 export { FileSystemProvider, useFileSystem } from './FileSystemProvider';
 export { UserProvider, useUser } from './UserProvider';

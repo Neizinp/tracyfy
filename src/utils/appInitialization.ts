@@ -7,7 +7,7 @@ import type { Project, GlobalState } from '../types';
 
 export const PROJECTS_KEY = 'reqtrace-projects';
 export const CURRENT_PROJECT_KEY = 'reqtrace-current-project-id';
-export const GLOBAL_STATE_KEY = 'reqtrace-global-state';
+const GLOBAL_STATE_KEY = 'reqtrace-global-state';
 
 /**
  * Helper to load projects from localStorage (browser fallback)
@@ -43,7 +43,6 @@ export const loadProjects = (): {
         useCases: [],
         testCases: [],
         information: [],
-        links: [],
       },
     };
   } catch (error) {
@@ -56,7 +55,6 @@ export const loadProjects = (): {
         useCases: [],
         testCases: [],
         information: [],
-        links: [],
       },
     };
   }
