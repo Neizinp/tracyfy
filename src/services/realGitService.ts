@@ -444,6 +444,75 @@ class RealGitService {
   }
 
   /**
+   * List files at a specific commit
+   */
+  async listFilesAtCommit(commitHash: string): Promise<string[]> {
+    if (!this.initialized) {
+      return [];
+    }
+
+    try {
+      if (isElectronEnv()) {
+        // Electron IPC doesn't support listFiles with ref yet, falling back to HEAD for now
+        // TODO: Update Electron IPC to support ref
+        console.warn('[listFilesAtCommit] Electron IPC does not support ref yet');
+        return await window.electronAPI!.git.listFiles(this.getRootDir());
+      } else {
+        return await git.listFiles({
+          fs: fsAdapter,
+          dir: this.getRootDir(),
+          ref: commitHash,
+        });
+      }
+    } catch (error) {
+      console.error('[listFilesAtCommit] Failed to list files:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Load full project snapshot at a specific commit
+   */
+  async loadProjectSnapshot(commitHash: string): Promise<{
+    requirements: Requirement[];
+    useCases: UseCase[];
+    testCases: TestCase[];
+    information: Information[];
+  }> {
+    const requirements: Requirement[] = [];
+    const useCases: UseCase[] = [];
+    const testCases: TestCase[] = [];
+    const information: Information[] = [];
+
+    try {
+      const allFiles = await this.listFilesAtCommit(commitHash);
+
+      // Helper to load and parse files
+      const loadFiles = async (prefix: string, parser: (md: string) => any, targetArray: any[]) => {
+        const files = allFiles.filter((f) => f.startsWith(prefix) && f.endsWith('.md'));
+        for (const file of files) {
+          const content = await this.readFileAtCommit(file, commitHash);
+          if (content) {
+            const parsed = parser(content);
+            if (parsed) targetArray.push(parsed);
+          }
+        }
+      };
+
+      await Promise.all([
+        loadFiles('requirements/', markdownToRequirement, requirements),
+        loadFiles('usecases/', markdownToUseCase, useCases),
+        loadFiles('testcases/', markdownToTestCase, testCases),
+        loadFiles('information/', markdownToInformation, information),
+      ]);
+    } catch (error) {
+      console.error('[loadProjectSnapshot] Failed to load snapshot:', error);
+    }
+
+    return { requirements, useCases, testCases, information };
+  }
+
+  /**
    * Get git log for a specific file or all files
    */
   async getHistory(filepath?: string): Promise<CommitInfo[]> {
