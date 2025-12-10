@@ -50,6 +50,7 @@ describe('useUseCases', () => {
         description: '',
         rationale: '',
         revision: '01',
+        parentIds: [],
         dateCreated: 1000000,
         lastModified: 1000000,
         linkedArtifacts: [],

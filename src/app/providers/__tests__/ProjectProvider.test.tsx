@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import React from 'react';
 import { ProjectProvider, useProject } from '../ProjectProvider';
 import type { Project } from '../../../types';

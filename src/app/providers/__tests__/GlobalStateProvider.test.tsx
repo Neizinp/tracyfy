@@ -64,6 +64,7 @@ const mockFsInformation: Information[] = [
     id: 'INFO-001',
     title: 'Test Information',
     content: '',
+    type: 'note',
     revision: '01',
     dateCreated: 1000000,
     lastModified: 1000000,

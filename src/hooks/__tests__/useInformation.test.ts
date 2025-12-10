@@ -17,9 +17,9 @@ describe('useInformation', () => {
     mockInformation = [
       {
         id: 'INFO-001',
-        title: 'Information 1',
-        content: 'Content text',
-        category: 'general',
+        title: 'Test Information',
+        content: 'Test Content',
+        type: 'note',
         revision: '01',
         dateCreated: 1000000,
         lastModified: 1000000,
@@ -55,7 +55,7 @@ describe('useInformation', () => {
       await hook.handleAddInformation({
         title: 'New Information',
         content: 'New Content',
-        category: 'technical',
+        type: 'note',
         revision: '01',
         linkedArtifacts: [],
       });
@@ -66,7 +66,7 @@ describe('useInformation', () => {
             id: 'INFO-002',
             title: 'New Information',
             content: 'New Content',
-            category: 'technical',
+            type: 'note',
           }),
         ])
       );
@@ -89,7 +89,7 @@ describe('useInformation', () => {
       await hook.handleAddInformation({
         title: 'New Information',
         content: 'Content',
-        category: 'general',
+        type: 'note',
         revision: '01',
         linkedArtifacts: [],
       });
@@ -165,7 +165,7 @@ describe('useInformation', () => {
       await hook.handleAddInformation({
         title: 'New Information',
         content: '',
-        category: 'general',
+        type: 'note',
         revision: '01',
         linkedArtifacts: [],
       });

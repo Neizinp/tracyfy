@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import React from 'react';
 import { UIProvider, useUI } from '../UIProvider';
 
@@ -59,25 +59,31 @@ vi.mock('../../../hooks/useUIState', () => ({
 
     // Column visibility
     columnVisibility: {
-      id: true,
-      title: true,
-      status: true,
+      idTitle: true,
+      description: false,
+      text: false,
+      rationale: false,
+      author: false,
+      verification: false,
       priority: true,
-      revision: true,
-      dateCreated: false,
-      lastModified: false,
-      linkedArtifacts: false,
+      status: true,
+      comments: false,
+      created: false,
+      approved: false,
     },
     setColumnVisibility: vi.fn(),
     getDefaultColumnVisibility: vi.fn(() => ({
-      id: true,
-      title: true,
-      status: true,
+      idTitle: true,
+      description: false,
+      text: false,
+      rationale: false,
+      author: false,
+      verification: false,
       priority: true,
-      revision: true,
-      dateCreated: false,
-      lastModified: false,
-      linkedArtifacts: false,
+      status: true,
+      comments: false,
+      created: false,
+      approved: false,
     })),
 
     // Search
@@ -163,8 +169,8 @@ describe('UIProvider', () => {
       const { result } = renderHook(() => useUI(), { wrapper });
 
       expect(result.current.columnVisibility).toBeDefined();
-      expect(result.current.columnVisibility.id).toBe(true);
-      expect(result.current.columnVisibility.title).toBe(true);
+      expect(result.current.columnVisibility.idTitle).toBe(true);
+      expect(result.current.columnVisibility.status).toBe(true);
       expect(typeof result.current.setColumnVisibility).toBe('function');
     });
 
