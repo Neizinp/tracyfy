@@ -15,7 +15,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { FileText, AlertCircle, GripVertical, Link2, ArrowRight } from 'lucide-react';
+import { FileText, GripVertical, Link2, ArrowRight } from 'lucide-react';
 import type { Requirement } from '../types';
 
 interface RequirementTreeProps {
@@ -230,10 +230,10 @@ export const RequirementTree: React.FC<RequirementTreeProps> = ({
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div
         style={{
-          backgroundColor: 'var(--color-bg-card)',
+          backgroundColor: requirements.length > 0 ? 'var(--color-bg-card)' : 'transparent',
           borderRadius: '8px',
-          border: '1px solid var(--color-border)',
-          padding: 'var(--spacing-sm)',
+          border: requirements.length > 0 ? '1px solid var(--color-border)' : 'none',
+          padding: requirements.length > 0 ? 'var(--spacing-sm)' : 0,
         }}
       >
         <SortableContext
@@ -255,13 +255,20 @@ export const RequirementTree: React.FC<RequirementTreeProps> = ({
         {requirements.length === 0 && (
           <div
             style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
               padding: 'var(--spacing-xl)',
-              textAlign: 'center',
               color: 'var(--color-text-muted)',
+              textAlign: 'center',
+              gap: 'var(--spacing-md)',
             }}
           >
-            <AlertCircle size={48} style={{ marginBottom: 'var(--spacing-md)', opacity: 1 }} />
-            <p>No requirements found. Create one to get started.</p>
+            <FileText size={48} />
+            <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+              No requirements found. Create one to get started.
+            </p>
           </div>
         )}
       </div>

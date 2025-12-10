@@ -43,6 +43,6 @@ describe('TestCaseList', () => {
   it('renders empty state', () => {
     render(<TestCaseList testCases={[]} onEdit={mockOnEdit} onDelete={mockOnDelete} />);
 
-    expect(screen.getByText('No test cases found.')).toBeInTheDocument();
+    expect(screen.getByText('No test cases found. Create one to get started.')).toBeInTheDocument();
   });
 });

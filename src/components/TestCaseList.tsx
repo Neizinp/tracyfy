@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, FileText } from 'lucide-react';
 import type { TestCase, Project } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 
@@ -40,6 +40,28 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
       .map((p) => p.name)
       .join(', ');
   };
+
+  if (testCases.length === 0) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 'var(--spacing-xl)',
+          color: 'var(--color-text-muted)',
+          textAlign: 'center',
+          gap: 'var(--spacing-md)',
+        }}
+      >
+        <FileText size={48} />
+        <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+          No test cases found. Create one to get started.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -158,185 +180,170 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
             </tr>
           </thead>
           <tbody>
-            {testCases.length === 0 ? (
-              <tr>
+            {testCases.map((tc) => (
+              <tr
+                key={tc.id}
+                style={{
+                  borderBottom: '1px solid var(--color-border)',
+                  transition: 'background-color 0.1s',
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')
+                }
+              >
+                <td style={{ padding: '12px', verticalAlign: 'top' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span
+                        style={{
+                          fontFamily: 'monospace',
+                          color: 'var(--color-accent-light)',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {tc.id}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 'var(--font-size-xs)',
+                          padding: '0 4px',
+                          borderRadius: '3px',
+                          backgroundColor: 'var(--color-bg-tertiary)',
+                          color: 'var(--color-text-muted)',
+                          border: '1px solid var(--color-border)',
+                        }}
+                      >
+                        v{tc.revision || '01'}
+                      </span>
+                    </div>
+                    <span style={{ fontWeight: 500 }}>{tc.title}</span>
+                  </div>
+                </td>
+                {showProjectColumn && (
+                  <td style={{ padding: '12px', verticalAlign: 'top' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      {getProjectNames(tc.id)
+                        .split(', ')
+                        .map(
+                          (name, i) =>
+                            name && (
+                              <span
+                                key={i}
+                                style={{
+                                  fontSize: 'var(--font-size-xs)',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  backgroundColor: 'var(--color-bg-tertiary)',
+                                  border: '1px solid var(--color-border)',
+                                  color: 'var(--color-text-secondary)',
+                                }}
+                              >
+                                {name}
+                              </span>
+                            )
+                        )}
+                    </div>
+                  </td>
+                )}
                 <td
-                  colSpan={showProjectColumn ? 8 : 7}
                   style={{
-                    padding: 'var(--spacing-xl)',
-                    textAlign: 'center',
+                    padding: '12px',
+                    verticalAlign: 'top',
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  {tc.description}
+                </td>
+                <td
+                  style={{
+                    padding: '12px',
+                    verticalAlign: 'top',
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  {tc.requirementIds.length > 0 ? tc.requirementIds.join(', ') : '-'}
+                </td>
+                <td style={{ padding: '12px', verticalAlign: 'top' }}>
+                  <span
+                    style={{
+                      fontSize: 'var(--font-size-xs)',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      backgroundColor:
+                        tc.priority === 'high'
+                          ? 'var(--color-error-bg)'
+                          : 'rgba(148, 163, 184, 0.2)',
+                      color:
+                        tc.priority === 'high'
+                          ? 'var(--color-error-light)'
+                          : 'var(--color-text-secondary)',
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {tc.priority}
+                  </span>
+                </td>
+                <td style={{ padding: '12px', verticalAlign: 'top' }}>
+                  <span
+                    style={{
+                      fontSize: 'var(--font-size-xs)',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      backgroundColor: getStatusColor(tc.status).bg,
+                      color: getStatusColor(tc.status).text,
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {tc.status}
+                  </span>
+                </td>
+                <td
+                  style={{
+                    padding: '12px',
+                    verticalAlign: 'top',
+                    fontSize: 'var(--font-size-sm)',
                     color: 'var(--color-text-muted)',
                   }}
                 >
-                  No test cases found. Create one to get started.
+                  {tc.lastRun ? formatDateTime(tc.lastRun) : '-'}
+                </td>
+                <td style={{ padding: '12px', verticalAlign: 'top' }}>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                      onClick={() => onEdit(tc)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--color-text-muted)',
+                        cursor: 'pointer',
+                        padding: '4px',
+                      }}
+                      title="Edit"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => onDelete(tc.id)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--color-error)',
+                        cursor: 'pointer',
+                        padding: '4px',
+                      }}
+                      title="Delete"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
-            ) : (
-              testCases.map((tc) => (
-                <tr
-                  key={tc.id}
-                  style={{
-                    borderBottom: '1px solid var(--color-border)',
-                    transition: 'background-color 0.1s',
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')
-                  }
-                >
-                  <td style={{ padding: '12px', verticalAlign: 'top' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span
-                          style={{
-                            fontFamily: 'monospace',
-                            color: 'var(--color-accent-light)',
-                            fontWeight: 500,
-                          }}
-                        >
-                          {tc.id}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 'var(--font-size-xs)',
-                            padding: '0 4px',
-                            borderRadius: '3px',
-                            backgroundColor: 'var(--color-bg-tertiary)',
-                            color: 'var(--color-text-muted)',
-                            border: '1px solid var(--color-border)',
-                          }}
-                        >
-                          v{tc.revision || '01'}
-                        </span>
-                      </div>
-                      <span style={{ fontWeight: 500 }}>{tc.title}</span>
-                    </div>
-                  </td>
-                  {showProjectColumn && (
-                    <td style={{ padding: '12px', verticalAlign: 'top' }}>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                        {getProjectNames(tc.id)
-                          .split(', ')
-                          .map(
-                            (name, i) =>
-                              name && (
-                                <span
-                                  key={i}
-                                  style={{
-                                    fontSize: 'var(--font-size-xs)',
-                                    padding: '2px 6px',
-                                    borderRadius: '4px',
-                                    backgroundColor: 'var(--color-bg-tertiary)',
-                                    border: '1px solid var(--color-border)',
-                                    color: 'var(--color-text-secondary)',
-                                  }}
-                                >
-                                  {name}
-                                </span>
-                              )
-                          )}
-                      </div>
-                    </td>
-                  )}
-                  <td
-                    style={{
-                      padding: '12px',
-                      verticalAlign: 'top',
-                      fontSize: 'var(--font-size-sm)',
-                      color: 'var(--color-text-secondary)',
-                    }}
-                  >
-                    {tc.description}
-                  </td>
-                  <td
-                    style={{
-                      padding: '12px',
-                      verticalAlign: 'top',
-                      fontSize: 'var(--font-size-sm)',
-                      color: 'var(--color-text-secondary)',
-                    }}
-                  >
-                    {tc.requirementIds.length > 0 ? tc.requirementIds.join(', ') : '-'}
-                  </td>
-                  <td style={{ padding: '12px', verticalAlign: 'top' }}>
-                    <span
-                      style={{
-                        fontSize: 'var(--font-size-xs)',
-                        padding: '2px 8px',
-                        borderRadius: '12px',
-                        backgroundColor:
-                          tc.priority === 'high'
-                            ? 'var(--color-error-bg)'
-                            : 'rgba(148, 163, 184, 0.2)',
-                        color:
-                          tc.priority === 'high'
-                            ? 'var(--color-error-light)'
-                            : 'var(--color-text-secondary)',
-                        textTransform: 'capitalize',
-                      }}
-                    >
-                      {tc.priority}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px', verticalAlign: 'top' }}>
-                    <span
-                      style={{
-                        fontSize: 'var(--font-size-xs)',
-                        padding: '2px 8px',
-                        borderRadius: '12px',
-                        backgroundColor: getStatusColor(tc.status).bg,
-                        color: getStatusColor(tc.status).text,
-                        textTransform: 'capitalize',
-                      }}
-                    >
-                      {tc.status}
-                    </span>
-                  </td>
-                  <td
-                    style={{
-                      padding: '12px',
-                      verticalAlign: 'top',
-                      fontSize: 'var(--font-size-sm)',
-                      color: 'var(--color-text-muted)',
-                    }}
-                  >
-                    {tc.lastRun ? formatDateTime(tc.lastRun) : '-'}
-                  </td>
-                  <td style={{ padding: '12px', verticalAlign: 'top' }}>
-                    <div style={{ display: 'flex', gap: '4px' }}>
-                      <button
-                        onClick={() => onEdit(tc)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--color-text-muted)',
-                          cursor: 'pointer',
-                          padding: '4px',
-                        }}
-                        title="Edit"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        onClick={() => onDelete(tc.id)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--color-error)',
-                          cursor: 'pointer',
-                          padding: '4px',
-                        }}
-                        title="Delete"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
+            ))}
           </tbody>
         </table>
       </div>

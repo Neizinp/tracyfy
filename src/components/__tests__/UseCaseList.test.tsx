@@ -94,6 +94,6 @@ describe('UseCaseList', () => {
       />
     );
 
-    expect(screen.getByText('No Use Cases Yet')).toBeInTheDocument();
+    expect(screen.getByText('No use cases found. Create one to get started.')).toBeInTheDocument();
   });
 });
