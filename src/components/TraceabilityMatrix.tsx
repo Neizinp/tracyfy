@@ -41,6 +41,7 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({
   const [showUseCases, setShowUseCases] = useState(true);
   const [showTestCases, setShowTestCases] = useState(true);
   const [showInformation, setShowInformation] = useState(true);
+  const [showUnlinked, setShowUnlinked] = useState(true);
 
   // Build unified artifact list
   const buildUnifiedArtifacts = (): UnifiedArtifact[] => {
@@ -89,7 +90,29 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({
     return artifacts;
   };
 
-  const unifiedArtifacts = buildUnifiedArtifacts();
+  // Build all artifacts first (before filtering by links)
+  const allArtifactsUnfiltered = buildUnifiedArtifacts();
+
+  // Build a flat list of all links (needed for filtering)
+  const allLinksForFiltering: { sourceId: string; targetId: string }[] = [];
+  allArtifactsUnfiltered.forEach((artifact) => {
+    artifact.linkedArtifacts.forEach((link) => {
+      allLinksForFiltering.push({
+        sourceId: artifact.id,
+        targetId: link.targetId,
+      });
+    });
+  });
+
+  // Helper to check if an artifact has any links (outgoing or incoming)
+  const hasAnyLinks = (artifactId: string): boolean => {
+    return allLinksForFiltering.some((l) => l.sourceId === artifactId || l.targetId === artifactId);
+  };
+
+  // Filter out unlinked artifacts if toggle is off
+  const unifiedArtifacts = showUnlinked
+    ? allArtifactsUnfiltered
+    : allArtifactsUnfiltered.filter((a) => hasAnyLinks(a.id));
 
   // Build a flat list of all links
   const allLinks: { sourceId: string; targetId: string; type: ArtifactLink['type'] }[] = [];
@@ -261,6 +284,20 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({
           active={showInformation}
           onClick={() => setShowInformation(!showInformation)}
           color={TYPE_COLORS.information}
+        />
+        <span
+          style={{
+            borderLeft: '1px solid var(--color-border)',
+            height: '24px',
+            alignSelf: 'center',
+            margin: '0 4px',
+          }}
+        />
+        <FilterButton
+          label="Show Unlinked"
+          active={showUnlinked}
+          onClick={() => setShowUnlinked(!showUnlinked)}
+          color="rgba(100, 100, 100, 0.15)"
         />
       </div>
 

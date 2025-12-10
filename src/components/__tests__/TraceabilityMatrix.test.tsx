@@ -67,11 +67,10 @@ describe('TraceabilityMatrix', () => {
       title: 'Test Case',
       description: '',
       requirementIds: ['REQ-001'],
-      steps: '',
-      expectedResult: '',
       status: 'draft',
       priority: 'medium',
       revision: '01',
+      dateCreated: Date.now(),
       lastModified: Date.now(),
       linkedArtifacts: [{ targetId: 'REQ-001', type: 'verifies' }],
     },
@@ -82,7 +81,9 @@ describe('TraceabilityMatrix', () => {
       id: 'INFO-001',
       title: 'Test Info',
       content: '',
+      type: 'note',
       revision: '01',
+      dateCreated: Date.now(),
       lastModified: Date.now(),
     },
   ];
@@ -176,5 +177,21 @@ describe('TraceabilityMatrix', () => {
     expect(
       screen.getByText('No artifacts to display. Enable at least one artifact type above.')
     ).toBeInTheDocument();
+  });
+
+  it('hides unlinked artifacts when Show Unlinked is toggled off', () => {
+    render(<TraceabilityMatrix {...defaultProps} />);
+
+    // INFO-001 has no links, should be visible initially
+    expect(screen.getAllByText('INFO-001').length).toBeGreaterThanOrEqual(1);
+
+    // Toggle off Show Unlinked
+    fireEvent.click(screen.getByText('Show Unlinked'));
+
+    // INFO-001 should be hidden now (no links to/from it)
+    expect(screen.queryByText('INFO-001')).not.toBeInTheDocument();
+
+    // But REQ-001 should still be visible (has links)
+    expect(screen.getAllByText('REQ-001').length).toBeGreaterThanOrEqual(1);
   });
 });
