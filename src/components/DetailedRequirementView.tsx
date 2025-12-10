@@ -541,10 +541,10 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                                 : 'rgba(16, 185, 129, 0.1)',
                           color:
                             req.priority === 'high'
-                              ? '#ef4444'
+                              ? 'var(--color-error)'
                               : req.priority === 'medium'
-                                ? '#f59e0b'
-                                : '#10b981',
+                                ? 'var(--color-warning)'
+                                : 'var(--color-success)',
                         }}
                       >
                         {req.priority.charAt(0).toUpperCase() + req.priority.slice(1)}
@@ -567,10 +567,10 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                                 : 'rgba(59, 130, 246, 0.1)',
                           color:
                             req.status === 'approved'
-                              ? '#10b981'
+                              ? 'var(--color-success)'
                               : req.status === 'draft'
-                                ? '#6b7280'
-                                : '#3b82f6',
+                                ? 'var(--color-text-muted)'
+                                : 'var(--color-info)',
                         }}
                       >
                         {req.status.charAt(0).toUpperCase() + req.status.slice(1)}

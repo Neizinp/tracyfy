@@ -103,7 +103,7 @@ export function PendingChangesPanel() {
   };
 
   const getStatusColor = (status: string) => {
-    return status === 'new' ? '#4ade80' : '#facc15'; // Green-400 : Yellow-400
+    return status === 'new' ? 'var(--color-success-light)' : 'var(--color-warning-light)';
   };
 
   const getStatusText = (status: string) => {

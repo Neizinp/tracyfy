@@ -113,7 +113,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     >
       <div
         style={{
-          backgroundColor: '#222',
+          backgroundColor: 'var(--color-bg-card)',
           borderRadius: '8px',
           border: '1px solid var(--color-border)',
           width: '800px',
@@ -162,8 +162,8 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
               background: 'none',
               border: 'none',
               borderBottom:
-                activeTab === 'baselines' ? '2px solid #3b82f6' : '2px solid transparent',
-              color: activeTab === 'baselines' ? '#3b82f6' : 'var(--color-text-muted)',
+                activeTab === 'baselines' ? '2px solid var(--color-info)' : '2px solid transparent',
+              color: activeTab === 'baselines' ? 'var(--color-info)' : 'var(--color-text-muted)',
               cursor: 'pointer',
               fontWeight: 500,
             }}
@@ -180,8 +180,9 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
               padding: '12px 24px',
               background: 'none',
               border: 'none',
-              borderBottom: activeTab === 'commits' ? '2px solid #3b82f6' : '2px solid transparent',
-              color: activeTab === 'commits' ? '#3b82f6' : 'var(--color-text-muted)',
+              borderBottom:
+                activeTab === 'commits' ? '2px solid var(--color-info)' : '2px solid transparent',
+              color: activeTab === 'commits' ? 'var(--color-info)' : 'var(--color-text-muted)',
               cursor: 'pointer',
               fontWeight: 500,
             }}
@@ -418,10 +419,10 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                       padding: 'var(--spacing-md)',
                       borderRadius: '6px',
                       border: isBaseline
-                        ? '1px solid rgba(59, 130, 246, 0.5)'
+                        ? '1px solid var(--color-info-bg)'
                         : '1px solid var(--color-border)',
                       backgroundColor: isBaseline
-                        ? 'rgba(59, 130, 246, 0.1)'
+                        ? 'var(--color-info-bg)'
                         : 'var(--color-bg-secondary)',
                       transition: 'background-color 0.2s',
                     }}
@@ -429,7 +430,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                       <div style={{ marginTop: '2px' }}>
                         {isBaseline ? (
-                          <Tag size={16} style={{ color: '#3b82f6' }} />
+                          <Tag size={16} style={{ color: 'var(--color-info)' }} />
                         ) : (
                           <GitCommit size={16} style={{ color: 'var(--color-text-muted)' }} />
                         )}
@@ -456,8 +457,8 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                                   gap: '4px',
                                   padding: '2px 8px',
                                   borderRadius: '12px',
-                                  backgroundColor: 'rgba(59, 130, 246, 0.3)',
-                                  color: '#93c5fd',
+                                  backgroundColor: 'var(--color-info-bg)',
+                                  color: 'var(--color-info-light)',
                                   fontSize: '0.75rem',
                                   fontWeight: 500,
                                 }}
@@ -473,8 +474,8 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                                 alignItems: 'center',
                                 padding: '2px 8px',
                                 borderRadius: '12px',
-                                backgroundColor: 'rgba(34, 197, 94, 0.2)',
-                                color: '#4ade80',
+                                backgroundColor: 'var(--color-success-bg)',
+                                color: 'var(--color-success-light)',
                                 fontSize: '0.75rem',
                                 fontWeight: 500,
                               }}

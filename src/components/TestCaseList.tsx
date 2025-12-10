@@ -21,13 +21,13 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
   const getStatusColor = (status: TestCase['status']) => {
     switch (status) {
       case 'passed':
-        return { bg: 'rgba(16, 185, 129, 0.2)', text: '#6ee7b7' };
+        return { bg: 'var(--color-success-bg)', text: 'var(--color-success-light)' };
       case 'failed':
-        return { bg: 'rgba(239, 68, 68, 0.2)', text: '#fca5a5' };
+        return { bg: 'var(--color-error-bg)', text: 'var(--color-error-light)' };
       case 'blocked':
-        return { bg: 'rgba(251, 191, 36, 0.2)', text: '#fcd34d' };
+        return { bg: 'var(--color-warning-bg)', text: 'var(--color-warning-light)' };
       case 'approved':
-        return { bg: 'rgba(59, 130, 246, 0.2)', text: '#93c5fd' };
+        return { bg: 'var(--color-info-bg)', text: 'var(--color-info-light)' };
       default:
         return { bg: 'rgba(148, 163, 184, 0.2)', text: 'var(--color-text-secondary)' };
     }
@@ -264,9 +264,12 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                         borderRadius: '12px',
                         backgroundColor:
                           tc.priority === 'high'
-                            ? 'rgba(239, 68, 68, 0.2)'
+                            ? 'var(--color-error-bg)'
                             : 'rgba(148, 163, 184, 0.2)',
-                        color: tc.priority === 'high' ? '#fca5a5' : 'var(--color-text-secondary)',
+                        color:
+                          tc.priority === 'high'
+                            ? 'var(--color-error-light)'
+                            : 'var(--color-text-secondary)',
                         textTransform: 'capitalize',
                       }}
                     >
@@ -317,7 +320,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                         style={{
                           background: 'none',
                           border: 'none',
-                          color: '#ef4444',
+                          color: 'var(--color-error)',
                           cursor: 'pointer',
                           padding: '4px',
                         }}
