@@ -9,7 +9,6 @@ import type {
   Information,
   ProjectBaseline,
   Project,
-  Link,
 } from '../../types';
 
 interface FileSystemContextValue {
@@ -25,7 +24,6 @@ interface FileSystemContextValue {
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
-  links: Link[];
   // Git-related
   pendingChanges: FileStatus[];
   refreshStatus: () => Promise<void>;
@@ -42,7 +40,6 @@ interface FileSystemContextValue {
   deleteProject: (id: string) => Promise<void>;
   createProject: (name: string, description: string) => Promise<Project>;
   setCurrentProject: (projectId: string) => Promise<void>;
-  saveLinks: (links: Link[]) => Promise<void>;
   getNextId: (type: 'requirements' | 'useCases' | 'testCases' | 'information') => Promise<string>;
   // Reload from disk
   reloadData: () => Promise<void>;
@@ -77,7 +74,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [useCases, setUseCases] = useState<UseCase[]>([]);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [information, setInformation] = useState<Information[]>([]);
-  const [links, setLinksState] = useState<Link[]>([]);
 
   // Counter for E2E mode to generate unique IDs
   const [e2eCounters, setE2eCounters] = useState({ req: 0, uc: 0, tc: 0, info: 0 });
@@ -119,7 +115,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setUseCases(data.useCases);
     setTestCases(data.testCases);
     setInformation(data.information);
-    setLinksState(data.links);
 
     // Recalculate counters to make sure they're in sync
     await diskProjectService.recalculateCounters();
@@ -129,7 +124,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       useCases: data.useCases.length,
       testCases: data.testCases.length,
       information: data.information.length,
-      links: data.links.length,
     });
   }, []);
 
@@ -154,7 +148,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           setUseCases([]);
           setTestCases([]);
           setInformation([]);
-          setLinksState([]);
           setIsReady(true);
           setIsLoading(false);
           return;
@@ -393,7 +386,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (isE2EMode()) {
         // In E2E mode, create project in memory
         project = {
-          id: `project-${Date.now()}`,
+          id: `project - ${Date.now()} `,
           name,
           description,
           requirementIds: [],
@@ -436,19 +429,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [isReady]
   );
 
-  // Links
-  const saveLinks = useCallback(
-    async (newLinks: Link[]) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await diskProjectService.saveLinks(newLinks);
-      }
-      setLinksState(newLinks);
-      if (!isE2EMode()) await refreshStatus();
-    },
-    [isReady, refreshStatus]
-  );
-
   // Get next ID
   const getNextId = useCallback(
     async (type: 'requirements' | 'useCases' | 'testCases' | 'information'): Promise<string> => {
@@ -468,7 +448,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }[type] as keyof typeof e2eCounters;
         const nextNum = e2eCounters[counterKey] + 1;
         setE2eCounters((prev) => ({ ...prev, [counterKey]: nextNum }));
-        return `${prefix}-${String(nextNum).padStart(3, '0')}`;
+        return `${prefix} -${String(nextNum).padStart(3, '0')} `;
       }
       return await diskProjectService.getNextId(type);
     },
@@ -481,7 +461,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (!isReady) throw new Error('Filesystem not ready');
       if (isE2EMode()) return; // Skip git operations in E2E mode
       console.log(
-        `[commitFile] Committing ${filepath} with message: ${message} by ${authorName || 'ReqTrace User'}`
+        `[commitFile] Committing ${filepath} with message: ${message} by ${authorName || 'ReqTrace User'} `
       );
       await realGitService.commitFile(filepath, message, authorName);
       await refreshStatus();
@@ -523,7 +503,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         useCases,
         testCases,
         information,
-        links,
         // Git
         pendingChanges,
         refreshStatus,
@@ -540,7 +519,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         createProject,
         deleteProject,
         setCurrentProject,
-        saveLinks,
         getNextId,
         reloadData,
         // Git operations

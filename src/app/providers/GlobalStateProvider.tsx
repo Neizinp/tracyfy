@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useRef, useEffect, useCallb
 import type { ReactNode } from 'react';
 import { useFileSystem } from './FileSystemProvider';
 import { useProject } from './ProjectProvider';
-import type { Requirement, UseCase, TestCase, Information, Link } from '../../types';
+import type { Requirement, UseCase, TestCase, Information } from '../../types';
 
 interface GlobalStateContextValue {
   // Global artifacts (all artifacts regardless of project)
@@ -10,10 +10,6 @@ interface GlobalStateContextValue {
   globalUseCases: UseCase[];
   globalTestCases: TestCase[];
   globalInformation: Information[];
-
-  // Links
-  links: Link[];
-  setLinks: (links: Link[] | ((prev: Link[]) => Link[])) => void;
 
   // Local project artifacts (filtered by current project)
   requirements: Requirement[];
@@ -37,8 +33,6 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     useCases: fsUseCases,
     testCases: fsTestCases,
     information: fsInformation,
-    links: fsLinks,
-    saveLinks,
   } = useFileSystem();
 
   const { currentProject } = useProject();
@@ -48,7 +42,6 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [globalUseCases, setGlobalUseCases] = useState<UseCase[]>([]);
   const [globalTestCases, setGlobalTestCases] = useState<TestCase[]>([]);
   const [globalInformation, setGlobalInformation] = useState<Information[]>([]);
-  const [links, setLinksState] = useState<Link[]>([]);
 
   // Project-filtered state
   const [requirements, setRequirementsState] = useState<Requirement[]>([]);
@@ -75,10 +68,6 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     setGlobalInformation(fsInformation);
   }, [fsInformation]);
 
-  useEffect(() => {
-    setLinksState(fsLinks);
-  }, [fsLinks]);
-
   // Filter artifacts by current project
   useEffect(() => {
     if (currentProject) {
@@ -98,19 +87,6 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
       setInformationState(globalInformation);
     }
   }, [currentProject, globalRequirements, globalUseCases, globalTestCases, globalInformation]);
-
-  // Links setter that saves to disk
-  const setLinks = useCallback(
-    (linksOrFn: Link[] | ((prev: Link[]) => Link[])) => {
-      setLinksState((prev) => {
-        const newLinks = typeof linksOrFn === 'function' ? linksOrFn(prev) : linksOrFn;
-        // Save to disk asynchronously
-        saveLinks(newLinks).catch((err) => console.error('Failed to save links:', err));
-        return newLinks;
-      });
-    },
-    [saveLinks]
-  );
 
   // Wrapper setters for requirements (update global state)
   const setRequirements = useCallback(
@@ -152,8 +128,6 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     globalUseCases,
     globalTestCases,
     globalInformation,
-    links,
-    setLinks,
     requirements,
     setRequirements,
     useCases,
