@@ -210,7 +210,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                 style={{
                   padding: '6px 12px',
                   borderRadius: '6px',
-                  backgroundColor: 'var(--color-success)',
+                  backgroundColor: 'var(--color-info)',
                   color: 'white',
                   border: 'none',
                   cursor: 'pointer',
@@ -266,7 +266,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                   style={{
                     padding: '6px 12px',
                     borderRadius: '6px',
-                    backgroundColor: 'var(--color-success)',
+                    backgroundColor: 'var(--color-info)',
                     color: 'white',
                     border: 'none',
                     cursor: 'pointer',
@@ -329,7 +329,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                       borderRadius: '6px',
                       border: '1px solid var(--color-border)',
                       backgroundColor: 'var(--color-bg-secondary)',
-                      borderColor: 'var(--color-success)',
+                      borderColor: 'var(--color-border)',
                       transition: 'background-color 0.2s',
                     }}
                   >
@@ -357,7 +357,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                             style={{
                               padding: '2px 8px',
                               borderRadius: '12px',
-                              backgroundColor: 'var(--color-success)',
+                              backgroundColor: 'var(--color-info)',
                               color: 'white',
                               fontSize: 'var(--font-size-xs)',
                               fontWeight: 500,
