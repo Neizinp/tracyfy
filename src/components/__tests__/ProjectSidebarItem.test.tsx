@@ -40,50 +40,39 @@ describe('ProjectSidebarItem', () => {
     expect(screen.getByText('Test Project')).toBeInTheDocument();
   });
 
-  it('should call onSwitchProject when clicked', () => {
-    renderWithDnd(<ProjectSidebarItem {...defaultProps} />);
-
-    const projectButton = screen.getByText('Test Project');
-    fireEvent.click(projectButton);
-
-    expect(mockOnSwitchProject).toHaveBeenCalledWith('PROJ-001');
-  });
-
-  it('should call onOpenProjectSettings when settings button clicked', () => {
-    renderWithDnd(<ProjectSidebarItem {...defaultProps} />);
-
-    const buttons = screen.getAllByRole('button');
-    const settingsButton = buttons.find((btn) => btn.querySelector('svg.lucide-settings'));
-    if (settingsButton) fireEvent.click(settingsButton);
-
-    expect(mockOnOpenProjectSettings).toHaveBeenCalledWith(mockProject);
-  });
-
-  it('should show active state when isActive is true', () => {
-    renderWithDnd(<ProjectSidebarItem {...defaultProps} isActive={true} />);
-
-    // Active project should have specific styling
-    const projectButton = screen.getByText('Test Project').closest('button');
-    expect(projectButton).toHaveStyle({ fontWeight: 600 });
-  });
-
-  it('should show inactive state when isActive is false', () => {
+  it('should call onSwitchProject when clicked on inactive project', () => {
     renderWithDnd(<ProjectSidebarItem {...defaultProps} isActive={false} />);
 
-    const projectButton = screen.getByText('Test Project').closest('button');
-    expect(projectButton).toHaveStyle({ fontWeight: 400 });
+    const projectItem = screen.getByText('Test Project').closest('div');
+    if (projectItem) fireEvent.click(projectItem);
+
+    expect(mockOnSwitchProject).toHaveBeenCalledWith('PROJ-001');
+    expect(mockOnOpenProjectSettings).not.toHaveBeenCalled();
   });
 
-  it('should prevent propagation when settings button clicked', () => {
-    renderWithDnd(<ProjectSidebarItem {...defaultProps} />);
+  it('should call onOpenProjectSettings when clicked on active project', () => {
+    renderWithDnd(<ProjectSidebarItem {...defaultProps} isActive={true} />);
 
-    const buttons = screen.getAllByRole('button');
-    const settingsButton = buttons.find((btn) => btn.querySelector('svg.lucide-settings'));
-    if (settingsButton) fireEvent.click(settingsButton);
+    const projectItem = screen.getByText('Test Project').closest('div');
+    if (projectItem) fireEvent.click(projectItem);
 
-    // Should open settings, not switch project
     expect(mockOnOpenProjectSettings).toHaveBeenCalledWith(mockProject);
     expect(mockOnSwitchProject).not.toHaveBeenCalled();
+  });
+
+  it('should show active state styling when isActive is true', () => {
+    const { container } = renderWithDnd(<ProjectSidebarItem {...defaultProps} isActive={true} />);
+
+    // Active project should have hover background
+    const projectItem = container.firstChild as HTMLElement;
+    expect(projectItem).toHaveStyle({ fontWeight: 600 });
+  });
+
+  it('should show inactive state styling when isActive is false', () => {
+    const { container } = renderWithDnd(<ProjectSidebarItem {...defaultProps} isActive={false} />);
+
+    const projectItem = container.firstChild as HTMLElement;
+    expect(projectItem).toHaveStyle({ fontWeight: 400 });
   });
 
   it('should render folder icon', () => {
@@ -91,12 +80,5 @@ describe('ProjectSidebarItem', () => {
 
     const folderIcon = container.querySelector('svg.lucide-folder-open');
     expect(folderIcon).toBeInTheDocument();
-  });
-
-  it('should render settings icon', () => {
-    const { container } = renderWithDnd(<ProjectSidebarItem {...defaultProps} />);
-
-    const settingsIcon = container.querySelector('svg.lucide-settings');
-    expect(settingsIcon).toBeInTheDocument();
   });
 });
