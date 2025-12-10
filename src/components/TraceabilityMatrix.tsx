@@ -229,15 +229,6 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({
       }}
     >
       <div style={{ marginBottom: 'var(--spacing-md)' }}>
-        <h3
-          style={{
-            fontSize: 'var(--font-size-xl)',
-            fontWeight: 600,
-            marginBottom: 'var(--spacing-xs)',
-          }}
-        >
-          Traceability Matrix
-        </h3>
         <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
           Shows relationships between all artifacts. Click the toggles to filter by artifact type.
         </p>

@@ -98,7 +98,7 @@ describe('TraceabilityMatrix', () => {
   it('renders matrix structure correctly', () => {
     render(<TraceabilityMatrix {...defaultProps} />);
 
-    expect(screen.getByText('Traceability Matrix')).toBeInTheDocument();
+    expect(screen.getByText('From / To')).toBeInTheDocument();
     // Check row headers - REQ-001 appears in row and column
     expect(screen.getAllByText('REQ-001').length).toBeGreaterThanOrEqual(2);
   });
