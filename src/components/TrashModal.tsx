@@ -114,7 +114,7 @@ export const TrashModal: React.FC<TrashModalProps> = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
             <Trash2 size={20} color="var(--color-text-secondary)" />
-            <h3 style={{ fontWeight: 600, fontSize: '1.125rem' }}>
+            <h3 style={{ fontWeight: 600, fontSize: 'var(--font-size-lg)' }}>
               Trash Bin ({allDeletedItems.length})
             </h3>
           </div>
@@ -172,7 +172,12 @@ export const TrashModal: React.FC<TrashModalProps> = ({
                       </span>
                       <span style={{ fontWeight: 500 }}>{item.title}</span>
                     </div>
-                    <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-sm)',
+                        color: 'var(--color-text-secondary)',
+                      }}
+                    >
                       Deleted: {formatDate(item.deletedAt)}
                     </div>
                   </div>
@@ -228,7 +233,7 @@ export const TrashModal: React.FC<TrashModalProps> = ({
             padding: 'var(--spacing-md)',
             borderTop: '1px solid var(--color-border)',
             backgroundColor: 'var(--color-bg-subtle)',
-            fontSize: '0.875rem',
+            fontSize: 'var(--font-size-sm)',
             color: 'var(--color-text-secondary)',
             display: 'flex',
             alignItems: 'center',

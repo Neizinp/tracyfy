@@ -113,7 +113,11 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
           <div style={{ marginBottom: 'var(--spacing-md)' }}>
             <label
               htmlFor="project-name"
-              style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}
+              style={{
+                display: 'block',
+                marginBottom: 'var(--spacing-xs)',
+                fontSize: 'var(--font-size-sm)',
+              }}
             >
               Project Name
             </label>
@@ -137,7 +141,11 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
           <div style={{ marginBottom: 'var(--spacing-md)' }}>
             <label
               htmlFor="project-description"
-              style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}
+              style={{
+                display: 'block',
+                marginBottom: 'var(--spacing-xs)',
+                fontSize: 'var(--font-size-sm)',
+              }}
             >
               Description
             </label>
@@ -168,7 +176,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                 color: 'var(--color-error)',
                 borderRadius: '6px',
                 border: '1px solid var(--color-error-light)',
-                fontSize: '0.875rem',
+                fontSize: 'var(--font-size-sm)',
               }}
             >
               {error}
@@ -227,7 +235,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
             >
               <h4
                 style={{
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--font-size-sm)',
                   fontWeight: 500,
                   color: 'var(--color-error)',
                   marginBottom: 'var(--spacing-sm)',
@@ -250,7 +258,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
                   }}
                 >
@@ -280,7 +288,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                 >
                   <p
                     style={{
-                      fontSize: '0.875rem',
+                      fontSize: 'var(--font-size-sm)',
                       color: 'var(--color-error)',
                       marginBottom: 'var(--spacing-sm)',
                     }}
@@ -300,7 +308,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                         backgroundColor: 'var(--color-bg-card)',
                         color: 'var(--color-text-secondary)',
                         cursor: 'pointer',
-                        fontSize: '0.875rem',
+                        fontSize: 'var(--font-size-sm)',
                         fontWeight: 500,
                       }}
                     >
@@ -320,7 +328,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                         backgroundColor: 'var(--color-error)',
                         color: 'white',
                         cursor: 'pointer',
-                        fontSize: '0.875rem',
+                        fontSize: 'var(--font-size-sm)',
                         fontWeight: 500,
                       }}
                     >

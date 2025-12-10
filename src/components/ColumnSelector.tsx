@@ -68,7 +68,7 @@ export const ColumnSelector: React.FC<ColumnSelectorProps> = ({
           borderRadius: '6px',
           color: 'var(--color-text-primary)',
           cursor: 'pointer',
-          fontSize: '0.875rem',
+          fontSize: 'var(--font-size-sm)',
           fontWeight: 500,
           transition: 'background-color 0.2s',
         }}
@@ -132,7 +132,7 @@ export const ColumnSelector: React.FC<ColumnSelectorProps> = ({
               />
               <span
                 style={{
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--font-size-sm)',
                   color: 'var(--color-text-primary)',
                   userSelect: 'none',
                 }}

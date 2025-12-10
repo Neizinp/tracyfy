@@ -115,7 +115,7 @@ export function PendingChangesPanel() {
       <div
         style={{
           padding: 'var(--spacing-sm)',
-          fontSize: '0.875rem',
+          fontSize: 'var(--font-size-sm)',
           color: 'var(--color-text-muted)',
         }}
       >
@@ -156,7 +156,7 @@ export function PendingChangesPanel() {
         <div key={typeName}>
           <div
             style={{
-              fontSize: '0.75rem',
+              fontSize: 'var(--font-size-xs)',
               fontWeight: 600,
               color: 'var(--color-text-muted)',
               marginBottom: 'var(--spacing-xs)',
@@ -187,7 +187,7 @@ export function PendingChangesPanel() {
                   {getTypeIcon()}
                   <span
                     style={{
-                      fontSize: '0.875rem',
+                      fontSize: 'var(--font-size-sm)',
                       fontWeight: 500,
                       color: 'var(--color-text-primary)',
                       flex: 1,
@@ -200,7 +200,7 @@ export function PendingChangesPanel() {
                   </span>
                   <span
                     style={{
-                      fontSize: '0.75rem',
+                      fontSize: 'var(--font-size-xs)',
                       color: getStatusColor(change.status),
                     }}
                   >
@@ -225,7 +225,7 @@ export function PendingChangesPanel() {
                   style={{
                     width: '100%',
                     padding: '4px 8px',
-                    fontSize: '0.75rem',
+                    fontSize: 'var(--font-size-xs)',
                     backgroundColor: 'var(--color-bg-app)',
                     border: '1px solid var(--color-border)',
                     borderRadius: '4px',
@@ -246,7 +246,7 @@ export function PendingChangesPanel() {
                     justifyContent: 'center',
                     gap: 'var(--spacing-sm)',
                     padding: '6px 12px',
-                    fontSize: '0.75rem',
+                    fontSize: 'var(--font-size-xs)',
                     fontWeight: 500,
                     color: 'white',
                     backgroundColor: 'var(--color-accent)',
@@ -276,7 +276,7 @@ export function PendingChangesPanel() {
           padding: 'var(--spacing-sm)',
           backgroundColor: 'var(--color-bg-secondary)',
           borderRadius: '6px',
-          fontSize: '0.75rem',
+          fontSize: 'var(--font-size-xs)',
           color: 'var(--color-text-muted)',
         }}
       >

@@ -36,7 +36,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <label
             style={{
               display: 'block',
-              fontSize: '0.875rem',
+              fontSize: 'var(--font-size-sm)',
               fontWeight: 500,
               color: 'var(--color-text-primary)',
             }}
@@ -51,7 +51,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               alignItems: 'center',
               gap: '6px',
               padding: '4px 12px',
-              fontSize: '0.75rem',
+              fontSize: 'var(--font-size-xs)',
               backgroundColor: 'var(--color-bg-secondary)',
               color: 'var(--color-text-secondary)',
               border: '1px solid var(--color-border)',
@@ -109,7 +109,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             borderRadius: '6px',
             padding: '12px',
             backgroundColor: 'var(--color-bg-app)',
-            fontSize: '0.875rem',
+            fontSize: 'var(--font-size-sm)',
           }}
         >
           {value ? (
@@ -121,7 +121,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 h1: ({ ...props }) => (
                   <h1
                     style={{
-                      fontSize: '1.25rem',
+                      fontSize: 'var(--font-size-xl)',
                       fontWeight: 'bold',
                       marginBottom: '8px',
                       color: 'var(--color-text-primary)',
@@ -132,7 +132,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 h2: ({ ...props }) => (
                   <h2
                     style={{
-                      fontSize: '1.125rem',
+                      fontSize: 'var(--font-size-lg)',
                       fontWeight: 'bold',
                       marginBottom: '6px',
                       color: 'var(--color-text-primary)',
@@ -143,7 +143,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 h3: ({ ...props }) => (
                   <h3
                     style={{
-                      fontSize: '1rem',
+                      fontSize: 'var(--font-size-base)',
                       fontWeight: 'bold',
                       marginBottom: '6px',
                       color: 'var(--color-text-primary)',
@@ -154,7 +154,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 h4: ({ ...props }) => (
                   <h4
                     style={{
-                      fontSize: '0.875rem',
+                      fontSize: 'var(--font-size-sm)',
                       fontWeight: 'bold',
                       marginBottom: '4px',
                       color: 'var(--color-text-primary)',
@@ -167,7 +167,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                     style={{
                       marginBottom: '8px',
                       color: 'var(--color-text-secondary)',
-                      fontSize: '0.875rem',
+                      fontSize: 'var(--font-size-sm)',
                     }}
                     {...props}
                   />
@@ -179,7 +179,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                       listStylePosition: 'inside',
                       marginBottom: '8px',
                       color: 'var(--color-text-secondary)',
-                      fontSize: '0.875rem',
+                      fontSize: 'var(--font-size-sm)',
                     }}
                     {...props}
                   />
@@ -191,7 +191,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                       listStylePosition: 'inside',
                       marginBottom: '8px',
                       color: 'var(--color-text-secondary)',
-                      fontSize: '0.875rem',
+                      fontSize: 'var(--font-size-sm)',
                     }}
                     {...props}
                   />
@@ -332,7 +332,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               style={{
                 color: 'var(--color-text-muted)',
                 fontStyle: 'italic',
-                fontSize: '0.875rem',
+                fontSize: 'var(--font-size-sm)',
               }}
             >
               No content

@@ -46,7 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div style={{ padding: 'var(--spacing-md)', borderBottom: '1px solid var(--color-border)' }}>
         <h1
           style={{
-            fontSize: '1.25rem',
+            fontSize: 'var(--font-size-xl)',
             fontWeight: '600',
             display: 'flex',
             alignItems: 'center',

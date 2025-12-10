@@ -67,7 +67,7 @@ export const InformationList: React.FC<InformationListProps> = ({
               <span
                 style={{
                   fontFamily: 'monospace',
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--font-size-sm)',
                   color: 'var(--color-text-muted)',
                   backgroundColor: 'var(--color-bg-secondary)',
                   padding: '2px 6px',
@@ -78,7 +78,7 @@ export const InformationList: React.FC<InformationListProps> = ({
               </span>
               <span
                 style={{
-                  fontSize: '0.75rem',
+                  fontSize: 'var(--font-size-xs)',
                   padding: '1px 5px',
                   borderRadius: '3px',
                   backgroundColor: 'var(--color-bg-tertiary)',
@@ -88,7 +88,9 @@ export const InformationList: React.FC<InformationListProps> = ({
               >
                 v{info.revision || '01'}
               </span>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{info.title}</h3>
+              <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)', fontWeight: 600 }}>
+                {info.title}
+              </h3>
             </div>
             <div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>
               <button
@@ -124,7 +126,7 @@ export const InformationList: React.FC<InformationListProps> = ({
             style={{
               display: 'flex',
               gap: 'var(--spacing-md)',
-              fontSize: '0.875rem',
+              fontSize: 'var(--font-size-sm)',
               color: 'var(--color-text-secondary)',
               flexWrap: 'wrap',
               alignItems: 'center',
@@ -162,7 +164,7 @@ export const InformationList: React.FC<InformationListProps> = ({
 
           <div
             style={{
-              fontSize: '0.9rem',
+              fontSize: 'var(--font-size-sm)',
               color: 'var(--color-text-primary)',
               whiteSpace: 'pre-wrap',
               marginTop: 'var(--spacing-xs)',

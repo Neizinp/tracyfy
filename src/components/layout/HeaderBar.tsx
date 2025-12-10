@@ -221,7 +221,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-secondary)',
               color: 'var(--color-text-primary)',
-              fontSize: '0.875rem',
+              fontSize: 'var(--font-size-sm)',
             }}
           />
         </div>
@@ -395,7 +395,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   <label
                     htmlFor="baseline-select"
                     style={{
-                      fontSize: '0.9rem',
+                      fontSize: 'var(--font-size-sm)',
                       fontWeight: 500,
                       display: 'block',
                       marginBottom: 4,

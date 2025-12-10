@@ -214,7 +214,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                   color: 'white',
                   border: 'none',
                   cursor: 'pointer',
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--font-size-sm)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
@@ -241,7 +241,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                     border: '1px solid var(--color-border)',
                     backgroundColor: 'var(--color-bg-app)',
                     color: 'var(--color-text-primary)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                     width: '120px',
                   }}
                 />
@@ -256,7 +256,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                     border: '1px solid var(--color-border)',
                     backgroundColor: 'var(--color-bg-app)',
                     color: 'var(--color-text-primary)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                     width: '200px',
                   }}
                 />
@@ -270,7 +270,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                     color: 'white',
                     border: 'none',
                     cursor: 'pointer',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                     opacity: baselineName.trim() ? 1 : 0.5,
                   }}
                 >
@@ -289,7 +289,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                     backgroundColor: 'var(--color-bg-card)',
                     color: 'var(--color-text-primary)',
                     cursor: 'pointer',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Cancel
@@ -344,7 +344,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                       <div style={{ flex: 1 }}>
                         <div
                           style={{
-                            fontSize: '0.875rem',
+                            fontSize: 'var(--font-size-sm)',
                             color: 'var(--color-text-muted)',
                             marginBottom: '4px',
                             display: 'flex',
@@ -359,7 +359,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                               borderRadius: '12px',
                               backgroundColor: 'var(--color-success)',
                               color: 'white',
-                              fontSize: '0.75rem',
+                              fontSize: 'var(--font-size-xs)',
                               fontWeight: 500,
                               display: 'flex',
                               alignItems: 'center',
@@ -459,7 +459,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                                   borderRadius: '12px',
                                   backgroundColor: 'var(--color-info-bg)',
                                   color: 'var(--color-info-light)',
-                                  fontSize: '0.75rem',
+                                  fontSize: 'var(--font-size-xs)',
                                   fontWeight: 500,
                                 }}
                               >
@@ -476,7 +476,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                                 borderRadius: '12px',
                                 backgroundColor: 'var(--color-success-bg)',
                                 color: 'var(--color-success-light)',
-                                fontSize: '0.75rem',
+                                fontSize: 'var(--font-size-xs)',
                                 fontWeight: 500,
                               }}
                             >
@@ -490,11 +490,13 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                             alignItems: 'center',
                             gap: '8px',
                             marginTop: '4px',
-                            fontSize: '0.875rem',
+                            fontSize: 'var(--font-size-sm)',
                             color: 'var(--color-text-muted)',
                           }}
                         >
-                          <span style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                          <span
+                            style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-xs)' }}
+                          >
                             {commit.hash.substring(0, 7)}
                           </span>
                           <span>•</span>
@@ -515,7 +517,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
           style={{
             padding: 'var(--spacing-md)',
             borderTop: '1px solid var(--color-border)',
-            fontSize: '0.875rem',
+            fontSize: 'var(--font-size-sm)',
             color: 'var(--color-text-muted)',
           }}
         >

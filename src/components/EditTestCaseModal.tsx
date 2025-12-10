@@ -221,7 +221,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Title
@@ -251,7 +251,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Description
@@ -280,7 +280,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Priority
@@ -311,7 +311,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Status
@@ -344,7 +344,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Author
@@ -367,7 +367,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Date Created
@@ -395,7 +395,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                     style={{
                       display: 'block',
                       marginBottom: 'var(--spacing-xs)',
-                      fontSize: '0.875rem',
+                      fontSize: 'var(--font-size-sm)',
                     }}
                   >
                     Last Run
@@ -423,7 +423,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Linked Requirements ({requirementIds.length} selected)
@@ -443,7 +443,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                       style={{
                         padding: '8px',
                         color: 'var(--color-text-muted)',
-                        fontSize: '0.875rem',
+                        fontSize: 'var(--font-size-sm)',
                       }}
                     >
                       No requirements available
@@ -477,14 +477,14 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                         <span
                           style={{
                             fontFamily: 'monospace',
-                            fontSize: '0.85em',
+                            fontSize: 'var(--font-size-sm)',
                             color: 'var(--color-accent-light)',
                             marginRight: '8px',
                           }}
                         >
                           {req.id}
                         </span>
-                        <span style={{ fontSize: '0.875rem' }}>{req.title}</span>
+                        <span style={{ fontSize: 'var(--font-size-sm)' }}>{req.title}</span>
                       </label>
                     ))
                   )}
@@ -513,7 +513,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                   <div
                     style={{
                       color: 'var(--color-error)',
-                      fontSize: '0.875rem',
+                      fontSize: 'var(--font-size-sm)',
                       marginBottom: 'var(--spacing-md)',
                     }}
                   >
@@ -618,7 +618,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Linked Items
@@ -639,7 +639,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                       style={{
                         padding: '8px',
                         color: 'var(--color-text-muted)',
-                        fontSize: '0.875rem',
+                        fontSize: 'var(--font-size-sm)',
                       }}
                     >
                       No links found.
@@ -676,7 +676,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                             setIsLinkModalOpen(true);
                           }}
                           style={{
-                            fontSize: '0.75rem',
+                            fontSize: 'var(--font-size-xs)',
                             color: 'var(--color-accent)',
                             background: 'none',
                             border: '1px solid var(--color-accent)',
@@ -706,7 +706,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                               display: 'flex',
                               alignItems: 'center',
                               gap: '8px',
-                              fontSize: '0.875rem',
+                              fontSize: 'var(--font-size-sm)',
                             }}
                           >
                             <span
@@ -714,7 +714,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                                 padding: '2px 6px',
                                 borderRadius: '4px',
                                 backgroundColor: 'var(--color-bg-secondary)',
-                                fontSize: '0.75rem',
+                                fontSize: 'var(--font-size-xs)',
                                 fontFamily: 'monospace',
                               }}
                             >

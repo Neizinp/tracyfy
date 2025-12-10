@@ -209,7 +209,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Title *
@@ -240,7 +240,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Actor *
@@ -270,7 +270,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Priority
@@ -301,7 +301,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Status
@@ -333,7 +333,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Description
@@ -367,7 +367,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Main Flow *
@@ -399,7 +399,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Alternative Flows
@@ -434,7 +434,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Preconditions
@@ -464,7 +464,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Postconditions
@@ -497,7 +497,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Linked Items
@@ -518,7 +518,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                       style={{
                         padding: '8px',
                         color: 'var(--color-text-muted)',
-                        fontSize: '0.875rem',
+                        fontSize: 'var(--font-size-sm)',
                       }}
                     >
                       No links found.
@@ -555,7 +555,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                             setIsLinkModalOpen(true);
                           }}
                           style={{
-                            fontSize: '0.75rem',
+                            fontSize: 'var(--font-size-xs)',
                             color: 'var(--color-accent)',
                             background: 'none',
                             border: '1px solid var(--color-accent)',
@@ -585,7 +585,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                               display: 'flex',
                               alignItems: 'center',
                               gap: '8px',
-                              fontSize: '0.875rem',
+                              fontSize: 'var(--font-size-sm)',
                             }}
                           >
                             <span
@@ -593,7 +593,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                                 padding: '2px 6px',
                                 borderRadius: '4px',
                                 backgroundColor: 'var(--color-bg-secondary)',
-                                fontSize: '0.75rem',
+                                fontSize: 'var(--font-size-xs)',
                                 fontFamily: 'monospace',
                               }}
                             >

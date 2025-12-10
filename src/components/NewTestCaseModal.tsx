@@ -108,7 +108,11 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
           <div style={{ marginBottom: 'var(--spacing-md)' }}>
             <label
               htmlFor="new-test-case-title"
-              style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}
+              style={{
+                display: 'block',
+                marginBottom: 'var(--spacing-xs)',
+                fontSize: 'var(--font-size-sm)',
+              }}
             >
               Title
             </label>
@@ -134,7 +138,11 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
           <div style={{ marginBottom: 'var(--spacing-md)' }}>
             <label
               htmlFor="new-test-case-description"
-              style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}
+              style={{
+                display: 'block',
+                marginBottom: 'var(--spacing-xs)',
+                fontSize: 'var(--font-size-sm)',
+              }}
             >
               Description
             </label>
@@ -159,7 +167,11 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
           <div style={{ marginBottom: 'var(--spacing-md)' }}>
             <label
               htmlFor="new-test-case-priority"
-              style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}
+              style={{
+                display: 'block',
+                marginBottom: 'var(--spacing-xs)',
+                fontSize: 'var(--font-size-sm)',
+              }}
             >
               Priority
             </label>
@@ -186,7 +198,11 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
           <div style={{ marginBottom: 'var(--spacing-md)' }}>
             <label
               htmlFor="new-test-case-author"
-              style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}
+              style={{
+                display: 'block',
+                marginBottom: 'var(--spacing-xs)',
+                fontSize: 'var(--font-size-sm)',
+              }}
             >
               Author
             </label>
@@ -205,7 +221,11 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
 
           <div style={{ marginBottom: 'var(--spacing-lg)' }}>
             <label
-              style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}
+              style={{
+                display: 'block',
+                marginBottom: 'var(--spacing-xs)',
+                fontSize: 'var(--font-size-sm)',
+              }}
             >
               Linked Requirements ({requirementIds.length} selected)
             </label>
@@ -221,7 +241,11 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
             >
               {activeRequirements.length === 0 ? (
                 <div
-                  style={{ padding: '8px', color: 'var(--color-text-muted)', fontSize: '0.875rem' }}
+                  style={{
+                    padding: '8px',
+                    color: 'var(--color-text-muted)',
+                    fontSize: 'var(--font-size-sm)',
+                  }}
                 >
                   No requirements available
                 </div>
@@ -254,14 +278,14 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
                     <span
                       style={{
                         fontFamily: 'monospace',
-                        fontSize: '0.85em',
+                        fontSize: 'var(--font-size-sm)',
                         color: 'var(--color-accent-light)',
                         marginRight: '8px',
                       }}
                     >
                       {req.id}
                     </span>
-                    <span style={{ fontSize: '0.875rem' }}>{req.title}</span>
+                    <span style={{ fontSize: 'var(--font-size-sm)' }}>{req.title}</span>
                   </label>
                 ))
               )}

@@ -19,7 +19,7 @@ const MarkdownCell: React.FC<{ content: string }> = ({ content }) => {
   if (!content) return <span>-</span>;
 
   return (
-    <div className="markdown-cell" style={{ fontSize: '0.875rem' }}>
+    <div className="markdown-cell" style={{ fontSize: 'var(--font-size-sm)' }}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
@@ -28,7 +28,7 @@ const MarkdownCell: React.FC<{ content: string }> = ({ content }) => {
           h1: ({ ...props }) => (
             <h1
               style={{
-                fontSize: '1.1rem',
+                fontSize: 'var(--font-size-lg)',
                 fontWeight: 'bold',
                 margin: '4px 0',
                 color: 'var(--color-text-primary)',
@@ -39,7 +39,7 @@ const MarkdownCell: React.FC<{ content: string }> = ({ content }) => {
           h2: ({ ...props }) => (
             <h2
               style={{
-                fontSize: '1rem',
+                fontSize: 'var(--font-size-base)',
                 fontWeight: 'bold',
                 margin: '4px 0',
                 color: 'var(--color-text-primary)',
@@ -61,7 +61,7 @@ const MarkdownCell: React.FC<{ content: string }> = ({ content }) => {
           h4: ({ ...props }) => (
             <h4
               style={{
-                fontSize: '0.9rem',
+                fontSize: 'var(--font-size-sm)',
                 fontWeight: 'bold',
                 margin: '2px 0',
                 color: 'var(--color-text-primary)',
@@ -107,7 +107,7 @@ const MarkdownCell: React.FC<{ content: string }> = ({ content }) => {
                   backgroundColor: 'var(--color-bg-secondary)',
                   padding: '1px 4px',
                   borderRadius: '3px',
-                  fontSize: '0.85em',
+                  fontSize: 'var(--font-size-sm)',
                   color: 'var(--color-accent-light)',
                 }}
                 {...props}
@@ -121,7 +121,7 @@ const MarkdownCell: React.FC<{ content: string }> = ({ content }) => {
                   backgroundColor: 'var(--color-bg-secondary)',
                   padding: '4px 8px',
                   borderRadius: '4px',
-                  fontSize: '0.85em',
+                  fontSize: 'var(--font-size-sm)',
                   overflowX: 'auto',
                   margin: '4px 0',
                 }}
@@ -136,7 +136,7 @@ const MarkdownCell: React.FC<{ content: string }> = ({ content }) => {
             <div style={{ overflowX: 'auto', margin: '4px 0' }}>
               <table
                 style={{
-                  fontSize: '0.8rem',
+                  fontSize: 'var(--font-size-sm)',
                   borderCollapse: 'collapse',
                   border: '1px solid var(--color-border)',
                 }}
@@ -232,7 +232,9 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
       }}
     >
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+        <table
+          style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--font-size-sm)' }}
+        >
           <thead>
             <tr
               style={{
@@ -445,7 +447,7 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                   <td style={{ padding: '12px 16px', verticalAlign: 'top' }}>
                     <span
                       style={{
-                        fontSize: '0.75rem',
+                        fontSize: 'var(--font-size-xs)',
                         padding: '2px 6px',
                         borderRadius: '4px',
                         backgroundColor: 'var(--color-bg-tertiary)',
@@ -473,7 +475,7 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                                 <span
                                   key={i}
                                   style={{
-                                    fontSize: '0.75rem',
+                                    fontSize: 'var(--font-size-xs)',
                                     padding: '2px 6px',
                                     borderRadius: '4px',
                                     background: 'var(--color-bg-tertiary)',
@@ -531,7 +533,7 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                         style={{
                           padding: '2px 8px',
                           borderRadius: '12px',
-                          fontSize: '0.75rem',
+                          fontSize: 'var(--font-size-xs)',
                           fontWeight: 500,
                           background:
                             req.priority === 'high'
@@ -557,7 +559,7 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                         style={{
                           padding: '2px 8px',
                           borderRadius: '12px',
-                          fontSize: '0.75rem',
+                          fontSize: 'var(--font-size-xs)',
                           fontWeight: 500,
                           background:
                             req.status === 'approved'

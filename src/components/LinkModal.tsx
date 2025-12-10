@@ -183,7 +183,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
             <label
               style={{
                 display: 'block',
-                fontSize: '0.875rem',
+                fontSize: 'var(--font-size-sm)',
                 color: 'var(--color-text-muted)',
                 marginBottom: '0.25rem',
               }}
@@ -197,7 +197,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                 borderRadius: '6px',
                 border: '1px solid var(--color-border)',
                 fontFamily: 'monospace',
-                fontSize: '0.875rem',
+                fontSize: 'var(--font-size-sm)',
                 color: 'var(--color-accent)',
                 display: 'flex',
                 alignItems: 'center',
@@ -231,7 +231,13 @@ export const LinkModal: React.FC<LinkModalProps> = ({
           <form onSubmit={handleSubmit}>
             {/* Target Type */}
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 'var(--font-size-sm)',
+                  marginBottom: '0.5rem',
+                }}
+              >
                 Target Type
               </label>
               <div
@@ -258,7 +264,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                         padding: '0.375rem 0.5rem',
                         borderRadius: '4px',
                         border: 'none',
-                        fontSize: '0.875rem',
+                        fontSize: 'var(--font-size-sm)',
                         fontWeight: 500,
                         cursor: 'pointer',
                         backgroundColor:
@@ -282,7 +288,13 @@ export const LinkModal: React.FC<LinkModalProps> = ({
 
             {/* Search & Select Target */}
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 'var(--font-size-sm)',
+                  marginBottom: '0.5rem',
+                }}
+              >
                 Select Target
               </label>
               <div style={{ position: 'relative', marginBottom: '0.5rem' }}>
@@ -309,7 +321,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                     backgroundColor: 'var(--color-bg-app)',
                     color: 'var(--color-text-primary)',
                     outline: 'none',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 />
               </div>
@@ -330,7 +342,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                       textAlign: 'center',
                       color: 'var(--color-text-muted)',
                       fontStyle: 'italic',
-                      fontSize: '0.875rem',
+                      fontSize: 'var(--font-size-sm)',
                     }}
                   >
                     No artifacts found
@@ -367,7 +379,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                           >
                             <span
                               style={{
-                                fontSize: '0.75rem',
+                                fontSize: 'var(--font-size-xs)',
                                 fontFamily: 'monospace',
                                 padding: '2px 6px',
                                 borderRadius: '4px',
@@ -378,7 +390,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                             </span>
                             <span
                               style={{
-                                fontSize: '0.875rem',
+                                fontSize: 'var(--font-size-sm)',
                                 fontWeight: 500,
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
@@ -391,7 +403,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                           {artifact.description && (
                             <div
                               style={{
-                                fontSize: '0.75rem',
+                                fontSize: 'var(--font-size-xs)',
                                 color: 'var(--color-text-muted)',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
@@ -432,7 +444,13 @@ export const LinkModal: React.FC<LinkModalProps> = ({
 
             {/* Link Type */}
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 'var(--font-size-sm)',
+                  marginBottom: '0.5rem',
+                }}
+              >
                 Link Type
               </label>
               <select
@@ -446,7 +464,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                   backgroundColor: 'var(--color-bg-app)',
                   color: 'var(--color-text-primary)',
                   outline: 'none',
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--font-size-sm)',
                 }}
               >
                 <option value="relates_to">Relates To</option>

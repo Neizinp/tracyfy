@@ -97,7 +97,9 @@ export const DirectorySelector: React.FC<DirectorySelectorProps> = ({ onReady })
             }}
           >
             <AlertCircle size={20} style={{ color: 'var(--color-danger)', flexShrink: 0 }} />
-            <span style={{ color: 'var(--color-danger)', fontSize: '0.875rem' }}>{error}</span>
+            <span style={{ color: 'var(--color-danger)', fontSize: 'var(--font-size-sm)' }}>
+              {error}
+            </span>
           </div>
         )}
 
@@ -114,7 +116,7 @@ export const DirectorySelector: React.FC<DirectorySelectorProps> = ({ onReady })
             }}
           >
             <Folder size={20} style={{ color: 'var(--color-success)' }} />
-            <span style={{ color: 'var(--color-text-primary)', fontSize: '0.875rem' }}>
+            <span style={{ color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>
               {directoryName}
             </span>
           </div>
@@ -130,7 +132,7 @@ export const DirectorySelector: React.FC<DirectorySelectorProps> = ({ onReady })
             color: 'white',
             border: 'none',
             cursor: isLoading ? 'not-allowed' : 'pointer',
-            fontSize: '1rem',
+            fontSize: 'var(--font-size-base)',
             fontWeight: 500,
             display: 'inline-flex',
             alignItems: 'center',
@@ -155,7 +157,7 @@ export const DirectorySelector: React.FC<DirectorySelectorProps> = ({ onReady })
         <p
           style={{
             color: 'var(--color-text-muted)',
-            fontSize: '0.75rem',
+            fontSize: 'var(--font-size-xs)',
             marginTop: '24px',
           }}
         >

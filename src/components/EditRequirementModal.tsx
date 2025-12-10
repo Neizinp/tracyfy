@@ -234,7 +234,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Title *
@@ -262,7 +262,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Priority
@@ -291,7 +291,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Status
@@ -321,7 +321,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Author
@@ -344,7 +344,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Date Created
@@ -405,7 +405,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Verification Method
@@ -435,7 +435,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Parent Requirements ({parentIds.length} selected)
@@ -455,7 +455,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                       style={{
                         padding: '8px',
                         color: 'var(--color-text-muted)',
-                        fontSize: '0.875rem',
+                        fontSize: 'var(--font-size-sm)',
                       }}
                     >
                       No other requirements available
@@ -504,19 +504,19 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                           <span
                             style={{
                               fontFamily: 'monospace',
-                              fontSize: '0.85em',
+                              fontSize: 'var(--font-size-sm)',
                               color: 'var(--color-accent-light)',
                               marginRight: '8px',
                             }}
                           >
                             {req.id}
                           </span>
-                          <span style={{ fontSize: '0.875rem' }}>{req.title}</span>
+                          <span style={{ fontSize: 'var(--font-size-sm)' }}>{req.title}</span>
                           {isDescendant && (
                             <span
                               style={{
                                 marginLeft: 'auto',
-                                fontSize: '0.75rem',
+                                fontSize: 'var(--font-size-xs)',
                                 color: 'var(--color-text-muted)',
                               }}
                             >
@@ -535,7 +535,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Linked Items
@@ -556,7 +556,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                       style={{
                         padding: '8px',
                         color: 'var(--color-text-muted)',
-                        fontSize: '0.875rem',
+                        fontSize: 'var(--font-size-sm)',
                       }}
                     >
                       No linked items.
@@ -574,7 +574,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                             setIsLinkModalOpen(true);
                           }}
                           style={{
-                            fontSize: '0.75rem',
+                            fontSize: 'var(--font-size-xs)',
                             color: 'var(--color-accent)',
                             background: 'none',
                             border: '1px solid var(--color-accent)',
@@ -604,7 +604,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                               display: 'flex',
                               alignItems: 'center',
                               gap: '8px',
-                              fontSize: '0.875rem',
+                              fontSize: 'var(--font-size-sm)',
                             }}
                           >
                             <span
@@ -612,7 +612,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                                 padding: '2px 6px',
                                 borderRadius: '4px',
                                 backgroundColor: 'var(--color-bg-secondary)',
-                                fontSize: '0.75rem',
+                                fontSize: 'var(--font-size-xs)',
                                 fontFamily: 'monospace',
                               }}
                             >
@@ -664,7 +664,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
               <div
                 style={{
                   color: 'var(--color-error)',
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--font-size-sm)',
                   marginBottom: 'var(--spacing-md)',
                 }}
               >

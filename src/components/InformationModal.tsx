@@ -101,7 +101,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
             zIndex: 1,
           }}
         >
-          <h2 style={{ margin: 0, fontSize: '1.25rem' }}>
+          <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)' }}>
             {information ? `Edit Information - ${information.id}` : 'New Information'}
           </h2>
           <button
@@ -272,7 +272,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Linked Items
@@ -293,7 +293,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                       style={{
                         padding: '8px',
                         color: 'var(--color-text-muted)',
-                        fontSize: '0.875rem',
+                        fontSize: 'var(--font-size-sm)',
                       }}
                     >
                       No links found.
@@ -330,7 +330,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                             setIsLinkModalOpen(true);
                           }}
                           style={{
-                            fontSize: '0.75rem',
+                            fontSize: 'var(--font-size-xs)',
                             color: 'var(--color-accent)',
                             background: 'none',
                             border: '1px solid var(--color-accent)',
@@ -360,7 +360,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                               display: 'flex',
                               alignItems: 'center',
                               gap: '8px',
-                              fontSize: '0.875rem',
+                              fontSize: 'var(--font-size-sm)',
                             }}
                           >
                             <span
@@ -368,7 +368,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                                 padding: '2px 6px',
                                 borderRadius: '4px',
                                 backgroundColor: 'var(--color-bg-secondary)',
-                                fontSize: '0.75rem',
+                                fontSize: 'var(--font-size-xs)',
                                 fontFamily: 'monospace',
                               }}
                             >

@@ -130,11 +130,17 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
               }}
             >
               <div
-                style={{ fontSize: '0.75rem', color: 'var(--color-accent)', marginBottom: '4px' }}
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-accent)',
+                  marginBottom: '4px',
+                }}
               >
                 Current User
               </div>
-              <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{currentUser.name}</div>
+              <div style={{ fontWeight: 600, fontSize: 'var(--font-size-lg)' }}>
+                {currentUser.name}
+              </div>
             </div>
           )}
 
@@ -148,7 +154,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                 marginBottom: 'var(--spacing-sm)',
               }}
             >
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 500 }}>All Users</h4>
+              <h4 style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500 }}>All Users</h4>
               {!isAdding && (
                 <button
                   onClick={() => setIsAdding(true)}
@@ -159,7 +165,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                     backgroundColor: 'var(--color-accent)',
                     color: 'white',
                     cursor: 'pointer',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
                   }}
                 >
@@ -234,7 +240,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                   textAlign: 'center',
                   padding: 'var(--spacing-lg)',
                   color: 'var(--color-text-muted)',
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--font-size-sm)',
                 }}
               >
                 No users yet. Add your first user above.
@@ -287,7 +293,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                             backgroundColor: 'var(--color-accent)',
                             color: 'white',
                             cursor: 'pointer',
-                            fontSize: '0.75rem',
+                            fontSize: 'var(--font-size-xs)',
                           }}
                         >
                           Save
@@ -301,7 +307,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                             backgroundColor: 'transparent',
                             color: 'var(--color-text-muted)',
                             cursor: 'pointer',
-                            fontSize: '0.75rem',
+                            fontSize: 'var(--font-size-xs)',
                           }}
                         >
                           Cancel
@@ -315,7 +321,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                           </span>
                           <span
                             style={{
-                              fontSize: '0.75rem',
+                              fontSize: 'var(--font-size-xs)',
                               color: 'var(--color-text-muted)',
                               marginLeft: '8px',
                             }}
@@ -335,7 +341,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                                 backgroundColor: 'transparent',
                                 color: 'var(--color-text-secondary)',
                                 cursor: 'pointer',
-                                fontSize: '0.75rem',
+                                fontSize: 'var(--font-size-xs)',
                               }}
                             >
                               Switch
@@ -351,7 +357,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                               backgroundColor: 'transparent',
                               color: 'var(--color-text-secondary)',
                               cursor: 'pointer',
-                              fontSize: '0.75rem',
+                              fontSize: 'var(--font-size-xs)',
                             }}
                           >
                             Edit
@@ -367,7 +373,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                                   backgroundColor: 'var(--color-error)',
                                   color: 'white',
                                   cursor: 'pointer',
-                                  fontSize: '0.75rem',
+                                  fontSize: 'var(--font-size-xs)',
                                 }}
                               >
                                 Confirm
@@ -381,7 +387,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                                   backgroundColor: 'transparent',
                                   color: 'var(--color-text-muted)',
                                   cursor: 'pointer',
-                                  fontSize: '0.75rem',
+                                  fontSize: 'var(--font-size-xs)',
                                 }}
                               >
                                 Cancel
@@ -398,7 +404,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                                 backgroundColor: 'var(--color-bg-card)',
                                 color: 'var(--color-error)',
                                 cursor: 'pointer',
-                                fontSize: '0.75rem',
+                                fontSize: 'var(--font-size-xs)',
                               }}
                             >
                               Delete

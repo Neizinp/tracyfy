@@ -68,11 +68,13 @@ const LibraryItem = ({
       </div>
 
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: '0.9rem', fontWeight: 500, marginBottom: '4px' }}>{title}</div>
+        <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, marginBottom: '4px' }}>
+          {title}
+        </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span
             style={{
-              fontSize: '0.75rem',
+              fontSize: 'var(--font-size-xs)',
               fontFamily: 'monospace',
               color: 'var(--color-text-muted)',
             }}
@@ -82,7 +84,7 @@ const LibraryItem = ({
           {projectNames && (
             <span
               style={{
-                fontSize: '0.7rem',
+                fontSize: 'var(--font-size-xs)',
                 color: 'var(--color-text-secondary)',
                 backgroundColor: 'var(--color-bg-tertiary)',
                 padding: '2px 6px',
@@ -235,14 +237,16 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
             marginBottom: '16px',
           }}
         >
-          <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Global Library</h3>
+          <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)', fontWeight: 600 }}>
+            Global Library
+          </h3>
           <button
             onClick={onClose}
             style={{
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              fontSize: '1.2rem',
+              fontSize: 'var(--font-size-xl)',
               color: 'var(--color-text-secondary)',
             }}
           >
@@ -273,7 +277,7 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-primary)',
               color: 'var(--color-text-primary)',
-              fontSize: '0.9rem',
+              fontSize: 'var(--font-size-sm)',
             }}
           />
         </div>
@@ -302,7 +306,7 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
               flexDirection: 'column',
               alignItems: 'center',
               gap: '4px',
-              fontSize: '0.75rem',
+              fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
             }}
           >

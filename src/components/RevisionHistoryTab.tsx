@@ -135,7 +135,9 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
       }}
     >
       <div style={{ overflowY: 'auto', flex: 1 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+        <table
+          style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--font-size-sm)' }}
+        >
           <thead>
             <tr
               style={{

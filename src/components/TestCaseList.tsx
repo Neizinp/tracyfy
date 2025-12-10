@@ -63,7 +63,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                 style={{
                   padding: '12px',
                   textAlign: 'left',
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--font-size-sm)',
                   fontWeight: 600,
                   color: 'var(--color-text-secondary)',
                   width: '180px',
@@ -76,7 +76,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                   style={{
                     padding: '12px',
                     textAlign: 'left',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                     fontWeight: 600,
                     color: 'var(--color-text-secondary)',
                     width: '150px',
@@ -89,7 +89,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                 style={{
                   padding: '12px',
                   textAlign: 'left',
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--font-size-sm)',
                   fontWeight: 600,
                   color: 'var(--color-text-secondary)',
                   width: '250px',
@@ -101,7 +101,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                 style={{
                   padding: '12px',
                   textAlign: 'left',
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--font-size-sm)',
                   fontWeight: 600,
                   color: 'var(--color-text-secondary)',
                   width: '150px',
@@ -113,7 +113,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                 style={{
                   padding: '12px',
                   textAlign: 'left',
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--font-size-sm)',
                   fontWeight: 600,
                   color: 'var(--color-text-secondary)',
                   width: '100px',
@@ -125,7 +125,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                 style={{
                   padding: '12px',
                   textAlign: 'left',
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--font-size-sm)',
                   fontWeight: 600,
                   color: 'var(--color-text-secondary)',
                   width: '100px',
@@ -137,7 +137,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                 style={{
                   padding: '12px',
                   textAlign: 'left',
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--font-size-sm)',
                   fontWeight: 600,
                   color: 'var(--color-text-secondary)',
                   width: '140px',
@@ -149,7 +149,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                 style={{
                   padding: '12px',
                   textAlign: 'left',
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--font-size-sm)',
                   fontWeight: 600,
                   color: 'var(--color-text-secondary)',
                   width: '80px',
@@ -196,7 +196,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                         </span>
                         <span
                           style={{
-                            fontSize: '0.7rem',
+                            fontSize: 'var(--font-size-xs)',
                             padding: '0 4px',
                             borderRadius: '3px',
                             backgroundColor: 'var(--color-bg-tertiary)',
@@ -221,7 +221,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                                 <span
                                   key={i}
                                   style={{
-                                    fontSize: '0.75rem',
+                                    fontSize: 'var(--font-size-xs)',
                                     padding: '2px 6px',
                                     borderRadius: '4px',
                                     backgroundColor: 'var(--color-bg-tertiary)',
@@ -240,7 +240,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                     style={{
                       padding: '12px',
                       verticalAlign: 'top',
-                      fontSize: '0.875rem',
+                      fontSize: 'var(--font-size-sm)',
                       color: 'var(--color-text-secondary)',
                     }}
                   >
@@ -250,7 +250,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                     style={{
                       padding: '12px',
                       verticalAlign: 'top',
-                      fontSize: '0.875rem',
+                      fontSize: 'var(--font-size-sm)',
                       color: 'var(--color-text-secondary)',
                     }}
                   >
@@ -259,7 +259,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                   <td style={{ padding: '12px', verticalAlign: 'top' }}>
                     <span
                       style={{
-                        fontSize: '0.75rem',
+                        fontSize: 'var(--font-size-xs)',
                         padding: '2px 8px',
                         borderRadius: '12px',
                         backgroundColor:
@@ -279,7 +279,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                   <td style={{ padding: '12px', verticalAlign: 'top' }}>
                     <span
                       style={{
-                        fontSize: '0.75rem',
+                        fontSize: 'var(--font-size-xs)',
                         padding: '2px 8px',
                         borderRadius: '12px',
                         backgroundColor: getStatusColor(tc.status).bg,
@@ -294,7 +294,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                     style={{
                       padding: '12px',
                       verticalAlign: 'top',
-                      fontSize: '0.875rem',
+                      fontSize: 'var(--font-size-sm)',
                       color: 'var(--color-text-muted)',
                     }}
                   >

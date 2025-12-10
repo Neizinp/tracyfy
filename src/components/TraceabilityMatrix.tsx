@@ -97,10 +97,16 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({ requirem
       }}
     >
       <div style={{ marginBottom: 'var(--spacing-md)' }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 'var(--spacing-xs)' }}>
+        <h3
+          style={{
+            fontSize: 'var(--font-size-xl)',
+            fontWeight: 600,
+            marginBottom: 'var(--spacing-xs)',
+          }}
+        >
           Traceability Matrix
         </h3>
-        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+        <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
           Shows relationships between requirements. ↓P=Parent, ↑C=Child, ↔=Relates, →=Depends,
           ⚠=Conflicts
         </p>
@@ -111,7 +117,7 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({ requirem
           style={{
             width: '100%',
             borderCollapse: 'collapse',
-            fontSize: '0.875rem',
+            fontSize: 'var(--font-size-sm)',
           }}
         >
           <thead>
@@ -206,7 +212,7 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({ requirem
           padding: 'var(--spacing-sm)',
           backgroundColor: 'var(--color-bg-sidebar)',
           borderRadius: '6px',
-          fontSize: '0.75rem',
+          fontSize: 'var(--font-size-xs)',
           color: 'var(--color-text-secondary)',
         }}
       >

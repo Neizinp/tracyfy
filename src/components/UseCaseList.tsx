@@ -86,7 +86,13 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
         }}
       >
         <FileText size={48} style={{ margin: '0 auto', color: 'var(--color-text-muted)' }} />
-        <h3 style={{ marginTop: 'var(--spacing-md)', fontSize: '1.125rem', fontWeight: 600 }}>
+        <h3
+          style={{
+            marginTop: 'var(--spacing-md)',
+            fontSize: 'var(--font-size-lg)',
+            fontWeight: 600,
+          }}
+        >
           No Use Cases Yet
         </h3>
         <p style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-xs)' }}>
@@ -142,7 +148,7 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
                   <span
                     style={{
                       fontFamily: 'monospace',
-                      fontSize: '0.85em',
+                      fontSize: 'var(--font-size-sm)',
                       color: 'var(--color-accent-light)',
                     }}
                   >
@@ -150,7 +156,7 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
                   </span>
                   <span
                     style={{
-                      fontSize: '0.75rem',
+                      fontSize: 'var(--font-size-xs)',
                       padding: '1px 5px',
                       borderRadius: '3px',
                       backgroundColor: 'var(--color-bg-tertiary)',
@@ -160,14 +166,16 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
                   >
                     v{useCase.revision || '01'}
                   </span>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>{useCase.title}</h3>
+                  <h3 style={{ fontSize: 'var(--font-size-base)', fontWeight: 600, margin: 0 }}>
+                    {useCase.title}
+                  </h3>
                 </div>
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 'var(--spacing-sm)',
-                    fontSize: '0.75rem',
+                    fontSize: 'var(--font-size-xs)',
                     flexWrap: 'wrap',
                   }}
                 >
@@ -231,7 +239,7 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
                     backgroundColor: 'var(--color-accent)',
                     color: 'white',
                     cursor: 'pointer',
-                    fontSize: '0.75rem',
+                    fontSize: 'var(--font-size-xs)',
                     fontWeight: 500,
                   }}
                 >
@@ -283,12 +291,12 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
               >
                 {useCase.description && (
                   <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                    <strong style={{ fontSize: '0.875rem' }}>Description:</strong>
+                    <strong style={{ fontSize: 'var(--font-size-sm)' }}>Description:</strong>
                     <p
                       style={{
                         marginTop: '4px',
                         color: 'var(--color-text-secondary)',
-                        fontSize: '0.875rem',
+                        fontSize: 'var(--font-size-sm)',
                       }}
                     >
                       {useCase.description}
@@ -298,12 +306,12 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
 
                 {useCase.preconditions && (
                   <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                    <strong style={{ fontSize: '0.875rem' }}>Preconditions:</strong>
+                    <strong style={{ fontSize: 'var(--font-size-sm)' }}>Preconditions:</strong>
                     <p
                       style={{
                         marginTop: '4px',
                         color: 'var(--color-text-secondary)',
-                        fontSize: '0.875rem',
+                        fontSize: 'var(--font-size-sm)',
                         whiteSpace: 'pre-wrap',
                       }}
                     >
@@ -313,12 +321,12 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
                 )}
 
                 <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                  <strong style={{ fontSize: '0.875rem' }}>Main Flow:</strong>
+                  <strong style={{ fontSize: 'var(--font-size-sm)' }}>Main Flow:</strong>
                   <p
                     style={{
                       marginTop: '4px',
                       color: 'var(--color-text-secondary)',
-                      fontSize: '0.875rem',
+                      fontSize: 'var(--font-size-sm)',
                       whiteSpace: 'pre-wrap',
                     }}
                   >
@@ -328,12 +336,12 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
 
                 {useCase.alternativeFlows && (
                   <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                    <strong style={{ fontSize: '0.875rem' }}>Alternative Flows:</strong>
+                    <strong style={{ fontSize: 'var(--font-size-sm)' }}>Alternative Flows:</strong>
                     <p
                       style={{
                         marginTop: '4px',
                         color: 'var(--color-text-secondary)',
-                        fontSize: '0.875rem',
+                        fontSize: 'var(--font-size-sm)',
                         whiteSpace: 'pre-wrap',
                       }}
                     >
@@ -344,12 +352,12 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
 
                 {useCase.postconditions && (
                   <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                    <strong style={{ fontSize: '0.875rem' }}>Postconditions:</strong>
+                    <strong style={{ fontSize: 'var(--font-size-sm)' }}>Postconditions:</strong>
                     <p
                       style={{
                         marginTop: '4px',
                         color: 'var(--color-text-secondary)',
-                        fontSize: '0.875rem',
+                        fontSize: 'var(--font-size-sm)',
                         whiteSpace: 'pre-wrap',
                       }}
                     >
@@ -360,7 +368,7 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
 
                 {linkedReqs.length > 0 && (
                   <div>
-                    <strong style={{ fontSize: '0.875rem' }}>
+                    <strong style={{ fontSize: 'var(--font-size-sm)' }}>
                       Linked Requirements ({linkedReqs.length}):
                     </strong>
                     <div
@@ -374,7 +382,7 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
                             borderRadius: '4px',
                             backgroundColor: 'var(--color-bg-card)',
                             border: '1px solid var(--color-border)',
-                            fontSize: '0.75rem',
+                            fontSize: 'var(--font-size-xs)',
                             fontFamily: 'monospace',
                           }}
                         >

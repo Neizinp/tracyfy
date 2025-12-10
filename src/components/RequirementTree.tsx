@@ -121,7 +121,7 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
 
         <div
           style={{
-            fontSize: '0.75rem',
+            fontSize: 'var(--font-size-xs)',
             padding: '2px 8px',
             borderRadius: '12px',
             backgroundColor:
@@ -165,7 +165,7 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
               padding: '2px 6px',
               borderRadius: '10px',
               backgroundColor: 'var(--color-bg-secondary)',
-              fontSize: '0.75rem',
+              fontSize: 'var(--font-size-xs)',
               color: 'var(--color-accent-light)',
             }}
             title={linkedArtifacts
@@ -188,7 +188,7 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
               padding: '2px 6px',
               borderRadius: '10px',
               backgroundColor: 'var(--color-bg-secondary)',
-              fontSize: '0.75rem',
+              fontSize: 'var(--font-size-xs)',
               color: 'var(--color-warning-light)',
             }}
             title={`Multiple parents: ${originalReq.parentIds.join(', ')}`}

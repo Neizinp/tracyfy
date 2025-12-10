@@ -168,7 +168,7 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Title *
@@ -208,7 +208,7 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Priority
@@ -239,7 +239,7 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Author
@@ -287,7 +287,7 @@ export const NewRequirementModal: React.FC<NewRequirementModalProps> = ({
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
-                    fontSize: '0.875rem',
+                    fontSize: 'var(--font-size-sm)',
                   }}
                 >
                   Verification Method

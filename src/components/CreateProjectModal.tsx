@@ -79,7 +79,11 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         <form onSubmit={handleSubmit} style={{ padding: 'var(--spacing-lg)' }}>
           <div style={{ marginBottom: 'var(--spacing-md)' }}>
             <label
-              style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}
+              style={{
+                display: 'block',
+                marginBottom: 'var(--spacing-xs)',
+                fontSize: 'var(--font-size-sm)',
+              }}
             >
               Project Name <span style={{ color: 'var(--color-error)' }}>*</span>
             </label>
@@ -104,7 +108,11 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
           <div style={{ marginBottom: 'var(--spacing-lg)' }}>
             <label
-              style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}
+              style={{
+                display: 'block',
+                marginBottom: 'var(--spacing-xs)',
+                fontSize: 'var(--font-size-sm)',
+              }}
             >
               Description
             </label>
