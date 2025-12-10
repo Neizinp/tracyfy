@@ -1,0 +1,40 @@
+/* Light Theme - Clean, professional light palette */
+[data-theme='light'] {
+  /* Base Colors */
+  --color-bg-app: #f8fafc;
+  --color-bg-sidebar: #ffffff;
+  --color-bg-card: #ffffff;
+  --color-bg-secondary: #f1f5f9;
+  --color-bg-hover: #e2e8f0;
+
+  /* Text Colors */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+
+  /* Accent Colors - Slightly adjusted for light mode visibility */
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-accent-light: #6366f1;
+
+  /* Semantic Colors - Slightly darker for light backgrounds */
+  --color-success: #059669;
+  --color-success-light: #10b981;
+  --color-success-bg: rgba(16, 185, 129, 0.15);
+
+  --color-warning: #d97706;
+  --color-warning-light: #f59e0b;
+  --color-warning-bg: rgba(251, 191, 36, 0.15);
+
+  --color-error: #dc2626;
+  --color-error-light: #ef4444;
+  --color-error-bg: rgba(239, 68, 68, 0.15);
+
+  --color-info: #2563eb;
+  --color-info-light: #3b82f6;
+  --color-info-bg: rgba(59, 130, 246, 0.15);
+
+  /* Borders */
+  --color-border: #e2e8f0;
+  --color-border-light: #cbd5e1;
+}

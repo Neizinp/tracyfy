@@ -22,6 +22,7 @@ import {
   hoverHandlers,
 } from './layoutStyles';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
+import { ThemeToggle } from './ThemeToggle';
 
 export interface HeaderBarProps {
   currentProjectName: string;
@@ -474,6 +475,9 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             </div>
           )}
         </div>
+
+        {/* Theme Toggle */}
+        <ThemeToggle />
       </div>
     </header>
   );

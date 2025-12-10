@@ -35,6 +35,18 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
   });
 
   useEffect(() => {
+    const loadSnapshot = async () => {
+      setLoading(true);
+      try {
+        const snapshot = await realGitService.loadProjectSnapshot(commitHash);
+        setData(snapshot);
+      } catch (error) {
+        console.error('Failed to load snapshot:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (isOpen) {
       if (commitHash) {
         loadSnapshot();
@@ -43,18 +55,6 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
       }
     }
   }, [isOpen, commitHash]);
-
-  const loadSnapshot = async () => {
-    setLoading(true);
-    try {
-      const snapshot = await realGitService.loadProjectSnapshot(commitHash);
-      setData(snapshot);
-    } catch (error) {
-      console.error('Failed to load snapshot:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (!isOpen) return null;
 

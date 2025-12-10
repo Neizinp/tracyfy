@@ -68,7 +68,7 @@ describe('useUseCases', () => {
     mockDeleteArtifact = vi.fn().mockResolvedValue(undefined);
   });
 
-  const createHook = () =>
+  const useTestHook = () =>
     useUseCases({
       useCases: mockUseCases,
       setUseCases: mockSetUseCases as any,
@@ -84,7 +84,7 @@ describe('useUseCases', () => {
 
   describe('handleAddUseCase', () => {
     it('should add a new use case with generated ID', async () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handleAddUseCase({
         title: 'New Use Case',
@@ -123,7 +123,7 @@ describe('useUseCases', () => {
     });
 
     it('should set lastModified timestamp on new use case', async () => {
-      const hook = createHook();
+      const hook = useTestHook();
       const beforeTime = Date.now();
 
       await hook.handleAddUseCase({
@@ -147,7 +147,7 @@ describe('useUseCases', () => {
     });
 
     it('should update existing use case when id is provided', async () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handleAddUseCase({
         id: 'UC-001',
@@ -171,7 +171,7 @@ describe('useUseCases', () => {
     });
 
     it('should increment revision on update', async () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handleAddUseCase({
         id: 'UC-001',
@@ -188,7 +188,7 @@ describe('useUseCases', () => {
     });
 
     it('should not update if use case not found', async () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handleAddUseCase({
         id: 'UC-999',
@@ -203,7 +203,7 @@ describe('useUseCases', () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockSaveArtifact.mockRejectedValue(new Error('Save failed'));
 
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handleAddUseCase({
         title: 'New Use Case',
@@ -226,7 +226,7 @@ describe('useUseCases', () => {
 
   describe('handleEditUseCase', () => {
     it('should set editing use case and open modal', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleEditUseCase(mockUseCases[0]);
 
@@ -237,7 +237,7 @@ describe('useUseCases', () => {
 
   describe('handleDeleteUseCase', () => {
     it('should soft delete a use case when confirmed', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleDeleteUseCase('UC-001');
 
@@ -253,7 +253,7 @@ describe('useUseCases', () => {
     });
 
     it('should remove use case references from requirements on delete', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleDeleteUseCase('UC-001');
 
@@ -268,7 +268,7 @@ describe('useUseCases', () => {
     });
 
     it('should increment requirement revision when use case link is removed', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleDeleteUseCase('UC-001');
 
@@ -277,7 +277,7 @@ describe('useUseCases', () => {
     });
 
     it('should not delete if use case not found', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleDeleteUseCase('UC-999');
 
@@ -290,7 +290,7 @@ describe('useUseCases', () => {
         'confirm',
         vi.fn(() => false)
       );
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleDeleteUseCase('UC-001');
 
@@ -304,7 +304,7 @@ describe('useUseCases', () => {
       mockUseCases[0].isDeleted = true;
       mockUseCases[0].deletedAt = Date.now();
 
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleRestoreUseCase('UC-001');
 
@@ -320,7 +320,7 @@ describe('useUseCases', () => {
     });
 
     it('should not restore if use case not found', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleRestoreUseCase('UC-999');
 
@@ -331,7 +331,7 @@ describe('useUseCases', () => {
 
   describe('handlePermanentDeleteUseCase', () => {
     it('should permanently delete use case', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handlePermanentDeleteUseCase('UC-001');
 
@@ -345,7 +345,7 @@ describe('useUseCases', () => {
         capturedUpdater = updater;
       });
 
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handlePermanentDeleteUseCase('UC-001');
 
@@ -357,7 +357,7 @@ describe('useUseCases', () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockDeleteArtifact.mockRejectedValue(new Error('Delete failed'));
 
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handlePermanentDeleteUseCase('UC-001');
 

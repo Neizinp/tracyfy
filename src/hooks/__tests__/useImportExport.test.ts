@@ -115,7 +115,7 @@ describe('useImportExport', () => {
     mockSetInformation = vi.fn();
   });
 
-  const createHook = (currentProjectId = 'proj-001') =>
+  const useTestHook = (currentProjectId = 'proj-001') =>
     useImportExport({
       currentProjectId,
       projects: mockProjects,
@@ -132,7 +132,7 @@ describe('useImportExport', () => {
   describe('handleExport', () => {
     it('should call exportProjectToJSON with correct parameters', async () => {
       const { exportProjectToJSON } = await import('../../utils/jsonExportUtils');
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handleExport();
 
@@ -155,7 +155,7 @@ describe('useImportExport', () => {
       const alertMock = vi.fn();
       vi.stubGlobal('alert', alertMock);
 
-      const hook = createHook('non-existent-project');
+      const hook = useTestHook('non-existent-project');
 
       await hook.handleExport();
 
@@ -171,7 +171,7 @@ describe('useImportExport', () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
       vi.stubGlobal('alert', alertMock);
 
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handleExport();
 
@@ -184,7 +184,7 @@ describe('useImportExport', () => {
   describe('handleImport', () => {
     it('should create file input and set up change handler', () => {
       const createElementSpy = vi.spyOn(document, 'createElement');
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleImport();
 
@@ -193,7 +193,7 @@ describe('useImportExport', () => {
     });
 
     it('should parse JSON and set state correctly', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       // Mock document.createElement to capture the input element
       const mockInput = {
@@ -252,7 +252,7 @@ describe('useImportExport', () => {
     });
 
     it('should handle missing arrays in import data', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       const mockInput = {
         type: '',
@@ -297,7 +297,7 @@ describe('useImportExport', () => {
       const alertMock = vi.fn();
       vi.stubGlobal('alert', alertMock);
 
-      const hook = createHook();
+      const hook = useTestHook();
 
       const mockInput = {
         type: '',
@@ -339,7 +339,7 @@ describe('useImportExport', () => {
   describe('handleImportExcel', () => {
     it('should create file input for Excel files', () => {
       const createElementSpy = vi.spyOn(document, 'createElement');
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleImportExcel();
 
@@ -357,7 +357,7 @@ describe('useImportExport', () => {
 
       vi.spyOn(document, 'createElement').mockReturnValue(mockInput as unknown as HTMLElement);
 
-      const hook = createHook();
+      const hook = useTestHook();
       hook.handleImportExcel();
 
       expect(mockInput.accept).toBe('.xlsx,.xls');
@@ -367,7 +367,7 @@ describe('useImportExport', () => {
 
   describe('returned functions', () => {
     it('should return all expected functions', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       expect(hook).toHaveProperty('handleExport');
       expect(hook).toHaveProperty('handleImport');

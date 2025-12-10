@@ -36,7 +36,7 @@ describe('useInformation', () => {
     mockDeleteArtifact = vi.fn().mockResolvedValue(undefined);
   });
 
-  const createHook = () =>
+  const useTestHook = () =>
     useInformation({
       information: mockInformation,
       setInformation: mockSetInformation as any,
@@ -50,7 +50,7 @@ describe('useInformation', () => {
 
   describe('handleAddInformation', () => {
     it('should add new information with generated ID', async () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handleAddInformation({
         title: 'New Information',
@@ -83,7 +83,7 @@ describe('useInformation', () => {
     });
 
     it('should set dateCreated and lastModified timestamps on new info', async () => {
-      const hook = createHook();
+      const hook = useTestHook();
       const beforeTime = Date.now();
 
       await hook.handleAddInformation({
@@ -103,7 +103,7 @@ describe('useInformation', () => {
     });
 
     it('should update existing information when id is provided', async () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handleAddInformation({
         id: 'INFO-001',
@@ -128,7 +128,7 @@ describe('useInformation', () => {
     });
 
     it('should increment revision on update', async () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handleAddInformation({
         id: 'INFO-001',
@@ -145,7 +145,7 @@ describe('useInformation', () => {
     });
 
     it('should not update if information not found', async () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handleAddInformation({
         id: 'INFO-999',
@@ -160,7 +160,7 @@ describe('useInformation', () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockSaveArtifact.mockRejectedValue(new Error('Save failed'));
 
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handleAddInformation({
         title: 'New Information',
@@ -177,7 +177,7 @@ describe('useInformation', () => {
 
   describe('handleEditInformation', () => {
     it('should set selected information and open modal', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleEditInformation(mockInformation[0]);
 
@@ -188,7 +188,7 @@ describe('useInformation', () => {
 
   describe('handleDeleteInformation', () => {
     it('should soft delete information', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleDeleteInformation('INFO-001');
 
@@ -212,7 +212,7 @@ describe('useInformation', () => {
     });
 
     it('should not delete if information not found', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleDeleteInformation('INFO-999');
 
@@ -224,7 +224,7 @@ describe('useInformation', () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockSaveArtifact.mockRejectedValue(new Error('Save failed'));
 
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handleDeleteInformation('INFO-001');
 
@@ -241,7 +241,7 @@ describe('useInformation', () => {
       mockInformation[0].isDeleted = true;
       mockInformation[0].deletedAt = Date.now();
 
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleRestoreInformation('INFO-001');
 
@@ -257,7 +257,7 @@ describe('useInformation', () => {
     });
 
     it('should not restore if information not found', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handleRestoreInformation('INFO-999');
 
@@ -269,7 +269,7 @@ describe('useInformation', () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockSaveArtifact.mockRejectedValue(new Error('Save failed'));
 
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handleRestoreInformation('INFO-001');
 
@@ -283,7 +283,7 @@ describe('useInformation', () => {
 
   describe('handlePermanentDeleteInformation', () => {
     it('should permanently delete information', () => {
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handlePermanentDeleteInformation('INFO-001');
 
@@ -297,7 +297,7 @@ describe('useInformation', () => {
         capturedUpdater = updater;
       });
 
-      const hook = createHook();
+      const hook = useTestHook();
 
       hook.handlePermanentDeleteInformation('INFO-001');
 
@@ -309,7 +309,7 @@ describe('useInformation', () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockDeleteArtifact.mockRejectedValue(new Error('Delete failed'));
 
-      const hook = createHook();
+      const hook = useTestHook();
 
       await hook.handlePermanentDeleteInformation('INFO-001');
 
