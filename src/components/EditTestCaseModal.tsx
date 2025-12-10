@@ -495,20 +495,24 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                 <div
                   style={{
                     padding: 'var(--spacing-md)',
-                    backgroundColor: '#fef2f2',
-                    border: '1px solid #fecaca',
+                    backgroundColor: 'var(--color-error-bg)',
+                    border: '1px solid var(--color-error-light)',
                     borderRadius: '6px',
                     marginBottom: 'var(--spacing-md)',
                   }}
                 >
                   <div
-                    style={{ color: '#991b1b', fontWeight: 500, marginBottom: 'var(--spacing-xs)' }}
+                    style={{
+                      color: 'var(--color-error)',
+                      fontWeight: 500,
+                      marginBottom: 'var(--spacing-xs)',
+                    }}
                   >
                     ⚠️ Move to Trash
                   </div>
                   <div
                     style={{
-                      color: '#7f1d1d',
+                      color: 'var(--color-error)',
                       fontSize: '0.875rem',
                       marginBottom: 'var(--spacing-md)',
                     }}
@@ -523,7 +527,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                         padding: '8px 16px',
                         borderRadius: '6px',
                         border: 'none',
-                        backgroundColor: '#dc2626',
+                        backgroundColor: 'var(--color-error)',
                         color: 'white',
                         cursor: 'pointer',
                         fontWeight: 500,
@@ -537,9 +541,9 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                       style={{
                         padding: '8px 16px',
                         borderRadius: '6px',
-                        border: '1px solid #d1d5db',
-                        backgroundColor: 'white',
-                        color: '#374151',
+                        border: '1px solid var(--color-border)',
+                        backgroundColor: 'var(--color-bg-card)',
+                        color: 'var(--color-text-secondary)',
                         cursor: 'pointer',
                       }}
                     >
@@ -563,9 +567,9 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                   style={{
                     padding: '8px 16px',
                     borderRadius: '6px',
-                    border: '1px solid #ef4444',
+                    border: '1px solid var(--color-error)',
                     backgroundColor: 'var(--color-bg-card)',
-                    color: '#ef4444',
+                    color: 'var(--color-error)',
                     cursor: showDeleteConfirm ? 'not-allowed' : 'pointer',
                     fontWeight: 500,
                     opacity: showDeleteConfirm ? 0.5 : 1,

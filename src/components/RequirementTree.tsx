@@ -126,7 +126,8 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
             borderRadius: '12px',
             backgroundColor:
               req.priority === 'high' ? 'var(--color-bg-secondary)' : 'var(--color-bg-secondary)',
-            color: req.priority === 'high' ? '#fca5a5' : 'var(--color-text-secondary)',
+            color:
+              req.priority === 'high' ? 'var(--color-error-light)' : 'var(--color-text-secondary)',
             marginRight: '12px',
           }}
         >
@@ -188,7 +189,7 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
               borderRadius: '10px',
               backgroundColor: 'var(--color-bg-secondary)',
               fontSize: '0.75rem',
-              color: '#fb923c',
+              color: 'var(--color-warning-light)',
             }}
             title={`Multiple parents: ${originalReq.parentIds.join(', ')}`}
           >

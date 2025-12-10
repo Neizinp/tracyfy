@@ -364,7 +364,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                                   padding: '4px 8px',
                                   borderRadius: '4px',
                                   border: 'none',
-                                  backgroundColor: '#dc2626',
+                                  backgroundColor: 'var(--color-error)',
                                   color: 'white',
                                   cursor: 'pointer',
                                   fontSize: '0.75rem',
@@ -394,9 +394,9 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                               style={{
                                 padding: '4px 8px',
                                 borderRadius: '4px',
-                                border: '1px solid #fca5a5',
-                                backgroundColor: 'transparent',
-                                color: '#ef4444',
+                                border: '1px solid var(--color-error-light)',
+                                backgroundColor: 'var(--color-bg-card)',
+                                color: 'var(--color-error)',
                                 cursor: 'pointer',
                                 fontSize: '0.75rem',
                               }}
