@@ -79,19 +79,6 @@ export interface Information {
   revision: string;
 }
 
-/**
- * @deprecated Use linkedArtifacts in artifacts instead. Will be removed in future version.
- */
-export interface Link {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  targetProjectId?: string; // If missing, assumes current project
-  sourceProjectId?: string; // If missing, assumes current project
-  type: 'relates_to' | 'depends_on' | 'conflicts_with';
-  description?: string;
-}
-
 export interface Project {
   id: string;
   name: string;
@@ -116,7 +103,6 @@ export interface GlobalState {
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
-  links: Link[];
 }
 
 export interface User {
