@@ -15,6 +15,23 @@
   --color-accent-hover: #4f46e5;
   --color-accent-light: #818cf8;
 
+  /* Semantic Colors */
+  --color-success: #10b981;
+  --color-success-light: #6ee7b7;
+  --color-success-bg: rgba(16, 185, 129, 0.2);
+
+  --color-warning: #f59e0b;
+  --color-warning-light: #fcd34d;
+  --color-warning-bg: rgba(251, 191, 36, 0.2);
+
+  --color-error: #ef4444;
+  --color-error-light: #fca5a5;
+  --color-error-bg: rgba(239, 68, 68, 0.2);
+
+  --color-info: #3b82f6;
+  --color-info-light: #93c5fd;
+  --color-info-bg: rgba(59, 130, 246, 0.2);
+
   /* Borders */
   --color-border: #334155;
   --color-border-light: #475569;
@@ -25,6 +42,14 @@
   --spacing-md: 1rem;
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
+
+  /* Typography Scale */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.25rem; /* 20px */
+  --font-size-2xl: 1.5rem; /* 24px */
 
   /* Typography */
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
