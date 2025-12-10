@@ -145,3 +145,50 @@ export const sidebarHoverHandlers = {
     e.currentTarget.style.color = 'var(--color-text-secondary)';
   },
 };
+
+// Delete button - solid red background
+export const deleteButtonStyle: CSSProperties = {
+  padding: '8px 16px',
+  borderRadius: '6px',
+  border: 'none',
+  backgroundColor: 'var(--color-error)',
+  color: 'white',
+  cursor: 'pointer',
+  fontWeight: 500,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 'var(--spacing-xs)',
+};
+
+// Delete button - outline style
+export const deleteButtonOutlineStyle: CSSProperties = {
+  padding: '8px 16px',
+  borderRadius: '6px',
+  border: '1px solid var(--color-error)',
+  backgroundColor: 'transparent',
+  color: 'var(--color-error)',
+  cursor: 'pointer',
+  fontWeight: 500,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 'var(--spacing-xs)',
+};
+
+// Empty state container style
+export const emptyStateStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 'var(--spacing-xl)',
+  color: 'var(--color-text-muted)',
+  textAlign: 'center',
+  gap: 'var(--spacing-md)',
+};
+
+// Empty state text style
+export const emptyStateTextStyle: CSSProperties = {
+  fontSize: 'var(--font-size-sm)',
+  color: 'var(--color-text-secondary)',
+  margin: 0,
+};
