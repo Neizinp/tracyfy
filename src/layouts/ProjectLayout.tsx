@@ -21,7 +21,7 @@ export const ProjectLayout: React.FC = () => {
   const ui = useUI();
 
   // Global state
-  const { globalRequirements, globalUseCases, globalTestCases, globalInformation, links } =
+  const { globalRequirements, globalUseCases, globalTestCases, globalInformation } =
     useGlobalState();
 
   // FileSystem context
@@ -134,7 +134,6 @@ export const ProjectLayout: React.FC = () => {
             useCases: globalUseCases,
             testCases: globalTestCases,
             information: globalInformation,
-            links: links,
           },
           currentProject.requirementIds,
           currentProject.useCaseIds,

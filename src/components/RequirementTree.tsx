@@ -16,11 +16,10 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FileText, AlertCircle, GripVertical, Link2, ArrowRight } from 'lucide-react';
-import type { Requirement, Link } from '../types';
+import type { Requirement } from '../types';
 
 interface RequirementTreeProps {
   requirements: Requirement[];
-  links: Link[];
   allRequirements: Requirement[];
   onReorder: (activeId: string, overId: string) => void;
   onLink: (requirementId: string) => void;
@@ -29,7 +28,6 @@ interface RequirementTreeProps {
 
 interface SortableRequirementItemProps {
   req: Requirement;
-  links: Link[];
   allRequirements: Requirement[];
   onReorder: (activeId: string, overId: string) => void;
   onLink: (requirementId: string) => void;
@@ -38,7 +36,6 @@ interface SortableRequirementItemProps {
 
 const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
   req,
-  links,
   allRequirements,
   onLink,
   onEdit,
@@ -57,6 +54,9 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
   // Check if this requirement has multiple parents
   const originalReq = allRequirements.find((r) => r.id === req.id);
   const hasMultipleParents = originalReq && originalReq.parentIds.length > 1;
+
+  // Get linked artifacts count from the requirement's linkedArtifacts
+  const linkedArtifacts = req.linkedArtifacts || [];
 
   return (
     <div ref={setNodeRef} style={style}>
@@ -153,38 +153,28 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
           <Link2 size={16} />
         </button>
 
-        {/* Link Badge */}
-        {(() => {
-          const reqLinks = links.filter((l) => l.sourceId === req.id || l.targetId === req.id);
-          if (reqLinks.length > 0) {
-            return (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  marginRight: '8px',
-                  padding: '2px 6px',
-                  borderRadius: '10px',
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  fontSize: '0.75rem',
-                  color: 'var(--color-accent-light)',
-                }}
-                title={reqLinks
-                  .map((l) => {
-                    const isSource = l.sourceId === req.id;
-                    const otherId = isSource ? l.targetId : l.sourceId;
-                    return `${isSource ? '→' : '←'} ${otherId} (${l.type.replace('_', ' ')})`;
-                  })
-                  .join('\n')}
-              >
-                <ArrowRight size={12} />
-                {reqLinks.length}
-              </div>
-            );
-          }
-          return null;
-        })()}
+        {/* Link Badge - now uses linkedArtifacts from the requirement */}
+        {linkedArtifacts.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              marginRight: '8px',
+              padding: '2px 6px',
+              borderRadius: '10px',
+              backgroundColor: 'var(--color-bg-secondary)',
+              fontSize: '0.75rem',
+              color: 'var(--color-accent-light)',
+            }}
+            title={linkedArtifacts
+              .map((link) => `→ ${link.targetId} (${link.type.replace('_', ' ')})`)
+              .join('\n')}
+          >
+            <ArrowRight size={12} />
+            {linkedArtifacts.length}
+          </div>
+        )}
 
         {/* Multi-Parent Indicator */}
         {hasMultipleParents && originalReq && (
@@ -216,7 +206,6 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
 
 export const RequirementTree: React.FC<RequirementTreeProps> = ({
   requirements,
-  links,
   allRequirements,
   onReorder,
   onLink,
@@ -254,7 +243,6 @@ export const RequirementTree: React.FC<RequirementTreeProps> = ({
             <SortableRequirementItem
               key={req.id}
               req={req}
-              links={links}
               allRequirements={allRequirements}
               onReorder={onReorder}
               onLink={onLink}

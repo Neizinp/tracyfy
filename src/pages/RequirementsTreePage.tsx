@@ -4,7 +4,7 @@ import { useRequirements } from '../app/providers';
 import { useUI } from '../app/providers';
 
 export const RequirementsTreePage: React.FC = () => {
-  const { requirements, setRequirements, links, handleLink, handleEdit } = useRequirements();
+  const { requirements, setRequirements, handleLink, handleEdit } = useRequirements();
   const { searchQuery } = useUI();
 
   const filteredRequirements = requirements.filter((req) => {
@@ -22,7 +22,6 @@ export const RequirementsTreePage: React.FC = () => {
   return (
     <RequirementTree
       requirements={filteredRequirements}
-      links={links}
       allRequirements={requirements}
       onReorder={(activeId, overId) => {
         const oldIndex = requirements.findIndex((r) => r.id === activeId);
