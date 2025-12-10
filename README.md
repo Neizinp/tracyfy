@@ -233,6 +233,39 @@ Users must authenticate using email and password...
 Security is a core requirement for the system.
 ```
 
+### Repository File Structure
+
+When you select a Git repository, ReqTrace creates the following folder structure:
+
+```
+your-project-repo/
+├── .reqtrace/
+│   ├── project.md          # Project metadata (name, description, counters)
+│   └── config.json         # Application configuration (if any)
+├── requirements/
+│   ├── REQ-001.md          # Each requirement is a separate Markdown file
+│   ├── REQ-002.md
+│   └── ...
+├── use-cases/
+│   ├── UC-001.md           # Use cases with actors, flows, etc.
+│   └── ...
+├── test-cases/
+│   ├── TC-001.md           # Test cases with requirements coverage
+│   └── ...
+├── information/
+│   ├── INFO-001.md         # Meeting notes, decisions, documentation
+│   └── ...
+└── .git/                   # Git repository (managed by isomorphic-git)
+```
+
+**Key points:**
+
+- Each artifact is a separate `.md` file, making them easy to review in Git diffs
+- Links between artifacts are stored in the source artifact's `linkedArtifacts` field
+- Project metadata (ID counters, project info) is stored in `.reqtrace/project.md`
+- Baselines are Git tags, not separate files
+- The entire repository can be cloned, reviewed, and merged using standard Git workflows
+
 ## 🎨 Design
 
 - **Dark Theme** - Modern dark UI with CSS custom properties
