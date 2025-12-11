@@ -190,7 +190,6 @@ export const ProjectLayout: React.FC = () => {
         );
       }}
       onSearch={ui.setSearchQuery}
-      onTrashOpen={() => ui.setIsTrashModalOpen(true)}
       rightPanel={
         ui.isLibraryPanelOpen ? (
           <GlobalLibraryPanel

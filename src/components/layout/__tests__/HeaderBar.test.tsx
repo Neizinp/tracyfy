@@ -47,13 +47,6 @@ describe('HeaderBar', () => {
       expect(screen.getByText('History')).toBeInTheDocument();
     });
 
-    it('should render Trash button when onTrashOpen is provided', () => {
-      const onTrashOpen = vi.fn();
-      render(<HeaderBar {...defaultProps} onTrashOpen={onTrashOpen} />);
-
-      expect(screen.getByText('Trash')).toBeInTheDocument();
-    });
-
     it('should render User button when onOpenUserSettings is provided', () => {
       const onOpenUserSettings = vi.fn();
       render(
@@ -135,7 +128,7 @@ describe('HeaderBar', () => {
     });
   });
 
-  describe('History and Trash buttons', () => {
+  describe('History and User buttons', () => {
     it('should call onViewHistory when History is clicked', () => {
       const onViewHistory = vi.fn();
       render(<HeaderBar {...defaultProps} onViewHistory={onViewHistory} />);
@@ -143,15 +136,6 @@ describe('HeaderBar', () => {
       fireEvent.click(screen.getByText('History'));
 
       expect(onViewHistory).toHaveBeenCalled();
-    });
-
-    it('should call onTrashOpen when Trash is clicked', () => {
-      const onTrashOpen = vi.fn();
-      render(<HeaderBar {...defaultProps} onTrashOpen={onTrashOpen} />);
-
-      fireEvent.click(screen.getByText('Trash'));
-
-      expect(onTrashOpen).toHaveBeenCalled();
     });
 
     it('should call onOpenUserSettings when User is clicked', () => {

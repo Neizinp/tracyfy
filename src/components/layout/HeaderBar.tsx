@@ -8,7 +8,6 @@ import {
   FileSpreadsheet,
   ChevronDown,
   Search,
-  Trash2,
   FolderOpen,
   User,
 } from 'lucide-react';
@@ -28,7 +27,6 @@ export interface HeaderBarProps {
   currentProjectName: string;
   onSearch?: (query: string) => void;
   onViewHistory?: () => void;
-  onTrashOpen?: () => void;
   // Create dropdown
   onNewRequirement: () => void;
   onNewUseCase?: () => void;
@@ -51,14 +49,13 @@ export interface HeaderBarProps {
  * Header bar component containing:
  * - Breadcrumb navigation
  * - Search bar
- * - Action buttons (History, Trash)
+ * - Action buttons (History)
  * - Create, Import, Export dropdown menus
  */
 export const HeaderBar: React.FC<HeaderBarProps> = ({
   currentProjectName,
   onSearch,
   onViewHistory,
-  onTrashOpen,
   onNewRequirement,
   onNewUseCase,
   onNewTestCase,
@@ -310,14 +307,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           <button onClick={onViewHistory} style={headerButtonStyle}>
             <Clock size={18} />
             History
-          </button>
-        )}
-
-        {/* Trash Button */}
-        {onTrashOpen && (
-          <button onClick={onTrashOpen} style={headerButtonStyle}>
-            <Trash2 size={18} />
-            Trash
           </button>
         )}
 

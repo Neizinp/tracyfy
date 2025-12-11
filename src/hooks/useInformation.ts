@@ -80,35 +80,7 @@ export function useInformation({
   };
 
   const handleDeleteInformation = (id: string) => {
-    const updatedInfo = information.find((info) => info.id === id);
-    if (!updatedInfo) return;
-
-    // Soft delete
-    const deletedInfo = { ...updatedInfo, isDeleted: true, deletedAt: Date.now() };
-
-    setInformation(information.map((info) => (info.id === id ? deletedInfo : info)));
-
-    // Save soft deleted state
-    saveArtifact('information', id, deletedInfo).catch((err) =>
-      console.error('Failed to save deleted information:', err)
-    );
-  };
-
-  const handleRestoreInformation = (id: string) => {
-    const updatedInfo = information.find((info) => info.id === id);
-    if (!updatedInfo) return;
-
-    const restoredInfo = { ...updatedInfo, isDeleted: false, deletedAt: undefined };
-
-    setInformation((prev) => prev.map((info) => (info.id === id ? restoredInfo : info)));
-
-    // Save restored state
-    saveArtifact('information', id, restoredInfo).catch((err) =>
-      console.error('Failed to save restored information:', err)
-    );
-  };
-
-  const handlePermanentDeleteInformation = (id: string) => {
+    // Permanent delete
     setInformation((prev) => prev.filter((info) => info.id !== id));
 
     // Delete from filesystem
@@ -121,7 +93,5 @@ export function useInformation({
     handleAddInformation,
     handleEditInformation,
     handleDeleteInformation,
-    handleRestoreInformation,
-    handlePermanentDeleteInformation,
   };
 }

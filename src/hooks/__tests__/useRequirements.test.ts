@@ -28,26 +28,29 @@ describe('useRequirements', () => {
       },
     ];
     usedReqNumbers = new Set([1]);
-    mockSetRequirements = vi.fn() as any;
-    mockSetUsedReqNumbers = vi.fn() as any;
-    mockSetIsEditModalOpen = vi.fn() as any;
-    mockSetEditingRequirement = vi.fn() as any;
-    mockSaveArtifact = vi.fn().mockResolvedValue(undefined) as any;
-    mockDeleteArtifact = vi.fn().mockResolvedValue(undefined) as any;
+    mockSetRequirements = vi.fn();
+    mockSetUsedReqNumbers = vi.fn();
+    mockSetIsEditModalOpen = vi.fn();
+    mockSetEditingRequirement = vi.fn();
+    mockSaveArtifact = vi.fn().mockResolvedValue(undefined);
+    mockDeleteArtifact = vi.fn().mockResolvedValue(undefined);
   });
+
+  const createHook = () =>
+    useRequirements({
+      requirements: mockRequirements,
+      setRequirements: mockSetRequirements as any,
+      usedReqNumbers,
+      setUsedReqNumbers: mockSetUsedReqNumbers as any,
+      setIsEditModalOpen: mockSetIsEditModalOpen as any,
+      setEditingRequirement: mockSetEditingRequirement as any,
+      saveArtifact: mockSaveArtifact as any,
+      deleteArtifact: mockDeleteArtifact as any,
+    });
 
   describe('handleAddRequirement', () => {
     it('should add a new requirement with generated ID', async () => {
-      const hook = useRequirements({
-        requirements: mockRequirements,
-        setRequirements: mockSetRequirements,
-        usedReqNumbers,
-        setUsedReqNumbers: mockSetUsedReqNumbers,
-        setIsEditModalOpen: mockSetIsEditModalOpen,
-        setEditingRequirement: mockSetEditingRequirement,
-        saveArtifact: mockSaveArtifact,
-        deleteArtifact: mockDeleteArtifact,
-      });
+      const hook = createHook();
 
       await hook.handleAddRequirement({
         title: 'New Requirement',
@@ -84,16 +87,7 @@ describe('useRequirements', () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockSaveArtifact.mockRejectedValue(new Error('Save failed'));
 
-      const hook = useRequirements({
-        requirements: mockRequirements,
-        setRequirements: mockSetRequirements,
-        usedReqNumbers,
-        setUsedReqNumbers: mockSetUsedReqNumbers,
-        setIsEditModalOpen: mockSetIsEditModalOpen,
-        setEditingRequirement: mockSetEditingRequirement,
-        saveArtifact: mockSaveArtifact,
-        deleteArtifact: mockDeleteArtifact,
-      });
+      const hook = createHook();
 
       await hook.handleAddRequirement({
         title: 'New Requirement',
@@ -113,16 +107,7 @@ describe('useRequirements', () => {
 
   describe('handleUpdateRequirement', () => {
     it('should update existing requirement and increment revision', async () => {
-      const hook = useRequirements({
-        requirements: mockRequirements,
-        setRequirements: mockSetRequirements,
-        usedReqNumbers,
-        setUsedReqNumbers: mockSetUsedReqNumbers,
-        setIsEditModalOpen: mockSetIsEditModalOpen,
-        setEditingRequirement: mockSetEditingRequirement,
-        saveArtifact: mockSaveArtifact,
-        deleteArtifact: mockDeleteArtifact,
-      });
+      const hook = createHook();
 
       await hook.handleUpdateRequirement('REQ-001', {
         title: 'Updated Title',
@@ -144,16 +129,7 @@ describe('useRequirements', () => {
     });
 
     it('should not update if requirement not found', async () => {
-      const hook = useRequirements({
-        requirements: mockRequirements,
-        setRequirements: mockSetRequirements,
-        usedReqNumbers,
-        setUsedReqNumbers: mockSetUsedReqNumbers,
-        setIsEditModalOpen: mockSetIsEditModalOpen,
-        setEditingRequirement: mockSetEditingRequirement,
-        saveArtifact: mockSaveArtifact,
-        deleteArtifact: mockDeleteArtifact,
-      });
+      const hook = createHook();
 
       await hook.handleUpdateRequirement('REQ-999', {
         title: 'Updated Title',
@@ -165,146 +141,14 @@ describe('useRequirements', () => {
   });
 
   describe('handleDeleteRequirement', () => {
-    it('should soft delete a requirement', () => {
-      const hook = useRequirements({
-        requirements: mockRequirements,
-        setRequirements: mockSetRequirements,
-        usedReqNumbers,
-        setUsedReqNumbers: mockSetUsedReqNumbers,
-        setIsEditModalOpen: mockSetIsEditModalOpen,
-        setEditingRequirement: mockSetEditingRequirement,
-        saveArtifact: mockSaveArtifact,
-        deleteArtifact: mockDeleteArtifact,
-      });
+    it('should permanently delete a requirement', () => {
+      const hook = createHook();
 
       hook.handleDeleteRequirement('REQ-001');
 
       expect(mockSetRequirements).toHaveBeenCalledWith(expect.any(Function));
       expect(mockSetIsEditModalOpen).toHaveBeenCalledWith(false);
       expect(mockSetEditingRequirement).toHaveBeenCalledWith(null);
-      expect(mockSaveArtifact).toHaveBeenCalledWith(
-        'requirements',
-        'REQ-001',
-        expect.objectContaining({
-          isDeleted: true,
-          deletedAt: expect.any(Number),
-        })
-      );
-    });
-
-    it('should not delete if requirement not found', () => {
-      const hook = useRequirements({
-        requirements: mockRequirements,
-        setRequirements: mockSetRequirements,
-        usedReqNumbers,
-        setUsedReqNumbers: mockSetUsedReqNumbers,
-        setIsEditModalOpen: mockSetIsEditModalOpen,
-        setEditingRequirement: mockSetEditingRequirement,
-        saveArtifact: mockSaveArtifact,
-        deleteArtifact: mockDeleteArtifact,
-      });
-
-      hook.handleDeleteRequirement('REQ-999');
-
-      expect(mockSetRequirements).not.toHaveBeenCalled();
-      expect(mockSaveArtifact).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('handleRestoreRequirement', () => {
-    it('should restore a soft-deleted requirement', () => {
-      const deletedReq: Requirement = {
-        ...mockRequirements[0],
-        isDeleted: true,
-        deletedAt: 2000000,
-      };
-
-      const hook = useRequirements({
-        requirements: [deletedReq],
-        setRequirements: mockSetRequirements,
-        usedReqNumbers,
-        setUsedReqNumbers: mockSetUsedReqNumbers,
-        setIsEditModalOpen: mockSetIsEditModalOpen,
-        setEditingRequirement: mockSetEditingRequirement,
-        saveArtifact: mockSaveArtifact,
-        deleteArtifact: mockDeleteArtifact,
-      });
-
-      hook.handleRestoreRequirement('REQ-001');
-
-      expect(mockSetRequirements).toHaveBeenCalledWith(expect.any(Function));
-      expect(mockSaveArtifact).toHaveBeenCalledWith(
-        'requirements',
-        'REQ-001',
-        expect.objectContaining({
-          isDeleted: false,
-          deletedAt: undefined,
-        })
-      );
-    });
-
-    it('should not restore if requirement not found', () => {
-      const hook = useRequirements({
-        requirements: mockRequirements,
-        setRequirements: mockSetRequirements,
-        usedReqNumbers,
-        setUsedReqNumbers: mockSetUsedReqNumbers,
-        setIsEditModalOpen: mockSetIsEditModalOpen,
-        setEditingRequirement: mockSetEditingRequirement,
-        saveArtifact: mockSaveArtifact,
-        deleteArtifact: mockDeleteArtifact,
-      });
-
-      hook.handleRestoreRequirement('REQ-999');
-
-      expect(mockSetRequirements).not.toHaveBeenCalled();
-      expect(mockSaveArtifact).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('handlePermanentDeleteRequirement', () => {
-    it('should permanently delete requirement and clean up references', () => {
-      const reqs: Requirement[] = [
-        {
-          id: 'REQ-001',
-          title: 'Parent',
-          description: '',
-          text: '',
-          rationale: '',
-          status: 'draft',
-          priority: 'high',
-          revision: '01',
-          dateCreated: 1000000,
-          lastModified: 1000000,
-        },
-        {
-          id: 'REQ-002',
-          title: 'Child',
-          description: '',
-          text: '',
-          rationale: '',
-          status: 'draft',
-          priority: 'medium',
-          revision: '01',
-          dateCreated: 1000000,
-          lastModified: 1000000,
-        },
-      ];
-
-      const hook = useRequirements({
-        requirements: reqs,
-        setRequirements: mockSetRequirements,
-        usedReqNumbers,
-        setUsedReqNumbers: mockSetUsedReqNumbers,
-        setIsEditModalOpen: mockSetIsEditModalOpen,
-        setEditingRequirement: mockSetEditingRequirement,
-        saveArtifact: mockSaveArtifact,
-        deleteArtifact: mockDeleteArtifact,
-      });
-
-      hook.handlePermanentDeleteRequirement('REQ-001');
-
-      expect(mockSetRequirements).toHaveBeenCalledWith(expect.any(Function));
       expect(mockDeleteArtifact).toHaveBeenCalledWith('requirements', 'REQ-001');
     });
 
@@ -337,22 +181,14 @@ describe('useRequirements', () => {
       ];
 
       let capturedUpdater: any;
-      mockSetRequirements.mockImplementation((updater) => {
+      mockSetRequirements.mockImplementation((updater: any) => {
         capturedUpdater = updater;
       });
 
-      const hook = useRequirements({
-        requirements: reqs,
-        setRequirements: mockSetRequirements,
-        usedReqNumbers,
-        setUsedReqNumbers: mockSetUsedReqNumbers,
-        setIsEditModalOpen: mockSetIsEditModalOpen,
-        setEditingRequirement: mockSetEditingRequirement,
-        saveArtifact: mockSaveArtifact,
-        deleteArtifact: mockDeleteArtifact,
-      });
+      mockRequirements = reqs;
+      const hook = createHook();
 
-      hook.handlePermanentDeleteRequirement('REQ-001');
+      hook.handleDeleteRequirement('REQ-001');
 
       const result = capturedUpdater(reqs);
       expect(result).toHaveLength(1);

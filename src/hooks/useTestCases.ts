@@ -67,21 +67,7 @@ export function useTestCases({
   };
 
   const handleDeleteTestCase = (id: string) => {
-    const updatedTestCase = testCases.find((tc) => tc.id === id);
-    if (!updatedTestCase) return;
-
-    // Soft delete
-    const deletedTestCase = { ...updatedTestCase, isDeleted: true, deletedAt: Date.now() };
-
-    setTestCases(testCases.map((tc) => (tc.id === id ? deletedTestCase : tc)));
-
-    // Save soft deleted state
-    saveArtifact('testcases', id, deletedTestCase).catch((err) =>
-      console.error('Failed to save deleted test case:', err)
-    );
-  };
-
-  const handlePermanentDeleteTestCase = (id: string) => {
+    // Permanent delete
     setTestCases((prev) => prev.filter((tc) => tc.id !== id));
 
     // Delete from filesystem
@@ -94,6 +80,5 @@ export function useTestCases({
     handleAddTestCase,
     handleUpdateTestCase,
     handleDeleteTestCase,
-    handlePermanentDeleteTestCase,
   };
 }

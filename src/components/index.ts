@@ -6,7 +6,6 @@ export * from './DetailedRequirementView';
 export * from './TraceabilityMatrix';
 export * from './UseCaseModal';
 export * from './UseCaseList';
-export * from './TrashModal';
 export * from './VersionHistory';
 export * from './ProjectSettingsModal';
 export * from './CreateProjectModal';

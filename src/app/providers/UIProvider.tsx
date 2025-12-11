@@ -22,8 +22,6 @@ interface UIContextValue {
   setIsEditRequirementModalOpen: (isOpen: boolean) => void;
   isUseCaseModalOpen: boolean;
   setIsUseCaseModalOpen: (isOpen: boolean) => void;
-  isTrashModalOpen: boolean;
-  setIsTrashModalOpen: (isOpen: boolean) => void;
   isVersionHistoryOpen: boolean;
   setIsVersionHistoryOpen: (isOpen: boolean) => void;
   isProjectSettingsOpen: boolean;

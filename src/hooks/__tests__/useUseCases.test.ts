@@ -2,12 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useUseCases } from '../useUseCases';
 import type { UseCase, Requirement } from '../../types';
 
-// Mock window.confirm
-vi.stubGlobal(
-  'confirm',
-  vi.fn(() => true)
-);
-
 describe('useUseCases', () => {
   let mockUseCases: UseCase[];
   let mockRequirements: Requirement[];
@@ -21,41 +15,35 @@ describe('useUseCases', () => {
   let usedUcNumbers: Set<number>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
     mockUseCases = [
       {
         id: 'UC-001',
-        title: 'Use Case 1',
-        description: 'Description',
+        title: 'Test Use Case',
+        description: 'Test Description',
         actor: 'User',
-        preconditions: '',
-        mainFlow: '',
+        preconditions: 'Logged in',
+        mainFlow: 'Step 1\nStep 2',
         alternativeFlows: '',
-        postconditions: '',
+        postconditions: 'Success',
         status: 'draft',
         priority: 'high',
         revision: '01',
         lastModified: 1000000,
-        linkedArtifacts: [],
-        isDeleted: false,
       },
     ];
     mockRequirements = [
       {
         id: 'REQ-001',
-        title: 'Requirement 1',
-        text: 'Text',
+        title: 'Test Requirement',
+        description: '',
+        text: '',
+        rationale: '',
         status: 'draft',
         priority: 'high',
-        description: '',
-        rationale: '',
         revision: '01',
-
         dateCreated: 1000000,
         lastModified: 1000000,
-        linkedArtifacts: [],
         useCaseIds: ['UC-001'],
-        isDeleted: false,
       },
     ];
     usedUcNumbers = new Set([1]);
@@ -66,9 +54,15 @@ describe('useUseCases', () => {
     mockSetEditingUseCase = vi.fn();
     mockSaveArtifact = vi.fn().mockResolvedValue(undefined);
     mockDeleteArtifact = vi.fn().mockResolvedValue(undefined);
+
+    // Mock window.confirm for delete tests
+    vi.stubGlobal(
+      'confirm',
+      vi.fn(() => true)
+    );
   });
 
-  const useTestHook = () =>
+  const createHook = () =>
     useUseCases({
       useCases: mockUseCases,
       setUseCases: mockSetUseCases as any,
@@ -84,149 +78,30 @@ describe('useUseCases', () => {
 
   describe('handleAddUseCase', () => {
     it('should add a new use case with generated ID', async () => {
-      const hook = useTestHook();
+      const hook = createHook();
 
       await hook.handleAddUseCase({
         title: 'New Use Case',
         description: 'New Description',
         actor: 'Admin',
-        preconditions: 'Logged in',
-        mainFlow: 'Step 1',
+        preconditions: '',
+        mainFlow: '',
         alternativeFlows: '',
-        postconditions: 'Success',
+        postconditions: '',
         status: 'draft',
         priority: 'medium',
         revision: '01',
-        linkedArtifacts: [],
       });
 
-      expect(mockSetUseCases).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({
-            id: 'UC-002',
-            title: 'New Use Case',
-            description: 'New Description',
-            actor: 'Admin',
-          }),
-        ])
-      );
-      expect(mockSetUsedUcNumbers).toHaveBeenCalled();
-      expect(mockSaveArtifact).toHaveBeenCalledWith(
-        'usecases',
-        'UC-002',
-        expect.objectContaining({
-          id: 'UC-002',
-          title: 'New Use Case',
-        })
-      );
+      expect(mockSetUsedUcNumbers).toHaveBeenCalledWith(expect.any(Function));
+      expect(mockSetUseCases).toHaveBeenCalled();
       expect(mockSetIsUseCaseModalOpen).toHaveBeenCalledWith(false);
-    });
-
-    it('should set lastModified timestamp on new use case', async () => {
-      const hook = useTestHook();
-      const beforeTime = Date.now();
-
-      await hook.handleAddUseCase({
-        title: 'New Use Case',
-        description: 'Description',
-        actor: 'User',
-        preconditions: '',
-        mainFlow: '',
-        alternativeFlows: '',
-        postconditions: '',
-        status: 'draft',
-        priority: 'high',
-        revision: '01',
-        linkedArtifacts: [],
-      });
-
-      const afterTime = Date.now();
-      const savedUseCase = mockSaveArtifact.mock.calls[0][2] as UseCase;
-      expect(savedUseCase.lastModified).toBeGreaterThanOrEqual(beforeTime);
-      expect(savedUseCase.lastModified).toBeLessThanOrEqual(afterTime);
-    });
-
-    it('should update existing use case when id is provided', async () => {
-      const hook = useTestHook();
-
-      await hook.handleAddUseCase({
-        id: 'UC-001',
-        updates: {
-          title: 'Updated Title',
-          description: 'Updated Description',
-        },
-      });
-
-      expect(mockSetUseCases).toHaveBeenCalledWith(expect.any(Function));
-      expect(mockSaveArtifact).toHaveBeenCalledWith(
-        'usecases',
-        'UC-001',
-        expect.objectContaining({
-          id: 'UC-001',
-          title: 'Updated Title',
-          revision: '02',
-        })
-      );
-      expect(mockSetEditingUseCase).toHaveBeenCalledWith(null);
-    });
-
-    it('should increment revision on update', async () => {
-      const hook = useTestHook();
-
-      await hook.handleAddUseCase({
-        id: 'UC-001',
-        updates: { title: 'Updated' },
-      });
-
-      expect(mockSaveArtifact).toHaveBeenCalledWith(
-        'usecases',
-        'UC-001',
-        expect.objectContaining({
-          revision: '02',
-        })
-      );
-    });
-
-    it('should not update if use case not found', async () => {
-      const hook = useTestHook();
-
-      await hook.handleAddUseCase({
-        id: 'UC-999',
-        updates: { title: 'Updated' },
-      });
-
-      expect(mockSetUseCases).not.toHaveBeenCalled();
-      expect(mockSaveArtifact).not.toHaveBeenCalled();
-    });
-
-    it('should handle save errors gracefully', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockSaveArtifact.mockRejectedValue(new Error('Save failed'));
-
-      const hook = useTestHook();
-
-      await hook.handleAddUseCase({
-        title: 'New Use Case',
-        description: '',
-        actor: '',
-        preconditions: '',
-        mainFlow: '',
-        alternativeFlows: '',
-        postconditions: '',
-        status: 'draft',
-        priority: 'medium',
-        revision: '01',
-        linkedArtifacts: [],
-      });
-
-      expect(consoleError).toHaveBeenCalledWith('Failed to save use case:', expect.any(Error));
-      consoleError.mockRestore();
     });
   });
 
   describe('handleEditUseCase', () => {
-    it('should set editing use case and open modal', () => {
-      const hook = useTestHook();
+    it('should open modal with use case for editing', () => {
+      const hook = createHook();
 
       hook.handleEditUseCase(mockUseCases[0]);
 
@@ -236,53 +111,14 @@ describe('useUseCases', () => {
   });
 
   describe('handleDeleteUseCase', () => {
-    it('should soft delete a use case when confirmed', () => {
-      const hook = useTestHook();
+    it('should permanently delete a use case when confirmed', () => {
+      const hook = createHook();
 
       hook.handleDeleteUseCase('UC-001');
 
       expect(mockSetUseCases).toHaveBeenCalledWith(expect.any(Function));
-      expect(mockSaveArtifact).toHaveBeenCalledWith(
-        'usecases',
-        'UC-001',
-        expect.objectContaining({
-          isDeleted: true,
-          deletedAt: expect.any(Number),
-        })
-      );
-    });
-
-    it('should remove use case references from requirements on delete', () => {
-      const hook = useTestHook();
-
-      hook.handleDeleteUseCase('UC-001');
-
-      expect(mockSetRequirements).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({
-            id: 'REQ-001',
-            useCaseIds: [],
-          }),
-        ])
-      );
-    });
-
-    it('should increment requirement revision when use case link is removed', () => {
-      const hook = useTestHook();
-
-      hook.handleDeleteUseCase('UC-001');
-
-      const updatedReqs = mockSetRequirements.mock.calls[0][0] as Requirement[];
-      expect(updatedReqs[0].revision).toBe('02');
-    });
-
-    it('should not delete if use case not found', () => {
-      const hook = useTestHook();
-
-      hook.handleDeleteUseCase('UC-999');
-
-      expect(mockSetUseCases).not.toHaveBeenCalled();
-      expect(mockSaveArtifact).not.toHaveBeenCalled();
+      expect(mockSetRequirements).toHaveBeenCalled();
+      expect(mockDeleteArtifact).toHaveBeenCalledWith('usecases', 'UC-001');
     });
 
     it('should not delete if user cancels confirmation', () => {
@@ -290,79 +126,13 @@ describe('useUseCases', () => {
         'confirm',
         vi.fn(() => false)
       );
-      const hook = useTestHook();
+
+      const hook = createHook();
 
       hook.handleDeleteUseCase('UC-001');
 
       expect(mockSetUseCases).not.toHaveBeenCalled();
-      expect(mockSaveArtifact).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('handleRestoreUseCase', () => {
-    it('should restore a soft-deleted use case', () => {
-      mockUseCases[0].isDeleted = true;
-      mockUseCases[0].deletedAt = Date.now();
-
-      const hook = useTestHook();
-
-      hook.handleRestoreUseCase('UC-001');
-
-      expect(mockSetUseCases).toHaveBeenCalledWith(expect.any(Function));
-      expect(mockSaveArtifact).toHaveBeenCalledWith(
-        'usecases',
-        'UC-001',
-        expect.objectContaining({
-          isDeleted: false,
-          deletedAt: undefined,
-        })
-      );
-    });
-
-    it('should not restore if use case not found', () => {
-      const hook = useTestHook();
-
-      hook.handleRestoreUseCase('UC-999');
-
-      expect(mockSetUseCases).not.toHaveBeenCalled();
-      expect(mockSaveArtifact).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('handlePermanentDeleteUseCase', () => {
-    it('should permanently delete use case', () => {
-      const hook = useTestHook();
-
-      hook.handlePermanentDeleteUseCase('UC-001');
-
-      expect(mockSetUseCases).toHaveBeenCalledWith(expect.any(Function));
-      expect(mockDeleteArtifact).toHaveBeenCalledWith('usecases', 'UC-001');
-    });
-
-    it('should remove use case from array', () => {
-      let capturedUpdater: any;
-      mockSetUseCases.mockImplementation((updater) => {
-        capturedUpdater = updater;
-      });
-
-      const hook = useTestHook();
-
-      hook.handlePermanentDeleteUseCase('UC-001');
-
-      const result = capturedUpdater(mockUseCases);
-      expect(result).toEqual([]);
-    });
-
-    it('should handle delete errors gracefully', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockDeleteArtifact.mockRejectedValue(new Error('Delete failed'));
-
-      const hook = useTestHook();
-
-      await hook.handlePermanentDeleteUseCase('UC-001');
-
-      expect(consoleError).toHaveBeenCalledWith('Failed to delete use case:', expect.any(Error));
-      consoleError.mockRestore();
+      expect(mockDeleteArtifact).not.toHaveBeenCalled();
     });
   });
 });

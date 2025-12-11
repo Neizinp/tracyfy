@@ -22,7 +22,6 @@ export interface LayoutProps {
   onOpenGlobalLibrary?: () => void;
   onOpenLibraryTab?: (tab: 'requirements' | 'usecases' | 'testcases' | 'information') => void;
   onSearch?: (query: string) => void;
-  onTrashOpen?: () => void;
   onNewInformation?: () => void;
   baselines?: ProjectBaseline[];
   rightPanel?: React.ReactNode;
@@ -54,7 +53,6 @@ export const Layout: React.FC<LayoutProps> = ({
   onOpenGlobalLibrary,
   onOpenLibraryTab,
   onSearch,
-  onTrashOpen,
   onNewInformation,
   baselines = [],
   rightPanel,
@@ -77,7 +75,6 @@ export const Layout: React.FC<LayoutProps> = ({
           currentProjectName={currentProjectName}
           onSearch={onSearch}
           onViewHistory={onViewHistory}
-          onTrashOpen={onTrashOpen}
           onNewRequirement={onNewRequirement}
           onNewUseCase={onNewUseCase}
           onNewTestCase={onNewTestCase}

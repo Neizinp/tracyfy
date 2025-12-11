@@ -14,7 +14,6 @@ export function useUIState() {
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [isEditRequirementModalOpen, setIsEditRequirementModalOpen] = useState(false);
   const [isUseCaseModalOpen, setIsUseCaseModalOpen] = useState(false);
-  const [isTrashModalOpen, setIsTrashModalOpen] = useState(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isProjectSettingsOpen, setIsProjectSettingsOpen] = useState(false);
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
@@ -124,8 +123,6 @@ export function useUIState() {
     setIsEditRequirementModalOpen,
     isUseCaseModalOpen,
     setIsUseCaseModalOpen,
-    isTrashModalOpen,
-    setIsTrashModalOpen,
     isVersionHistoryOpen,
     setIsVersionHistoryOpen,
     isProjectSettingsOpen,

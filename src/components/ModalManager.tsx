@@ -8,7 +8,6 @@ import {
   EditTestCaseModal,
   InformationModal,
   VersionHistory,
-  TrashModal,
   ProjectSettingsModal,
   CreateProjectModal,
   GlobalLibraryModal,
@@ -46,30 +45,12 @@ export const ModalManager: React.FC = () => {
     useGlobalState();
 
   // Artifact state and operations
-  const {
-    requirements,
-    handleAddRequirement,
-    handleUpdateRequirement,
-    handleDeleteRequirement,
-    handleRestoreRequirement,
-    handlePermanentDeleteRequirement,
-  } = useRequirements();
-  const {
-    useCases,
-    handleAddUseCase,
-    handleUpdateUseCase,
-    handleRestoreUseCase,
-    handlePermanentDeleteUseCase,
-  } = useUseCases();
+  const { requirements, handleAddRequirement, handleUpdateRequirement, handleDeleteRequirement } =
+    useRequirements();
+  const { useCases, handleAddUseCase, handleUpdateUseCase } = useUseCases();
   const { testCases, handleAddTestCase, handleUpdateTestCase, handleDeleteTestCase } =
     useTestCases();
-  const {
-    information,
-    handleAddInformation,
-    handleUpdateInformation,
-    handleRestoreInformation,
-    handlePermanentDeleteInformation,
-  } = useInformation();
+  const { information, handleAddInformation, handleUpdateInformation } = useInformation();
 
   // FileSystem state
   const { baselines, createBaseline, reloadData } = useFileSystem();
@@ -228,31 +209,6 @@ export const ModalManager: React.FC = () => {
         projectName={currentProject?.name ?? null}
         onClose={() => ui.setIsVersionHistoryOpen(false)}
         onCreateBaseline={createBaseline}
-      />
-
-      <TrashModal
-        isOpen={ui.isTrashModalOpen}
-        onClose={() => ui.setIsTrashModalOpen(false)}
-        deletedRequirements={requirements.filter((r) => r.isDeleted)}
-        deletedUseCases={useCases.filter((u) => u.isDeleted)}
-        deletedProjects={projects.filter((p) => p.isDeleted)}
-        onRestoreRequirement={handleRestoreRequirement}
-        onRestoreUseCase={handleRestoreUseCase}
-        onRestoreProject={async (id) => {
-          const { diskProjectService } = await import('../services/diskProjectService');
-          await diskProjectService.restoreProject(id);
-          await reloadData();
-        }}
-        onPermanentDeleteRequirement={handlePermanentDeleteRequirement}
-        onPermanentDeleteUseCase={handlePermanentDeleteUseCase}
-        onPermanentDeleteProject={async (id) => {
-          const { diskProjectService } = await import('../services/diskProjectService');
-          await diskProjectService.permanentDeleteProject(id);
-          await reloadData();
-        }}
-        deletedInformation={information.filter((i) => i.isDeleted)}
-        onRestoreInformation={handleRestoreInformation}
-        onPermanentDeleteInformation={handlePermanentDeleteInformation}
       />
 
       {ui.isProjectSettingsOpen && ui.projectToEdit && (

@@ -87,13 +87,8 @@ export function useUseCases({
         'Are you sure you want to delete this use case? Requirements linked to it will not be deleted.'
       )
     ) {
-      const updatedUseCase = useCases.find((uc) => uc.id === id);
-      if (!updatedUseCase) return;
-
-      // Soft delete
-      const deletedUseCase = { ...updatedUseCase, isDeleted: true, deletedAt: Date.now() };
-
-      setUseCases((prev) => prev.map((uc) => (uc.id === id ? deletedUseCase : uc)));
+      // Permanent delete
+      setUseCases((prev) => prev.filter((uc) => uc.id !== id));
 
       // Remove use case references from requirements
       setRequirements(
@@ -107,39 +102,16 @@ export function useUseCases({
         }))
       );
 
-      // Save soft deleted state
-      saveArtifact('usecases', id, deletedUseCase).catch((err) =>
-        console.error('Failed to save deleted use case:', err)
+      // Delete from filesystem
+      deleteArtifact('usecases', id).catch((err) =>
+        console.error('Failed to delete use case:', err)
       );
     }
-  };
-
-  const handleRestoreUseCase = (id: string) => {
-    const updatedUseCase = useCases.find((uc) => uc.id === id);
-    if (!updatedUseCase) return;
-
-    const restoredUseCase = { ...updatedUseCase, isDeleted: false, deletedAt: undefined };
-
-    setUseCases((prev) => prev.map((uc) => (uc.id === id ? restoredUseCase : uc)));
-
-    // Save restored state
-    saveArtifact('usecases', id, restoredUseCase).catch((err) =>
-      console.error('Failed to save restored use case:', err)
-    );
-  };
-
-  const handlePermanentDeleteUseCase = (id: string) => {
-    setUseCases((prev) => prev.filter((uc) => uc.id !== id));
-
-    // Delete from filesystem
-    deleteArtifact('usecases', id).catch((err) => console.error('Failed to delete use case:', err));
   };
 
   return {
     handleAddUseCase,
     handleEditUseCase,
     handleDeleteUseCase,
-    handleRestoreUseCase,
-    handlePermanentDeleteUseCase,
   };
 }

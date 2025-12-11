@@ -74,52 +74,12 @@ export function useRequirements({
   };
 
   const handleDeleteRequirement = (id: string) => {
-    // Soft delete: Mark as deleted instead of removing
-    const updatedReq = requirements.find((req) => req.id === id);
-    if (!updatedReq) return;
-
-    const deletedReq = { ...updatedReq, isDeleted: true, deletedAt: Date.now() };
-
-    setRequirements((prev) => prev.map((req) => (req.id === id ? deletedReq : req)));
+    // Permanent delete: Remove from state and filesystem
+    setRequirements((prev) => prev.filter((req) => req.id !== id));
 
     // Close modal if open
     setIsEditModalOpen(false);
     setEditingRequirement(null);
-
-    // Save the soft-deleted state to filesystem
-    // We still save it because soft-delete is just a state change
-    saveArtifact('requirements', id, deletedReq).catch((err) =>
-      console.error('Failed to save deleted requirement:', err)
-    );
-  };
-
-  const handleRestoreRequirement = (id: string) => {
-    const updatedReq = requirements.find((req) => req.id === id);
-    if (!updatedReq) return;
-
-    const restoredReq = { ...updatedReq, isDeleted: false, deletedAt: undefined };
-
-    setRequirements((prev) => prev.map((req) => (req.id === id ? restoredReq : req)));
-
-    // Save restored state
-    saveArtifact('requirements', id, restoredReq).catch((err) =>
-      console.error('Failed to save restored requirement:', err)
-    );
-  };
-
-  const handlePermanentDeleteRequirement = (id: string) => {
-    setRequirements((prev) =>
-      prev
-        .filter((req) => req.id !== id)
-        .map((req) => ({
-          ...req,
-          parentIds: req.parentIds ? req.parentIds.filter((parentId) => parentId !== id) : [],
-          lastModified: Date.now(),
-          revision: req.parentIds?.includes(id)
-            ? incrementRevision(req.revision || '01')
-            : req.revision,
-        }))
-    );
 
     // Delete from filesystem
     deleteArtifact('requirements', id).catch((err) =>
@@ -131,7 +91,5 @@ export function useRequirements({
     handleAddRequirement,
     handleUpdateRequirement,
     handleDeleteRequirement,
-    handleRestoreRequirement,
-    handlePermanentDeleteRequirement,
   };
 }
