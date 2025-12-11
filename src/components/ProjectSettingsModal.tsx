@@ -7,6 +7,7 @@ interface ProjectSettingsModalProps {
   onClose: () => void;
   onUpdate: (projectId: string, name: string, description: string) => Promise<void>;
   onDelete: (projectId: string) => void;
+  onCopy?: (originalProject: Project, newName: string, newDescription: string) => Promise<void>;
 }
 
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -17,11 +18,15 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   onClose,
   onUpdate,
   onDelete,
+  onCopy,
 }) => {
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRenameConfirm, setShowRenameConfirm] = useState(false);
+  const [showCopyMode, setShowCopyMode] = useState(false);
+  const [copyName, setCopyName] = useState('');
+  const [copyDescription, setCopyDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -31,6 +36,9 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       setDescription(project.description);
       setShowDeleteConfirm(false);
       setShowRenameConfirm(false);
+      setShowCopyMode(false);
+      setCopyName(`${project.name} (Copy)`);
+      setCopyDescription(project.description);
       setError(null);
       setIsSubmitting(false);
     }
@@ -64,6 +72,23 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
 
     // Otherwise, save directly
     await doSave();
+  };
+
+  const handleCopyProject = async () => {
+    if (!copyName.trim()) {
+      setError('Please enter a name for the new project');
+      return;
+    }
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await onCopy?.(project, copyName.trim(), copyDescription.trim());
+      onClose();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   useKeyboardShortcuts({
@@ -307,6 +332,158 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
               </button>
             </div>
 
+            {/* Copy Project Section */}
+            {onCopy && (
+              <div
+                style={{
+                  borderTop: '1px solid var(--color-border)',
+                  paddingTop: 'var(--spacing-md)',
+                  marginTop: 'var(--spacing-sm)',
+                }}
+              >
+                {!showCopyMode ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowCopyMode(true)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 16px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--color-border)',
+                      backgroundColor: 'var(--color-bg-card)',
+                      color: 'var(--color-text-primary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      fontSize: 'var(--font-size-sm)',
+                      fontWeight: 500,
+                    }}
+                  >
+                    Copy Project
+                  </button>
+                ) : (
+                  <div
+                    style={{
+                      padding: 'var(--spacing-md)',
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      borderRadius: '6px',
+                      border: '1px solid var(--color-border)',
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: '0 0 var(--spacing-sm) 0',
+                        fontSize: 'var(--font-size-sm)',
+                        fontWeight: 500,
+                      }}
+                    >
+                      Copy Project
+                    </p>
+                    <p
+                      style={{
+                        margin: '0 0 var(--spacing-md) 0',
+                        fontSize: 'var(--font-size-xs)',
+                        color: 'var(--color-text-secondary)',
+                      }}
+                    >
+                      Create a copy of this project with all its artifacts.
+                    </p>
+                    <div style={{ marginBottom: 'var(--spacing-sm)' }}>
+                      <label
+                        style={{
+                          display: 'block',
+                          marginBottom: 'var(--spacing-xs)',
+                          fontSize: 'var(--font-size-sm)',
+                          fontWeight: 500,
+                        }}
+                      >
+                        New Project Name
+                      </label>
+                      <input
+                        type="text"
+                        value={copyName}
+                        onChange={(e) => setCopyName(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--color-border)',
+                          backgroundColor: 'var(--color-bg-app)',
+                          color: 'var(--color-text-primary)',
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                      <label
+                        style={{
+                          display: 'block',
+                          marginBottom: 'var(--spacing-xs)',
+                          fontSize: 'var(--font-size-sm)',
+                          fontWeight: 500,
+                        }}
+                      >
+                        Description
+                      </label>
+                      <textarea
+                        value={copyDescription}
+                        onChange={(e) => setCopyDescription(e.target.value)}
+                        rows={3}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--color-border)',
+                          backgroundColor: 'var(--color-bg-app)',
+                          color: 'var(--color-text-primary)',
+                          outline: 'none',
+                          resize: 'vertical',
+                        }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowCopyMode(false)}
+                        style={{
+                          flex: 1,
+                          padding: '8px 16px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--color-border)',
+                          backgroundColor: 'var(--color-bg-card)',
+                          color: 'var(--color-text-primary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCopyProject}
+                        disabled={isSubmitting}
+                        style={{
+                          flex: 1,
+                          padding: '8px 16px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          backgroundColor: isSubmitting
+                            ? 'var(--color-bg-disabled)'
+                            : 'var(--color-accent)',
+                          color: 'white',
+                          cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {isSubmitting ? 'Copying...' : 'Create Copy'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Delete Project Section */}
             <div
               style={{
                 borderTop: '1px solid var(--color-border)',

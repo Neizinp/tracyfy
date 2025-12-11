@@ -364,6 +364,45 @@ class DiskProjectService {
   }
 
   /**
+   * Copy a project with a new name and description
+   * Artifacts are global, so the copy just references the same artifact IDs
+   */
+  async copyProject(
+    originalProject: Project,
+    newName: string,
+    newDescription: string
+  ): Promise<Project> {
+    // Check if name already exists
+    const nameExists = await this.checkProjectNameExists(newName);
+    if (nameExists) {
+      throw new Error(`A project named "${newName}" already exists`);
+    }
+
+    // Create new project ID
+    const newId = `proj-${Date.now()}`;
+
+    const newProject: Project = {
+      id: newId,
+      name: newName,
+      description: newDescription,
+      lastModified: Date.now(),
+      // Copy artifact references
+      requirementIds: [...originalProject.requirementIds],
+      useCaseIds: [...originalProject.useCaseIds],
+      testCaseIds: [...originalProject.testCaseIds],
+      informationIds: [...originalProject.informationIds],
+    };
+
+    // Save to disk
+    const content = projectToMarkdown(newProject);
+    const safeName = newName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `${safeName}.md`;
+    await fileSystemService.writeFile(`${PROJECTS_DIR}/${filename}`, content);
+
+    return newProject;
+  }
+
+  /**
    * Load a single project
    */
   async loadProject(projectId: string): Promise<Project | null> {

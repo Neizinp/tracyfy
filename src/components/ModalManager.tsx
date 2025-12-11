@@ -252,6 +252,12 @@ export const ModalManager: React.FC = () => {
             }
           }}
           onDelete={deleteProject}
+          onCopy={async (originalProject, newName, newDescription) => {
+            const { diskProjectService } = await import('../services/diskProjectService');
+            await diskProjectService.copyProject(originalProject, newName, newDescription);
+            // Reload data to include the new project
+            await reloadData();
+          }}
         />
       )}
 
