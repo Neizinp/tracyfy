@@ -71,14 +71,26 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 ### Prerequisites
 
 - Node.js 18+ and npm
-- A modern browser with File System Access API support (Chrome, Edge)
+- Git (for version control features)
+- A modern browser (see Browser Support below)
+
+### Browser Support
+
+| Browser    | Support                                |
+| ---------- | -------------------------------------- |
+| Chrome 86+ | ✅ Full support                        |
+| Edge 86+   | ✅ Full support                        |
+| Firefox    | ⚠️ Limited (no File System Access API) |
+| Safari     | ⚠️ Limited (no File System Access API) |
+
+The File System Access API is required for local file storage. Use Chrome or Edge for the best experience.
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/Neizinp/requirement-management-tool.git
-cd requirement-management-tool
+git clone https://github.com/Neizinp/reqify.git
+cd reqify
 
 # Install dependencies
 npm install
@@ -88,6 +100,13 @@ npm run dev
 ```
 
 The application will be available at `http://localhost:5173`
+
+### First Run
+
+1. On first launch, you'll be prompted to select a local directory
+2. Choose an existing Git repository or create a new folder
+3. If Git isn't initialized, Reqify will set it up for you
+4. All data is stored locally - no cloud account needed
 
 ### Build for Production
 
@@ -166,7 +185,10 @@ Run tests:
 npm test              # Run unit tests
 npm run typecheck     # TypeScript type checking
 npm run lint          # ESLint
-npx playwright test   # E2E tests
+
+# For E2E tests, install browsers first:
+npx playwright install
+npx playwright test
 ```
 
 ### Project Structure
