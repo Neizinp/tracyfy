@@ -17,6 +17,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { FileText, GripVertical, Link2, ArrowRight } from 'lucide-react';
 import type { Requirement } from '../types';
+import { getPriorityStyle, badgeStyle } from '../utils/artifactStyles';
 
 interface RequirementTreeProps {
   requirements: Requirement[];
@@ -114,13 +115,9 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
 
         <div
           style={{
-            fontSize: 'var(--font-size-xs)',
-            padding: '2px 8px',
-            borderRadius: '12px',
-            backgroundColor:
-              req.priority === 'high' ? 'var(--color-bg-secondary)' : 'var(--color-bg-secondary)',
-            color:
-              req.priority === 'high' ? 'var(--color-error-light)' : 'var(--color-text-secondary)',
+            ...badgeStyle,
+            backgroundColor: getPriorityStyle(req.priority).bg,
+            color: getPriorityStyle(req.priority).text,
             marginRight: '12px',
           }}
         >

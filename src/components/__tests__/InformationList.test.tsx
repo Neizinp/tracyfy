@@ -1,7 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { InformationList } from '../InformationList';
-import type { Information } from '../../types';
+import type { Information, InformationColumnVisibility } from '../../types';
+
+const defaultColumns: InformationColumnVisibility = {
+  idTitle: true,
+  type: true,
+  content: true,
+  created: true,
+};
 
 describe('InformationList', () => {
   const mockInformation: Information[] = [
@@ -23,7 +30,13 @@ describe('InformationList', () => {
   });
 
   it('renders information items', () => {
-    render(<InformationList information={mockInformation} onEdit={mockOnEdit} />);
+    render(
+      <InformationList
+        information={mockInformation}
+        onEdit={mockOnEdit}
+        visibleColumns={defaultColumns}
+      />
+    );
 
     expect(screen.getByText('INFO-001')).toBeInTheDocument();
     expect(screen.getByText('System Architecture')).toBeInTheDocument();
@@ -32,15 +45,22 @@ describe('InformationList', () => {
   });
 
   it('calls onEdit when card is clicked', () => {
-    render(<InformationList information={mockInformation} onEdit={mockOnEdit} />);
+    render(
+      <InformationList
+        information={mockInformation}
+        onEdit={mockOnEdit}
+        visibleColumns={defaultColumns}
+      />
+    );
 
-    // Click the card to edit
     fireEvent.click(screen.getByText('System Architecture'));
     expect(mockOnEdit).toHaveBeenCalledWith(mockInformation[0]);
   });
 
   it('renders empty state', () => {
-    render(<InformationList information={[]} onEdit={mockOnEdit} />);
+    render(
+      <InformationList information={[]} onEdit={mockOnEdit} visibleColumns={defaultColumns} />
+    );
 
     expect(
       screen.getByText('No information artifacts found. Create one to get started.')

@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
-import type { UseCase, Requirement, Project } from '../types';
+import type { UseCase, Requirement, Project, UseCaseColumnVisibility } from '../types';
+import { getPriorityStyle, getStatusStyle, badgeStyle } from '../utils/artifactStyles';
 
 interface UseCaseListProps {
   useCases: UseCase[];
@@ -8,6 +9,7 @@ interface UseCaseListProps {
   onEdit: (useCase: UseCase) => void;
   showProjectColumn?: boolean;
   projects?: Project[];
+  visibleColumns: UseCaseColumnVisibility;
 }
 
 export const UseCaseList: React.FC<UseCaseListProps> = ({
@@ -16,8 +18,8 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
   onEdit,
   showProjectColumn,
   projects,
+  visibleColumns,
 }) => {
-  // Get requirements linked to a use case
   const getLinkedRequirements = (useCaseId: string): Requirement[] => {
     return requirements.filter((req) => req.useCaseIds?.includes(useCaseId));
   };
@@ -30,32 +32,16 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
       .join(', ');
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'rgba(239, 68, 68, 0.2)';
-      case 'medium':
-        return 'rgba(251, 146, 60, 0.2)';
-      case 'low':
-        return 'rgba(34, 197, 94, 0.2)';
-      default:
-        return 'transparent';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'verified':
-        return 'rgba(34, 197, 94, 0.2)';
-      case 'implemented':
-        return 'rgba(59, 130, 246, 0.2)';
-      case 'approved':
-        return 'rgba(168, 85, 247, 0.2)';
-      case 'draft':
-        return 'rgba(156, 163, 175, 0.2)';
-      default:
-        return 'transparent';
-    }
+  const getVisibleColumnCount = () => {
+    let count = 1; // ID/Title always visible
+    if (visibleColumns.description) count++;
+    if (visibleColumns.actor) count++;
+    if (visibleColumns.priority) count++;
+    if (visibleColumns.status) count++;
+    if (visibleColumns.preconditions) count++;
+    if (visibleColumns.mainFlow) count++;
+    if (showProjectColumn) count++;
+    return count;
   };
 
   if (useCases.length === 0) {
@@ -80,132 +66,208 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
     );
   }
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
-      {useCases.map((useCase) => {
-        const linkedReqs = getLinkedRequirements(useCase.id);
+  const thStyle = {
+    padding: '12px 16px',
+    textAlign: 'left' as const,
+    fontWeight: 600,
+    color: 'var(--color-text-secondary)',
+    fontSize: 'var(--font-size-sm)',
+  };
 
-        return (
-          <div
-            key={useCase.id}
-            style={{
-              backgroundColor: 'var(--color-bg-card)',
-              borderRadius: '8px',
-              border: '1px solid var(--color-border)',
-              overflow: 'hidden',
-            }}
-          >
-            {/* Header */}
-            <div
+  const tdStyle = {
+    padding: '12px 16px',
+    verticalAlign: 'top' as const,
+    fontSize: 'var(--font-size-sm)',
+  };
+
+  return (
+    <div
+      style={{
+        background: 'var(--color-bg-primary)',
+        borderRadius: '8px',
+        border: '1px solid var(--color-border)',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{ overflowX: 'auto' }}>
+        <table
+          style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--font-size-sm)' }}
+        >
+          <thead>
+            <tr
               style={{
-                padding: 'var(--spacing-md)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--spacing-sm)',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s',
+                background: 'var(--color-bg-secondary)',
+                borderBottom: '1px solid var(--color-border)',
               }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
-              }
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')}
-              onClick={() => onEdit(useCase)}
             >
-              <div style={{ flex: 1 }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--spacing-sm)',
-                    marginBottom: '4px',
-                  }}
+              <th style={{ ...thStyle, width: '250px' }}>ID / Title</th>
+              <th style={{ ...thStyle, width: '60px' }}>Rev</th>
+              {showProjectColumn && <th style={{ ...thStyle, width: '150px' }}>Project(s)</th>}
+              {visibleColumns.description && (
+                <th style={{ ...thStyle, minWidth: '200px' }}>Description</th>
+              )}
+              {visibleColumns.actor && <th style={{ ...thStyle, width: '120px' }}>Actor</th>}
+              {visibleColumns.priority && <th style={{ ...thStyle, width: '100px' }}>Priority</th>}
+              {visibleColumns.status && <th style={{ ...thStyle, width: '100px' }}>Status</th>}
+              {visibleColumns.preconditions && (
+                <th style={{ ...thStyle, minWidth: '150px' }}>Preconditions</th>
+              )}
+              {visibleColumns.mainFlow && (
+                <th style={{ ...thStyle, minWidth: '200px' }}>Main Flow</th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {useCases.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={getVisibleColumnCount()}
+                  style={{ padding: '32px', textAlign: 'center', color: 'var(--color-text-muted)' }}
                 >
-                  <span
+                  No use cases found.
+                </td>
+              </tr>
+            ) : (
+              useCases.map((uc) => {
+                const linkedReqs = getLinkedRequirements(uc.id);
+                return (
+                  <tr
+                    key={uc.id}
+                    onClick={() => onEdit(uc)}
                     style={{
-                      fontFamily: 'monospace',
-                      fontSize: 'var(--font-size-sm)',
-                      color: 'var(--color-accent-light)',
+                      borderBottom: '1px solid var(--color-border)',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s',
                     }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')
+                    }
                   >
-                    {useCase.id}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 'var(--font-size-xs)',
-                      padding: '1px 5px',
-                      borderRadius: '3px',
-                      backgroundColor: 'var(--color-bg-tertiary)',
-                      color: 'var(--color-text-muted)',
-                      border: '1px solid var(--color-border)',
-                    }}
-                  >
-                    {useCase.revision || '01'}
-                  </span>
-                  <h3 style={{ fontSize: 'var(--font-size-base)', fontWeight: 600, margin: 0 }}>
-                    {useCase.title}
-                  </h3>
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--spacing-sm)',
-                    fontSize: 'var(--font-size-xs)',
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  {showProjectColumn &&
-                    getProjectNames(useCase.id)
-                      .split(', ')
-                      .map(
-                        (name, i) =>
-                          name && (
-                            <span
-                              key={i}
-                              style={{
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                backgroundColor: 'var(--color-bg-tertiary)',
-                                border: '1px solid var(--color-border)',
-                                color: 'var(--color-text-secondary)',
-                              }}
-                            >
-                              {name}
-                            </span>
-                          )
+                    <td style={tdStyle}>
+                      <div
+                        style={{
+                          fontWeight: 500,
+                          color: 'var(--color-accent)',
+                          marginBottom: '4px',
+                        }}
+                      >
+                        {uc.id}
+                      </div>
+                      <div style={{ color: 'var(--color-text-primary)' }}>{uc.title}</div>
+                      {linkedReqs.length > 0 && (
+                        <div
+                          style={{
+                            fontSize: 'var(--font-size-xs)',
+                            color: 'var(--color-text-muted)',
+                            marginTop: '4px',
+                          }}
+                        >
+                          {linkedReqs.length} linked req{linkedReqs.length !== 1 ? 's' : ''}
+                        </div>
                       )}
-                  <span
-                    style={{
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      backgroundColor: getPriorityColor(useCase.priority),
-                      textTransform: 'capitalize',
-                    }}
-                  >
-                    {useCase.priority}
-                  </span>
-                  <span
-                    style={{
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      backgroundColor: getStatusColor(useCase.status),
-                      textTransform: 'capitalize',
-                    }}
-                  >
-                    {useCase.status}
-                  </span>
-                  <span style={{ color: 'var(--color-text-muted)' }}>Actor: {useCase.actor}</span>
-                  {linkedReqs.length > 0 && (
-                    <span style={{ color: 'var(--color-text-muted)' }}>
-                      • {linkedReqs.length} requirement{linkedReqs.length !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
+                    </td>
+                    <td style={tdStyle}>
+                      <span
+                        style={{
+                          fontSize: 'var(--font-size-xs)',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          backgroundColor: 'var(--color-bg-tertiary)',
+                          color: 'var(--color-text-secondary)',
+                          border: '1px solid var(--color-border)',
+                        }}
+                      >
+                        {uc.revision || '01'}
+                      </span>
+                    </td>
+                    {showProjectColumn && (
+                      <td style={tdStyle}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          {getProjectNames(uc.id)
+                            .split(', ')
+                            .map(
+                              (name, i) =>
+                                name && (
+                                  <span
+                                    key={i}
+                                    style={{
+                                      fontSize: 'var(--font-size-xs)',
+                                      padding: '2px 6px',
+                                      borderRadius: '4px',
+                                      background: 'var(--color-bg-tertiary)',
+                                      color: 'var(--color-text-secondary)',
+                                      border: '1px solid var(--color-border)',
+                                    }}
+                                  >
+                                    {name}
+                                  </span>
+                                )
+                            )}
+                        </div>
+                      </td>
+                    )}
+                    {visibleColumns.description && (
+                      <td style={{ ...tdStyle, color: 'var(--color-text-secondary)' }}>
+                        {uc.description || '-'}
+                      </td>
+                    )}
+                    {visibleColumns.actor && (
+                      <td style={{ ...tdStyle, color: 'var(--color-text-secondary)' }}>
+                        {uc.actor || '-'}
+                      </td>
+                    )}
+                    {visibleColumns.priority && (
+                      <td style={tdStyle}>
+                        <span
+                          style={{
+                            ...badgeStyle,
+                            backgroundColor: getPriorityStyle(uc.priority).bg,
+                            color: getPriorityStyle(uc.priority).text,
+                          }}
+                        >
+                          {uc.priority}
+                        </span>
+                      </td>
+                    )}
+                    {visibleColumns.status && (
+                      <td style={tdStyle}>
+                        <span
+                          style={{
+                            ...badgeStyle,
+                            backgroundColor: getStatusStyle(uc.status).bg,
+                            color: getStatusStyle(uc.status).text,
+                          }}
+                        >
+                          {uc.status}
+                        </span>
+                      </td>
+                    )}
+                    {visibleColumns.preconditions && (
+                      <td style={{ ...tdStyle, color: 'var(--color-text-secondary)' }}>
+                        {uc.preconditions || '-'}
+                      </td>
+                    )}
+                    {visibleColumns.mainFlow && (
+                      <td
+                        style={{
+                          ...tdStyle,
+                          color: 'var(--color-text-secondary)',
+                          whiteSpace: 'pre-wrap',
+                        }}
+                      >
+                        {uc.mainFlow || '-'}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

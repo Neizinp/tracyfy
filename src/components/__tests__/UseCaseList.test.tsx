@@ -1,7 +1,19 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { UseCaseList } from '../UseCaseList';
-import type { UseCase, Requirement } from '../../types';
+import type { UseCase, Requirement, UseCaseColumnVisibility } from '../../types';
+
+const defaultColumns: UseCaseColumnVisibility = {
+  idTitle: true,
+  description: true,
+  actor: true,
+  priority: true,
+  status: true,
+  preconditions: false,
+  mainFlow: false,
+  alternativeFlows: false,
+  postconditions: false,
+};
 
 describe('UseCaseList', () => {
   const mockUseCases: UseCase[] = [
@@ -30,26 +42,42 @@ describe('UseCaseList', () => {
 
   it('renders use cases', () => {
     render(
-      <UseCaseList useCases={mockUseCases} requirements={mockRequirements} onEdit={mockOnEdit} />
+      <UseCaseList
+        useCases={mockUseCases}
+        requirements={mockRequirements}
+        onEdit={mockOnEdit}
+        visibleColumns={defaultColumns}
+      />
     );
 
     expect(screen.getByText('UC-001')).toBeInTheDocument();
     expect(screen.getByText('Login')).toBeInTheDocument();
-    expect(screen.getByText(/Actor: User/)).toBeInTheDocument();
+    expect(screen.getByText('User')).toBeInTheDocument();
   });
 
   it('calls onEdit when use case is clicked', () => {
     render(
-      <UseCaseList useCases={mockUseCases} requirements={mockRequirements} onEdit={mockOnEdit} />
+      <UseCaseList
+        useCases={mockUseCases}
+        requirements={mockRequirements}
+        onEdit={mockOnEdit}
+        visibleColumns={defaultColumns}
+      />
     );
 
-    // Click the use case header to edit
     fireEvent.click(screen.getByText('Login'));
     expect(mockOnEdit).toHaveBeenCalledWith(mockUseCases[0]);
   });
 
   it('renders empty state', () => {
-    render(<UseCaseList useCases={[]} requirements={mockRequirements} onEdit={mockOnEdit} />);
+    render(
+      <UseCaseList
+        useCases={[]}
+        requirements={mockRequirements}
+        onEdit={mockOnEdit}
+        visibleColumns={defaultColumns}
+      />
+    );
 
     expect(screen.getByText('No use cases found. Create one to get started.')).toBeInTheDocument();
   });

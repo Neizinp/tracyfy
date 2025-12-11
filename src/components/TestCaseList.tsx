@@ -1,13 +1,15 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
-import type { TestCase, Project } from '../types';
+import type { TestCase, Project, TestCaseColumnVisibility } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
+import { getPriorityStyle, getStatusStyle, badgeStyle } from '../utils/artifactStyles';
 
 interface TestCaseListProps {
   testCases: TestCase[];
   onEdit: (testCase: TestCase) => void;
   showProjectColumn?: boolean;
   projects?: Project[];
+  visibleColumns: TestCaseColumnVisibility;
 }
 
 export const TestCaseList: React.FC<TestCaseListProps> = ({
@@ -15,28 +17,25 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
   onEdit,
   showProjectColumn,
   projects,
+  visibleColumns,
 }) => {
-  const getStatusColor = (status: TestCase['status']) => {
-    switch (status) {
-      case 'passed':
-        return { bg: 'var(--color-success-bg)', text: 'var(--color-success-light)' };
-      case 'failed':
-        return { bg: 'var(--color-error-bg)', text: 'var(--color-error-light)' };
-      case 'blocked':
-        return { bg: 'var(--color-warning-bg)', text: 'var(--color-warning-light)' };
-      case 'approved':
-        return { bg: 'var(--color-info-bg)', text: 'var(--color-info-light)' };
-      default:
-        return { bg: 'rgba(148, 163, 184, 0.2)', text: 'var(--color-text-secondary)' };
-    }
-  };
-
   const getProjectNames = (tcId: string) => {
     if (!projects) return '';
     return projects
       .filter((p) => p.testCaseIds.includes(tcId))
       .map((p) => p.name)
       .join(', ');
+  };
+
+  const getVisibleColumnCount = () => {
+    let count = 2; // ID/Title + Rev always visible
+    if (showProjectColumn) count++;
+    if (visibleColumns.description) count++;
+    if (visibleColumns.requirements) count++;
+    if (visibleColumns.priority) count++;
+    if (visibleColumns.status) count++;
+    if (visibleColumns.lastRun) count++;
+    return count;
   };
 
   if (testCases.length === 0) {
@@ -61,249 +60,175 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
     );
   }
 
+  const thStyle = {
+    padding: '12px 16px',
+    textAlign: 'left' as const,
+    fontSize: 'var(--font-size-sm)',
+    fontWeight: 600,
+    color: 'var(--color-text-secondary)',
+  };
+
+  const tdStyle = {
+    padding: '12px 16px',
+    verticalAlign: 'top' as const,
+    fontSize: 'var(--font-size-sm)',
+  };
+
   return (
     <div
       style={{
-        backgroundColor: 'var(--color-bg-card)',
+        background: 'var(--color-bg-primary)',
         borderRadius: '8px',
         border: '1px solid var(--color-border)',
         overflow: 'hidden',
       }}
     >
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1200px' }}>
+        <table
+          style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--font-size-sm)' }}
+        >
           <thead>
             <tr
               style={{
-                backgroundColor: 'var(--color-bg-secondary)',
+                background: 'var(--color-bg-secondary)',
                 borderBottom: '1px solid var(--color-border)',
               }}
             >
-              <th
-                style={{
-                  padding: '12px',
-                  textAlign: 'left',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 600,
-                  color: 'var(--color-text-secondary)',
-                  width: '180px',
-                }}
-              >
-                ID / Title
-              </th>
-              {showProjectColumn && (
-                <th
-                  style={{
-                    padding: '12px',
-                    textAlign: 'left',
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: 600,
-                    color: 'var(--color-text-secondary)',
-                    width: '150px',
-                  }}
-                >
-                  Project(s)
-                </th>
+              <th style={{ ...thStyle, width: '250px' }}>ID / Title</th>
+              <th style={{ ...thStyle, width: '60px' }}>Rev</th>
+              {showProjectColumn && <th style={{ ...thStyle, width: '150px' }}>Project(s)</th>}
+              {visibleColumns.description && (
+                <th style={{ ...thStyle, minWidth: '200px' }}>Description</th>
               )}
-              <th
-                style={{
-                  padding: '12px',
-                  textAlign: 'left',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 600,
-                  color: 'var(--color-text-secondary)',
-                  width: '250px',
-                }}
-              >
-                Description
-              </th>
-              <th
-                style={{
-                  padding: '12px',
-                  textAlign: 'left',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 600,
-                  color: 'var(--color-text-secondary)',
-                  width: '150px',
-                }}
-              >
-                Requirements
-              </th>
-              <th
-                style={{
-                  padding: '12px',
-                  textAlign: 'left',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 600,
-                  color: 'var(--color-text-secondary)',
-                  width: '100px',
-                }}
-              >
-                Priority
-              </th>
-              <th
-                style={{
-                  padding: '12px',
-                  textAlign: 'left',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 600,
-                  color: 'var(--color-text-secondary)',
-                  width: '100px',
-                }}
-              >
-                Status
-              </th>
-              <th
-                style={{
-                  padding: '12px',
-                  textAlign: 'left',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 600,
-                  color: 'var(--color-text-secondary)',
-                  width: '140px',
-                }}
-              >
-                Last Run
-              </th>
+              {visibleColumns.requirements && (
+                <th style={{ ...thStyle, width: '150px' }}>Requirements</th>
+              )}
+              {visibleColumns.priority && <th style={{ ...thStyle, width: '100px' }}>Priority</th>}
+              {visibleColumns.status && <th style={{ ...thStyle, width: '100px' }}>Status</th>}
+              {visibleColumns.lastRun && <th style={{ ...thStyle, width: '140px' }}>Last Run</th>}
             </tr>
           </thead>
           <tbody>
-            {testCases.map((tc) => (
-              <tr
-                key={tc.id}
-                style={{
-                  borderBottom: '1px solid var(--color-border)',
-                  transition: 'background-color 0.1s',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')
-                }
-                onClick={() => onEdit(tc)}
-              >
-                <td style={{ padding: '12px', verticalAlign: 'top' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span
-                        style={{
-                          fontFamily: 'monospace',
-                          color: 'var(--color-accent-light)',
-                          fontWeight: 500,
-                        }}
-                      >
-                        {tc.id}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 'var(--font-size-xs)',
-                          padding: '0 4px',
-                          borderRadius: '3px',
-                          backgroundColor: 'var(--color-bg-tertiary)',
-                          color: 'var(--color-text-muted)',
-                          border: '1px solid var(--color-border)',
-                        }}
-                      >
-                        {tc.revision || '01'}
-                      </span>
-                    </div>
-                    <span style={{ fontWeight: 500 }}>{tc.title}</span>
-                  </div>
-                </td>
-                {showProjectColumn && (
-                  <td style={{ padding: '12px', verticalAlign: 'top' }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                      {getProjectNames(tc.id)
-                        .split(', ')
-                        .map(
-                          (name, i) =>
-                            name && (
-                              <span
-                                key={i}
-                                style={{
-                                  fontSize: 'var(--font-size-xs)',
-                                  padding: '2px 6px',
-                                  borderRadius: '4px',
-                                  backgroundColor: 'var(--color-bg-tertiary)',
-                                  border: '1px solid var(--color-border)',
-                                  color: 'var(--color-text-secondary)',
-                                }}
-                              >
-                                {name}
-                              </span>
-                            )
-                        )}
-                    </div>
-                  </td>
-                )}
+            {testCases.length === 0 ? (
+              <tr>
                 <td
-                  style={{
-                    padding: '12px',
-                    verticalAlign: 'top',
-                    fontSize: 'var(--font-size-sm)',
-                    color: 'var(--color-text-secondary)',
-                  }}
+                  colSpan={getVisibleColumnCount()}
+                  style={{ padding: '32px', textAlign: 'center', color: 'var(--color-text-muted)' }}
                 >
-                  {tc.description}
-                </td>
-                <td
-                  style={{
-                    padding: '12px',
-                    verticalAlign: 'top',
-                    fontSize: 'var(--font-size-sm)',
-                    color: 'var(--color-text-secondary)',
-                  }}
-                >
-                  {tc.requirementIds.length > 0 ? tc.requirementIds.join(', ') : '-'}
-                </td>
-                <td style={{ padding: '12px', verticalAlign: 'top' }}>
-                  <span
-                    style={{
-                      fontSize: 'var(--font-size-xs)',
-                      padding: '2px 8px',
-                      borderRadius: '12px',
-                      backgroundColor:
-                        tc.priority === 'high'
-                          ? 'var(--color-error-bg)'
-                          : 'rgba(148, 163, 184, 0.2)',
-                      color:
-                        tc.priority === 'high'
-                          ? 'var(--color-error-light)'
-                          : 'var(--color-text-secondary)',
-                      textTransform: 'capitalize',
-                    }}
-                  >
-                    {tc.priority}
-                  </span>
-                </td>
-                <td style={{ padding: '12px', verticalAlign: 'top' }}>
-                  <span
-                    style={{
-                      fontSize: 'var(--font-size-xs)',
-                      padding: '2px 8px',
-                      borderRadius: '12px',
-                      backgroundColor: getStatusColor(tc.status).bg,
-                      color: getStatusColor(tc.status).text,
-                      textTransform: 'capitalize',
-                    }}
-                  >
-                    {tc.status}
-                  </span>
-                </td>
-                <td
-                  style={{
-                    padding: '12px',
-                    verticalAlign: 'top',
-                    fontSize: 'var(--font-size-sm)',
-                    color: 'var(--color-text-muted)',
-                  }}
-                >
-                  {tc.lastRun ? formatDateTime(tc.lastRun) : '-'}
+                  No test cases found.
                 </td>
               </tr>
-            ))}
+            ) : (
+              testCases.map((tc) => (
+                <tr
+                  key={tc.id}
+                  onClick={() => onEdit(tc)}
+                  style={{
+                    borderBottom: '1px solid var(--color-border)',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s',
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')
+                  }
+                >
+                  <td style={tdStyle}>
+                    <div
+                      style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '4px' }}
+                    >
+                      {tc.id}
+                    </div>
+                    <div style={{ color: 'var(--color-text-primary)' }}>{tc.title}</div>
+                  </td>
+                  <td style={tdStyle}>
+                    <span
+                      style={{
+                        fontSize: 'var(--font-size-xs)',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        backgroundColor: 'var(--color-bg-tertiary)',
+                        color: 'var(--color-text-secondary)',
+                        border: '1px solid var(--color-border)',
+                      }}
+                    >
+                      {tc.revision || '01'}
+                    </span>
+                  </td>
+                  {showProjectColumn && (
+                    <td style={tdStyle}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                        {getProjectNames(tc.id)
+                          .split(', ')
+                          .map(
+                            (name, i) =>
+                              name && (
+                                <span
+                                  key={i}
+                                  style={{
+                                    fontSize: 'var(--font-size-xs)',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    background: 'var(--color-bg-tertiary)',
+                                    color: 'var(--color-text-secondary)',
+                                    border: '1px solid var(--color-border)',
+                                  }}
+                                >
+                                  {name}
+                                </span>
+                              )
+                          )}
+                      </div>
+                    </td>
+                  )}
+                  {visibleColumns.description && (
+                    <td style={{ ...tdStyle, color: 'var(--color-text-secondary)' }}>
+                      {tc.description || '-'}
+                    </td>
+                  )}
+                  {visibleColumns.requirements && (
+                    <td style={{ ...tdStyle, color: 'var(--color-text-secondary)' }}>
+                      {tc.requirementIds.length > 0 ? tc.requirementIds.join(', ') : '-'}
+                    </td>
+                  )}
+                  {visibleColumns.priority && (
+                    <td style={tdStyle}>
+                      <span
+                        style={{
+                          ...badgeStyle,
+                          backgroundColor: getPriorityStyle(tc.priority).bg,
+                          color: getPriorityStyle(tc.priority).text,
+                        }}
+                      >
+                        {tc.priority}
+                      </span>
+                    </td>
+                  )}
+                  {visibleColumns.status && (
+                    <td style={tdStyle}>
+                      <span
+                        style={{
+                          ...badgeStyle,
+                          backgroundColor: getStatusStyle(tc.status).bg,
+                          color: getStatusStyle(tc.status).text,
+                        }}
+                      >
+                        {tc.status}
+                      </span>
+                    </td>
+                  )}
+                  {visibleColumns.lastRun && (
+                    <td
+                      style={{ ...tdStyle, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}
+                    >
+                      {tc.lastRun ? formatDateTime(tc.lastRun) : '-'}
+                    </td>
+                  )}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

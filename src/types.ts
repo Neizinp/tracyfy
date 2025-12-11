@@ -132,6 +132,36 @@ export interface ColumnVisibility {
   approved: boolean;
 }
 
+export interface UseCaseColumnVisibility {
+  idTitle: boolean; // Always true
+  description: boolean;
+  actor: boolean;
+  priority: boolean;
+  status: boolean;
+  preconditions: boolean;
+  mainFlow: boolean;
+  alternativeFlows: boolean;
+  postconditions: boolean;
+}
+
+export interface TestCaseColumnVisibility {
+  idTitle: boolean; // Always true
+  description: boolean;
+  requirements: boolean;
+  priority: boolean;
+  status: boolean;
+  author: boolean;
+  lastRun: boolean;
+  created: boolean;
+}
+
+export interface InformationColumnVisibility {
+  idTitle: boolean; // Always true
+  type: boolean;
+  content: boolean;
+  created: boolean;
+}
+
 export type ViewType =
   | 'tree'
   | 'detailed'
