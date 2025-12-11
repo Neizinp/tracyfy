@@ -179,14 +179,14 @@ describe('TraceabilityMatrix', () => {
     ).toBeInTheDocument();
   });
 
-  it('hides unlinked artifacts when Show Unlinked is toggled off', () => {
+  it('hides unlinked artifacts when Linked filter is selected', () => {
     render(<TraceabilityMatrix {...defaultProps} />);
 
     // INFO-001 has no links, should be visible initially
     expect(screen.getAllByText('INFO-001').length).toBeGreaterThanOrEqual(1);
 
-    // Toggle off Show Unlinked
-    fireEvent.click(screen.getByText('Show Unlinked'));
+    // Click 'Linked' to show only linked artifacts
+    fireEvent.click(screen.getByText('Linked'));
 
     // INFO-001 should be hidden now (no links to/from it)
     expect(screen.queryByText('INFO-001')).not.toBeInTheDocument();

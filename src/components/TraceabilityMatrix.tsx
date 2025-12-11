@@ -41,7 +41,7 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({
   const [showUseCases, setShowUseCases] = useState(true);
   const [showTestCases, setShowTestCases] = useState(true);
   const [showInformation, setShowInformation] = useState(true);
-  const [showUnlinked, setShowUnlinked] = useState(true);
+  const [linkFilter, setLinkFilter] = useState<'all' | 'linked' | 'unlinked'>('all');
 
   // Build unified artifact list
   const buildUnifiedArtifacts = (): UnifiedArtifact[] => {
@@ -109,10 +109,12 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({
     return allLinksForFiltering.some((l) => l.sourceId === artifactId || l.targetId === artifactId);
   };
 
-  // Filter out unlinked artifacts if toggle is off
-  const unifiedArtifacts = showUnlinked
-    ? allArtifactsUnfiltered
-    : allArtifactsUnfiltered.filter((a) => hasAnyLinks(a.id));
+  // Filter artifacts based on link filter
+  const unifiedArtifacts = allArtifactsUnfiltered.filter((a) => {
+    if (linkFilter === 'all') return true;
+    if (linkFilter === 'linked') return hasAnyLinks(a.id);
+    return !hasAnyLinks(a.id); // 'unlinked'
+  });
 
   // Build a flat list of all links
   const allLinks: { sourceId: string; targetId: string; type: ArtifactLink['type'] }[] = [];
@@ -285,10 +287,22 @@ export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({
           }}
         />
         <FilterButton
-          label="Show Unlinked"
-          active={showUnlinked}
-          onClick={() => setShowUnlinked(!showUnlinked)}
+          label="All"
+          active={linkFilter === 'all'}
+          onClick={() => setLinkFilter('all')}
           color="rgba(100, 100, 100, 0.15)"
+        />
+        <FilterButton
+          label="Linked"
+          active={linkFilter === 'linked'}
+          onClick={() => setLinkFilter('linked')}
+          color="rgba(34, 197, 94, 0.15)"
+        />
+        <FilterButton
+          label="Unlinked"
+          active={linkFilter === 'unlinked'}
+          onClick={() => setLinkFilter('unlinked')}
+          color="rgba(239, 68, 68, 0.15)"
         />
       </div>
 
