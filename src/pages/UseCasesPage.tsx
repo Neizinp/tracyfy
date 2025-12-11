@@ -1,11 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { UseCaseList } from '../components';
 import { useUseCases, useRequirements, useUI } from '../app/providers';
+import { type SortConfig, toggleSort } from '../components/SortableHeader';
 
 export const UseCasesPage: React.FC = () => {
   const { useCases, handleEditUseCase } = useUseCases();
   const { requirements } = useRequirements();
   const { searchQuery, useCaseColumnVisibility } = useUI();
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'id', direction: 'asc' });
+
+  const handleSortChange = (key: string) => {
+    setSortConfig(toggleSort(sortConfig, key));
+  };
 
   const filteredUseCases = useCases.filter((uc) => {
     if (uc.isDeleted) return false;
@@ -25,6 +31,8 @@ export const UseCasesPage: React.FC = () => {
       requirements={requirements}
       onEdit={handleEditUseCase}
       visibleColumns={useCaseColumnVisibility}
+      sortConfig={sortConfig}
+      onSortChange={handleSortChange}
     />
   );
 };

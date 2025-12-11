@@ -2,6 +2,7 @@ import React from 'react';
 import { FileText } from 'lucide-react';
 import type { UseCase, Requirement, Project, UseCaseColumnVisibility } from '../types';
 import { getPriorityStyle, getStatusStyle, badgeStyle } from '../utils/artifactStyles';
+import { SortableHeader, sortItems, type SortConfig } from './SortableHeader';
 
 interface UseCaseListProps {
   useCases: UseCase[];
@@ -10,6 +11,8 @@ interface UseCaseListProps {
   showProjectColumn?: boolean;
   projects?: Project[];
   visibleColumns: UseCaseColumnVisibility;
+  sortConfig?: SortConfig;
+  onSortChange?: (key: string) => void;
 }
 
 export const UseCaseList: React.FC<UseCaseListProps> = ({
@@ -19,6 +22,8 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
   showProjectColumn,
   projects,
   visibleColumns,
+  sortConfig,
+  onSortChange,
 }) => {
   const getLinkedRequirements = (useCaseId: string): Requirement[] => {
     return requirements.filter((req) => req.useCaseIds?.includes(useCaseId));
@@ -100,15 +105,53 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
                 borderBottom: '1px solid var(--color-border)',
               }}
             >
-              <th style={{ ...thStyle, width: '250px' }}>ID / Title</th>
-              {visibleColumns.revision && <th style={{ ...thStyle, width: '60px' }}>Rev</th>}
+              <SortableHeader
+                label="ID / Title"
+                sortKey="id"
+                currentSort={sortConfig}
+                onSort={onSortChange || (() => {})}
+                style={{ width: '250px' }}
+              />
+              {visibleColumns.revision && (
+                <SortableHeader
+                  label="Rev"
+                  sortKey="revision"
+                  currentSort={sortConfig}
+                  onSort={onSortChange || (() => {})}
+                  style={{ width: '60px' }}
+                />
+              )}
               {showProjectColumn && <th style={{ ...thStyle, width: '150px' }}>Project(s)</th>}
               {visibleColumns.description && (
                 <th style={{ ...thStyle, minWidth: '200px' }}>Description</th>
               )}
-              {visibleColumns.actor && <th style={{ ...thStyle, width: '120px' }}>Actor</th>}
-              {visibleColumns.priority && <th style={{ ...thStyle, width: '100px' }}>Priority</th>}
-              {visibleColumns.status && <th style={{ ...thStyle, width: '100px' }}>Status</th>}
+              {visibleColumns.actor && (
+                <SortableHeader
+                  label="Actor"
+                  sortKey="actor"
+                  currentSort={sortConfig}
+                  onSort={onSortChange || (() => {})}
+                  style={{ width: '120px' }}
+                />
+              )}
+              {visibleColumns.priority && (
+                <SortableHeader
+                  label="Priority"
+                  sortKey="priority"
+                  currentSort={sortConfig}
+                  onSort={onSortChange || (() => {})}
+                  style={{ width: '100px' }}
+                />
+              )}
+              {visibleColumns.status && (
+                <SortableHeader
+                  label="Status"
+                  sortKey="status"
+                  currentSort={sortConfig}
+                  onSort={onSortChange || (() => {})}
+                  style={{ width: '100px' }}
+                />
+              )}
               {visibleColumns.preconditions && (
                 <th style={{ ...thStyle, minWidth: '150px' }}>Preconditions</th>
               )}
@@ -128,7 +171,7 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
                 </td>
               </tr>
             ) : (
-              useCases.map((uc) => {
+              sortItems(useCases, sortConfig).map((uc) => {
                 const linkedReqs = getLinkedRequirements(uc.id);
                 return (
                   <tr

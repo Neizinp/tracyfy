@@ -3,6 +3,7 @@ import { FileText } from 'lucide-react';
 import type { TestCase, Project, TestCaseColumnVisibility } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { getPriorityStyle, getStatusStyle, badgeStyle } from '../utils/artifactStyles';
+import { SortableHeader, sortItems, type SortConfig } from './SortableHeader';
 
 interface TestCaseListProps {
   testCases: TestCase[];
@@ -10,6 +11,8 @@ interface TestCaseListProps {
   showProjectColumn?: boolean;
   projects?: Project[];
   visibleColumns: TestCaseColumnVisibility;
+  sortConfig?: SortConfig;
+  onSortChange?: (key: string) => void;
 }
 
 export const TestCaseList: React.FC<TestCaseListProps> = ({
@@ -18,6 +21,8 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
   showProjectColumn,
   projects,
   visibleColumns,
+  sortConfig,
+  onSortChange,
 }) => {
   const getProjectNames = (tcId: string) => {
     if (!projects) return '';
@@ -94,8 +99,22 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                 borderBottom: '1px solid var(--color-border)',
               }}
             >
-              <th style={{ ...thStyle, width: '250px' }}>ID / Title</th>
-              {visibleColumns.revision && <th style={{ ...thStyle, width: '60px' }}>Rev</th>}
+              <SortableHeader
+                label="ID / Title"
+                sortKey="id"
+                currentSort={sortConfig}
+                onSort={onSortChange || (() => {})}
+                style={{ width: '250px' }}
+              />
+              {visibleColumns.revision && (
+                <SortableHeader
+                  label="Rev"
+                  sortKey="revision"
+                  currentSort={sortConfig}
+                  onSort={onSortChange || (() => {})}
+                  style={{ width: '60px' }}
+                />
+              )}
               {showProjectColumn && <th style={{ ...thStyle, width: '150px' }}>Project(s)</th>}
               {visibleColumns.description && (
                 <th style={{ ...thStyle, minWidth: '200px' }}>Description</th>
@@ -103,8 +122,24 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
               {visibleColumns.requirements && (
                 <th style={{ ...thStyle, width: '150px' }}>Requirements</th>
               )}
-              {visibleColumns.priority && <th style={{ ...thStyle, width: '100px' }}>Priority</th>}
-              {visibleColumns.status && <th style={{ ...thStyle, width: '100px' }}>Status</th>}
+              {visibleColumns.priority && (
+                <SortableHeader
+                  label="Priority"
+                  sortKey="priority"
+                  currentSort={sortConfig}
+                  onSort={onSortChange || (() => {})}
+                  style={{ width: '100px' }}
+                />
+              )}
+              {visibleColumns.status && (
+                <SortableHeader
+                  label="Status"
+                  sortKey="status"
+                  currentSort={sortConfig}
+                  onSort={onSortChange || (() => {})}
+                  style={{ width: '100px' }}
+                />
+              )}
               {visibleColumns.lastRun && <th style={{ ...thStyle, width: '140px' }}>Last Run</th>}
             </tr>
           </thead>
@@ -119,7 +154,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                 </td>
               </tr>
             ) : (
-              testCases.map((tc) => (
+              sortItems(testCases, sortConfig).map((tc) => (
                 <tr
                   key={tc.id}
                   onClick={() => onEdit(tc)}

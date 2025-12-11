@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import type { Requirement, ColumnVisibility, Project } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
+import { SortableHeader, sortItems, type SortConfig } from './SortableHeader';
 
 interface DetailedRequirementViewProps {
   requirements: Requirement[];
@@ -12,6 +13,8 @@ interface DetailedRequirementViewProps {
   onColumnVisibilityChange?: (columns: ColumnVisibility) => void;
   showProjectColumn?: boolean;
   projects?: Project[];
+  sortConfig?: SortConfig;
+  onSortChange?: (key: string) => void;
 }
 
 // Compact Markdown renderer for table cells
@@ -197,6 +200,8 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
   visibleColumns,
   showProjectColumn,
   projects,
+  sortConfig,
+  onSortChange,
 }) => {
   const getVisibleColumnCount = () => {
     let count = 1; // ID/Title always visible
@@ -242,28 +247,20 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                 borderBottom: '1px solid var(--color-border)',
               }}
             >
-              <th
-                style={{
-                  padding: '12px 16px',
-                  textAlign: 'left',
-                  fontWeight: 600,
-                  color: 'var(--color-text-secondary)',
-                  width: '250px',
-                }}
-              >
-                ID / Title
-              </th>
-              <th
-                style={{
-                  padding: '12px 16px',
-                  textAlign: 'left',
-                  fontWeight: 600,
-                  color: 'var(--color-text-secondary)',
-                  width: '60px',
-                }}
-              >
-                Rev
-              </th>
+              <SortableHeader
+                label="ID / Title"
+                sortKey="id"
+                currentSort={sortConfig}
+                onSort={onSortChange || (() => {})}
+                style={{ width: '250px' }}
+              />
+              <SortableHeader
+                label="Rev"
+                sortKey="revision"
+                currentSort={sortConfig}
+                onSort={onSortChange || (() => {})}
+                style={{ width: '60px' }}
+              />
               {showProjectColumn && (
                 <th
                   style={{
@@ -343,30 +340,22 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                 </th>
               )}
               {visibleColumns.priority && (
-                <th
-                  style={{
-                    padding: '12px 16px',
-                    textAlign: 'left',
-                    fontWeight: 600,
-                    color: 'var(--color-text-secondary)',
-                    width: '100px',
-                  }}
-                >
-                  Priority
-                </th>
+                <SortableHeader
+                  label="Priority"
+                  sortKey="priority"
+                  currentSort={sortConfig}
+                  onSort={onSortChange || (() => {})}
+                  style={{ width: '100px' }}
+                />
               )}
               {visibleColumns.status && (
-                <th
-                  style={{
-                    padding: '12px 16px',
-                    textAlign: 'left',
-                    fontWeight: 600,
-                    color: 'var(--color-text-secondary)',
-                    width: '100px',
-                  }}
-                >
-                  Status
-                </th>
+                <SortableHeader
+                  label="Status"
+                  sortKey="status"
+                  currentSort={sortConfig}
+                  onSort={onSortChange || (() => {})}
+                  style={{ width: '100px' }}
+                />
               )}
               {visibleColumns.comments && (
                 <th
@@ -420,7 +409,7 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
                 </td>
               </tr>
             ) : (
-              requirements.map((req) => (
+              sortItems(requirements, sortConfig).map((req) => (
                 <tr
                   key={req.id}
                   onClick={() => onEdit(req)}

@@ -2,6 +2,7 @@ import React from 'react';
 import { FileText } from 'lucide-react';
 import type { Information, Project, InformationColumnVisibility } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
+import { SortableHeader, sortItems, type SortConfig } from './SortableHeader';
 
 interface InformationListProps {
   information: Information[];
@@ -9,6 +10,8 @@ interface InformationListProps {
   showProjectColumn?: boolean;
   projects?: Project[];
   visibleColumns: InformationColumnVisibility;
+  sortConfig?: SortConfig;
+  onSortChange?: (key: string) => void;
 }
 
 export const InformationList: React.FC<InformationListProps> = ({
@@ -17,6 +20,8 @@ export const InformationList: React.FC<InformationListProps> = ({
   showProjectColumn,
   projects,
   visibleColumns,
+  sortConfig,
+  onSortChange,
 }) => {
   const getProjectNames = (infoId: string) => {
     if (!projects) return '';
@@ -104,10 +109,32 @@ export const InformationList: React.FC<InformationListProps> = ({
                 borderBottom: '1px solid var(--color-border)',
               }}
             >
-              <th style={{ ...thStyle, width: '250px' }}>ID / Title</th>
-              {visibleColumns.revision && <th style={{ ...thStyle, width: '60px' }}>Rev</th>}
+              <SortableHeader
+                label="ID / Title"
+                sortKey="id"
+                currentSort={sortConfig}
+                onSort={onSortChange || (() => {})}
+                style={{ width: '250px' }}
+              />
+              {visibleColumns.revision && (
+                <SortableHeader
+                  label="Rev"
+                  sortKey="revision"
+                  currentSort={sortConfig}
+                  onSort={onSortChange || (() => {})}
+                  style={{ width: '60px' }}
+                />
+              )}
               {showProjectColumn && <th style={{ ...thStyle, width: '150px' }}>Project(s)</th>}
-              {visibleColumns.type && <th style={{ ...thStyle, width: '100px' }}>Type</th>}
+              {visibleColumns.type && (
+                <SortableHeader
+                  label="Type"
+                  sortKey="type"
+                  currentSort={sortConfig}
+                  onSort={onSortChange || (() => {})}
+                  style={{ width: '100px' }}
+                />
+              )}
               {visibleColumns.content && <th style={{ ...thStyle, minWidth: '300px' }}>Content</th>}
               {visibleColumns.created && <th style={{ ...thStyle, width: '140px' }}>Created</th>}
             </tr>
@@ -123,7 +150,7 @@ export const InformationList: React.FC<InformationListProps> = ({
                 </td>
               </tr>
             ) : (
-              information.map((info) => (
+              sortItems(information, sortConfig).map((info) => (
                 <tr
                   key={info.id}
                   onClick={() => onEdit(info)}
