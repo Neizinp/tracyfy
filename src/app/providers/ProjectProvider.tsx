@@ -69,9 +69,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     async (projectId: string) => {
       await fsDeleteProject(projectId);
 
-      // If we deleted the current project, switch to another one
+      // If we deleted the current project, switch to another non-deleted one
       if (currentProjectId === projectId) {
-        const remainingProjects = projects.filter((p) => p.id !== projectId);
+        const remainingProjects = projects.filter((p) => p.id !== projectId && !p.isDeleted);
         if (remainingProjects.length > 0) {
           await setCurrentProject(remainingProjects[0].id);
         } else {

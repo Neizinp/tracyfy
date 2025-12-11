@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
-import type { Requirement, UseCase, Information } from '../types';
+import type { Requirement, UseCase, Information, Project } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 
 interface TrashModalProps {
@@ -9,18 +9,21 @@ interface TrashModalProps {
   deletedRequirements: Requirement[];
   deletedUseCases: UseCase[];
   deletedInformation: Information[];
+  deletedProjects: Project[];
   onRestoreRequirement: (id: string) => void;
   onRestoreUseCase: (id: string) => void;
   onRestoreInformation: (id: string) => void;
+  onRestoreProject: (id: string) => void;
   onPermanentDeleteRequirement: (id: string) => void;
   onPermanentDeleteUseCase: (id: string) => void;
   onPermanentDeleteInformation: (id: string) => void;
+  onPermanentDeleteProject: (id: string) => void;
 }
 
 interface DeletedItem {
   id: string;
   title: string;
-  type: 'requirement' | 'usecase' | 'information';
+  type: 'requirement' | 'usecase' | 'information' | 'project';
   deletedAt?: number;
   onRestore: () => void;
   onDelete: () => void;
@@ -34,12 +37,15 @@ export const TrashModal: React.FC<TrashModalProps> = ({
   deletedRequirements,
   deletedUseCases,
   deletedInformation,
+  deletedProjects,
   onRestoreRequirement,
   onRestoreUseCase,
   onRestoreInformation,
+  onRestoreProject,
   onPermanentDeleteRequirement,
   onPermanentDeleteUseCase,
   onPermanentDeleteInformation,
+  onPermanentDeleteProject,
 }) => {
   useKeyboardShortcuts({
     onClose: onClose,
@@ -77,6 +83,14 @@ export const TrashModal: React.FC<TrashModalProps> = ({
       deletedAt: info.deletedAt,
       onRestore: () => onRestoreInformation(info.id),
       onDelete: () => onPermanentDeleteInformation(info.id),
+    })),
+    ...deletedProjects.map((proj) => ({
+      id: proj.id,
+      title: proj.name,
+      type: 'project' as const,
+      deletedAt: proj.lastModified,
+      onRestore: () => onRestoreProject(proj.id),
+      onDelete: () => onPermanentDeleteProject(proj.id),
     })),
   ].sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0)); // Sort by most recently deleted
 

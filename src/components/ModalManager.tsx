@@ -228,10 +228,21 @@ export const ModalManager: React.FC = () => {
         onClose={() => ui.setIsTrashModalOpen(false)}
         deletedRequirements={requirements.filter((r) => r.isDeleted)}
         deletedUseCases={useCases.filter((u) => u.isDeleted)}
+        deletedProjects={projects.filter((p) => p.isDeleted)}
         onRestoreRequirement={handleRestoreRequirement}
         onRestoreUseCase={handleRestoreUseCase}
+        onRestoreProject={async (id) => {
+          const { diskProjectService } = await import('../services/diskProjectService');
+          await diskProjectService.restoreProject(id);
+          await reloadData();
+        }}
         onPermanentDeleteRequirement={handlePermanentDeleteRequirement}
         onPermanentDeleteUseCase={handlePermanentDeleteUseCase}
+        onPermanentDeleteProject={async (id) => {
+          const { diskProjectService } = await import('../services/diskProjectService');
+          await diskProjectService.permanentDeleteProject(id);
+          await reloadData();
+        }}
         deletedInformation={information.filter((i) => i.isDeleted)}
         onRestoreInformation={handleRestoreInformation}
         onPermanentDeleteInformation={handlePermanentDeleteInformation}

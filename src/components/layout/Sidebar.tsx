@@ -94,15 +94,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
-            {projects.map((project) => (
-              <ProjectSidebarItem
-                key={project.id}
-                project={project}
-                isActive={project.id === currentProjectId}
-                onSwitchProject={onSwitchProject}
-                onOpenProjectSettings={onOpenProjectSettings}
-              />
-            ))}
+            {projects
+              .filter((p) => !p.isDeleted)
+              .map((project) => (
+                <ProjectSidebarItem
+                  key={project.id}
+                  project={project}
+                  isActive={project.id === currentProjectId}
+                  onSwitchProject={onSwitchProject}
+                  onOpenProjectSettings={onOpenProjectSettings}
+                />
+              ))}
           </div>
         </div>
 

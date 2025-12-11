@@ -178,6 +178,33 @@ name: "${projectName}"
   });
 
   describe('deleteProject', () => {
+    it('should soft-delete project by setting isDeleted flag', async () => {
+      const projectId = 'proj-del';
+      const projectName = 'Delete Me';
+
+      vi.mocked(fileSystemService.listFiles).mockResolvedValue([`${projectName}.md`]);
+      vi.mocked(fileSystemService.readFile).mockImplementation(async (path) => {
+        if (path.endsWith(`${projectName}.md`)) {
+          return `---
+id: "${projectId}"
+name: "${projectName}"
+lastModified: 12345
+---`;
+        }
+        return null;
+      });
+
+      await diskProjectService.deleteProject(projectId);
+
+      // Should write file with isDeleted: true
+      expect(fileSystemService.writeFile).toHaveBeenCalled();
+      const writeCall = vi.mocked(fileSystemService.writeFile).mock.calls[0];
+      expect(writeCall[0]).toContain(`${projectName}.md`);
+      expect(writeCall[1]).toContain('isDeleted: true');
+    });
+  });
+
+  describe('permanentDeleteProject', () => {
     it('should delete file corresponding to the project ID', async () => {
       const projectId = 'proj-del';
       const projectName = 'Delete Me';
@@ -193,7 +220,7 @@ name: "${projectName}"
         return null;
       });
 
-      await diskProjectService.deleteProject(projectId);
+      await diskProjectService.permanentDeleteProject(projectId);
 
       expect(fileSystemService.deleteFile).toHaveBeenCalledWith(`projects/${projectName}.md`);
     });

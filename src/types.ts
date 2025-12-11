@@ -95,6 +95,7 @@ export interface Project {
   informationIds: string[];
   baselines?: string[]; // IDs of baselines for this project
   currentBaseline?: string; // ID of current baseline
+  isDeleted?: boolean; // Soft delete flag
   // Links are now global, so we don't strictly need them here,
   // but keeping a reference might be useful for project-specific views if we ever want to scope them tightly.
   // For now, let's remove them from Project as per plan, or keep them as IDs if we want "Project owns these links".

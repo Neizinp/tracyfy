@@ -352,14 +352,51 @@ class DiskProjectService {
   }
 
   /**
-   * Delete a project (does not delete artifacts)
+   * Soft-delete a project (sets isDeleted flag, does not remove file)
    */
   async deleteProject(projectId: string): Promise<void> {
+    const project = await this.loadProject(projectId);
+    if (project) {
+      project.isDeleted = true;
+      project.lastModified = Date.now();
+      await this.updateProject(project);
+    } else {
+      console.warn(`Could not find project ${projectId} to delete`);
+    }
+  }
+
+  /**
+   * Restore a soft-deleted project
+   */
+  async restoreProject(projectId: string): Promise<void> {
+    const project = await this.loadProject(projectId);
+    if (project) {
+      project.isDeleted = false;
+      project.lastModified = Date.now();
+      await this.updateProject(project);
+    } else {
+      console.warn(`Could not find project ${projectId} to restore`);
+    }
+  }
+
+  /**
+   * Permanently delete a project (removes file, auto-commits)
+   */
+  async permanentDeleteProject(projectId: string): Promise<void> {
+    const project = await this.loadProject(projectId);
+    const projectName = project?.name || projectId;
+
     const filename = await this.findProjectFilenameById(projectId);
     if (filename) {
-      await fileSystemService.deleteFile(`${PROJECTS_DIR}/${filename}`);
+      const filepath = `${PROJECTS_DIR}/${filename}`;
+      await fileSystemService.deleteFile(filepath);
+
+      // Auto-commit the deletion
+      if (realGitService.isInitialized()) {
+        await realGitService.commitFile(filepath, `Project deleted: ${projectName}`);
+      }
     } else {
-      console.warn(`Could not find file for project ${projectId} to delete`);
+      console.warn(`Could not find file for project ${projectId} to permanently delete`);
     }
   }
 

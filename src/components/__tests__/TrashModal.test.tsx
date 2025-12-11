@@ -8,9 +8,11 @@ describe('TrashModal', () => {
   const mockOnRestoreRequirement = vi.fn();
   const mockOnRestoreUseCase = vi.fn();
   const mockOnRestoreInformation = vi.fn();
+  const mockOnRestoreProject = vi.fn();
   const mockOnPermanentDeleteRequirement = vi.fn();
   const mockOnPermanentDeleteUseCase = vi.fn();
   const mockOnPermanentDeleteInformation = vi.fn();
+  const mockOnPermanentDeleteProject = vi.fn();
 
   const mockDeletedReq: Requirement = {
     id: 'REQ-001',
@@ -59,12 +61,15 @@ describe('TrashModal', () => {
     deletedRequirements: [mockDeletedReq],
     deletedUseCases: [mockDeletedUseCase],
     deletedInformation: [mockDeletedInfo],
+    deletedProjects: [],
     onRestoreRequirement: mockOnRestoreRequirement,
     onRestoreUseCase: mockOnRestoreUseCase,
     onRestoreInformation: mockOnRestoreInformation,
+    onRestoreProject: mockOnRestoreProject,
     onPermanentDeleteRequirement: mockOnPermanentDeleteRequirement,
     onPermanentDeleteUseCase: mockOnPermanentDeleteUseCase,
     onPermanentDeleteInformation: mockOnPermanentDeleteInformation,
+    onPermanentDeleteProject: mockOnPermanentDeleteProject,
   };
 
   beforeEach(() => {
