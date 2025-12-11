@@ -83,10 +83,10 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
     setIsSubmitting(true);
     try {
       await onCopy?.(project, copyName.trim(), copyDescription.trim());
+      setIsSubmitting(false);
       onClose();
     } catch (err) {
       setError((err as Error).message);
-    } finally {
       setIsSubmitting(false);
     }
   };

@@ -65,7 +65,7 @@ export const ModalManager: React.FC = () => {
   } = useInformation();
 
   // FileSystem state
-  const { baselines, createBaseline } = useFileSystem();
+  const { baselines, createBaseline, reloadData } = useFileSystem();
 
   // Handler for adding a link to an artifact's linkedArtifacts array
   const handleAddArtifactLink = useCallback(
