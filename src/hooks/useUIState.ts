@@ -47,7 +47,7 @@ export function useUIState() {
   >('requirements');
   const [globalLibrarySelection, setGlobalLibrarySelection] = useState<Set<string>>(new Set());
 
-  // Column Visibility
+  // Column Visibility - Requirements
   const getDefaultColumnVisibility = (): ColumnVisibility => ({
     idTitle: true,
     description: true,
@@ -72,6 +72,39 @@ export function useUIState() {
       [column]: !prev[column],
     }));
   };
+
+  // Column Visibility - Use Cases
+  const [useCaseColumnVisibility, setUseCaseColumnVisibility] = useState({
+    idTitle: true,
+    description: true,
+    actor: true,
+    priority: true,
+    status: true,
+    preconditions: false,
+    mainFlow: false,
+    alternativeFlows: false,
+    postconditions: false,
+  });
+
+  // Column Visibility - Test Cases
+  const [testCaseColumnVisibility, setTestCaseColumnVisibility] = useState({
+    idTitle: true,
+    description: true,
+    requirements: true,
+    priority: true,
+    status: true,
+    author: false,
+    lastRun: true,
+    created: false,
+  });
+
+  // Column Visibility - Information
+  const [informationColumnVisibility, setInformationColumnVisibility] = useState({
+    idTitle: true,
+    type: true,
+    content: true,
+    created: true,
+  });
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -139,11 +172,19 @@ export function useUIState() {
     globalLibrarySelection,
     setGlobalLibrarySelection,
 
-    // Column Visibility
+    // Column Visibility - Requirements
     columnVisibility,
     setColumnVisibility,
     handleColumnToggle,
     getDefaultColumnVisibility,
+
+    // Column Visibility - Other artifact types
+    useCaseColumnVisibility,
+    setUseCaseColumnVisibility,
+    testCaseColumnVisibility,
+    setTestCaseColumnVisibility,
+    informationColumnVisibility,
+    setInformationColumnVisibility,
 
     // Helper functions
     handleGlobalLibrarySelect: (id: string) => {

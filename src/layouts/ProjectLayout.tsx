@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Layout, ColumnSelector, GlobalLibraryPanel, ModalManager } from '../components';
+import { GenericColumnSelector } from '../components/GenericColumnSelector';
 import {
   useProject,
   useUI,
@@ -11,7 +12,51 @@ import {
 } from '../app/providers';
 import { exportProjectToPDF } from '../utils/pdfExportUtils';
 import { exportProjectToExcel } from '../utils/excelExportUtils';
-import type { Project } from '../types';
+import type {
+  Project,
+  UseCaseColumnVisibility,
+  TestCaseColumnVisibility,
+  InformationColumnVisibility,
+} from '../types';
+
+// Column configurations for each artifact type
+const useCaseColumns: {
+  key: keyof UseCaseColumnVisibility;
+  label: string;
+  alwaysVisible?: boolean;
+}[] = [
+  { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
+  { key: 'description', label: 'Description' },
+  { key: 'actor', label: 'Actor' },
+  { key: 'priority', label: 'Priority' },
+  { key: 'status', label: 'Status' },
+  { key: 'preconditions', label: 'Preconditions' },
+  { key: 'mainFlow', label: 'Main Flow' },
+];
+
+const testCaseColumns: {
+  key: keyof TestCaseColumnVisibility;
+  label: string;
+  alwaysVisible?: boolean;
+}[] = [
+  { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
+  { key: 'description', label: 'Description' },
+  { key: 'requirements', label: 'Requirements' },
+  { key: 'priority', label: 'Priority' },
+  { key: 'status', label: 'Status' },
+  { key: 'lastRun', label: 'Last Run' },
+];
+
+const informationColumns: {
+  key: keyof InformationColumnVisibility;
+  label: string;
+  alwaysVisible?: boolean;
+}[] = [
+  { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
+  { key: 'type', label: 'Type' },
+  { key: 'content', label: 'Content' },
+  { key: 'created', label: 'Created' },
+];
 
 export const ProjectLayout: React.FC = () => {
   const { projects, currentProjectId, currentProject, switchProject, addToProject } = useProject();
@@ -190,6 +235,27 @@ export const ProjectLayout: React.FC = () => {
                     console.error('Failed to save column visibility:', error);
                   }
                 }}
+              />
+            )}
+            {location.pathname.includes('/use-cases') && (
+              <GenericColumnSelector
+                columns={useCaseColumns}
+                visibleColumns={ui.useCaseColumnVisibility}
+                onColumnVisibilityChange={ui.setUseCaseColumnVisibility}
+              />
+            )}
+            {location.pathname.includes('/test-cases') && (
+              <GenericColumnSelector
+                columns={testCaseColumns}
+                visibleColumns={ui.testCaseColumnVisibility}
+                onColumnVisibilityChange={ui.setTestCaseColumnVisibility}
+              />
+            )}
+            {location.pathname.includes('/information') && (
+              <GenericColumnSelector
+                columns={informationColumns}
+                visibleColumns={ui.informationColumnVisibility}
+                onColumnVisibilityChange={ui.setInformationColumnVisibility}
               />
             )}
           </div>

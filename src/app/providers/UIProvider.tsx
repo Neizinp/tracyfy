@@ -1,7 +1,16 @@
 import React, { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 import { useUIState } from '../../hooks/useUIState';
-import type { Requirement, UseCase, Information, Project, ColumnVisibility } from '../../types';
+import type {
+  Requirement,
+  UseCase,
+  Information,
+  Project,
+  ColumnVisibility,
+  UseCaseColumnVisibility,
+  TestCaseColumnVisibility,
+  InformationColumnVisibility,
+} from '../../types';
 
 interface UIContextValue {
   // Modal states
@@ -56,10 +65,18 @@ interface UIContextValue {
     selection: Set<string> | ((prev: Set<string>) => Set<string>)
   ) => void;
 
-  // Column visibility
+  // Column visibility - Requirements
   columnVisibility: ColumnVisibility;
   setColumnVisibility: (cols: ColumnVisibility) => void;
   getDefaultColumnVisibility: () => ColumnVisibility;
+
+  // Column visibility - Other artifact types
+  useCaseColumnVisibility: UseCaseColumnVisibility;
+  setUseCaseColumnVisibility: (cols: UseCaseColumnVisibility) => void;
+  testCaseColumnVisibility: TestCaseColumnVisibility;
+  setTestCaseColumnVisibility: (cols: TestCaseColumnVisibility) => void;
+  informationColumnVisibility: InformationColumnVisibility;
+  setInformationColumnVisibility: (cols: InformationColumnVisibility) => void;
 
   // Search
   searchQuery: string;
