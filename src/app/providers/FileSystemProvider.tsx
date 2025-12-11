@@ -412,7 +412,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (!isE2EMode()) {
         await diskProjectService.deleteProject(id);
       }
-      setProjects((prev) => prev.filter((p) => p.id !== id));
+      // Soft-delete: update isDeleted flag instead of removing from array
+      setProjects((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, isDeleted: true, lastModified: Date.now() } : p))
+      );
       if (!isE2EMode()) await refreshStatus();
     },
     [isReady, refreshStatus]

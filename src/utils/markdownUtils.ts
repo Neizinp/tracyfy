@@ -545,6 +545,7 @@ export function projectToMarkdown(project: Project): string {
     useCaseIds: project.useCaseIds,
     testCaseIds: project.testCaseIds,
     informationIds: project.informationIds,
+    isDeleted: project.isDeleted || false,
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -581,5 +582,6 @@ export function markdownToProject(markdown: string): Project | null {
     testCaseIds: frontmatter.testCaseIds || [],
     informationIds: frontmatter.informationIds || [],
     lastModified: frontmatter.lastModified || Date.now(),
+    isDeleted: frontmatter.isDeleted || false,
   };
 }

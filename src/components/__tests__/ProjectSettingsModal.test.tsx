@@ -105,21 +105,22 @@ describe('ProjectSettingsModal', () => {
   it('should show delete confirmation when delete button clicked', () => {
     render(<ProjectSettingsModal {...defaultProps} />);
 
-    const deleteButton = screen.getByText(/Delete Project/i);
+    const deleteButton = screen.getByText(/Move to Trash/i);
     fireEvent.click(deleteButton);
 
-    expect(screen.getByText(/Are you sure/i)).toBeInTheDocument();
+    expect(screen.getByText(/Trash Bin/i)).toBeInTheDocument();
   });
 
   it('should call onDelete when confirmed', () => {
     render(<ProjectSettingsModal {...defaultProps} />);
 
     // Click delete button
-    const deleteButton = screen.getByText(/Delete Project/i);
+    const deleteButton = screen.getByText(/Move to Trash/i);
     fireEvent.click(deleteButton);
 
-    // Confirm deletion
-    const confirmButton = screen.getByText(/Confirm Delete/i);
+    // Confirm deletion - get the Move to Trash button in the confirmation dialog
+    const confirmButtons = screen.getAllByText(/Move to Trash/i);
+    const confirmButton = confirmButtons[confirmButtons.length - 1]; // The confirmation button
     fireEvent.click(confirmButton);
 
     expect(mockOnDelete).toHaveBeenCalledWith('PROJ-001');
@@ -130,18 +131,18 @@ describe('ProjectSettingsModal', () => {
     render(<ProjectSettingsModal {...defaultProps} />);
 
     // Click delete button
-    const deleteButton = screen.getByText(/Delete Project/i);
+    const deleteButton = screen.getByText(/Move to Trash/i);
     fireEvent.click(deleteButton);
 
     // Verify confirmation is shown
-    expect(screen.getByText(/Are you sure/i)).toBeInTheDocument();
+    expect(screen.getByText(/Trash Bin/i)).toBeInTheDocument();
 
     // Cancel deletion - get all Cancel buttons and click the second one (in confirmation)
     const cancelButtons = screen.getAllByText(/Cancel/i);
     fireEvent.click(cancelButtons[1]);
 
     expect(mockOnDelete).not.toHaveBeenCalled();
-    expect(screen.queryByText(/Are you sure/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Trash Bin/i)).not.toBeInTheDocument();
   });
 
   it('should reset form when reopened', () => {
