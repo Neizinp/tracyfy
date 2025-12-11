@@ -56,32 +56,42 @@ export const sidebarButtonStyle: CSSProperties = {
 
 // Header action button style
 export const headerButtonStyle: CSSProperties = {
+  height: '36px',
   backgroundColor: 'var(--color-bg-card)',
   color: 'var(--color-text-secondary)',
   border: '1px solid var(--color-border)',
-  padding: '0.5rem 1rem',
+  padding: '0 12px',
   borderRadius: '6px',
   display: 'flex',
   alignItems: 'center',
   gap: 'var(--spacing-sm)',
   cursor: 'pointer',
   fontWeight: 500,
+  fontSize: 'var(--font-size-sm)',
+  lineHeight: 1,
   transition: 'background-color 0.2s',
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
 };
 
 // Primary accent button style
 export const primaryButtonStyle: CSSProperties = {
+  height: '36px',
   backgroundColor: 'var(--color-accent)',
   color: 'white',
   border: 'none',
-  padding: '0.5rem 1rem',
+  padding: '0 12px',
   borderRadius: '6px',
   display: 'flex',
   alignItems: 'center',
   gap: 'var(--spacing-sm)',
   cursor: 'pointer',
   fontWeight: 500,
+  fontSize: 'var(--font-size-sm)',
+  lineHeight: 1,
   transition: 'background-color 0.2s',
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
 };
 
 // Dropdown container style
