@@ -1,4 +1,4 @@
-# ReqTrace - Requirement Management Tool
+# Reqify - Requirement Management Tool
 
 A modern, web-based requirement management tool inspired by IBM Rational Doors. Built with React, TypeScript, and Vite for managing system requirements, use cases, test cases, and comprehensive documentation with multi-project support and Git-based version control.
 
@@ -235,11 +235,11 @@ Security is a core requirement for the system.
 
 ### Repository File Structure
 
-When you select a Git repository, ReqTrace creates the following folder structure:
+When you select a Git repository, Reqify creates the following folder structure:
 
 ```
 your-project-repo/
-├── .reqtrace/
+├── .reqify/
 │   ├── project.md          # Project metadata (name, description, counters)
 │   └── config.json         # Application configuration (if any)
 ├── requirements/
@@ -262,7 +262,7 @@ your-project-repo/
 
 - Each artifact is a separate `.md` file, making them easy to review in Git diffs
 - Links between artifacts are stored in the source artifact's `linkedArtifacts` field
-- Project metadata (ID counters, project info) is stored in `.reqtrace/project.md`
+- Project metadata (ID counters, project info) is stored in `.reqify/project.md`
 - Baselines are Git tags, not separate files
 - The entire repository can be cloned, reviewed, and merged using standard Git workflows
 

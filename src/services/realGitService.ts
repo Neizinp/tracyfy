@@ -327,7 +327,7 @@ class RealGitService {
       fs: fsAdapter,
       dir: this.getRootDir(),
       message,
-      author: { name: 'ReqTrace User', email: 'user@reqtrace.local' },
+      author: { name: 'Reqify User', email: 'user@reqify.local' },
       cache,
     });
 
@@ -397,7 +397,7 @@ class RealGitService {
 
   /**
    * Commit a single file (Atomic Commit)
-   * @param authorName - Optional author name, defaults to 'ReqTrace User'
+   * @param authorName - Optional author name, defaults to 'Reqify User'
    */
   async commitFile(filepath: string, message: string, authorName?: string): Promise<void> {
     if (!this.initialized) {
@@ -414,12 +414,12 @@ class RealGitService {
       await git.remove({ fs: fsAdapter, dir: this.getRootDir(), filepath, cache });
     }
 
-    const authorNameToUse = authorName || 'ReqTrace User';
+    const authorNameToUse = authorName || 'Reqify User';
     const commitOid = await git.commit({
       fs: fsAdapter,
       dir: this.getRootDir(),
       message,
-      author: { name: authorNameToUse, email: 'user@reqtrace.local' },
+      author: { name: authorNameToUse, email: 'user@reqify.local' },
       cache,
     });
 
@@ -646,7 +646,7 @@ class RealGitService {
       throw new Error('Git service not initialized');
     }
 
-    const author = { name: 'ReqTrace User', email: 'user@reqtrace.local' };
+    const author = { name: 'Reqify User', email: 'user@reqify.local' };
 
     if (isElectronEnv()) {
       const result = await window.electronAPI!.git.annotatedTag(

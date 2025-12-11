@@ -86,7 +86,7 @@ ipcMain.handle('git:commit', async (_event, dir, message, author) => {
       fs,
       dir,
       message,
-      author: author || { name: 'ReqTrace User', email: 'user@reqtrace.local' },
+      author: author || { name: 'Reqify User', email: 'user@reqify.local' },
     });
     return { oid };
   } catch (error) {
@@ -145,7 +145,7 @@ ipcMain.handle('git:annotatedTag', async (_event, dir, ref, message, tagger) => 
       dir,
       ref,
       message,
-      tagger: tagger || { name: 'ReqTrace User', email: 'user@reqtrace.local' },
+      tagger: tagger || { name: 'Reqify User', email: 'user@reqify.local' },
     });
     return { ok: true };
   } catch (error) {

@@ -154,10 +154,10 @@ describe('Path Validation', () => {
 describe('IndexedDB Handle Storage', () => {
   it('should use correct database and store names', () => {
     // Document the expected constants
-    const DB_NAME = 'reqtrace-fs-handles';
+    const DB_NAME = 'reqify-fs-handles';
     const STORE_NAME = 'handles';
 
-    expect(DB_NAME).toBe('reqtrace-fs-handles');
+    expect(DB_NAME).toBe('reqify-fs-handles');
     expect(STORE_NAME).toBe('handles');
   });
 });

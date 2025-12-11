@@ -41,8 +41,8 @@ vi.mock('../../utils/appInitialization', () => ({
     currentProjectId: 'proj-001',
     globalState: {},
   })),
-  PROJECTS_KEY: 'reqtrace_projects',
-  CURRENT_PROJECT_KEY: 'reqtrace_current_project',
+  PROJECTS_KEY: 'reqify_projects',
+  CURRENT_PROJECT_KEY: 'reqify_current_project',
 }));
 
 describe('useProjectManager', () => {
@@ -106,7 +106,7 @@ describe('useProjectManager', () => {
         result.current.handleSwitchProject('proj-002');
       });
 
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('reqtrace_current_project', 'proj-002');
+      expect(localStorageMock.setItem).toHaveBeenCalledWith('reqify_current_project', 'proj-002');
     });
   });
 

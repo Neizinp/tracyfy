@@ -51,10 +51,10 @@ describe('Sidebar', () => {
   });
 
   describe('rendering', () => {
-    it('should render ReqTrace logo', () => {
+    it('should render Reqify logo', () => {
       renderWithRouter(<Sidebar {...defaultProps} />);
 
-      expect(screen.getByText('ReqTrace')).toBeInTheDocument();
+      expect(screen.getByText('Reqify')).toBeInTheDocument();
     });
 
     it('should render Projects section header', () => {

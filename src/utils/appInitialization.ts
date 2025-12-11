@@ -5,9 +5,9 @@
 
 import type { Project, GlobalState } from '../types';
 
-export const PROJECTS_KEY = 'reqtrace-projects';
-export const CURRENT_PROJECT_KEY = 'reqtrace-current-project-id';
-const GLOBAL_STATE_KEY = 'reqtrace-global-state';
+export const PROJECTS_KEY = 'reqify-projects';
+export const CURRENT_PROJECT_KEY = 'reqify-current-project-id';
+const GLOBAL_STATE_KEY = 'reqify-global-state';
 
 /**
  * Helper to load projects from localStorage (browser fallback)

@@ -7,7 +7,7 @@
  */
 
 // Store the directory handle in IndexedDB for persistence
-const DB_NAME = 'reqtrace-fs-handles';
+const DB_NAME = 'reqify-fs-handles';
 const STORE_NAME = 'handles';
 
 interface DirectoryState {

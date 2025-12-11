@@ -340,8 +340,8 @@ describe('RealGitService', () => {
         expect.objectContaining({
           message: 'Add requirement',
           author: expect.objectContaining({
-            name: 'ReqTrace User',
-            email: 'user@reqtrace.local',
+            name: 'Reqify User',
+            email: 'user@reqify.local',
           }),
         })
       );
