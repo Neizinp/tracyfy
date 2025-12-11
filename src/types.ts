@@ -134,6 +134,7 @@ export interface ColumnVisibility {
 
 export interface UseCaseColumnVisibility {
   idTitle: boolean; // Always true
+  revision: boolean;
   description: boolean;
   actor: boolean;
   priority: boolean;
@@ -146,6 +147,7 @@ export interface UseCaseColumnVisibility {
 
 export interface TestCaseColumnVisibility {
   idTitle: boolean; // Always true
+  revision: boolean;
   description: boolean;
   requirements: boolean;
   priority: boolean;
@@ -157,6 +159,7 @@ export interface TestCaseColumnVisibility {
 
 export interface InformationColumnVisibility {
   idTitle: boolean; // Always true
+  revision: boolean;
   type: boolean;
   content: boolean;
   created: boolean;

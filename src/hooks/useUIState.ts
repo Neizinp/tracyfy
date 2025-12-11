@@ -76,6 +76,7 @@ export function useUIState() {
   // Column Visibility - Use Cases
   const [useCaseColumnVisibility, setUseCaseColumnVisibility] = useState({
     idTitle: true,
+    revision: true,
     description: true,
     actor: true,
     priority: true,
@@ -89,6 +90,7 @@ export function useUIState() {
   // Column Visibility - Test Cases
   const [testCaseColumnVisibility, setTestCaseColumnVisibility] = useState({
     idTitle: true,
+    revision: true,
     description: true,
     requirements: true,
     priority: true,
@@ -101,6 +103,7 @@ export function useUIState() {
   // Column Visibility - Information
   const [informationColumnVisibility, setInformationColumnVisibility] = useState({
     idTitle: true,
+    revision: true,
     type: true,
     content: true,
     created: true,

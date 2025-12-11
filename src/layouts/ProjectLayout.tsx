@@ -26,6 +26,7 @@ const useCaseColumns: {
   alwaysVisible?: boolean;
 }[] = [
   { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
+  { key: 'revision', label: 'Rev' },
   { key: 'description', label: 'Description' },
   { key: 'actor', label: 'Actor' },
   { key: 'priority', label: 'Priority' },
@@ -40,6 +41,7 @@ const testCaseColumns: {
   alwaysVisible?: boolean;
 }[] = [
   { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
+  { key: 'revision', label: 'Rev' },
   { key: 'description', label: 'Description' },
   { key: 'requirements', label: 'Requirements' },
   { key: 'priority', label: 'Priority' },
@@ -53,6 +55,7 @@ const informationColumns: {
   alwaysVisible?: boolean;
 }[] = [
   { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
+  { key: 'revision', label: 'Rev' },
   { key: 'type', label: 'Type' },
   { key: 'content', label: 'Content' },
   { key: 'created', label: 'Created' },

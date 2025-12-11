@@ -95,7 +95,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
               }}
             >
               <th style={{ ...thStyle, width: '250px' }}>ID / Title</th>
-              <th style={{ ...thStyle, width: '60px' }}>Rev</th>
+              {visibleColumns.revision && <th style={{ ...thStyle, width: '60px' }}>Rev</th>}
               {showProjectColumn && <th style={{ ...thStyle, width: '150px' }}>Project(s)</th>}
               {visibleColumns.description && (
                 <th style={{ ...thStyle, minWidth: '200px' }}>Description</th>
@@ -143,20 +143,22 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                     </div>
                     <div style={{ color: 'var(--color-text-primary)' }}>{tc.title}</div>
                   </td>
-                  <td style={tdStyle}>
-                    <span
-                      style={{
-                        fontSize: 'var(--font-size-xs)',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        backgroundColor: 'var(--color-bg-tertiary)',
-                        color: 'var(--color-text-secondary)',
-                        border: '1px solid var(--color-border)',
-                      }}
-                    >
-                      {tc.revision || '01'}
-                    </span>
-                  </td>
+                  {visibleColumns.revision && (
+                    <td style={tdStyle}>
+                      <span
+                        style={{
+                          fontSize: 'var(--font-size-xs)',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          backgroundColor: 'var(--color-bg-tertiary)',
+                          color: 'var(--color-text-secondary)',
+                          border: '1px solid var(--color-border)',
+                        }}
+                      >
+                        {tc.revision || '01'}
+                      </span>
+                    </td>
+                  )}
                   {showProjectColumn && (
                     <td style={tdStyle}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
