@@ -285,6 +285,56 @@ class RealGitService {
   }
 
   /**
+   * Rename a file with proper git tracking and auto-commit
+   * This performs a git mv equivalent and immediately commits the rename,
+   * so it appears as a single commit in history instead of two pending changes.
+   *
+   * @param oldPath - The current file path (relative to repo root)
+   * @param newPath - The new file path (relative to repo root)
+   * @param newContent - The new file content to write
+   * @param commitMessage - Optional custom commit message (defaults to "Renamed: oldName → newName")
+   */
+  async renameFile(
+    oldPath: string,
+    newPath: string,
+    newContent: string,
+    commitMessage?: string
+  ): Promise<void> {
+    if (!this.initialized) {
+      throw new Error('Git service not initialized');
+    }
+
+    const cache = {};
+
+    // 1. Write the new file with updated content
+    await fileSystemService.writeFile(newPath, newContent);
+
+    // 2. Delete the old file
+    await fileSystemService.deleteFile(oldPath);
+
+    // 3. Stage the removal of the old file (git rm)
+    await git.remove({ fs: fsAdapter, dir: this.getRootDir(), filepath: oldPath, cache });
+
+    // 4. Stage the addition of the new file (git add)
+    await git.add({ fs: fsAdapter, dir: this.getRootDir(), filepath: newPath, cache });
+
+    // 5. Auto-commit the rename with a predefined message
+    const oldName = oldPath.split('/').pop()?.replace('.md', '') || oldPath;
+    const newName = newPath.split('/').pop()?.replace('.md', '') || newPath;
+    const message = commitMessage || `Renamed project: ${oldName} → ${newName}`;
+
+    await git.commit({
+      fs: fsAdapter,
+      dir: this.getRootDir(),
+      message,
+      author: { name: 'ReqTrace User', email: 'user@reqtrace.local' },
+      cache,
+    });
+
+    console.log(`[renameFile] Committed rename: ${oldPath} -> ${newPath}`);
+  }
+
+  /**
    * Get git status
    */
   async getStatus(): Promise<FileStatus[]> {

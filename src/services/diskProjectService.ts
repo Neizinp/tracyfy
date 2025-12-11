@@ -21,6 +21,7 @@
  */
 
 import { fileSystemService } from './fileSystemService';
+import { realGitService } from './realGitService';
 import type { Project, Requirement, UseCase, TestCase, Information, User } from '../types';
 import {
   requirementToMarkdown,
@@ -333,12 +334,20 @@ class DiskProjectService {
 
     const markdown = projectToMarkdown(updatedProject);
     const newFilename = `${project.name}.md`;
+    const oldPath = oldFilename ? `${PROJECTS_DIR}/${oldFilename}` : null;
+    const newPath = `${PROJECTS_DIR}/${newFilename}`;
 
-    await fileSystemService.writeFile(`${PROJECTS_DIR}/${newFilename}`, markdown);
+    // If filename changed, use git rename to preserve history and auto-commit
+    if (oldPath && oldFilename !== newFilename && realGitService.isInitialized()) {
+      await realGitService.renameFile(oldPath, newPath, markdown);
+    } else {
+      // Just write the file (no rename needed)
+      await fileSystemService.writeFile(newPath, markdown);
 
-    // If filename changed (and we found the old one), delete the old one
-    if (oldFilename && oldFilename !== newFilename) {
-      await fileSystemService.deleteFile(`${PROJECTS_DIR}/${oldFilename}`);
+      // If filename changed but git not initialized, delete old file manually
+      if (oldFilename && oldFilename !== newFilename) {
+        await fileSystemService.deleteFile(`${PROJECTS_DIR}/${oldFilename}`);
+      }
     }
   }
 

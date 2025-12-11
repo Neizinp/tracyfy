@@ -21,6 +21,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showRenameConfirm, setShowRenameConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -29,15 +30,18 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       setName(project.name);
       setDescription(project.description);
       setShowDeleteConfirm(false);
+      setShowRenameConfirm(false);
       setError(null);
       setIsSubmitting(false);
     }
   }, [isOpen, project]);
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const isNameChanged = name.trim() !== project.name;
+
+  const doSave = async () => {
     setError(null);
     setIsSubmitting(true);
+    setShowRenameConfirm(false);
 
     try {
       await onUpdate(project.id, name, description);
@@ -47,6 +51,19 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
+    // If name changed, show confirmation dialog
+    if (isNameChanged) {
+      setShowRenameConfirm(true);
+      return;
+    }
+
+    // Otherwise, save directly
+    await doSave();
   };
 
   useKeyboardShortcuts({
@@ -186,6 +203,64 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
               }}
             >
               {error}
+            </div>
+          )}
+
+          {showRenameConfirm && (
+            <div
+              style={{
+                marginBottom: 'var(--spacing-md)',
+                padding: 'var(--spacing-md)',
+                backgroundColor: 'var(--color-warning-bg, #fef3cd)',
+                borderRadius: '6px',
+                border: '1px solid var(--color-warning-border, #ffc107)',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-warning-text, #856404)',
+                  marginBottom: 'var(--spacing-sm)',
+                }}
+              >
+                Renaming the project will create an automatic commit. Continue?
+              </p>
+              <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowRenameConfirm(false)}
+                  style={{
+                    flex: 1,
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-bg-card)',
+                    color: 'var(--color-text-secondary)',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 500,
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={doSave}
+                  style={{
+                    flex: 1,
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: 'var(--color-accent)',
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 500,
+                  }}
+                >
+                  Confirm Rename
+                </button>
+              </div>
             </div>
           )}
 

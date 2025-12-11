@@ -73,7 +73,7 @@ describe('ProjectSettingsModal', () => {
     expect(descInput.value).toBe('Updated Description');
   });
 
-  it('should call onUpdate when form is submitted', async () => {
+  it('should call onUpdate when form is submitted with name change', async () => {
     render(<ProjectSettingsModal {...defaultProps} />);
 
     const nameInput = screen.getByDisplayValue('Test Project');
@@ -84,6 +84,17 @@ describe('ProjectSettingsModal', () => {
 
     const saveButton = screen.getByText(/Save Changes/i);
     fireEvent.click(saveButton);
+
+    // Should show rename confirmation dialog since name changed
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Renaming the project will create an automatic commit/i)
+      ).toBeInTheDocument();
+    });
+
+    // Click Confirm Rename button
+    const confirmButton = screen.getByText(/Confirm Rename/i);
+    fireEvent.click(confirmButton);
 
     await waitFor(() => {
       expect(mockOnUpdate).toHaveBeenCalledWith('PROJ-001', 'New Name', 'New Desc');
