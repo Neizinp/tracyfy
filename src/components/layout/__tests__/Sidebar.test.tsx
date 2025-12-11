@@ -81,10 +81,9 @@ describe('Sidebar', () => {
       renderWithRouter(<Sidebar {...defaultProps} />);
 
       expect(screen.getByText('Views')).toBeInTheDocument();
-      expect(screen.getByText('Requirements Tree')).toBeInTheDocument();
-      expect(screen.getByText('Detailed View')).toBeInTheDocument();
       expect(screen.getByText('Traceability Matrix')).toBeInTheDocument();
-      // These appear in both Views and Repository sections, so use getAllByText
+      // Requirements appears in both Views and Repository, so use getAllByText
+      expect(screen.getAllByText('Requirements').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Use Cases').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Test Cases').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Information').length).toBeGreaterThanOrEqual(1);

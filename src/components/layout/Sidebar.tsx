@@ -127,14 +127,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div style={{ marginBottom: 'var(--spacing-lg)' }}>
           <h2 style={{ ...sectionHeaderStyle, margin: '0 0 var(--spacing-sm) 0' }}>Views</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <NavLink to="/requirements/tree" icon={LayoutGrid} label="Requirements Tree" />
-            <NavLink to="/requirements/detailed" icon={FileText} label="Detailed View" />
             <NavLink
-              to="/requirements/matrix"
+              to="/matrix"
               icon={LayoutGrid}
               label="Traceability Matrix"
               iconStyle={{ transform: 'rotate(45deg)' }}
             />
+            <NavLink to="/requirements" icon={FileText} label="Requirements" />
             <NavLink to="/use-cases" icon={FileText} label="Use Cases" />
             <NavLink to="/test-cases" icon={FileText} label="Test Cases" />
             <NavLink to="/information" icon={FileText} label="Information" />

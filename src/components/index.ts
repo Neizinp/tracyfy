@@ -1,5 +1,4 @@
 export * from './Layout';
-export * from './RequirementTree';
 export * from './NewRequirementModal';
 export * from './LinkModal';
 export * from './EditRequirementModal';

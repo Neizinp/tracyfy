@@ -17,7 +17,7 @@ interface NavLinkProps {
  */
 export const NavLink: React.FC<NavLinkProps> = ({ to, icon: Icon, label, iconStyle }) => {
   const location = useLocation();
-  const isActive = location.pathname.includes(to);
+  const isActive = location.pathname === to || location.pathname.startsWith(to + '/');
 
   return (
     <Link

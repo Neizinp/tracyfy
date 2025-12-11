@@ -96,9 +96,8 @@ export const ProjectLayout: React.FC = () => {
 
   // Get page title from current route
   const getPageTitle = () => {
-    if (location.pathname.includes('/requirements/tree')) return 'Requirements Tree';
-    if (location.pathname.includes('/requirements/detailed')) return 'Detailed View';
-    if (location.pathname.includes('/requirements/matrix')) return 'Traceability Matrix';
+    if (location.pathname === '/requirements') return 'Requirements';
+    if (location.pathname.includes('/matrix')) return 'Traceability Matrix';
     if (location.pathname.includes('/use-cases')) return 'Use Cases';
     if (location.pathname.includes('/test-cases')) return 'Test Cases';
     if (location.pathname.includes('/information')) return 'Information';
@@ -106,7 +105,7 @@ export const ProjectLayout: React.FC = () => {
     if (location.pathname.includes('/library/use-cases')) return 'Use Cases';
     if (location.pathname.includes('/library/test-cases')) return 'Test Cases';
     if (location.pathname.includes('/library/information')) return 'Information';
-    return 'Requirements Tree';
+    return 'Requirements';
   };
 
   // Handle adding selected items from library to project

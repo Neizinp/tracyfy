@@ -3,7 +3,7 @@ import { DetailedRequirementView } from '../components';
 import { useRequirements, useUI } from '../app/providers';
 import { type SortConfig, toggleSort } from '../components/SortableHeader';
 
-export const RequirementsDetailedPage: React.FC = () => {
+export const RequirementsPage: React.FC = () => {
   const { requirements, handleEdit } = useRequirements();
   const { searchQuery, columnVisibility } = useUI();
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'id', direction: 'asc' });

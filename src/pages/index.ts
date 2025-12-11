@@ -1,5 +1,4 @@
-export { RequirementsTreePage } from './RequirementsTreePage';
-export { RequirementsDetailedPage } from './RequirementsDetailedPage';
+export { RequirementsPage } from './RequirementsPage';
 export { TraceabilityMatrixPage } from './TraceabilityMatrixPage';
 export { UseCasesPage } from './UseCasesPage';
 export { TestCasesPage } from './TestCasesPage';
