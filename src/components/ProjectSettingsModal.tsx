@@ -523,7 +523,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                       d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                     />
                   </svg>
-                  Move to Trash
+                  Delete Project
                 </button>
               ) : (
                 <div
@@ -541,8 +541,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                       marginBottom: 'var(--spacing-sm)',
                     }}
                   >
-                    Move <strong>{project.name}</strong> to Trash? You can restore it later from the
-                    Trash Bin.
+                    Delete <strong>{project.name}</strong>? This action cannot be undone.
                   </p>
                   <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
                     <button
@@ -580,7 +579,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                         fontWeight: 500,
                       }}
                     >
-                      Move to Trash
+                      Delete Project
                     </button>
                   </div>
                 </div>
