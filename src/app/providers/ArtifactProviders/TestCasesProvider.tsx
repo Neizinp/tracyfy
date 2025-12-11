@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
 import { useFileSystem } from '../FileSystemProvider';
+import { useUser } from '../UserProvider';
 import type { TestCase } from '../../../types';
 import { incrementRevision } from '../../../utils/revisionUtils';
 
@@ -33,6 +34,7 @@ export const TestCasesProvider: React.FC<{ children: ReactNode }> = ({ children 
     isReady,
     getNextId,
   } = useFileSystem();
+  const { currentUser } = useUser();
   const hasSyncedInitial = useRef(false);
 
   // Sync test cases from filesystem on initial load
@@ -46,6 +48,13 @@ export const TestCasesProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const handleAddTestCase = useCallback(
     async (newTcData: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated'>) => {
+      if (!currentUser) {
+        alert(
+          'Please select a user before creating artifacts.\n\nGo to Settings → Users to select a user.'
+        );
+        return;
+      }
+
       const newId = await getNextId('testCases');
       const now = Date.now();
 
@@ -65,7 +74,7 @@ export const TestCasesProvider: React.FC<{ children: ReactNode }> = ({ children 
         console.error('Failed to save test case:', error);
       }
     },
-    [getNextId, saveTestCase, setTestCases]
+    [currentUser, getNextId, saveTestCase, setTestCases]
   );
 
   const handleUpdateTestCase = useCallback(
@@ -148,10 +157,16 @@ export const TestCasesProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const handleEditTestCase = useCallback(
     (tc: TestCase) => {
+      if (!currentUser) {
+        alert(
+          'Please select a user before editing artifacts.\n\nGo to Settings → Users to select a user.'
+        );
+        return;
+      }
       setSelectedTestCaseId(tc.id);
       setIsEditTestCaseModalOpen(true);
     },
-    [setSelectedTestCaseId, setIsEditTestCaseModalOpen]
+    [currentUser, setSelectedTestCaseId, setIsEditTestCaseModalOpen]
   );
 
   const value: TestCasesContextValue = {

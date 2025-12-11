@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
 import { useFileSystem } from '../FileSystemProvider';
+import { useUser } from '../UserProvider';
 import type { Requirement } from '../../../types';
 import { incrementRevision } from '../../../utils/revisionUtils';
 
@@ -41,6 +42,7 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
     isReady,
     getNextId,
   } = useFileSystem();
+  const { currentUser } = useUser();
   const hasSyncedInitial = useRef(false);
 
   // Sync requirements from filesystem on initial load
@@ -58,6 +60,13 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const handleAddRequirement = useCallback(
     async (newReqData: Omit<Requirement, 'id' | 'lastModified'>) => {
+      if (!currentUser) {
+        alert(
+          'Please select a user before creating artifacts.\n\nGo to Settings → Users to select a user.'
+        );
+        return;
+      }
+
       const newId = await getNextId('requirements');
 
       const newRequirement: Requirement = {
@@ -75,7 +84,7 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
         console.error('Failed to save requirement:', error);
       }
     },
-    [getNextId, saveRequirement, setRequirements]
+    [currentUser, getNextId, saveRequirement, setRequirements]
   );
 
   const handleUpdateRequirement = useCallback(
@@ -172,10 +181,16 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const handleEdit = useCallback(
     (req: Requirement) => {
+      if (!currentUser) {
+        alert(
+          'Please select a user before editing artifacts.\n\nGo to Settings → Users to select a user.'
+        );
+        return;
+      }
       setEditingRequirement(req);
       setIsEditRequirementModalOpen(true);
     },
-    [setEditingRequirement, setIsEditRequirementModalOpen]
+    [currentUser, setEditingRequirement, setIsEditRequirementModalOpen]
   );
 
   const handleLink = useCallback(

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
 import { useFileSystem } from '../FileSystemProvider';
+import { useUser } from '../UserProvider';
 import type { UseCase } from '../../../types';
 import { incrementRevision } from '../../../utils/revisionUtils';
 
@@ -34,6 +35,7 @@ export const UseCasesProvider: React.FC<{ children: ReactNode }> = ({ children }
     isReady,
     getNextId,
   } = useFileSystem();
+  const { currentUser } = useUser();
   const hasSyncedInitial = useRef(false);
 
   // Sync use cases from filesystem on initial load
@@ -47,6 +49,13 @@ export const UseCasesProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const handleAddUseCase = useCallback(
     async (newUcData: Omit<UseCase, 'id' | 'lastModified'>) => {
+      if (!currentUser) {
+        alert(
+          'Please select a user before creating artifacts.\n\nGo to Settings → Users to select a user.'
+        );
+        return;
+      }
+
       const newId = await getNextId('useCases');
 
       const newUseCase: UseCase = {
@@ -64,15 +73,21 @@ export const UseCasesProvider: React.FC<{ children: ReactNode }> = ({ children }
         console.error('Failed to save use case:', error);
       }
     },
-    [getNextId, saveUseCase, setUseCases]
+    [currentUser, getNextId, saveUseCase, setUseCases]
   );
 
   const handleEditUseCase = useCallback(
     (uc: UseCase) => {
+      if (!currentUser) {
+        alert(
+          'Please select a user before editing artifacts.\n\nGo to Settings → Users to select a user.'
+        );
+        return;
+      }
       setEditingUseCase(uc);
       setIsUseCaseModalOpen(true);
     },
-    [setEditingUseCase, setIsUseCaseModalOpen]
+    [currentUser, setEditingUseCase, setIsUseCaseModalOpen]
   );
 
   const handleUpdateUseCase = useCallback(

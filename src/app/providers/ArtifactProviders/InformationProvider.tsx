@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
 import { useFileSystem } from '../FileSystemProvider';
+import { useUser } from '../UserProvider';
 import type { Information } from '../../../types';
 import { incrementRevision } from '../../../utils/revisionUtils';
 
@@ -33,6 +34,7 @@ export const InformationProvider: React.FC<{ children: ReactNode }> = ({ childre
     isReady,
     getNextId,
   } = useFileSystem();
+  const { currentUser } = useUser();
   const hasSyncedInitial = useRef(false);
 
   // Sync information from filesystem on initial load
@@ -50,6 +52,13 @@ export const InformationProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   const handleAddInformation = useCallback(
     async (newInfoData: Omit<Information, 'id' | 'lastModified' | 'dateCreated'>) => {
+      if (!currentUser) {
+        alert(
+          'Please select a user before creating artifacts.\n\nGo to Settings → Users to select a user.'
+        );
+        return;
+      }
+
       const newId = await getNextId('information');
       const now = Date.now();
 
@@ -69,15 +78,21 @@ export const InformationProvider: React.FC<{ children: ReactNode }> = ({ childre
         console.error('Failed to save information:', error);
       }
     },
-    [getNextId, saveInformation, setInformation]
+    [currentUser, getNextId, saveInformation, setInformation]
   );
 
   const handleEditInformation = useCallback(
     (info: Information) => {
+      if (!currentUser) {
+        alert(
+          'Please select a user before editing artifacts.\n\nGo to Settings → Users to select a user.'
+        );
+        return;
+      }
       setSelectedInformation(info);
       setIsInformationModalOpen(true);
     },
-    [setSelectedInformation, setIsInformationModalOpen]
+    [currentUser, setSelectedInformation, setIsInformationModalOpen]
   );
 
   const handleUpdateInformation = useCallback(
