@@ -7,7 +7,7 @@ import { realGitService } from '../services/realGitService';
 interface VersionHistoryProps {
   isOpen: boolean;
   baselines: ProjectBaseline[];
-  projectId: string;
+  projectName: string | null;
   onClose: () => void;
   onCreateBaseline: (name: string, message: string) => void;
 }
@@ -18,20 +18,31 @@ import { SnapshotViewer } from './SnapshotViewer';
 export const VersionHistory: React.FC<VersionHistoryProps> = ({
   isOpen,
   baselines,
-  projectId,
+  projectName,
   onClose,
   onCreateBaseline,
 }) => {
   const [isCreatingBaseline, setIsCreatingBaseline] = useState(false);
-  const [activeTab, setActiveTab] = useState<'baselines' | 'commits'>('baselines');
+  const [activeTab, setActiveTab] = useState<'baselines' | 'commits' | 'global'>('baselines');
   const [commits, setCommits] = useState<CommitInfo[]>([]);
+  const [globalCommits, setGlobalCommits] = useState<CommitInfo[]>([]);
   const [baselineCommitHashes, setBaselineCommitHashes] = useState<Map<string, string[]>>(
     new Map()
   );
   const [isLoadingCommits, setIsLoadingCommits] = useState(false);
+  const [isLoadingGlobalCommits, setIsLoadingGlobalCommits] = useState(false);
 
-  // Default name generation
-  const nextBaselineNumber = `${baselines.length + 1}.0`;
+  // Project-specific baseline helpers
+  const projectPrefix = projectName ? `[${projectName}] ` : '';
+  const isProjectBaseline = (tagName: string) => projectName && tagName.startsWith(projectPrefix);
+  const getVersionFromTag = (tagName: string) =>
+    tagName.startsWith(projectPrefix) ? tagName.slice(projectPrefix.length) : tagName;
+
+  // Filter baselines for current project
+  const projectBaselines = baselines.filter((b) => isProjectBaseline(b.name));
+
+  // Default name generation (count only project-specific baselines)
+  const nextBaselineNumber = `${projectBaselines.length + 1}.0`;
 
   const [baselineName, setBaselineName] = useState(nextBaselineNumber);
   const [baselineMessage, setBaselineMessage] = useState('');
@@ -72,11 +83,11 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   }, []);
 
   const loadCommits = useCallback(async () => {
-    if (!projectId) return;
+    if (!projectName) return;
 
     setIsLoadingCommits(true);
     try {
-      const projectFilePath = `projects/${projectId}.md`;
+      const projectFilePath = `projects/${projectName}.md`;
       const history = await realGitService.getHistory(projectFilePath);
       setCommits(history);
     } catch (error) {
@@ -84,7 +95,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     } finally {
       setIsLoadingCommits(false);
     }
-  }, [projectId]);
+  }, [projectName]);
 
   // Load tags on open (needed for baseline view buttons)
   useEffect(() => {
@@ -100,19 +111,40 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     }
   }, [isOpen, activeTab, loadCommits]);
 
+  // Load global commits when global tab is active
+  const loadGlobalCommits = useCallback(async () => {
+    setIsLoadingGlobalCommits(true);
+    try {
+      const history = await realGitService.getHistory(); // No filepath = all commits
+      setGlobalCommits(history);
+    } catch (error) {
+      console.error('Failed to load global commits:', error);
+    } finally {
+      setIsLoadingGlobalCommits(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && activeTab === 'global') {
+      loadGlobalCommits();
+    }
+  }, [isOpen, activeTab, loadGlobalCommits]);
+
   // Update default name when modal opens for creating
   const handleStartCreating = () => {
-    setBaselineName(`${baselines.length + 1}.0`);
+    setBaselineName(`${projectBaselines.length + 1}.0`);
     setBaselineMessage('');
     setIsCreatingBaseline(true);
   };
 
   const handleCreateBaselineSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (baselineName.trim()) {
+    if (baselineName.trim() && projectName) {
+      // Prepend project name to create project-specific baseline
+      const fullTagName = `${projectPrefix}${baselineName.trim()}`;
       onCreateBaseline(
-        baselineName.trim(),
-        baselineMessage.trim() || `Baseline ${baselineName.trim()} `
+        fullTagName,
+        baselineMessage.trim() || `Baseline ${baselineName.trim()} for ${projectName}`
       );
       setBaselineName('');
       setBaselineMessage('');
@@ -220,7 +252,26 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
             }}
           >
             <GitCommit size={16} />
-            Commits
+            Project Commits
+          </button>
+          <button
+            onClick={() => setActiveTab('global')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 24px',
+              background: 'none',
+              border: 'none',
+              borderBottom:
+                activeTab === 'global' ? '2px solid var(--color-info)' : '2px solid transparent',
+              color: activeTab === 'global' ? 'var(--color-info)' : 'var(--color-text-muted)',
+              cursor: 'pointer',
+              fontWeight: 500,
+            }}
+          >
+            <GitCommit size={16} />
+            All Commits
           </button>
         </div>
 
@@ -340,7 +391,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
         >
           {activeTab === 'baselines' ? (
             // Baselines List
-            baselines.length === 0 ? (
+            projectBaselines.length === 0 ? (
               <div
                 style={{
                   textAlign: 'center',
@@ -349,11 +400,11 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                 }}
               >
                 <Tag size={48} style={{ opacity: 1, marginBottom: '12px' }} />
-                <p>No baselines found.</p>
+                <p>No baselines found for this project.</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {baselines.map((baseline) => (
+                {projectBaselines.map((baseline) => (
                   <div
                     key={baseline.id}
                     style={{
@@ -399,7 +450,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                             }}
                           >
                             <Tag size={10} />
-                            {baseline.version}
+                            {getVersionFromTag(baseline.name)}
                           </span>
                         </div>
                         <div
@@ -568,6 +619,135 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
               })}
             </div>
           )}
+
+          {/* Global Commits List */}
+          {activeTab === 'global' &&
+            (isLoadingGlobalCommits ? (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: 'var(--spacing-xl)',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                <p>Loading all commits...</p>
+              </div>
+            ) : globalCommits.length === 0 ? (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: 'var(--spacing-xl)',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                <GitCommit size={48} style={{ opacity: 0.5, marginBottom: '12px' }} />
+                <p>No commits in repository.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {globalCommits.map((commit, index) => {
+                  const baselineTags = baselineCommitHashes.get(commit.hash);
+                  const isBaseline = baselineTags && baselineTags.length > 0;
+
+                  return (
+                    <div
+                      key={commit.hash}
+                      style={{
+                        padding: 'var(--spacing-md)',
+                        borderRadius: '6px',
+                        border: isBaseline
+                          ? '1px solid var(--color-info-bg)'
+                          : '1px solid var(--color-border)',
+                        backgroundColor: isBaseline
+                          ? 'var(--color-info-bg)'
+                          : 'var(--color-bg-secondary)',
+                        transition: 'background-color 0.2s',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                        <div style={{ marginTop: '2px' }}>
+                          {isBaseline ? (
+                            <Tag size={16} style={{ color: 'var(--color-info)' }} />
+                          ) : (
+                            <GitCommit size={16} style={{ color: 'var(--color-text-muted)' }} />
+                          )}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              flexWrap: 'wrap',
+                            }}
+                          >
+                            <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>
+                              {commit.message.split('\n')[0]}
+                            </span>
+                            {isBaseline &&
+                              baselineTags.map((tagName) => (
+                                <span
+                                  key={tagName}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    padding: '2px 8px',
+                                    borderRadius: '12px',
+                                    backgroundColor: 'var(--color-info-bg)',
+                                    color: 'var(--color-info-light)',
+                                    fontSize: 'var(--font-size-xs)',
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  <Tag size={10} />
+                                  {tagName}
+                                </span>
+                              ))}
+                            {index === 0 && (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  padding: '2px 8px',
+                                  borderRadius: '12px',
+                                  backgroundColor: 'var(--color-success-bg)',
+                                  color: 'var(--color-success-light)',
+                                  fontSize: 'var(--font-size-xs)',
+                                  fontWeight: 500,
+                                }}
+                              >
+                                HEAD
+                              </span>
+                            )}
+                          </div>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              marginTop: '4px',
+                              fontSize: 'var(--font-size-sm)',
+                              color: 'var(--color-text-muted)',
+                            }}
+                          >
+                            <span
+                              style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-xs)' }}
+                            >
+                              {commit.hash.substring(0, 7)}
+                            </span>
+                            <span>•</span>
+                            <span>{commit.author}</span>
+                            <span>•</span>
+                            <span>{formatDateTime(commit.timestamp)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
         </div>
 
         <div
@@ -580,7 +760,9 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
         >
           {activeTab === 'baselines'
             ? '💡 Tip: Create baselines to save named snapshots of your project (e.g., "v1.0 Release").'
-            : '💡 Tip: Commits with a tag badge are also baselines.'}
+            : activeTab === 'commits'
+              ? '💡 Tip: Shows commits affecting this project only.'
+              : '💡 Tip: All commits across the entire repository.'}
         </div>
       </div>
 

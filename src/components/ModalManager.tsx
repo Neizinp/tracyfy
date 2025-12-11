@@ -31,8 +31,15 @@ export const ModalManager: React.FC = () => {
   const ui = useUI();
 
   // Project state
-  const { projects, currentProjectId, updateProject, deleteProject, createProject, addToProject } =
-    useProject();
+  const {
+    projects,
+    currentProjectId,
+    currentProject,
+    updateProject,
+    deleteProject,
+    createProject,
+    addToProject,
+  } = useProject();
 
   // Global state
   const { globalRequirements, globalUseCases, globalTestCases, globalInformation } =
@@ -218,7 +225,7 @@ export const ModalManager: React.FC = () => {
       <VersionHistory
         isOpen={ui.isVersionHistoryOpen}
         baselines={baselines}
-        projectId={currentProjectId}
+        projectName={currentProject?.name ?? null}
         onClose={() => ui.setIsVersionHistoryOpen(false)}
         onCreateBaseline={createBaseline}
       />
