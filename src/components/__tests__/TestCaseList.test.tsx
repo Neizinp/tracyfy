@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TestCaseList } from '../TestCaseList';
 import type { TestCase } from '../../types';
@@ -19,10 +19,13 @@ describe('TestCaseList', () => {
   ];
 
   const mockOnEdit = vi.fn();
-  const mockOnDelete = vi.fn();
+
+  beforeEach(() => {
+    mockOnEdit.mockClear();
+  });
 
   it('renders test cases', () => {
-    render(<TestCaseList testCases={mockTestCases} onEdit={mockOnEdit} onDelete={mockOnDelete} />);
+    render(<TestCaseList testCases={mockTestCases} onEdit={mockOnEdit} />);
 
     expect(screen.getByText('TC-001')).toBeInTheDocument();
     expect(screen.getByText('Verify Login')).toBeInTheDocument();
@@ -30,18 +33,16 @@ describe('TestCaseList', () => {
     expect(screen.getByText('passed')).toBeInTheDocument();
   });
 
-  it('handles edit and delete actions', () => {
-    render(<TestCaseList testCases={mockTestCases} onEdit={mockOnEdit} onDelete={mockOnDelete} />);
+  it('calls onEdit when row is clicked', () => {
+    render(<TestCaseList testCases={mockTestCases} onEdit={mockOnEdit} />);
 
-    fireEvent.click(screen.getByTitle('Edit'));
+    // Click the row to edit
+    fireEvent.click(screen.getByText('Verify Login'));
     expect(mockOnEdit).toHaveBeenCalledWith(mockTestCases[0]);
-
-    fireEvent.click(screen.getByTitle('Delete'));
-    expect(mockOnDelete).toHaveBeenCalledWith('TC-001');
   });
 
   it('renders empty state', () => {
-    render(<TestCaseList testCases={[]} onEdit={mockOnEdit} onDelete={mockOnDelete} />);
+    render(<TestCaseList testCases={[]} onEdit={mockOnEdit} />);
 
     expect(screen.getByText('No test cases found. Create one to get started.')).toBeInTheDocument();
   });

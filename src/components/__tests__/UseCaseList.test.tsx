@@ -23,18 +23,14 @@ describe('UseCaseList', () => {
 
   const mockRequirements: Requirement[] = [];
   const mockOnEdit = vi.fn();
-  const mockOnDelete = vi.fn();
-  const mockOnBreakDown = vi.fn();
+
+  beforeEach(() => {
+    mockOnEdit.mockClear();
+  });
 
   it('renders use cases', () => {
     render(
-      <UseCaseList
-        useCases={mockUseCases}
-        requirements={mockRequirements}
-        onEdit={mockOnEdit}
-        onDelete={mockOnDelete}
-        onBreakDown={mockOnBreakDown}
-      />
+      <UseCaseList useCases={mockUseCases} requirements={mockRequirements} onEdit={mockOnEdit} />
     );
 
     expect(screen.getByText('UC-001')).toBeInTheDocument();
@@ -42,57 +38,18 @@ describe('UseCaseList', () => {
     expect(screen.getByText(/Actor: User/)).toBeInTheDocument();
   });
 
-  it('expands use case details on click', () => {
+  it('calls onEdit when use case is clicked', () => {
     render(
-      <UseCaseList
-        useCases={mockUseCases}
-        requirements={mockRequirements}
-        onEdit={mockOnEdit}
-        onDelete={mockOnDelete}
-        onBreakDown={mockOnBreakDown}
-      />
+      <UseCaseList useCases={mockUseCases} requirements={mockRequirements} onEdit={mockOnEdit} />
     );
 
-    // Click header to expand
+    // Click the use case header to edit
     fireEvent.click(screen.getByText('Login'));
-
-    // Check for details
-    expect(screen.getByText('Description:')).toBeInTheDocument();
-    expect(screen.getByText('User logs in')).toBeInTheDocument();
-    expect(screen.getByText('Main Flow:')).toBeInTheDocument();
-  });
-
-  it('handles actions', () => {
-    render(
-      <UseCaseList
-        useCases={mockUseCases}
-        requirements={mockRequirements}
-        onEdit={mockOnEdit}
-        onDelete={mockOnDelete}
-        onBreakDown={mockOnBreakDown}
-      />
-    );
-
-    fireEvent.click(screen.getByTitle('Edit use case'));
     expect(mockOnEdit).toHaveBeenCalledWith(mockUseCases[0]);
-
-    fireEvent.click(screen.getByTitle('Delete use case'));
-    expect(mockOnDelete).toHaveBeenCalledWith('UC-001');
-
-    fireEvent.click(screen.getByTitle('Break down into requirements'));
-    expect(mockOnBreakDown).toHaveBeenCalledWith(mockUseCases[0]);
   });
 
   it('renders empty state', () => {
-    render(
-      <UseCaseList
-        useCases={[]}
-        requirements={mockRequirements}
-        onEdit={mockOnEdit}
-        onDelete={mockOnDelete}
-        onBreakDown={mockOnBreakDown}
-      />
-    );
+    render(<UseCaseList useCases={[]} requirements={mockRequirements} onEdit={mockOnEdit} />);
 
     expect(screen.getByText('No use cases found. Create one to get started.')).toBeInTheDocument();
   });

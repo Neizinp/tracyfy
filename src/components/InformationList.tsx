@@ -1,12 +1,11 @@
 import React from 'react';
-import { Edit2, Trash2, FileText, Calendar, Tag } from 'lucide-react';
+import { FileText, Calendar, Tag } from 'lucide-react';
 import type { Information, Project } from '../types';
 import { formatDate } from '../utils/dateUtils';
 
 interface InformationListProps {
   information: Information[];
   onEdit: (info: Information) => void;
-  onDelete: (id: string) => void;
   showProjectColumn?: boolean;
   projects?: Project[];
 }
@@ -14,7 +13,6 @@ interface InformationListProps {
 export const InformationList: React.FC<InformationListProps> = ({
   information,
   onEdit,
-  onDelete,
   showProjectColumn,
   projects,
 }) => {
@@ -68,66 +66,34 @@ export const InformationList: React.FC<InformationListProps> = ({
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-primary)')}
         >
-          <div
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-              <span
-                style={{
-                  fontFamily: 'monospace',
-                  fontSize: 'var(--font-size-sm)',
-                  color: 'var(--color-text-muted)',
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                }}
-              >
-                {info.id}
-              </span>
-              <span
-                style={{
-                  fontSize: 'var(--font-size-xs)',
-                  padding: '1px 5px',
-                  borderRadius: '3px',
-                  backgroundColor: 'var(--color-bg-tertiary)',
-                  color: 'var(--color-text-muted)',
-                  border: '1px solid var(--color-border)',
-                }}
-              >
-                {info.revision || '01'}
-              </span>
-              <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)', fontWeight: 600 }}>
-                {info.title}
-              </h3>
-            </div>
-            <div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>
-              <button
-                onClick={() => onEdit(info)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--color-text-secondary)',
-                  padding: '4px',
-                }}
-                title="Edit"
-              >
-                <Edit2 size={16} />
-              </button>
-              <button
-                onClick={() => onDelete(info.id)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--color-error)',
-                  padding: '4px',
-                }}
-                title="Delete"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+            <span
+              style={{
+                fontFamily: 'monospace',
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--color-text-muted)',
+                backgroundColor: 'var(--color-bg-secondary)',
+                padding: '2px 6px',
+                borderRadius: '4px',
+              }}
+            >
+              {info.id}
+            </span>
+            <span
+              style={{
+                fontSize: 'var(--font-size-xs)',
+                padding: '1px 5px',
+                borderRadius: '3px',
+                backgroundColor: 'var(--color-bg-tertiary)',
+                color: 'var(--color-text-muted)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              {info.revision || '01'}
+            </span>
+            <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)', fontWeight: 600 }}>
+              {info.title}
+            </h3>
           </div>
 
           <div

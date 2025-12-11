@@ -162,7 +162,7 @@ const SortableRequirementItem: React.FC<SortableRequirementItemProps> = ({
               color: 'var(--color-accent-light)',
             }}
             title={linkedArtifacts
-              .map((link) => `→ ${link.targetId} (${link.type.replace('_', ' ')})`)
+              .map((link) => `→ ${link.targetId} (${(link.type || 'unknown').replace('_', ' ')})`)
               .join('\n')}
           >
             <ArrowRight size={12} />

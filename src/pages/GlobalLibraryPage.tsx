@@ -17,9 +17,9 @@ export const GlobalLibraryPage: React.FC = () => {
   const { projects } = useProject();
   const { columnVisibility } = useUI();
   const { handleEdit: handleEditRequirement } = useRequirements();
-  const { handleEditUseCase, handleDeleteUseCase, handleBreakDownUseCase } = useUseCases();
-  const { handleEditTestCase, handleDeleteTestCase } = useTestCases();
-  const { handleEditInformation, handleDeleteInformation } = useInformation();
+  const { handleEditUseCase } = useUseCases();
+  const { handleEditTestCase } = useTestCases();
+  const { handleEditInformation } = useInformation();
 
   const { type } = useParams<{ type: string }>();
 
@@ -41,8 +41,6 @@ export const GlobalLibraryPage: React.FC = () => {
           useCases={globalUseCases.filter((u) => !u.isDeleted)}
           requirements={globalRequirements}
           onEdit={handleEditUseCase}
-          onDelete={handleDeleteUseCase}
-          onBreakDown={handleBreakDownUseCase}
           showProjectColumn={true}
           projects={projects}
         />
@@ -53,7 +51,6 @@ export const GlobalLibraryPage: React.FC = () => {
         <TestCaseList
           testCases={globalTestCases.filter((t) => !t.isDeleted)}
           onEdit={handleEditTestCase}
-          onDelete={handleDeleteTestCase}
           showProjectColumn={true}
           projects={projects}
         />
@@ -64,7 +61,6 @@ export const GlobalLibraryPage: React.FC = () => {
         <InformationList
           information={globalInformation.filter((i) => !i.isDeleted)}
           onEdit={handleEditInformation}
-          onDelete={handleDeleteInformation}
           showProjectColumn={true}
           projects={projects}
         />

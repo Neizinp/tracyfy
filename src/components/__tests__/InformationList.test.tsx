@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { InformationList } from '../InformationList';
 import type { Information } from '../../types';
@@ -17,12 +17,13 @@ describe('InformationList', () => {
   ];
 
   const mockOnEdit = vi.fn();
-  const mockOnDelete = vi.fn();
+
+  beforeEach(() => {
+    mockOnEdit.mockClear();
+  });
 
   it('renders information items', () => {
-    render(
-      <InformationList information={mockInformation} onEdit={mockOnEdit} onDelete={mockOnDelete} />
-    );
+    render(<InformationList information={mockInformation} onEdit={mockOnEdit} />);
 
     expect(screen.getByText('INFO-001')).toBeInTheDocument();
     expect(screen.getByText('System Architecture')).toBeInTheDocument();
@@ -30,20 +31,16 @@ describe('InformationList', () => {
     expect(screen.getByText('other')).toBeInTheDocument();
   });
 
-  it('handles edit and delete actions', () => {
-    render(
-      <InformationList information={mockInformation} onEdit={mockOnEdit} onDelete={mockOnDelete} />
-    );
+  it('calls onEdit when card is clicked', () => {
+    render(<InformationList information={mockInformation} onEdit={mockOnEdit} />);
 
-    fireEvent.click(screen.getByTitle('Edit'));
+    // Click the card to edit
+    fireEvent.click(screen.getByText('System Architecture'));
     expect(mockOnEdit).toHaveBeenCalledWith(mockInformation[0]);
-
-    fireEvent.click(screen.getByTitle('Delete'));
-    expect(mockOnDelete).toHaveBeenCalledWith('INFO-001');
   });
 
   it('renders empty state', () => {
-    render(<InformationList information={[]} onEdit={mockOnEdit} onDelete={mockOnDelete} />);
+    render(<InformationList information={[]} onEdit={mockOnEdit} />);
 
     expect(
       screen.getByText('No information artifacts found. Create one to get started.')

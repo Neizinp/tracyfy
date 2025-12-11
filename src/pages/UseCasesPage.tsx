@@ -3,8 +3,7 @@ import { UseCaseList } from '../components';
 import { useUseCases, useRequirements, useUI } from '../app/providers';
 
 export const UseCasesPage: React.FC = () => {
-  const { useCases, handleEditUseCase, handleDeleteUseCase, handleBreakDownUseCase } =
-    useUseCases();
+  const { useCases, handleEditUseCase } = useUseCases();
   const { requirements } = useRequirements();
   const { searchQuery } = useUI();
 
@@ -25,8 +24,6 @@ export const UseCasesPage: React.FC = () => {
       useCases={filteredUseCases}
       requirements={requirements}
       onEdit={handleEditUseCase}
-      onDelete={handleDeleteUseCase}
-      onBreakDown={handleBreakDownUseCase}
     />
   );
 };

@@ -1,12 +1,11 @@
 import React from 'react';
-import { Edit2, Trash2, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import type { TestCase, Project } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 
 interface TestCaseListProps {
   testCases: TestCase[];
   onEdit: (testCase: TestCase) => void;
-  onDelete: (id: string) => void;
   showProjectColumn?: boolean;
   projects?: Project[];
 }
@@ -14,7 +13,6 @@ interface TestCaseListProps {
 export const TestCaseList: React.FC<TestCaseListProps> = ({
   testCases,
   onEdit,
-  onDelete,
   showProjectColumn,
   projects,
 }) => {
@@ -167,16 +165,6 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
               >
                 Last Run
               </th>
-              <th
-                style={{
-                  padding: '12px',
-                  textAlign: 'left',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 600,
-                  color: 'var(--color-text-secondary)',
-                  width: '80px',
-                }}
-              ></th>
             </tr>
           </thead>
           <tbody>
@@ -186,6 +174,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                 style={{
                   borderBottom: '1px solid var(--color-border)',
                   transition: 'background-color 0.1s',
+                  cursor: 'pointer',
                 }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
@@ -193,6 +182,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')
                 }
+                onClick={() => onEdit(tc)}
               >
                 <td style={{ padding: '12px', verticalAlign: 'top' }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -311,36 +301,6 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                   }}
                 >
                   {tc.lastRun ? formatDateTime(tc.lastRun) : '-'}
-                </td>
-                <td style={{ padding: '12px', verticalAlign: 'top' }}>
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    <button
-                      onClick={() => onEdit(tc)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--color-text-muted)',
-                        cursor: 'pointer',
-                        padding: '4px',
-                      }}
-                      title="Edit"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button
-                      onClick={() => onDelete(tc.id)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--color-error)',
-                        cursor: 'pointer',
-                        padding: '4px',
-                      }}
-                      title="Delete"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
                 </td>
               </tr>
             ))}
