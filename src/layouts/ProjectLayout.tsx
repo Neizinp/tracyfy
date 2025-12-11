@@ -195,7 +195,10 @@ export const ProjectLayout: React.FC = () => {
         ui.isLibraryPanelOpen ? (
           <GlobalLibraryPanel
             isOpen={true}
-            onClose={() => ui.setIsLibraryPanelOpen(false)}
+            onClose={() => {
+              ui.setGlobalLibrarySelection(new Set());
+              ui.setIsLibraryPanelOpen(false);
+            }}
             requirements={globalRequirements}
             useCases={globalUseCases}
             testCases={globalTestCases}
@@ -203,6 +206,8 @@ export const ProjectLayout: React.FC = () => {
             projects={projects}
             selectedItems={ui.globalLibrarySelection}
             onToggleSelect={ui.handleGlobalLibrarySelect}
+            onSelectAll={(ids) => ui.setGlobalLibrarySelection(new Set(ids))}
+            onDeselectAll={() => ui.setGlobalLibrarySelection(new Set())}
             activeTab={ui.activeLibraryTab}
             onTabChange={(tab) => ui.setActiveLibraryTab(tab as any)}
             onAddToProject={handleAddFromLibrary}

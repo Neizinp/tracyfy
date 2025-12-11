@@ -12,6 +12,8 @@ interface GlobalLibraryPanelProps {
   projects: Project[];
   selectedItems: Set<string>;
   onToggleSelect: (id: string) => void;
+  onSelectAll?: (ids: string[]) => void;
+  onDeselectAll?: () => void;
   activeTab?: Tab;
   onTabChange?: (tab: Tab) => void;
   onAddToProject?: (ids: string[]) => void;
@@ -116,6 +118,8 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
   projects,
   selectedItems,
   onToggleSelect,
+  onSelectAll,
+  onDeselectAll,
   activeTab: propActiveTab,
   onTabChange,
   onAddToProject,
@@ -320,6 +324,61 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
             {tab.label}
           </button>
         ))}
+      </div>
+
+      {/* Select All / Deselect All buttons */}
+      <div
+        style={{
+          padding: '8px 16px',
+          borderBottom: '1px solid var(--color-border)',
+          display: 'flex',
+          gap: '8px',
+        }}
+      >
+        <button
+          onClick={() => {
+            const currentTabIds = (() => {
+              switch (activeTab) {
+                case 'requirements':
+                  return filterItems(requirements).map((r) => r.id);
+                case 'usecases':
+                  return filterItems(useCases).map((uc) => uc.id);
+                case 'testcases':
+                  return filterItems(testCases).map((tc) => tc.id);
+                case 'information':
+                  return filterItems(information).map((info) => info.id);
+              }
+            })();
+            onSelectAll?.(currentTabIds);
+          }}
+          style={{
+            flex: 1,
+            padding: '6px 12px',
+            borderRadius: '4px',
+            border: '1px solid var(--color-border)',
+            backgroundColor: 'var(--color-bg-card)',
+            color: 'var(--color-text-secondary)',
+            cursor: 'pointer',
+            fontSize: 'var(--font-size-xs)',
+          }}
+        >
+          Select All
+        </button>
+        <button
+          onClick={() => onDeselectAll?.()}
+          style={{
+            flex: 1,
+            padding: '6px 12px',
+            borderRadius: '4px',
+            border: '1px solid var(--color-border)',
+            backgroundColor: 'var(--color-bg-card)',
+            color: 'var(--color-text-secondary)',
+            cursor: 'pointer',
+            fontSize: 'var(--font-size-xs)',
+          }}
+        >
+          Deselect All
+        </button>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>{renderContent()}</div>
