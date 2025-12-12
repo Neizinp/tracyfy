@@ -4,14 +4,15 @@ import type { Requirement, ArtifactLink } from '../types';
 import { MarkdownEditor } from './MarkdownEditor';
 import { formatDateTime } from '../utils/dateUtils';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
-import { useUI, useGlobalState } from '../app/providers';
+import { useUI, useGlobalState, useUser } from '../app/providers';
 import { useIncomingLinks } from '../hooks/useIncomingLinks';
 
-interface EditRequirementModalProps {
+interface RequirementModalProps {
   isOpen: boolean;
-  requirement: Requirement | null;
+  requirement: Requirement | null; // null = create mode
   onClose: () => void;
-  onSubmit: (id: string, updates: Partial<Requirement>) => void;
+  onCreate: (req: Omit<Requirement, 'id' | 'children' | 'lastModified'>) => void;
+  onUpdate: (id: string, updates: Partial<Requirement>) => void;
   onDelete: (id: string) => void;
 }
 
@@ -19,11 +20,12 @@ type Tab = 'overview' | 'details' | 'relationships' | 'comments' | 'history';
 
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
-export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
+export const RequirementModal: React.FC<RequirementModalProps> = ({
   isOpen,
   requirement,
   onClose,
-  onSubmit,
+  onCreate,
+  onUpdate,
   onDelete,
 }) => {
   const {
@@ -41,6 +43,8 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
     setIsInformationModalOpen,
   } = useUI();
   const { requirements, useCases, testCases, information } = useGlobalState();
+  const { currentUser } = useUser();
+  const isEditMode = requirement !== null;
 
   // Compute incoming links (artifacts that link TO this requirement)
   const incomingLinks = useIncomingLinks({
@@ -64,36 +68,69 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [linkedArtifacts, setLinkedArtifacts] = useState<ArtifactLink[]>([]);
 
+  // Reset form when modal opens/closes or requirement changes
   useEffect(() => {
-    if (requirement) {
-      setTitle(requirement.title);
-      setDescription(requirement.description);
-      setText(requirement.text);
-      setRationale(requirement.rationale);
-      setPriority(requirement.priority);
-      setStatus(requirement.status);
-
-      setVerificationMethod(requirement.verificationMethod || '');
-      setComments(requirement.comments || '');
-      setLinkedArtifacts(requirement.linkedArtifacts || []);
+    if (isOpen) {
+      if (requirement) {
+        // Edit mode: populate from requirement
+        setTitle(requirement.title);
+        setDescription(requirement.description);
+        setText(requirement.text);
+        setRationale(requirement.rationale);
+        setPriority(requirement.priority);
+        setStatus(requirement.status);
+        setVerificationMethod(requirement.verificationMethod || '');
+        setComments(requirement.comments || '');
+        setLinkedArtifacts(requirement.linkedArtifacts || []);
+      } else {
+        // Create mode: reset to defaults
+        setTitle('');
+        setDescription('');
+        setText('');
+        setRationale('');
+        setPriority('medium');
+        setStatus('draft');
+        setVerificationMethod('');
+        setComments('');
+        setLinkedArtifacts([]);
+      }
+      setActiveTab('overview');
+      setShowDeleteConfirm(false);
     }
-  }, [requirement]);
+  }, [isOpen, requirement]);
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!requirement) return;
 
-    onSubmit(requirement.id, {
-      title,
-      description,
-      text,
-      rationale,
-      priority,
-      status,
-      linkedArtifacts,
-      verificationMethod,
-      comments,
-    });
+    if (isEditMode && requirement) {
+      // Update existing requirement
+      onUpdate(requirement.id, {
+        title,
+        description,
+        text,
+        rationale,
+        priority,
+        status,
+        linkedArtifacts,
+        verificationMethod,
+        comments,
+      });
+    } else {
+      // Create new requirement
+      onCreate({
+        title,
+        description,
+        text,
+        rationale,
+        priority,
+        author: currentUser?.name || undefined,
+        verificationMethod: verificationMethod || undefined,
+        comments: comments || undefined,
+        dateCreated: Date.now(),
+        status: 'draft',
+        revision: '01',
+      });
+    }
     onClose();
   };
 
@@ -158,14 +195,18 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
     }
   };
 
-  if (!isOpen || !requirement) return null;
+  if (!isOpen) return null;
 
-  const tabs: { id: Tab; label: string }[] = [
+  const modalTitle = isEditMode ? `Edit Requirement - ${requirement?.id}` : 'New Requirement';
+  const submitLabel = isEditMode ? 'Save Changes' : 'Create Requirement';
+
+  // Filter tabs based on mode
+  const allTabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'details', label: 'Details' },
     { id: 'relationships', label: 'Relationships' },
     { id: 'comments', label: 'Comments' },
-    { id: 'history', label: 'Revision History' },
+    ...(isEditMode ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
   ];
 
   return (
@@ -208,7 +249,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
             backgroundColor: 'var(--color-bg-card)',
           }}
         >
-          <h3 style={{ fontWeight: 600 }}>Edit Requirement - {requirement.id}</h3>
+          <h3 style={{ fontWeight: 600 }}>{modalTitle}</h3>
           <button
             onClick={onClose}
             style={{
@@ -230,7 +271,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
             backgroundColor: 'var(--color-bg-secondary)',
           }}
         >
-          {tabs.map((tab) => (
+          {allTabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -369,39 +410,47 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                     borderRadius: '6px',
                     border: '1px solid var(--color-border)',
                     backgroundColor: 'var(--color-bg-secondary)',
-                    color: 'var(--color-text-muted)',
+                    color: isEditMode
+                      ? 'var(--color-text-muted)'
+                      : currentUser
+                        ? 'var(--color-text-primary)'
+                        : 'var(--color-text-muted)',
                   }}
                 >
-                  {requirement.author || 'Not specified'}
+                  {isEditMode
+                    ? requirement?.author || 'Not specified'
+                    : currentUser?.name || 'No user selected'}
                 </div>
               </div>
 
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    marginBottom: 'var(--spacing-xs)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Date Created
-                </label>
-                <input
-                  type="text"
-                  value={formatDateTime(requirement.dateCreated)}
-                  disabled
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    color: 'var(--color-text-muted)',
-                    outline: 'none',
-                    cursor: 'not-allowed',
-                  }}
-                />
-              </div>
+              {isEditMode && (
+                <div>
+                  <label
+                    style={{
+                      display: 'block',
+                      marginBottom: 'var(--spacing-xs)',
+                      fontSize: 'var(--font-size-sm)',
+                    }}
+                  >
+                    Date Created
+                  </label>
+                  <input
+                    type="text"
+                    value={requirement ? formatDateTime(requirement.dateCreated) : ''}
+                    disabled
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--color-border)',
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      color: 'var(--color-text-muted)',
+                      outline: 'none',
+                      cursor: 'not-allowed',
+                    }}
+                  />
+                </div>
+              )}
 
               <div style={{ gridColumn: '1 / -1' }}>
                 <MarkdownEditor
@@ -483,25 +532,27 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                   >
                     Linked Items
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLinkSourceId(requirement.id);
-                      setLinkSourceType('requirement');
-                      setIsLinkModalOpen(true);
-                    }}
-                    style={{
-                      fontSize: 'var(--font-size-xs)',
-                      color: 'var(--color-accent)',
-                      background: 'none',
-                      border: '1px solid var(--color-accent)',
-                      borderRadius: '4px',
-                      padding: '2px 8px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    + Add Link
-                  </button>
+                  {isEditMode && requirement && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLinkSourceId(requirement.id);
+                        setLinkSourceType('requirement');
+                        setIsLinkModalOpen(true);
+                      }}
+                      style={{
+                        fontSize: 'var(--font-size-xs)',
+                        color: 'var(--color-accent)',
+                        background: 'none',
+                        border: '1px solid var(--color-accent)',
+                        borderRadius: '4px',
+                        padding: '2px 8px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      + Add Link
+                    </button>
+                  )}
                 </div>
                 <div
                   style={{
@@ -514,7 +565,18 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                     overflowY: 'auto',
                   }}
                 >
-                  {linkedArtifacts.length === 0 ? (
+                  {!isEditMode ? (
+                    <div
+                      style={{
+                        padding: '16px',
+                        color: 'var(--color-text-muted)',
+                        fontSize: 'var(--font-size-sm)',
+                        textAlign: 'center',
+                      }}
+                    >
+                      Save the requirement first to add relationships.
+                    </div>
+                  ) : linkedArtifacts.length === 0 ? (
                     <div
                       style={{
                         padding: '8px',
@@ -806,24 +868,32 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
             gap: 'var(--spacing-sm)',
           }}
         >
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={showDeleteConfirm}
+          {isEditMode && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={showDeleteConfirm}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '6px',
+                border: '1px solid var(--color-error)',
+                backgroundColor: 'var(--color-bg-card)',
+                color: 'var(--color-error)',
+                cursor: showDeleteConfirm ? 'not-allowed' : 'pointer',
+                fontWeight: 500,
+                opacity: showDeleteConfirm ? 0.5 : 1,
+              }}
+            >
+              Delete
+            </button>
+          )}
+          <div
             style={{
-              padding: '8px 16px',
-              borderRadius: '6px',
-              border: '1px solid var(--color-error)',
-              backgroundColor: 'var(--color-bg-card)',
-              color: 'var(--color-error)',
-              cursor: showDeleteConfirm ? 'not-allowed' : 'pointer',
-              fontWeight: 500,
-              opacity: showDeleteConfirm ? 0.5 : 1,
+              display: 'flex',
+              gap: 'var(--spacing-sm)',
+              marginLeft: isEditMode ? '0' : 'auto',
             }}
           >
-            Delete
-          </button>
-          <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
             <button
               type="button"
               onClick={onClose}
@@ -851,7 +921,7 @@ export const EditRequirementModal: React.FC<EditRequirementModalProps> = ({
                 fontWeight: 500,
               }}
             >
-              Save Changes
+              {submitLabel}
             </button>
           </div>
         </div>

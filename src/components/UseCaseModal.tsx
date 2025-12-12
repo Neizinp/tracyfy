@@ -108,7 +108,13 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     { id: 'conditions', label: 'Conditions' },
     { id: 'relationships', label: 'Relationships' },
     { id: 'history', label: 'Revision History' },
-  ].filter((tab) => tab.id !== 'relationships' || useCase) as { id: Tab; label: string }[]; // Only show relationships for existing use cases
+  ].filter((tab) => {
+    // Only show relationships and history for existing use cases
+    if (tab.id === 'relationships' || tab.id === 'history') {
+      return useCase !== null && useCase !== undefined;
+    }
+    return true;
+  }) as { id: Tab; label: string }[];
 
   return (
     <div

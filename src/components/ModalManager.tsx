@@ -1,8 +1,7 @@
 import React, { useCallback } from 'react';
 import {
-  NewRequirementModal,
+  RequirementModal,
   LinkModal,
-  EditRequirementModal,
   UseCaseModal,
   TestCaseModal,
   InformationModal,
@@ -133,12 +132,23 @@ export const ModalManager: React.FC = () => {
     ? testCases.find((t) => t.id === ui.selectedTestCaseId) || null
     : null;
 
+  // Determine which Requirement to show (edit mode) or null (create mode)
+  const selectedRequirement = ui.isEditRequirementModalOpen ? ui.editingRequirement : null;
+
   return (
     <>
-      <NewRequirementModal
-        isOpen={ui.isNewRequirementModalOpen}
-        onClose={() => ui.setIsNewRequirementModalOpen(false)}
-        onSubmit={handleAddRequirement}
+      {/* Unified RequirementModal for both create and edit */}
+      <RequirementModal
+        isOpen={ui.isNewRequirementModalOpen || ui.isEditRequirementModalOpen}
+        requirement={selectedRequirement}
+        onClose={() => {
+          ui.setIsNewRequirementModalOpen(false);
+          ui.setIsEditRequirementModalOpen(false);
+          ui.setEditingRequirement(null);
+        }}
+        onCreate={handleAddRequirement}
+        onUpdate={handleUpdateRequirement}
+        onDelete={handleDeleteRequirement}
       />
 
       <LinkModal
@@ -154,19 +164,6 @@ export const ModalManager: React.FC = () => {
         onClose={() => ui.setIsLinkModalOpen(false)}
         onAddLink={handleAddArtifactLink}
       />
-
-      {ui.isEditRequirementModalOpen && ui.editingRequirement && (
-        <EditRequirementModal
-          isOpen={ui.isEditRequirementModalOpen}
-          requirement={ui.editingRequirement}
-          onClose={() => {
-            ui.setIsEditRequirementModalOpen(false);
-            ui.setEditingRequirement(null);
-          }}
-          onSubmit={handleUpdateRequirement}
-          onDelete={handleDeleteRequirement}
-        />
-      )}
 
       <UseCaseModal
         isOpen={ui.isUseCaseModalOpen}
