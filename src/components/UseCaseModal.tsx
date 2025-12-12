@@ -537,7 +537,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                     overflowY: 'auto',
                   }}
                 >
-                  {(useCase.linkedArtifacts || []).length === 0 ? (
+                  {(useCase.linkedArtifacts || []).filter((l) => l.targetId).length === 0 ? (
                     <div
                       style={{
                         padding: '8px',
@@ -591,43 +591,45 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                           + Add Link
                         </button>
                       </div>
-                      {(useCase.linkedArtifacts || []).map((link, index) => (
-                        <div
-                          key={`${link.targetId}-${index}`}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '6px 8px',
-                            backgroundColor: 'var(--color-bg-card)',
-                            borderRadius: '4px',
-                            border: '1px solid var(--color-border)',
-                          }}
-                        >
+                      {(useCase.linkedArtifacts || [])
+                        .filter((link) => link.targetId)
+                        .map((link, index) => (
                           <div
+                            key={`${link.targetId}-${index}`}
                             style={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '8px',
-                              fontSize: 'var(--font-size-sm)',
+                              justifyContent: 'space-between',
+                              padding: '6px 8px',
+                              backgroundColor: 'var(--color-bg-card)',
+                              borderRadius: '4px',
+                              border: '1px solid var(--color-border)',
                             }}
                           >
-                            <span
+                            <div
                               style={{
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                backgroundColor: 'var(--color-bg-secondary)',
-                                fontSize: 'var(--font-size-xs)',
-                                fontFamily: 'monospace',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                fontSize: 'var(--font-size-sm)',
                               }}
                             >
-                              {(link.type || 'related').replace('_', ' ')}
-                            </span>
-                            <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
-                            <span style={{ fontWeight: 500 }}>{link.targetId}</span>
+                              <span
+                                style={{
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  backgroundColor: 'var(--color-bg-secondary)',
+                                  fontSize: 'var(--font-size-xs)',
+                                  fontFamily: 'monospace',
+                                }}
+                              >
+                                {(link.type || 'related').replace('_', ' ')}
+                              </span>
+                              <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
+                              <span style={{ fontWeight: 500 }}>{link.targetId}</span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   )}
                 </div>
