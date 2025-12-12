@@ -144,12 +144,28 @@ const SummaryCard: React.FC<{
   );
 };
 
+type IssueType = 'no_outgoing' | 'no_incoming' | 'orphan_link' | 'unlinked';
+
+interface GapInfo {
+  artifact: UnifiedArtifact;
+  issueType: IssueType;
+  details?: string;
+}
+
+const ISSUE_LABELS: Record<IssueType, { label: string; color: string }> = {
+  unlinked: { label: 'No links', color: 'var(--color-warning-light)' },
+  no_outgoing: { label: 'No outgoing links', color: 'var(--color-warning-light)' },
+  no_incoming: { label: 'No incoming links', color: 'var(--color-info-light, #60a5fa)' },
+  orphan_link: { label: 'Orphan link', color: 'var(--color-error-light, #f87171)' },
+};
+
 // Gap Item Component
 const GapItem: React.FC<{
-  artifact: UnifiedArtifact;
+  gap: GapInfo;
   onClick?: () => void;
-}> = ({ artifact, onClick }) => {
-  const colors = TYPE_COLORS[artifact.type];
+}> = ({ gap, onClick }) => {
+  const colors = TYPE_COLORS[gap.artifact.type];
+  const issueInfo = ISSUE_LABELS[gap.issueType];
 
   return (
     <div
@@ -171,13 +187,32 @@ const GapItem: React.FC<{
         e.currentTarget.style.backgroundColor = colors.bg;
       }}
     >
-      <XCircle size={16} style={{ color: 'var(--color-warning-light)' }} />
+      <XCircle size={16} style={{ color: issueInfo.color }} />
       <span style={{ fontFamily: 'monospace', fontWeight: 600, color: colors.text }}>
-        {artifact.id}
+        {gap.artifact.id}
       </span>
-      <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-        {artifact.title}
+      <span
+        style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', flex: 1 }}
+      >
+        {gap.artifact.title}
       </span>
+      <span
+        style={{
+          fontSize: 'var(--font-size-xs)',
+          padding: '2px 8px',
+          backgroundColor: 'var(--color-bg-tertiary)',
+          borderRadius: '4px',
+          color: issueInfo.color,
+          fontWeight: 500,
+        }}
+      >
+        {issueInfo.label}
+      </span>
+      {gap.details && (
+        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+          {gap.details}
+        </span>
+      )}
     </div>
   );
 };
@@ -321,10 +356,45 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
     };
   }, [allArtifacts, allLinksSet]);
 
-  // Get gap artifacts (those with no links)
-  const gapArtifacts = useMemo(() => {
-    return allArtifacts.filter((a) => !allLinksSet.has(a.id));
-  }, [allArtifacts, allLinksSet]);
+  // Get gap artifacts with issue types
+  const gapArtifacts = useMemo((): GapInfo[] => {
+    const gaps: GapInfo[] = [];
+    const artifactIds = new Set(allArtifacts.map((a) => a.id));
+
+    // Build incoming links set
+    const hasIncomingLink = new Set<string>();
+    allArtifacts.forEach((artifact) => {
+      artifact.linkedArtifacts.forEach((link) => {
+        if (link.targetId) hasIncomingLink.add(link.targetId);
+      });
+    });
+
+    allArtifacts.forEach((artifact) => {
+      const hasOutgoing = artifact.linkedArtifacts.length > 0;
+      const hasIncoming = hasIncomingLink.has(artifact.id);
+
+      // Check for orphan links (links to non-existent artifacts)
+      const orphanLinks = artifact.linkedArtifacts.filter(
+        (link) => link.targetId && !artifactIds.has(link.targetId)
+      );
+
+      if (orphanLinks.length > 0) {
+        gaps.push({
+          artifact,
+          issueType: 'orphan_link',
+          details: `→ ${orphanLinks.map((l) => l.targetId).join(', ')}`,
+        });
+      } else if (!hasOutgoing && !hasIncoming) {
+        gaps.push({ artifact, issueType: 'unlinked' });
+      } else if (!hasOutgoing) {
+        gaps.push({ artifact, issueType: 'no_outgoing' });
+      } else if (!hasIncoming) {
+        gaps.push({ artifact, issueType: 'no_incoming' });
+      }
+    });
+
+    return gaps;
+  }, [allArtifacts]);
 
   // Get all links as flat list
   const allLinks = useMemo(() => {
@@ -383,7 +453,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   // Filter gaps by selected type
   const filteredGaps = useMemo(() => {
     if (selectedType === 'all') return gapArtifacts;
-    return gapArtifacts.filter((a) => a.type === selectedType);
+    return gapArtifacts.filter((gap) => gap.artifact.type === selectedType);
   }, [gapArtifacts, selectedType]);
 
   const tabStyle = (isActive: boolean): React.CSSProperties => ({
@@ -661,11 +731,11 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                 overflowY: 'auto',
               }}
             >
-              {filteredGaps.map((artifact) => (
+              {filteredGaps.map((gap) => (
                 <GapItem
-                  key={artifact.id}
-                  artifact={artifact}
-                  onClick={onSelectArtifact ? () => onSelectArtifact(artifact.id) : undefined}
+                  key={gap.artifact.id}
+                  gap={gap}
+                  onClick={onSelectArtifact ? () => onSelectArtifact(gap.artifact.id) : undefined}
                 />
               ))}
             </div>
