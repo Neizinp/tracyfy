@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { LayoutGrid, Plus, GitBranch, FileText, BookOpen } from 'lucide-react';
 import type { Project } from '../../types';
 import { ProjectSidebarItem } from '../ProjectSidebarItem';
@@ -6,6 +6,11 @@ import { PendingChangesPanel } from '../PendingChangesPanel';
 import { NavLink } from './NavLink';
 import { RepositoryButton } from './RepositoryButton';
 import { sectionHeaderStyle } from './layoutStyles';
+
+const SIDEBAR_WIDTH_KEY = 'sidebar-width';
+const DEFAULT_WIDTH = 260;
+const MIN_WIDTH = 180;
+const MAX_WIDTH = 400;
 
 export interface SidebarProps {
   projects: Project[];
@@ -32,14 +37,73 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenProjectSettings,
   onOpenLibraryTab,
 }) => {
+  const [width, setWidth] = useState(() => {
+    try {
+      const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
+      return saved ? Math.min(Math.max(parseInt(saved, 10), MIN_WIDTH), MAX_WIDTH) : DEFAULT_WIDTH;
+    } catch {
+      return DEFAULT_WIDTH;
+    }
+  });
+  const [isResizing, setIsResizing] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+
+  // Save width to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));
+    } catch {
+      // Ignore in test environment
+    }
+  }, [width]);
+
+  // Handle mouse move during resize
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizing) return;
+      const newWidth = Math.min(Math.max(e.clientX, MIN_WIDTH), MAX_WIDTH);
+      setWidth(newWidth);
+    },
+    [isResizing]
+  );
+
+  // Handle mouse up to stop resizing
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  // Attach/detach mouse listeners
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    } else {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing, handleMouseMove, handleMouseUp]);
+
   return (
     <aside
+      ref={sidebarRef}
       style={{
-        width: '260px',
+        width: `${width}px`,
+        minWidth: `${MIN_WIDTH}px`,
+        maxWidth: `${MAX_WIDTH}px`,
         backgroundColor: 'var(--color-bg-sidebar)',
         borderRight: '1px solid var(--color-border)',
         display: 'flex',
         flexDirection: 'column',
+        position: 'relative',
       }}
     >
       {/* Logo */}
@@ -173,6 +237,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div style={{ padding: 'var(--spacing-md)', borderTop: '1px solid var(--color-border)' }}>
         {/* Global Settings or User Profile could go here */}
       </div>
+
+      {/* Resize handle */}
+      <div
+        onMouseDown={() => setIsResizing(true)}
+        style={{
+          position: 'absolute',
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: '4px',
+          cursor: 'col-resize',
+          backgroundColor: isResizing ? 'var(--color-accent)' : 'transparent',
+          transition: 'background-color 0.15s',
+        }}
+        onMouseEnter={(e) => {
+          if (!isResizing) e.currentTarget.style.backgroundColor = 'var(--color-border)';
+        }}
+        onMouseLeave={(e) => {
+          if (!isResizing) e.currentTarget.style.backgroundColor = 'transparent';
+        }}
+      />
     </aside>
   );
 };
