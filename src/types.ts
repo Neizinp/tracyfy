@@ -1,4 +1,4 @@
-// Link stored within an artifact
+// Link stored within an artifact (DEPRECATED - use Link instead)
 export interface ArtifactLink {
   targetId: string;
   type:
@@ -14,6 +14,16 @@ export interface ArtifactLink {
     | 'constrains' // Imposes restrictions on another requirement
     | 'requires' // Precondition for another requirement
     | 'related_to'; // Generic association for context
+}
+
+// Standalone link entity stored in links/ folder
+export interface Link {
+  id: string; // LINK-001, LINK-002, etc.
+  sourceId: string; // The artifact creating the link (e.g., REQ-001)
+  targetId: string; // The artifact being linked to (e.g., UC-003)
+  type: import('./utils/linkTypes').LinkType; // Link relationship type
+  dateCreated: number;
+  lastModified: number;
 }
 
 export interface Requirement {
