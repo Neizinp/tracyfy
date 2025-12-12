@@ -3,7 +3,7 @@ export * from './NewRequirementModal';
 export * from './LinkModal';
 export * from './EditRequirementModal';
 export * from './DetailedRequirementView';
-export * from './TraceabilityMatrix';
+export * from './TraceabilityDashboard';
 export * from './UseCaseModal';
 export * from './UseCaseList';
 export * from './VersionHistory';

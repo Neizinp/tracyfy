@@ -97,7 +97,7 @@ export const ProjectLayout: React.FC = () => {
   // Get page title from current route
   const getPageTitle = () => {
     if (location.pathname === '/requirements') return 'Requirements';
-    if (location.pathname.includes('/matrix')) return 'Traceability Matrix';
+    if (location.pathname.includes('/traceability')) return 'Traceability Dashboard';
     if (location.pathname.includes('/use-cases')) return 'Use Cases';
     if (location.pathname.includes('/test-cases')) return 'Test Cases';
     if (location.pathname.includes('/information')) return 'Information';

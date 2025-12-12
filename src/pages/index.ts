@@ -1,5 +1,5 @@
 export { RequirementsPage } from './RequirementsPage';
-export { TraceabilityMatrixPage } from './TraceabilityMatrixPage';
+export { TraceabilityDashboardPage } from './TraceabilityDashboardPage';
 export { UseCasesPage } from './UseCasesPage';
 export { TestCasesPage } from './TestCasesPage';
 export { InformationPage } from './InformationPage';

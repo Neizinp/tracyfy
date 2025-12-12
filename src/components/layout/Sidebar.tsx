@@ -130,9 +130,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <h2 style={{ ...sectionHeaderStyle, margin: '0 0 var(--spacing-sm) 0' }}>Views</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <NavLink
-              to="/matrix"
+              to="/traceability"
               icon={LayoutGrid}
-              label="Traceability Matrix"
+              label="Traceability Dashboard"
               iconStyle={{ transform: 'rotate(45deg)' }}
             />
             <NavLink to="/requirements" icon={FileText} label="Requirements" />
