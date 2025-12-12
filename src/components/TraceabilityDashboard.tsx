@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { AlertTriangle, Link2, CheckCircle2, XCircle } from 'lucide-react';
+import { AlertTriangle, Link2, CheckCircle2, XCircle, Plus, Trash2 } from 'lucide-react';
 import type { Requirement, UseCase, TestCase, Information, ArtifactLink } from '../types';
 
 interface TraceabilityDashboardProps {
@@ -8,6 +8,8 @@ interface TraceabilityDashboardProps {
   testCases: TestCase[];
   information: Information[];
   onSelectArtifact?: (artifactId: string) => void;
+  onAddLink?: (artifactId: string, artifactType: string) => void;
+  onRemoveLink?: (artifactId: string, targetId: string) => void;
 }
 
 type ArtifactType = 'requirement' | 'useCase' | 'testCase' | 'information';
@@ -163,13 +165,14 @@ const ISSUE_LABELS: Record<IssueType, { label: string; color: string }> = {
 const GapItem: React.FC<{
   gap: GapInfo;
   onClick?: () => void;
-}> = ({ gap, onClick }) => {
+  onAddLink?: () => void;
+  onRemoveOrphan?: () => void;
+}> = ({ gap, onClick, onAddLink, onRemoveOrphan }) => {
   const colors = TYPE_COLORS[gap.artifact.type];
   const issueInfo = ISSUE_LABELS[gap.issueType];
 
   return (
     <div
-      onClick={onClick}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -177,18 +180,19 @@ const GapItem: React.FC<{
         padding: 'var(--spacing-sm) var(--spacing-md)',
         backgroundColor: colors.bg,
         borderRadius: '6px',
-        cursor: onClick ? 'pointer' : 'default',
         transition: 'background-color 0.15s',
-      }}
-      onMouseEnter={(e) => {
-        if (onClick) e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = colors.bg;
       }}
     >
       <XCircle size={16} style={{ color: issueInfo.color }} />
-      <span style={{ fontFamily: 'monospace', fontWeight: 600, color: colors.text }}>
+      <span
+        onClick={onClick}
+        style={{
+          fontFamily: 'monospace',
+          fontWeight: 600,
+          color: colors.text,
+          cursor: onClick ? 'pointer' : 'default',
+        }}
+      >
         {gap.artifact.id}
       </span>
       <span
@@ -212,6 +216,59 @@ const GapItem: React.FC<{
         <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
           {gap.details}
         </span>
+      )}
+      {/* Quick action buttons */}
+      {gap.issueType !== 'orphan_link' && onAddLink && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddLink();
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '4px 8px',
+            backgroundColor: 'var(--color-accent)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            fontSize: 'var(--font-size-xs)',
+            cursor: 'pointer',
+            fontWeight: 500,
+          }}
+          title="Add a link to this artifact"
+        >
+          <Plus size={12} />
+          Link
+        </button>
+      )}
+      {gap.issueType === 'orphan_link' && onRemoveOrphan && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemoveOrphan();
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '4px 8px',
+            backgroundColor: 'var(--color-error-light, #f87171)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            fontSize: 'var(--font-size-xs)',
+            cursor: 'pointer',
+            fontWeight: 500,
+          }}
+          title="Remove the orphan link"
+        >
+          <Trash2 size={12} />
+          Fix
+        </button>
       )}
     </div>
   );
@@ -287,6 +344,8 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   testCases,
   information,
   onSelectArtifact,
+  onAddLink,
+  onRemoveLink,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'gaps' | 'links' | 'impact' | 'matrix'>(
     'overview'
@@ -753,6 +812,18 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                   key={gap.artifact.id}
                   gap={gap}
                   onClick={onSelectArtifact ? () => onSelectArtifact(gap.artifact.id) : undefined}
+                  onAddLink={
+                    onAddLink ? () => onAddLink(gap.artifact.id, gap.artifact.type) : undefined
+                  }
+                  onRemoveOrphan={
+                    gap.issueType === 'orphan_link' && onRemoveLink && gap.details
+                      ? () => {
+                          // Extract first orphan target from details (format: "→ TARGET-ID")
+                          const orphanTarget = gap.details?.replace('→ ', '').split(',')[0].trim();
+                          if (orphanTarget) onRemoveLink(gap.artifact.id, orphanTarget);
+                        }
+                      : undefined
+                  }
                 />
               ))}
             </div>

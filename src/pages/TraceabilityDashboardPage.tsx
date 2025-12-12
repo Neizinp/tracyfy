@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { TraceabilityDashboard } from '../components';
 import {
   useRequirements,
@@ -9,11 +9,11 @@ import {
 } from '../app/providers';
 
 export const TraceabilityDashboardPage: React.FC = () => {
-  const { requirements } = useRequirements();
-  const { useCases } = useUseCases();
-  const { testCases } = useTestCases();
-  const { information } = useInformation();
-  const { searchQuery } = useUI();
+  const { requirements, handleUpdateRequirement } = useRequirements();
+  const { useCases, handleUpdateUseCase } = useUseCases();
+  const { testCases, handleUpdateTestCase } = useTestCases();
+  const { information, handleUpdateInformation } = useInformation();
+  const { searchQuery, setLinkSourceId, setLinkSourceType, setIsLinkModalOpen } = useUI();
 
   const filteredRequirements = useMemo(() => {
     const query = searchQuery.toLowerCase();
@@ -68,12 +68,73 @@ export const TraceabilityDashboardPage: React.FC = () => {
     });
   }, [information, searchQuery]);
 
+  // Handler to open LinkModal for adding a link
+  const handleAddLink = useCallback(
+    (artifactId: string, artifactType: string) => {
+      const typeMap: Record<string, 'requirement' | 'usecase' | 'testcase' | 'information'> = {
+        requirement: 'requirement',
+        useCase: 'usecase',
+        testCase: 'testcase',
+        information: 'information',
+      };
+      setLinkSourceId(artifactId);
+      setLinkSourceType(typeMap[artifactType] || 'requirement');
+      setIsLinkModalOpen(true);
+    },
+    [setLinkSourceId, setLinkSourceType, setIsLinkModalOpen]
+  );
+
+  // Handler to remove an orphan link
+  const handleRemoveLink = useCallback(
+    (artifactId: string, targetId: string) => {
+      // Find the artifact and remove the orphan link
+      const req = requirements.find((r) => r.id === artifactId);
+      if (req) {
+        const updatedLinks = (req.linkedArtifacts || []).filter((l) => l.targetId !== targetId);
+        handleUpdateRequirement(artifactId, { linkedArtifacts: updatedLinks });
+        return;
+      }
+
+      const uc = useCases.find((u) => u.id === artifactId);
+      if (uc) {
+        const updatedLinks = (uc.linkedArtifacts || []).filter((l) => l.targetId !== targetId);
+        handleUpdateUseCase(artifactId, { linkedArtifacts: updatedLinks });
+        return;
+      }
+
+      const tc = testCases.find((t) => t.id === artifactId);
+      if (tc) {
+        const updatedLinks = (tc.linkedArtifacts || []).filter((l) => l.targetId !== targetId);
+        handleUpdateTestCase(artifactId, { linkedArtifacts: updatedLinks });
+        return;
+      }
+
+      const info = information.find((i) => i.id === artifactId);
+      if (info) {
+        const updatedLinks = (info.linkedArtifacts || []).filter((l) => l.targetId !== targetId);
+        handleUpdateInformation(artifactId, { linkedArtifacts: updatedLinks });
+      }
+    },
+    [
+      requirements,
+      useCases,
+      testCases,
+      information,
+      handleUpdateRequirement,
+      handleUpdateUseCase,
+      handleUpdateTestCase,
+      handleUpdateInformation,
+    ]
+  );
+
   return (
     <TraceabilityDashboard
       requirements={filteredRequirements}
       useCases={filteredUseCases}
       testCases={filteredTestCases}
       information={filteredInformation}
+      onAddLink={handleAddLink}
+      onRemoveLink={handleRemoveLink}
     />
   );
 };
