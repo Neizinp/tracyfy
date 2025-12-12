@@ -3,6 +3,42 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { UseCaseList } from '../UseCaseList';
 import type { UseCase, Requirement, UseCaseColumnVisibility } from '../../types';
 
+// Mock react-virtuoso to render all items (bypasses virtualization in tests)
+vi.mock('react-virtuoso', () => ({
+  TableVirtuoso: ({
+    data,
+    fixedHeaderContent,
+    itemContent,
+    components,
+  }: {
+    data: UseCase[];
+    fixedHeaderContent: () => React.ReactNode;
+    itemContent: (index: number, item: UseCase) => React.ReactNode;
+    components: {
+      Table: React.FC<{ style?: React.CSSProperties; children?: React.ReactNode }>;
+      TableHead: React.ForwardRefExoticComponent<
+        { children?: React.ReactNode } & React.RefAttributes<HTMLTableSectionElement>
+      >;
+      TableRow: React.FC<{ item: UseCase; children?: React.ReactNode }>;
+    };
+  }) => {
+    const Table = components.Table;
+    const TableRow = components.TableRow;
+    return (
+      <Table>
+        <thead>{fixedHeaderContent()}</thead>
+        <tbody>
+          {data.map((item, index) => (
+            <TableRow key={item.id} item={item}>
+              {itemContent(index, item)}
+            </TableRow>
+          ))}
+        </tbody>
+      </Table>
+    );
+  },
+}));
+
 const defaultColumns: UseCaseColumnVisibility = {
   idTitle: true,
   revision: true,

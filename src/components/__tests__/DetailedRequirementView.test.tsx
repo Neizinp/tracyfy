@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DetailedRequirementView } from '../DetailedRequirementView';
 import type { Requirement, ColumnVisibility, Project } from '../../types';
@@ -11,6 +11,42 @@ vi.mock('react-markdown', () => ({
 vi.mock('remark-gfm', () => ({ default: () => {} }));
 vi.mock('rehype-raw', () => ({ default: () => {} }));
 
+// Mock react-virtuoso to render all items (bypasses virtualization in tests)
+vi.mock('react-virtuoso', () => ({
+  TableVirtuoso: ({
+    data,
+    fixedHeaderContent,
+    itemContent,
+    components,
+  }: {
+    data: Requirement[];
+    fixedHeaderContent: () => React.ReactNode;
+    itemContent: (index: number, item: Requirement) => React.ReactNode;
+    components: {
+      Table: React.FC<{ style?: React.CSSProperties; children?: React.ReactNode }>;
+      TableHead: React.ForwardRefExoticComponent<
+        { children?: React.ReactNode } & React.RefAttributes<HTMLTableSectionElement>
+      >;
+      TableRow: React.FC<{ item: Requirement; children?: React.ReactNode }>;
+    };
+  }) => {
+    const Table = components.Table;
+    const TableRow = components.TableRow;
+    return (
+      <Table>
+        <thead>{fixedHeaderContent()}</thead>
+        <tbody>
+          {data.map((item, index) => (
+            <TableRow key={item.id} item={item}>
+              {itemContent(index, item)}
+            </TableRow>
+          ))}
+        </tbody>
+      </Table>
+    );
+  },
+}));
+
 describe('DetailedRequirementView', () => {
   const mockRequirements: Requirement[] = [
     {
@@ -22,7 +58,6 @@ describe('DetailedRequirementView', () => {
       revision: '01',
       lastModified: Date.now(),
       dateCreated: Date.now(),
-
       text: '',
       rationale: '',
     },
@@ -35,7 +70,6 @@ describe('DetailedRequirementView', () => {
       revision: '02',
       lastModified: Date.now(),
       dateCreated: Date.now(),
-
       text: '',
       rationale: '',
     },
@@ -56,6 +90,10 @@ describe('DetailedRequirementView', () => {
     created: true,
     approved: true,
   };
+
+  beforeEach(() => {
+    mockOnEdit.mockClear();
+  });
 
   it('renders requirements correctly', () => {
     render(
