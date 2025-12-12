@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { Information } from '../types';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
-import { useUI } from '../app/providers';
+import { useUI, useGlobalState } from '../app/providers';
+import { useIncomingLinks } from '../hooks/useIncomingLinks';
 
 interface InformationModalProps {
   isOpen: boolean;
@@ -26,10 +27,20 @@ export const InformationModal: React.FC<InformationModalProps> = ({
   onSubmit,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
+  const { requirements, useCases, testCases, information: allInformation } = useGlobalState();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [type, setType] = useState<Information['type']>('note');
+
+  // Get incoming links (artifacts that link TO this information)
+  const incomingLinks = useIncomingLinks({
+    targetId: information?.id || '',
+    requirements,
+    useCases,
+    testCases,
+    information: allInformation,
+  });
 
   useEffect(() => {
     if (information) {
@@ -384,6 +395,94 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                             <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
                             <span style={{ fontWeight: 500 }}>{link.targetId}</span>
                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Incoming Links Section */}
+              <div>
+                <label
+                  style={{
+                    fontSize: 'var(--font-size-sm)',
+                    marginBottom: 'var(--spacing-xs)',
+                    display: 'block',
+                  }}
+                >
+                  Incoming Links
+                  <span
+                    style={{
+                      fontSize: 'var(--font-size-xs)',
+                      color: 'var(--color-text-muted)',
+                      marginLeft: '8px',
+                    }}
+                  >
+                    (artifacts that link to this)
+                  </span>
+                </label>
+                <div
+                  style={{
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '6px',
+                    padding: '8px',
+                    backgroundColor: 'var(--color-bg-app)',
+                    minHeight: '80px',
+                    maxHeight: '150px',
+                    overflowY: 'auto',
+                  }}
+                >
+                  {incomingLinks.length === 0 ? (
+                    <div
+                      style={{
+                        padding: '8px',
+                        color: 'var(--color-text-muted)',
+                        fontSize: 'var(--font-size-sm)',
+                      }}
+                    >
+                      No incoming links. Other artifacts can link to this information.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {incomingLinks.map((link, index) => (
+                        <div
+                          key={`${link.sourceId}-${index}`}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '6px 8px',
+                            backgroundColor: 'var(--color-bg-card)',
+                            borderRadius: '4px',
+                            border: '1px solid var(--color-border)',
+                            fontSize: 'var(--font-size-sm)',
+                            gap: '8px',
+                          }}
+                        >
+                          <span style={{ fontWeight: 500, color: 'var(--color-accent)' }}>
+                            {link.sourceId}
+                          </span>
+                          <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
+                          <span
+                            style={{
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              backgroundColor: 'var(--color-bg-secondary)',
+                              fontSize: 'var(--font-size-xs)',
+                              fontFamily: 'monospace',
+                            }}
+                          >
+                            {link.linkType.replace('_', ' ')}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: 'var(--font-size-xs)',
+                              color: 'var(--color-text-muted)',
+                              marginLeft: 'auto',
+                            }}
+                          >
+                            ({link.sourceType})
+                          </span>
                         </div>
                       ))}
                     </div>
