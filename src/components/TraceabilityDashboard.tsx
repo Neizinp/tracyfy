@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Requirement, UseCase, TestCase, Information, ArtifactLink } from '../types';
 
-interface TraceabilityMatrixProps {
+interface TraceabilityDashboardProps {
   requirements: Requirement[];
   useCases: UseCase[];
   testCases: TestCase[];
@@ -30,7 +30,7 @@ const TYPE_LABELS: Record<ArtifactType, string> = {
   information: 'INFO',
 };
 
-export const TraceabilityMatrix: React.FC<TraceabilityMatrixProps> = ({
+export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   requirements,
   useCases,
   testCases,

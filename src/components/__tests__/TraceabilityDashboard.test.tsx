@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { TraceabilityMatrix } from '../TraceabilityMatrix';
+import { TraceabilityDashboard } from '../TraceabilityDashboard';
 import type { Requirement, UseCase, TestCase, Information } from '../../types';
 
-describe('TraceabilityMatrix', () => {
+describe('TraceabilityDashboard', () => {
   const mockRequirements: Requirement[] = [
     {
       id: 'REQ-001',
@@ -96,7 +96,7 @@ describe('TraceabilityMatrix', () => {
   };
 
   it('renders matrix structure correctly', () => {
-    render(<TraceabilityMatrix {...defaultProps} />);
+    render(<TraceabilityDashboard {...defaultProps} />);
 
     expect(screen.getByText('From / To')).toBeInTheDocument();
     // Check row headers - REQ-001 appears in row and column
@@ -104,7 +104,7 @@ describe('TraceabilityMatrix', () => {
   });
 
   it('renders filter toggle buttons', () => {
-    render(<TraceabilityMatrix {...defaultProps} />);
+    render(<TraceabilityDashboard {...defaultProps} />);
 
     expect(screen.getByText('Requirements (3)')).toBeInTheDocument();
     expect(screen.getByText('Use Cases (1)')).toBeInTheDocument();
@@ -113,7 +113,7 @@ describe('TraceabilityMatrix', () => {
   });
 
   it('filters artifacts when toggle is clicked', () => {
-    render(<TraceabilityMatrix {...defaultProps} />);
+    render(<TraceabilityDashboard {...defaultProps} />);
 
     // Initially UC-001 should be visible
     expect(screen.getAllByText('UC-001').length).toBeGreaterThanOrEqual(1);
@@ -127,7 +127,7 @@ describe('TraceabilityMatrix', () => {
   });
 
   it('renders linkedArtifacts relationships', () => {
-    render(<TraceabilityMatrix {...defaultProps} />);
+    render(<TraceabilityDashboard {...defaultProps} />);
 
     // REQ-001 related_to REQ-003 (via linkedArtifacts)
     // Should show the related_to symbol
@@ -136,7 +136,7 @@ describe('TraceabilityMatrix', () => {
   });
 
   it('renders cross-artifact links', () => {
-    render(<TraceabilityMatrix {...defaultProps} />);
+    render(<TraceabilityDashboard {...defaultProps} />);
 
     // UC-001 satisfies REQ-001
     const satisfiesSymbols = screen.getAllByText('✓');
@@ -148,7 +148,7 @@ describe('TraceabilityMatrix', () => {
   });
 
   it('renders self-reference cells with special marker', () => {
-    render(<TraceabilityMatrix {...defaultProps} />);
+    render(<TraceabilityDashboard {...defaultProps} />);
 
     // Diagonal cells show ● for same artifact
     const selfMarkers = screen.getAllByText('●');
@@ -156,7 +156,7 @@ describe('TraceabilityMatrix', () => {
   });
 
   it('displays legend with all relationship types', () => {
-    render(<TraceabilityMatrix {...defaultProps} />);
+    render(<TraceabilityDashboard {...defaultProps} />);
 
     expect(screen.getByText('Legend:')).toBeInTheDocument();
     expect(screen.getByText('parent')).toBeInTheDocument();
@@ -166,7 +166,7 @@ describe('TraceabilityMatrix', () => {
   });
 
   it('shows empty state when all filters are off', () => {
-    render(<TraceabilityMatrix {...defaultProps} />);
+    render(<TraceabilityDashboard {...defaultProps} />);
 
     // Turn off all filters
     fireEvent.click(screen.getByText('Requirements (3)'));
@@ -180,7 +180,7 @@ describe('TraceabilityMatrix', () => {
   });
 
   it('hides unlinked artifacts when Linked filter is selected', () => {
-    render(<TraceabilityMatrix {...defaultProps} />);
+    render(<TraceabilityDashboard {...defaultProps} />);
 
     // INFO-001 has no links, should be visible initially
     expect(screen.getAllByText('INFO-001').length).toBeGreaterThanOrEqual(1);
