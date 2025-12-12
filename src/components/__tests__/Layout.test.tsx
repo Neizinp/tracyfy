@@ -4,10 +4,6 @@ import { BrowserRouter } from 'react-router-dom';
 import { Layout } from '../Layout';
 import { AppProviders } from '../../app/AppProviders';
 
-vi.mock('../ProjectManager', () => ({
-  ProjectManager: () => <div>ProjectManager</div>,
-}));
-
 vi.mock('../ModalManager', () => ({
   ModalManager: () => <div>ModalManager</div>,
 }));
