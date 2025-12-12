@@ -621,7 +621,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                                 fontFamily: 'monospace',
                               }}
                             >
-                              {link.type.replace('_', ' ')}
+                              {(link.type || 'related').replace('_', ' ')}
                             </span>
                             <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
                             <span style={{ fontWeight: 500 }}>{link.targetId}</span>
