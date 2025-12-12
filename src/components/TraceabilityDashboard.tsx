@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { AlertTriangle, Link2, CheckCircle2, XCircle } from 'lucide-react';
 import type { Requirement, UseCase, TestCase, Information, ArtifactLink } from '../types';
 
 interface TraceabilityDashboardProps {
@@ -6,28 +7,243 @@ interface TraceabilityDashboardProps {
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
+  onSelectArtifact?: (artifactId: string) => void;
 }
 
 type ArtifactType = 'requirement' | 'useCase' | 'testCase' | 'information';
 
 interface UnifiedArtifact {
   id: string;
+  title: string;
   type: ArtifactType;
   linkedArtifacts: ArtifactLink[];
 }
 
-const TYPE_COLORS: Record<ArtifactType, string> = {
-  requirement: 'rgba(59, 130, 246, 0.15)',
-  useCase: 'rgba(139, 92, 246, 0.15)',
-  testCase: 'rgba(34, 197, 94, 0.15)',
-  information: 'rgba(234, 179, 8, 0.15)',
+const TYPE_COLORS: Record<ArtifactType, { bg: string; border: string; text: string }> = {
+  requirement: {
+    bg: 'rgba(59, 130, 246, 0.1)',
+    border: 'rgba(59, 130, 246, 0.5)',
+    text: '#3b82f6',
+  },
+  useCase: { bg: 'rgba(139, 92, 246, 0.1)', border: 'rgba(139, 92, 246, 0.5)', text: '#8b5cf6' },
+  testCase: { bg: 'rgba(34, 197, 94, 0.1)', border: 'rgba(34, 197, 94, 0.5)', text: '#22c55e' },
+  information: { bg: 'rgba(234, 179, 8, 0.1)', border: 'rgba(234, 179, 8, 0.5)', text: '#eab308' },
 };
 
-const TYPE_LABELS: Record<ArtifactType, string> = {
-  requirement: 'REQ',
-  useCase: 'UC',
-  testCase: 'TC',
-  information: 'INFO',
+// Summary Card Component
+const SummaryCard: React.FC<{
+  title: string;
+  total: number;
+  linked: number;
+  gaps: number;
+  color: { bg: string; border: string; text: string };
+  onViewGaps?: () => void;
+}> = ({ title, total, linked, gaps, color, onViewGaps }) => {
+  const coverage = total > 0 ? Math.round((linked / total) * 100) : 0;
+
+  return (
+    <div
+      style={{
+        backgroundColor: 'var(--color-bg-card)',
+        border: `1px solid ${color.border}`,
+        borderRadius: '8px',
+        padding: 'var(--spacing-md)',
+        flex: 1,
+        minWidth: '200px',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '12px',
+        }}
+      >
+        <h3
+          style={{ fontSize: 'var(--font-size-md)', fontWeight: 600, color: color.text, margin: 0 }}
+        >
+          {title}
+        </h3>
+        <span
+          style={{
+            fontSize: 'var(--font-size-2xl)',
+            fontWeight: 700,
+            color: 'var(--color-text-primary)',
+          }}
+        >
+          {total}
+        </span>
+      </div>
+
+      {/* Coverage bar */}
+      <div style={{ marginBottom: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+            Coverage
+          </span>
+          <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, color: color.text }}>
+            {coverage}%
+          </span>
+        </div>
+        <div
+          style={{
+            height: '8px',
+            backgroundColor: 'var(--color-bg-tertiary)',
+            borderRadius: '4px',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              height: '100%',
+              width: `${coverage}%`,
+              backgroundColor: color.text,
+              borderRadius: '4px',
+              transition: 'width 0.3s ease',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: 'flex', gap: 'var(--spacing-md)', fontSize: 'var(--font-size-sm)' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            color: 'var(--color-success-light)',
+          }}
+        >
+          <CheckCircle2 size={14} />
+          <span>{linked} linked</span>
+        </div>
+        {gaps > 0 && (
+          <button
+            type="button"
+            onClick={onViewGaps}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              color: 'var(--color-warning-light)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              fontSize: 'var(--font-size-sm)',
+            }}
+          >
+            <AlertTriangle size={14} />
+            <span>{gaps} gaps</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Gap Item Component
+const GapItem: React.FC<{
+  artifact: UnifiedArtifact;
+  onClick?: () => void;
+}> = ({ artifact, onClick }) => {
+  const colors = TYPE_COLORS[artifact.type];
+
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--spacing-sm)',
+        padding: 'var(--spacing-sm) var(--spacing-md)',
+        backgroundColor: colors.bg,
+        borderRadius: '6px',
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'background-color 0.15s',
+      }}
+      onMouseEnter={(e) => {
+        if (onClick) e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = colors.bg;
+      }}
+    >
+      <XCircle size={16} style={{ color: 'var(--color-warning-light)' }} />
+      <span style={{ fontFamily: 'monospace', fontWeight: 600, color: colors.text }}>
+        {artifact.id}
+      </span>
+      <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+        {artifact.title}
+      </span>
+    </div>
+  );
+};
+
+// Link Row Component
+const LinkRow: React.FC<{
+  sourceId: string;
+  targetId: string;
+  linkType: string;
+  sourceType: ArtifactType;
+  targetType: ArtifactType;
+  onClickSource?: () => void;
+  onClickTarget?: () => void;
+}> = ({ sourceId, targetId, linkType, sourceType, targetType, onClickSource, onClickTarget }) => {
+  const sourceColors = TYPE_COLORS[sourceType];
+  const targetColors = TYPE_COLORS[targetType];
+
+  return (
+    <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+      <td style={{ padding: '8px 12px' }}>
+        <span
+          onClick={onClickSource}
+          style={{
+            fontFamily: 'monospace',
+            fontWeight: 600,
+            color: sourceColors.text,
+            cursor: onClickSource ? 'pointer' : 'default',
+            padding: '2px 6px',
+            backgroundColor: sourceColors.bg,
+            borderRadius: '4px',
+          }}
+        >
+          {sourceId}
+        </span>
+      </td>
+      <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+        <span
+          style={{
+            padding: '2px 8px',
+            backgroundColor: 'var(--color-bg-tertiary)',
+            borderRadius: '4px',
+            fontSize: 'var(--font-size-sm)',
+            color: 'var(--color-text-secondary)',
+          }}
+        >
+          {(linkType || 'unknown').replace(/_/g, ' ')}
+        </span>
+      </td>
+      <td style={{ padding: '8px 12px' }}>
+        <span
+          onClick={onClickTarget}
+          style={{
+            fontFamily: 'monospace',
+            fontWeight: 600,
+            color: targetColors.text,
+            cursor: onClickTarget ? 'pointer' : 'default',
+            padding: '2px 6px',
+            backgroundColor: targetColors.bg,
+            borderRadius: '4px',
+          }}
+        >
+          {targetId}
+        </span>
+      </td>
+    </tr>
+  );
 };
 
 export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
@@ -35,437 +251,533 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   useCases,
   testCases,
   information,
+  onSelectArtifact,
 }) => {
-  // Filter toggle state
-  const [showRequirements, setShowRequirements] = useState(true);
-  const [showUseCases, setShowUseCases] = useState(true);
-  const [showTestCases, setShowTestCases] = useState(true);
-  const [showInformation, setShowInformation] = useState(true);
-  const [linkFilter, setLinkFilter] = useState<'all' | 'linked' | 'unlinked'>('all');
+  const [activeTab, setActiveTab] = useState<'overview' | 'gaps' | 'links'>('overview');
+  const [selectedType, setSelectedType] = useState<ArtifactType | 'all'>('all');
 
-  // Build unified artifact list
-  const buildUnifiedArtifacts = (): UnifiedArtifact[] => {
+  // Build unified artifacts list
+  const allArtifacts = useMemo((): UnifiedArtifact[] => {
     const artifacts: UnifiedArtifact[] = [];
-
-    if (showRequirements) {
-      requirements.forEach((req) => {
-        artifacts.push({
-          id: req.id,
-          type: 'requirement',
-          linkedArtifacts: req.linkedArtifacts || [],
-        });
-      });
-    }
-
-    if (showUseCases) {
-      useCases.forEach((uc) => {
-        artifacts.push({
-          id: uc.id,
-          type: 'useCase',
-          linkedArtifacts: uc.linkedArtifacts || [],
-        });
-      });
-    }
-
-    if (showTestCases) {
-      testCases.forEach((tc) => {
-        artifacts.push({
-          id: tc.id,
-          type: 'testCase',
-          linkedArtifacts: tc.linkedArtifacts || [],
-        });
-      });
-    }
-
-    if (showInformation) {
-      information.forEach((info) => {
-        artifacts.push({
-          id: info.id,
-          type: 'information',
-          linkedArtifacts: info.linkedArtifacts || [],
-        });
-      });
-    }
-
-    return artifacts;
-  };
-
-  // Build all artifacts first (before filtering by links)
-  const allArtifactsUnfiltered = buildUnifiedArtifacts();
-
-  // Build a flat list of all links (needed for filtering)
-  const allLinksForFiltering: { sourceId: string; targetId: string }[] = [];
-  allArtifactsUnfiltered.forEach((artifact) => {
-    artifact.linkedArtifacts.forEach((link) => {
-      allLinksForFiltering.push({
-        sourceId: artifact.id,
-        targetId: link.targetId,
-      });
-    });
-  });
-
-  // Helper to check if an artifact has any links (outgoing or incoming)
-  const hasAnyLinks = (artifactId: string): boolean => {
-    return allLinksForFiltering.some((l) => l.sourceId === artifactId || l.targetId === artifactId);
-  };
-
-  // Filter artifacts based on link filter
-  const unifiedArtifacts = allArtifactsUnfiltered.filter((a) => {
-    if (linkFilter === 'all') return true;
-    if (linkFilter === 'linked') return hasAnyLinks(a.id);
-    return !hasAnyLinks(a.id); // 'unlinked'
-  });
-
-  // Build a flat list of all links
-  const allLinks: { sourceId: string; targetId: string; type: ArtifactLink['type'] }[] = [];
-  unifiedArtifacts.forEach((artifact) => {
-    artifact.linkedArtifacts.forEach((link) => {
-      allLinks.push({
-        sourceId: artifact.id,
-        targetId: link.targetId,
-        type: link.type,
-      });
-    });
-  });
-
-  // Helper to find link between two artifacts
-  const getLink = (
-    fromId: string,
-    toId: string
-  ): { sourceId: string; targetId: string; type: ArtifactLink['type'] } | undefined => {
-    return allLinks.find(
-      (l) =>
-        (l.sourceId === fromId && l.targetId === toId) ||
-        (l.sourceId === toId && l.targetId === fromId)
+    requirements.forEach((r) =>
+      artifacts.push({
+        id: r.id,
+        title: r.title,
+        type: 'requirement',
+        linkedArtifacts: r.linkedArtifacts || [],
+      })
     );
-  };
+    useCases.forEach((u) =>
+      artifacts.push({
+        id: u.id,
+        title: u.title,
+        type: 'useCase',
+        linkedArtifacts: u.linkedArtifacts || [],
+      })
+    );
+    testCases.forEach((t) =>
+      artifacts.push({
+        id: t.id,
+        title: t.title,
+        type: 'testCase',
+        linkedArtifacts: t.linkedArtifacts || [],
+      })
+    );
+    information.forEach((i) =>
+      artifacts.push({
+        id: i.id,
+        title: i.title,
+        type: 'information',
+        linkedArtifacts: i.linkedArtifacts || [],
+      })
+    );
+    return artifacts;
+  }, [requirements, useCases, testCases, information]);
 
-  // Link symbols and colors
-  const linkSymbols: Record<string, string> = {
-    parent: '↑',
-    child: '↓',
-    derived_from: '⊳',
-    depends_on: '→',
-    conflicts_with: '⚠',
-    duplicates: '≈',
-    refines: '⊕',
-    satisfies: '✓',
-    verifies: '✔',
-    constrains: '⊂',
-    requires: '⟶',
-    related_to: '↔',
-  };
+  // Build all links set for bi-directional lookup
+  const allLinksSet = useMemo(() => {
+    const links = new Set<string>();
+    allArtifacts.forEach((artifact) => {
+      artifact.linkedArtifacts.forEach((link) => {
+        links.add(artifact.id);
+        links.add(link.targetId);
+      });
+    });
+    return links;
+  }, [allArtifacts]);
 
-  const linkColors: Record<string, string> = {
-    parent: 'rgba(59, 130, 246, 0.3)',
-    child: 'rgba(59, 130, 246, 0.3)',
-    derived_from: 'rgba(99, 102, 241, 0.3)',
-    depends_on: 'rgba(251, 146, 60, 0.3)',
-    conflicts_with: 'rgba(239, 68, 68, 0.3)',
-    duplicates: 'rgba(234, 179, 8, 0.3)',
-    refines: 'rgba(34, 197, 94, 0.3)',
-    satisfies: 'rgba(16, 185, 129, 0.3)',
-    verifies: 'rgba(6, 182, 212, 0.3)',
-    constrains: 'rgba(244, 63, 94, 0.3)',
-    requires: 'rgba(249, 115, 22, 0.3)',
-    related_to: 'rgba(168, 85, 247, 0.3)',
-  };
+  // Calculate coverage stats per type
+  const stats = useMemo(() => {
+    const calculateStats = (artifacts: UnifiedArtifact[]) => {
+      const linked = artifacts.filter((a) => allLinksSet.has(a.id)).length;
+      return { total: artifacts.length, linked, gaps: artifacts.length - linked };
+    };
 
-  // Helper to get cell content
-  const getCellContent = (
-    rowArtifact: UnifiedArtifact,
-    colArtifact: UnifiedArtifact
-  ): { text: string; color: string; tooltip: string } | null => {
-    if (rowArtifact.id === colArtifact.id) {
-      return null; // Same artifact
-    }
+    return {
+      requirement: calculateStats(allArtifacts.filter((a) => a.type === 'requirement')),
+      useCase: calculateStats(allArtifacts.filter((a) => a.type === 'useCase')),
+      testCase: calculateStats(allArtifacts.filter((a) => a.type === 'testCase')),
+      information: calculateStats(allArtifacts.filter((a) => a.type === 'information')),
+    };
+  }, [allArtifacts, allLinksSet]);
 
-    const link = getLink(rowArtifact.id, colArtifact.id);
+  // Get gap artifacts (those with no links)
+  const gapArtifacts = useMemo(() => {
+    return allArtifacts.filter((a) => !allLinksSet.has(a.id));
+  }, [allArtifacts, allLinksSet]);
 
-    if (link) {
-      return {
-        text: linkSymbols[link.type] || '•',
-        color: linkColors[link.type] || 'rgba(100, 100, 100, 0.2)',
-        tooltip: `${link.type.replace(/_/g, ' ')}: ${link.sourceId} → ${link.targetId}`,
-      };
-    }
+  // Get all links as flat list
+  const allLinks = useMemo(() => {
+    const links: {
+      sourceId: string;
+      targetId: string;
+      type: string;
+      sourceType: ArtifactType;
+      targetType: ArtifactType;
+    }[] = [];
+    const artifactTypeMap = new Map(allArtifacts.map((a) => [a.id, a.type]));
+    const artifactIds = new Set(allArtifacts.map((a) => a.id));
 
-    return null;
-  };
+    // Add links from linkedArtifacts
+    allArtifacts.forEach((artifact) => {
+      artifact.linkedArtifacts.forEach((link) => {
+        // Only include links with valid type and existing target
+        if (link.type && link.targetId && artifactIds.has(link.targetId)) {
+          links.push({
+            sourceId: artifact.id,
+            targetId: link.targetId,
+            type: link.type,
+            sourceType: artifact.type,
+            targetType: artifactTypeMap.get(link.targetId) || 'requirement',
+          });
+        }
+      });
+    });
 
-  const FilterButton: React.FC<{
-    label: string;
-    active: boolean;
-    onClick: () => void;
-    color: string;
-  }> = ({ label, active, onClick, color }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        padding: '4px 12px',
-        borderRadius: '4px',
-        border: active
-          ? `2px solid ${color.replace('0.15', '0.8')}`
-          : '2px solid var(--color-border)',
-        backgroundColor: active ? color : 'transparent',
-        color: active ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-        cursor: 'pointer',
-        fontSize: 'var(--font-size-sm)',
-        fontWeight: active ? 600 : 400,
-        transition: 'all 0.15s ease',
-      }}
-    >
-      {label}
-    </button>
-  );
+    // Also add legacy requirementIds from TestCases
+    testCases.forEach((tc) => {
+      if (tc.requirementIds) {
+        tc.requirementIds.forEach((reqId) => {
+          if (artifactIds.has(reqId)) {
+            links.push({
+              sourceId: tc.id,
+              targetId: reqId,
+              type: 'verifies',
+              sourceType: 'testCase',
+              targetType: 'requirement',
+            });
+          }
+        });
+      }
+    });
+
+    return links;
+  }, [allArtifacts, testCases]);
+
+  // Filter links by selected type
+  const filteredLinks = useMemo(() => {
+    if (selectedType === 'all') return allLinks;
+    return allLinks.filter((l) => l.sourceType === selectedType || l.targetType === selectedType);
+  }, [allLinks, selectedType]);
+
+  // Filter gaps by selected type
+  const filteredGaps = useMemo(() => {
+    if (selectedType === 'all') return gapArtifacts;
+    return gapArtifacts.filter((a) => a.type === selectedType);
+  }, [gapArtifacts, selectedType]);
+
+  const tabStyle = (isActive: boolean): React.CSSProperties => ({
+    padding: '8px 16px',
+    backgroundColor: isActive ? 'var(--color-accent)' : 'transparent',
+    color: isActive ? 'white' : 'var(--color-text-secondary)',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: isActive ? 600 : 400,
+    fontSize: 'var(--font-size-sm)',
+    transition: 'all 0.15s',
+  });
+
+  const totalGaps =
+    stats.requirement.gaps + stats.useCase.gaps + stats.testCase.gaps + stats.information.gaps;
+  const totalLinked =
+    stats.requirement.linked +
+    stats.useCase.linked +
+    stats.testCase.linked +
+    stats.information.linked;
+  const totalArtifacts = allArtifacts.length;
 
   return (
-    <div
-      style={{
-        backgroundColor: 'var(--color-bg-card)',
-        borderRadius: '8px',
-        border: '1px solid var(--color-border)',
-        padding: 'var(--spacing-md)',
-        overflowX: 'auto',
-      }}
-    >
-      <div style={{ marginBottom: 'var(--spacing-md)' }}>
-        <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
-          Shows relationships between all artifacts. Click the toggles to filter by artifact type.
-        </p>
-      </div>
-
-      {/* Filter Toggles */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 'var(--spacing-sm)',
-          marginBottom: 'var(--spacing-md)',
-          flexWrap: 'wrap',
-        }}
-      >
-        <span
-          style={{
-            fontSize: 'var(--font-size-sm)',
-            color: 'var(--color-text-secondary)',
-            alignSelf: 'center',
-          }}
-        >
-          Show:
-        </span>
-        <FilterButton
-          label={`Requirements (${requirements.length})`}
-          active={showRequirements}
-          onClick={() => setShowRequirements(!showRequirements)}
-          color={TYPE_COLORS.requirement}
-        />
-        <FilterButton
-          label={`Use Cases (${useCases.length})`}
-          active={showUseCases}
-          onClick={() => setShowUseCases(!showUseCases)}
-          color={TYPE_COLORS.useCase}
-        />
-        <FilterButton
-          label={`Test Cases (${testCases.length})`}
-          active={showTestCases}
-          onClick={() => setShowTestCases(!showTestCases)}
-          color={TYPE_COLORS.testCase}
-        />
-        <FilterButton
-          label={`Information (${information.length})`}
-          active={showInformation}
-          onClick={() => setShowInformation(!showInformation)}
-          color={TYPE_COLORS.information}
-        />
-        <span
-          style={{
-            borderLeft: '1px solid var(--color-border)',
-            height: '24px',
-            alignSelf: 'center',
-            margin: '0 4px',
-          }}
-        />
-        <FilterButton
-          label="All"
-          active={linkFilter === 'all'}
-          onClick={() => setLinkFilter('all')}
-          color="rgba(100, 100, 100, 0.15)"
-        />
-        <FilterButton
-          label="Linked"
-          active={linkFilter === 'linked'}
-          onClick={() => setLinkFilter('linked')}
-          color="rgba(34, 197, 94, 0.15)"
-        />
-        <FilterButton
-          label="Unlinked"
-          active={linkFilter === 'unlinked'}
-          onClick={() => setLinkFilter('unlinked')}
-          color="rgba(239, 68, 68, 0.15)"
-        />
-      </div>
-
-      {unifiedArtifacts.length === 0 ? (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+      {/* Header with tabs */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div
           style={{
-            padding: 'var(--spacing-lg)',
-            textAlign: 'center',
-            color: 'var(--color-text-muted)',
+            display: 'flex',
+            gap: '4px',
+            backgroundColor: 'var(--color-bg-tertiary)',
+            padding: '4px',
+            borderRadius: '8px',
           }}
         >
-          No artifacts to display. Enable at least one artifact type above.
+          <button
+            type="button"
+            onClick={() => setActiveTab('overview')}
+            style={tabStyle(activeTab === 'overview')}
+          >
+            Overview
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('gaps')}
+            style={tabStyle(activeTab === 'gaps')}
+          >
+            Gaps ({totalGaps})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('links')}
+            style={tabStyle(activeTab === 'links')}
+          >
+            Links ({allLinks.length})
+          </button>
         </div>
-      ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table
+
+        {/* Type filter */}
+        {(activeTab === 'gaps' || activeTab === 'links') && (
+          <select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value as ArtifactType | 'all')}
             style={{
-              width: '100%',
-              borderCollapse: 'collapse',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid var(--color-border)',
+              backgroundColor: 'var(--color-bg-card)',
+              color: 'var(--color-text-primary)',
               fontSize: 'var(--font-size-sm)',
             }}
           >
-            <thead>
-              <tr>
-                <th
-                  style={{
-                    position: 'sticky',
-                    left: 0,
-                    backgroundColor: 'var(--color-bg-card)',
-                    padding: '8px',
-                    border: '1px solid var(--color-border)',
-                    fontWeight: 600,
-                    textAlign: 'left',
-                    minWidth: '120px',
-                    zIndex: 2,
-                  }}
-                >
-                  From / To
-                </th>
-                {unifiedArtifacts.map((artifact) => (
-                  <th
-                    key={artifact.id}
-                    style={{
-                      padding: '8px',
-                      border: '1px solid var(--color-border)',
-                      fontWeight: 600,
-                      textAlign: 'center',
-                      minWidth: '80px',
-                      backgroundColor: TYPE_COLORS[artifact.type],
-                      writingMode: 'vertical-rl',
-                      transform: 'rotate(180deg)',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 'var(--font-size-xs)',
-                        color: 'var(--color-text-muted)',
-                        marginRight: '4px',
-                      }}
-                    >
-                      {TYPE_LABELS[artifact.type]}
-                    </span>
-                    {artifact.id}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {unifiedArtifacts.map((rowArtifact, rowIndex) => (
-                <tr
-                  key={rowArtifact.id}
-                  style={{
-                    backgroundColor:
-                      rowIndex % 2 === 0 ? 'var(--color-bg-card)' : 'var(--color-bg-hover)',
-                  }}
-                >
-                  <td
-                    style={{
-                      position: 'sticky',
-                      left: 0,
-                      backgroundColor: TYPE_COLORS[rowArtifact.type],
-                      padding: '8px',
-                      border: '1px solid var(--color-border)',
-                      fontWeight: 600,
-                      fontFamily: 'monospace',
-                      zIndex: 1,
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 'var(--font-size-xs)',
-                        color: 'var(--color-text-muted)',
-                        marginRight: '8px',
-                      }}
-                    >
-                      {TYPE_LABELS[rowArtifact.type]}
-                    </span>
-                    {rowArtifact.id}
-                  </td>
-                  {unifiedArtifacts.map((colArtifact) => {
-                    const cellContent = getCellContent(rowArtifact, colArtifact);
-                    const isSame = rowArtifact.id === colArtifact.id;
-                    return (
-                      <td
-                        key={colArtifact.id}
-                        style={{
-                          padding: '8px',
-                          border: '1px solid var(--color-border)',
-                          textAlign: 'center',
-                          backgroundColor: isSame
-                            ? 'var(--color-bg-sidebar)'
-                            : cellContent
-                              ? cellContent.color
-                              : 'var(--color-bg-card)',
-                          fontWeight: cellContent ? 600 : 400,
-                          cursor: cellContent ? 'help' : 'default',
-                        }}
-                        title={cellContent?.tooltip || ''}
-                      >
-                        {isSame ? '●' : cellContent ? cellContent.text : '-'}
-                      </td>
-                    );
-                  })}
-                </tr>
+            <option value="all">All Types</option>
+            <option value="requirement">Requirements</option>
+            <option value="useCase">Use Cases</option>
+            <option value="testCase">Test Cases</option>
+            <option value="information">Information</option>
+          </select>
+        )}
+      </div>
+
+      {/* Overview Tab */}
+      {activeTab === 'overview' && (
+        <>
+          {/* Overall stats */}
+          <div
+            style={{
+              display: 'flex',
+              gap: 'var(--spacing-lg)',
+              padding: 'var(--spacing-lg)',
+              backgroundColor: 'var(--color-bg-card)',
+              borderRadius: '8px',
+              border: '1px solid var(--color-border)',
+            }}
+          >
+            <div style={{ textAlign: 'center', flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 'var(--font-size-3xl)',
+                  fontWeight: 700,
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                {totalArtifacts}
+              </div>
+              <div
+                style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}
+              >
+                Total Artifacts
+              </div>
+            </div>
+            <div style={{ textAlign: 'center', flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 'var(--font-size-3xl)',
+                  fontWeight: 700,
+                  color: 'var(--color-success-light)',
+                }}
+              >
+                {totalLinked}
+              </div>
+              <div
+                style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}
+              >
+                Linked
+              </div>
+            </div>
+            <div style={{ textAlign: 'center', flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 'var(--font-size-3xl)',
+                  fontWeight: 700,
+                  color: 'var(--color-warning-light)',
+                }}
+              >
+                {totalGaps}
+              </div>
+              <div
+                style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}
+              >
+                Gaps
+              </div>
+            </div>
+            <div style={{ textAlign: 'center', flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 'var(--font-size-3xl)',
+                  fontWeight: 700,
+                  color: 'var(--color-accent)',
+                }}
+              >
+                {allLinks.length}
+              </div>
+              <div
+                style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}
+              >
+                Links
+              </div>
+            </div>
+          </div>
+
+          {/* Summary Cards */}
+          <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap' }}>
+            <SummaryCard
+              title="Requirements"
+              total={stats.requirement.total}
+              linked={stats.requirement.linked}
+              gaps={stats.requirement.gaps}
+              color={TYPE_COLORS.requirement}
+              onViewGaps={() => {
+                setSelectedType('requirement');
+                setActiveTab('gaps');
+              }}
+            />
+            <SummaryCard
+              title="Use Cases"
+              total={stats.useCase.total}
+              linked={stats.useCase.linked}
+              gaps={stats.useCase.gaps}
+              color={TYPE_COLORS.useCase}
+              onViewGaps={() => {
+                setSelectedType('useCase');
+                setActiveTab('gaps');
+              }}
+            />
+            <SummaryCard
+              title="Test Cases"
+              total={stats.testCase.total}
+              linked={stats.testCase.linked}
+              gaps={stats.testCase.gaps}
+              color={TYPE_COLORS.testCase}
+              onViewGaps={() => {
+                setSelectedType('testCase');
+                setActiveTab('gaps');
+              }}
+            />
+            <SummaryCard
+              title="Information"
+              total={stats.information.total}
+              linked={stats.information.linked}
+              gaps={stats.information.gaps}
+              color={TYPE_COLORS.information}
+              onViewGaps={() => {
+                setSelectedType('information');
+                setActiveTab('gaps');
+              }}
+            />
+          </div>
+
+          {/* Quick Links Legend */}
+          <div
+            style={{
+              padding: 'var(--spacing-md)',
+              backgroundColor: 'var(--color-bg-tertiary)',
+              borderRadius: '8px',
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Link2 size={14} />
+                <strong>Tip:</strong>
+              </div>
+              <span>
+                Click on "gaps" counts to see unlinked artifacts. Use the Links tab to view all
+                relationships.
+              </span>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Gaps Tab */}
+      {activeTab === 'gaps' && (
+        <div
+          style={{
+            backgroundColor: 'var(--color-bg-card)',
+            borderRadius: '8px',
+            border: '1px solid var(--color-border)',
+            padding: 'var(--spacing-md)',
+          }}
+        >
+          <h3
+            style={{
+              margin: '0 0 var(--spacing-md) 0',
+              fontSize: 'var(--font-size-lg)',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            Unlinked Artifacts ({filteredGaps.length})
+          </h3>
+          {filteredGaps.length === 0 ? (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: 'var(--spacing-xl)',
+                color: 'var(--color-text-muted)',
+              }}
+            >
+              <CheckCircle2
+                size={48}
+                style={{ marginBottom: '12px', color: 'var(--color-success-light)' }}
+              />
+              <p>All artifacts are linked!</p>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                maxHeight: '400px',
+                overflowY: 'auto',
+              }}
+            >
+              {filteredGaps.map((artifact) => (
+                <GapItem
+                  key={artifact.id}
+                  artifact={artifact}
+                  onClick={onSelectArtifact ? () => onSelectArtifact(artifact.id) : undefined}
+                />
               ))}
-            </tbody>
-          </table>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Legend */}
-      <div
-        style={{
-          marginTop: 'var(--spacing-md)',
-          padding: 'var(--spacing-sm)',
-          backgroundColor: 'var(--color-bg-sidebar)',
-          borderRadius: '6px',
-          fontSize: 'var(--font-size-xs)',
-          color: 'var(--color-text-secondary)',
-        }}
-      >
-        <strong>Legend:</strong>
+      {/* Links Tab */}
+      {activeTab === 'links' && (
         <div
-          style={{ display: 'flex', gap: 'var(--spacing-sm)', marginTop: '4px', flexWrap: 'wrap' }}
+          style={{
+            backgroundColor: 'var(--color-bg-card)',
+            borderRadius: '8px',
+            border: '1px solid var(--color-border)',
+            overflow: 'hidden',
+          }}
         >
-          {Object.entries(linkSymbols).map(([type, symbol]) => (
-            <span key={type} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span
+          <div
+            style={{ padding: 'var(--spacing-md)', borderBottom: '1px solid var(--color-border)' }}
+          >
+            <h3
+              style={{
+                margin: 0,
+                fontSize: 'var(--font-size-lg)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              All Links ({filteredLinks.length})
+            </h3>
+          </div>
+          {filteredLinks.length === 0 ? (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: 'var(--spacing-xl)',
+                color: 'var(--color-text-muted)',
+              }}
+            >
+              <Link2 size={48} style={{ marginBottom: '12px' }} />
+              <p>No links found for the selected filter.</p>
+            </div>
+          ) : (
+            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              <table
                 style={{
-                  padding: '2px 6px',
-                  backgroundColor: linkColors[type],
-                  borderRadius: '4px',
-                  fontWeight: 600,
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: 'var(--font-size-sm)',
                 }}
               >
-                {symbol}
-              </span>
-              {type.replace(/_/g, ' ')}
-            </span>
-          ))}
+                <thead>
+                  <tr
+                    style={{
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      borderBottom: '1px solid var(--color-border)',
+                    }}
+                  >
+                    <th
+                      style={{
+                        padding: '10px 12px',
+                        textAlign: 'left',
+                        fontWeight: 600,
+                        color: 'var(--color-text-secondary)',
+                      }}
+                    >
+                      Source
+                    </th>
+                    <th
+                      style={{
+                        padding: '10px 12px',
+                        textAlign: 'center',
+                        fontWeight: 600,
+                        color: 'var(--color-text-secondary)',
+                      }}
+                    >
+                      Link Type
+                    </th>
+                    <th
+                      style={{
+                        padding: '10px 12px',
+                        textAlign: 'left',
+                        fontWeight: 600,
+                        color: 'var(--color-text-secondary)',
+                      }}
+                    >
+                      Target
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLinks.map((link, index) => (
+                    <LinkRow
+                      key={`${link.sourceId}-${link.targetId}-${index}`}
+                      sourceId={link.sourceId}
+                      targetId={link.targetId}
+                      linkType={link.type}
+                      sourceType={link.sourceType}
+                      targetType={link.targetType}
+                      onClickSource={
+                        onSelectArtifact ? () => onSelectArtifact(link.sourceId) : undefined
+                      }
+                      onClickTarget={
+                        onSelectArtifact ? () => onSelectArtifact(link.targetId) : undefined
+                      }
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { TraceabilityDashboard } from '../TraceabilityDashboard';
 import type { Requirement, UseCase, TestCase, Information } from '../../types';
 
@@ -16,11 +16,11 @@ describe('TraceabilityDashboard', () => {
       dateCreated: Date.now(),
       text: '',
       rationale: '',
-      linkedArtifacts: [{ targetId: 'REQ-003', type: 'related_to' }],
+      linkedArtifacts: [{ targetId: 'UC-001', type: 'satisfies' }],
     },
     {
       id: 'REQ-002',
-      title: 'Child Req',
+      title: 'Unlinked Req',
       description: '',
       status: 'draft',
       priority: 'medium',
@@ -29,18 +29,7 @@ describe('TraceabilityDashboard', () => {
       dateCreated: Date.now(),
       text: '',
       rationale: '',
-    },
-    {
-      id: 'REQ-003',
-      title: 'Related Req',
-      description: '',
-      status: 'draft',
-      priority: 'medium',
-      revision: '01',
-      lastModified: Date.now(),
-      dateCreated: Date.now(),
-      text: '',
-      rationale: '',
+      // No linked artifacts - this is a gap
     },
   ];
 
@@ -57,7 +46,7 @@ describe('TraceabilityDashboard', () => {
       status: 'draft',
       revision: '01',
       lastModified: Date.now(),
-      linkedArtifacts: [{ targetId: 'REQ-001', type: 'satisfies' }],
+      linkedArtifacts: [{ targetId: 'REQ-001', type: 'derived_from' }],
     },
   ];
 
@@ -72,7 +61,7 @@ describe('TraceabilityDashboard', () => {
       revision: '01',
       dateCreated: Date.now(),
       lastModified: Date.now(),
-      linkedArtifacts: [{ targetId: 'REQ-001', type: 'verifies' }],
+      // No linked artifacts - this is a gap
     },
   ];
 
@@ -85,6 +74,7 @@ describe('TraceabilityDashboard', () => {
       revision: '01',
       dateCreated: Date.now(),
       lastModified: Date.now(),
+      // No linked artifacts - this is a gap
     },
   ];
 
@@ -95,103 +85,156 @@ describe('TraceabilityDashboard', () => {
     information: mockInformation,
   };
 
-  it('renders matrix structure correctly', () => {
-    render(<TraceabilityDashboard {...defaultProps} />);
+  // Helper to get the tab bar
+  const getTabBar = () => {
+    return screen.getByRole('button', { name: 'Overview' }).parentElement!;
+  };
 
-    expect(screen.getByText('From / To')).toBeInTheDocument();
-    // Check row headers - REQ-001 appears in row and column
-    expect(screen.getAllByText('REQ-001').length).toBeGreaterThanOrEqual(2);
+  const clickTab = (tabName: string) => {
+    const tabBar = getTabBar();
+    const tab = within(tabBar).getByText(new RegExp(tabName));
+    fireEvent.click(tab);
+  };
+
+  describe('Overview Tab', () => {
+    it('renders summary cards for all artifact types', () => {
+      render(<TraceabilityDashboard {...defaultProps} />);
+
+      expect(screen.getByText('Requirements')).toBeInTheDocument();
+      expect(screen.getByText('Use Cases')).toBeInTheDocument();
+      expect(screen.getByText('Test Cases')).toBeInTheDocument();
+      expect(screen.getByText('Information')).toBeInTheDocument();
+    });
+
+    it('shows total artifact counts', () => {
+      render(<TraceabilityDashboard {...defaultProps} />);
+
+      expect(screen.getByText('Total Artifacts')).toBeInTheDocument();
+      expect(screen.getByText('5')).toBeInTheDocument(); // 2 reqs + 1 UC + 1 TC + 1 Info
+    });
+
+    it('displays coverage percentages', () => {
+      render(<TraceabilityDashboard {...defaultProps} />);
+
+      // Coverage percentages should be visible
+      const coverageLabels = screen.getAllByText('Coverage');
+      expect(coverageLabels.length).toBeGreaterThan(0);
+    });
   });
 
-  it('renders filter toggle buttons', () => {
-    render(<TraceabilityDashboard {...defaultProps} />);
+  describe('Tab Navigation', () => {
+    it('renders all tabs', () => {
+      render(<TraceabilityDashboard {...defaultProps} />);
+      const tabBar = getTabBar();
 
-    expect(screen.getByText('Requirements (3)')).toBeInTheDocument();
-    expect(screen.getByText('Use Cases (1)')).toBeInTheDocument();
-    expect(screen.getByText('Test Cases (1)')).toBeInTheDocument();
-    expect(screen.getByText('Information (1)')).toBeInTheDocument();
+      expect(within(tabBar).getByText('Overview')).toBeInTheDocument();
+      expect(within(tabBar).getByText(/Gaps/)).toBeInTheDocument();
+      expect(within(tabBar).getByText(/Links/)).toBeInTheDocument();
+    });
+
+    it('switches to Gaps tab when clicked', () => {
+      render(<TraceabilityDashboard {...defaultProps} />);
+      clickTab('Gaps');
+
+      expect(screen.getByText(/Unlinked Artifacts/)).toBeInTheDocument();
+    });
+
+    it('switches to Links tab when clicked', () => {
+      render(<TraceabilityDashboard {...defaultProps} />);
+      clickTab('Links');
+
+      expect(screen.getByText(/All Links/)).toBeInTheDocument();
+    });
   });
 
-  it('filters artifacts when toggle is clicked', () => {
-    render(<TraceabilityDashboard {...defaultProps} />);
+  describe('Gaps Tab', () => {
+    it('lists unlinked artifacts', () => {
+      render(<TraceabilityDashboard {...defaultProps} />);
+      clickTab('Gaps');
 
-    // Initially UC-001 should be visible
-    expect(screen.getAllByText('UC-001').length).toBeGreaterThanOrEqual(1);
+      // REQ-002, TC-001, INFO-001 have no links
+      expect(screen.getByText('REQ-002')).toBeInTheDocument();
+      expect(screen.getByText('TC-001')).toBeInTheDocument();
+      expect(screen.getByText('INFO-001')).toBeInTheDocument();
+    });
 
-    // Click the Use Cases toggle to hide them
-    const useCaseToggle = screen.getByText('Use Cases (1)');
-    fireEvent.click(useCaseToggle);
+    it('shows empty state when all artifacts are linked', () => {
+      const allLinkedProps = {
+        requirements: [{ ...mockRequirements[0] }], // REQ-001 has link
+        useCases: mockUseCases, // UC-001 has link
+        testCases: [],
+        information: [],
+      };
 
-    // UC-001 should no longer be in the matrix
-    expect(screen.queryByText('UC-001')).not.toBeInTheDocument();
+      render(<TraceabilityDashboard {...allLinkedProps} />);
+      clickTab('Gaps');
+
+      expect(screen.getByText('All artifacts are linked!')).toBeInTheDocument();
+    });
   });
 
-  it('renders linkedArtifacts relationships', () => {
-    render(<TraceabilityDashboard {...defaultProps} />);
+  describe('Links Tab', () => {
+    it('displays links table with source and target', () => {
+      render(<TraceabilityDashboard {...defaultProps} />);
+      clickTab('Links');
 
-    // REQ-001 related_to REQ-003 (via linkedArtifacts)
-    // Should show the related_to symbol
-    const linkCells = screen.getAllByText('↔');
-    expect(linkCells.length).toBeGreaterThan(0);
+      expect(screen.getByText('Source')).toBeInTheDocument();
+      expect(screen.getByText('Link Type')).toBeInTheDocument();
+      expect(screen.getByText('Target')).toBeInTheDocument();
+    });
+
+    it('shows link relationships', () => {
+      render(<TraceabilityDashboard {...defaultProps} />);
+      clickTab('Links');
+
+      // REQ-001 satisfies UC-001
+      expect(screen.getAllByText('REQ-001').length).toBeGreaterThan(0);
+      expect(screen.getByText('satisfies')).toBeInTheDocument();
+    });
   });
 
-  it('renders cross-artifact links', () => {
-    render(<TraceabilityDashboard {...defaultProps} />);
+  describe('Filtering', () => {
+    it('shows type filter dropdown on Gaps tab', () => {
+      render(<TraceabilityDashboard {...defaultProps} />);
+      clickTab('Gaps');
 
-    // UC-001 satisfies REQ-001
-    const satisfiesSymbols = screen.getAllByText('✓');
-    expect(satisfiesSymbols.length).toBeGreaterThan(0);
+      expect(screen.getByDisplayValue('All Types')).toBeInTheDocument();
+    });
 
-    // TC-001 verifies REQ-001
-    const verifiesSymbols = screen.getAllByText('✔');
-    expect(verifiesSymbols.length).toBeGreaterThan(0);
+    it('filters gaps by type', () => {
+      render(<TraceabilityDashboard {...defaultProps} />);
+      clickTab('Gaps');
+
+      // Select Requirements filter
+      fireEvent.change(screen.getByDisplayValue('All Types'), { target: { value: 'requirement' } });
+
+      // Only REQ-002 should be visible
+      expect(screen.getByText('REQ-002')).toBeInTheDocument();
+      expect(screen.queryByText('TC-001')).not.toBeInTheDocument();
+      expect(screen.queryByText('INFO-001')).not.toBeInTheDocument();
+    });
   });
 
-  it('renders self-reference cells with special marker', () => {
-    render(<TraceabilityDashboard {...defaultProps} />);
+  describe('Interactivity', () => {
+    it('calls onSelectArtifact when gap item is clicked', () => {
+      const mockOnSelect = vi.fn();
+      render(<TraceabilityDashboard {...defaultProps} onSelectArtifact={mockOnSelect} />);
+      clickTab('Gaps');
 
-    // Diagonal cells show ● for same artifact
-    const selfMarkers = screen.getAllByText('●');
-    expect(selfMarkers.length).toBeGreaterThanOrEqual(1);
-  });
+      fireEvent.click(screen.getByText('REQ-002'));
 
-  it('displays legend with all relationship types', () => {
-    render(<TraceabilityDashboard {...defaultProps} />);
+      expect(mockOnSelect).toHaveBeenCalledWith('REQ-002');
+    });
 
-    expect(screen.getByText('Legend:')).toBeInTheDocument();
-    expect(screen.getByText('parent')).toBeInTheDocument();
-    expect(screen.getByText('child')).toBeInTheDocument();
-    expect(screen.getByText('depends on')).toBeInTheDocument();
-    expect(screen.getByText('related to')).toBeInTheDocument();
-  });
+    it('navigates to Gaps tab when clicking gaps count in summary card', () => {
+      render(<TraceabilityDashboard {...defaultProps} />);
 
-  it('shows empty state when all filters are off', () => {
-    render(<TraceabilityDashboard {...defaultProps} />);
+      // Click on a gaps count button (found outside the tab bar)
+      const gapButtons = screen.getAllByRole('button', { name: /\d+ gaps?/ });
+      fireEvent.click(gapButtons[0]);
 
-    // Turn off all filters
-    fireEvent.click(screen.getByText('Requirements (3)'));
-    fireEvent.click(screen.getByText('Use Cases (1)'));
-    fireEvent.click(screen.getByText('Test Cases (1)'));
-    fireEvent.click(screen.getByText('Information (1)'));
-
-    expect(
-      screen.getByText('No artifacts to display. Enable at least one artifact type above.')
-    ).toBeInTheDocument();
-  });
-
-  it('hides unlinked artifacts when Linked filter is selected', () => {
-    render(<TraceabilityDashboard {...defaultProps} />);
-
-    // INFO-001 has no links, should be visible initially
-    expect(screen.getAllByText('INFO-001').length).toBeGreaterThanOrEqual(1);
-
-    // Click 'Linked' to show only linked artifacts
-    fireEvent.click(screen.getByText('Linked'));
-
-    // INFO-001 should be hidden now (no links to/from it)
-    expect(screen.queryByText('INFO-001')).not.toBeInTheDocument();
-
-    // But REQ-001 should still be visible (has links)
-    expect(screen.getAllByText('REQ-001').length).toBeGreaterThanOrEqual(1);
+      // Should switch to Gaps tab
+      expect(screen.getByText(/Unlinked Artifacts/)).toBeInTheDocument();
+    });
   });
 });
