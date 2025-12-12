@@ -4,8 +4,7 @@ import {
   LinkModal,
   EditRequirementModal,
   UseCaseModal,
-  NewTestCaseModal,
-  EditTestCaseModal,
+  TestCaseModal,
   InformationModal,
   VersionHistory,
   ProjectSettingsModal,
@@ -129,6 +128,11 @@ export const ModalManager: React.FC = () => {
     }
   };
 
+  // Determine which TestCase to show (edit mode) or null (create mode)
+  const selectedTestCase = ui.isEditTestCaseModalOpen
+    ? testCases.find((t) => t.id === ui.selectedTestCaseId) || null
+    : null;
+
   return (
     <>
       <NewRequirementModal
@@ -174,20 +178,17 @@ export const ModalManager: React.FC = () => {
         onSubmit={handleAddUseCase}
       />
 
-      <NewTestCaseModal
-        isOpen={ui.isNewTestCaseModalOpen}
-        onClose={() => ui.setIsNewTestCaseModalOpen(false)}
-        onSubmit={handleAddTestCase}
-      />
-
-      <EditTestCaseModal
-        isOpen={ui.isEditTestCaseModalOpen}
-        testCase={testCases.find((t) => t.id === ui.selectedTestCaseId) || null}
+      {/* Unified TestCaseModal for both create and edit */}
+      <TestCaseModal
+        isOpen={ui.isNewTestCaseModalOpen || ui.isEditTestCaseModalOpen}
+        testCase={selectedTestCase}
         onClose={() => {
+          ui.setIsNewTestCaseModalOpen(false);
           ui.setIsEditTestCaseModalOpen(false);
           ui.setSelectedTestCaseId(null);
         }}
-        onSubmit={handleUpdateTestCase}
+        onCreate={handleAddTestCase}
+        onUpdate={handleUpdateTestCase}
         onDelete={handleDeleteTestCase}
       />
 

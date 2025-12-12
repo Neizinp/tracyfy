@@ -3,66 +3,91 @@ import { X } from 'lucide-react';
 import type { TestCase } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
-import { useUI } from '../app/providers';
+import { useUI, useUser } from '../app/providers';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
-interface EditTestCaseModalProps {
+interface TestCaseModalProps {
   isOpen: boolean;
-  testCase: TestCase | null;
-
+  testCase: TestCase | null; // null = create mode, TestCase = edit mode
   onClose: () => void;
-  onSubmit: (id: string, updates: Partial<TestCase>) => void;
+  onCreate: (testCase: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated'>) => void;
+  onUpdate: (id: string, updates: Partial<TestCase>) => void;
   onDelete: (id: string) => void;
 }
 
 type Tab = 'overview' | 'relationships' | 'history';
 
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-
-export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
+export const TestCaseModal: React.FC<TestCaseModalProps> = ({
   isOpen,
   testCase,
-
   onClose,
-  onSubmit,
+  onCreate,
+  onUpdate,
   onDelete,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
+  const { currentUser } = useUser();
+  const isEditMode = testCase !== null;
+
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TestCase['priority']>('medium');
   const [status, setStatus] = useState<TestCase['status']>('draft');
-
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Reset form when modal opens/closes or testCase changes
   useEffect(() => {
-    if (testCase) {
-      setTitle(testCase.title);
-      setDescription(testCase.description);
-      setPriority(testCase.priority);
-      setStatus(testCase.status);
+    if (isOpen) {
+      if (testCase) {
+        // Edit mode: populate from testCase
+        setTitle(testCase.title);
+        setDescription(testCase.description);
+        setPriority(testCase.priority);
+        setStatus(testCase.status);
+      } else {
+        // Create mode: reset to defaults
+        setTitle('');
+        setDescription('');
+        setPriority('medium');
+        setStatus('draft');
+      }
+      setActiveTab('overview');
+      setShowDeleteConfirm(false);
     }
-  }, [testCase]);
+  }, [isOpen, testCase]);
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!testCase) return;
 
-    const updates: Partial<TestCase> = {
-      title,
-      description,
-      priority,
-      status,
+    if (isEditMode && testCase) {
+      // Update existing
+      const updates: Partial<TestCase> = {
+        title,
+        description,
+        priority,
+        status,
+        lastModified: Date.now(),
+      };
 
-      lastModified: Date.now(),
-    };
+      // Update lastRun when status changes to passed/failed
+      if ((status === 'passed' || status === 'failed') && testCase.status !== status) {
+        updates.lastRun = Date.now();
+      }
 
-    // Update lastRun when status changes to passed/failed
-    if ((status === 'passed' || status === 'failed') && testCase.status !== status) {
-      updates.lastRun = Date.now();
+      onUpdate(testCase.id, updates);
+    } else {
+      // Create new
+      onCreate({
+        title,
+        description,
+        priority,
+        author: currentUser?.name || undefined,
+        requirementIds: [],
+        status: 'draft',
+        revision: '01',
+      });
     }
-
-    onSubmit(testCase.id, updates);
     onClose();
   };
 
@@ -71,13 +96,18 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
     onClose: onClose,
   });
 
-  if (!isOpen || !testCase) return null;
+  if (!isOpen) return null;
 
   const confirmDelete = () => {
-    onDelete(testCase.id);
-    setShowDeleteConfirm(false);
-    onClose();
+    if (testCase) {
+      onDelete(testCase.id);
+      setShowDeleteConfirm(false);
+      onClose();
+    }
   };
+
+  const modalTitle = isEditMode ? `Edit Test Case - ${testCase?.id}` : 'New Test Case';
+  const submitLabel = isEditMode ? 'Save Changes' : 'Create Test Case';
 
   return (
     <div
@@ -92,7 +122,6 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
-        // no blur
       }}
     >
       <div
@@ -122,7 +151,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
             zIndex: 1,
           }}
         >
-          <h3 style={{ fontWeight: 600 }}>Edit Test Case - {testCase.id}</h3>
+          <h3 style={{ fontWeight: 600 }}>{modalTitle}</h3>
           <button
             onClick={onClose}
             style={{
@@ -185,23 +214,27 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
           >
             Relationships
           </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            style={{
-              padding: '12px 24px',
-              border: 'none',
-              backgroundColor: activeTab === 'history' ? 'var(--color-bg-card)' : 'transparent',
-              color:
-                activeTab === 'history' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-              cursor: 'pointer',
-              fontWeight: activeTab === 'history' ? 600 : 400,
-              borderBottom:
-                activeTab === 'history' ? '2px solid var(--color-accent)' : '2px solid transparent',
-              transition: 'all 0.2s',
-            }}
-          >
-            Revision History
-          </button>
+          {isEditMode && (
+            <button
+              onClick={() => setActiveTab('history')}
+              style={{
+                padding: '12px 24px',
+                border: 'none',
+                backgroundColor: activeTab === 'history' ? 'var(--color-bg-card)' : 'transparent',
+                color:
+                  activeTab === 'history' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                cursor: 'pointer',
+                fontWeight: activeTab === 'history' ? 600 : 400,
+                borderBottom:
+                  activeTab === 'history'
+                    ? '2px solid var(--color-accent)'
+                    : '2px solid transparent',
+                transition: 'all 0.2s',
+              }}
+            >
+              Revision History
+            </button>
+          )}
         </div>
 
         <form
@@ -217,7 +250,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
             <>
               <div style={{ marginBottom: 'var(--spacing-md)' }}>
                 <label
-                  htmlFor="edit-test-case-title"
+                  htmlFor="test-case-title"
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
@@ -227,7 +260,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                   Title
                 </label>
                 <input
-                  id="edit-test-case-title"
+                  id="test-case-title"
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -247,7 +280,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
 
               <div style={{ marginBottom: 'var(--spacing-md)' }}>
                 <label
-                  htmlFor="edit-test-case-description"
+                  htmlFor="test-case-description"
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
@@ -257,7 +290,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                   Description
                 </label>
                 <textarea
-                  id="edit-test-case-description"
+                  id="test-case-description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={4}
@@ -276,7 +309,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
 
               <div style={{ marginBottom: 'var(--spacing-md)' }}>
                 <label
-                  htmlFor="edit-test-case-priority"
+                  htmlFor="test-case-priority"
                   style={{
                     display: 'block',
                     marginBottom: 'var(--spacing-xs)',
@@ -286,7 +319,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                   Priority
                 </label>
                 <select
-                  id="edit-test-case-priority"
+                  id="test-case-priority"
                   value={priority}
                   onChange={(e) => setPriority(e.target.value as TestCase['priority'])}
                   style={{
@@ -305,91 +338,123 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                 </select>
               </div>
 
-              <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                <label
-                  htmlFor="edit-test-case-status"
-                  style={{
-                    display: 'block',
-                    marginBottom: 'var(--spacing-xs)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Status
-                </label>
-                <select
-                  id="edit-test-case-status"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as TestCase['status'])}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    outline: 'none',
-                  }}
-                >
-                  <option value="draft">Draft</option>
-                  <option value="approved">Approved</option>
-                  <option value="passed">Passed</option>
-                  <option value="failed">Failed</option>
-                  <option value="blocked">Blocked</option>
-                </select>
-              </div>
+              {isEditMode && (
+                <>
+                  <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                    <label
+                      htmlFor="test-case-status"
+                      style={{
+                        display: 'block',
+                        marginBottom: 'var(--spacing-xs)',
+                        fontSize: 'var(--font-size-sm)',
+                      }}
+                    >
+                      Status
+                    </label>
+                    <select
+                      id="test-case-status"
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value as TestCase['status'])}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--color-border)',
+                        backgroundColor: 'var(--color-bg-app)',
+                        color: 'var(--color-text-primary)',
+                        outline: 'none',
+                      }}
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="approved">Approved</option>
+                      <option value="passed">Passed</option>
+                      <option value="failed">Failed</option>
+                      <option value="blocked">Blocked</option>
+                    </select>
+                  </div>
 
-              <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                <label
-                  htmlFor="edit-test-case-author"
-                  style={{
-                    display: 'block',
-                    marginBottom: 'var(--spacing-xs)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Author
-                </label>
-                <div
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    color: 'var(--color-text-muted)',
-                  }}
-                >
-                  {testCase.author || 'Not specified'}
-                </div>
-              </div>
+                  <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: 'var(--spacing-xs)',
+                        fontSize: 'var(--font-size-sm)',
+                      }}
+                    >
+                      Author
+                    </label>
+                    <div
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--color-border)',
+                        backgroundColor: 'var(--color-bg-secondary)',
+                        color: 'var(--color-text-muted)',
+                      }}
+                    >
+                      {testCase?.author || 'Not specified'}
+                    </div>
+                  </div>
 
-              <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                <label
-                  style={{
-                    display: 'block',
-                    marginBottom: 'var(--spacing-xs)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Date Created
-                </label>
-                <input
-                  type="text"
-                  value={formatDateTime(testCase.dateCreated)}
-                  disabled
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    color: 'var(--color-text-muted)',
-                    outline: 'none',
-                    cursor: 'not-allowed',
-                  }}
-                />
-              </div>
+                  <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: 'var(--spacing-xs)',
+                        fontSize: 'var(--font-size-sm)',
+                      }}
+                    >
+                      Date Created
+                    </label>
+                    <input
+                      type="text"
+                      value={testCase ? formatDateTime(testCase.dateCreated) : ''}
+                      disabled
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--color-border)',
+                        backgroundColor: 'var(--color-bg-secondary)',
+                        color: 'var(--color-text-muted)',
+                        outline: 'none',
+                        cursor: 'not-allowed',
+                      }}
+                    />
+                  </div>
 
-              {testCase.lastRun && (
+                  {testCase?.lastRun && (
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                      <label
+                        style={{
+                          display: 'block',
+                          marginBottom: 'var(--spacing-xs)',
+                          fontSize: 'var(--font-size-sm)',
+                        }}
+                      >
+                        Last Run
+                      </label>
+                      <input
+                        type="text"
+                        value={formatDateTime(testCase.lastRun)}
+                        disabled
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--color-border)',
+                          backgroundColor: 'var(--color-bg-secondary)',
+                          color: 'var(--color-text-muted)',
+                          outline: 'none',
+                          cursor: 'not-allowed',
+                        }}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {!isEditMode && (
                 <div style={{ marginBottom: 'var(--spacing-md)' }}>
                   <label
                     style={{
@@ -398,27 +463,23 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                       fontSize: 'var(--font-size-sm)',
                     }}
                   >
-                    Last Run
+                    Author
                   </label>
-                  <input
-                    type="text"
-                    value={formatDateTime(testCase.lastRun)}
-                    disabled
+                  <div
                     style={{
-                      width: '100%',
                       padding: '8px 12px',
                       borderRadius: '6px',
                       border: '1px solid var(--color-border)',
                       backgroundColor: 'var(--color-bg-secondary)',
-                      color: 'var(--color-text-muted)',
-                      outline: 'none',
-                      cursor: 'not-allowed',
+                      color: currentUser ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
                     }}
-                  />
+                  >
+                    {currentUser?.name || 'No user selected'}
+                  </div>
                 </div>
               )}
 
-              {showDeleteConfirm ? (
+              {isEditMode && showDeleteConfirm ? (
                 <div
                   style={{
                     padding: 'var(--spacing-md)',
@@ -483,27 +544,29 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
               <div
                 style={{
                   display: 'flex',
-                  justifyContent: 'space-between',
+                  justifyContent: isEditMode ? 'space-between' : 'flex-end',
                   gap: 'var(--spacing-sm)',
                 }}
               >
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  disabled={showDeleteConfirm}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-error)',
-                    backgroundColor: 'var(--color-bg-card)',
-                    color: 'var(--color-error)',
-                    cursor: showDeleteConfirm ? 'not-allowed' : 'pointer',
-                    fontWeight: 500,
-                    opacity: showDeleteConfirm ? 0.5 : 1,
-                  }}
-                >
-                  Delete
-                </button>
+                {isEditMode && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    disabled={showDeleteConfirm}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--color-error)',
+                      backgroundColor: 'var(--color-bg-card)',
+                      color: 'var(--color-error)',
+                      cursor: showDeleteConfirm ? 'not-allowed' : 'pointer',
+                      fontWeight: 500,
+                      opacity: showDeleteConfirm ? 0.5 : 1,
+                    }}
+                  >
+                    Delete
+                  </button>
+                )}
                 <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
                   <button
                     type="button"
@@ -531,7 +594,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                       fontWeight: 500,
                     }}
                   >
-                    Save Changes
+                    {submitLabel}
                   </button>
                 </div>
               </div>
@@ -561,7 +624,18 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                     overflowY: 'auto',
                   }}
                 >
-                  {(testCase.linkedArtifacts || []).length === 0 ? (
+                  {!isEditMode ? (
+                    <div
+                      style={{
+                        padding: '16px',
+                        color: 'var(--color-text-muted)',
+                        fontSize: 'var(--font-size-sm)',
+                        textAlign: 'center',
+                      }}
+                    >
+                      Save the test case first to add relationships.
+                    </div>
+                  ) : (testCase?.linkedArtifacts || []).length === 0 ? (
                     <div
                       style={{
                         padding: '8px',
@@ -573,9 +647,11 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          setLinkSourceId(testCase.id);
-                          setLinkSourceType('testcase');
-                          setIsLinkModalOpen(true);
+                          if (testCase) {
+                            setLinkSourceId(testCase.id);
+                            setLinkSourceType('testcase');
+                            setIsLinkModalOpen(true);
+                          }
                         }}
                         style={{
                           display: 'block',
@@ -598,9 +674,11 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            setLinkSourceId(testCase.id);
-                            setLinkSourceType('testcase');
-                            setIsLinkModalOpen(true);
+                            if (testCase) {
+                              setLinkSourceId(testCase.id);
+                              setLinkSourceType('testcase');
+                              setIsLinkModalOpen(true);
+                            }
                           }}
                           style={{
                             fontSize: 'var(--font-size-xs)',
@@ -615,7 +693,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                           + Add Link
                         </button>
                       </div>
-                      {(testCase.linkedArtifacts || []).map((link, index) => (
+                      {(testCase?.linkedArtifacts || []).map((link, index) => (
                         <div
                           key={`${link.targetId}-${index}`}
                           style={{
