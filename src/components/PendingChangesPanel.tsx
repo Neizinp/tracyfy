@@ -214,11 +214,17 @@ export function PendingChangesPanel() {
                   value={commitMessages[change.id] || ''}
                   onChange={(e) => handleCommitMessageChange(change.id, e.target.value)}
                   onKeyDown={(e) => {
+                    console.log('[PendingChanges] KeyDown:', e.key, {
+                      isCommitting: committing[change.id],
+                      message: commitMessages[change.id],
+                      hasTrimmedMessage: !!commitMessages[change.id]?.trim(),
+                    });
                     if (
                       e.key === 'Enter' &&
                       !committing[change.id] &&
                       commitMessages[change.id]?.trim()
                     ) {
+                      console.log('[PendingChanges] Triggering commit via Enter');
                       handleCommit(change);
                     }
                   }}
