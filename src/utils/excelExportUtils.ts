@@ -235,59 +235,87 @@ export async function exportProjectToExcel(
     XLSX.utils.book_append_sheet(wb, wsInfo, 'Information');
   }
 
-  // 6. Traceability Matrix
-  if (projectRequirements.length > 0) {
+  // 6. Traceability Matrix (all artifact types)
+  const allArtifacts = [
+    ...projectRequirements.map((r) => ({
+      id: r.id,
+      type: 'REQ',
+      linkedArtifacts: r.linkedArtifacts || [],
+    })),
+    ...projectUseCases.map((u) => ({
+      id: u.id,
+      type: 'UC',
+      linkedArtifacts: u.linkedArtifacts || [],
+    })),
+    ...projectTestCases.map((t) => ({
+      id: t.id,
+      type: 'TC',
+      linkedArtifacts: [
+        ...(t.linkedArtifacts || []),
+        // Include legacy requirementIds as verifies links
+        ...(t.requirementIds || []).map((reqId) => ({
+          targetId: reqId,
+          type: 'verifies' as const,
+        })),
+      ],
+    })),
+    ...projectInformation.map((i) => ({
+      id: i.id,
+      type: 'INFO',
+      linkedArtifacts: i.linkedArtifacts || [],
+    })),
+  ];
+
+  if (allArtifacts.length > 0) {
     const matrixData: any[] = [];
 
-    // Helper to find link between two artifacts
-    // Now built from each artifact's linkedArtifacts array
-    const getLink = (fromId: string, toId: string): ArtifactLink | undefined => {
-      // Check all artifacts for a link between fromId and toId
-      const allArtifacts = [
-        ...projectRequirements,
-        ...projectUseCases,
-        ...projectTestCases,
-        ...projectInformation,
-      ];
+    // Build ID set for validation
+    const artifactIds = new Set(allArtifacts.map((a) => a.id));
 
-      for (const artifact of allArtifacts) {
-        const linkedArtifacts = artifact.linkedArtifacts || [];
-        // Check if this artifact links from fromId to toId
-        if (artifact.id === fromId) {
-          const link = linkedArtifacts.find((l) => l.targetId === toId);
-          if (link) return link;
-        }
-        // Check if this artifact links from toId to fromId (reverse)
-        if (artifact.id === toId) {
-          const link = linkedArtifacts.find((l) => l.targetId === fromId);
-          if (link) return link;
-        }
+    // Helper to find link between two artifacts
+    const getLink = (fromId: string, toId: string): ArtifactLink | undefined => {
+      const fromArtifact = allArtifacts.find((a) => a.id === fromId);
+      if (fromArtifact) {
+        const link = fromArtifact.linkedArtifacts.find((l) => l.targetId === toId);
+        if (link) return link;
       }
       return undefined;
     };
 
-    projectRequirements.forEach((rowReq) => {
-      const row: any = { 'From / To': rowReq.id };
+    // Link type abbreviations for readability
+    const linkAbbreviations: Record<string, string> = {
+      parent: 'PAR',
+      child: 'CHD',
+      derived_from: 'DER',
+      depends_on: 'DEP',
+      conflicts_with: 'CNF',
+      duplicates: 'DUP',
+      refines: 'REF',
+      satisfies: 'SAT',
+      verifies: 'VER',
+      constrains: 'CON',
+      requires: 'REQ',
+      related_to: 'REL',
+    };
 
-      projectRequirements.forEach((colReq) => {
-        if (rowReq.id === colReq.id) {
-          row[colReq.id] = '-';
+    allArtifacts.forEach((rowArtifact) => {
+      const row: any = { 'From / To': rowArtifact.id };
+
+      allArtifacts.forEach((colArtifact) => {
+        if (rowArtifact.id === colArtifact.id) {
+          row[colArtifact.id] = '-';
           return;
         }
 
-        let symbol = '';
+        let cellValue = '';
 
-        const link = getLink(rowReq.id, colReq.id);
-        if (link) {
-          const linkSymbols: Record<string, string> = {
-            relates_to: '↔',
-            depends_on: '→',
-            conflicts_with: '⚠',
-          };
-          symbol = linkSymbols[link.type] || '?';
+        // Check for link from row to col
+        const link = getLink(rowArtifact.id, colArtifact.id);
+        if (link && artifactIds.has(link.targetId)) {
+          cellValue = linkAbbreviations[link.type] || link.type;
         }
 
-        row[colReq.id] = symbol;
+        row[colArtifact.id] = cellValue;
       });
 
       matrixData.push(row);
@@ -297,10 +325,65 @@ export async function exportProjectToExcel(
 
     // Set column widths
     const cols = [{ wch: 15 }]; // First column width
-    projectRequirements.forEach(() => cols.push({ wch: 8 })); // Other columns width
+    allArtifacts.forEach(() => cols.push({ wch: 6 })); // Other columns width
     wsMatrix['!cols'] = cols;
 
     XLSX.utils.book_append_sheet(wb, wsMatrix, 'Traceability Matrix');
+
+    // Add legend sheet
+    const legendData = [
+      {
+        Abbreviation: 'PAR',
+        'Link Type': 'Parent',
+        Description: 'Hierarchical decomposition - row is parent of column',
+      },
+      {
+        Abbreviation: 'CHD',
+        'Link Type': 'Child',
+        Description: 'Hierarchical decomposition - row is child of column',
+      },
+      {
+        Abbreviation: 'DER',
+        'Link Type': 'Derived From',
+        Description: 'Logical derivation, not strict hierarchy',
+      },
+      { Abbreviation: 'DEP', 'Link Type': 'Depends On', Description: 'Row depends on column' },
+      { Abbreviation: 'CNF', 'Link Type': 'Conflicts With', Description: 'Mutual exclusivity' },
+      { Abbreviation: 'DUP', 'Link Type': 'Duplicates', Description: 'Redundancy or overlap' },
+      {
+        Abbreviation: 'REF',
+        'Link Type': 'Refines',
+        Description: 'Adds detail without changing intent',
+      },
+      {
+        Abbreviation: 'SAT',
+        'Link Type': 'Satisfies',
+        Description: 'Links to design or implementation',
+      },
+      {
+        Abbreviation: 'VER',
+        'Link Type': 'Verifies',
+        Description: 'Links to test cases or validation',
+      },
+      {
+        Abbreviation: 'CON',
+        'Link Type': 'Constrains',
+        Description: 'Imposes restrictions on column',
+      },
+      {
+        Abbreviation: 'REQ',
+        'Link Type': 'Requires',
+        Description: 'Row is a precondition for column',
+      },
+      {
+        Abbreviation: 'REL',
+        'Link Type': 'Related To',
+        Description: 'Generic association for context',
+      },
+    ];
+    const wsLegend = XLSX.utils.json_to_sheet(legendData);
+    wsLegend['!cols'] = [{ wch: 12 }, { wch: 15 }, { wch: 50 }];
+    XLSX.utils.book_append_sheet(wb, wsLegend, 'Matrix Legend');
   }
 
   // Write file
