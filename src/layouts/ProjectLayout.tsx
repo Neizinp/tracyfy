@@ -227,7 +227,8 @@ export const ProjectLayout: React.FC = () => {
             <h2 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 600 }}>{getPageTitle()}</h2>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            {location.pathname.includes('/requirements/detailed') && (
+            {(location.pathname === '/requirements' ||
+              location.pathname.includes('/requirements/detailed')) && (
               <ColumnSelector
                 visibleColumns={ui.columnVisibility}
                 onColumnVisibilityChange={(columns) => {
