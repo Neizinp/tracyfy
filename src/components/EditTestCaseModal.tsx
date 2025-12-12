@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import type { TestCase, Requirement } from '../types';
+import type { TestCase } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI } from '../app/providers';
@@ -8,7 +8,7 @@ import { useUI } from '../app/providers';
 interface EditTestCaseModalProps {
   isOpen: boolean;
   testCase: TestCase | null;
-  requirements: Requirement[];
+
   onClose: () => void;
   onSubmit: (id: string, updates: Partial<TestCase>) => void;
   onDelete: (id: string) => void;
@@ -21,7 +21,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
   isOpen,
   testCase,
-  requirements,
+
   onClose,
   onSubmit,
   onDelete,
@@ -32,7 +32,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TestCase['priority']>('medium');
   const [status, setStatus] = useState<TestCase['status']>('draft');
-  const [requirementIds, setRequirementIds] = useState<string[]>([]);
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
@@ -41,7 +41,6 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
       setDescription(testCase.description);
       setPriority(testCase.priority);
       setStatus(testCase.status);
-      setRequirementIds(testCase.requirementIds || []);
     }
   }, [testCase]);
 
@@ -54,7 +53,7 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
       description,
       priority,
       status,
-      requirementIds,
+
       lastModified: Date.now(),
     };
 
@@ -74,19 +73,11 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
 
   if (!isOpen || !testCase) return null;
 
-  const handleRequirementToggle = (reqId: string) => {
-    setRequirementIds((prev) =>
-      prev.includes(reqId) ? prev.filter((id) => id !== reqId) : [...prev, reqId]
-    );
-  };
-
   const confirmDelete = () => {
     onDelete(testCase.id);
     setShowDeleteConfirm(false);
     onClose();
   };
-
-  const activeRequirements = requirements.filter((r) => !r.isDeleted);
 
   return (
     <div
@@ -426,79 +417,6 @@ export const EditTestCaseModal: React.FC<EditTestCaseModalProps> = ({
                   />
                 </div>
               )}
-
-              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <label
-                  style={{
-                    display: 'block',
-                    marginBottom: 'var(--spacing-xs)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Linked Requirements ({requirementIds.length} selected)
-                </label>
-                <div
-                  style={{
-                    maxHeight: '200px',
-                    overflowY: 'auto',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '6px',
-                    padding: '8px',
-                    backgroundColor: 'var(--color-bg-app)',
-                  }}
-                >
-                  {activeRequirements.length === 0 ? (
-                    <div
-                      style={{
-                        padding: '8px',
-                        color: 'var(--color-text-muted)',
-                        fontSize: 'var(--font-size-sm)',
-                      }}
-                    >
-                      No requirements available
-                    </div>
-                  ) : (
-                    activeRequirements.map((req) => (
-                      <label
-                        key={req.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '6px 8px',
-                          cursor: 'pointer',
-                          borderRadius: '4px',
-                          marginBottom: '2px',
-                          transition: 'background-color 0.1s',
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')
-                        }
-                      >
-                        <input
-                          type="checkbox"
-                          checked={requirementIds.includes(req.id)}
-                          onChange={() => handleRequirementToggle(req.id)}
-                          style={{ marginRight: '8px', cursor: 'pointer' }}
-                        />
-                        <span
-                          style={{
-                            fontFamily: 'monospace',
-                            fontSize: 'var(--font-size-sm)',
-                            color: 'var(--color-accent-light)',
-                            marginRight: '8px',
-                          }}
-                        >
-                          {req.id}
-                        </span>
-                        <span style={{ fontSize: 'var(--font-size-sm)' }}>{req.title}</span>
-                      </label>
-                    ))
-                  )}
-                </div>
-              </div>
 
               {showDeleteConfirm ? (
                 <div

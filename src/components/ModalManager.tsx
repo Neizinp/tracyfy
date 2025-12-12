@@ -176,7 +176,6 @@ export const ModalManager: React.FC = () => {
 
       <NewTestCaseModal
         isOpen={ui.isNewTestCaseModalOpen}
-        requirements={requirements.filter((r) => !r.isDeleted)}
         onClose={() => ui.setIsNewTestCaseModalOpen(false)}
         onSubmit={handleAddTestCase}
       />
@@ -184,7 +183,6 @@ export const ModalManager: React.FC = () => {
       <EditTestCaseModal
         isOpen={ui.isEditTestCaseModalOpen}
         testCase={testCases.find((t) => t.id === ui.selectedTestCaseId) || null}
-        requirements={requirements.filter((r) => !r.isDeleted)}
         onClose={() => {
           ui.setIsEditTestCaseModalOpen(false);
           ui.setSelectedTestCaseId(null);

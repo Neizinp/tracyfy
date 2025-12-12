@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import type { TestCase, Requirement } from '../types';
+import type { TestCase } from '../types';
 import { useUser } from '../app/providers';
 
 interface NewTestCaseModalProps {
   isOpen: boolean;
-  requirements: Requirement[];
+
   onClose: () => void;
   onSubmit: (testCase: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated'>) => void;
 }
@@ -14,14 +14,13 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
   isOpen,
-  requirements,
+
   onClose,
   onSubmit,
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TestCase['priority']>('medium');
-  const [requirementIds, setRequirementIds] = useState<string[]>([]);
 
   const { currentUser } = useUser();
 
@@ -32,7 +31,7 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
       description,
       priority,
       author: currentUser?.name || undefined,
-      requirementIds,
+      requirementIds: [], // Use Relationships tab to add links after creation
       status: 'draft',
       revision: '01',
     });
@@ -40,7 +39,7 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
     setTitle('');
     setDescription('');
     setPriority('medium');
-    setRequirementIds([]);
+
     onClose();
   };
 
@@ -50,14 +49,6 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
   });
 
   if (!isOpen) return null;
-
-  const handleRequirementToggle = (reqId: string) => {
-    setRequirementIds((prev) =>
-      prev.includes(reqId) ? prev.filter((id) => id !== reqId) : [...prev, reqId]
-    );
-  };
-
-  const activeRequirements = requirements.filter((r) => !r.isDeleted);
 
   return (
     <div
@@ -223,79 +214,6 @@ export const NewTestCaseModal: React.FC<NewTestCaseModalProps> = ({
               }}
             >
               {currentUser?.name || 'No user selected'}
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: 'var(--spacing-xs)',
-                fontSize: 'var(--font-size-sm)',
-              }}
-            >
-              Linked Requirements ({requirementIds.length} selected)
-            </label>
-            <div
-              style={{
-                maxHeight: '200px',
-                overflowY: 'auto',
-                border: '1px solid var(--color-border)',
-                borderRadius: '6px',
-                padding: '8px',
-                backgroundColor: 'var(--color-bg-app)',
-              }}
-            >
-              {activeRequirements.length === 0 ? (
-                <div
-                  style={{
-                    padding: '8px',
-                    color: 'var(--color-text-muted)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  No requirements available
-                </div>
-              ) : (
-                activeRequirements.map((req) => (
-                  <label
-                    key={req.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '6px 8px',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      marginBottom: '2px',
-                      transition: 'background-color 0.1s',
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')
-                    }
-                  >
-                    <input
-                      type="checkbox"
-                      checked={requirementIds.includes(req.id)}
-                      onChange={() => handleRequirementToggle(req.id)}
-                      style={{ marginRight: '8px', cursor: 'pointer' }}
-                    />
-                    <span
-                      style={{
-                        fontFamily: 'monospace',
-                        fontSize: 'var(--font-size-sm)',
-                        color: 'var(--color-accent-light)',
-                        marginRight: '8px',
-                      }}
-                    >
-                      {req.id}
-                    </span>
-                    <span style={{ fontSize: 'var(--font-size-sm)' }}>{req.title}</span>
-                  </label>
-                ))
-              )}
             </div>
           </div>
 

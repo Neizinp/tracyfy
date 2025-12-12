@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { EditTestCaseModal } from '../EditTestCaseModal';
 import { UIProvider } from '../../app/providers';
-import type { TestCase, Requirement } from '../../types';
+import type { TestCase } from '../../types';
 
 // Mock dependencies
 vi.mock('../RevisionHistoryTab', () => ({
@@ -18,39 +18,6 @@ const renderWithProvider = (ui: React.ReactElement) => {
 };
 
 describe('EditTestCaseModal', () => {
-  const mockRequirements: Requirement[] = [
-    {
-      id: 'REQ-001',
-      title: 'User Authentication',
-      description: 'Test auth',
-      text: 'Auth requirement',
-      rationale: 'Security',
-      status: 'approved',
-      priority: 'high',
-
-      lastModified: Date.now(),
-      revision: '01',
-      dateCreated: Date.now(),
-      author: 'Test Author',
-      isDeleted: false,
-    },
-    {
-      id: 'REQ-002',
-      title: 'Data Validation',
-      description: 'Validate input',
-      text: 'Validation requirement',
-      rationale: 'Data integrity',
-      status: 'draft',
-      priority: 'medium',
-
-      lastModified: Date.now(),
-      revision: '01',
-      dateCreated: Date.now(),
-      author: 'Test Author',
-      isDeleted: false,
-    },
-  ];
-
   const mockTestCase: TestCase = {
     id: 'TC-001',
     title: 'Login Test',
@@ -67,10 +34,6 @@ describe('EditTestCaseModal', () => {
   const defaultProps = {
     isOpen: true,
     testCase: mockTestCase,
-    requirements: mockRequirements,
-    links: [],
-    projects: [],
-    currentProjectId: 'PROJ-001',
     onClose: vi.fn(),
     onSubmit: vi.fn(),
     onDelete: vi.fn(),
@@ -91,9 +54,10 @@ describe('EditTestCaseModal', () => {
     expect(screen.queryByText(/Edit Test Case/i)).not.toBeInTheDocument();
   });
 
-  it('should display both tabs', () => {
+  it('should display tabs', () => {
     renderWithProvider(<EditTestCaseModal {...defaultProps} />);
     expect(screen.getByText('Overview')).toBeInTheDocument();
+    expect(screen.getByText('Relationships')).toBeInTheDocument();
     expect(screen.getByText('Revision History')).toBeInTheDocument();
   });
 
@@ -122,22 +86,6 @@ describe('EditTestCaseModal', () => {
     fireEvent.change(titleInput, { target: { value: 'Updated Test' } });
 
     expect(screen.getByDisplayValue('Updated Test')).toBeInTheDocument();
-  });
-
-  it('should handle requirement linking', () => {
-    renderWithProvider(<EditTestCaseModal {...defaultProps} />);
-
-    // REQ-001 should be checked (it's in requirementIds)
-    const req001Checkbox = screen.getByRole('checkbox', { name: /REQ-001/i });
-    expect(req001Checkbox).toBeChecked();
-
-    // REQ-002 should not be checked
-    const req002Checkbox = screen.getByRole('checkbox', { name: /REQ-002/i });
-    expect(req002Checkbox).not.toBeChecked();
-
-    // Toggle REQ-002
-    fireEvent.click(req002Checkbox);
-    expect(req002Checkbox).toBeChecked();
   });
 
   it('should call onSubmit with correct data when saved', () => {
@@ -212,30 +160,6 @@ describe('EditTestCaseModal', () => {
     );
   });
 
-  it('should filter out deleted requirements', () => {
-    const requirementsWithDeleted = [
-      ...mockRequirements,
-      {
-        ...mockRequirements[0],
-        id: 'REQ-003',
-        title: 'Deleted Requirement',
-        isDeleted: true,
-      },
-    ];
-
-    renderWithProvider(
-      <EditTestCaseModal {...defaultProps} requirements={requirementsWithDeleted} />
-    );
-
-    // Should not show deleted requirement
-    expect(screen.queryByText('REQ-003')).not.toBeInTheDocument();
-    expect(screen.queryByText('Deleted Requirement')).not.toBeInTheDocument();
-
-    // Should show active requirements
-    expect(screen.getByText('REQ-001')).toBeInTheDocument();
-    expect(screen.getByText('REQ-002')).toBeInTheDocument();
-  });
-
   it('should validate required title field', () => {
     renderWithProvider(<EditTestCaseModal {...defaultProps} />);
 
@@ -251,5 +175,14 @@ describe('EditTestCaseModal', () => {
 
     fireEvent.change(prioritySelect, { target: { value: 'low' } });
     expect(prioritySelect.value).toBe('low');
+  });
+
+  it('should show Relationships tab content', () => {
+    renderWithProvider(<EditTestCaseModal {...defaultProps} />);
+
+    const relationshipsTab = screen.getByText('Relationships');
+    fireEvent.click(relationshipsTab);
+
+    expect(screen.getByText('Linked Items')).toBeInTheDocument();
   });
 });
