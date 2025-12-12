@@ -43,7 +43,7 @@ describe('useIncomingLinks', () => {
       useCases: [
         {
           id: 'UC-001',
-          linkedArtifacts: [{ targetId: 'REQ-001', type: 'relates_to' as const }],
+          linkedArtifacts: [{ targetId: 'REQ-001', type: 'related_to' as const }],
         },
       ],
     };
@@ -54,7 +54,7 @@ describe('useIncomingLinks', () => {
     expect(result.current[0]).toEqual({
       sourceId: 'UC-001',
       sourceType: 'usecase',
-      linkType: 'relates_to',
+      linkType: 'related_to',
     });
   });
 
@@ -64,7 +64,7 @@ describe('useIncomingLinks', () => {
       testCases: [
         {
           id: 'TC-001',
-          linkedArtifacts: [{ targetId: 'REQ-001', type: 'relates_to' as const }],
+          linkedArtifacts: [{ targetId: 'REQ-001', type: 'related_to' as const }],
         },
       ],
     };
@@ -75,7 +75,7 @@ describe('useIncomingLinks', () => {
     expect(result.current[0]).toEqual({
       sourceId: 'TC-001',
       sourceType: 'testcase',
-      linkType: 'relates_to',
+      linkType: 'related_to',
     });
   });
 
@@ -85,7 +85,7 @@ describe('useIncomingLinks', () => {
       information: [
         {
           id: 'INF-001',
-          linkedArtifacts: [{ targetId: 'REQ-001', type: 'relates_to' as const }],
+          linkedArtifacts: [{ targetId: 'REQ-001', type: 'related_to' as const }],
         },
       ],
     };
@@ -96,7 +96,7 @@ describe('useIncomingLinks', () => {
     expect(result.current[0]).toEqual({
       sourceId: 'INF-001',
       sourceType: 'information',
-      linkType: 'relates_to',
+      linkType: 'related_to',
     });
   });
 
@@ -112,13 +112,13 @@ describe('useIncomingLinks', () => {
       useCases: [
         {
           id: 'UC-001',
-          linkedArtifacts: [{ targetId: 'REQ-001', type: 'relates_to' as const }],
+          linkedArtifacts: [{ targetId: 'REQ-001', type: 'related_to' as const }],
         },
       ],
       testCases: [
         {
           id: 'TC-001',
-          linkedArtifacts: [{ targetId: 'REQ-001', type: 'relates_to' as const }],
+          linkedArtifacts: [{ targetId: 'REQ-001', type: 'related_to' as const }],
         },
       ],
     };

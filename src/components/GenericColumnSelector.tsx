@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { Columns } from 'lucide-react';
 
 interface ColumnConfig<T extends string> {

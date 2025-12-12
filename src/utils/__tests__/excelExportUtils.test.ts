@@ -98,7 +98,6 @@ describe('excelExportUtils', () => {
     useCases: [mockUseCase],
     testCases: [mockTestCase],
     information: [mockInfo],
-    links: [],
   };
 
   it('should create separate sheets for each artifact type', async () => {
@@ -140,7 +139,7 @@ describe('excelExportUtils', () => {
 
     await exportProjectToExcel(
       mockProject,
-      { ...globalState, requirements, links: [] },
+      { ...globalState, requirements },
       ['r1', 'r2'],
       [],
       [],

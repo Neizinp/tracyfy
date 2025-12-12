@@ -5,6 +5,7 @@ import type { TestCase, TestCaseColumnVisibility } from '../../types';
 
 const defaultColumns: TestCaseColumnVisibility = {
   idTitle: true,
+  revision: true,
   description: true,
   requirements: true,
   priority: true,

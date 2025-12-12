@@ -5,6 +5,7 @@ import type { UseCase, Requirement, UseCaseColumnVisibility } from '../../types'
 
 const defaultColumns: UseCaseColumnVisibility = {
   idTitle: true,
+  revision: true,
   description: true,
   actor: true,
   priority: true,

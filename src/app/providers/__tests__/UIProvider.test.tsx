@@ -133,7 +133,6 @@ describe('UIProvider', () => {
       expect(typeof result.current.setIsNewRequirementModalOpen).toBe('function');
       expect(result.current.isLinkModalOpen).toBe(false);
       expect(result.current.isUseCaseModalOpen).toBe(false);
-      expect(result.current.isTrashModalOpen).toBe(false);
     });
 
     it('should provide selection state', () => {

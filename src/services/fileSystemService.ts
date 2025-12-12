@@ -118,7 +118,7 @@ class FileSystemService {
       const gitPath = `${this.rootPath}/.git`;
       const gitExists = await api.fs.checkExists(gitPath);
 
-      return { path: this.rootPath, hasGit: gitExists.exists };
+      return { path: this.rootPath ?? undefined, hasGit: gitExists.exists };
     }
 
     // Browser path: use File System Access API

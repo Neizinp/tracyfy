@@ -3,6 +3,7 @@ import { FileText, GitCommit, Plus, Minus, Edit, Calendar, User } from 'lucide-r
 import type { ProjectBaseline, ArtifactRevision } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { realGitService } from '../services/realGitService';
+import { fileSystemService } from '../services/fileSystemService';
 import {
   markdownToRequirement,
   markdownToUseCase,
@@ -22,6 +23,7 @@ interface ArtifactRevisionInfo {
   type: 'requirement' | 'usecase' | 'testcase' | 'information';
   commitHash: string;
   revisions: ArtifactRevision[];
+  revision?: string;
 }
 
 export function BaselineRevisionHistory({
@@ -77,18 +79,20 @@ export function BaselineRevisionHistory({
                   let revision = '01';
                   try {
                     const folderPath = `${folder}/${artifactId}.md`;
-                    const fileContent = await realGitService.readFile(folderPath);
-                    let parsed: any = null;
-                    if (currentInfo.type === 'requirement') {
-                      parsed = markdownToRequirement(fileContent);
-                    } else if (currentInfo.type === 'usecase') {
-                      parsed = markdownToUseCase(fileContent);
-                    } else if (currentInfo.type === 'testcase') {
-                      parsed = markdownToTestCase(fileContent);
-                    } else if (currentInfo.type === 'information') {
-                      parsed = markdownToInformation(fileContent);
+                    const fileContent = await fileSystemService.readFile(folderPath);
+                    if (fileContent) {
+                      let parsed: any = null;
+                      if (currentInfo.type === 'requirement') {
+                        parsed = markdownToRequirement(fileContent);
+                      } else if (currentInfo.type === 'usecase') {
+                        parsed = markdownToUseCase(fileContent);
+                      } else if (currentInfo.type === 'testcase') {
+                        parsed = markdownToTestCase(fileContent);
+                      } else if (currentInfo.type === 'information') {
+                        parsed = markdownToInformation(fileContent);
+                      }
+                      if (parsed && parsed.revision) revision = parsed.revision;
                     }
-                    if (parsed && parsed.revision) revision = parsed.revision;
                   } catch {
                     // ignore
                   }

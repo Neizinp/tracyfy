@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { SortableHeader, toggleSort, sortItems, SortConfig } from '../SortableHeader';
+import { SortableHeader, toggleSort, sortItems } from '../SortableHeader';
+import type { SortConfig } from '../SortableHeader';
 
 describe('SortableHeader', () => {
   describe('Component', () => {

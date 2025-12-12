@@ -5,6 +5,7 @@ import type { Information, InformationColumnVisibility } from '../../types';
 
 const defaultColumns: InformationColumnVisibility = {
   idTitle: true,
+  revision: true,
   type: true,
   content: true,
   created: true,

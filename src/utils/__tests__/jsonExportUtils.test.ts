@@ -72,7 +72,7 @@ describe('jsonExportUtils', () => {
     dateCreated: 0,
     // Links are now stored in linkedArtifacts
     linkedArtifacts: [
-      { targetId: 'u1', type: 'relates_to' },
+      { targetId: 'u1', type: 'related_to' },
       { targetId: 'external-id', type: 'depends_on' },
     ],
   };
