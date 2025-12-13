@@ -5,6 +5,7 @@ import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
+import { MarkdownEditor } from './MarkdownEditor';
 
 interface UseCaseModalProps {
   isOpen: boolean;
@@ -352,32 +353,11 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
               </div>
 
               <div style={{ gridColumn: '1 / -1' }}>
-                <label
-                  htmlFor="use-case-description"
-                  style={{
-                    display: 'block',
-                    marginBottom: 'var(--spacing-xs)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Description
-                </label>
-                <textarea
-                  id="use-case-description"
+                <MarkdownEditor
+                  label="Description"
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  placeholder="Brief description of the use case"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    outline: 'none',
-                    resize: 'vertical',
-                  }}
+                  onChange={setDescription}
+                  height={150}
                 />
               </div>
             </div>
@@ -386,65 +366,20 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
           {activeTab === 'flows' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
               <div>
-                <label
-                  htmlFor="use-case-main-flow"
-                  style={{
-                    display: 'block',
-                    marginBottom: 'var(--spacing-xs)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Main Flow *
-                </label>
-                <textarea
-                  id="use-case-main-flow"
+                <MarkdownEditor
+                  label="Main Flow *"
                   value={mainFlow}
-                  onChange={(e) => setMainFlow(e.target.value)}
-                  required
-                  rows={10}
-                  placeholder="1. User enters credentials&#10;2. System validates credentials&#10;3. System grants access"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    outline: 'none',
-                    resize: 'vertical',
-                    fontFamily: 'monospace',
-                  }}
+                  onChange={setMainFlow}
+                  height={250}
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="use-case-alternative-flows"
-                  style={{
-                    display: 'block',
-                    marginBottom: 'var(--spacing-xs)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Alternative Flows
-                </label>
-                <textarea
-                  id="use-case-alternative-flows"
+                <MarkdownEditor
+                  label="Alternative Flows"
                   value={alternativeFlows}
-                  onChange={(e) => setAlternativeFlows(e.target.value)}
-                  rows={8}
-                  placeholder="Alternative paths or error scenarios"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    outline: 'none',
-                    resize: 'vertical',
-                    fontFamily: 'monospace',
-                  }}
+                  onChange={setAlternativeFlows}
+                  height={200}
                 />
               </div>
             </div>
@@ -453,62 +388,20 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
           {activeTab === 'conditions' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
               <div>
-                <label
-                  htmlFor="use-case-preconditions"
-                  style={{
-                    display: 'block',
-                    marginBottom: 'var(--spacing-xs)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Preconditions
-                </label>
-                <textarea
-                  id="use-case-preconditions"
+                <MarkdownEditor
+                  label="Preconditions"
                   value={preconditions}
-                  onChange={(e) => setPreconditions(e.target.value)}
-                  rows={8}
-                  placeholder="What must be true before this use case can start"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    outline: 'none',
-                    resize: 'vertical',
-                  }}
+                  onChange={setPreconditions}
+                  height={200}
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="use-case-postconditions"
-                  style={{
-                    display: 'block',
-                    marginBottom: 'var(--spacing-xs)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Postconditions
-                </label>
-                <textarea
-                  id="use-case-postconditions"
+                <MarkdownEditor
+                  label="Postconditions"
                   value={postconditions}
-                  onChange={(e) => setPostconditions(e.target.value)}
-                  rows={8}
-                  placeholder="What must be true after this use case completes"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    outline: 'none',
-                    resize: 'vertical',
-                  }}
+                  onChange={setPostconditions}
+                  height={200}
                 />
               </div>
             </div>

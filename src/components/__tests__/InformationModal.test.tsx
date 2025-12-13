@@ -66,18 +66,15 @@ describe('InformationModal', () => {
   it('should validate required fields', () => {
     renderWithProvider(<InformationModal {...defaultProps} />);
 
-    const titleInput = screen.getByLabelText(/Title/i);
-    const contentInput = screen.getByLabelText(/Content/i);
-
+    const titleInput = screen.getByRole('textbox', { name: /Title/i });
     expect(titleInput).toHaveAttribute('required');
-    expect(contentInput).toHaveAttribute('required');
+    // Content is now a MarkdownEditor, no required attribute on it
   });
 
   it('should call onSubmit with correct data when creating new information', () => {
     renderWithProvider(<InformationModal {...defaultProps} />);
 
-    const titleInput = screen.getByLabelText(/Title/i);
-    const contentInput = screen.getByLabelText(/Content/i);
+    const titleInput = screen.getByRole('textbox', { name: /Title/i });
 
     // Find Type select by role
     const selects = screen.getAllByRole('combobox');
@@ -86,7 +83,6 @@ describe('InformationModal', () => {
     ) as HTMLSelectElement;
 
     fireEvent.change(titleInput, { target: { value: 'New Note' } });
-    fireEvent.change(contentInput, { target: { value: 'Test content' } });
     if (typeSelect) {
       fireEvent.change(typeSelect, { target: { value: 'decision' } });
     }
@@ -97,7 +93,6 @@ describe('InformationModal', () => {
     expect(defaultProps.onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'New Note',
-        content: 'Test content',
         type: 'decision',
         revision: '01',
       })

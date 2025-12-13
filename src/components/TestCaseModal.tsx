@@ -7,6 +7,7 @@ import { useUI, useUser } from '../app/providers';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useLinkService } from '../hooks/useLinkService';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
+import { MarkdownEditor } from './MarkdownEditor';
 
 interface TestCaseModalProps {
   isOpen: boolean;
@@ -290,31 +291,11 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
               </div>
 
               <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                <label
-                  htmlFor="test-case-description"
-                  style={{
-                    display: 'block',
-                    marginBottom: 'var(--spacing-xs)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Description
-                </label>
-                <textarea
-                  id="test-case-description"
+                <MarkdownEditor
+                  label="Description"
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    outline: 'none',
-                    resize: 'vertical',
-                  }}
+                  onChange={setDescription}
+                  height={150}
                 />
               </div>
 

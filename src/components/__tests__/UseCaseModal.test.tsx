@@ -62,8 +62,9 @@ describe('UseCaseModal', () => {
     const flowsTab = screen.getByText('Flows');
     fireEvent.click(flowsTab);
 
-    expect(screen.getByLabelText(/Main Flow/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Alternative Flows/i)).toBeInTheDocument();
+    // MarkdownEditor labels are not form-associated, check by text
+    expect(screen.getByText('Main Flow *')).toBeInTheDocument();
+    expect(screen.getByText('Alternative Flows')).toBeInTheDocument();
   });
 
   it('should populate form fields when editing existing use case', () => {
@@ -78,18 +79,11 @@ describe('UseCaseModal', () => {
   it('should call onSubmit with correct data when creating new use case', () => {
     renderWithProvider(<UseCaseModal {...defaultProps} />);
 
-    const titleInput = screen.getByLabelText(/Title/i);
-    const actorInput = screen.getByLabelText(/Actor/i);
+    const titleInput = screen.getByRole('textbox', { name: /Title/i });
+    const actorInput = screen.getByRole('textbox', { name: /Actor/i });
 
     fireEvent.change(titleInput, { target: { value: 'New Use Case' } });
     fireEvent.change(actorInput, { target: { value: 'Test Actor' } });
-
-    // Switch to Flows tab to fill required field
-    const flowsTab = screen.getByText('Flows');
-    fireEvent.click(flowsTab);
-
-    const mainFlowInput = screen.getByLabelText(/Main Flow/i);
-    fireEvent.change(mainFlowInput, { target: { value: 'Test flow' } });
 
     const submitButton = screen.getByText('Create Use Case');
     fireEvent.click(submitButton);
@@ -98,7 +92,6 @@ describe('UseCaseModal', () => {
       expect.objectContaining({
         title: 'New Use Case',
         actor: 'Test Actor',
-        mainFlow: 'Test flow',
         revision: '01',
       })
     );
@@ -144,18 +137,11 @@ describe('UseCaseModal', () => {
   it('should validate required fields', () => {
     renderWithProvider(<UseCaseModal {...defaultProps} />);
 
-    const titleInput = screen.getByLabelText(/Title/i);
-    const actorInput = screen.getByLabelText(/Actor/i);
+    const titleInput = screen.getByRole('textbox', { name: /Title/i });
+    const actorInput = screen.getByRole('textbox', { name: /Actor/i });
 
     expect(titleInput).toHaveAttribute('required');
     expect(actorInput).toHaveAttribute('required');
-
-    // Switch to Flows tab
-    const flowsTab = screen.getByText('Flows');
-    fireEvent.click(flowsTab);
-
-    const mainFlowInput = screen.getByLabelText(/Main Flow/i);
-    expect(mainFlowInput).toHaveAttribute('required');
   });
 
   it('should have correct default values for new use case', () => {

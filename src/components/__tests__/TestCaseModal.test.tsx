@@ -74,7 +74,7 @@ describe('TestCaseModal', () => {
     it('should call onCreate when form is submitted', () => {
       renderWithProvider(<TestCaseModal {...defaultProps} />);
 
-      const titleInput = screen.getByLabelText(/Title/i);
+      const titleInput = screen.getByRole('textbox', { name: /Title/i });
       fireEvent.change(titleInput, { target: { value: 'New Test' } });
 
       const submitButton = screen.getByText('Create Test Case');
@@ -118,7 +118,7 @@ describe('TestCaseModal', () => {
     it('should call onUpdate when form is saved', () => {
       renderWithProvider(<TestCaseModal {...editProps} />);
 
-      const titleInput = screen.getByLabelText(/Title/i);
+      const titleInput = screen.getByRole('textbox', { name: /Title/i });
       fireEvent.change(titleInput, { target: { value: 'Updated Test' } });
 
       const submitButton = screen.getByText('Save Changes');

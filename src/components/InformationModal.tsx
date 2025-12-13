@@ -5,6 +5,7 @@ import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
+import { MarkdownEditor } from './MarkdownEditor';
 
 interface InformationModalProps {
   isOpen: boolean;
@@ -225,27 +226,11 @@ export const InformationModal: React.FC<InformationModalProps> = ({
               </div>
 
               <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <label
-                  htmlFor="info-content"
-                  style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}
-                >
-                  Content
-                </label>
-                <textarea
-                  id="info-content"
+                <MarkdownEditor
+                  label="Content"
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  required
-                  rows={10}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    color: 'var(--color-text-primary)',
-                    resize: 'vertical',
-                  }}
+                  onChange={setContent}
+                  height={250}
                 />
               </div>
 
