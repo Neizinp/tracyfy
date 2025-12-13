@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link2, CheckCircle2 } from 'lucide-react';
 import type { Requirement, UseCase, TestCase, Information, Link } from '../types';
 import type { ArtifactType, UnifiedArtifact, GapInfo } from './traceability';
@@ -33,6 +33,12 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   onDeleteLink,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+
+  // Sync activeTab with initialTab when it changes (e.g., from URL navigation)
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
   // Multi-select type toggles - all selected by default
   const [selectedTypes, setSelectedTypes] = useState<Set<ArtifactType>>(
     new Set(['requirement', 'useCase', 'testCase', 'information'])
