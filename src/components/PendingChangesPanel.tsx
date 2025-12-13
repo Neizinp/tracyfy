@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FileText, GitCommit, AlertCircle } from 'lucide-react';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { useUser } from '../app/providers/UserProvider';
@@ -9,6 +9,8 @@ export function PendingChangesPanel() {
   const { currentUser } = useUser();
   const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
   const [parsedChanges, setParsedChanges] = useState<ArtifactChange[]>([]);
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [focusNextId, setFocusNextId] = useState<string | null>(null);
 
   useEffect(() => {
     // Convert file statuses to ArtifactChange objects
@@ -78,6 +80,16 @@ export function PendingChangesPanel() {
       return;
     }
 
+    // Find the index of current change to determine which one to focus next
+    const currentIndex = parsedChanges.findIndex((c) => c.id === change.id);
+    const remainingChanges = parsedChanges.filter((c) => c.id !== change.id);
+
+    // Determine next change to focus (same position if available, otherwise last)
+    const nextChange = remainingChanges[currentIndex] || remainingChanges[currentIndex - 1];
+    if (nextChange) {
+      setFocusNextId(nextChange.id);
+    }
+
     // Optimistic UI: Clear the commit message immediately so the entry disappears
     // The commit will continue in the background
     setCommitMessages((prev) => {
@@ -87,7 +99,10 @@ export function PendingChangesPanel() {
     });
 
     // Remove from parsed changes immediately for instant feedback
-    setParsedChanges((prev) => prev.filter((c) => c.id !== change.id));
+    setParsedChanges(remainingChanges);
+
+    // Clean up the ref for this change
+    delete inputRefs.current[change.id];
 
     // Run commit in background (don't await - let it complete asynchronously)
     commitFile(change.path, message, currentUser?.name).catch((error) => {
@@ -95,6 +110,14 @@ export function PendingChangesPanel() {
       // On error, the user will see the change reappear on next status refresh
     });
   };
+
+  // Effect to focus the next input after a commit
+  useEffect(() => {
+    if (focusNextId && inputRefs.current[focusNextId]) {
+      inputRefs.current[focusNextId]?.focus();
+      setFocusNextId(null);
+    }
+  }, [focusNextId, parsedChanges]);
 
   const getTypeIcon = () => {
     return <FileText size={16} style={{ color: 'var(--color-accent)' }} />;
@@ -207,6 +230,9 @@ export function PendingChangesPanel() {
                 </div>
 
                 <input
+                  ref={(el) => {
+                    inputRefs.current[change.id] = el;
+                  }}
                   type="text"
                   placeholder="Commit message (required)"
                   value={commitMessages[change.id] || ''}
