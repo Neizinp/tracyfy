@@ -12,6 +12,7 @@ import {
 } from '../app/providers';
 import { exportProjectToPDF } from '../utils/pdfExportUtils';
 import { exportProjectToExcel } from '../utils/excelExportUtils';
+import { createDemoProject } from '../services/demoDataService';
 import type {
   Project,
   UseCaseColumnVisibility,
@@ -73,7 +74,7 @@ export const ProjectLayout: React.FC = () => {
     useGlobalState();
 
   // FileSystem context
-  const { baselines } = useFileSystem();
+  const { baselines, reloadData } = useFileSystem();
 
   // Import/Export handlers
   const importExport = useImportExport();
@@ -93,6 +94,19 @@ export const ProjectLayout: React.FC = () => {
     },
     [ui]
   );
+
+  // Create demo project handler
+  const handleCreateDemoProject = useCallback(async () => {
+    try {
+      const demoProject = await createDemoProject();
+      await reloadData();
+      switchProject(demoProject.id);
+    } catch (error) {
+      console.error('Failed to create demo project:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Failed to create demo project: ${errorMessage}`);
+    }
+  }, [reloadData, switchProject]);
 
   // Get page title from current route
   const getPageTitle = () => {
@@ -132,6 +146,7 @@ export const ProjectLayout: React.FC = () => {
       currentProjectId={currentProjectId}
       onSwitchProject={switchProject}
       onCreateProject={handleCreateProject}
+      onCreateDemoProject={handleCreateDemoProject}
       onOpenProjectSettings={handleOpenProjectSettings}
       onNewRequirement={() => ui.setIsNewRequirementModalOpen(true)}
       onNewUseCase={() => ui.setIsUseCaseModalOpen(true)}

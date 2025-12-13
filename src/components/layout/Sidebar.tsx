@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { LayoutGrid, Plus, GitBranch, FileText, BookOpen } from 'lucide-react';
+import { LayoutGrid, Plus, GitBranch, FileText, BookOpen, FlaskConical } from 'lucide-react';
 import type { Project } from '../../types';
 import { ProjectSidebarItem } from '../ProjectSidebarItem';
 import { PendingChangesPanel } from '../PendingChangesPanel';
@@ -17,6 +17,7 @@ export interface SidebarProps {
   currentProjectId: string;
   onSwitchProject: (projectId: string) => void;
   onCreateProject: () => void;
+  onCreateDemoProject?: () => void;
   onOpenProjectSettings: (project: Project) => void;
   onOpenLibraryTab?: (tab: 'requirements' | 'usecases' | 'testcases' | 'information') => void;
 }
@@ -34,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentProjectId,
   onSwitchProject,
   onCreateProject,
+  onCreateDemoProject,
   onOpenProjectSettings,
   onOpenLibraryTab,
 }) => {
@@ -134,27 +136,52 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
           >
             <h2 style={sectionHeaderStyle}>Projects</h2>
-            <button
-              onClick={onCreateProject}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--color-text-muted)',
-                padding: '4px',
-                borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              title="New Project"
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
-              }
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')}
-            >
-              <Plus size={14} />
-            </button>
+            <div style={{ display: 'flex', gap: '2px' }}>
+              {onCreateDemoProject && (
+                <button
+                  onClick={onCreateDemoProject}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--color-text-muted)',
+                    padding: '4px',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  title="Create Demo Project"
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
+                  }
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  <FlaskConical size={14} />
+                </button>
+              )}
+              <button
+                onClick={onCreateProject}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--color-text-muted)',
+                  padding: '4px',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                title="New Project"
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
+                }
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <Plus size={14} />
+              </button>
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>

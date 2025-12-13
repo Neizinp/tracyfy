@@ -42,6 +42,7 @@ const REQUIREMENTS_DIR = 'requirements';
 const USECASES_DIR = 'usecases';
 const TESTCASES_DIR = 'testcases';
 const INFORMATION_DIR = 'information';
+const LINKS_DIR = 'links';
 const PROJECTS_DIR = 'projects';
 const USERS_DIR = 'users';
 const COUNTERS_DIR = 'counters';
@@ -57,6 +58,7 @@ class DiskProjectService {
     await fileSystemService.getOrCreateDirectory(USECASES_DIR);
     await fileSystemService.getOrCreateDirectory(TESTCASES_DIR);
     await fileSystemService.getOrCreateDirectory(INFORMATION_DIR);
+    await fileSystemService.getOrCreateDirectory(LINKS_DIR);
     await fileSystemService.getOrCreateDirectory(PROJECTS_DIR);
     await fileSystemService.getOrCreateDirectory(USERS_DIR);
     await fileSystemService.getOrCreateDirectory(COUNTERS_DIR);

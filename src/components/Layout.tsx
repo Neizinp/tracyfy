@@ -9,6 +9,7 @@ export interface LayoutProps {
   currentProjectId: string;
   onSwitchProject: (projectId: string) => void;
   onCreateProject: () => void;
+  onCreateDemoProject?: () => void;
   onOpenProjectSettings: (project: Project) => void;
   onNewRequirement: () => void;
   onNewUseCase?: () => void;
@@ -40,6 +41,7 @@ export const Layout: React.FC<LayoutProps> = ({
   currentProjectId,
   onSwitchProject,
   onCreateProject,
+  onCreateDemoProject,
   onOpenProjectSettings,
   onNewRequirement,
   onNewUseCase,
@@ -66,6 +68,7 @@ export const Layout: React.FC<LayoutProps> = ({
         currentProjectId={currentProjectId}
         onSwitchProject={onSwitchProject}
         onCreateProject={onCreateProject}
+        onCreateDemoProject={onCreateDemoProject}
         onOpenProjectSettings={onOpenProjectSettings}
         onOpenLibraryTab={onOpenLibraryTab}
       />
