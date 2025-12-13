@@ -153,6 +153,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
 
   return (
     <TraceabilityDashboard
+      key={initialTab}
       requirements={filteredRequirements}
       useCases={filteredUseCases}
       testCases={filteredTestCases}
