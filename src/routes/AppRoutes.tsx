@@ -8,6 +8,7 @@ import {
   InformationPage,
   GlobalLibraryPage,
 } from '../pages';
+import { LinksPage } from '../pages/LinksPage';
 
 export function AppRoutes() {
   return (
@@ -17,6 +18,7 @@ export function AppRoutes() {
 
         <Route path="requirements" element={<RequirementsPage />} />
         <Route path="traceability" element={<TraceabilityDashboardPage />} />
+        <Route path="links" element={<LinksPage />} />
 
         <Route path="use-cases" element={<UseCasesPage />} />
         <Route path="test-cases" element={<TestCasesPage />} />
