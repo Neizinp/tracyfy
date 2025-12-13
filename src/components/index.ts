@@ -27,3 +27,5 @@ export { LoadingOverlay } from './LoadingOverlay';
 export { DirectorySelector } from './DirectorySelector';
 export { SnapshotViewer } from './SnapshotViewer';
 export { StatusBar } from './StatusBar';
+export { ToastContainer } from './ToastContainer';
+export { UserOnboardingModal } from './UserOnboardingModal';

@@ -16,3 +16,4 @@ export { ImportExportProvider, useImportExport } from './ImportExportProvider';
 export { FileSystemProvider, useFileSystem } from './FileSystemProvider';
 export { UserProvider, useUser } from './UserProvider';
 export { BackgroundTasksProvider, useBackgroundTasks } from './BackgroundTasksProvider';
+export { ToastProvider, useToast } from './ToastProvider';

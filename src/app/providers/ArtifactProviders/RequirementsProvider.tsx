@@ -4,6 +4,7 @@ import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
 import { useFileSystem } from '../FileSystemProvider';
 import { useUser } from '../UserProvider';
+import { useToast } from '../ToastProvider';
 import type { Requirement } from '../../../types';
 import { incrementRevision } from '../../../utils/revisionUtils';
 
@@ -43,6 +44,7 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
     getNextId,
   } = useFileSystem();
   const { currentUser } = useUser();
+  const { showToast } = useToast();
   const hasSyncedInitial = useRef(false);
 
   // Sync requirements from filesystem on initial load
@@ -61,8 +63,9 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
   const handleAddRequirement = useCallback(
     async (newReqData: Omit<Requirement, 'id' | 'lastModified'>) => {
       if (!currentUser) {
-        alert(
-          'Please select a user before creating artifacts.\n\nGo to Settings → Users to select a user.'
+        showToast(
+          'Please select a user before creating artifacts. Go to Settings → Users to select a user.',
+          'warning'
         );
         return;
       }
@@ -84,7 +87,7 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
         console.error('Failed to save requirement:', error);
       }
     },
-    [currentUser, getNextId, saveRequirement, setRequirements]
+    [currentUser, getNextId, saveRequirement, setRequirements, showToast]
   );
 
   const handleUpdateRequirement = useCallback(
@@ -182,15 +185,16 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
   const handleEdit = useCallback(
     (req: Requirement) => {
       if (!currentUser) {
-        alert(
-          'Please select a user before editing artifacts.\n\nGo to Settings → Users to select a user.'
+        showToast(
+          'Please select a user before editing artifacts. Go to Settings → Users to select a user.',
+          'warning'
         );
         return;
       }
       setEditingRequirement(req);
       setIsEditRequirementModalOpen(true);
     },
-    [currentUser, setEditingRequirement, setIsEditRequirementModalOpen]
+    [currentUser, setEditingRequirement, setIsEditRequirementModalOpen, showToast]
   );
 
   const handleLink = useCallback(
