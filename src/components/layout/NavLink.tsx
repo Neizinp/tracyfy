@@ -14,10 +14,19 @@ interface NavLinkProps {
 /**
  * Reusable navigation link component for the sidebar.
  * Automatically detects active state based on current route.
+ * Supports URLs with query parameters (e.g., /path?tab=value).
  */
 export const NavLink: React.FC<NavLinkProps> = ({ to, icon: Icon, label, iconStyle }) => {
   const location = useLocation();
-  const isActive = location.pathname === to || location.pathname.startsWith(to + '/');
+
+  // Parse the 'to' prop to separate pathname and search params
+  const [toPathname, toSearch] = to.includes('?') ? to.split('?') : [to, ''];
+
+  // Check if active: pathname must match, and if there's a search param in 'to', it must also match
+  const pathnameMatches =
+    location.pathname === toPathname || location.pathname.startsWith(toPathname + '/');
+  const searchMatches = toSearch ? location.search === `?${toSearch}` : true;
+  const isActive = pathnameMatches && searchMatches;
 
   return (
     <Link
