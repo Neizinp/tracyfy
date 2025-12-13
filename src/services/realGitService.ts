@@ -160,17 +160,9 @@ class RealGitService {
         }
       }
 
-      // In Electron, use IPC to initialize git
+      // In Electron, use IPC to initialize git - auto-init without prompting
       if (isElectronEnv()) {
-        const shouldInit = confirm(
-          'This directory is not a git repository.\n\n' +
-            'Would you like to initialize it as a git repository?\n\n' +
-            'This is required for version tracking.'
-        );
-
-        if (!shouldInit) {
-          return false;
-        }
+        console.log('[init] Auto-initializing git repository...');
 
         const rootDir = this.getRootDir();
         const result = await window.electronAPI!.git.init(rootDir);
@@ -183,16 +175,8 @@ class RealGitService {
         return true;
       }
 
-      // Browser path: ask user if they want to initialize git
-      const shouldInit = confirm(
-        'This directory is not a git repository.\n\n' +
-          'Would you like to initialize it as a git repository?\n\n' +
-          'This is required for version tracking.'
-      );
-
-      if (!shouldInit) {
-        return false;
-      }
+      // Browser path: auto-initialize git without prompting
+      console.log('[init] Auto-initializing git repository (browser)...');
 
       // Initialize git repository
       await git.init({
@@ -327,7 +311,7 @@ class RealGitService {
       fs: fsAdapter,
       dir: this.getRootDir(),
       message,
-      author: { name: 'Reqify User', email: 'user@reqify.local' },
+      author: { name: 'Tracyfy User', email: 'user@tracyfy.local' },
       cache,
     });
 
@@ -397,7 +381,7 @@ class RealGitService {
 
   /**
    * Commit a single file (Atomic Commit)
-   * @param authorName - Optional author name, defaults to 'Reqify User'
+   * @param authorName - Optional author name, defaults to 'Tracyfy User'
    */
   async commitFile(filepath: string, message: string, authorName?: string): Promise<void> {
     if (!this.initialized) {
@@ -414,12 +398,12 @@ class RealGitService {
       await git.remove({ fs: fsAdapter, dir: this.getRootDir(), filepath, cache });
     }
 
-    const authorNameToUse = authorName || 'Reqify User';
+    const authorNameToUse = authorName || 'Tracyfy User';
     const commitOid = await git.commit({
       fs: fsAdapter,
       dir: this.getRootDir(),
       message,
-      author: { name: authorNameToUse, email: 'user@reqify.local' },
+      author: { name: authorNameToUse, email: 'user@tracyfy.local' },
       cache,
     });
 
@@ -646,7 +630,7 @@ class RealGitService {
       throw new Error('Git service not initialized');
     }
 
-    const author = { name: 'Reqify User', email: 'user@reqify.local' };
+    const author = { name: 'Tracyfy User', email: 'user@tracyfy.local' };
 
     if (isElectronEnv()) {
       const result = await window.electronAPI!.git.annotatedTag(

@@ -340,8 +340,8 @@ describe('RealGitService', () => {
         expect.objectContaining({
           message: 'Add requirement',
           author: expect.objectContaining({
-            name: 'Reqify User',
-            email: 'user@reqify.local',
+            name: 'Tracyfy User',
+            email: 'user@tracyfy.local',
           }),
         })
       );
@@ -928,18 +928,14 @@ Rationale
       expect(result).toBe(true);
     });
 
-    it('should return false when user declines initialization', async () => {
+    it('should auto-initialize git repository for new directories', async () => {
       vi.mocked(fileSystemService.checkGitExists).mockResolvedValue(false);
-
-      // Mock confirm to decline
-      globalThis.confirm = vi.fn().mockReturnValue(false) as unknown as (
-        message?: string
-      ) => boolean;
+      vi.mocked(git.init).mockResolvedValue(undefined);
 
       const result = await realGitService.init();
 
-      expect(result).toBe(false);
-      expect(git.init).not.toHaveBeenCalled();
+      expect(result).toBe(true);
+      expect(git.init).toHaveBeenCalled();
     });
   });
 });

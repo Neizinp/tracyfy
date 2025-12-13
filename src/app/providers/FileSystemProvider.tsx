@@ -464,7 +464,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (!isReady) throw new Error('Filesystem not ready');
       if (isE2EMode()) return; // Skip git operations in E2E mode
       console.log(
-        `[commitFile] Committing ${filepath} with message: ${message} by ${authorName || 'Reqify User'} `
+        `[commitFile] Committing ${filepath} with message: ${message} by ${authorName || 'Tracyfy User'} `
       );
       await realGitService.commitFile(filepath, message, authorName);
       await refreshStatus();

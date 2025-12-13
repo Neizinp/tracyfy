@@ -5,9 +5,9 @@
 
 import type { Project, GlobalState } from '../types';
 
-export const PROJECTS_KEY = 'reqify-projects';
-export const CURRENT_PROJECT_KEY = 'reqify-current-project-id';
-const GLOBAL_STATE_KEY = 'reqify-global-state';
+export const PROJECTS_KEY = 'tracyfy-projects';
+export const CURRENT_PROJECT_KEY = 'tracyfy-current-project-id';
+const GLOBAL_STATE_KEY = 'tracyfy-global-state';
 
 /**
  * Helper to load projects from localStorage (browser fallback)
