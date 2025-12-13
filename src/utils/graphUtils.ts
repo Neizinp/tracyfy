@@ -10,6 +10,8 @@ export interface ArtifactNodeData {
   title: string;
   artifactType: ArtifactType;
   linkCount: number;
+  highlighted: boolean;
+  isSelected: boolean;
 }
 
 export interface LinkEdgeData {
@@ -21,7 +23,9 @@ export interface LinkEdgeData {
  */
 export function transformArtifactsToNodes(
   artifacts: UnifiedArtifact[],
-  layout: LayoutAlgorithm = 'force'
+  layout: LayoutAlgorithm = 'force',
+  selectedNodeId: string | null = null,
+  connectedNodeIds: Set<string> = new Set()
 ): Node<ArtifactNodeData>[] {
   const positions = calculateLayout(artifacts, layout);
 
@@ -34,6 +38,8 @@ export function transformArtifactsToNodes(
       title: artifact.title,
       artifactType: artifact.type,
       linkCount: artifact.linkedArtifacts.length,
+      highlighted: connectedNodeIds.has(artifact.id),
+      isSelected: artifact.id === selectedNodeId,
     },
   }));
 }
@@ -48,28 +54,37 @@ export function transformLinksToEdges(
     type: string;
     sourceType: ArtifactType;
     targetType: ArtifactType;
-  }[]
+  }[],
+  selectedNodeId: string | null = null
 ): Edge<LinkEdgeData>[] {
-  return links.map((link, index) => ({
-    id: `edge-${link.sourceId}-${link.targetId}-${index}`,
-    source: link.sourceId,
-    target: link.targetId,
-    label: link.type,
-    type: 'smoothstep',
-    animated: false,
-    data: {
-      linkType: link.type,
-    },
-    style: {
-      stroke: getLinkColor(link.type),
-      strokeWidth: 2,
-    },
-    labelStyle: {
-      fontSize: '10px',
-      fontWeight: 500,
-      fill: 'var(--color-text-secondary)',
-    },
-  }));
+  return links.map((link, index) => {
+    const isConnectedToSelected =
+      selectedNodeId !== null &&
+      (link.sourceId === selectedNodeId || link.targetId === selectedNodeId);
+
+    return {
+      id: `edge-${link.sourceId}-${link.targetId}-${index}`,
+      source: link.sourceId,
+      target: link.targetId,
+      label: link.type,
+      type: 'smoothstep',
+      animated: isConnectedToSelected,
+      data: {
+        linkType: link.type,
+      },
+      style: {
+        stroke: isConnectedToSelected ? getLinkColor(link.type) : getLinkColor(link.type),
+        strokeWidth: isConnectedToSelected ? 3 : 2,
+        opacity: selectedNodeId !== null && !isConnectedToSelected ? 0.3 : 1,
+      },
+      labelStyle: {
+        fontSize: '10px',
+        fontWeight: isConnectedToSelected ? 600 : 500,
+        fill: isConnectedToSelected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+        opacity: selectedNodeId !== null && !isConnectedToSelected ? 0.3 : 1,
+      },
+    };
+  });
 }
 
 /**

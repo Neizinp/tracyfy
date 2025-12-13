@@ -10,19 +10,47 @@ import { getNodeColor } from '../../utils/graphUtils';
  */
 export const ArtifactNode: React.FC<NodeProps<ArtifactNodeData>> = ({ data, selected }) => {
   const colors = getNodeColor(data.artifactType);
+  const isHighlighted = data.highlighted;
+  const isSelected = data.isSelected || selected;
+
+  // Determine styling based on state
+  const getBorderColor = () => {
+    if (isSelected) return colors.border;
+    if (isHighlighted) return colors.border;
+    return 'var(--color-border)';
+  };
+
+  const getBackgroundColor = () => {
+    if (isSelected) return `${colors.bg}40`;
+    if (isHighlighted) return `${colors.bg}25`;
+    return 'var(--color-bg-card)';
+  };
+
+  const getBoxShadow = () => {
+    if (isSelected) return `0 4px 12px ${colors.border}40`;
+    if (isHighlighted) return `0 0 0 3px ${colors.border}30, 0 4px 12px ${colors.border}20`;
+    return '0 2px 8px rgba(0, 0, 0, 0.1)';
+  };
+
+  const getOpacity = () => {
+    // If a node is selected, non-highlighted and non-selected nodes fade
+    if (data.isSelected === false && !isHighlighted && !isSelected) return 0.4;
+    return 1;
+  };
 
   return (
     <div
       style={{
         padding: '12px 16px',
         borderRadius: '8px',
-        border: `2px solid ${selected ? colors.border : 'var(--color-border)'}`,
-        backgroundColor: selected ? `${colors.bg}40` : 'var(--color-bg-card)',
+        border: `2px solid ${getBorderColor()}`,
+        backgroundColor: getBackgroundColor(),
         minWidth: '200px',
         maxWidth: '220px',
-        boxShadow: selected ? `0 4px 12px ${colors.border}40` : '0 2px 8px rgba(0, 0, 0, 0.1)',
+        boxShadow: getBoxShadow(),
         transition: 'all 0.2s ease',
         cursor: 'pointer',
+        opacity: getOpacity(),
       }}
     >
       {/* Input handle */}

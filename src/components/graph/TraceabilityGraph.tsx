@@ -46,6 +46,9 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
 }) => {
   const [layout, setLayout] = useState<LayoutAlgorithm>('force');
 
+  // Track selected node for highlighting connected nodes
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
   // Filter artifacts by selected types
   const filteredArtifacts = useMemo(() => {
     if (selectedTypes.size === 4) return artifacts;
@@ -58,13 +61,31 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
     return links.filter((l) => artifactIds.has(l.sourceId) && artifactIds.has(l.targetId));
   }, [links, filteredArtifacts]);
 
-  // Transform to React Flow format
+  // Compute connected node IDs for the selected node
+  const connectedNodeIds = useMemo(() => {
+    if (!selectedNodeId) return new Set<string>();
+    const connected = new Set<string>();
+    filteredLinks.forEach((link) => {
+      if (link.sourceId === selectedNodeId) {
+        connected.add(link.targetId);
+      }
+      if (link.targetId === selectedNodeId) {
+        connected.add(link.sourceId);
+      }
+    });
+    return connected;
+  }, [selectedNodeId, filteredLinks]);
+
+  // Transform to React Flow format with highlighting info
   const initialNodes = useMemo(
-    () => transformArtifactsToNodes(filteredArtifacts, layout),
-    [filteredArtifacts, layout]
+    () => transformArtifactsToNodes(filteredArtifacts, layout, selectedNodeId, connectedNodeIds),
+    [filteredArtifacts, layout, selectedNodeId, connectedNodeIds]
   );
 
-  const initialEdges = useMemo(() => transformLinksToEdges(filteredLinks), [filteredLinks]);
+  const initialEdges = useMemo(
+    () => transformLinksToEdges(filteredLinks, selectedNodeId),
+    [filteredLinks, selectedNodeId]
+  );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -81,6 +102,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
   // Handle node click
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: { id: string }) => {
+      setSelectedNodeId((prevId) => (prevId === node.id ? null : node.id));
       if (onSelectArtifact) {
         onSelectArtifact(node.id);
       }
@@ -90,18 +112,28 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
 
   // Re-apply layout
   const handleReLayout = useCallback(() => {
-    const newNodes = transformArtifactsToNodes(filteredArtifacts, layout);
+    const newNodes = transformArtifactsToNodes(
+      filteredArtifacts,
+      layout,
+      selectedNodeId,
+      connectedNodeIds
+    );
     setNodes(newNodes);
-  }, [filteredArtifacts, layout, setNodes]);
+  }, [filteredArtifacts, layout, setNodes, selectedNodeId, connectedNodeIds]);
 
   // Handle layout change
   const handleLayoutChange = useCallback(
     (newLayout: LayoutAlgorithm) => {
       setLayout(newLayout);
-      const newNodes = transformArtifactsToNodes(filteredArtifacts, newLayout);
+      const newNodes = transformArtifactsToNodes(
+        filteredArtifacts,
+        newLayout,
+        selectedNodeId,
+        connectedNodeIds
+      );
       setNodes(newNodes);
     },
-    [filteredArtifacts, setNodes]
+    [filteredArtifacts, setNodes, selectedNodeId, connectedNodeIds]
   );
 
   return (
