@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { TraceabilityDashboard } from '../components';
 import {
   useRequirements,
@@ -9,7 +10,16 @@ import {
 } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
 
+type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
+
 export const TraceabilityDashboardPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab') as TabType | null;
+  const initialTab: TabType =
+    tabParam && ['overview', 'gaps', 'links', 'impact', 'matrix', 'graph'].includes(tabParam)
+      ? tabParam
+      : 'overview';
+
   const { requirements, handleUpdateRequirement } = useRequirements();
   const { useCases, handleUpdateUseCase } = useUseCases();
   const { testCases, handleUpdateTestCase } = useTestCases();
@@ -148,6 +158,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
       testCases={filteredTestCases}
       information={filteredInformation}
       standaloneLinks={standaloneLinks}
+      initialTab={initialTab}
       onAddLink={handleAddLink}
       onRemoveLink={handleRemoveLink}
       onDeleteLink={handleDeleteLink}

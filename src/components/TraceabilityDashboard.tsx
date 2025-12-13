@@ -5,12 +5,15 @@ import type { ArtifactType, UnifiedArtifact, GapInfo } from './traceability';
 import { TYPE_COLORS, SummaryCard, GapItem, LinkRow } from './traceability';
 import { TraceabilityGraph } from './graph/TraceabilityGraph';
 
+type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
+
 interface TraceabilityDashboardProps {
   requirements: Requirement[];
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
   standaloneLinks?: Link[]; // Links from the new Link entity system
+  initialTab?: TabType; // Allow external control of initial tab
   onSelectArtifact?: (artifactId: string) => void;
   onAddLink?: (artifactId: string, artifactType: string) => void;
   onRemoveLink?: (artifactId: string, targetId: string) => void;
@@ -23,14 +26,13 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   testCases,
   information,
   standaloneLinks = [],
+  initialTab = 'overview',
   onSelectArtifact,
   onAddLink,
   onRemoveLink,
   onDeleteLink,
 }) => {
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph'
-  >('overview');
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   // Multi-select type toggles - all selected by default
   const [selectedTypes, setSelectedTypes] = useState<Set<ArtifactType>>(
     new Set(['requirement', 'useCase', 'testCase', 'information'])
