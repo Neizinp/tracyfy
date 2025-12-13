@@ -1,4 +1,4 @@
-# Reqify - Requirement Management Tool
+# Tracyfy - Requirement Management Tool
 
 A modern, web-based requirement management tool inspired by IBM Rational Doors. Built with React, TypeScript, and Vite for managing system requirements, use cases, test cases, and comprehensive documentation with multi-project support and Git-based version control.
 
@@ -89,8 +89,8 @@ The File System Access API is required for local file storage. Use Chrome or Edg
 
 ```bash
 # Clone the repository
-git clone https://github.com/Neizinp/reqify.git
-cd reqify
+git clone https://github.com/Neizinp/tracyfy.git
+cd tracyfy
 
 # Install dependencies
 npm install
@@ -105,7 +105,7 @@ The application will be available at `http://localhost:5173`
 
 1. On first launch, you'll be prompted to select a local directory
 2. Choose an existing Git repository or create a new folder
-3. If Git isn't initialized, Reqify will set it up for you
+3. If Git isn't initialized, Tracyfy will set it up for you
 4. All data is stored locally - no cloud account needed
 
 ### Build for Production
@@ -257,11 +257,11 @@ Security is a core requirement for the system.
 
 ### Repository File Structure
 
-When you select a Git repository, Reqify creates the following folder structure:
+When you select a Git repository, Tracyfy creates the following folder structure:
 
 ```
 your-project-repo/
-├── .reqify/
+├── .tracyfy/
 │   ├── project.md          # Project metadata (name, description, counters)
 │   └── config.json         # Application configuration (if any)
 ├── requirements/
@@ -284,7 +284,7 @@ your-project-repo/
 
 - Each artifact is a separate `.md` file, making them easy to review in Git diffs
 - Links between artifacts are stored in the source artifact's `linkedArtifacts` field
-- Project metadata (ID counters, project info) is stored in `.reqify/project.md`
+- Project metadata (ID counters, project info) is stored in `.tracyfy/project.md`
 - Baselines are Git tags, not separate files
 - The entire repository can be cloned, reviewed, and merged using standard Git workflows
 

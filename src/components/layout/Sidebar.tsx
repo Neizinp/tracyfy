@@ -120,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }}
         >
           <LayoutGrid size={24} color="var(--color-accent)" />
-          Reqify
+          Tracyfy
         </h1>
       </div>
 

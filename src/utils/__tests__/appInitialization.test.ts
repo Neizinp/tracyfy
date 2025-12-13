@@ -4,11 +4,11 @@ import { loadProjects, PROJECTS_KEY, CURRENT_PROJECT_KEY } from '../appInitializ
 describe('appInitialization', () => {
   describe('exports', () => {
     it('should export PROJECTS_KEY constant', () => {
-      expect(PROJECTS_KEY).toBe('reqify-projects');
+      expect(PROJECTS_KEY).toBe('tracyfy-projects');
     });
 
     it('should export CURRENT_PROJECT_KEY constant', () => {
-      expect(CURRENT_PROJECT_KEY).toBe('reqify-current-project-id');
+      expect(CURRENT_PROJECT_KEY).toBe('tracyfy-current-project-id');
     });
 
     it('should export loadProjects function', () => {
