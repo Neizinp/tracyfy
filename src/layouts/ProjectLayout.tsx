@@ -9,6 +9,7 @@ import {
   useImportExport,
   useFileSystem,
   useUser,
+  useBackgroundTasks,
 } from '../app/providers';
 import { exportProjectToPDF } from '../utils/pdfExportUtils';
 import { exportProjectToExcel } from '../utils/excelExportUtils';
@@ -82,6 +83,9 @@ export const ProjectLayout: React.FC = () => {
   // User context
   const { currentUser } = useUser();
 
+  // Background tasks
+  const { startTask, endTask } = useBackgroundTasks();
+
   // Project action handlers
   const handleCreateProject = useCallback(() => {
     ui.setIsCreateProjectModalOpen(true);
@@ -97,6 +101,7 @@ export const ProjectLayout: React.FC = () => {
 
   // Create demo project handler
   const handleCreateDemoProject = useCallback(async () => {
+    const taskId = startTask('Creating demo project...');
     try {
       const demoProject = await createDemoProject();
       await reloadData();
@@ -106,8 +111,10 @@ export const ProjectLayout: React.FC = () => {
       console.error('Failed to create demo project:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       alert(`Failed to create demo project: ${errorMessage}`);
+    } finally {
+      endTask(taskId);
     }
-  }, [reloadData, refreshStatus, switchProject]);
+  }, [reloadData, refreshStatus, switchProject, startTask, endTask]);
 
   // Get page title from current route
   const getPageTitle = () => {
