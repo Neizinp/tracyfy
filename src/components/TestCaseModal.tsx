@@ -3,9 +3,10 @@ import { X } from 'lucide-react';
 import type { TestCase } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
-import { useUI, useUser, useGlobalState } from '../app/providers';
+import { useUI, useUser } from '../app/providers';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import { useIncomingLinks } from '../hooks/useIncomingLinks';
+import { useLinkService } from '../hooks/useLinkService';
+import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 
 interface TestCaseModalProps {
   isOpen: boolean;
@@ -28,7 +29,6 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
   const { currentUser } = useUser();
-  const { requirements, useCases, testCases, information } = useGlobalState();
   const isEditMode = testCase !== null;
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -38,14 +38,8 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
   const [status, setStatus] = useState<TestCase['status']>('draft');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Get incoming links (artifacts that link TO this test case)
-  const incomingLinks = useIncomingLinks({
-    targetId: testCase?.id || '',
-    requirements,
-    useCases,
-    testCases,
-    information,
-  });
+  // Get links using the new link service
+  const { outgoingLinks, incomingLinks, loading: linksLoading } = useLinkService(testCase?.id);
 
   // Reset form when modal opens/closes or testCase changes
   useEffect(() => {
@@ -646,7 +640,17 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
                     >
                       Save the test case first to add relationships.
                     </div>
-                  ) : (testCase?.linkedArtifacts || []).length === 0 ? (
+                  ) : linksLoading ? (
+                    <div
+                      style={{
+                        padding: '8px',
+                        color: 'var(--color-text-muted)',
+                        fontSize: 'var(--font-size-sm)',
+                      }}
+                    >
+                      Loading links...
+                    </div>
+                  ) : outgoingLinks.length === 0 ? (
                     <div
                       style={{
                         padding: '8px',
@@ -704,9 +708,9 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
                           + Add Link
                         </button>
                       </div>
-                      {(testCase?.linkedArtifacts || []).map((link, index) => (
+                      {outgoingLinks.map((link) => (
                         <div
-                          key={`${link.targetId}-${index}`}
+                          key={link.id}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -734,7 +738,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
                                 fontFamily: 'monospace',
                               }}
                             >
-                              {link.type.replace('_', ' ')}
+                              {LINK_TYPE_LABELS[link.type] || link.type.replace('_', ' ')}
                             </span>
                             <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
                             <span style={{ fontWeight: 500 }}>{link.targetId}</span>

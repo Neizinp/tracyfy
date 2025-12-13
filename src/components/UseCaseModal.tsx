@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { UseCase } from '../types';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
-import { useUI, useGlobalState } from '../app/providers';
-import { useIncomingLinks } from '../hooks/useIncomingLinks';
+import { useUI } from '../app/providers';
+import { useLinkService } from '../hooks/useLinkService';
+import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 
 interface UseCaseModalProps {
   isOpen: boolean;
@@ -25,7 +26,6 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
   onSubmit,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
-  const { requirements, useCases, testCases, information } = useGlobalState();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -37,14 +37,8 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
   const [priority, setPriority] = useState<UseCase['priority']>('medium');
   const [status, setStatus] = useState<UseCase['status']>('draft');
 
-  // Get incoming links (artifacts that link TO this use case)
-  const incomingLinks = useIncomingLinks({
-    targetId: useCase?.id || '',
-    requirements,
-    useCases,
-    testCases,
-    information,
-  });
+  // Get links using the new link service
+  const { outgoingLinks, incomingLinks, loading: linksLoading } = useLinkService(useCase?.id);
 
   useEffect(() => {
     if (useCase) {
@@ -537,7 +531,17 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                     overflowY: 'auto',
                   }}
                 >
-                  {(useCase.linkedArtifacts || []).filter((l) => l.targetId).length === 0 ? (
+                  {linksLoading ? (
+                    <div
+                      style={{
+                        padding: '8px',
+                        color: 'var(--color-text-muted)',
+                        fontSize: 'var(--font-size-sm)',
+                      }}
+                    >
+                      Loading links...
+                    </div>
+                  ) : outgoingLinks.length === 0 ? (
                     <div
                       style={{
                         padding: '8px',
@@ -591,45 +595,43 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                           + Add Link
                         </button>
                       </div>
-                      {(useCase.linkedArtifacts || [])
-                        .filter((link) => link.targetId)
-                        .map((link, index) => (
+                      {outgoingLinks.map((link) => (
+                        <div
+                          key={link.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 8px',
+                            backgroundColor: 'var(--color-bg-card)',
+                            borderRadius: '4px',
+                            border: '1px solid var(--color-border)',
+                          }}
+                        >
                           <div
-                            key={`${link.targetId}-${index}`}
                             style={{
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '6px 8px',
-                              backgroundColor: 'var(--color-bg-card)',
-                              borderRadius: '4px',
-                              border: '1px solid var(--color-border)',
+                              gap: '8px',
+                              fontSize: 'var(--font-size-sm)',
                             }}
                           >
-                            <div
+                            <span
                               style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                fontSize: 'var(--font-size-sm)',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                backgroundColor: 'var(--color-bg-secondary)',
+                                fontSize: 'var(--font-size-xs)',
+                                fontFamily: 'monospace',
                               }}
                             >
-                              <span
-                                style={{
-                                  padding: '2px 6px',
-                                  borderRadius: '4px',
-                                  backgroundColor: 'var(--color-bg-secondary)',
-                                  fontSize: 'var(--font-size-xs)',
-                                  fontFamily: 'monospace',
-                                }}
-                              >
-                                {(link.type || 'related').replace('_', ' ')}
-                              </span>
-                              <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
-                              <span style={{ fontWeight: 500 }}>{link.targetId}</span>
-                            </div>
+                              {LINK_TYPE_LABELS[link.type] || link.type.replace('_', ' ')}
+                            </span>
+                            <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
+                            <span style={{ fontWeight: 500 }}>{link.targetId}</span>
                           </div>
-                        ))}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

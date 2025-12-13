@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { Information } from '../types';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
-import { useUI, useGlobalState } from '../app/providers';
-import { useIncomingLinks } from '../hooks/useIncomingLinks';
+import { useUI } from '../app/providers';
+import { useLinkService } from '../hooks/useLinkService';
+import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 
 interface InformationModalProps {
   isOpen: boolean;
@@ -27,20 +28,13 @@ export const InformationModal: React.FC<InformationModalProps> = ({
   onSubmit,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
-  const { requirements, useCases, testCases, information: allInformation } = useGlobalState();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [type, setType] = useState<Information['type']>('note');
 
-  // Get incoming links (artifacts that link TO this information)
-  const incomingLinks = useIncomingLinks({
-    targetId: information?.id || '',
-    requirements,
-    useCases,
-    testCases,
-    information: allInformation,
-  });
+  // Get links using the new link service
+  const { outgoingLinks, incomingLinks, loading: linksLoading } = useLinkService(information?.id);
 
   useEffect(() => {
     if (information) {
@@ -306,7 +300,17 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                     overflowY: 'auto',
                   }}
                 >
-                  {(information.linkedArtifacts || []).length === 0 ? (
+                  {linksLoading ? (
+                    <div
+                      style={{
+                        padding: '8px',
+                        color: 'var(--color-text-muted)',
+                        fontSize: 'var(--font-size-sm)',
+                      }}
+                    >
+                      Loading links...
+                    </div>
+                  ) : outgoingLinks.length === 0 ? (
                     <div
                       style={{
                         padding: '8px',
@@ -360,9 +364,9 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                           + Add Link
                         </button>
                       </div>
-                      {(information.linkedArtifacts || []).map((link, index) => (
+                      {outgoingLinks.map((link) => (
                         <div
-                          key={`${link.targetId}-${index}`}
+                          key={link.id}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -390,7 +394,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                                 fontFamily: 'monospace',
                               }}
                             >
-                              {link.type.replace('_', ' ')}
+                              {LINK_TYPE_LABELS[link.type] || link.type.replace('_', ' ')}
                             </span>
                             <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
                             <span style={{ fontWeight: 500 }}>{link.targetId}</span>
