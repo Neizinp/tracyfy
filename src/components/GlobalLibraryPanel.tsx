@@ -165,12 +165,14 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
   const filterItems = <T extends { id: string; title: string; isDeleted?: boolean }>(
     items: T[]
   ) => {
-    return items.filter(
-      (item) =>
-        !item.isDeleted &&
-        (item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.id.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    return items
+      .filter(
+        (item) =>
+          !item.isDeleted &&
+          (item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.id.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+      .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
   };
 
   const renderContent = () => {

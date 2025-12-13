@@ -15,7 +15,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
   const { testCases, handleUpdateTestCase } = useTestCases();
   const { information, handleUpdateInformation } = useInformation();
   const { searchQuery, setLinkSourceId, setLinkSourceType, setIsLinkModalOpen } = useUI();
-  const { allLinks: standaloneLinks } = useLinkService();
+  const { allLinks: standaloneLinks, deleteLink } = useLinkService();
 
   const filteredRequirements = useMemo(() => {
     const query = searchQuery.toLowerCase();
@@ -129,6 +129,18 @@ export const TraceabilityDashboardPage: React.FC = () => {
     ]
   );
 
+  // Handler to delete a standalone link
+  const handleDeleteLink = useCallback(
+    async (linkId: string) => {
+      try {
+        await deleteLink(linkId);
+      } catch (error) {
+        console.error('Failed to delete link:', error);
+      }
+    },
+    [deleteLink]
+  );
+
   return (
     <TraceabilityDashboard
       requirements={filteredRequirements}
@@ -138,6 +150,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
       standaloneLinks={standaloneLinks}
       onAddLink={handleAddLink}
       onRemoveLink={handleRemoveLink}
+      onDeleteLink={handleDeleteLink}
     />
   );
 };

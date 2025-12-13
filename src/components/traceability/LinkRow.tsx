@@ -1,4 +1,5 @@
 import React from 'react';
+import { Trash2 } from 'lucide-react';
 import type { ArtifactType } from './types';
 import { TYPE_COLORS } from './types';
 
@@ -10,6 +11,7 @@ interface LinkRowProps {
   targetType: ArtifactType;
   onClickSource?: () => void;
   onClickTarget?: () => void;
+  onDelete?: () => void;
 }
 
 export const LinkRow: React.FC<LinkRowProps> = ({
@@ -20,6 +22,7 @@ export const LinkRow: React.FC<LinkRowProps> = ({
   targetType,
   onClickSource,
   onClickTarget,
+  onDelete,
 }) => {
   const sourceColors = TYPE_COLORS[sourceType];
   const targetColors = TYPE_COLORS[targetType];
@@ -71,6 +74,32 @@ export const LinkRow: React.FC<LinkRowProps> = ({
           {targetId}
         </span>
       </td>
+      {onDelete && (
+        <td style={{ padding: '8px 12px', textAlign: 'center', width: '40px' }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px',
+              borderRadius: '4px',
+              color: 'var(--color-text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            title="Delete link"
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-error-light)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-muted)')}
+          >
+            <Trash2 size={14} />
+          </button>
+        </td>
+      )}
     </tr>
   );
 };

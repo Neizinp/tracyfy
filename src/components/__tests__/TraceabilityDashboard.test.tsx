@@ -302,21 +302,25 @@ describe('TraceabilityDashboard', () => {
       expect(screen.getByText(/verifies/)).toBeInTheDocument();
     });
 
-    it('has type filter dropdown', () => {
+    it('has type filter toggle buttons', () => {
       render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Matrix');
 
-      const select = screen.getByRole('combobox');
-      expect(select).toBeInTheDocument();
-      expect(screen.getByText(/All Types/)).toBeInTheDocument();
+      // Should have toggle buttons for each type
+      expect(screen.getByRole('button', { name: 'UC' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'REQ' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'TC' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'INFO' })).toBeInTheDocument();
     });
 
-    it('filters matrix by artifact type', () => {
+    it('filters matrix by toggling artifact types', () => {
       render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Matrix');
 
-      // Filter to only requirements
-      fireEvent.change(screen.getByRole('combobox'), { target: { value: 'requirement' } });
+      // Toggle off UC, TC, INFO - keep only REQ
+      fireEvent.click(screen.getByRole('button', { name: 'UC' }));
+      fireEvent.click(screen.getByRole('button', { name: 'TC' }));
+      fireEvent.click(screen.getByRole('button', { name: 'INFO' }));
 
       // Should show requirements but not use cases
       expect(screen.getAllByText('REQ-001').length).toBeGreaterThan(0);
@@ -325,18 +329,23 @@ describe('TraceabilityDashboard', () => {
   });
 
   describe('Filtering', () => {
-    it('shows type filter dropdown on Gaps tab', () => {
+    it('shows type filter toggles on Gaps tab', () => {
       render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Gaps');
 
-      expect(screen.getByDisplayValue('All Types')).toBeInTheDocument();
+      // Should have toggle buttons for each type
+      expect(screen.getByRole('button', { name: 'UC' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'REQ' })).toBeInTheDocument();
     });
 
-    it('filters gaps by type', () => {
+    it('filters gaps by toggling types', () => {
       render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Gaps');
 
-      fireEvent.change(screen.getByDisplayValue('All Types'), { target: { value: 'requirement' } });
+      // Toggle off INFO and UC, keep only REQ and TC
+      fireEvent.click(screen.getByRole('button', { name: 'INFO' }));
+      fireEvent.click(screen.getByRole('button', { name: 'UC' }));
+      fireEvent.click(screen.getByRole('button', { name: 'TC' }));
 
       expect(screen.getByText('REQ-002')).toBeInTheDocument();
       expect(screen.queryByText('INFO-001')).not.toBeInTheDocument();

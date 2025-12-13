@@ -279,7 +279,7 @@ All APIs will use URL-based versioning: \`/api/v1/...\`
   // Links between artifacts (indices refer to arrays above)
   // sourceType/targetType: 'req' | 'uc' | 'tc' | 'info'
   links: [
-    // Requirements -> Use Cases
+    // Requirements -> Use Cases (satisfies)
     { sourceIndex: 0, sourceType: 'req', targetIndex: 0, targetType: 'uc', type: 'satisfies' }, // Auth -> Login Flow
     { sourceIndex: 1, sourceType: 'req', targetIndex: 1, targetType: 'uc', type: 'satisfies' }, // Export -> Export Report
     { sourceIndex: 0, sourceType: 'req', targetIndex: 2, targetType: 'uc', type: 'related_to' }, // Auth -> Password Reset
@@ -290,8 +290,19 @@ All APIs will use URL-based versioning: \`/api/v1/...\`
     { sourceIndex: 2, sourceType: 'tc', targetIndex: 1, targetType: 'req', type: 'verifies' }, // Test CSV -> Export
     { sourceIndex: 3, sourceType: 'tc', targetIndex: 2, targetType: 'req', type: 'verifies' }, // Test API Time -> Performance
 
-    // Information -> Requirements
+    // Test Cases -> Use Cases (verifies)
+    { sourceIndex: 0, sourceType: 'tc', targetIndex: 0, targetType: 'uc', type: 'verifies' }, // Test Login -> Login Flow
+    { sourceIndex: 2, sourceType: 'tc', targetIndex: 1, targetType: 'uc', type: 'verifies' }, // Test CSV -> Export Report
+
+    // Information -> Requirements (related_to)
     { sourceIndex: 0, sourceType: 'info', targetIndex: 0, targetType: 'req', type: 'related_to' }, // JWT Decision -> Auth
+    { sourceIndex: 2, sourceType: 'info', targetIndex: 2, targetType: 'req', type: 'related_to' }, // API Versioning -> Performance
+
+    // Information -> Use Cases
+    { sourceIndex: 1, sourceType: 'info', targetIndex: 0, targetType: 'uc', type: 'related_to' }, // Sprint Notes -> Login Flow
+
+    // Information -> Test Cases
+    { sourceIndex: 0, sourceType: 'info', targetIndex: 0, targetType: 'tc', type: 'related_to' }, // JWT Decision -> Test Login
 
     // Requirement dependencies
     { sourceIndex: 3, sourceType: 'req', targetIndex: 0, targetType: 'req', type: 'constrains' }, // A11y constrains Auth

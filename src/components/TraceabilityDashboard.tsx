@@ -13,6 +13,7 @@ interface TraceabilityDashboardProps {
   onSelectArtifact?: (artifactId: string) => void;
   onAddLink?: (artifactId: string, artifactType: string) => void;
   onRemoveLink?: (artifactId: string, targetId: string) => void;
+  onDeleteLink?: (linkId: string) => void;
 }
 
 export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
@@ -24,12 +25,29 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   onSelectArtifact,
   onAddLink,
   onRemoveLink,
+  onDeleteLink,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'gaps' | 'links' | 'impact' | 'matrix'>(
     'overview'
   );
-  const [selectedType, setSelectedType] = useState<ArtifactType | 'all'>('all');
+  // Multi-select type toggles - all selected by default
+  const [selectedTypes, setSelectedTypes] = useState<Set<ArtifactType>>(
+    new Set(['requirement', 'useCase', 'testCase', 'information'])
+  );
   const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null);
+
+  // Toggle a type on/off
+  const toggleType = (type: ArtifactType) => {
+    setSelectedTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
+  };
 
   // Build unified artifacts list
   const allArtifacts = useMemo((): UnifiedArtifact[] => {
@@ -139,6 +157,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   // Get all links as flat list
   const allLinks = useMemo(() => {
     const links: {
+      linkId?: string; // Only for standalone links (deletable)
       sourceId: string;
       targetId: string;
       type: string;
@@ -161,6 +180,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
     standaloneLinks.forEach((link) => {
       if (artifactIds.has(link.sourceId) && artifactIds.has(link.targetId)) {
         links.push({
+          linkId: link.id, // Include ID for deletion
           sourceId: link.sourceId,
           targetId: link.targetId,
           type: link.type,
@@ -206,17 +226,19 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
     return links;
   }, [allArtifacts, testCases, standaloneLinks]);
 
-  // Filter links by selected type
+  // Filter links by selected types
   const filteredLinks = useMemo(() => {
-    if (selectedType === 'all') return allLinks;
-    return allLinks.filter((l) => l.sourceType === selectedType || l.targetType === selectedType);
-  }, [allLinks, selectedType]);
+    if (selectedTypes.size === 4) return allLinks; // All types selected
+    return allLinks.filter(
+      (l) => selectedTypes.has(l.sourceType) || selectedTypes.has(l.targetType)
+    );
+  }, [allLinks, selectedTypes]);
 
-  // Filter gaps by selected type
+  // Filter gaps by selected types
   const filteredGaps = useMemo(() => {
-    if (selectedType === 'all') return gapArtifacts;
-    return gapArtifacts.filter((gap) => gap.artifact.type === selectedType);
-  }, [gapArtifacts, selectedType]);
+    if (selectedTypes.size === 4) return gapArtifacts; // All types selected
+    return gapArtifacts.filter((gap) => selectedTypes.has(gap.artifact.type));
+  }, [gapArtifacts, selectedTypes]);
 
   const tabStyle = (isActive: boolean): React.CSSProperties => ({
     padding: '8px 16px',
@@ -288,28 +310,6 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
             Matrix
           </button>
         </div>
-
-        {/* Type filter */}
-        {(activeTab === 'gaps' || activeTab === 'links') && (
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value as ArtifactType | 'all')}
-            style={{
-              padding: '8px 12px',
-              borderRadius: '6px',
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-bg-card)',
-              color: 'var(--color-text-primary)',
-              fontSize: 'var(--font-size-sm)',
-            }}
-          >
-            <option value="all">All Types</option>
-            <option value="requirement">Requirements</option>
-            <option value="useCase">Use Cases</option>
-            <option value="testCase">Test Cases</option>
-            <option value="information">Information</option>
-          </select>
-        )}
       </div>
 
       {/* Overview Tab */}
@@ -401,7 +401,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
               gaps={stats.requirement.gaps}
               color={TYPE_COLORS.requirement}
               onViewGaps={() => {
-                setSelectedType('requirement');
+                setSelectedTypes(new Set(['requirement']));
                 setActiveTab('gaps');
               }}
             />
@@ -412,7 +412,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
               gaps={stats.useCase.gaps}
               color={TYPE_COLORS.useCase}
               onViewGaps={() => {
-                setSelectedType('useCase');
+                setSelectedTypes(new Set(['useCase']));
                 setActiveTab('gaps');
               }}
             />
@@ -423,7 +423,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
               gaps={stats.testCase.gaps}
               color={TYPE_COLORS.testCase}
               onViewGaps={() => {
-                setSelectedType('testCase');
+                setSelectedTypes(new Set(['testCase']));
                 setActiveTab('gaps');
               }}
             />
@@ -434,7 +434,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
               gaps={stats.information.gaps}
               color={TYPE_COLORS.information}
               onViewGaps={() => {
-                setSelectedType('information');
+                setSelectedTypes(new Set(['information']));
                 setActiveTab('gaps');
               }}
             />
@@ -474,15 +474,61 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
             padding: 'var(--spacing-md)',
           }}
         >
-          <h3
+          <div
             style={{
-              margin: '0 0 var(--spacing-md) 0',
-              fontSize: 'var(--font-size-lg)',
-              color: 'var(--color-text-primary)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 'var(--spacing-md)',
             }}
           >
-            Unlinked Artifacts ({filteredGaps.length})
-          </h3>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: 'var(--font-size-lg)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              Unlinked Artifacts ({filteredGaps.length})
+            </h3>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {[
+                { type: 'useCase' as ArtifactType, label: 'UC', color: TYPE_COLORS.useCase.text },
+                {
+                  type: 'requirement' as ArtifactType,
+                  label: 'REQ',
+                  color: TYPE_COLORS.requirement.text,
+                },
+                { type: 'testCase' as ArtifactType, label: 'TC', color: TYPE_COLORS.testCase.text },
+                {
+                  type: 'information' as ArtifactType,
+                  label: 'INFO',
+                  color: TYPE_COLORS.information.text,
+                },
+              ].map(({ type, label, color }) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => toggleType(type)}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    border: selectedTypes.has(type)
+                      ? `2px solid ${color}`
+                      : '2px solid var(--color-border)',
+                    backgroundColor: selectedTypes.has(type) ? `${color}20` : 'transparent',
+                    color: selectedTypes.has(type) ? color : 'var(--color-text-muted)',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-xs)',
+                    fontWeight: 600,
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           {filteredGaps.length === 0 ? (
             <div
               style={{
@@ -542,7 +588,13 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
           }}
         >
           <div
-            style={{ padding: 'var(--spacing-md)', borderBottom: '1px solid var(--color-border)' }}
+            style={{
+              padding: 'var(--spacing-md)',
+              borderBottom: '1px solid var(--color-border)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
           >
             <h3
               style={{
@@ -553,6 +605,43 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
             >
               All Links ({filteredLinks.length})
             </h3>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {[
+                { type: 'useCase' as ArtifactType, label: 'UC', color: TYPE_COLORS.useCase.text },
+                {
+                  type: 'requirement' as ArtifactType,
+                  label: 'REQ',
+                  color: TYPE_COLORS.requirement.text,
+                },
+                { type: 'testCase' as ArtifactType, label: 'TC', color: TYPE_COLORS.testCase.text },
+                {
+                  type: 'information' as ArtifactType,
+                  label: 'INFO',
+                  color: TYPE_COLORS.information.text,
+                },
+              ].map(({ type, label, color }) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => toggleType(type)}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    border: selectedTypes.has(type)
+                      ? `2px solid ${color}`
+                      : '2px solid var(--color-border)',
+                    backgroundColor: selectedTypes.has(type) ? `${color}20` : 'transparent',
+                    color: selectedTypes.has(type) ? color : 'var(--color-text-muted)',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-xs)',
+                    fontWeight: 600,
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
           {filteredLinks.length === 0 ? (
             <div
@@ -611,6 +700,17 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                     >
                       Target
                     </th>
+                    {onDeleteLink && (
+                      <th
+                        style={{
+                          padding: '10px 12px',
+                          textAlign: 'center',
+                          fontWeight: 600,
+                          color: 'var(--color-text-secondary)',
+                          width: '60px',
+                        }}
+                      ></th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -627,6 +727,9 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                       }
                       onClickTarget={
                         onSelectArtifact ? () => onSelectArtifact(link.targetId) : undefined
+                      }
+                      onDelete={
+                        onDeleteLink && link.linkId ? () => onDeleteLink(link.linkId!) : undefined
                       }
                     />
                   ))}
@@ -697,33 +800,74 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
               const selectedArtifact = allArtifacts.find((a) => a.id === selectedArtifactId);
               if (!selectedArtifact) return null;
 
-              // Get direct outgoing links from linkedArtifacts
-              const outgoingLinks: { targetId: string; type: string }[] =
-                selectedArtifact.linkedArtifacts
-                  .filter((l) => l.targetId && allArtifacts.some((a) => a.id === l.targetId))
-                  .map((l) => ({ targetId: l.targetId, type: l.type || 'related_to' }));
+              // Get direct outgoing links from standaloneLinks
+              const outgoingLinks: { targetId: string; type: string }[] = standaloneLinks
+                .filter(
+                  (l) =>
+                    l.sourceId === selectedArtifactId &&
+                    allArtifacts.some((a) => a.id === l.targetId)
+                )
+                .map((l) => ({ targetId: l.targetId, type: l.type }));
+
+              // Also add from legacy linkedArtifacts
+              selectedArtifact.linkedArtifacts
+                .filter((l) => l.targetId && allArtifacts.some((a) => a.id === l.targetId))
+                .forEach((l) => {
+                  if (!outgoingLinks.some((ol) => ol.targetId === l.targetId)) {
+                    outgoingLinks.push({ targetId: l.targetId, type: l.type || 'related_to' });
+                  }
+                });
 
               // Also add legacy requirementIds from TestCases
               const selectedTestCase = testCases.find((tc) => tc.id === selectedArtifactId);
               if (selectedTestCase?.requirementIds) {
                 selectedTestCase.requirementIds.forEach((reqId) => {
-                  if (allArtifacts.some((a) => a.id === reqId)) {
+                  if (
+                    allArtifacts.some((a) => a.id === reqId) &&
+                    !outgoingLinks.some((ol) => ol.targetId === reqId)
+                  ) {
                     outgoingLinks.push({ targetId: reqId, type: 'verifies' });
                   }
                 });
               }
 
-              // Get direct incoming links from linkedArtifacts
+              // Get direct incoming links from standaloneLinks
+              const artifactTypeMap = new Map(allArtifacts.map((a) => [a.id, a.type]));
+              const getTypeFromId = (id: string): ArtifactType => {
+                if (id.startsWith('REQ-')) return 'requirement';
+                if (id.startsWith('UC-')) return 'useCase';
+                if (id.startsWith('TC-')) return 'testCase';
+                if (id.startsWith('INFO-')) return 'information';
+                return artifactTypeMap.get(id) || 'requirement';
+              };
+
               const incomingLinks: { sourceId: string; type: string; sourceType: ArtifactType }[] =
-                allArtifacts
-                  .filter((a) => a.linkedArtifacts.some((l) => l.targetId === selectedArtifactId))
-                  .map((a) => ({
-                    sourceId: a.id,
-                    type:
-                      a.linkedArtifacts.find((l) => l.targetId === selectedArtifactId)?.type ||
-                      'related_to',
-                    sourceType: a.type,
+                standaloneLinks
+                  .filter(
+                    (l) =>
+                      l.targetId === selectedArtifactId &&
+                      allArtifacts.some((a) => a.id === l.sourceId)
+                  )
+                  .map((l) => ({
+                    sourceId: l.sourceId,
+                    type: l.type,
+                    sourceType: getTypeFromId(l.sourceId),
                   }));
+
+              // Also add from legacy linkedArtifacts
+              allArtifacts
+                .filter((a) => a.linkedArtifacts.some((l) => l.targetId === selectedArtifactId))
+                .forEach((a) => {
+                  if (!incomingLinks.some((il) => il.sourceId === a.id)) {
+                    incomingLinks.push({
+                      sourceId: a.id,
+                      type:
+                        a.linkedArtifacts.find((l) => l.targetId === selectedArtifactId)?.type ||
+                        'related_to',
+                      sourceType: a.type,
+                    });
+                  }
+                });
 
               // Also add TestCases that have this artifact in requirementIds
               if (selectedArtifact.type === 'requirement') {
@@ -925,25 +1069,55 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
       {activeTab === 'matrix' &&
         (() => {
           const MAX_MATRIX_SIZE = 20;
-          const matrixArtifacts =
-            selectedType === 'all'
-              ? allArtifacts.slice(0, MAX_MATRIX_SIZE)
-              : allArtifacts.filter((a) => a.type === selectedType).slice(0, MAX_MATRIX_SIZE);
+          const unsortedArtifacts =
+            selectedTypes.size === 4
+              ? allArtifacts
+              : allArtifacts.filter((a) => selectedTypes.has(a.type));
 
-          // Build link map for quick lookup
+          // Type priority order: useCase, requirement, testCase, information
+          const typeOrder: Record<string, number> = {
+            useCase: 0,
+            requirement: 1,
+            testCase: 2,
+            information: 3,
+          };
+
+          // Sort by type priority first, then by ID numerically within each type
+          const matrixArtifacts = [...unsortedArtifacts]
+            .sort((a, b) => {
+              const typeCompare = (typeOrder[a.type] ?? 99) - (typeOrder[b.type] ?? 99);
+              if (typeCompare !== 0) return typeCompare;
+              return a.id.localeCompare(b.id, undefined, { numeric: true });
+            })
+            .slice(0, MAX_MATRIX_SIZE);
+
+          // Build link map for quick lookup (bidirectional)
           const linkMap = new Map<string, Map<string, string>>();
           allLinks.forEach((link) => {
+            // Forward direction
             if (!linkMap.has(link.sourceId)) linkMap.set(link.sourceId, new Map());
             linkMap.get(link.sourceId)!.set(link.targetId, link.type);
+
+            // Reverse direction (for mirroring across diagonal)
+            if (!linkMap.has(link.targetId)) linkMap.set(link.targetId, new Map());
+            if (!linkMap.get(link.targetId)!.has(link.sourceId)) {
+              // Add reverse with indicator (arrow pointing back)
+              linkMap.get(link.targetId)!.set(link.sourceId, `←${link.type}`);
+            }
           });
 
           const getLinkSymbol = (
             fromId: string,
             toId: string
-          ): { symbol: string; color: string } | null => {
+          ): { symbol: string; color: string; isReverse?: boolean } | null => {
             if (fromId === toId) return { symbol: '●', color: 'var(--color-text-muted)' };
             const type = linkMap.get(fromId)?.get(toId);
             if (!type) return null;
+
+            // Check if this is a reverse (incoming) link
+            const isReverse = type.startsWith('←');
+            const actualType = isReverse ? type.substring(1) : type;
+
             const symbols: Record<string, { symbol: string; color: string }> = {
               parent: { symbol: '↑', color: '#3b82f6' },
               child: { symbol: '↓', color: '#3b82f6' },
@@ -959,7 +1133,11 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
               references: { symbol: '→', color: '#6366f1' },
               referenced_by: { symbol: '←', color: '#6366f1' },
             };
-            return symbols[type] || { symbol: '•', color: 'var(--color-text-secondary)' };
+            const result = symbols[actualType] || {
+              symbol: '•',
+              color: 'var(--color-text-secondary)',
+            };
+            return { ...result, isReverse };
           };
 
           return (
@@ -988,26 +1166,52 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                 >
                   Traceability Matrix
                 </h3>
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value as ArtifactType | 'all')}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    color: 'var(--color-text-primary)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  <option value="all">All Types (max {MAX_MATRIX_SIZE})</option>
-                  <option value="requirement">Requirements</option>
-                  <option value="useCase">Use Cases</option>
-                  <option value="testCase">Test Cases</option>
-                  <option value="information">Information</option>
-                </select>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {[
+                    {
+                      type: 'useCase' as ArtifactType,
+                      label: 'UC',
+                      color: TYPE_COLORS.useCase.text,
+                    },
+                    {
+                      type: 'requirement' as ArtifactType,
+                      label: 'REQ',
+                      color: TYPE_COLORS.requirement.text,
+                    },
+                    {
+                      type: 'testCase' as ArtifactType,
+                      label: 'TC',
+                      color: TYPE_COLORS.testCase.text,
+                    },
+                    {
+                      type: 'information' as ArtifactType,
+                      label: 'INFO',
+                      color: TYPE_COLORS.information.text,
+                    },
+                  ].map(({ type, label, color }) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => toggleType(type)}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        border: selectedTypes.has(type)
+                          ? `2px solid ${color}`
+                          : '2px solid var(--color-border)',
+                        backgroundColor: selectedTypes.has(type) ? `${color}20` : 'transparent',
+                        color: selectedTypes.has(type) ? color : 'var(--color-text-muted)',
+                        cursor: 'pointer',
+                        fontSize: 'var(--font-size-xs)',
+                        fontWeight: 600,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
-
               {matrixArtifacts.length === 0 ? (
                 <div
                   style={{
@@ -1020,7 +1224,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                 </div>
               ) : (
                 <>
-                  {allArtifacts.length > MAX_MATRIX_SIZE && selectedType === 'all' && (
+                  {allArtifacts.length > MAX_MATRIX_SIZE && selectedTypes.size === 4 && (
                     <div
                       style={{
                         padding: '8px 12px',
@@ -1032,7 +1236,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                       }}
                     >
                       Showing first {MAX_MATRIX_SIZE} of {allArtifacts.length} artifacts. Use the
-                      filter to narrow down.
+                      toggles to narrow down.
                     </div>
                   )}
 
@@ -1107,10 +1311,22 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                                         : 'transparent',
                                     cursor: link && row.id !== col.id ? 'pointer' : 'default',
                                   }}
-                                  title={link && row.id !== col.id ? `${row.id} → ${col.id}` : ''}
+                                  title={
+                                    link && row.id !== col.id
+                                      ? link.isReverse
+                                        ? `${col.id} → ${row.id} (incoming)`
+                                        : `${row.id} → ${col.id}`
+                                      : ''
+                                  }
                                 >
                                   {link && (
-                                    <span style={{ color: link.color, fontWeight: 600 }}>
+                                    <span
+                                      style={{
+                                        color: link.color,
+                                        fontWeight: 600,
+                                        opacity: link.isReverse ? 0.5 : 1,
+                                      }}
+                                    >
                                       {link.symbol}
                                     </span>
                                   )}
