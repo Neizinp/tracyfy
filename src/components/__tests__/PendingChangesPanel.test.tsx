@@ -15,6 +15,16 @@ vi.mock('../../app/providers/UserProvider', () => ({
   }),
 }));
 
+// Mock the useBackgroundTasks hook
+vi.mock('../../app/providers/BackgroundTasksProvider', () => ({
+  useBackgroundTasks: () => ({
+    tasks: [],
+    isWorking: false,
+    startTask: vi.fn(() => 'task-1'),
+    endTask: vi.fn(),
+  }),
+}));
+
 import { useFileSystem } from '../../app/providers/FileSystemProvider';
 
 describe('PendingChangesPanel', () => {

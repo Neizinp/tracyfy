@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { FileText, GitCommit, AlertCircle } from 'lucide-react';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { useUser } from '../app/providers/UserProvider';
+import { useBackgroundTasks } from '../app/providers/BackgroundTasksProvider';
 import type { ArtifactChange } from '../types';
 
 export function PendingChangesPanel() {
   const { pendingChanges, commitFile, projects } = useFileSystem();
   const { currentUser } = useUser();
+  const { startTask, endTask } = useBackgroundTasks();
   const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
   const [parsedChanges, setParsedChanges] = useState<ArtifactChange[]>([]);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -104,11 +106,18 @@ export function PendingChangesPanel() {
     // Clean up the ref for this change
     delete inputRefs.current[change.id];
 
+    // Track the commit operation as a background task
+    const taskId = startTask(`Committing ${change.title}...`);
+
     // Run commit in background (don't await - let it complete asynchronously)
-    commitFile(change.path, message, currentUser?.name).catch((error) => {
-      console.error('Failed to commit:', error);
-      // On error, the user will see the change reappear on next status refresh
-    });
+    commitFile(change.path, message, currentUser?.name)
+      .catch((error) => {
+        console.error('Failed to commit:', error);
+        // On error, the user will see the change reappear on next status refresh
+      })
+      .finally(() => {
+        endTask(taskId);
+      });
   };
 
   // Effect to focus the next input after a commit

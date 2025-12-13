@@ -26,3 +26,4 @@ export { BaselineRevisionHistory } from './BaselineRevisionHistory';
 export { LoadingOverlay } from './LoadingOverlay';
 export { DirectorySelector } from './DirectorySelector';
 export { SnapshotViewer } from './SnapshotViewer';
+export { StatusBar } from './StatusBar';

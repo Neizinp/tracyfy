@@ -11,28 +11,31 @@ import {
   ImportExportProvider,
   FileSystemProvider,
   UserProvider,
+  BackgroundTasksProvider,
 } from './providers';
 
 export const AppProviders: React.FC<{ children: ReactNode }> = ({ children }) => {
   return (
-    <FileSystemProvider>
-      <UserProvider>
-        <ProjectProvider>
-          <UIProvider>
-            <GlobalStateProvider>
-              <RequirementsProvider>
-                <UseCasesProvider>
-                  <TestCasesProvider>
-                    <InformationProvider>
-                      <ImportExportProvider>{children}</ImportExportProvider>
-                    </InformationProvider>
-                  </TestCasesProvider>
-                </UseCasesProvider>
-              </RequirementsProvider>
-            </GlobalStateProvider>
-          </UIProvider>
-        </ProjectProvider>
-      </UserProvider>
-    </FileSystemProvider>
+    <BackgroundTasksProvider>
+      <FileSystemProvider>
+        <UserProvider>
+          <ProjectProvider>
+            <UIProvider>
+              <GlobalStateProvider>
+                <RequirementsProvider>
+                  <UseCasesProvider>
+                    <TestCasesProvider>
+                      <InformationProvider>
+                        <ImportExportProvider>{children}</ImportExportProvider>
+                      </InformationProvider>
+                    </TestCasesProvider>
+                  </UseCasesProvider>
+                </RequirementsProvider>
+              </GlobalStateProvider>
+            </UIProvider>
+          </ProjectProvider>
+        </UserProvider>
+      </FileSystemProvider>
+    </BackgroundTasksProvider>
   );
 };
