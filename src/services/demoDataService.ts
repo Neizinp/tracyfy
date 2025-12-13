@@ -94,14 +94,16 @@ export async function createDemoProject(): Promise<Project> {
   project.lastModified = now;
   await diskProjectService.updateProject(project);
 
-  // 7. Create links between artifacts (project-specific for demo data)
+  // 7. Create links between artifacts
+  // Links can be global (visible everywhere) or project-specific
   for (const linkDef of DEMO_ARTIFACTS.links) {
     const sourceId = getArtifactId(linkDef.sourceType, linkDef.sourceIndex, createdIds);
     const targetId = getArtifactId(linkDef.targetType, linkDef.targetIndex, createdIds);
 
     if (sourceId && targetId) {
-      // Demo links are project-specific (not global)
-      await diskLinkService.createLink(sourceId, targetId, linkDef.type, [project.id]);
+      // Global links have empty projectIds, project links include this project's ID
+      const projectIds = linkDef.scope === 'global' ? [] : [project.id];
+      await diskLinkService.createLink(sourceId, targetId, linkDef.type, projectIds);
     }
   }
 
