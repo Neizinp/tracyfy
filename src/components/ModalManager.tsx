@@ -22,6 +22,8 @@ import {
   useFileSystem,
 } from '../app/providers';
 import type { Information, ArtifactLink } from '../types';
+import { diskLinkService } from '../services/diskLinkService';
+import type { LinkType } from '../utils/linkTypes';
 
 export const ModalManager: React.FC = () => {
   // UI state
@@ -43,73 +45,34 @@ export const ModalManager: React.FC = () => {
     useGlobalState();
 
   // Artifact state and operations
-  const { requirements, handleAddRequirement, handleUpdateRequirement, handleDeleteRequirement } =
+  const { handleAddRequirement, handleUpdateRequirement, handleDeleteRequirement } =
     useRequirements();
-  const { useCases, handleAddUseCase, handleUpdateUseCase } = useUseCases();
+  const { handleAddUseCase } = useUseCases();
   const { testCases, handleAddTestCase, handleUpdateTestCase, handleDeleteTestCase } =
     useTestCases();
-  const { information, handleAddInformation, handleUpdateInformation } = useInformation();
+  const { handleAddInformation, handleUpdateInformation } = useInformation();
 
   // FileSystem state
   const { baselines, createBaseline, reloadData } = useFileSystem();
 
-  // Handler for adding a link to an artifact's linkedArtifacts array
+  // Handler for creating a Link entity - now uses diskLinkService
   const handleAddArtifactLink = useCallback(
-    (newLink: ArtifactLink) => {
+    async (newLink: ArtifactLink) => {
       const sourceId = ui.linkSourceId || ui.selectedRequirementId;
-      const sourceType = ui.linkSourceType || 'requirement';
 
       if (!sourceId) return;
 
-      // Find and update the source artifact based on type
-      switch (sourceType) {
-        case 'requirement': {
-          const req = requirements.find((r) => r.id === sourceId);
-          if (req) {
-            const updatedLinks = [...(req.linkedArtifacts || []), newLink];
-            handleUpdateRequirement(sourceId, { linkedArtifacts: updatedLinks });
-          }
-          break;
-        }
-        case 'usecase': {
-          const uc = useCases.find((u) => u.id === sourceId);
-          if (uc) {
-            const updatedLinks = [...(uc.linkedArtifacts || []), newLink];
-            handleUpdateUseCase(sourceId, { linkedArtifacts: updatedLinks });
-          }
-          break;
-        }
-        case 'testcase': {
-          const tc = testCases.find((t) => t.id === sourceId);
-          if (tc) {
-            const updatedLinks = [...(tc.linkedArtifacts || []), newLink];
-            handleUpdateTestCase(sourceId, { linkedArtifacts: updatedLinks });
-          }
-          break;
-        }
-        case 'information': {
-          const info = information.find((i) => i.id === sourceId);
-          if (info) {
-            const updatedLinks = [...(info.linkedArtifacts || []), newLink];
-            handleUpdateInformation(sourceId, { linkedArtifacts: updatedLinks });
-          }
-          break;
-        }
+      try {
+        // Create a Link file using the new link service
+        await diskLinkService.createLink(sourceId, newLink.targetId, newLink.type as LinkType);
+        console.log(`Link created: ${sourceId} -> ${newLink.targetId} (${newLink.type})`);
+      } catch (error) {
+        console.error('Failed to create link:', error);
       }
 
       ui.setIsLinkModalOpen(false);
     },
-    [
-      ui,
-      requirements,
-      useCases,
-      testCases,
-      information,
-      handleUpdateRequirement,
-      handleUpdateUseCase,
-      handleUpdateTestCase,
-      handleUpdateInformation,
-    ]
+    [ui]
   );
 
   // Combined handler for InformationModal - handles both add and update
