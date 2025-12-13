@@ -8,7 +8,6 @@ export function PendingChangesPanel() {
   const { pendingChanges, commitFile, projects } = useFileSystem();
   const { currentUser } = useUser();
   const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
-  const [committing, setCommitting] = useState<Record<string, boolean>>({});
   const [parsedChanges, setParsedChanges] = useState<ArtifactChange[]>([]);
 
   useEffect(() => {
@@ -79,23 +78,22 @@ export function PendingChangesPanel() {
       return;
     }
 
-    setCommitting((prev) => ({ ...prev, [change.id]: true }));
+    // Optimistic UI: Clear the commit message immediately so the entry disappears
+    // The commit will continue in the background
+    setCommitMessages((prev) => {
+      const updated = { ...prev };
+      delete updated[change.id];
+      return updated;
+    });
 
-    try {
-      await commitFile(change.path, message, currentUser?.name);
+    // Remove from parsed changes immediately for instant feedback
+    setParsedChanges((prev) => prev.filter((c) => c.id !== change.id));
 
-      // Clear the commit message
-      setCommitMessages((prev) => {
-        const updated = { ...prev };
-        delete updated[change.id];
-        return updated;
-      });
-    } catch (error) {
+    // Run commit in background (don't await - let it complete asynchronously)
+    commitFile(change.path, message, currentUser?.name).catch((error) => {
       console.error('Failed to commit:', error);
-      alert(`Failed to commit: ${error}`);
-    } finally {
-      setCommitting((prev) => ({ ...prev, [change.id]: false }));
-    }
+      // On error, the user will see the change reappear on next status refresh
+    });
   };
 
   const getTypeIcon = () => {
@@ -214,17 +212,7 @@ export function PendingChangesPanel() {
                   value={commitMessages[change.id] || ''}
                   onChange={(e) => handleCommitMessageChange(change.id, e.target.value)}
                   onKeyDown={(e) => {
-                    console.log('[PendingChanges] KeyDown:', e.key, {
-                      isCommitting: committing[change.id],
-                      message: commitMessages[change.id],
-                      hasTrimmedMessage: !!commitMessages[change.id]?.trim(),
-                    });
-                    if (
-                      e.key === 'Enter' &&
-                      !committing[change.id] &&
-                      commitMessages[change.id]?.trim()
-                    ) {
-                      console.log('[PendingChanges] Triggering commit via Enter');
+                    if (e.key === 'Enter' && commitMessages[change.id]?.trim()) {
                       handleCommit(change);
                     }
                   }}
@@ -239,12 +227,11 @@ export function PendingChangesPanel() {
                     marginBottom: 'var(--spacing-sm)',
                     outline: 'none',
                   }}
-                  disabled={committing[change.id]}
                 />
 
                 <button
                   onClick={() => handleCommit(change)}
-                  disabled={committing[change.id] || !commitMessages[change.id]?.trim()}
+                  disabled={!commitMessages[change.id]?.trim()}
                   style={{
                     width: '100%',
                     display: 'flex',
@@ -258,15 +245,12 @@ export function PendingChangesPanel() {
                     backgroundColor: 'var(--color-accent)',
                     border: 'none',
                     borderRadius: '4px',
-                    cursor:
-                      committing[change.id] || !commitMessages[change.id]?.trim()
-                        ? 'not-allowed'
-                        : 'pointer',
-                    opacity: committing[change.id] || !commitMessages[change.id]?.trim() ? 0.5 : 1,
+                    cursor: !commitMessages[change.id]?.trim() ? 'not-allowed' : 'pointer',
+                    opacity: !commitMessages[change.id]?.trim() ? 0.5 : 1,
                   }}
                 >
                   <GitCommit size={14} />
-                  {committing[change.id] ? 'Committing...' : 'Commit'}
+                  Commit
                 </button>
               </div>
             ))}
