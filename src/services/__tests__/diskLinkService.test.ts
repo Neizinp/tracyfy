@@ -161,7 +161,9 @@ lastModified: 1700000000000
     it('should create a new link file with generated ID', async () => {
       vi.mocked(fileSystemService.readFile).mockResolvedValue(null); // Counter doesn't exist
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
-      vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(undefined);
+      vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
+        undefined as unknown as FileSystemDirectoryHandle
+      );
 
       const link = await diskLinkService.createLink('REQ-001', 'UC-001', 'satisfies');
 
@@ -179,7 +181,9 @@ lastModified: 1700000000000
     it('should increment counter for subsequent links', async () => {
       vi.mocked(fileSystemService.readFile).mockResolvedValue('5'); // Counter at 5
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
-      vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(undefined);
+      vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
+        undefined as unknown as FileSystemDirectoryHandle
+      );
 
       const link = await diskLinkService.createLink('REQ-001', 'TC-001', 'verifies');
 
@@ -190,7 +194,9 @@ lastModified: 1700000000000
     it('should create project-scoped links', async () => {
       vi.mocked(fileSystemService.readFile).mockResolvedValue(null);
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
-      vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(undefined);
+      vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
+        undefined as unknown as FileSystemDirectoryHandle
+      );
 
       const link = await diskLinkService.createLink('REQ-001', 'UC-001', 'satisfies', [
         'PRJ-001',
@@ -203,7 +209,9 @@ lastModified: 1700000000000
     it('should set dateCreated and lastModified', async () => {
       vi.mocked(fileSystemService.readFile).mockResolvedValue(null);
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
-      vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(undefined);
+      vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
+        undefined as unknown as FileSystemDirectoryHandle
+      );
 
       const before = Date.now();
       const link = await diskLinkService.createLink('REQ-001', 'UC-001', 'satisfies');

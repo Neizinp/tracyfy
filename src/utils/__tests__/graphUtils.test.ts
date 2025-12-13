@@ -6,12 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  transformArtifactsToNodes,
-  transformLinksToEdges,
-  getNodeColor,
-  type LayoutAlgorithm,
-} from '../graphUtils';
+import { transformArtifactsToNodes, transformLinksToEdges, getNodeColor } from '../graphUtils';
 import type { UnifiedArtifact, ArtifactType } from '../../components/traceability';
 
 describe('graphUtils', () => {
@@ -25,8 +20,6 @@ describe('graphUtils', () => {
     id,
     type,
     title,
-    status: 'draft',
-    lastModified: Date.now(),
     linkedArtifacts: linkedArtifacts.map((targetId) => ({ targetId, type: 'related_to' })),
   });
 
