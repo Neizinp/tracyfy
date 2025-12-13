@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link2, CheckCircle2 } from 'lucide-react';
-import type { Requirement, UseCase, TestCase, Information } from '../types';
+import type { Requirement, UseCase, TestCase, Information, Link } from '../types';
 import type { ArtifactType, UnifiedArtifact, GapInfo } from './traceability';
 import { TYPE_COLORS, SummaryCard, GapItem, LinkRow } from './traceability';
 
@@ -9,6 +9,7 @@ interface TraceabilityDashboardProps {
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
+  standaloneLinks?: Link[]; // Links from the new Link entity system
   onSelectArtifact?: (artifactId: string) => void;
   onAddLink?: (artifactId: string, artifactType: string) => void;
   onRemoveLink?: (artifactId: string, targetId: string) => void;
@@ -19,6 +20,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   useCases,
   testCases,
   information,
+  standaloneLinks = [],
   onSelectArtifact,
   onAddLink,
   onRemoveLink,
@@ -146,7 +148,29 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
     const artifactTypeMap = new Map(allArtifacts.map((a) => [a.id, a.type]));
     const artifactIds = new Set(allArtifacts.map((a) => a.id));
 
-    // Add links from linkedArtifacts
+    // Helper to determine artifact type from ID
+    const getTypeFromId = (id: string): ArtifactType => {
+      if (id.startsWith('REQ-')) return 'requirement';
+      if (id.startsWith('UC-')) return 'useCase';
+      if (id.startsWith('TC-')) return 'testCase';
+      if (id.startsWith('INFO-')) return 'information';
+      return artifactTypeMap.get(id) || 'requirement';
+    };
+
+    // Add standalone Link entities (new system)
+    standaloneLinks.forEach((link) => {
+      if (artifactIds.has(link.sourceId) && artifactIds.has(link.targetId)) {
+        links.push({
+          sourceId: link.sourceId,
+          targetId: link.targetId,
+          type: link.type,
+          sourceType: getTypeFromId(link.sourceId),
+          targetType: getTypeFromId(link.targetId),
+        });
+      }
+    });
+
+    // Add links from linkedArtifacts (legacy embedded links)
     allArtifacts.forEach((artifact) => {
       artifact.linkedArtifacts.forEach((link) => {
         // Only include links with valid type and existing target
@@ -180,7 +204,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
     });
 
     return links;
-  }, [allArtifacts, testCases]);
+  }, [allArtifacts, testCases, standaloneLinks]);
 
   // Filter links by selected type
   const filteredLinks = useMemo(() => {

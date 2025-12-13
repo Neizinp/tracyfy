@@ -36,25 +36,26 @@ export function useLinkService(artifactId?: string): UseLinkServiceReturn {
 
   // Load links for the artifact
   const loadLinks = useCallback(async () => {
-    if (!artifactId) {
-      setOutgoingLinks([]);
-      setIncomingLinks([]);
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      const [outgoing, incoming, all] = await Promise.all([
-        diskLinkService.getOutgoingLinks(artifactId),
-        diskLinkService.getIncomingLinks(artifactId),
-        diskLinkService.getAllLinks(),
-      ]);
-
-      setOutgoingLinks(outgoing);
-      setIncomingLinks(incoming);
+      // Always load all links
+      const all = await diskLinkService.getAllLinks();
       setAllLinks(all);
+
+      // Only load artifact-specific links if artifactId is provided
+      if (artifactId) {
+        const [outgoing, incoming] = await Promise.all([
+          diskLinkService.getOutgoingLinks(artifactId),
+          diskLinkService.getIncomingLinks(artifactId),
+        ]);
+        setOutgoingLinks(outgoing);
+        setIncomingLinks(incoming);
+      } else {
+        setOutgoingLinks([]);
+        setIncomingLinks([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load links');
       console.error('Failed to load links:', err);

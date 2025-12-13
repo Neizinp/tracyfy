@@ -7,6 +7,7 @@ import {
   useInformation,
   useUI,
 } from '../app/providers';
+import { useLinkService } from '../hooks/useLinkService';
 
 export const TraceabilityDashboardPage: React.FC = () => {
   const { requirements, handleUpdateRequirement } = useRequirements();
@@ -14,6 +15,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
   const { testCases, handleUpdateTestCase } = useTestCases();
   const { information, handleUpdateInformation } = useInformation();
   const { searchQuery, setLinkSourceId, setLinkSourceType, setIsLinkModalOpen } = useUI();
+  const { allLinks: standaloneLinks } = useLinkService();
 
   const filteredRequirements = useMemo(() => {
     const query = searchQuery.toLowerCase();
@@ -133,6 +135,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
       useCases={filteredUseCases}
       testCases={filteredTestCases}
       information={filteredInformation}
+      standaloneLinks={standaloneLinks}
       onAddLink={handleAddLink}
       onRemoveLink={handleRemoveLink}
     />
