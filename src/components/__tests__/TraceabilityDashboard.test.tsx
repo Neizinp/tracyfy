@@ -1,7 +1,24 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { TraceabilityDashboard } from '../TraceabilityDashboard';
-import type { Requirement, UseCase, TestCase, Information } from '../../types';
+import type { Requirement, UseCase, TestCase, Information, Link } from '../../types';
+import { diskLinkService } from '../../services/diskLinkService';
+
+// Mock the diskLinkService for LinksView
+vi.mock('../../services/diskLinkService', () => ({
+  diskLinkService: {
+    getAllLinks: vi.fn(),
+    deleteLink: vi.fn(),
+    updateLink: vi.fn(),
+  },
+}));
+
+// Default mock setup - reset before each test
+beforeEach(() => {
+  vi.clearAllMocks();
+  // Default to empty array for tests that don't care about links
+  vi.mocked(diskLinkService.getAllLinks).mockResolvedValue([]);
+});
 
 describe('TraceabilityDashboard', () => {
   const mockRequirements: Requirement[] = [
@@ -138,11 +155,15 @@ describe('TraceabilityDashboard', () => {
       expect(screen.getByText(/Unlinked Artifacts/)).toBeInTheDocument();
     });
 
-    it('switches to Links tab when clicked', () => {
+    it('switches to Links tab when clicked', async () => {
       render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
-      expect(screen.getByText(/All Links/)).toBeInTheDocument();
+      // LinksView shows header like "Links (N)"
+      await waitFor(() => {
+        expect(screen.queryByText('Loading links...')).not.toBeInTheDocument();
+      });
+      expect(screen.getByRole('heading', { level: 2 })).toBeInTheDocument();
     });
 
     it('switches to Impact tab when clicked', () => {
@@ -195,30 +216,67 @@ describe('TraceabilityDashboard', () => {
   });
 
   describe('Links Tab', () => {
-    it('displays links table with source and target', () => {
+    // Create mock links that match what the component would derive
+    const mockLinks: Link[] = [
+      {
+        id: 'LINK-001',
+        sourceId: 'REQ-001',
+        targetId: 'UC-001',
+        type: 'satisfies',
+        projectIds: [],
+        dateCreated: Date.now(),
+        lastModified: Date.now(),
+      },
+      {
+        id: 'LINK-002',
+        sourceId: 'TC-001',
+        targetId: 'REQ-001',
+        type: 'verifies',
+        projectIds: [],
+        dateCreated: Date.now(),
+        lastModified: Date.now(),
+      },
+    ];
+
+    beforeEach(() => {
+      vi.mocked(diskLinkService.getAllLinks).mockResolvedValue(mockLinks);
+    });
+
+    it('displays LinksView with table headers', async () => {
       render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
+      await waitFor(() => {
+        expect(screen.queryByText('Loading links...')).not.toBeInTheDocument();
+      });
+
       expect(screen.getByText('Source')).toBeInTheDocument();
-      expect(screen.getByText('Link Type')).toBeInTheDocument();
       expect(screen.getByText('Target')).toBeInTheDocument();
     });
 
-    it('shows link relationships', () => {
+    it('shows links from diskLinkService', async () => {
       render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
-      expect(screen.getAllByText('REQ-001').length).toBeGreaterThan(0);
-      expect(screen.getByText('satisfies')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText('Loading links...')).not.toBeInTheDocument();
+      });
+
+      expect(screen.getByText('LINK-001')).toBeInTheDocument();
+      expect(screen.getByText('LINK-002')).toBeInTheDocument();
     });
 
-    it('includes legacy requirementIds as verifies links', () => {
+    it('displays link types in the table', async () => {
       render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
-      // TC-001 has requirementIds: ['REQ-001'] which should show as verifies
-      expect(screen.getByText('verifies')).toBeInTheDocument();
-      expect(screen.getByText('TC-001')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText('Loading links...')).not.toBeInTheDocument();
+      });
+
+      // Use getAllByText since link types appear in both the dropdown and the table
+      expect(screen.getAllByText('Satisfies').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Verifies').length).toBeGreaterThan(0);
     });
   });
 
