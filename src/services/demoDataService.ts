@@ -35,6 +35,22 @@ export async function createDemoProject(): Promise<Project> {
   const timestamp = `${nowDate.toLocaleString('en-US', { month: 'short' })}${nowDate.getDate()}-${String(nowDate.getHours()).padStart(2, '0')}${String(nowDate.getMinutes()).padStart(2, '0')}`;
   const projectName = `${DEMO_PROJECT.name} (${timestamp})`;
 
+  // 0. Ensure a demo user exists and is selected
+  const existingUsers = await diskProjectService.loadAllUsers();
+  let demoUser = existingUsers.find((u) => u.name === 'Demo User');
+  if (!demoUser) {
+    const userId = await diskProjectService.getNextId('users');
+    demoUser = {
+      id: userId,
+      name: 'Demo User',
+      dateCreated: now,
+      lastModified: now,
+    };
+    await diskProjectService.saveUser(demoUser);
+  }
+  // Set as current user so editing works
+  await diskProjectService.setCurrentUserId(demoUser.id);
+
   // 1. Create the project
   const project = await diskProjectService.createProject(projectName, DEMO_PROJECT.description);
 
