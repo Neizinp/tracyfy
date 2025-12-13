@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { fileSystemService } from '../../services/fileSystemService';
 import { realGitService, type FileStatus, type CommitInfo } from '../../services/realGitService';
 import { diskProjectService } from '../../services/diskProjectService';
+import { useBackgroundTasks } from './BackgroundTasksProvider';
 import type {
   Requirement,
   UseCase,
@@ -78,14 +79,22 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Counter for E2E mode to generate unique IDs
   const [e2eCounters, setE2eCounters] = useState({ req: 0, uc: 0, tc: 0, info: 0 });
 
+  // Background tasks for status bar
+  const { startTask, endTask } = useBackgroundTasks();
+
   const refreshStatus = useCallback(async () => {
     console.log('[refreshStatus] Called');
     if (realGitService.isInitialized()) {
-      const status = await realGitService.getStatus();
-      console.log('[refreshStatus] Updated pendingChanges:', status);
-      setPendingChanges(status);
+      const taskId = startTask('Refreshing git status...');
+      try {
+        const status = await realGitService.getStatus();
+        console.log('[refreshStatus] Updated pendingChanges:', status);
+        setPendingChanges(status);
+      } finally {
+        endTask(taskId);
+      }
     }
-  }, []);
+  }, [startTask, endTask]);
 
   const refreshBaselines = useCallback(async () => {
     if (realGitService.isInitialized()) {
@@ -107,25 +116,30 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Load all data from disk using diskProjectService
   const reloadData = useCallback(async () => {
-    console.log('[reloadData] Loading all data from disk...');
-    const data = await diskProjectService.loadAll();
-    setProjects(data.projects);
-    setCurrentProjectIdState(data.currentProjectId);
-    setRequirements(data.requirements);
-    setUseCases(data.useCases);
-    setTestCases(data.testCases);
-    setInformation(data.information);
+    const taskId = startTask('Loading data...');
+    try {
+      console.log('[reloadData] Loading all data from disk...');
+      const data = await diskProjectService.loadAll();
+      setProjects(data.projects);
+      setCurrentProjectIdState(data.currentProjectId);
+      setRequirements(data.requirements);
+      setUseCases(data.useCases);
+      setTestCases(data.testCases);
+      setInformation(data.information);
 
-    // Recalculate counters to make sure they're in sync
-    await diskProjectService.recalculateCounters();
-    console.log('[reloadData] Data loaded:', {
-      projects: data.projects.length,
-      requirements: data.requirements.length,
-      useCases: data.useCases.length,
-      testCases: data.testCases.length,
-      information: data.information.length,
-    });
-  }, []);
+      // Recalculate counters to make sure they're in sync
+      await diskProjectService.recalculateCounters();
+      console.log('[reloadData] Data loaded:', {
+        projects: data.projects.length,
+        requirements: data.requirements.length,
+        useCases: data.useCases.length,
+        testCases: data.testCases.length,
+        information: data.information.length,
+      });
+    } finally {
+      endTask(taskId);
+    }
+  }, [startTask, endTask]);
 
   // Try to restore previously selected directory on mount
   useEffect(() => {
