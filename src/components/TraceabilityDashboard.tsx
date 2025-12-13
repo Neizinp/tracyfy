@@ -3,6 +3,7 @@ import { Link2, CheckCircle2 } from 'lucide-react';
 import type { Requirement, UseCase, TestCase, Information, Link } from '../types';
 import type { ArtifactType, UnifiedArtifact, GapInfo } from './traceability';
 import { TYPE_COLORS, SummaryCard, GapItem, LinkRow } from './traceability';
+import { TraceabilityGraph } from './graph/TraceabilityGraph';
 
 interface TraceabilityDashboardProps {
   requirements: Requirement[];
@@ -27,9 +28,9 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   onRemoveLink,
   onDeleteLink,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'gaps' | 'links' | 'impact' | 'matrix'>(
-    'overview'
-  );
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph'
+  >('overview');
   // Multi-select type toggles - all selected by default
   const [selectedTypes, setSelectedTypes] = useState<Set<ArtifactType>>(
     new Set(['requirement', 'useCase', 'testCase', 'information'])
@@ -308,6 +309,13 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
             style={tabStyle(activeTab === 'matrix')}
           >
             Matrix
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('graph')}
+            style={tabStyle(activeTab === 'graph')}
+          >
+            Graph
           </button>
         </div>
       </div>
@@ -1379,6 +1387,15 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
             </div>
           );
         })()}
+      {activeTab === 'graph' && (
+        <TraceabilityGraph
+          artifacts={allArtifacts}
+          links={allLinks}
+          selectedTypes={selectedTypes}
+          onSelectArtifact={onSelectArtifact}
+          onToggleType={toggleType}
+        />
+      )}
     </div>
   );
 };
