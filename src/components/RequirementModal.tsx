@@ -5,7 +5,8 @@ import { MarkdownEditor } from './MarkdownEditor';
 import { formatDateTime } from '../utils/dateUtils';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI, useGlobalState, useUser } from '../app/providers';
-import { useIncomingLinks } from '../hooks/useIncomingLinks';
+import { useLinkService } from '../hooks/useLinkService';
+import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 
 interface RequirementModalProps {
   isOpen: boolean;
@@ -42,18 +43,12 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
     setSelectedInformation,
     setIsInformationModalOpen,
   } = useUI();
-  const { requirements, useCases, testCases, information } = useGlobalState();
+  const { requirements, useCases, information } = useGlobalState();
   const { currentUser } = useUser();
   const isEditMode = requirement !== null;
 
-  // Compute incoming links (artifacts that link TO this requirement)
-  const incomingLinks = useIncomingLinks({
-    targetId: requirement?.id || '',
-    requirements,
-    useCases,
-    testCases,
-    information,
-  });
+  // Get links using the new link service
+  const { outgoingLinks, incomingLinks, loading: linksLoading } = useLinkService(requirement?.id);
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [title, setTitle] = useState('');
@@ -576,7 +571,17 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
                     >
                       Save the requirement first to add relationships.
                     </div>
-                  ) : linkedArtifacts.length === 0 ? (
+                  ) : linksLoading ? (
+                    <div
+                      style={{
+                        padding: '8px',
+                        color: 'var(--color-text-muted)',
+                        fontSize: 'var(--font-size-sm)',
+                      }}
+                    >
+                      Loading links...
+                    </div>
+                  ) : outgoingLinks.length === 0 ? (
                     <div
                       style={{
                         padding: '8px',
@@ -589,9 +594,9 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      {linkedArtifacts.map((link, index) => (
+                      {outgoingLinks.map((link) => (
                         <div
-                          key={`${link.targetId}-${index}`}
+                          key={link.id}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -637,7 +642,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
                                 fontFamily: 'monospace',
                               }}
                             >
-                              {link.type.replace('_', ' ')}
+                              {LINK_TYPE_LABELS[link.type] || link.type.replace('_', ' ')}
                             </span>
                             <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
                             <span style={{ fontWeight: 500, color: 'var(--color-accent)' }}>
