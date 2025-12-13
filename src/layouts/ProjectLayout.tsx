@@ -74,7 +74,7 @@ export const ProjectLayout: React.FC = () => {
     useGlobalState();
 
   // FileSystem context
-  const { baselines, reloadData } = useFileSystem();
+  const { baselines, reloadData, refreshStatus } = useFileSystem();
 
   // Import/Export handlers
   const importExport = useImportExport();
@@ -100,13 +100,14 @@ export const ProjectLayout: React.FC = () => {
     try {
       const demoProject = await createDemoProject();
       await reloadData();
+      await refreshStatus(); // Refresh git status so pending changes show up
       switchProject(demoProject.id);
     } catch (error) {
       console.error('Failed to create demo project:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       alert(`Failed to create demo project: ${errorMessage}`);
     }
-  }, [reloadData, switchProject]);
+  }, [reloadData, refreshStatus, switchProject]);
 
   // Get page title from current route
   const getPageTitle = () => {
