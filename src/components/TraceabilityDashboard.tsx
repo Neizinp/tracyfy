@@ -99,14 +99,20 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   // Build all links set for bi-directional lookup
   const allLinksSet = useMemo(() => {
     const links = new Set<string>();
+    // Include legacy embedded links
     allArtifacts.forEach((artifact) => {
       artifact.linkedArtifacts.forEach((link) => {
         links.add(artifact.id);
         links.add(link.targetId);
       });
     });
+    // Include standalone Link entities (new system)
+    standaloneLinks.forEach((link) => {
+      links.add(link.sourceId);
+      links.add(link.targetId);
+    });
     return links;
-  }, [allArtifacts]);
+  }, [allArtifacts, standaloneLinks]);
 
   // Calculate coverage stats per type
   const stats = useMemo(() => {
