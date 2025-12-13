@@ -38,7 +38,13 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
   const [status, setStatus] = useState<UseCase['status']>('draft');
 
   // Get links using the new link service
-  const { outgoingLinks, incomingLinks, loading: linksLoading } = useLinkService(useCase?.id);
+  const {
+    outgoingLinks,
+    incomingLinks,
+    loading: linksLoading,
+  } = useLinkService({
+    artifactId: useCase?.id,
+  });
 
   useEffect(() => {
     if (useCase) {

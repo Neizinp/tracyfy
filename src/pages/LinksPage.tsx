@@ -5,7 +5,7 @@
  */
 
 import { LinksView } from '../components/LinksView';
-import { useUI } from '../app/providers';
+import { useUI, useProject } from '../app/providers';
 
 export function LinksPage() {
   const {
@@ -16,6 +16,8 @@ export function LinksPage() {
     setSelectedInformation,
     setIsInformationModalOpen,
   } = useUI();
+
+  const { projects } = useProject();
 
   // Navigate to an artifact's modal
   const handleNavigateToArtifact = (id: string, type: string) => {
@@ -39,5 +41,5 @@ export function LinksPage() {
     }
   };
 
-  return <LinksView onNavigateToArtifact={handleNavigateToArtifact} />;
+  return <LinksView onNavigateToArtifact={handleNavigateToArtifact} projects={projects} />;
 }

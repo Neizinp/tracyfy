@@ -21,7 +21,8 @@ import {
   useInformation,
   useFileSystem,
 } from '../app/providers';
-import type { Information, ArtifactLink } from '../types';
+import type { Information } from '../types';
+import type { LinkModalResult } from './LinkModal';
 import { diskLinkService } from '../services/diskLinkService';
 import type { LinkType } from '../utils/linkTypes';
 
@@ -57,15 +58,22 @@ export const ModalManager: React.FC = () => {
 
   // Handler for creating a Link entity - now uses diskLinkService
   const handleAddArtifactLink = useCallback(
-    async (newLink: ArtifactLink) => {
+    async (newLink: LinkModalResult) => {
       const sourceId = ui.linkSourceId || ui.selectedRequirementId;
 
       if (!sourceId) return;
 
       try {
-        // Create a Link file using the new link service
-        await diskLinkService.createLink(sourceId, newLink.targetId, newLink.type as LinkType);
-        console.log(`Link created: ${sourceId} -> ${newLink.targetId} (${newLink.type})`);
+        // Create a Link file using the new link service with project scope
+        await diskLinkService.createLink(
+          sourceId,
+          newLink.targetId,
+          newLink.type as LinkType,
+          newLink.projectIds
+        );
+        console.log(
+          `Link created: ${sourceId} -> ${newLink.targetId} (${newLink.type}) [${newLink.projectIds.length === 0 ? 'Global' : newLink.projectIds.join(', ')}]`
+        );
       } catch (error) {
         console.error('Failed to create link:', error);
       }

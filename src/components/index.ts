@@ -1,6 +1,7 @@
 export * from './Layout';
 export * from './RequirementModal';
 export * from './LinkModal';
+export { EditLinkModal } from './EditLinkModal';
 export * from './DetailedRequirementView';
 export * from './TraceabilityDashboard';
 export * from './UseCaseModal';

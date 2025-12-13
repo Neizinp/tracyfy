@@ -25,7 +25,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
   const { testCases, handleUpdateTestCase } = useTestCases();
   const { information, handleUpdateInformation } = useInformation();
   const { searchQuery, setLinkSourceId, setLinkSourceType, setIsLinkModalOpen } = useUI();
-  const { allLinks: standaloneLinks, deleteLink } = useLinkService();
+  const { allLinks: standaloneLinks, deleteLink } = useLinkService({});
 
   const filteredRequirements = useMemo(() => {
     const query = searchQuery.toLowerCase();

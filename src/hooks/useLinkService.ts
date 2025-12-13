@@ -19,15 +19,28 @@ interface UseLinkServiceReturn {
   error: string | null;
 
   // Operations
-  createLink: (sourceId: string, targetId: string, type: LinkType) => Promise<Link>;
+  createLink: (
+    sourceId: string,
+    targetId: string,
+    type: LinkType,
+    projectIds?: string[]
+  ) => Promise<Link>;
   deleteLink: (linkId: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
+interface UseLinkServiceOptions {
+  artifactId?: string;
+  projectId?: string; // Filter links by project visibility
+}
+
 /**
  * Hook for managing links for a specific artifact
+ * @param options.artifactId - Optional artifact ID to get links for
+ * @param options.projectId - Optional project ID to filter links by project visibility
  */
-export function useLinkService(artifactId?: string): UseLinkServiceReturn {
+export function useLinkService(options: UseLinkServiceOptions = {}): UseLinkServiceReturn {
+  const { artifactId, projectId } = options;
   const [outgoingLinks, setOutgoingLinks] = useState<Link[]>([]);
   const [incomingLinks, setIncomingLinks] = useState<IncomingLink[]>([]);
   const [allLinks, setAllLinks] = useState<Link[]>([]);
@@ -40,15 +53,21 @@ export function useLinkService(artifactId?: string): UseLinkServiceReturn {
     setError(null);
 
     try {
-      // Always load all links
-      const all = await diskLinkService.getAllLinks();
+      // Load all links (filtered by project if provided)
+      const all = projectId
+        ? await diskLinkService.getLinksForProject(projectId)
+        : await diskLinkService.getAllLinks();
       setAllLinks(all);
 
       // Only load artifact-specific links if artifactId is provided
       if (artifactId) {
         const [outgoing, incoming] = await Promise.all([
-          diskLinkService.getOutgoingLinks(artifactId),
-          diskLinkService.getIncomingLinks(artifactId),
+          projectId
+            ? diskLinkService.getOutgoingLinksForProject(artifactId, projectId)
+            : diskLinkService.getOutgoingLinks(artifactId),
+          projectId
+            ? diskLinkService.getIncomingLinksForProject(artifactId, projectId)
+            : diskLinkService.getIncomingLinks(artifactId),
         ]);
         setOutgoingLinks(outgoing);
         setIncomingLinks(incoming);
@@ -62,18 +81,23 @@ export function useLinkService(artifactId?: string): UseLinkServiceReturn {
     } finally {
       setLoading(false);
     }
-  }, [artifactId]);
+  }, [artifactId, projectId]);
 
-  // Load on mount and when artifactId changes
+  // Load on mount and when artifactId/projectId changes
   useEffect(() => {
     loadLinks();
   }, [loadLinks]);
 
   // Create a new link
   const createLink = useCallback(
-    async (sourceId: string, targetId: string, type: LinkType): Promise<Link> => {
+    async (
+      sourceId: string,
+      targetId: string,
+      type: LinkType,
+      projectIds: string[] = []
+    ): Promise<Link> => {
       try {
-        const link = await diskLinkService.createLink(sourceId, targetId, type);
+        const link = await diskLinkService.createLink(sourceId, targetId, type, projectIds);
         // Refresh to get updated lists
         await loadLinks();
         return link;

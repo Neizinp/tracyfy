@@ -34,7 +34,13 @@ export const InformationModal: React.FC<InformationModalProps> = ({
   const [type, setType] = useState<Information['type']>('note');
 
   // Get links using the new link service
-  const { outgoingLinks, incomingLinks, loading: linksLoading } = useLinkService(information?.id);
+  const {
+    outgoingLinks,
+    incomingLinks,
+    loading: linksLoading,
+  } = useLinkService({
+    artifactId: information?.id,
+  });
 
   useEffect(() => {
     if (information) {

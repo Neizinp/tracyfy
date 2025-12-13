@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Link as LinkIcon } from 'lucide-react';
+import { X, Search, Link as LinkIcon, Globe, Folder } from 'lucide-react';
 import type { Requirement, ArtifactLink, Project, UseCase, TestCase, Information } from '../types';
+
+// Extended link data that includes project scope
+export interface LinkModalResult {
+  targetId: string;
+  type: ArtifactLink['type'];
+  projectIds: string[]; // Empty = global, populated = project-specific
+}
 
 interface LinkModalProps {
   isOpen: boolean;
@@ -13,7 +20,7 @@ interface LinkModalProps {
   globalTestCases: TestCase[];
   globalInformation: Information[];
   onClose: () => void;
-  onAddLink: (link: ArtifactLink) => void;
+  onAddLink: (link: LinkModalResult) => void;
 }
 
 type ArtifactType = 'requirement' | 'usecase' | 'testcase' | 'information';
@@ -37,6 +44,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
   const [linkType, setLinkType] = useState<ArtifactLink['type']>('related_to');
+  const [linkScope, setLinkScope] = useState<'global' | 'project'>('project'); // Default to current project
 
   useEffect(() => {
     if (isOpen) {
@@ -44,6 +52,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
       setSearchQuery('');
       setSelectedTargetId('');
       setLinkType('related_to');
+      setLinkScope('project'); // Default to project-specific
     }
   }, [isOpen]);
 
@@ -98,6 +107,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
       onAddLink({
         targetId: selectedTargetId,
         type: linkType,
+        projectIds: linkScope === 'global' ? [] : [currentProjectId],
       });
       onClose();
     }
@@ -487,6 +497,88 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                 <option value="requires">Requires (precondition)</option>
                 <option value="related_to">Related To (generic association)</option>
               </select>
+            </div>
+
+            {/* Link Scope */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 'var(--font-size-sm)',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Link Scope
+              </label>
+              <div
+                style={{
+                  display: 'flex',
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  borderRadius: '6px',
+                  padding: '4px',
+                  border: '1px solid var(--color-border)',
+                  gap: '4px',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setLinkScope('project')}
+                  style={{
+                    flex: 1,
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '4px',
+                    border: 'none',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    backgroundColor:
+                      linkScope === 'project' ? 'var(--color-accent)' : 'transparent',
+                    color: linkScope === 'project' ? '#fff' : 'var(--color-text-secondary)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <Folder size={14} />
+                  This Project
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLinkScope('global')}
+                  style={{
+                    flex: 1,
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '4px',
+                    border: 'none',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    backgroundColor: linkScope === 'global' ? 'var(--color-accent)' : 'transparent',
+                    color: linkScope === 'global' ? '#fff' : 'var(--color-text-secondary)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <Globe size={14} />
+                  Global
+                </button>
+              </div>
+              <div
+                style={{
+                  marginTop: '0.5rem',
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                {linkScope === 'project'
+                  ? 'Link will only be visible in this project.'
+                  : 'Link will be visible across all projects.'}
+              </div>
             </div>
 
             {/* Footer Buttons */}

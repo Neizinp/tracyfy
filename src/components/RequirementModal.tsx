@@ -48,7 +48,13 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
   const isEditMode = requirement !== null;
 
   // Get links using the new link service
-  const { outgoingLinks, incomingLinks, loading: linksLoading } = useLinkService(requirement?.id);
+  const {
+    outgoingLinks,
+    incomingLinks,
+    loading: linksLoading,
+  } = useLinkService({
+    artifactId: requirement?.id,
+  });
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [title, setTitle] = useState('');

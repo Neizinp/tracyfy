@@ -39,7 +39,13 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Get links using the new link service
-  const { outgoingLinks, incomingLinks, loading: linksLoading } = useLinkService(testCase?.id);
+  const {
+    outgoingLinks,
+    incomingLinks,
+    loading: linksLoading,
+  } = useLinkService({
+    artifactId: testCase?.id,
+  });
 
   // Reset form when modal opens/closes or testCase changes
   useEffect(() => {

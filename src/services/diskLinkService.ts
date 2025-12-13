@@ -135,8 +135,14 @@ class DiskLinkService {
 
   /**
    * Create a new link
+   * @param projectIds - Empty array = global (all projects), populated = project-specific
    */
-  async createLink(sourceId: string, targetId: string, type: LinkType): Promise<Link> {
+  async createLink(
+    sourceId: string,
+    targetId: string,
+    type: LinkType,
+    projectIds: string[] = []
+  ): Promise<Link> {
     // Ensure links folder exists
     await this.initialize();
 
@@ -149,6 +155,7 @@ class DiskLinkService {
       sourceId,
       targetId,
       type,
+      projectIds,
       dateCreated: now,
       lastModified: now,
     };
@@ -188,6 +195,31 @@ class DiskLinkService {
   }
 
   /**
+   * Update an existing link
+   */
+  async updateLink(
+    linkId: string,
+    updates: Partial<Pick<Link, 'type' | 'projectIds'>>
+  ): Promise<Link | null> {
+    const existingLink = await this.getLinkById(linkId);
+    if (!existingLink) {
+      console.error(`Link ${linkId} not found`);
+      return null;
+    }
+
+    const updatedLink: Link = {
+      ...existingLink,
+      ...updates,
+      lastModified: Date.now(),
+    };
+
+    const content = linkToMarkdown(updatedLink);
+    await fileSystemService.writeFile(`${LINKS_DIR}/${linkId}.md`, content);
+
+    return updatedLink;
+  }
+
+  /**
    * Check if a link already exists between two artifacts
    */
   async linkExists(sourceId: string, targetId: string, type?: LinkType): Promise<boolean> {
@@ -209,6 +241,48 @@ class DiskLinkService {
     if (id.startsWith('TC-')) return 'testcase';
     if (id.startsWith('INFO-')) return 'information';
     return 'unknown';
+  }
+
+  /**
+   * Get links visible to a specific project
+   * Returns links that are global (empty projectIds) OR include the given project ID
+   */
+  async getLinksForProject(projectId: string): Promise<Link[]> {
+    const allLinks = await this.getAllLinks();
+    return allLinks.filter(
+      (link) => link.projectIds.length === 0 || link.projectIds.includes(projectId)
+    );
+  }
+
+  /**
+   * Get global links only (visible to all projects)
+   */
+  async getGlobalLinks(): Promise<Link[]> {
+    const allLinks = await this.getAllLinks();
+    return allLinks.filter((link) => link.projectIds.length === 0);
+  }
+
+  /**
+   * Get outgoing links FROM an artifact, filtered by project visibility
+   */
+  async getOutgoingLinksForProject(artifactId: string, projectId: string): Promise<Link[]> {
+    const allLinks = await this.getLinksForProject(projectId);
+    return allLinks.filter((link) => link.sourceId === artifactId);
+  }
+
+  /**
+   * Get incoming links TO an artifact, filtered by project visibility
+   */
+  async getIncomingLinksForProject(artifactId: string, projectId: string): Promise<IncomingLink[]> {
+    const allLinks = await this.getLinksForProject(projectId);
+    return allLinks
+      .filter((link) => link.targetId === artifactId)
+      .map((link) => ({
+        linkId: link.id,
+        sourceId: link.sourceId,
+        sourceType: this.getArtifactType(link.sourceId),
+        linkType: getInverseType(link.type),
+      }));
   }
 }
 

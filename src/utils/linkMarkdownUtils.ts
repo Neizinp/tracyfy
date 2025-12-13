@@ -11,12 +11,14 @@ import type { LinkType } from './linkTypes';
  * Convert a Link object to Markdown with YAML frontmatter
  */
 export function linkToMarkdown(link: Link): string {
+  const projectIdsValue = link.projectIds.length > 0 ? link.projectIds.join(', ') : '';
   const lines: string[] = [
     '---',
     `id: ${link.id}`,
     `sourceId: ${link.sourceId}`,
     `targetId: ${link.targetId}`,
     `type: ${link.type}`,
+    `projectIds: ${projectIdsValue}`,
     `dateCreated: ${link.dateCreated}`,
     `lastModified: ${link.lastModified}`,
     '---',
@@ -24,6 +26,10 @@ export function linkToMarkdown(link: Link): string {
     `# ${link.id}`,
     '',
     `Links **${link.sourceId}** to **${link.targetId}** (${link.type.replace('_', ' ')})`,
+    '',
+    link.projectIds.length > 0
+      ? `**Scope:** ${link.projectIds.join(', ')}`
+      : '**Scope:** Global (all projects)',
   ];
 
   return lines.join('\n') + '\n';
@@ -57,11 +63,20 @@ export function parseMarkdownLink(content: string): Link | null {
     return null;
   }
 
+  // Parse projectIds: comma-separated string -> array, empty string -> empty array (global)
+  const projectIds = data.projectIds
+    ? data.projectIds
+        .split(',')
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0)
+    : [];
+
   return {
     id: data.id,
     sourceId: data.sourceId,
     targetId: data.targetId,
     type: data.type as LinkType,
+    projectIds,
     dateCreated: parseInt(data.dateCreated, 10) || Date.now(),
     lastModified: parseInt(data.lastModified, 10) || Date.now(),
   };
