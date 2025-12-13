@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link2, CheckCircle2 } from 'lucide-react';
-import type { Requirement, UseCase, TestCase, Information, Link } from '../types';
+import type { Requirement, UseCase, TestCase, Information, Link, Project } from '../types';
 import type { ArtifactType, UnifiedArtifact, GapInfo } from './traceability';
-import { TYPE_COLORS, SummaryCard, GapItem, LinkRow } from './traceability';
+import { TYPE_COLORS, SummaryCard, GapItem } from './traceability';
 import { TraceabilityGraph } from './graph/TraceabilityGraph';
+import { LinksView } from './LinksView';
 
 type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
 
@@ -13,11 +14,11 @@ interface TraceabilityDashboardProps {
   testCases: TestCase[];
   information: Information[];
   standaloneLinks?: Link[]; // Links from the new Link entity system
+  projects?: Project[]; // Projects for link scope display
   initialTab?: TabType; // Allow external control of initial tab
   onSelectArtifact?: (artifactId: string) => void;
   onAddLink?: (artifactId: string, artifactType: string) => void;
   onRemoveLink?: (artifactId: string, targetId: string) => void;
-  onDeleteLink?: (linkId: string) => void;
 }
 
 export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
@@ -26,11 +27,11 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   testCases,
   information,
   standaloneLinks = [],
+  projects = [],
   initialTab = 'overview',
   onSelectArtifact,
   onAddLink,
   onRemoveLink,
-  onDeleteLink,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
 
@@ -240,14 +241,6 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
 
     return links;
   }, [allArtifacts, testCases, standaloneLinks]);
-
-  // Filter links by selected types
-  const filteredLinks = useMemo(() => {
-    if (selectedTypes.size === 4) return allLinks; // All types selected
-    return allLinks.filter(
-      (l) => selectedTypes.has(l.sourceType) || selectedTypes.has(l.targetType)
-    );
-  }, [allLinks, selectedTypes]);
 
   // Filter gaps by selected types
   const filteredGaps = useMemo(() => {
@@ -599,167 +592,14 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
         </div>
       )}
 
-      {/* Links Tab */}
+      {/* Links Tab - Using LinksView component with edit functionality */}
       {activeTab === 'links' && (
-        <div
-          style={{
-            backgroundColor: 'var(--color-bg-card)',
-            borderRadius: '8px',
-            border: '1px solid var(--color-border)',
-            overflow: 'hidden',
+        <LinksView
+          onNavigateToArtifact={(id, _type) => {
+            if (onSelectArtifact) onSelectArtifact(id);
           }}
-        >
-          <div
-            style={{
-              padding: 'var(--spacing-md)',
-              borderBottom: '1px solid var(--color-border)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <h3
-              style={{
-                margin: 0,
-                fontSize: 'var(--font-size-lg)',
-                color: 'var(--color-text-primary)',
-              }}
-            >
-              All Links ({filteredLinks.length})
-            </h3>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {[
-                { type: 'useCase' as ArtifactType, label: 'UC', color: TYPE_COLORS.useCase.text },
-                {
-                  type: 'requirement' as ArtifactType,
-                  label: 'REQ',
-                  color: TYPE_COLORS.requirement.text,
-                },
-                { type: 'testCase' as ArtifactType, label: 'TC', color: TYPE_COLORS.testCase.text },
-                {
-                  type: 'information' as ArtifactType,
-                  label: 'INFO',
-                  color: TYPE_COLORS.information.text,
-                },
-              ].map(({ type, label, color }) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => toggleType(type)}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    border: selectedTypes.has(type)
-                      ? `2px solid ${color}`
-                      : '2px solid var(--color-border)',
-                    backgroundColor: selectedTypes.has(type) ? `${color}20` : 'transparent',
-                    color: selectedTypes.has(type) ? color : 'var(--color-text-muted)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-xs)',
-                    fontWeight: 600,
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-          {filteredLinks.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: 'var(--spacing-xl)',
-                color: 'var(--color-text-muted)',
-              }}
-            >
-              <Link2 size={48} style={{ marginBottom: '12px' }} />
-              <p>No links found for the selected filter.</p>
-            </div>
-          ) : (
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-              <table
-                style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  fontSize: 'var(--font-size-sm)',
-                }}
-              >
-                <thead>
-                  <tr
-                    style={{
-                      backgroundColor: 'var(--color-bg-secondary)',
-                      borderBottom: '1px solid var(--color-border)',
-                    }}
-                  >
-                    <th
-                      style={{
-                        padding: '10px 12px',
-                        textAlign: 'left',
-                        fontWeight: 600,
-                        color: 'var(--color-text-secondary)',
-                      }}
-                    >
-                      Source
-                    </th>
-                    <th
-                      style={{
-                        padding: '10px 12px',
-                        textAlign: 'center',
-                        fontWeight: 600,
-                        color: 'var(--color-text-secondary)',
-                      }}
-                    >
-                      Link Type
-                    </th>
-                    <th
-                      style={{
-                        padding: '10px 12px',
-                        textAlign: 'left',
-                        fontWeight: 600,
-                        color: 'var(--color-text-secondary)',
-                      }}
-                    >
-                      Target
-                    </th>
-                    {onDeleteLink && (
-                      <th
-                        style={{
-                          padding: '10px 12px',
-                          textAlign: 'center',
-                          fontWeight: 600,
-                          color: 'var(--color-text-secondary)',
-                          width: '60px',
-                        }}
-                      ></th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredLinks.map((link, index) => (
-                    <LinkRow
-                      key={`${link.sourceId}-${link.targetId}-${index}`}
-                      sourceId={link.sourceId}
-                      targetId={link.targetId}
-                      linkType={link.type}
-                      sourceType={link.sourceType}
-                      targetType={link.targetType}
-                      onClickSource={
-                        onSelectArtifact ? () => onSelectArtifact(link.sourceId) : undefined
-                      }
-                      onClickTarget={
-                        onSelectArtifact ? () => onSelectArtifact(link.targetId) : undefined
-                      }
-                      onDelete={
-                        onDeleteLink && link.linkId ? () => onDeleteLink(link.linkId!) : undefined
-                      }
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+          projects={projects}
+        />
       )}
 
       {/* Impact Tab */}
