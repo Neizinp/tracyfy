@@ -265,7 +265,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
             }}
           >
             <GitCommit size={16} />
-            Project Commits
+            {projectName ? `${projectName} Commits` : 'Project Commits'}
           </button>
           <button
             onClick={() => setActiveTab('global')}

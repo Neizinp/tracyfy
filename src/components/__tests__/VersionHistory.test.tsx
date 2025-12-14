@@ -46,14 +46,14 @@ describe('VersionHistory', () => {
       render(<VersionHistory {...defaultProps} />);
 
       expect(screen.getByText('Baselines')).toBeInTheDocument();
-      expect(screen.getByText('Project Commits')).toBeInTheDocument();
+      expect(screen.getByText('TestProject Commits')).toBeInTheDocument();
       expect(screen.getByText('All Commits')).toBeInTheDocument();
     });
 
     it('should switch to Project Commits tab when clicked', () => {
       render(<VersionHistory {...defaultProps} />);
 
-      const commitsTab = screen.getByText('Project Commits');
+      const commitsTab = screen.getByText('TestProject Commits');
       fireEvent.click(commitsTab);
 
       // The tab should be active (has different styling)
@@ -89,7 +89,7 @@ describe('VersionHistory', () => {
       render(<VersionHistory {...defaultProps} />);
 
       // Switch to commits tab
-      fireEvent.click(screen.getByText('Project Commits'));
+      fireEvent.click(screen.getByText('TestProject Commits'));
 
       // Baselines message should not be visible
       expect(screen.queryByText(/No baselines found/i)).not.toBeInTheDocument();

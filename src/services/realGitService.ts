@@ -114,6 +114,12 @@ class RealGitService {
   private rootDir = '.';
   // Commit queue to serialize git commits (prevents race conditions)
   private commitQueue: Promise<void> = Promise.resolve();
+  // Cache for getCommitFiles results (commit hash -> files)
+  private commitFilesCache = new Map<string, string[]>();
+  // Path to cache file in project folder
+  private readonly CACHE_FILE = '.tracyfy/commit-cache.json';
+  // Flag to track if cache has been loaded from disk
+  private cacheLoadedFromDisk = false;
 
   /**
    * Get the root directory path (Electron uses absolute path, browser uses '.')
@@ -124,6 +130,42 @@ class RealGitService {
       return rootPath || '.';
     }
     return this.rootDir;
+  }
+
+  /**
+   * Load commit files cache from disk
+   */
+  private async loadCacheFromDisk(): Promise<void> {
+    if (this.cacheLoadedFromDisk) return;
+
+    try {
+      const content = await fileSystemService.readFile(this.CACHE_FILE);
+      const data = JSON.parse(content) as Record<string, string[]>;
+      for (const [hash, files] of Object.entries(data)) {
+        this.commitFilesCache.set(hash, files);
+      }
+      console.log(
+        `[RealGitService] Loaded ${Object.keys(data).length} cached commit files from disk`
+      );
+    } catch {
+      // Cache file doesn't exist yet - that's fine
+    }
+    this.cacheLoadedFromDisk = true;
+  }
+
+  /**
+   * Save commit files cache to disk
+   */
+  private async saveCacheToDisk(): Promise<void> {
+    try {
+      const data: Record<string, string[]> = {};
+      for (const [hash, files] of this.commitFilesCache.entries()) {
+        data[hash] = files;
+      }
+      await fileSystemService.writeFile(this.CACHE_FILE, JSON.stringify(data, null, 2));
+    } catch (err) {
+      console.warn('[RealGitService] Failed to save commit cache to disk:', err);
+    }
   }
 
   /**
@@ -415,6 +457,10 @@ class RealGitService {
       console.log(
         `[commitFile] Successfully committed ${filepath} by ${authorNameToUse}, SHA: ${commitOid}`
       );
+
+      // Proactively cache the file for this commit (so Version History is instant)
+      this.commitFilesCache.set(commitOid, [filepath]);
+      void this.saveCacheToDisk();
     });
 
     // Wait for our commit to complete
@@ -596,10 +642,20 @@ class RealGitService {
   /**
    * Get files changed in a specific commit
    * Returns array of filepaths that were added, modified, or deleted
+   * Results are cached since commit contents are immutable
    */
   async getCommitFiles(commitHash: string): Promise<string[]> {
     if (!this.initialized) {
       return [];
+    }
+
+    // Load cache from disk on first call
+    await this.loadCacheFromDisk();
+
+    // Check cache first - commit contents are immutable so cache is always valid
+    const cached = this.commitFilesCache.get(commitHash);
+    if (cached !== undefined) {
+      return cached;
     }
 
     try {
@@ -624,10 +680,8 @@ class RealGitService {
 
       if (!parentHash) {
         // Initial commit - all files are new
-        console.log(
-          `[getCommitFiles] ${commitHash.substring(0, 7)}: Initial commit, files:`,
-          currentFiles
-        );
+        this.commitFilesCache.set(commitHash, currentFiles);
+        void this.saveCacheToDisk(); // Save in background
         return currentFiles;
       }
 
@@ -699,13 +753,14 @@ class RealGitService {
         }
       }
 
-      console.log(
-        `[getCommitFiles] ${commitHash.substring(0, 7)}: current=${currentFiles.length}, parent=${parentFiles.length}, changed=`,
-        changedFiles
-      );
+      // Cache the result before returning
+      this.commitFilesCache.set(commitHash, changedFiles);
+      void this.saveCacheToDisk(); // Save in background
       return changedFiles;
     } catch (error) {
       console.error('[getCommitFiles] Failed:', error);
+      // Cache empty result to avoid retrying failed lookups
+      this.commitFilesCache.set(commitHash, []);
       return [];
     }
   }
