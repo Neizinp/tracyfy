@@ -10,6 +10,13 @@ vi.mock('../../services/realGitService', () => ({
     getTagsWithDetails: vi.fn().mockResolvedValue([]),
     getTags: vi.fn().mockResolvedValue([]),
     readFileAtCommit: vi.fn().mockResolvedValue(''),
+    loadProjectSnapshot: vi.fn().mockResolvedValue({
+      requirements: [],
+      useCases: [],
+      testCases: [],
+      information: [],
+    }),
+    getCommitFiles: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -113,6 +120,48 @@ describe('VersionHistory', () => {
       render(<VersionHistory {...defaultProps} />);
 
       expect(screen.getByText(/Create baselines to save named snapshots/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Baseline View Button', () => {
+    it('should look up commit hash using baseline.name (full tag name)', async () => {
+      // This test prevents regression: baseline.name contains full tag like "[ProjectName] 1.0"
+      // but baseline.version might only contain "1.0"
+      const mockBaselines: ProjectBaseline[] = [
+        {
+          id: 'baseline-1',
+          projectId: 'proj-001',
+          name: '[TestProject] 1.0', // Full tag name with project prefix
+          version: '1.0', // Stripped version (should NOT be used for lookup)
+          description: 'First baseline',
+          timestamp: Date.now(),
+          artifactCommits: {},
+        },
+      ];
+
+      // Mock getTagsWithDetails to return the tag with commit hash
+      const { realGitService } = await import('../../services/realGitService');
+      vi.mocked(realGitService.getTagsWithDetails).mockResolvedValue([
+        {
+          name: '[TestProject] 1.0',
+          message: 'First baseline',
+          timestamp: Date.now(),
+          commit: 'abc123def',
+        },
+      ]);
+
+      render(<VersionHistory {...defaultProps} baselines={mockBaselines} />);
+
+      // Wait for tags to load
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Click the View button
+      const viewButton = screen.getByText('View');
+      fireEvent.click(viewButton);
+
+      // The SnapshotViewer should open (it would fail if commitHash was empty)
+      // Since SnapshotViewer shows the name, we verify it displays correctly
+      expect(screen.getByText(/Snapshot:/i)).toBeInTheDocument();
     });
   });
 });

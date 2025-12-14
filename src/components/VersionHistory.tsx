@@ -477,14 +477,14 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                       </div>
                       <button
                         onClick={() => {
-                          // Try to find commit hash from tag map first
-                          const commitFromTag = tagToCommitHash.get(baseline.version);
+                          // Look up commit hash using baseline.name (the full tag name)
+                          const commitFromTag = tagToCommitHash.get(baseline.name);
                           // Fallback to artifact commit if tag not found (legacy or untagged?)
                           const fallbackCommit = Object.keys(baseline.artifactCommits)[0] || '';
 
                           setViewingSnapshot({
                             commitHash: commitFromTag || fallbackCommit,
-                            name: baseline.version,
+                            name: getVersionFromTag(baseline.name),
                             timestamp: baseline.timestamp,
                           });
                         }}
