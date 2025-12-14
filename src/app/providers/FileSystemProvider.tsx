@@ -15,6 +15,7 @@ import type {
 interface FileSystemContextValue {
   isReady: boolean;
   isLoading: boolean;
+  isApiSupported: boolean;
   directoryName: string | null;
   error: string | null;
   selectDirectory: () => Promise<void>;
@@ -510,6 +511,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       value={{
         isReady,
         isLoading,
+        isApiSupported: fileSystemService.isSupported(),
         directoryName,
         error,
         selectDirectory,

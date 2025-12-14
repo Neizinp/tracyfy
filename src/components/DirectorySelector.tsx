@@ -7,7 +7,8 @@ interface DirectorySelectorProps {
 }
 
 export const DirectorySelector: React.FC<DirectorySelectorProps> = ({ onReady }) => {
-  const { isReady, isLoading, error, selectDirectory, directoryName } = useFileSystem();
+  const { isReady, isLoading, error, selectDirectory, directoryName, isApiSupported } =
+    useFileSystem();
 
   React.useEffect(() => {
     if (isReady && onReady) {
@@ -122,47 +123,51 @@ export const DirectorySelector: React.FC<DirectorySelectorProps> = ({ onReady })
           </div>
         )}
 
-        <button
-          onClick={selectDirectory}
-          disabled={isLoading}
-          style={{
-            padding: '14px 32px',
-            borderRadius: '8px',
-            backgroundColor: 'var(--color-accent)',
-            color: 'white',
-            border: 'none',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            fontSize: 'var(--font-size-base)',
-            fontWeight: 500,
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            opacity: isLoading ? 0.7 : 1,
-            transition: 'all 0.2s',
-          }}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
-              Loading...
-            </>
-          ) : (
-            <>
-              <Folder size={20} />
-              Choose Folder
-            </>
-          )}
-        </button>
+        {isApiSupported && (
+          <>
+            <button
+              onClick={selectDirectory}
+              disabled={isLoading}
+              style={{
+                padding: '14px 32px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--color-accent)',
+                color: 'white',
+                border: 'none',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                fontSize: 'var(--font-size-base)',
+                fontWeight: 500,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                opacity: isLoading ? 0.7 : 1,
+                transition: 'all 0.2s',
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <Folder size={20} />
+                  Choose Folder
+                </>
+              )}
+            </button>
 
-        <p
-          style={{
-            color: 'var(--color-text-muted)',
-            fontSize: 'var(--font-size-xs)',
-            marginTop: '24px',
-          }}
-        >
-          Tip: You can use an existing Git repository or we'll initialize one for you.
-        </p>
+            <p
+              style={{
+                color: 'var(--color-text-muted)',
+                fontSize: 'var(--font-size-xs)',
+                marginTop: '24px',
+              }}
+            >
+              Tip: You can use an existing Git repository or we'll initialize one for you.
+            </p>
+          </>
+        )}
       </div>
 
       <style>{`

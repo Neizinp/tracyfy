@@ -28,6 +28,7 @@ describe('DirectorySelector', () => {
       error: null,
       selectDirectory: mockSelectDirectory,
       directoryName: null,
+      isApiSupported: true,
     } as any);
 
     render(<DirectorySelector />);
@@ -84,6 +85,7 @@ describe('DirectorySelector', () => {
       error: null,
       selectDirectory: mockSelectDirectory,
       directoryName: null,
+      isApiSupported: true,
     } as any);
 
     render(<DirectorySelector />);
@@ -100,6 +102,7 @@ describe('DirectorySelector', () => {
       error: null,
       selectDirectory: mockSelectDirectory,
       directoryName: null,
+      isApiSupported: true,
     } as any);
 
     render(<DirectorySelector />);
@@ -117,6 +120,7 @@ describe('DirectorySelector', () => {
       error: null,
       selectDirectory: mockSelectDirectory,
       directoryName: null,
+      isApiSupported: true,
     } as any);
 
     render(<DirectorySelector />);
@@ -131,11 +135,34 @@ describe('DirectorySelector', () => {
       error: null,
       selectDirectory: mockSelectDirectory,
       directoryName: null,
+      isApiSupported: true,
     } as any);
 
     const { container } = render(<DirectorySelector />);
 
     const folderIcon = container.querySelector('svg.lucide-folder');
     expect(folderIcon).toBeInTheDocument();
+  });
+
+  it('should hide button when File System Access API is not supported', () => {
+    vi.mocked(useFileSystem).mockReturnValue({
+      isReady: false,
+      isLoading: false,
+      error: 'File System Access API is not supported. Please use Chrome, Edge, or Opera.',
+      selectDirectory: mockSelectDirectory,
+      directoryName: null,
+      isApiSupported: false,
+    } as any);
+
+    render(<DirectorySelector />);
+
+    // The error message should be displayed
+    expect(screen.getByText(/File System Access API is not supported/i)).toBeInTheDocument();
+    // But the button should NOT be displayed
+    expect(screen.queryByText(/Choose Folder/i)).not.toBeInTheDocument();
+    // And the tip should NOT be displayed
+    expect(
+      screen.queryByText(/Tip: You can use an existing Git repository/i)
+    ).not.toBeInTheDocument();
   });
 });
