@@ -77,21 +77,4 @@ describe('StatusBar', () => {
 
     expect(screen.getByText(/9 operations remaining/)).toBeInTheDocument();
   });
-
-  it('should show "Initializing Git cache" message', () => {
-    vi.mocked(useBackgroundTasks).mockReturnValue({
-      tasks: [
-        { id: '1', message: 'Initializing Git cache (one-time)...', startTime: Date.now() },
-        { id: '2', message: 'Committing REQ-001...', startTime: Date.now() },
-      ],
-      isWorking: true,
-      startTask: vi.fn(),
-      endTask: vi.fn(),
-    });
-
-    render(<StatusBar />);
-
-    expect(screen.getByText(/Initializing Git cache/)).toBeInTheDocument();
-    expect(screen.getByText(/1 operations remaining/)).toBeInTheDocument();
-  });
 });

@@ -21,8 +21,6 @@ export function PendingChangesPanel() {
   // Track number of active commits for debounced refresh
   const activeCommitsRef = useRef<number>(0);
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Track if this is the first commit (git cache warm-up)
-  const isFirstCommitRef = useRef<boolean>(true);
 
   // Debounced refresh - only refreshes after all commits are done and a delay
   const scheduleRefresh = useCallback(() => {
@@ -188,15 +186,7 @@ export function PendingChangesPanel() {
     delete inputRefs.current[change.id];
 
     // Track the commit operation as a background task
-    // Show special message for first commit (git cache warm-up)
-    const isFirstCommit = isFirstCommitRef.current;
-    if (isFirstCommit) {
-      isFirstCommitRef.current = false; // Set immediately so other commits don't see it
-    }
-    const taskMessage = isFirstCommit
-      ? 'Initializing Git cache (one-time)...'
-      : `Committing ${change.title}...`;
-    const taskId = startTask(taskMessage);
+    const taskId = startTask(`Committing ${change.title}...`);
 
     // Track active commits for debounced refresh
     activeCommitsRef.current += 1;

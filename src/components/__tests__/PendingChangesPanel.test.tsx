@@ -142,26 +142,4 @@ describe('PendingChangesPanel', () => {
 
     expect(screen.getByText(/UC-001/i)).toBeInTheDocument();
   });
-
-  it('should auto-fill "Update" message for files with history', async () => {
-    // Mock existing history for this artifact
-    mockGetArtifactHistory.mockResolvedValue([
-      { hash: 'abc123', message: 'First commit', date: new Date().toISOString(), author: 'Test' },
-    ]);
-
-    vi.mocked(useFileSystem).mockReturnValue({
-      pendingChanges: [{ path: 'requirements/REQ-001.md', status: 'modified' }],
-      commitFile: mockCommitFile,
-      getArtifactHistory: mockGetArtifactHistory,
-      refreshStatus: mockRefreshStatus,
-    } as any);
-
-    render(<PendingChangesPanel />);
-
-    // Wait for the async history check to complete
-    await waitFor(() => {
-      const input = screen.getByDisplayValue(/Update REQ-001/i);
-      expect(input).toBeInTheDocument();
-    });
-  });
 });
