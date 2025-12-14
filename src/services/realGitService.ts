@@ -140,6 +140,7 @@ class RealGitService {
 
     try {
       const content = await fileSystemService.readFile(this.CACHE_FILE);
+      if (!content) return; // No cache file exists yet
       const data = JSON.parse(content) as Record<string, string[]>;
       for (const [hash, files] of Object.entries(data)) {
         this.commitFilesCache.set(hash, files);
