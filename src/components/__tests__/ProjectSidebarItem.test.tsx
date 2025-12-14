@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProjectSidebarItem } from '../ProjectSidebarItem';
 import type { Project } from '../../types';
-import { DndContext } from '@dnd-kit/core';
 
 describe('ProjectSidebarItem', () => {
   const mockOnSwitchProject = vi.fn();
@@ -30,18 +29,14 @@ describe('ProjectSidebarItem', () => {
     vi.clearAllMocks();
   });
 
-  const renderWithDnd = (ui: React.ReactElement) => {
-    return render(<DndContext>{ui}</DndContext>);
-  };
-
   it('should render project name', () => {
-    renderWithDnd(<ProjectSidebarItem {...defaultProps} />);
+    render(<ProjectSidebarItem {...defaultProps} />);
 
     expect(screen.getByText('Test Project')).toBeInTheDocument();
   });
 
   it('should call onSwitchProject when clicked on inactive project', () => {
-    renderWithDnd(<ProjectSidebarItem {...defaultProps} isActive={false} />);
+    render(<ProjectSidebarItem {...defaultProps} isActive={false} />);
 
     const projectItem = screen.getByText('Test Project').closest('div');
     if (projectItem) fireEvent.click(projectItem);
@@ -51,7 +46,7 @@ describe('ProjectSidebarItem', () => {
   });
 
   it('should call onOpenProjectSettings when clicked on active project', () => {
-    renderWithDnd(<ProjectSidebarItem {...defaultProps} isActive={true} />);
+    render(<ProjectSidebarItem {...defaultProps} isActive={true} />);
 
     const projectItem = screen.getByText('Test Project').closest('div');
     if (projectItem) fireEvent.click(projectItem);
@@ -61,7 +56,7 @@ describe('ProjectSidebarItem', () => {
   });
 
   it('should show active state styling when isActive is true', () => {
-    const { container } = renderWithDnd(<ProjectSidebarItem {...defaultProps} isActive={true} />);
+    const { container } = render(<ProjectSidebarItem {...defaultProps} isActive={true} />);
 
     // Active project should have hover background
     const projectItem = container.firstChild as HTMLElement;
@@ -69,14 +64,14 @@ describe('ProjectSidebarItem', () => {
   });
 
   it('should show inactive state styling when isActive is false', () => {
-    const { container } = renderWithDnd(<ProjectSidebarItem {...defaultProps} isActive={false} />);
+    const { container } = render(<ProjectSidebarItem {...defaultProps} isActive={false} />);
 
     const projectItem = container.firstChild as HTMLElement;
     expect(projectItem).toHaveStyle({ fontWeight: 400 });
   });
 
   it('should render folder icon', () => {
-    const { container } = renderWithDnd(<ProjectSidebarItem {...defaultProps} />);
+    const { container } = render(<ProjectSidebarItem {...defaultProps} />);
 
     const folderIcon = container.querySelector('svg.lucide-folder-open');
     expect(folderIcon).toBeInTheDocument();

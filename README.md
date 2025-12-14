@@ -15,7 +15,6 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 ### Core Functionality
 
 - **Hierarchical Requirements** - Organize requirements in parent-child relationships
-- **Drag & Drop** - Intuitive reordering and restructuring of requirements
 - **Use Cases** - Define and manage use cases with actors, flows, preconditions, and postconditions
 - **Test Cases** - Create test cases linked to requirements for verification tracking
 - **Information Management** - Store project notes, meeting minutes, and decisions
@@ -135,9 +134,8 @@ npm run preview  # Preview the production build
 
 ### Managing Hierarchy
 
-- **Drag and drop** requirements to reorganize
-- Requirements can have multiple parents
-- Visual indicators show parent-child relationships
+- Requirements can have multiple parents via links
+- Visual indicators show parent-child relationships in tree view
 
 ### Creating Links
 
@@ -167,7 +165,6 @@ npm run preview  # Preview the production build
 - **TypeScript** - Type safety throughout
 - **Vite** - Build tool and dev server
 - **isomorphic-git** - Git operations in the browser
-- **@dnd-kit** - Drag and drop functionality
 - **Lucide React** - Icon library
 - **jsPDF + jsPDF-AutoTable** - PDF generation
 - **SheetJS (xlsx)** - Excel export

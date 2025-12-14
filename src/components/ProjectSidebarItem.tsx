@@ -1,5 +1,4 @@
 import React from 'react';
-import { useDroppable } from '@dnd-kit/core';
 import { FolderOpen } from 'lucide-react';
 import type { Project } from '../types';
 
@@ -16,15 +15,6 @@ export const ProjectSidebarItem: React.FC<ProjectSidebarItemProps> = ({
   onSwitchProject,
   onOpenProjectSettings,
 }) => {
-  const { setNodeRef, isOver } = useDroppable({
-    id: `project-${project.id}`,
-    data: {
-      type: 'project-target',
-      projectId: project.id,
-      projectName: project.name,
-    },
-  });
-
   const handleClick = () => {
     if (isActive) {
       onOpenProjectSettings(project);
@@ -35,22 +25,17 @@ export const ProjectSidebarItem: React.FC<ProjectSidebarItemProps> = ({
 
   return (
     <div
-      ref={setNodeRef}
       onClick={handleClick}
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: 'var(--spacing-sm)',
         padding: 'var(--spacing-sm)',
-        backgroundColor: isOver
-          ? 'var(--color-bg-tertiary)'
-          : isActive
-            ? 'var(--color-bg-hover)'
-            : 'transparent',
+        backgroundColor: isActive ? 'var(--color-bg-hover)' : 'transparent',
         borderRadius: '6px',
         cursor: 'pointer',
         position: 'relative',
-        border: isOver ? '2px dashed var(--color-accent)' : '2px solid transparent',
+        border: '2px solid transparent',
         color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
         fontWeight: isActive ? 600 : 400,
         transition: 'background-color 0.15s',
