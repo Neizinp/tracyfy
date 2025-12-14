@@ -240,7 +240,9 @@ export async function exportProjectToPDF(
   }
 
   // 4. Revision History (NEW POSITION - after TOC)
-  if (artifactCommits.length > 0 || removedArtifacts.length > 0) {
+  // ONLY show revision history if there's a previous baseline to compare against
+  // If no previous baseline exists, there's nothing to compare - skip entirely
+  if (previousBaseline && (artifactCommits.length > 0 || removedArtifacts.length > 0)) {
     doc.addPage();
     tocEntries.push({ title: 'Revision History', page: currentPage, level: 0 });
     addRevisionHistory(doc, artifactCommits, removedArtifacts);

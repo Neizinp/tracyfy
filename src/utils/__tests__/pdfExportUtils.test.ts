@@ -878,5 +878,42 @@ describe('pdfExportUtils', () => {
         expect(changesCell).toContain('• Initial commit');
       }
     });
+
+    it('should NOT show revision history when exporting with NO baselines (current state, no previous baseline)', async () => {
+      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+        createWritable: vi.fn().mockResolvedValue({
+          write: vi.fn(),
+          close: vi.fn(),
+        }),
+      });
+
+      // Export current state with EMPTY baselines array - no previous baseline to compare against
+      await exportProjectToPDF(
+        mockProject,
+        globalState,
+        ['r1'],
+        [],
+        [],
+        [],
+        [], // No baselines at all
+        null // Current state export
+      );
+
+      // Revision History section should NOT be added to TOC or content
+      // The text 'Revision History' should NOT appear (it only appears as a heading when section is added)
+      const textCalls = mockText.mock.calls.map(([text]) => text);
+      const hasRevisionHistoryHeading = textCalls.some(
+        (text) => typeof text === 'string' && text === 'Revision History'
+      );
+      expect(hasRevisionHistoryHeading).toBe(false);
+
+      // No revision history table should be created
+      const autoTableCalls = (autoTable as any).mock.calls;
+      const revisionHistoryCalls = autoTableCalls.filter(
+        ([_doc, options]: [any, any]) =>
+          options.head && options.head[0] && options.head[0].includes('Changes')
+      );
+      expect(revisionHistoryCalls.length).toBe(0);
+    });
   });
 });
