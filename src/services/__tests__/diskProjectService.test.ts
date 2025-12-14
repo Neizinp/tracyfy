@@ -183,4 +183,43 @@ lastModified: 1700000000000
       expect(fileSystemService.writeFile).toHaveBeenCalledWith('counters/users.md', '6');
     });
   });
+
+  describe('getNextIds (batch allocation)', () => {
+    it('should return empty array for count of 0', async () => {
+      const ids = await diskProjectService.getNextIds('requirements', 0);
+      expect(ids).toEqual([]);
+    });
+
+    it('should allocate multiple IDs at once', async () => {
+      vi.mocked(fileSystemService.readFile).mockResolvedValue('0');
+      vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
+
+      const ids = await diskProjectService.getNextIds('requirements', 3);
+
+      expect(ids).toEqual(['REQ-001', 'REQ-002', 'REQ-003']);
+      expect(fileSystemService.writeFile).toHaveBeenCalledWith('counters/requirements.md', '3');
+    });
+
+    it('should continue from existing counter', async () => {
+      vi.mocked(fileSystemService.readFile).mockResolvedValue('10');
+      vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
+
+      const ids = await diskProjectService.getNextIds('useCases', 2);
+
+      expect(ids).toEqual(['UC-011', 'UC-012']);
+      expect(fileSystemService.writeFile).toHaveBeenCalledWith('counters/useCases.md', '12');
+    });
+
+    it('should work with different artifact types', async () => {
+      vi.mocked(fileSystemService.readFile).mockResolvedValue('5');
+      vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
+
+      const tcIds = await diskProjectService.getNextIds('testCases', 2);
+      expect(tcIds).toEqual(['TC-006', 'TC-007']);
+
+      vi.mocked(fileSystemService.readFile).mockResolvedValue('3');
+      const infoIds = await diskProjectService.getNextIds('information', 2);
+      expect(infoIds).toEqual(['INFO-004', 'INFO-005']);
+    });
+  });
 });

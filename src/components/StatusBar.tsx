@@ -15,9 +15,11 @@ export function StatusBar() {
     return null;
   }
 
-  // Show the most recent task message, or a count if multiple
+  // Show the most recent task message, with remaining count if multiple
   const message =
-    tasks.length === 1 ? tasks[0].message : `${tasks.length} operations in progress...`;
+    tasks.length === 1
+      ? tasks[0].message
+      : `${tasks[0].message} (${tasks.length - 1} operations remaining)`;
 
   return (
     <div

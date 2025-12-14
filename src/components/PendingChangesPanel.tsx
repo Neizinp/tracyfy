@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { FileText, GitCommit, AlertCircle } from 'lucide-react';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { useUser } from '../app/providers/UserProvider';
@@ -6,13 +6,37 @@ import { useBackgroundTasks } from '../app/providers/BackgroundTasksProvider';
 import type { ArtifactChange } from '../types';
 
 export function PendingChangesPanel() {
-  const { pendingChanges, commitFile, projects } = useFileSystem();
+  const { pendingChanges, commitFile, projects, getArtifactHistory, refreshStatus } =
+    useFileSystem();
   const { currentUser } = useUser();
   const { startTask, endTask } = useBackgroundTasks();
   const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
   const [parsedChanges, setParsedChanges] = useState<ArtifactChange[]>([]);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [focusNextId, setFocusNextId] = useState<string | null>(null);
+  // Track IDs currently being committed to prevent duplicate commits
+  const [committingIds, setCommittingIds] = useState<Set<string>>(new Set());
+  // Track IDs that have had their default message set (to avoid re-checking git history)
+  const processedDefaultsRef = useRef<Set<string>>(new Set());
+  // Track number of active commits for debounced refresh
+  const activeCommitsRef = useRef<number>(0);
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track if this is the first commit (git cache warm-up)
+  const isFirstCommitRef = useRef<boolean>(true);
+
+  // Debounced refresh - only refreshes after all commits are done and a delay
+  const scheduleRefresh = useCallback(() => {
+    // Clear any pending refresh
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+    // Schedule a new refresh after a short delay
+    refreshTimeoutRef.current = setTimeout(() => {
+      if (activeCommitsRef.current === 0) {
+        refreshStatus();
+      }
+    }, 500); // Wait 500ms after last commit before refreshing
+  }, [refreshStatus]);
 
   useEffect(() => {
     // Convert file statuses to ArtifactChange objects
@@ -55,32 +79,89 @@ export function PendingChangesPanel() {
       })
       .filter(Boolean) as ArtifactChange[];
 
-    // Auto-fill "First commit" for new items
-    setCommitMessages((prev) => {
-      const next = { ...prev };
-      let hasChanges = false;
-      changes.forEach((change) => {
-        if (change.status === 'new' && !next[change.id]) {
-          next[change.id] = 'First commit';
-          hasChanges = true;
-        }
-      });
-      return hasChanges ? next : prev;
-    });
+    // Set default commit messages based on git history
+    const setDefaults = async () => {
+      const idsToProcess = changes.filter((c) => !processedDefaultsRef.current.has(c.id));
 
+      if (idsToProcess.length === 0) return;
+
+      const defaults: Record<string, string> = {};
+
+      for (const change of idsToProcess) {
+        // Map artifact type to folder name for history lookup
+        const folderMap: Record<string, 'requirements' | 'usecases' | 'testcases' | 'information'> =
+          {
+            requirement: 'requirements',
+            usecase: 'usecases',
+            testcase: 'testcases',
+            information: 'information',
+          };
+
+        // For projects, always use "Update Project" since project folder uses different structure
+        if (change.type === 'project') {
+          defaults[change.id] = change.status === 'new' ? 'First commit' : `Update ${change.title}`;
+          processedDefaultsRef.current.add(change.id);
+          continue;
+        }
+
+        const artifactFolder = folderMap[change.type];
+        if (!artifactFolder) continue;
+
+        try {
+          // Check if there's existing git history for this artifact
+          const history = await getArtifactHistory(artifactFolder, change.id);
+          if (history.length > 0) {
+            // Has history - use "Update" message
+            defaults[change.id] = `Update ${change.id}`;
+          } else {
+            // No history - truly a first commit
+            defaults[change.id] = 'First commit';
+          }
+          processedDefaultsRef.current.add(change.id);
+        } catch {
+          // On error, fall back to status-based message
+          defaults[change.id] = change.status === 'new' ? 'First commit' : `Update ${change.id}`;
+          processedDefaultsRef.current.add(change.id);
+        }
+      }
+
+      if (Object.keys(defaults).length > 0) {
+        setCommitMessages((prev) => {
+          const next = { ...prev };
+          for (const [id, message] of Object.entries(defaults)) {
+            // Only set if not already set (user may have typed something)
+            if (!next[id]) {
+              next[id] = message;
+            }
+          }
+          return next;
+        });
+      }
+    };
+
+    setDefaults();
     setParsedChanges(changes);
-  }, [pendingChanges, commitMessages, projects]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingChanges, projects, getArtifactHistory]);
 
   const handleCommitMessageChange = (id: string, message: string) => {
     setCommitMessages((prev) => ({ ...prev, [id]: message }));
   };
 
   const handleCommit = async (change: ArtifactChange) => {
+    // Prevent duplicate commits
+    if (committingIds.has(change.id)) {
+      return;
+    }
+
     const message = commitMessages[change.id];
     if (!message || message.trim() === '') {
       alert('Please enter a commit message');
       return;
     }
+
+    // Mark as committing immediately to prevent duplicates
+    setCommittingIds((prev) => new Set([...prev, change.id]));
 
     // Find the index of current change to determine which one to focus next
     const currentIndex = parsedChanges.findIndex((c) => c.id === change.id);
@@ -107,7 +188,18 @@ export function PendingChangesPanel() {
     delete inputRefs.current[change.id];
 
     // Track the commit operation as a background task
-    const taskId = startTask(`Committing ${change.title}...`);
+    // Show special message for first commit (git cache warm-up)
+    const isFirstCommit = isFirstCommitRef.current;
+    if (isFirstCommit) {
+      isFirstCommitRef.current = false; // Set immediately so other commits don't see it
+    }
+    const taskMessage = isFirstCommit
+      ? 'Initializing Git cache (one-time)...'
+      : `Committing ${change.title}...`;
+    const taskId = startTask(taskMessage);
+
+    // Track active commits for debounced refresh
+    activeCommitsRef.current += 1;
 
     // Run commit in background (don't await - let it complete asynchronously)
     commitFile(change.path, message, currentUser?.name)
@@ -117,6 +209,15 @@ export function PendingChangesPanel() {
       })
       .finally(() => {
         endTask(taskId);
+        // Clean up the committing state
+        setCommittingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(change.id);
+          return next;
+        });
+        // Decrement active commits and schedule refresh when all are done
+        activeCommitsRef.current -= 1;
+        scheduleRefresh();
       });
   };
 
@@ -251,6 +352,7 @@ export function PendingChangesPanel() {
                       handleCommit(change);
                     }
                   }}
+                  disabled={committingIds.has(change.id)}
                   style={{
                     width: '100%',
                     padding: '4px 8px',
@@ -266,7 +368,7 @@ export function PendingChangesPanel() {
 
                 <button
                   onClick={() => handleCommit(change)}
-                  disabled={!commitMessages[change.id]?.trim()}
+                  disabled={!commitMessages[change.id]?.trim() || committingIds.has(change.id)}
                   style={{
                     width: '100%',
                     display: 'flex',
@@ -280,8 +382,12 @@ export function PendingChangesPanel() {
                     backgroundColor: 'var(--color-accent)',
                     border: 'none',
                     borderRadius: '4px',
-                    cursor: !commitMessages[change.id]?.trim() ? 'not-allowed' : 'pointer',
-                    opacity: !commitMessages[change.id]?.trim() ? 0.5 : 1,
+                    cursor:
+                      !commitMessages[change.id]?.trim() || committingIds.has(change.id)
+                        ? 'not-allowed'
+                        : 'pointer',
+                    opacity:
+                      !commitMessages[change.id]?.trim() || committingIds.has(change.id) ? 0.5 : 1,
                   }}
                 >
                   <GitCommit size={14} />

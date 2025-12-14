@@ -482,10 +482,13 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         `[commitFile] Committing ${filepath} with message: ${message} by ${authorName || 'Tracyfy User'} `
       );
       await realGitService.commitFile(filepath, message, authorName);
-      await refreshStatus();
+      // Note: We intentionally don't call refreshStatus() here.
+      // Calling it after every commit causes massive performance issues
+      // when committing multiple files. The PendingChangesPanel handles
+      // removing items from the UI optimistically.
       console.log(`[commitFile] Committed ${filepath} successfully`);
     },
-    [isReady, refreshStatus]
+    [isReady]
   );
 
   const getArtifactHistory = useCallback(

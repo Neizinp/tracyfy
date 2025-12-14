@@ -25,7 +25,7 @@ export interface DemoArtifacts {
 }
 
 export const DEMO_PROJECT = {
-  name: 'Sample Product - Release 1.0',
+  name: 'Demo Project',
   description:
     'A demonstration project showcasing requirements management with traceability across requirements, use cases, test cases, and information items.',
 };

@@ -52,6 +52,6 @@ describe('RevisionHistoryTab', () => {
 
     expect(screen.getByText('John Doe')).toBeInTheDocument();
     expect(screen.getByText('Initial commit')).toBeInTheDocument();
-    expect(screen.getByText('abcdef1')).toBeInTheDocument(); // Short hash
+    // Note: Commit hash column was removed to simplify the UI
   });
 });

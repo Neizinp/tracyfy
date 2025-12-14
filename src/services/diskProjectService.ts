@@ -208,6 +208,36 @@ class DiskProjectService {
     return `${prefixMap[type]}-${String(next).padStart(3, '0')}`;
   }
 
+  /**
+   * Get multiple artifact IDs at once (batch allocation)
+   * More efficient than calling getNextId repeatedly
+   */
+  async getNextIds(
+    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users',
+    count: number
+  ): Promise<string[]> {
+    if (count <= 0) return [];
+
+    const current = await this.getCounter(type);
+    const nextEnd = current + count;
+    await this.setCounter(type, nextEnd);
+
+    const prefixMap = {
+      requirements: 'REQ',
+      useCases: 'UC',
+      testCases: 'TC',
+      information: 'INFO',
+      users: 'USER',
+    };
+
+    const ids: string[] = [];
+    for (let i = current + 1; i <= nextEnd; i++) {
+      ids.push(`${prefixMap[type]}-${String(i).padStart(3, '0')}`);
+    }
+
+    return ids;
+  }
+
   // ============ PROJECT OPERATIONS ============
 
   /**

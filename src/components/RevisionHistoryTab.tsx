@@ -150,7 +150,6 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
               <th style={{ padding: '12px 8px', fontWeight: 600 }}>Date</th>
               <th style={{ padding: '12px 8px', fontWeight: 600 }}>Author</th>
               <th style={{ padding: '12px 8px', fontWeight: 600 }}>Message</th>
-              <th style={{ padding: '12px 8px', fontWeight: 600 }}>Commit</th>
             </tr>
           </thead>
           <tbody>
@@ -189,15 +188,6 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
                   </td>
                   <td style={{ padding: '12px 8px', color: 'var(--color-text-primary)' }}>
                     {commit.message}
-                  </td>
-                  <td
-                    style={{
-                      padding: '12px 8px',
-                      fontFamily: 'monospace',
-                      color: 'var(--color-accent-light)',
-                    }}
-                  >
-                    {commit.hash.substring(0, 7)}
                   </td>
                 </tr>
               );

@@ -19,10 +19,11 @@ interface CreatedArtifactIds {
 /**
  * Create a demo project with all sample artifacts and links.
  * Returns the created project.
+ *
+ * Performance optimized: Uses batch ID allocation and parallel saves.
  */
 export async function createDemoProject(): Promise<Project> {
-  const nowDate = new Date();
-  const now = nowDate.getTime();
+  const now = Date.now();
   const createdIds: CreatedArtifactIds = {
     requirements: [],
     useCases: [],
@@ -30,10 +31,8 @@ export async function createDemoProject(): Promise<Project> {
     information: [],
   };
 
-  // Use timestamp suffix to allow multiple demo projects
-  // Format: Dec13-0824 (no colons or spaces that could cause file issues)
-  const timestamp = `${nowDate.toLocaleString('en-US', { month: 'short' })}${nowDate.getDate()}-${String(nowDate.getHours()).padStart(2, '0')}${String(nowDate.getMinutes()).padStart(2, '0')}`;
-  const projectName = `${DEMO_PROJECT.name} (${timestamp})`;
+  // Use the simple demo project name
+  const projectName = DEMO_PROJECT.name;
 
   // 0. Ensure a demo user exists and is selected
   const existingUsers = await diskProjectService.loadAllUsers();
@@ -54,55 +53,53 @@ export async function createDemoProject(): Promise<Project> {
   // 1. Create the project
   const project = await diskProjectService.createProject(projectName, DEMO_PROJECT.description);
 
-  // 2. Create requirements
-  for (const reqData of DEMO_ARTIFACTS.requirements) {
-    const id = await diskProjectService.getNextId('requirements');
-    const requirement: Requirement = {
-      ...reqData,
-      id,
-      lastModified: now,
-    };
-    await diskProjectService.saveRequirement(requirement);
-    createdIds.requirements.push(id);
-  }
+  // 2. Batch allocate all IDs at once (single disk write per type)
+  const [reqIds, ucIds, tcIds, infoIds] = await Promise.all([
+    diskProjectService.getNextIds('requirements', DEMO_ARTIFACTS.requirements.length),
+    diskProjectService.getNextIds('useCases', DEMO_ARTIFACTS.useCases.length),
+    diskProjectService.getNextIds('testCases', DEMO_ARTIFACTS.testCases.length),
+    diskProjectService.getNextIds('information', DEMO_ARTIFACTS.information.length),
+  ]);
 
-  // 3. Create use cases
-  for (const ucData of DEMO_ARTIFACTS.useCases) {
-    const id = await diskProjectService.getNextId('useCases');
-    const useCase: UseCase = {
-      ...ucData,
-      id,
-      lastModified: now,
-    };
-    await diskProjectService.saveUseCase(useCase);
-    createdIds.useCases.push(id);
-  }
+  createdIds.requirements = reqIds;
+  createdIds.useCases = ucIds;
+  createdIds.testCases = tcIds;
+  createdIds.information = infoIds;
 
-  // 4. Create test cases
-  for (const tcData of DEMO_ARTIFACTS.testCases) {
-    const id = await diskProjectService.getNextId('testCases');
-    const testCase: TestCase = {
-      ...tcData,
-      id,
-      lastModified: now,
-    };
-    await diskProjectService.saveTestCase(testCase);
-    createdIds.testCases.push(id);
-  }
+  // 3. Prepare all artifacts with their IDs
+  const requirements: Requirement[] = DEMO_ARTIFACTS.requirements.map((reqData, i) => ({
+    ...reqData,
+    id: reqIds[i],
+    lastModified: now,
+  }));
 
-  // 5. Create information items
-  for (const infoData of DEMO_ARTIFACTS.information) {
-    const id = await diskProjectService.getNextId('information');
-    const information: Information = {
-      ...infoData,
-      id,
-      lastModified: now,
-    };
-    await diskProjectService.saveInformation(information);
-    createdIds.information.push(id);
-  }
+  const useCases: UseCase[] = DEMO_ARTIFACTS.useCases.map((ucData, i) => ({
+    ...ucData,
+    id: ucIds[i],
+    lastModified: now,
+  }));
 
-  // 6. Update project with artifact IDs
+  const testCases: TestCase[] = DEMO_ARTIFACTS.testCases.map((tcData, i) => ({
+    ...tcData,
+    id: tcIds[i],
+    lastModified: now,
+  }));
+
+  const informationItems: Information[] = DEMO_ARTIFACTS.information.map((infoData, i) => ({
+    ...infoData,
+    id: infoIds[i],
+    lastModified: now,
+  }));
+
+  // 4. Save all artifacts in parallel
+  await Promise.all([
+    ...requirements.map((r) => diskProjectService.saveRequirement(r)),
+    ...useCases.map((u) => diskProjectService.saveUseCase(u)),
+    ...testCases.map((t) => diskProjectService.saveTestCase(t)),
+    ...informationItems.map((i) => diskProjectService.saveInformation(i)),
+  ]);
+
+  // 5. Update project with artifact IDs
   project.requirementIds = createdIds.requirements;
   project.useCaseIds = createdIds.useCases;
   project.testCaseIds = createdIds.testCases;
@@ -110,18 +107,22 @@ export async function createDemoProject(): Promise<Project> {
   project.lastModified = now;
   await diskProjectService.updateProject(project);
 
-  // 7. Create links between artifacts
-  // Links can be global (visible everywhere) or project-specific
-  for (const linkDef of DEMO_ARTIFACTS.links) {
-    const sourceId = getArtifactId(linkDef.sourceType, linkDef.sourceIndex, createdIds);
-    const targetId = getArtifactId(linkDef.targetType, linkDef.targetIndex, createdIds);
+  // 6. Create links between artifacts in parallel
+  const linkPromises = DEMO_ARTIFACTS.links
+    .map((linkDef) => {
+      const sourceId = getArtifactId(linkDef.sourceType, linkDef.sourceIndex, createdIds);
+      const targetId = getArtifactId(linkDef.targetType, linkDef.targetIndex, createdIds);
 
-    if (sourceId && targetId) {
-      // Global links have empty projectIds, project links include this project's ID
-      const projectIds = linkDef.scope === 'global' ? [] : [project.id];
-      await diskLinkService.createLink(sourceId, targetId, linkDef.type, projectIds);
-    }
-  }
+      if (sourceId && targetId) {
+        // Global links have empty projectIds, project links include this project's ID
+        const projectIds = linkDef.scope === 'global' ? [] : [project.id];
+        return diskLinkService.createLink(sourceId, targetId, linkDef.type, projectIds);
+      }
+      return null;
+    })
+    .filter(Boolean);
+
+  await Promise.all(linkPromises);
 
   return project;
 }
