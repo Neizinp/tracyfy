@@ -99,7 +99,7 @@ export function PendingChangesPanel() {
 
         // For projects, always use "Update Project" since project folder uses different structure
         if (change.type === 'project') {
-          defaults[change.id] = change.status === 'new' ? 'First commit' : `Update ${change.title}`;
+          defaults[change.id] = change.status === 'new' ? 'First commit' : '';
           processedDefaultsRef.current.add(change.id);
           continue;
         }
@@ -111,8 +111,8 @@ export function PendingChangesPanel() {
           // Check if there's existing git history for this artifact
           const history = await getArtifactHistory(artifactFolder, change.id);
           if (history.length > 0) {
-            // Has history - use "Update" message
-            defaults[change.id] = `Update ${change.id}`;
+            // Has history - leave empty for user to type
+            defaults[change.id] = '';
           } else {
             // No history - truly a first commit
             defaults[change.id] = 'First commit';
@@ -120,7 +120,7 @@ export function PendingChangesPanel() {
           processedDefaultsRef.current.add(change.id);
         } catch {
           // On error, fall back to status-based message
-          defaults[change.id] = change.status === 'new' ? 'First commit' : `Update ${change.id}`;
+          defaults[change.id] = change.status === 'new' ? 'First commit' : '';
           processedDefaultsRef.current.add(change.id);
         }
       }
