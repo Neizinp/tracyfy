@@ -98,6 +98,48 @@ export const ModalManager: React.FC = () => {
     }
   };
 
+  // Handler for selecting an artifact from VersionHistory commits
+  const handleSelectArtifact = useCallback(
+    (artifactId: string, artifactType: string) => {
+      // Map folder names to artifact type handling
+      switch (artifactType) {
+        case 'requirements': {
+          const req = globalRequirements.find((r) => r.id === artifactId);
+          if (req) {
+            ui.setEditingRequirement(req);
+            ui.setIsEditRequirementModalOpen(true);
+          }
+          break;
+        }
+        case 'usecases': {
+          const uc = globalUseCases.find((u) => u.id === artifactId);
+          if (uc) {
+            ui.setEditingUseCase(uc);
+            ui.setIsUseCaseModalOpen(true);
+          }
+          break;
+        }
+        case 'testcases': {
+          const tc = globalTestCases.find((t) => t.id === artifactId);
+          if (tc) {
+            ui.setSelectedTestCaseId(tc.id);
+            ui.setIsEditTestCaseModalOpen(true);
+          }
+          break;
+        }
+        case 'information': {
+          const info = globalInformation.find((i) => i.id === artifactId);
+          if (info) {
+            ui.setSelectedInformation(info);
+            ui.setIsInformationModalOpen(true);
+          }
+          break;
+        }
+      }
+    },
+    [ui, globalRequirements, globalUseCases, globalTestCases, globalInformation]
+  );
+
   // Determine which TestCase to show (edit mode) or null (create mode)
   const selectedTestCase = ui.isEditTestCaseModalOpen
     ? testCases.find((t) => t.id === ui.selectedTestCaseId) || null
@@ -176,6 +218,7 @@ export const ModalManager: React.FC = () => {
         projectName={currentProject?.name ?? null}
         onClose={() => ui.setIsVersionHistoryOpen(false)}
         onCreateBaseline={createBaseline}
+        onSelectArtifact={handleSelectArtifact}
       />
 
       {ui.isProjectSettingsOpen && ui.projectToEdit && (

@@ -10,6 +10,7 @@ interface VersionHistoryProps {
   projectName: string | null;
   onClose: () => void;
   onCreateBaseline: (name: string, message: string) => void;
+  onSelectArtifact?: (artifactId: string, artifactType: string) => void;
 }
 
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -21,6 +22,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   projectName,
   onClose,
   onCreateBaseline,
+  onSelectArtifact,
 }) => {
   const [isCreatingBaseline, setIsCreatingBaseline] = useState(false);
   const [activeTab, setActiveTab] = useState<'baselines' | 'commits' | 'global'>('baselines');
@@ -31,6 +33,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   );
   const [isLoadingCommits, setIsLoadingCommits] = useState(false);
   const [isLoadingGlobalCommits, setIsLoadingGlobalCommits] = useState(false);
+  const [commitFiles, setCommitFiles] = useState<Map<string, string[]>>(new Map());
 
   // Project-specific baseline helpers
   const projectPrefix = projectName ? `[${projectName}] ` : '';
@@ -117,6 +120,16 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     try {
       const history = await realGitService.getHistory(); // No filepath = all commits
       setGlobalCommits(history);
+
+      // Load files for each commit in parallel
+      const filesMap = new Map<string, string[]>();
+      await Promise.all(
+        history.map(async (commit) => {
+          const files = await realGitService.getCommitFiles(commit.hash);
+          filesMap.set(commit.hash, files);
+        })
+      );
+      setCommitFiles(filesMap);
     } catch (error) {
       console.error('Failed to load global commits:', error);
     } finally {
@@ -742,6 +755,44 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                             <span>{commit.author}</span>
                             <span>•</span>
                             <span>{formatDateTime(commit.timestamp)}</span>
+                            <span>•</span>
+                            {(() => {
+                              const filePath = commitFiles.get(commit.hash)?.[0];
+                              if (!commitFiles.has(commit.hash)) {
+                                return (
+                                  <span style={{ color: 'var(--color-text-muted)' }}>...</span>
+                                );
+                              }
+                              if (!filePath) {
+                                return <span style={{ color: 'var(--color-text-muted)' }}>—</span>;
+                              }
+                              const fileName = filePath.split('/').pop()?.replace('.md', '') || '';
+                              const artifactType = filePath.split('/')[0]; // e.g., "requirements", "usecases"
+                              return (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onSelectArtifact) {
+                                      onSelectArtifact(fileName, artifactType);
+                                      onClose();
+                                    }
+                                  }}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    padding: 0,
+                                    color: 'var(--color-accent)',
+                                    fontWeight: 500,
+                                    cursor: onSelectArtifact ? 'pointer' : 'default',
+                                    textDecoration: onSelectArtifact ? 'underline' : 'none',
+                                    font: 'inherit',
+                                  }}
+                                  disabled={!onSelectArtifact}
+                                >
+                                  {fileName}
+                                </button>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>

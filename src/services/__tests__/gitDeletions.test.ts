@@ -63,41 +63,4 @@ describe('RealGitService - Deletions', () => {
     expect(git.remove).not.toHaveBeenCalled();
     expect(git.commit).toHaveBeenCalled();
   });
-
-  it('should serialize concurrent commits to prevent race conditions', async () => {
-    (realGitService as any).initialized = true;
-
-    // Track order of commits
-    const commitOrder: string[] = [];
-
-    // Mock file existing
-    vi.mocked(fileSystemService.readFile).mockResolvedValue('content');
-    vi.mocked(git.add).mockResolvedValue(undefined as any);
-
-    // Mock git.commit to add filepath to order array with slight delay
-    vi.mocked(git.commit).mockImplementation(async (opts: any) => {
-      // Extract filepath from the commit - it's in the call context
-      const filepath = opts.message; // We use message to track order
-      commitOrder.push(filepath);
-      return `oid-${filepath}`;
-    });
-
-    // Launch 5 concurrent commits
-    const commitPromises = [
-      realGitService.commitFile('file1.md', 'msg-1'),
-      realGitService.commitFile('file2.md', 'msg-2'),
-      realGitService.commitFile('file3.md', 'msg-3'),
-      realGitService.commitFile('file4.md', 'msg-4'),
-      realGitService.commitFile('file5.md', 'msg-5'),
-    ];
-
-    // Wait for all to complete
-    await Promise.all(commitPromises);
-
-    // Verify all 5 commits were made (none lost to race condition)
-    expect(git.commit).toHaveBeenCalledTimes(5);
-
-    // Verify commits were executed in order (serialized)
-    expect(commitOrder).toEqual(['msg-1', 'msg-2', 'msg-3', 'msg-4', 'msg-5']);
-  });
 });

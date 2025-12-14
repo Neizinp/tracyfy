@@ -594,6 +594,123 @@ class RealGitService {
   }
 
   /**
+   * Get files changed in a specific commit
+   * Returns array of filepaths that were added, modified, or deleted
+   */
+  async getCommitFiles(commitHash: string): Promise<string[]> {
+    if (!this.initialized) {
+      return [];
+    }
+
+    try {
+      // Get the commit to find its parent
+      const [commitLog] = await git.log({
+        fs: fsAdapter,
+        dir: this.getRootDir(),
+        ref: commitHash,
+        depth: 1,
+      });
+
+      if (!commitLog) return [];
+
+      const parentHash = commitLog.commit.parent[0]; // First parent
+
+      // Get files in this commit's tree
+      const currentFiles = await git.listFiles({
+        fs: fsAdapter,
+        dir: this.getRootDir(),
+        ref: commitHash,
+      });
+
+      if (!parentHash) {
+        // Initial commit - all files are new
+        console.log(
+          `[getCommitFiles] ${commitHash.substring(0, 7)}: Initial commit, files:`,
+          currentFiles
+        );
+        return currentFiles;
+      }
+
+      // Get files in parent's tree
+      const parentFiles = await git.listFiles({
+        fs: fsAdapter,
+        dir: this.getRootDir(),
+        ref: parentHash,
+      });
+
+      // Find added/deleted files (fast check)
+      const currentSet = new Set(currentFiles);
+      const parentSet = new Set(parentFiles);
+      const changedFiles: string[] = [];
+
+      // Added files
+      for (const file of currentFiles) {
+        if (!parentSet.has(file)) {
+          changedFiles.push(file);
+        }
+      }
+
+      // Deleted files
+      for (const file of parentFiles) {
+        if (!currentSet.has(file)) {
+          changedFiles.push(file);
+        }
+      }
+
+      // If no added/deleted, try to find modified file from commit message
+      if (changedFiles.length === 0) {
+        const msg = commitLog.commit.message.toLowerCase();
+        for (const file of currentFiles) {
+          const filename = file.split('/').pop()?.replace('.md', '') || '';
+          if (msg.includes(filename.toLowerCase())) {
+            changedFiles.push(file);
+            break;
+          }
+        }
+      }
+
+      // Still nothing? Compare blobs to find modified file (slower but accurate)
+      if (changedFiles.length === 0) {
+        for (const file of currentFiles) {
+          if (parentSet.has(file)) {
+            try {
+              const [currentBlob, parentBlob] = await Promise.all([
+                git.readBlob({
+                  fs: fsAdapter,
+                  dir: this.getRootDir(),
+                  oid: commitHash,
+                  filepath: file,
+                }),
+                git.readBlob({
+                  fs: fsAdapter,
+                  dir: this.getRootDir(),
+                  oid: parentHash,
+                  filepath: file,
+                }),
+              ]);
+              if (currentBlob.oid !== parentBlob.oid) {
+                changedFiles.push(file);
+                break; // One file per commit, so stop after finding it
+              }
+            } catch {
+              // Skip files that can't be read
+            }
+          }
+        }
+      }
+
+      console.log(
+        `[getCommitFiles] ${commitHash.substring(0, 7)}: current=${currentFiles.length}, parent=${parentFiles.length}, changed=`,
+        changedFiles
+      );
+      return changedFiles;
+    } catch (error) {
+      console.error('[getCommitFiles] Failed:', error);
+      return [];
+    }
+  }
+
+  /**
    * Read file content at a specific commit
    */
   async readFileAtCommit(filepath: string, commitHash: string): Promise<string | null> {
