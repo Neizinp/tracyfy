@@ -492,133 +492,135 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                 ))}
               </div>
             )
-          ) : // Commits List
-          isLoadingCommits ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: 'var(--spacing-xl)',
-                color: 'var(--color-text-muted)',
-              }}
-            >
-              <p>Loading commits...</p>
-            </div>
-          ) : commits.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: 'var(--spacing-xl)',
-                color: 'var(--color-text-muted)',
-              }}
-            >
-              <GitCommit size={48} style={{ opacity: 0.5, marginBottom: '12px' }} />
-              <p>No commits yet.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {commits.map((commit, index) => {
-                const baselineTags = baselineCommitHashes.get(commit.hash);
-                const isBaseline = baselineTags && baselineTags.length > 0;
+          ) : activeTab === 'commits' ? (
+            // Project Commits List
+            isLoadingCommits ? (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: 'var(--spacing-xl)',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                <p>Loading commits...</p>
+              </div>
+            ) : commits.length === 0 ? (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: 'var(--spacing-xl)',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                <GitCommit size={48} style={{ opacity: 0.5, marginBottom: '12px' }} />
+                <p>No commits yet.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {commits.map((commit, index) => {
+                  const baselineTags = baselineCommitHashes.get(commit.hash);
+                  const isBaseline = baselineTags && baselineTags.length > 0;
 
-                return (
-                  <div
-                    key={commit.hash}
-                    style={{
-                      padding: 'var(--spacing-md)',
-                      borderRadius: '6px',
-                      border: isBaseline
-                        ? '1px solid var(--color-info-bg)'
-                        : '1px solid var(--color-border)',
-                      backgroundColor: isBaseline
-                        ? 'var(--color-info-bg)'
-                        : 'var(--color-bg-secondary)',
-                      transition: 'background-color 0.2s',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                      <div style={{ marginTop: '2px' }}>
-                        {isBaseline ? (
-                          <Tag size={16} style={{ color: 'var(--color-info)' }} />
-                        ) : (
-                          <GitCommit size={16} style={{ color: 'var(--color-text-muted)' }} />
-                        )}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            flexWrap: 'wrap',
-                          }}
-                        >
-                          <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                            {commit.message.split('\n')[0]}
-                          </span>
-                          {isBaseline &&
-                            baselineTags.map((tagName) => (
+                  return (
+                    <div
+                      key={commit.hash}
+                      style={{
+                        padding: 'var(--spacing-md)',
+                        borderRadius: '6px',
+                        border: isBaseline
+                          ? '1px solid var(--color-info-bg)'
+                          : '1px solid var(--color-border)',
+                        backgroundColor: isBaseline
+                          ? 'var(--color-info-bg)'
+                          : 'var(--color-bg-secondary)',
+                        transition: 'background-color 0.2s',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                        <div style={{ marginTop: '2px' }}>
+                          {isBaseline ? (
+                            <Tag size={16} style={{ color: 'var(--color-info)' }} />
+                          ) : (
+                            <GitCommit size={16} style={{ color: 'var(--color-text-muted)' }} />
+                          )}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              flexWrap: 'wrap',
+                            }}
+                          >
+                            <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>
+                              {commit.message.split('\n')[0]}
+                            </span>
+                            {isBaseline &&
+                              baselineTags.map((tagName) => (
+                                <span
+                                  key={tagName}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    padding: '2px 8px',
+                                    borderRadius: '12px',
+                                    backgroundColor: 'var(--color-info-bg)',
+                                    color: 'var(--color-info-light)',
+                                    fontSize: 'var(--font-size-xs)',
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  <Tag size={10} />
+                                  {tagName}
+                                </span>
+                              ))}
+                            {index === 0 && (
                               <span
-                                key={tagName}
                                 style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: '4px',
                                   padding: '2px 8px',
                                   borderRadius: '12px',
-                                  backgroundColor: 'var(--color-info-bg)',
-                                  color: 'var(--color-info-light)',
+                                  backgroundColor: 'var(--color-success-bg)',
+                                  color: 'var(--color-success-light)',
                                   fontSize: 'var(--font-size-xs)',
                                   fontWeight: 500,
                                 }}
                               >
-                                <Tag size={10} />
-                                {tagName}
+                                HEAD
                               </span>
-                            ))}
-                          {index === 0 && (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                padding: '2px 8px',
-                                borderRadius: '12px',
-                                backgroundColor: 'var(--color-success-bg)',
-                                color: 'var(--color-success-light)',
-                                fontSize: 'var(--font-size-xs)',
-                                fontWeight: 500,
-                              }}
-                            >
-                              HEAD
-                            </span>
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            marginTop: '4px',
-                            fontSize: 'var(--font-size-sm)',
-                            color: 'var(--color-text-muted)',
-                          }}
-                        >
-                          <span
-                            style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-xs)' }}
+                            )}
+                          </div>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              marginTop: '4px',
+                              fontSize: 'var(--font-size-sm)',
+                              color: 'var(--color-text-muted)',
+                            }}
                           >
-                            {commit.hash.substring(0, 7)}
-                          </span>
-                          <span>•</span>
-                          <span>{commit.author}</span>
-                          <span>•</span>
-                          <span>{formatDateTime(commit.timestamp)}</span>
+                            <span
+                              style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-xs)' }}
+                            >
+                              {commit.hash.substring(0, 7)}
+                            </span>
+                            <span>•</span>
+                            <span>{commit.author}</span>
+                            <span>•</span>
+                            <span>{formatDateTime(commit.timestamp)}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )
+          ) : null}
 
           {/* Global Commits List */}
           {activeTab === 'global' &&
@@ -761,8 +763,8 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
           {activeTab === 'baselines'
             ? '💡 Tip: Create baselines to save named snapshots of your project (e.g., "v1.0 Release").'
             : activeTab === 'commits'
-              ? '💡 Tip: Shows commits affecting this project only.'
-              : '💡 Tip: All commits across the entire repository.'}
+              ? '💡 Tip: Shows commits to the project file only (project metadata changes).'
+              : '💡 Tip: Shows all commits across all files (artifacts, projects, etc.).'}
         </div>
       </div>
 

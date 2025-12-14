@@ -112,6 +112,8 @@ function parseStatusMatrix(matrix: [string, number, number, number][]): {
 class RealGitService {
   private initialized = false;
   private rootDir = '.';
+  // Commit queue to serialize git commits (prevents race conditions)
+  private commitQueue: Promise<void> = Promise.resolve();
 
   /**
    * Get the root directory path (Electron uses absolute path, browser uses '.')
@@ -388,28 +390,35 @@ class RealGitService {
       throw new Error('Git service not initialized');
     }
 
-    const fileExists = (await fileSystemService.readFile(filepath)) !== null;
-    const cache = {};
+    // Queue the commit to ensure serialized execution
+    // This prevents race conditions when multiple commits run concurrently
+    this.commitQueue = this.commitQueue.then(async () => {
+      const fileExists = (await fileSystemService.readFile(filepath)) !== null;
+      const cache = {};
 
-    if (fileExists) {
-      await git.add({ fs: fsAdapter, dir: this.getRootDir(), filepath, cache });
-    } else {
-      // File doesn't exist, assume it's a deletion
-      await git.remove({ fs: fsAdapter, dir: this.getRootDir(), filepath, cache });
-    }
+      if (fileExists) {
+        await git.add({ fs: fsAdapter, dir: this.getRootDir(), filepath, cache });
+      } else {
+        // File doesn't exist, assume it's a deletion
+        await git.remove({ fs: fsAdapter, dir: this.getRootDir(), filepath, cache });
+      }
 
-    const authorNameToUse = authorName || 'Tracyfy User';
-    const commitOid = await git.commit({
-      fs: fsAdapter,
-      dir: this.getRootDir(),
-      message,
-      author: { name: authorNameToUse, email: 'user@tracyfy.local' },
-      cache,
+      const authorNameToUse = authorName || 'Tracyfy User';
+      const commitOid = await git.commit({
+        fs: fsAdapter,
+        dir: this.getRootDir(),
+        message,
+        author: { name: authorNameToUse, email: 'user@tracyfy.local' },
+        cache,
+      });
+
+      console.log(
+        `[commitFile] Successfully committed ${filepath} by ${authorNameToUse}, SHA: ${commitOid}`
+      );
     });
 
-    console.log(
-      `[commitFile] Successfully committed ${filepath} by ${authorNameToUse}, SHA: ${commitOid}`
-    );
+    // Wait for our commit to complete
+    await this.commitQueue;
   }
 
   /**
