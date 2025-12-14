@@ -175,22 +175,27 @@ export const ProjectLayout: React.FC = () => {
           return;
         }
 
-        await exportProjectToPDF(
-          currentProject,
-          {
-            requirements: globalRequirements,
-            useCases: globalUseCases,
-            testCases: globalTestCases,
-            information: globalInformation,
-          },
-          currentProject.requirementIds,
-          currentProject.useCaseIds,
-          currentProject.testCaseIds,
-          currentProject.informationIds,
-          baselines,
-          selectedBaseline, // selectedBaseline: ProjectBaseline | null
-          currentUser?.name
-        );
+        const taskId = startTask('Exporting PDF...');
+        try {
+          await exportProjectToPDF(
+            currentProject,
+            {
+              requirements: globalRequirements,
+              useCases: globalUseCases,
+              testCases: globalTestCases,
+              information: globalInformation,
+            },
+            currentProject.requirementIds,
+            currentProject.useCaseIds,
+            currentProject.testCaseIds,
+            currentProject.informationIds,
+            baselines,
+            selectedBaseline, // selectedBaseline: ProjectBaseline | null
+            currentUser?.name
+          );
+        } finally {
+          endTask(taskId);
+        }
       }}
       onExportExcel={async () => {
         if (!currentProject) {
@@ -198,20 +203,25 @@ export const ProjectLayout: React.FC = () => {
           return;
         }
 
-        await exportProjectToExcel(
-          currentProject,
-          {
-            requirements: globalRequirements,
-            useCases: globalUseCases,
-            testCases: globalTestCases,
-            information: globalInformation,
-          },
-          currentProject.requirementIds,
-          currentProject.useCaseIds,
-          currentProject.testCaseIds,
-          currentProject.informationIds,
-          baselines
-        );
+        const taskId = startTask('Exporting Excel...');
+        try {
+          await exportProjectToExcel(
+            currentProject,
+            {
+              requirements: globalRequirements,
+              useCases: globalUseCases,
+              testCases: globalTestCases,
+              information: globalInformation,
+            },
+            currentProject.requirementIds,
+            currentProject.useCaseIds,
+            currentProject.testCaseIds,
+            currentProject.informationIds,
+            baselines
+          );
+        } finally {
+          endTask(taskId);
+        }
       }}
       onSearch={ui.setSearchQuery}
       rightPanel={
