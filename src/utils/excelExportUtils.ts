@@ -15,6 +15,18 @@ import { realGitService } from '../services/realGitService';
 // Excel handles newlines in cells if wrapText is on.
 const sanitize = (text: string | undefined) => text || '';
 
+/**
+ * Sort artifacts by their numeric ID suffix (e.g., REQ-001, REQ-002)
+ * Extracts the number from IDs like "REQ-001", "UC-002", "TC-003", "INFO-004"
+ */
+function sortByIdNumber<T extends { id: string }>(artifacts: T[]): T[] {
+  return [...artifacts].sort((a, b) => {
+    const numA = parseInt(a.id.match(/\d+$/)?.[0] || '0', 10);
+    const numB = parseInt(b.id.match(/\d+$/)?.[0] || '0', 10);
+    return numA - numB;
+  });
+}
+
 export async function exportProjectToExcel(
   project: Project,
   globalState: {
@@ -31,18 +43,18 @@ export async function exportProjectToExcel(
 ): Promise<void> {
   const wb = XLSX.utils.book_new();
 
-  // Filter artifacts
-  const projectRequirements = globalState.requirements.filter(
-    (r) => projectRequirementIds.includes(r.id) && !r.isDeleted
+  // Filter artifacts and sort by ID number for consistent ordering
+  const projectRequirements = sortByIdNumber(
+    globalState.requirements.filter((r) => projectRequirementIds.includes(r.id) && !r.isDeleted)
   );
-  const projectUseCases = globalState.useCases.filter(
-    (u) => projectUseCaseIds.includes(u.id) && !u.isDeleted
+  const projectUseCases = sortByIdNumber(
+    globalState.useCases.filter((u) => projectUseCaseIds.includes(u.id) && !u.isDeleted)
   );
-  const projectTestCases = globalState.testCases.filter(
-    (t) => projectTestCaseIds.includes(t.id) && !t.isDeleted
+  const projectTestCases = sortByIdNumber(
+    globalState.testCases.filter((t) => projectTestCaseIds.includes(t.id) && !t.isDeleted)
   );
-  const projectInformation = globalState.information.filter(
-    (i) => projectInformationIds.includes(i.id) && !i.isDeleted
+  const projectInformation = sortByIdNumber(
+    globalState.information.filter((i) => projectInformationIds.includes(i.id) && !i.isDeleted)
   );
 
   // 1. Revision History
@@ -58,7 +70,7 @@ export async function exportProjectToExcel(
     title: string
   ) => {
     try {
-      const history = await realGitService.getHistory(`${type}/${id}.json`);
+      const history = await realGitService.getHistory(`${type}/${id}.md`);
       const filteredHistory = lastBaseline
         ? history.filter((commit) => commit.timestamp > lastBaseline.timestamp)
         : history;

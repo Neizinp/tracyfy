@@ -1,5 +1,17 @@
 import type { Project, Requirement, UseCase, TestCase, Information } from '../types';
 
+/**
+ * Sort artifacts by their numeric ID suffix (e.g., REQ-001, REQ-002)
+ * Extracts the number from IDs like "REQ-001", "UC-002", "TC-003", "INFO-004"
+ */
+function sortByIdNumber<T extends { id: string }>(artifacts: T[]): T[] {
+  return [...artifacts].sort((a, b) => {
+    const numA = parseInt(a.id.match(/\d+$/)?.[0] || '0', 10);
+    const numB = parseInt(b.id.match(/\d+$/)?.[0] || '0', 10);
+    return numA - numB;
+  });
+}
+
 export interface ExportData {
   project: {
     id: string;
@@ -28,18 +40,18 @@ export async function exportProjectToJSON(
   projectTestCaseIds: string[],
   projectInformationIds: string[]
 ): Promise<void> {
-  // Filter artifacts
-  const requirements = globalState.requirements.filter(
-    (r) => projectRequirementIds.includes(r.id) && !r.isDeleted
+  // Filter artifacts and sort by ID number for consistent ordering
+  const requirements = sortByIdNumber(
+    globalState.requirements.filter((r) => projectRequirementIds.includes(r.id) && !r.isDeleted)
   );
-  const useCases = globalState.useCases.filter(
-    (u) => projectUseCaseIds.includes(u.id) && !u.isDeleted
+  const useCases = sortByIdNumber(
+    globalState.useCases.filter((u) => projectUseCaseIds.includes(u.id) && !u.isDeleted)
   );
-  const testCases = globalState.testCases.filter(
-    (t) => projectTestCaseIds.includes(t.id) && !t.isDeleted
+  const testCases = sortByIdNumber(
+    globalState.testCases.filter((t) => projectTestCaseIds.includes(t.id) && !t.isDeleted)
   );
-  const information = globalState.information.filter(
-    (i) => projectInformationIds.includes(i.id) && !i.isDeleted
+  const information = sortByIdNumber(
+    globalState.information.filter((i) => projectInformationIds.includes(i.id) && !i.isDeleted)
   );
 
   // Note: Links are now stored in each artifact's linkedArtifacts field
