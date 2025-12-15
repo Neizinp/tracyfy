@@ -56,7 +56,7 @@ interface FileSystemContextValue {
   refreshBaselines: () => Promise<void>;
 }
 
-const FileSystemContext = createContext<FileSystemContextValue | undefined>(undefined);
+export const FileSystemContext = createContext<FileSystemContextValue | undefined>(undefined);
 
 // Check if we're in E2E test mode (skip disk operations)
 const isE2EMode = () => typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__;

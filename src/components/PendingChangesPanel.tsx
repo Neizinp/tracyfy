@@ -44,26 +44,32 @@ export function PendingChangesPanel() {
         const parts = fs.path.split('/');
         if (parts.length < 2) return null;
 
-        const typeStr = parts[0]; // 'requirements', 'usecases', etc.
+        const typeStr = parts[0]; // 'requirements', 'usecases', 'assets', etc.
         const filename = parts[1];
-        const id = filename.replace('.md', '');
+        // For .md files, strip extension. For assets (images), keep the full filename as id.
+        const id = filename.endsWith('.md') ? filename.replace('.md', '') : filename;
 
         // Map folder names to artifact types
-        let type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'project';
+        let type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'project' | 'asset';
         if (typeStr === 'requirements') type = 'requirement';
         else if (typeStr === 'usecases') type = 'usecase';
         else if (typeStr === 'testcases') type = 'testcase';
         else if (typeStr === 'information') type = 'information';
         else if (typeStr === 'projects') type = 'project';
+        else if (typeStr === 'assets') type = 'asset';
         else return null;
 
         const status = fs.status === 'new' ? 'new' : 'modified';
 
         // For projects, use the project name instead of ID
+        // For assets, use the filename (which is a UUID)
         let title = id;
         if (type === 'project') {
           const project = projects.find((p) => p.id === id);
           title = project?.name || id;
+        } else if (type === 'asset') {
+          // For assets, show a friendlier name
+          title = `Image: ${filename}`;
         }
 
         return {
@@ -98,6 +104,13 @@ export function PendingChangesPanel() {
         // For projects, always use "Update Project" since project folder uses different structure
         if (change.type === 'project') {
           defaults[change.id] = change.status === 'new' ? 'First commit' : '';
+          processedDefaultsRef.current.add(change.id);
+          continue;
+        }
+
+        // For assets (images), use "Picture added" as default
+        if (change.type === 'asset') {
+          defaults[change.id] = 'Picture added';
           processedDefaultsRef.current.add(change.id);
           continue;
         }
@@ -257,7 +270,9 @@ export function PendingChangesPanel() {
             ? 'Test Cases'
             : change.type === 'project'
               ? 'Projects'
-              : 'Information';
+              : change.type === 'asset'
+                ? 'Assets'
+                : 'Information';
     if (!groupedChanges[typeName]) {
       groupedChanges[typeName] = [];
     }

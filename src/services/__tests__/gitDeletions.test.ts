@@ -7,6 +7,7 @@ import git from 'isomorphic-git';
 vi.mock('../fileSystemService', () => ({
   fileSystemService: {
     readFile: vi.fn(),
+    readFileBinary: vi.fn(),
     writeFile: vi.fn(),
     checkGitExists: vi.fn(),
   },
@@ -31,8 +32,8 @@ describe('RealGitService - Deletions', () => {
     const filepath = 'deleted-file.md';
     const message = 'Delete file';
 
-    // Mock file NOT existing
-    vi.mocked(fileSystemService.readFile).mockResolvedValue(null);
+    // Mock file NOT existing (readFileBinary returns null)
+    vi.mocked(fileSystemService.readFileBinary).mockResolvedValue(null);
 
     // Mock git functions
     vi.mocked(git.remove).mockResolvedValue(undefined as any);
@@ -51,8 +52,8 @@ describe('RealGitService - Deletions', () => {
     const filepath = 'existing-file.md';
     const message = 'Update file';
 
-    // Mock file existing
-    vi.mocked(fileSystemService.readFile).mockResolvedValue('content');
+    // Mock file existing (readFileBinary returns binary content)
+    vi.mocked(fileSystemService.readFileBinary).mockResolvedValue(new Uint8Array([1, 2, 3]));
 
     vi.mocked(git.add).mockResolvedValue(undefined as any);
     vi.mocked(git.commit).mockResolvedValue('oid-456');

@@ -320,6 +320,11 @@ describe('RealGitService', () => {
         if (path === 'requirements/REQ-001.md') return '# Test requirement';
         return null;
       });
+      // Mock readFileBinary for file existence checks
+      vi.mocked(fileSystemService.readFileBinary).mockImplementation(async (path: string) => {
+        if (path === 'requirements/REQ-001.md') return new Uint8Array([1, 2, 3]);
+        return null;
+      });
 
       await realGitService.init();
     });
@@ -352,6 +357,8 @@ describe('RealGitService', () => {
         if (path === '.git/HEAD') return 'ref: refs/heads/main\n';
         return null; // File doesn't exist
       });
+      // Also mock readFileBinary to return null for non-existent file
+      vi.mocked(fileSystemService.readFileBinary).mockResolvedValue(null);
 
       await realGitService.commitFile('requirements/NONEXISTENT.md', 'Test commit');
 
@@ -369,6 +376,11 @@ describe('RealGitService', () => {
       vi.mocked(fileSystemService.readFile).mockImplementation(async (path: string) => {
         if (path === '.git/HEAD') return 'ref: refs/heads/main\n';
         if (path.endsWith('.md')) return '# Content';
+        return null;
+      });
+      // Mock readFileBinary for file existence
+      vi.mocked(fileSystemService.readFileBinary).mockImplementation(async (path: string) => {
+        if (path.endsWith('.md')) return new Uint8Array([1, 2, 3]);
         return null;
       });
 

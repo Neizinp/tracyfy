@@ -10,6 +10,7 @@ import type {
 } from '../types';
 import { formatDate } from './dateUtils';
 import { realGitService } from '../services/realGitService';
+import { fileSystemService } from '../services/fileSystemService';
 import type { CommitInfo } from '../types';
 
 // Additional types
@@ -17,6 +18,144 @@ interface TOCEntry {
   title: string;
   page: number;
   level: number;
+}
+
+// Image cache to avoid loading the same image multiple times
+const imageCache = new Map<string, string>();
+
+/**
+ * Extract image paths from markdown content
+ * Matches ![alt](./assets/...) pattern
+ */
+function extractImagePaths(markdown: string): string[] {
+  const regex = /!\[[^\]]*\]\((\.[^)]+)\)/g;
+  const paths: string[] = [];
+  let match;
+  while ((match = regex.exec(markdown)) !== null) {
+    paths.push(match[1]);
+  }
+  return paths;
+}
+
+/**
+ * Load an image from the file system and convert to base64 data URL
+ * Returns null if image cannot be loaded
+ */
+async function loadImageAsBase64(relativePath: string): Promise<string | null> {
+  // Check cache first
+  if (imageCache.has(relativePath)) {
+    return imageCache.get(relativePath)!;
+  }
+
+  try {
+    // Normalize path (remove leading ./)
+    const normalizedPath = relativePath.replace(/^\.\//, '');
+
+    // Read binary data
+    const data = await fileSystemService.readFileBinary(normalizedPath);
+    if (!data) {
+      console.warn(`[PDF Export] Image not found: ${relativePath}`);
+      return null;
+    }
+
+    // Determine MIME type from extension
+    const ext = normalizedPath.split('.').pop()?.toLowerCase() || 'png';
+    const mimeTypes: Record<string, string> = {
+      png: 'image/png',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      gif: 'image/gif',
+      webp: 'image/webp',
+    };
+    const mimeType = mimeTypes[ext] || 'image/png';
+
+    // Convert to base64 data URL
+    const base64 = btoa(String.fromCharCode(...data));
+    const dataUrl = `data:${mimeType};base64,${base64}`;
+
+    // Cache the result
+    imageCache.set(relativePath, dataUrl);
+
+    return dataUrl;
+  } catch (error) {
+    console.error(`[PDF Export] Failed to load image: ${relativePath}`, error);
+    return null;
+  }
+}
+
+/**
+ * Add images from markdown content to the PDF at the current position
+ * Returns the new Y position after adding images
+ */
+async function addImagesFromMarkdown(
+  doc: jsPDF,
+  markdown: string,
+  startY: number,
+  contentLeft: number,
+  contentWidth: number,
+  pageRef: { page: number }
+): Promise<number> {
+  const imagePaths = extractImagePaths(markdown);
+  if (imagePaths.length === 0) return startY;
+
+  let currentY = startY;
+  const maxImageHeight = 60; // Maximum image height in mm
+  const maxImageWidth = contentWidth;
+
+  for (const imagePath of imagePaths) {
+    const dataUrl = await loadImageAsBase64(imagePath);
+    if (!dataUrl) continue;
+
+    try {
+      // Get image dimensions
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = reject;
+        img.src = dataUrl;
+      });
+
+      // Calculate scaled dimensions to fit within bounds
+      let imgWidth = img.width;
+      let imgHeight = img.height;
+
+      // Convert pixels to mm (assuming 96 DPI)
+      const pxToMm = 0.264583;
+      imgWidth *= pxToMm;
+      imgHeight *= pxToMm;
+
+      // Scale to fit within max dimensions
+      if (imgWidth > maxImageWidth) {
+        const scale = maxImageWidth / imgWidth;
+        imgWidth = maxImageWidth;
+        imgHeight *= scale;
+      }
+      if (imgHeight > maxImageHeight) {
+        const scale = maxImageHeight / imgHeight;
+        imgHeight = maxImageHeight;
+        imgWidth *= scale;
+      }
+
+      // Check if we need a new page
+      if (currentY + imgHeight > 270) {
+        doc.addPage();
+        pageRef.page++;
+        currentY = 20;
+      }
+
+      // Determine format (jsPDF only supports JPEG, PNG, WEBP)
+      const ext = imagePath.split('.').pop()?.toLowerCase() || 'png';
+      const format = ext === 'jpg' ? 'JPEG' : ext.toUpperCase();
+
+      // Add the image
+      doc.addImage(dataUrl, format, contentLeft, currentY, imgWidth, imgHeight);
+      currentY += imgHeight + 3; // Add some spacing after image
+    } catch (error) {
+      console.error(`[PDF Export] Failed to add image to PDF: ${imagePath}`, error);
+    }
+  }
+
+  return currentY;
 }
 
 /**
@@ -266,28 +405,28 @@ export async function exportProjectToPDF(
   if (projectRequirements.length > 0) {
     doc.addPage();
     tocEntries.push({ title: 'Requirements', page: currentPage, level: 0 });
-    currentPage = addRequirementsSection(doc, projectRequirements, currentPage, tocEntries);
+    currentPage = await addRequirementsSection(doc, projectRequirements, currentPage, tocEntries);
   }
 
   // 6. Use Cases Section
   if (projectUseCases.length > 0) {
     doc.addPage();
     tocEntries.push({ title: 'Use Cases', page: currentPage, level: 0 });
-    currentPage = addUseCasesSection(doc, projectUseCases, currentPage, tocEntries);
+    currentPage = await addUseCasesSection(doc, projectUseCases, currentPage, tocEntries);
   }
 
   // 7. Test Cases Section
   if (projectTestCases.length > 0) {
     doc.addPage();
     tocEntries.push({ title: 'Test Cases', page: currentPage, level: 0 });
-    currentPage = addTestCasesSection(doc, projectTestCases, currentPage, tocEntries);
+    currentPage = await addTestCasesSection(doc, projectTestCases, currentPage, tocEntries);
   }
 
   // 8. Information Section
   if (projectInformation.length > 0) {
     doc.addPage();
     tocEntries.push({ title: 'Information', page: currentPage, level: 0 });
-    currentPage = addInformationSection(doc, projectInformation, currentPage, tocEntries);
+    currentPage = await addInformationSection(doc, projectInformation, currentPage, tocEntries);
   }
 
   // Add TOC (go back to page 2)
@@ -419,12 +558,12 @@ function addTableOfContents(doc: jsPDF, entries: TOCEntry[]): void {
 }
 
 // Requirements Section
-function addRequirementsSection(
+async function addRequirementsSection(
   doc: jsPDF,
   requirements: Requirement[],
   startPage: number,
   tocEntries: TOCEntry[]
-): number {
+): Promise<number> {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text('Requirements', 20, 20);
@@ -432,7 +571,7 @@ function addRequirementsSection(
   let yPos = 30;
   let page = startPage;
 
-  requirements.forEach((req) => {
+  for (const req of requirements) {
     // Check if we need a new page (need ~60mm minimum for header + some content)
     if (yPos > 230) {
       doc.addPage();
@@ -505,6 +644,18 @@ function addRequirementsSection(
       const descLines = doc.splitTextToSize(req.description, contentWidth);
       doc.text(descLines, contentLeft, currentY);
       currentY += descLines.length * 4 + 3;
+
+      // Add embedded images from description
+      const pageRef = { page };
+      currentY = await addImagesFromMarkdown(
+        doc,
+        req.description,
+        currentY,
+        contentLeft,
+        contentWidth,
+        pageRef
+      );
+      page = pageRef.page;
     }
 
     // Requirement Text
@@ -525,6 +676,18 @@ function addRequirementsSection(
       const textLines = doc.splitTextToSize(req.text, contentWidth);
       doc.text(textLines, contentLeft, currentY);
       currentY += textLines.length * 4 + 3;
+
+      // Add embedded images from text
+      const pageRef = { page };
+      currentY = await addImagesFromMarkdown(
+        doc,
+        req.text,
+        currentY,
+        contentLeft,
+        contentWidth,
+        pageRef
+      );
+      page = pageRef.page;
     }
 
     // Rationale
@@ -545,6 +708,18 @@ function addRequirementsSection(
       const rationaleLines = doc.splitTextToSize(req.rationale, contentWidth);
       doc.text(rationaleLines, contentLeft, currentY);
       currentY += rationaleLines.length * 4 + 3;
+
+      // Add embedded images from rationale
+      const pageRef = { page };
+      currentY = await addImagesFromMarkdown(
+        doc,
+        req.rationale,
+        currentY,
+        contentLeft,
+        contentWidth,
+        pageRef
+      );
+      page = pageRef.page;
     }
 
     // Comments
@@ -565,6 +740,18 @@ function addRequirementsSection(
       const commentsLines = doc.splitTextToSize(req.comments, contentWidth);
       doc.text(commentsLines, contentLeft, currentY);
       currentY += commentsLines.length * 4 + 3;
+
+      // Add embedded images from comments
+      const pageRef = { page };
+      currentY = await addImagesFromMarkdown(
+        doc,
+        req.comments,
+        currentY,
+        contentLeft,
+        contentWidth,
+        pageRef
+      );
+      page = pageRef.page;
     }
 
     // Footer metadata bar
@@ -582,18 +769,18 @@ function addRequirementsSection(
     doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
 
     yPos = currentY + 5; // Space between requirements
-  });
+  }
 
   return page;
 }
 
 // Use Cases Section
-function addUseCasesSection(
+async function addUseCasesSection(
   doc: jsPDF,
   useCases: UseCase[],
   startPage: number,
   tocEntries: TOCEntry[]
-): number {
+): Promise<number> {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text('Use Cases', 20, 20);
@@ -601,7 +788,7 @@ function addUseCasesSection(
   let yPos = 30;
   let page = startPage;
 
-  useCases.forEach((useCase) => {
+  for (const useCase of useCases) {
     // Check if we need a new page (need ~60mm minimum for header + some content)
     if (yPos > 230) {
       doc.addPage();
@@ -673,6 +860,17 @@ function addUseCasesSection(
       const descLines = doc.splitTextToSize(useCase.description, contentWidth);
       doc.text(descLines, contentLeft, currentY);
       currentY += descLines.length * 4 + 3;
+
+      const pageRef = { page };
+      currentY = await addImagesFromMarkdown(
+        doc,
+        useCase.description,
+        currentY,
+        contentLeft,
+        contentWidth,
+        pageRef
+      );
+      page = pageRef.page;
     }
 
     // Preconditions
@@ -693,6 +891,17 @@ function addUseCasesSection(
       const preLines = doc.splitTextToSize(useCase.preconditions, contentWidth);
       doc.text(preLines, contentLeft, currentY);
       currentY += preLines.length * 4 + 3;
+
+      const pageRef = { page };
+      currentY = await addImagesFromMarkdown(
+        doc,
+        useCase.preconditions,
+        currentY,
+        contentLeft,
+        contentWidth,
+        pageRef
+      );
+      page = pageRef.page;
     }
 
     // Main Flow
@@ -713,6 +922,17 @@ function addUseCasesSection(
       const flowLines = doc.splitTextToSize(useCase.mainFlow, contentWidth);
       doc.text(flowLines, contentLeft, currentY);
       currentY += flowLines.length * 4 + 3;
+
+      const pageRef = { page };
+      currentY = await addImagesFromMarkdown(
+        doc,
+        useCase.mainFlow,
+        currentY,
+        contentLeft,
+        contentWidth,
+        pageRef
+      );
+      page = pageRef.page;
     }
 
     // Alternative Flows
@@ -733,6 +953,17 @@ function addUseCasesSection(
       const altLines = doc.splitTextToSize(useCase.alternativeFlows, contentWidth);
       doc.text(altLines, contentLeft, currentY);
       currentY += altLines.length * 4 + 3;
+
+      const pageRef = { page };
+      currentY = await addImagesFromMarkdown(
+        doc,
+        useCase.alternativeFlows,
+        currentY,
+        contentLeft,
+        contentWidth,
+        pageRef
+      );
+      page = pageRef.page;
     }
 
     // Postconditions
@@ -753,6 +984,17 @@ function addUseCasesSection(
       const postLines = doc.splitTextToSize(useCase.postconditions, contentWidth);
       doc.text(postLines, contentLeft, currentY);
       currentY += postLines.length * 4 + 3;
+
+      const pageRef = { page };
+      currentY = await addImagesFromMarkdown(
+        doc,
+        useCase.postconditions,
+        currentY,
+        contentLeft,
+        contentWidth,
+        pageRef
+      );
+      page = pageRef.page;
     }
 
     // Footer metadata bar (Dates)
@@ -770,18 +1012,18 @@ function addUseCasesSection(
     doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
 
     yPos = currentY + 5;
-  });
+  }
 
   return page;
 }
 
 // Test Cases Section
-function addTestCasesSection(
+async function addTestCasesSection(
   doc: jsPDF,
   testCases: TestCase[],
   startPage: number,
   tocEntries: TOCEntry[]
-): number {
+): Promise<number> {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text('Test Cases', 20, 20);
@@ -789,7 +1031,7 @@ function addTestCasesSection(
   let yPos = 30;
   let page = startPage;
 
-  testCases.forEach((testCase) => {
+  for (const testCase of testCases) {
     // Check if we need a new page
     if (yPos > 230) {
       doc.addPage();
@@ -861,6 +1103,17 @@ function addTestCasesSection(
       const descLines = doc.splitTextToSize(testCase.description, contentWidth);
       doc.text(descLines, contentLeft, currentY);
       currentY += descLines.length * 4 + 3;
+
+      const pageRef = { page };
+      currentY = await addImagesFromMarkdown(
+        doc,
+        testCase.description,
+        currentY,
+        contentLeft,
+        contentWidth,
+        pageRef
+      );
+      page = pageRef.page;
     }
 
     // Tests Requirements (traceability)
@@ -897,18 +1150,18 @@ function addTestCasesSection(
     doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
 
     yPos = currentY + 5;
-  });
+  }
 
   return page;
 }
 
 // Information Section
-function addInformationSection(
+async function addInformationSection(
   doc: jsPDF,
   information: Information[],
   startPage: number,
   tocEntries: TOCEntry[]
-): number {
+): Promise<number> {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text('Information', 20, 20);
@@ -916,7 +1169,7 @@ function addInformationSection(
   let yPos = 30;
   let page = startPage;
 
-  information.forEach((info) => {
+  for (const info of information) {
     // Check if we need a new page
     if (yPos > 230) {
       doc.addPage();
@@ -974,15 +1227,22 @@ function addInformationSection(
         currentY = 20;
         boxTop = 20;
       }
-      // doc.setFontSize(9);
-      // doc.setFont('helvetica', 'bold');
-      // doc.text('Content:', contentLeft, currentY);
-      // currentY += 4;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       const contentLines = doc.splitTextToSize(info.content, contentWidth);
       doc.text(contentLines, contentLeft, currentY);
       currentY += contentLines.length * 4 + 3;
+
+      const pageRef = { page };
+      currentY = await addImagesFromMarkdown(
+        doc,
+        info.content,
+        currentY,
+        contentLeft,
+        contentWidth,
+        pageRef
+      );
+      page = pageRef.page;
     }
 
     // Footer metadata bar (Dates)
@@ -1000,7 +1260,7 @@ function addInformationSection(
     doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
 
     yPos = currentY + 5;
-  });
+  }
 
   return page;
 }

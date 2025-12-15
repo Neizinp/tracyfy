@@ -195,7 +195,7 @@ export type ViewType =
 
 export interface ArtifactChange {
   id: string;
-  type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'project';
+  type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'project' | 'asset';
   title: string;
   status: 'new' | 'modified'; // No 'deleted' - artifacts can only be removed from projects
   path: string;

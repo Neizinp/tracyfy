@@ -72,4 +72,31 @@ describe('MarkdownEditor', () => {
     // We can verify the component rendered without errors
     expect(container.querySelector('.markdown-editor-container')).toBeInTheDocument();
   });
+
+  it('renders Image button and hidden file input', () => {
+    const mockOnChange = vi.fn();
+    const { container } = render(<MarkdownEditor value="" onChange={mockOnChange} label="Test" />);
+
+    // Should show the Image button
+    expect(screen.getByText('Image')).toBeInTheDocument();
+
+    // Should have a hidden file input
+    const fileInput = container.querySelector('input[type="file"]');
+    expect(fileInput).toBeInTheDocument();
+    expect(fileInput).toHaveAttribute('accept', 'image/*');
+  });
+
+  it('clicking Image button triggers file input click', () => {
+    const mockOnChange = vi.fn();
+    const { container } = render(<MarkdownEditor value="" onChange={mockOnChange} label="Test" />);
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const clickSpy = vi.spyOn(fileInput, 'click');
+
+    // Click the Image button
+    fireEvent.click(screen.getByText('Image'));
+
+    // Should trigger file input click
+    expect(clickSpy).toHaveBeenCalled();
+  });
 });

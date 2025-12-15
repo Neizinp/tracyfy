@@ -142,4 +142,71 @@ describe('PendingChangesPanel', () => {
 
     expect(screen.getByText(/UC-001/i)).toBeInTheDocument();
   });
+
+  it('should parse asset paths correctly and show image title', () => {
+    vi.mocked(useFileSystem).mockReturnValue({
+      pendingChanges: [{ path: 'assets/abc123-def456.png', status: 'new' }],
+      commitFile: mockCommitFile,
+      getArtifactHistory: mockGetArtifactHistory,
+      refreshStatus: mockRefreshStatus,
+    } as any);
+
+    render(<PendingChangesPanel />);
+
+    // Should show the image filename in title
+    expect(screen.getByText(/Image: abc123-def456.png/i)).toBeInTheDocument();
+  });
+
+  it('should group assets under Assets category', () => {
+    vi.mocked(useFileSystem).mockReturnValue({
+      pendingChanges: [{ path: 'assets/test-image.jpg', status: 'new' }],
+      commitFile: mockCommitFile,
+      getArtifactHistory: mockGetArtifactHistory,
+      refreshStatus: mockRefreshStatus,
+    } as any);
+
+    render(<PendingChangesPanel />);
+
+    // Should show Assets group header
+    expect(screen.getByText('Assets')).toBeInTheDocument();
+  });
+
+  it('should auto-fill "Picture added" for new asset files', async () => {
+    vi.mocked(useFileSystem).mockReturnValue({
+      pendingChanges: [{ path: 'assets/my-photo.png', status: 'new' }],
+      commitFile: mockCommitFile,
+      getArtifactHistory: mockGetArtifactHistory,
+      refreshStatus: mockRefreshStatus,
+    } as any);
+
+    render(<PendingChangesPanel />);
+
+    // Wait for the async default message to be set
+    await waitFor(() => {
+      const input = screen.getByDisplayValue(/Picture added/i);
+      expect(input).toBeInTheDocument();
+    });
+  });
+
+  it('should handle mixed artifact types and assets', () => {
+    vi.mocked(useFileSystem).mockReturnValue({
+      pendingChanges: [
+        { path: 'requirements/REQ-001.md', status: 'new' },
+        { path: 'assets/photo.jpg', status: 'new' },
+        { path: 'usecases/UC-001.md', status: 'modified' },
+      ],
+      commitFile: mockCommitFile,
+      getArtifactHistory: mockGetArtifactHistory,
+      refreshStatus: mockRefreshStatus,
+    } as any);
+
+    render(<PendingChangesPanel />);
+
+    expect(screen.getByText(/REQ-001/i)).toBeInTheDocument();
+    expect(screen.getByText(/Image: photo.jpg/i)).toBeInTheDocument();
+    expect(screen.getByText(/UC-001/i)).toBeInTheDocument();
+    expect(screen.getByText('Requirements')).toBeInTheDocument();
+    expect(screen.getByText('Assets')).toBeInTheDocument();
+    expect(screen.getByText('Use Cases')).toBeInTheDocument();
+  });
 });

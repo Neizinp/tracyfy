@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback, useEffect, useContext } from 'react';
 import MDEditor from '@uiw/react-md-editor';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { Eye, Edit2 } from 'lucide-react';
+import { Eye, Edit2, ImagePlus } from 'lucide-react';
+import { assetService } from '../services/assetService';
+import { AssetImage } from './AssetImage';
+import { FileSystemContext } from '../app/providers/FileSystemProvider';
 
 interface MarkdownEditorProps {
   value: string;
@@ -21,18 +24,153 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   placeholder = 'Enter text with Markdown formatting...',
 }) => {
   const [isEditMode, setIsEditMode] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+  // Use optional context - may be null if not inside FileSystemProvider (e.g., in tests)
+  const fileSystemContext = useContext(FileSystemContext);
+  const refreshStatus = fileSystemContext?.refreshStatus;
+
+  // Handle file upload
+  const handleFileUpload = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith('image/')) {
+        console.warn('Only image files are supported');
+        return;
+      }
+      setIsUploading(true);
+      try {
+        const assetPath = await assetService.uploadAsset(file);
+        // Insert markdown image at cursor/end
+        const imageMarkdown = `![${file.name}](${assetPath})`;
+        onChange(value + '\n' + imageMarkdown);
+        // Refresh git status so the new asset appears in pending changes
+        await refreshStatus?.();
+      } catch (error) {
+        console.error('Failed to upload image:', error);
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [value, onChange, refreshStatus]
+  );
+
+  // Handle file input change
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        handleFileUpload(file);
+      }
+      // Reset input so same file can be selected again
+      e.target.value = '';
+    },
+    [handleFileUpload]
+  );
+
+  // Handle paste from clipboard
+  const handlePaste = useCallback(
+    async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const blob = item.getAsFile();
+          if (blob) {
+            setIsUploading(true);
+            try {
+              const assetPath = await assetService.uploadAssetFromBlob(blob, 'pasted-image.png');
+              const imageMarkdown = `![pasted image](${assetPath})`;
+              onChange(value + '\n' + imageMarkdown);
+              // Refresh git status so the new asset appears in pending changes
+              await refreshStatus?.();
+            } catch (error) {
+              console.error('Failed to paste image:', error);
+            } finally {
+              setIsUploading(false);
+            }
+          }
+          break;
+        }
+      }
+    },
+    [value, onChange, refreshStatus]
+  );
+
+  // Handle drag and drop
+  const handleDrop = useCallback(
+    async (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        if (file.type.startsWith('image/')) {
+          await handleFileUpload(file);
+        }
+      }
+    },
+    [handleFileUpload]
+  );
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDragEnter = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  // Set up paste and drag-drop listeners
+  useEffect(() => {
+    const container = editorContainerRef.current;
+    if (!container) return;
+
+    const pasteHandler = handlePaste as unknown as EventListener;
+    const dropHandler = handleDrop as unknown as EventListener;
+    const dragOverHandler = handleDragOver as unknown as EventListener;
+    const dragEnterHandler = handleDragEnter as unknown as EventListener;
+
+    // Use capture phase to ensure we get the event before the browser
+    container.addEventListener('paste', pasteHandler);
+    container.addEventListener('drop', dropHandler, { capture: true });
+    container.addEventListener('dragover', dragOverHandler, { capture: true });
+    container.addEventListener('dragenter', dragEnterHandler, { capture: true });
+
+    return () => {
+      container.removeEventListener('paste', pasteHandler);
+      container.removeEventListener('drop', dropHandler, { capture: true });
+      container.removeEventListener('dragover', dragOverHandler, { capture: true });
+      container.removeEventListener('dragenter', dragEnterHandler, { capture: true });
+    };
+  }, [handlePaste, handleDrop, handleDragOver, handleDragEnter]);
 
   return (
-    <div className="markdown-editor-container">
-      {label && (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '8px',
-          }}
-        >
+    <div className="markdown-editor-container" ref={editorContainerRef}>
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        accept="image/*"
+        onChange={handleFileInputChange}
+      />
+
+      {/* Toolbar - always shown */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '8px',
+        }}
+      >
+        {label ? (
           <label
             style={{
               display: 'block',
@@ -43,6 +181,53 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           >
             {label}
           </label>
+        ) : (
+          <div />
+        )}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {/* Image upload button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (fileInputRef.current) {
+                fileInputRef.current.click();
+              } else {
+                console.error('File input ref not available');
+              }
+            }}
+            disabled={isUploading}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 12px',
+              fontSize: 'var(--font-size-xs)',
+              backgroundColor: 'var(--color-bg-secondary)',
+              color: isUploading ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '6px',
+              cursor: isUploading ? 'wait' : 'pointer',
+              transition: 'all 0.2s',
+              opacity: isUploading ? 0.7 : 1,
+            }}
+            onMouseEnter={(e) => {
+              if (!isUploading) {
+                e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
+                e.currentTarget.style.color = 'var(--color-text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)';
+              e.currentTarget.style.color = isUploading
+                ? 'var(--color-text-muted)'
+                : 'var(--color-text-secondary)';
+            }}
+            title={isUploading ? 'Uploading...' : 'Insert image (or paste/drag-drop)'}
+          >
+            <ImagePlus size={14} />
+            {isUploading ? 'Uploading...' : 'Image'}
+          </button>
+          {/* Preview/Edit toggle */}
           <button
             type="button"
             onClick={() => setIsEditMode(!isEditMode)}
@@ -82,7 +267,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             )}
           </button>
         </div>
-      )}
+      </div>
 
       {isEditMode ? (
         <div data-color-mode="dark">
@@ -93,6 +278,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             preview="edit"
             hideToolbar={false}
             enableScroll={true}
+            commandsFilter={(cmd) => (cmd.name === 'image' ? false : cmd)}
             textareaProps={{
               placeholder: placeholder,
             }}
@@ -295,6 +481,8 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                     {...props}
                   />
                 ),
+                // Custom image component for local assets
+                img: ({ src, alt, ...props }) => <AssetImage src={src} alt={alt} {...props} />,
                 a: ({ ...props }) => (
                   <a
                     style={{ color: 'var(--color-accent-light)', textDecoration: 'underline' }}

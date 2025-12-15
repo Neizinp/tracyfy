@@ -400,20 +400,38 @@ class RealGitService {
         statusMatrixFiles.size > 0 ? statusMatrixFiles : new Set(result.map((f) => f.path));
       const untrackedFiles: FileStatus[] = [];
 
-      const artifactTypes = ['requirements', 'usecases', 'testcases', 'information', 'projects'];
+      const artifactTypes = [
+        'requirements',
+        'usecases',
+        'testcases',
+        'information',
+        'projects',
+        'assets',
+      ];
+      const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.tiff'];
       for (const type of artifactTypes) {
         try {
           const files = await fileSystemService.listFiles(type);
+          if (type === 'assets') {
+            console.log(`[getStatus] Assets folder contains: ${files.length} files`, files);
+          }
           for (const file of files) {
-            if (file.endsWith('.md')) {
+            const isMarkdown = file.endsWith('.md');
+            const isImage =
+              type === 'assets' && imageExtensions.some((ext) => file.toLowerCase().endsWith(ext));
+            if (isMarkdown || isImage) {
               const filePath = `${type}/${file}`;
               if (!trackedPaths.has(filePath)) {
+                console.log(`[getStatus] Found untracked file: ${filePath}`);
                 untrackedFiles.push({ path: filePath, status: 'new' });
               }
             }
           }
-        } catch {
+        } catch (err) {
           // Directory might not exist yet
+          if (type === 'assets') {
+            console.log(`[getStatus] Assets folder does not exist or error:`, err);
+          }
         }
       }
 
@@ -436,7 +454,7 @@ class RealGitService {
     // Queue the commit to ensure serialized execution
     // This prevents race conditions when multiple commits run concurrently
     this.commitQueue = this.commitQueue.then(async () => {
-      const fileExists = (await fileSystemService.readFile(filepath)) !== null;
+      const fileExists = (await fileSystemService.readFileBinary(filepath)) !== null;
       const cache = {};
 
       if (fileExists) {
