@@ -10,6 +10,7 @@ import {
   CreateProjectModal,
   GlobalLibraryModal,
 } from './';
+import { RiskModal } from './RiskModal';
 import { UserSettingsModal } from './UserSettingsModal';
 import {
   useUI,
@@ -21,7 +22,7 @@ import {
   useInformation,
   useFileSystem,
 } from '../app/providers';
-import type { Information } from '../types';
+import type { Information, Risk } from '../types';
 import type { LinkModalResult } from './LinkModal';
 import { diskLinkService } from '../services/diskLinkService';
 import type { LinkType } from '../utils/linkTypes';
@@ -53,8 +54,11 @@ export const ModalManager: React.FC = () => {
     useTestCases();
   const { handleAddInformation, handleUpdateInformation } = useInformation();
 
-  // FileSystem state
-  const { baselines, createBaseline, reloadData } = useFileSystem();
+  // FileSystem state - includes risk operations
+  const { baselines, createBaseline, reloadData, risks, saveRisk, getNextId } = useFileSystem();
+
+  // Track selected risk for editing
+  const [selectedRisk, setSelectedRisk] = React.useState<Risk | null>(null);
 
   // Handler for creating a Link entity - now uses diskLinkService
   const handleAddArtifactLink = useCallback(
@@ -95,6 +99,34 @@ export const ModalManager: React.FC = () => {
     } else {
       // This is a new info
       handleAddInformation(data as Omit<Information, 'id' | 'lastModified' | 'dateCreated'>);
+    }
+  };
+
+  // Combined handler for RiskModal - handles both add and update
+  const handleRiskSubmit = async (
+    data: Omit<Risk, 'id' | 'lastModified' | 'dateCreated'> | { id: string; updates: Partial<Risk> }
+  ) => {
+    if ('id' in data && 'updates' in data) {
+      // Update existing risk
+      const existing = risks.find((r) => r.id === data.id);
+      if (existing) {
+        await saveRisk({
+          ...existing,
+          ...data.updates,
+          lastModified: Date.now(),
+        });
+      }
+    } else {
+      // Create new risk
+      const newId = await getNextId('risks');
+      const now = Date.now();
+      await saveRisk({
+        id: newId,
+        ...data,
+        linkedArtifacts: [],
+        dateCreated: now,
+        lastModified: now,
+      } as Risk);
     }
   };
 
@@ -210,6 +242,16 @@ export const ModalManager: React.FC = () => {
           ui.setSelectedInformation(null);
         }}
         onSubmit={handleInformationSubmit}
+      />
+
+      <RiskModal
+        isOpen={ui.isRiskModalOpen}
+        risk={selectedRisk}
+        onClose={() => {
+          ui.setIsRiskModalOpen(false);
+          setSelectedRisk(null);
+        }}
+        onSubmit={handleRiskSubmit}
       />
 
       <VersionHistory

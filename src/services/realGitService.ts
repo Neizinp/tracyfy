@@ -405,6 +405,7 @@ class RealGitService {
         'usecases',
         'testcases',
         'information',
+        'risks',
         'projects',
         'assets',
       ];

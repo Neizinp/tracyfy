@@ -6,6 +6,7 @@ import {
   UseCasesPage,
   TestCasesPage,
   InformationPage,
+  RisksPage,
   GlobalLibraryPage,
 } from '../pages';
 import { LinksPage } from '../pages/LinksPage';
@@ -23,6 +24,7 @@ export function AppRoutes() {
         <Route path="use-cases" element={<UseCasesPage />} />
         <Route path="test-cases" element={<TestCasesPage />} />
         <Route path="information" element={<InformationPage />} />
+        <Route path="risks" element={<RisksPage />} />
 
         <Route path="library/:type" element={<GlobalLibraryPage />} />
       </Route>

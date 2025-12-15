@@ -10,6 +10,7 @@ import type {
   UseCaseColumnVisibility,
   TestCaseColumnVisibility,
   InformationColumnVisibility,
+  RiskColumnVisibility,
 } from '../../types';
 
 interface UIContextValue {
@@ -34,6 +35,8 @@ interface UIContextValue {
   setIsEditTestCaseModalOpen: (isOpen: boolean) => void;
   isInformationModalOpen: boolean;
   setIsInformationModalOpen: (isOpen: boolean) => void;
+  isRiskModalOpen: boolean;
+  setIsRiskModalOpen: (isOpen: boolean) => void;
   isLibraryPanelOpen: boolean;
   setIsLibraryPanelOpen: (isOpen: boolean) => void;
   isGlobalLibraryModalOpen: boolean;
@@ -75,6 +78,8 @@ interface UIContextValue {
   setTestCaseColumnVisibility: (cols: TestCaseColumnVisibility) => void;
   informationColumnVisibility: InformationColumnVisibility;
   setInformationColumnVisibility: (cols: InformationColumnVisibility) => void;
+  riskColumnVisibility: RiskColumnVisibility;
+  setRiskColumnVisibility: (cols: RiskColumnVisibility) => void;
 
   // Search
   searchQuery: string;
@@ -83,8 +88,10 @@ interface UIContextValue {
   // Link source
   linkSourceId: string | null;
   setLinkSourceId: (id: string | null) => void;
-  linkSourceType: 'requirement' | 'usecase' | 'testcase' | 'information' | null;
-  setLinkSourceType: (type: 'requirement' | 'usecase' | 'testcase' | 'information' | null) => void;
+  linkSourceType: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk' | null;
+  setLinkSourceType: (
+    type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk' | null
+  ) => void;
 
   // Helper functions
   handleGlobalLibrarySelect: (id: string) => void;

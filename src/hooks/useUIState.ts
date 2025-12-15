@@ -20,6 +20,7 @@ export function useUIState() {
   const [isNewTestCaseModalOpen, setIsNewTestCaseModalOpen] = useState(false);
   const [isEditTestCaseModalOpen, setIsEditTestCaseModalOpen] = useState(false);
   const [isInformationModalOpen, setIsInformationModalOpen] = useState(false);
+  const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   const [isLibraryPanelOpen, setIsLibraryPanelOpen] = useState(false);
   const [isGlobalLibraryModalOpen, setIsGlobalLibraryModalOpen] = useState(false);
   const [isUserSettingsModalOpen, setIsUserSettingsModalOpen] = useState(false);
@@ -31,7 +32,7 @@ export function useUIState() {
   const [selectedInformation, setSelectedInformation] = useState<Information | null>(null);
   const [linkSourceId, setLinkSourceId] = useState<string | null>(null);
   const [linkSourceType, setLinkSourceType] = useState<
-    'requirement' | 'usecase' | 'testcase' | 'information' | null
+    'requirement' | 'usecase' | 'testcase' | 'information' | 'risk' | null
   >(null);
 
   // Editing States
@@ -108,6 +109,21 @@ export function useUIState() {
     created: true,
   });
 
+  // Column Visibility - Risks
+  const [riskColumnVisibility, setRiskColumnVisibility] = useState({
+    idTitle: true,
+    revision: true,
+    category: true,
+    probability: true,
+    impact: true,
+    status: true,
+    owner: true,
+    description: false,
+    mitigation: false,
+    contingency: false,
+    created: true,
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
 
   return {
@@ -135,6 +151,8 @@ export function useUIState() {
     setIsEditTestCaseModalOpen,
     isInformationModalOpen,
     setIsInformationModalOpen,
+    isRiskModalOpen,
+    setIsRiskModalOpen,
     isLibraryPanelOpen,
     setIsLibraryPanelOpen,
     isGlobalLibraryModalOpen,
@@ -185,6 +203,8 @@ export function useUIState() {
     setTestCaseColumnVisibility,
     informationColumnVisibility,
     setInformationColumnVisibility,
+    riskColumnVisibility,
+    setRiskColumnVisibility,
 
     // Helper functions
     handleGlobalLibrarySelect: (id: string) => {

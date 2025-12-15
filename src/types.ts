@@ -96,6 +96,25 @@ export interface Information {
   revision: string;
 }
 
+export interface Risk {
+  id: string;
+  title: string;
+  description: string;
+  category: 'technical' | 'schedule' | 'resource' | 'external' | 'other';
+  probability: 'low' | 'medium' | 'high';
+  impact: 'low' | 'medium' | 'high';
+  mitigation: string; // Mitigation strategy
+  contingency: string; // Contingency plan
+  status: 'identified' | 'analyzing' | 'mitigating' | 'resolved' | 'accepted';
+  owner?: string; // Person responsible
+  linkedArtifacts?: ArtifactLink[]; // Links to other artifacts
+  dateCreated: number;
+  lastModified: number;
+  isDeleted?: boolean;
+  deletedAt?: number;
+  revision: string;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -104,6 +123,7 @@ export interface Project {
   useCaseIds: string[];
   testCaseIds: string[];
   informationIds: string[];
+  riskIds: string[];
   baselines?: string[]; // IDs of baselines for this project
   currentBaseline?: string; // ID of current baseline
   isDeleted?: boolean; // Soft delete flag
@@ -121,6 +141,7 @@ export interface GlobalState {
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
+  risks: Risk[];
 }
 
 export interface User {
@@ -177,6 +198,20 @@ export interface InformationColumnVisibility {
   created: boolean;
 }
 
+export interface RiskColumnVisibility {
+  idTitle: boolean; // Always true
+  revision: boolean;
+  description: boolean;
+  category: boolean;
+  probability: boolean;
+  impact: boolean;
+  status: boolean;
+  owner: boolean;
+  mitigation: boolean;
+  contingency: boolean;
+  created: boolean;
+}
+
 export type ViewType =
   | 'tree'
   | 'detailed'
@@ -184,18 +219,20 @@ export type ViewType =
   | 'usecases'
   | 'testcases'
   | 'information'
+  | 'risks'
   | 'baselines'
   | 'baseline-history'
   | 'library-requirements'
   | 'library-usecases'
   | 'library-testcases'
-  | 'library-information';
+  | 'library-information'
+  | 'library-risks';
 
 // Git Revision Control Types
 
 export interface ArtifactChange {
   id: string;
-  type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'project' | 'asset';
+  type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'project' | 'asset' | 'risk';
   title: string;
   status: 'new' | 'modified'; // No 'deleted' - artifacts can only be removed from projects
   path: string;

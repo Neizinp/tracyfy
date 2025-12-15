@@ -1,4 +1,4 @@
-import type { Requirement, UseCase, TestCase, Information, User, Project } from '../types';
+import type { Requirement, UseCase, TestCase, Information, User, Project, Risk } from '../types';
 
 /**
  * Convert a JavaScript object to YAML frontmatter string
@@ -545,6 +545,7 @@ export function projectToMarkdown(project: Project): string {
     useCaseIds: project.useCaseIds,
     testCaseIds: project.testCaseIds,
     informationIds: project.informationIds,
+    riskIds: project.riskIds || [],
     isDeleted: project.isDeleted || false,
   };
 
@@ -581,7 +582,94 @@ export function markdownToProject(markdown: string): Project | null {
     useCaseIds: frontmatter.useCaseIds || [],
     testCaseIds: frontmatter.testCaseIds || [],
     informationIds: frontmatter.informationIds || [],
+    riskIds: frontmatter.riskIds || [],
     lastModified: frontmatter.lastModified || Date.now(),
     isDeleted: frontmatter.isDeleted || false,
+  };
+}
+
+/**
+ * Convert a Risk to Markdown with YAML frontmatter
+ */
+export function riskToMarkdown(risk: Risk): string {
+  const frontmatter = {
+    id: risk.id,
+    title: risk.title,
+    category: risk.category,
+    probability: risk.probability,
+    impact: risk.impact,
+    status: risk.status,
+    owner: risk.owner || '',
+    revision: risk.revision,
+    dateCreated: risk.dateCreated,
+    lastModified: risk.lastModified,
+    linkedArtifacts: risk.linkedArtifacts || [],
+    isDeleted: risk.isDeleted || false,
+    deletedAt: risk.deletedAt || null,
+  };
+
+  const yaml = objectToYaml(frontmatter);
+
+  const body = `# ${risk.title}
+
+## Description
+${risk.description}
+
+## Mitigation Strategy
+${risk.mitigation}
+
+## Contingency Plan
+${risk.contingency}
+`.trim();
+
+  return `${yaml}\n\n${body}`;
+}
+
+/**
+ * Parse Markdown content into a Risk object
+ */
+export function markdownToRisk(markdown: string): Risk {
+  const { frontmatter, body } = parseYamlFrontmatter(markdown);
+
+  const sections: Record<string, string> = {};
+  const lines = body.split('\n');
+  let currentSection = '';
+  let currentContent: string[] = [];
+
+  for (const line of lines) {
+    if (line.startsWith('## ')) {
+      if (currentSection && currentContent.length > 0) {
+        sections[currentSection] = currentContent.join('\n').trim();
+      }
+      currentSection = line.substring(3).trim();
+      currentContent = [];
+    } else if (line.startsWith('# ')) {
+      continue;
+    } else {
+      currentContent.push(line);
+    }
+  }
+
+  if (currentSection && currentContent.length > 0) {
+    sections[currentSection] = currentContent.join('\n').trim();
+  }
+
+  return {
+    id: frontmatter.id || '',
+    title: frontmatter.title || '',
+    description: sections['Description'] || '',
+    category: frontmatter.category || 'other',
+    probability: frontmatter.probability || 'medium',
+    impact: frontmatter.impact || 'medium',
+    mitigation: sections['Mitigation Strategy'] || '',
+    contingency: sections['Contingency Plan'] || '',
+    status: frontmatter.status || 'identified',
+    owner: frontmatter.owner || undefined,
+    dateCreated: frontmatter.dateCreated || Date.now(),
+    lastModified: frontmatter.lastModified || Date.now(),
+    linkedArtifacts: frontmatter.linkedArtifacts || [],
+    isDeleted: frontmatter.isDeleted || false,
+    deletedAt: frontmatter.deletedAt || undefined,
+    revision: frontmatter.revision || '01',
   };
 }

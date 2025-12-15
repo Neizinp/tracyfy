@@ -19,6 +19,7 @@ import type {
   UseCaseColumnVisibility,
   TestCaseColumnVisibility,
   InformationColumnVisibility,
+  RiskColumnVisibility,
 } from '../types';
 
 // Column configurations for each artifact type
@@ -60,6 +61,24 @@ const informationColumns: {
   { key: 'revision', label: 'Rev' },
   { key: 'type', label: 'Type' },
   { key: 'content', label: 'Content' },
+  { key: 'created', label: 'Created' },
+];
+
+const riskColumns: {
+  key: keyof RiskColumnVisibility;
+  label: string;
+  alwaysVisible?: boolean;
+}[] = [
+  { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
+  { key: 'revision', label: 'Rev' },
+  { key: 'category', label: 'Category' },
+  { key: 'probability', label: 'Probability' },
+  { key: 'impact', label: 'Impact' },
+  { key: 'status', label: 'Status' },
+  { key: 'owner', label: 'Owner' },
+  { key: 'description', label: 'Description' },
+  { key: 'mitigation', label: 'Mitigation' },
+  { key: 'contingency', label: 'Contingency' },
   { key: 'created', label: 'Created' },
 ];
 
@@ -124,6 +143,7 @@ export const ProjectLayout: React.FC = () => {
     if (location.pathname.includes('/use-cases')) return 'Use Cases';
     if (location.pathname.includes('/test-cases')) return 'Test Cases';
     if (location.pathname.includes('/information')) return 'Information';
+    if (location.pathname.includes('/risks')) return 'Risks';
     if (location.pathname.includes('/library/requirements')) return 'Requirements';
     if (location.pathname.includes('/library/use-cases')) return 'Use Cases';
     if (location.pathname.includes('/library/test-cases')) return 'Test Cases';
@@ -160,6 +180,7 @@ export const ProjectLayout: React.FC = () => {
       onNewUseCase={() => ui.setIsUseCaseModalOpen(true)}
       onNewTestCase={() => ui.setIsNewTestCaseModalOpen(true)}
       onNewInformation={() => ui.setIsInformationModalOpen(true)}
+      onNewRisk={() => ui.setIsRiskModalOpen(true)}
       onExport={importExport.handleExport}
       onImport={importExport.handleImport}
       onImportExcel={importExport.handleImportExcel}
@@ -297,6 +318,13 @@ export const ProjectLayout: React.FC = () => {
                 columns={informationColumns}
                 visibleColumns={ui.informationColumnVisibility}
                 onColumnVisibilityChange={ui.setInformationColumnVisibility}
+              />
+            )}
+            {location.pathname.includes('/risks') && (
+              <GenericColumnSelector
+                columns={riskColumns}
+                visibleColumns={ui.riskColumnVisibility}
+                onColumnVisibilityChange={ui.setRiskColumnVisibility}
               />
             )}
           </div>

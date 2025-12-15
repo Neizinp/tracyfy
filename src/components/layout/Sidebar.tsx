@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { LayoutGrid, Plus, GitBranch, FileText, BookOpen, FlaskConical, Link2 } from 'lucide-react';
+import {
+  LayoutGrid,
+  Plus,
+  GitBranch,
+  FileText,
+  BookOpen,
+  FlaskConical,
+  Link2,
+  ShieldAlert,
+} from 'lucide-react';
 import type { Project } from '../../types';
 import { ProjectSidebarItem } from '../ProjectSidebarItem';
 import { PendingChangesPanel } from '../PendingChangesPanel';
@@ -230,6 +239,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <NavLink to="/use-cases" icon={FileText} label="Use Cases" />
             <NavLink to="/test-cases" icon={FileText} label="Test Cases" />
             <NavLink to="/information" icon={FileText} label="Information" />
+            <NavLink to="/risks" icon={ShieldAlert} label="Risks" />
             <NavLink to="/traceability?tab=links" icon={Link2} label="Links" />
           </div>
         </div>
