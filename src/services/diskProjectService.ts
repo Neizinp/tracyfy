@@ -22,7 +22,7 @@
 
 import { fileSystemService } from './fileSystemService';
 import { realGitService } from './realGitService';
-import type { Project, Requirement, UseCase, TestCase, Information, User } from '../types';
+import type { Project, Requirement, UseCase, TestCase, Information, User, Risk } from '../types';
 import {
   requirementToMarkdown,
   markdownToRequirement,
@@ -32,6 +32,8 @@ import {
   markdownToTestCase,
   informationToMarkdown,
   markdownToInformation,
+  riskToMarkdown,
+  markdownToRisk,
   userToMarkdown,
   markdownToUser,
   projectToMarkdown,
@@ -42,6 +44,7 @@ const REQUIREMENTS_DIR = 'requirements';
 const USECASES_DIR = 'usecases';
 const TESTCASES_DIR = 'testcases';
 const INFORMATION_DIR = 'information';
+const RISKS_DIR = 'risks';
 const LINKS_DIR = 'links';
 const PROJECTS_DIR = 'projects';
 const USERS_DIR = 'users';
@@ -58,6 +61,7 @@ class DiskProjectService {
     await fileSystemService.getOrCreateDirectory(USECASES_DIR);
     await fileSystemService.getOrCreateDirectory(TESTCASES_DIR);
     await fileSystemService.getOrCreateDirectory(INFORMATION_DIR);
+    await fileSystemService.getOrCreateDirectory(RISKS_DIR);
     await fileSystemService.getOrCreateDirectory(LINKS_DIR);
     await fileSystemService.getOrCreateDirectory(PROJECTS_DIR);
     await fileSystemService.getOrCreateDirectory(USERS_DIR);
@@ -118,7 +122,7 @@ class DiskProjectService {
    * File format: just the number, e.g., "42"
    */
   private async getCounter(
-    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users'
+    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users' | 'risks'
   ): Promise<number> {
     const filename = `${COUNTERS_DIR}/${type}.md`;
     try {
@@ -136,7 +140,7 @@ class DiskProjectService {
    * Set counter value
    */
   private async setCounter(
-    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users',
+    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users' | 'risks',
     value: number
   ): Promise<void> {
     const filename = `${COUNTERS_DIR}/${type}.md`;
@@ -191,7 +195,7 @@ class DiskProjectService {
    * Get next artifact ID and increment counter
    */
   async getNextId(
-    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users'
+    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users' | 'risks'
   ): Promise<string> {
     const current = await this.getCounter(type);
     const next = current + 1;
@@ -203,6 +207,7 @@ class DiskProjectService {
       testCases: 'TC',
       information: 'INFO',
       users: 'USER',
+      risks: 'RISK',
     };
 
     return `${prefixMap[type]}-${String(next).padStart(3, '0')}`;
@@ -213,7 +218,7 @@ class DiskProjectService {
    * More efficient than calling getNextId repeatedly
    */
   async getNextIds(
-    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users',
+    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users' | 'risks',
     count: number
   ): Promise<string[]> {
     if (count <= 0) return [];
@@ -228,6 +233,7 @@ class DiskProjectService {
       testCases: 'TC',
       information: 'INFO',
       users: 'USER',
+      risks: 'RISK',
     };
 
     const ids: string[] = [];
@@ -334,6 +340,7 @@ class DiskProjectService {
       useCaseIds: [],
       testCaseIds: [],
       informationIds: [],
+      riskIds: [],
       lastModified: Date.now(),
     };
 
@@ -460,6 +467,7 @@ class DiskProjectService {
       useCaseIds: [...originalProject.useCaseIds],
       testCaseIds: [...originalProject.testCaseIds],
       informationIds: [...originalProject.informationIds],
+      riskIds: [...(originalProject.riskIds || [])],
     };
 
     // Save to disk
@@ -659,6 +667,50 @@ class DiskProjectService {
     await fileSystemService.deleteFile(`${INFORMATION_DIR}/${infoId}.md`);
   }
 
+  // ============ RISK OPERATIONS ============
+
+  /**
+   * Save a risk to disk (global)
+   */
+  async saveRisk(risk: Risk): Promise<void> {
+    const markdown = riskToMarkdown(risk);
+    await fileSystemService.writeFile(`${RISKS_DIR}/${risk.id}.md`, markdown);
+  }
+
+  /**
+   * Load all risks (global)
+   */
+  async loadAllRisks(): Promise<Risk[]> {
+    const risks: Risk[] = [];
+
+    try {
+      const files = await fileSystemService.listFiles(RISKS_DIR);
+
+      for (const file of files) {
+        if (file.endsWith('.md')) {
+          const content = await fileSystemService.readFile(`${RISKS_DIR}/${file}`);
+          if (content) {
+            const risk = markdownToRisk(content);
+            if (risk) {
+              risks.push(risk);
+            }
+          }
+        }
+      }
+    } catch {
+      // Directory might not exist
+    }
+
+    return risks;
+  }
+
+  /**
+   * Delete a risk from disk
+   */
+  async deleteRisk(riskId: string): Promise<void> {
+    await fileSystemService.deleteFile(`${RISKS_DIR}/${riskId}.md`);
+  }
+
   // ============ USER OPERATIONS ============
 
   /**
@@ -715,14 +767,16 @@ class DiskProjectService {
     useCases: UseCase[];
     testCases: TestCase[];
     information: Information[];
+    risks: Risk[];
   }> {
-    const [projects, requirements, useCases, testCases, information, currentProjectId] =
+    const [projects, requirements, useCases, testCases, information, risks, currentProjectId] =
       await Promise.all([
         this.listProjects(),
         this.loadAllRequirements(),
         this.loadAllUseCases(),
         this.loadAllTestCases(),
         this.loadAllInformation(),
+        this.loadAllRisks(),
         this.getCurrentProjectId(),
       ]);
 
@@ -733,6 +787,7 @@ class DiskProjectService {
       useCases,
       testCases,
       information,
+      risks,
     };
   }
 
@@ -741,18 +796,20 @@ class DiskProjectService {
    * Call this after loading to ensure counters are in sync
    */
   async recalculateCounters(): Promise<void> {
-    const [requirements, useCases, testCases, information] = await Promise.all([
+    const [requirements, useCases, testCases, information, risks] = await Promise.all([
       this.loadAllRequirements(),
       this.loadAllUseCases(),
       this.loadAllTestCases(),
       this.loadAllInformation(),
+      this.loadAllRisks(),
     ]);
 
     // Find max number for each type
     let maxReq = 0,
       maxUc = 0,
       maxTc = 0,
-      maxInfo = 0;
+      maxInfo = 0,
+      maxRisk = 0;
 
     for (const req of requirements) {
       const match = req.id.match(/REQ-(\d+)/);
@@ -774,11 +831,17 @@ class DiskProjectService {
       if (match) maxInfo = Math.max(maxInfo, parseInt(match[1], 10));
     }
 
+    for (const risk of risks) {
+      const match = risk.id.match(/RISK-(\d+)/);
+      if (match) maxRisk = Math.max(maxRisk, parseInt(match[1], 10));
+    }
+
     await Promise.all([
       this.setCounter('requirements', maxReq),
       this.setCounter('useCases', maxUc),
       this.setCounter('testCases', maxTc),
       this.setCounter('information', maxInfo),
+      this.setCounter('risks', maxRisk),
     ]);
   }
 }

@@ -50,11 +50,19 @@ export function PendingChangesPanel() {
         const id = filename.endsWith('.md') ? filename.replace('.md', '') : filename;
 
         // Map folder names to artifact types
-        let type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'project' | 'asset';
+        let type:
+          | 'requirement'
+          | 'usecase'
+          | 'testcase'
+          | 'information'
+          | 'project'
+          | 'asset'
+          | 'risk';
         if (typeStr === 'requirements') type = 'requirement';
         else if (typeStr === 'usecases') type = 'usecase';
         else if (typeStr === 'testcases') type = 'testcase';
         else if (typeStr === 'information') type = 'information';
+        else if (typeStr === 'risks') type = 'risk';
         else if (typeStr === 'projects') type = 'project';
         else if (typeStr === 'assets') type = 'asset';
         else return null;
@@ -93,13 +101,16 @@ export function PendingChangesPanel() {
 
       for (const change of idsToProcess) {
         // Map artifact type to folder name for history lookup
-        const folderMap: Record<string, 'requirements' | 'usecases' | 'testcases' | 'information'> =
-          {
-            requirement: 'requirements',
-            usecase: 'usecases',
-            testcase: 'testcases',
-            information: 'information',
-          };
+        const folderMap: Record<
+          string,
+          'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
+        > = {
+          requirement: 'requirements',
+          usecase: 'usecases',
+          testcase: 'testcases',
+          information: 'information',
+          risk: 'risks',
+        };
 
         // For projects, always use "Update Project" since project folder uses different structure
         if (change.type === 'project') {
@@ -272,7 +283,9 @@ export function PendingChangesPanel() {
               ? 'Projects'
               : change.type === 'asset'
                 ? 'Assets'
-                : 'Information';
+                : change.type === 'risk'
+                  ? 'Risks'
+                  : 'Information';
     if (!groupedChanges[typeName]) {
       groupedChanges[typeName] = [];
     }

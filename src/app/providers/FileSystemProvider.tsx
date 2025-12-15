@@ -8,6 +8,7 @@ import type {
   UseCase,
   TestCase,
   Information,
+  Risk,
   ProjectBaseline,
   Project,
 } from '../../types';
@@ -26,6 +27,7 @@ interface FileSystemContextValue {
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
+  risks: Risk[];
   // Git-related
   pendingChanges: FileStatus[];
   refreshStatus: () => Promise<void>;
@@ -34,21 +36,25 @@ interface FileSystemContextValue {
   saveUseCase: (useCase: UseCase) => Promise<void>;
   saveTestCase: (testCase: TestCase) => Promise<void>;
   saveInformation: (info: Information) => Promise<void>;
+  saveRisk: (risk: Risk) => Promise<void>;
   deleteRequirement: (id: string) => Promise<void>;
   deleteUseCase: (id: string) => Promise<void>;
   deleteTestCase: (id: string) => Promise<void>;
   deleteInformation: (id: string) => Promise<void>;
+  deleteRisk: (id: string) => Promise<void>;
   saveProject: (project: Project) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   createProject: (name: string, description: string) => Promise<Project>;
   setCurrentProject: (projectId: string) => Promise<void>;
-  getNextId: (type: 'requirements' | 'useCases' | 'testCases' | 'information') => Promise<string>;
+  getNextId: (
+    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'risks'
+  ) => Promise<string>;
   // Reload from disk
   reloadData: () => Promise<void>;
   // Git operations
   commitFile: (filepath: string, message: string, authorName?: string) => Promise<void>;
   getArtifactHistory: (
-    type: 'requirements' | 'usecases' | 'testcases' | 'information',
+    type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks',
     id: string
   ) => Promise<CommitInfo[]>;
   baselines: ProjectBaseline[];
@@ -76,9 +82,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [useCases, setUseCases] = useState<UseCase[]>([]);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [information, setInformation] = useState<Information[]>([]);
+  const [risks, setRisks] = useState<Risk[]>([]);
 
   // Counter for E2E mode to generate unique IDs
-  const [e2eCounters, setE2eCounters] = useState({ req: 0, uc: 0, tc: 0, info: 0 });
+  const [e2eCounters, setE2eCounters] = useState({ req: 0, uc: 0, tc: 0, info: 0, risk: 0 });
 
   // Background tasks for status bar
   const { startTask, endTask } = useBackgroundTasks();
@@ -127,6 +134,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setUseCases(data.useCases);
       setTestCases(data.testCases);
       setInformation(data.information);
+      setRisks(data.risks);
 
       // Recalculate counters to make sure they're in sync
       await diskProjectService.recalculateCounters();
@@ -136,6 +144,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         useCases: data.useCases.length,
         testCases: data.testCases.length,
         information: data.information.length,
+        risks: data.risks.length,
       });
     } finally {
       endTask(taskId);
@@ -372,6 +381,39 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [isReady, refreshStatus]
   );
 
+  // CRUD operations - Risks
+  const saveRisk = useCallback(
+    async (risk: Risk) => {
+      if (!isReady) throw new Error('Filesystem not ready');
+      if (!isE2EMode()) {
+        await diskProjectService.saveRisk(risk);
+      }
+      setRisks((prev) => {
+        const idx = prev.findIndex((r) => r.id === risk.id);
+        if (idx >= 0) {
+          const updated = [...prev];
+          updated[idx] = risk;
+          return updated;
+        }
+        return [...prev, risk];
+      });
+      if (!isE2EMode()) await refreshStatus();
+    },
+    [isReady, refreshStatus]
+  );
+
+  const deleteRisk = useCallback(
+    async (id: string) => {
+      if (!isReady) throw new Error('Filesystem not ready');
+      if (!isE2EMode()) {
+        await diskProjectService.deleteRisk(id);
+      }
+      setRisks((prev) => prev.filter((r) => r.id !== id));
+      if (!isE2EMode()) await refreshStatus();
+    },
+    [isReady, refreshStatus]
+  );
+
   // CRUD operations - Projects
   const saveProject = useCallback(
     async (project: Project) => {
@@ -408,6 +450,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           useCaseIds: [],
           testCaseIds: [],
           informationIds: [],
+          riskIds: [],
           lastModified: Date.now(),
         };
       } else {
@@ -449,7 +492,9 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Get next ID
   const getNextId = useCallback(
-    async (type: 'requirements' | 'useCases' | 'testCases' | 'information'): Promise<string> => {
+    async (
+      type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'risks'
+    ): Promise<string> => {
       if (isE2EMode()) {
         // In E2E mode, use local counter
         const prefix = {
@@ -457,12 +502,14 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           useCases: 'UC',
           testCases: 'TC',
           information: 'INFO',
+          risks: 'RISK',
         }[type];
         const counterKey = {
           requirements: 'req',
           useCases: 'uc',
           testCases: 'tc',
           information: 'info',
+          risks: 'risk',
         }[type] as keyof typeof e2eCounters;
         const nextNum = e2eCounters[counterKey] + 1;
         setE2eCounters((prev) => ({ ...prev, [counterKey]: nextNum }));
@@ -492,7 +539,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   );
 
   const getArtifactHistory = useCallback(
-    async (type: 'requirements' | 'usecases' | 'testcases' | 'information', id: string) => {
+    async (
+      type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks',
+      id: string
+    ) => {
       if (!isReady || isE2EMode()) return [];
       return await realGitService.getHistory(`${type}/${id}.md`);
     },
@@ -525,6 +575,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         useCases,
         testCases,
         information,
+        risks,
         // Git
         pendingChanges,
         refreshStatus,
@@ -533,10 +584,12 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         saveUseCase,
         saveTestCase,
         saveInformation,
+        saveRisk,
         deleteRequirement,
         deleteUseCase,
         deleteTestCase,
         deleteInformation,
+        deleteRisk,
         saveProject,
         createProject,
         deleteProject,

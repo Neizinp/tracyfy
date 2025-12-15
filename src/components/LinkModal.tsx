@@ -12,7 +12,7 @@ export interface LinkModalResult {
 interface LinkModalProps {
   isOpen: boolean;
   sourceArtifactId: string | null;
-  sourceArtifactType: 'requirement' | 'usecase' | 'testcase' | 'information';
+  sourceArtifactType: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
   projects: Project[];
   currentProjectId: string;
   globalRequirements: Requirement[];
@@ -130,6 +130,8 @@ export const LinkModal: React.FC<LinkModalProps> = ({
         return 'Source Test Case';
       case 'information':
         return 'Source Information';
+      case 'risk':
+        return 'Source Risk';
       default:
         return 'Source Artifact';
     }
