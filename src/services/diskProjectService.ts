@@ -138,7 +138,7 @@ class DiskProjectService {
   }
 
   /**
-   * Set counter value
+   * Set counter value (and auto-commit)
    */
   private async setCounter(
     type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users' | 'risks',
@@ -146,6 +146,11 @@ class DiskProjectService {
   ): Promise<void> {
     const filename = `${COUNTERS_DIR}/${type}.md`;
     await fileSystemService.writeFile(filename, String(value));
+
+    // Auto-commit the counter update in the background
+    realGitService.commitFile(filename, `Update ${type} counter`).catch(() => {
+      // Silently ignore commit errors - counter is still updated locally
+    });
   }
 
   /**
