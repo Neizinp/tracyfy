@@ -515,7 +515,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setE2eCounters((prev) => ({ ...prev, [counterKey]: nextNum }));
         return `${prefix} -${String(nextNum).padStart(3, '0')} `;
       }
-      return await diskProjectService.getNextId(type);
+      return await diskProjectService.getNextIdWithSync(type);
     },
     [e2eCounters]
   );
