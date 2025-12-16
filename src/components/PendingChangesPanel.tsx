@@ -60,6 +60,8 @@ export function PendingChangesPanel() {
           | 'risk'
           | 'user'
           | 'counter'
+          | 'link'
+          | 'custom-attribute'
           | 'saved-filter';
         if (typeStr === 'requirements') type = 'requirement';
         else if (typeStr === 'usecases') type = 'usecase';
@@ -70,6 +72,8 @@ export function PendingChangesPanel() {
         else if (typeStr === 'assets') type = 'asset';
         else if (typeStr === 'users') type = 'user';
         else if (typeStr === 'counters') type = 'counter';
+        else if (typeStr === 'links') type = 'link';
+        else if (typeStr === 'custom-attributes') type = 'custom-attribute';
         else if (typeStr === 'saved-filters') type = 'saved-filter';
         else return null;
 
@@ -152,6 +156,21 @@ export function PendingChangesPanel() {
         // For counters, use simple default
         if (change.type === 'counter') {
           defaults[change.id] = 'Update counter';
+          processedDefaultsRef.current.add(change.id);
+          continue;
+        }
+
+        // For links, use appropriate default
+        if (change.type === 'link') {
+          defaults[change.id] = change.status === 'new' ? 'Add link' : 'Update link';
+          processedDefaultsRef.current.add(change.id);
+          continue;
+        }
+
+        // For custom attributes, use appropriate default
+        if (change.type === 'custom-attribute') {
+          defaults[change.id] =
+            change.status === 'new' ? 'Add custom attribute' : 'Update custom attribute';
           processedDefaultsRef.current.add(change.id);
           continue;
         }
@@ -319,9 +338,13 @@ export function PendingChangesPanel() {
                     ? 'Users'
                     : change.type === 'counter'
                       ? 'Counters'
-                      : change.type === 'saved-filter'
-                        ? 'Saved Searches'
-                        : 'Information';
+                      : change.type === 'link'
+                        ? 'Links'
+                        : change.type === 'custom-attribute'
+                          ? 'Custom Attributes'
+                          : change.type === 'saved-filter'
+                            ? 'Saved Searches'
+                            : 'Information';
     if (!groupedChanges[typeName]) {
       groupedChanges[typeName] = [];
     }

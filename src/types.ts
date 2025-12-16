@@ -250,6 +250,8 @@ export interface ArtifactChange {
     | 'risk'
     | 'user'
     | 'counter'
+    | 'link'
+    | 'custom-attribute'
     | 'saved-filter';
   title: string;
   status: 'new' | 'modified'; // No 'deleted' - artifacts can only be removed from projects
