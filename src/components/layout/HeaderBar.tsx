@@ -46,6 +46,7 @@ export interface HeaderBarProps {
   baselines?: ProjectBaseline[];
   onOpenUserSettings?: () => void;
   currentUserName?: string;
+  onOpenAdvancedSearch?: () => void;
 }
 
 /**
@@ -74,6 +75,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   baselines = [],
   onOpenUserSettings,
   currentUserName,
+  onOpenAdvancedSearch,
 }) => {
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [selectedBaselineId, setSelectedBaselineId] = useState<string>('current');
@@ -249,6 +251,20 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             }}
           />
         </div>
+      )}
+
+      {/* Advanced Search Button */}
+      {onOpenAdvancedSearch && (
+        <button
+          onClick={onOpenAdvancedSearch}
+          style={{
+            ...headerButtonStyle,
+            padding: '6px 10px',
+          }}
+          title="Advanced Search (Ctrl+Shift+F)"
+        >
+          <Search size={16} />
+        </button>
       )}
 
       <div style={{ display: 'flex', gap: '8px' }}>

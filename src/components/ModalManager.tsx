@@ -13,6 +13,7 @@ import {
 } from './';
 import { RiskModal } from './RiskModal';
 import { UserSettingsModal } from './UserSettingsModal';
+import { AdvancedSearchModal } from './AdvancedSearchModal';
 import {
   useUI,
   useProject,
@@ -445,6 +446,56 @@ export const ModalManager: React.FC = () => {
           ).length,
           risks: risks.filter((r) => !r.isDeleted && currentProject?.riskIds.includes(r.id)).length,
           links: projectLinks.length,
+        }}
+      />
+
+      <AdvancedSearchModal
+        isOpen={ui.isAdvancedSearchOpen}
+        onClose={() => ui.setIsAdvancedSearchOpen(false)}
+        onNavigateToArtifact={(type, id) => {
+          // Navigate to the artifact by opening its modal
+          switch (type) {
+            case 'requirement': {
+              const req = globalRequirements.find((r) => r.id === id);
+              if (req) {
+                ui.setEditingRequirement(req);
+                ui.setIsEditRequirementModalOpen(true);
+              }
+              break;
+            }
+            case 'useCase': {
+              const uc = globalUseCases.find((u) => u.id === id);
+              if (uc) {
+                ui.setEditingUseCase(uc);
+                ui.setIsUseCaseModalOpen(true);
+              }
+              break;
+            }
+            case 'testCase': {
+              const tc = globalTestCases.find((t) => t.id === id);
+              if (tc) {
+                ui.setSelectedTestCaseId(tc.id);
+                ui.setIsEditTestCaseModalOpen(true);
+              }
+              break;
+            }
+            case 'information': {
+              const info = globalInformation.find((i) => i.id === id);
+              if (info) {
+                ui.setSelectedInformation(info);
+                ui.setIsInformationModalOpen(true);
+              }
+              break;
+            }
+            case 'risk': {
+              const risk = risks.find((r) => r.id === id);
+              if (risk) {
+                setSelectedRisk(risk);
+                ui.setIsRiskModalOpen(true);
+              }
+              break;
+            }
+          }
         }}
       />
     </>

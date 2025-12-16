@@ -216,6 +216,7 @@ export const ProjectLayout: React.FC = () => {
       onOpenGlobalLibrary={() => ui.setIsLibraryPanelOpen(true)}
       onOpenLibraryTab={ui.handleOpenLibrary}
       onOpenExportModal={() => ui.setIsExportModalOpen(true)}
+      onOpenAdvancedSearch={() => ui.setIsAdvancedSearchOpen(true)}
       onViewHistory={() => ui.setIsVersionHistoryOpen(true)}
       onOpenUserSettings={() => ui.setIsUserSettingsModalOpen(true)}
       currentUserName={currentUser?.name}

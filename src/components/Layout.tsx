@@ -32,6 +32,7 @@ export interface LayoutProps {
   rightPanel?: React.ReactNode;
   onOpenUserSettings?: () => void;
   currentUserName?: string;
+  onOpenAdvancedSearch?: () => void;
 }
 
 /**
@@ -66,6 +67,7 @@ export const Layout: React.FC<LayoutProps> = ({
   rightPanel,
   onOpenUserSettings,
   currentUserName,
+  onOpenAdvancedSearch,
 }) => {
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -99,6 +101,7 @@ export const Layout: React.FC<LayoutProps> = ({
           baselines={baselines}
           onOpenUserSettings={onOpenUserSettings}
           currentUserName={currentUserName}
+          onOpenAdvancedSearch={onOpenAdvancedSearch}
         />
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>

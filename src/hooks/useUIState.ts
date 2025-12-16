@@ -25,6 +25,7 @@ export function useUIState() {
   const [isGlobalLibraryModalOpen, setIsGlobalLibraryModalOpen] = useState(false);
   const [isUserSettingsModalOpen, setIsUserSettingsModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
 
   // Selection States
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
@@ -162,6 +163,8 @@ export function useUIState() {
     setIsUserSettingsModalOpen,
     isExportModalOpen,
     setIsExportModalOpen,
+    isAdvancedSearchOpen,
+    setIsAdvancedSearchOpen,
 
     // Selections
     selectedRequirementId,
