@@ -29,3 +29,5 @@ export { SnapshotViewer } from './SnapshotViewer';
 export { StatusBar } from './StatusBar';
 export { ToastContainer } from './ToastContainer';
 export { UserOnboardingModal } from './UserOnboardingModal';
+export { ExportModal } from './ExportModal';
+export type { ExportOptions } from './ExportModal';

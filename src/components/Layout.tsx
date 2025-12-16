@@ -24,6 +24,7 @@ export interface LayoutProps {
   onOpenLibraryTab?: (
     tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
   ) => void;
+  onOpenExportModal?: () => void;
   onSearch?: (query: string) => void;
   onNewInformation?: () => void;
   onNewRisk?: () => void;
@@ -57,6 +58,7 @@ export const Layout: React.FC<LayoutProps> = ({
   onImportExcel,
   onOpenGlobalLibrary,
   onOpenLibraryTab,
+  onOpenExportModal,
   onSearch,
   onNewInformation,
   onNewRisk,
@@ -90,6 +92,7 @@ export const Layout: React.FC<LayoutProps> = ({
           onImport={onImport}
           onImportExcel={onImportExcel}
           onOpenGlobalLibrary={onOpenGlobalLibrary}
+          onOpenExportModal={onOpenExportModal}
           onExport={onExport}
           onExportPDF={onExportPDF}
           onExportExcel={onExportExcel}

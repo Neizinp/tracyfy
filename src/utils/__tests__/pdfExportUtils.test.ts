@@ -157,6 +157,13 @@ vi.mock('../../services/realGitService', () => ({
   },
 }));
 
+// Mock diskLinkService
+vi.mock('../../services/diskLinkService', () => ({
+  diskLinkService: {
+    getLinksForProject: vi.fn().mockResolvedValue([]),
+  },
+}));
+
 describe('pdfExportUtils', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -170,6 +177,7 @@ describe('pdfExportUtils', () => {
     useCaseIds: ['u1'],
     testCaseIds: ['t1'],
     informationIds: ['i1'],
+    riskIds: [],
     lastModified: 0,
   };
 

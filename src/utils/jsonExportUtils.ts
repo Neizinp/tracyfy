@@ -1,4 +1,5 @@
-import type { Project, Requirement, UseCase, TestCase, Information } from '../types';
+import type { Project, Requirement, UseCase, TestCase, Information, Link, Risk } from '../types';
+import { diskLinkService } from '../services/diskLinkService';
 
 /**
  * Sort artifacts by their numeric ID suffix (e.g., REQ-001, REQ-002)
@@ -24,6 +25,8 @@ export interface ExportData {
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
+  risks: Risk[];
+  links: Link[];
   exportedAt: string;
 }
 
@@ -34,6 +37,7 @@ export async function exportProjectToJSON(
     useCases: UseCase[];
     testCases: TestCase[];
     information: Information[];
+    risks?: Risk[];
   },
   projectRequirementIds: string[],
   projectUseCaseIds: string[],
@@ -54,8 +58,13 @@ export async function exportProjectToJSON(
     globalState.information.filter((i) => projectInformationIds.includes(i.id) && !i.isDeleted)
   );
 
-  // Note: Links are now stored in each artifact's linkedArtifacts field
-  // They are automatically exported as part of the artifact data
+  // Fetch links visible to this project (global + project-specific)
+  const links = sortByIdNumber(await diskLinkService.getLinksForProject(project.id));
+
+  // Filter risks for this project (if provided)
+  const projectRisks = sortByIdNumber(
+    (globalState.risks || []).filter((r) => project.riskIds?.includes(r.id) && !r.isDeleted)
+  );
 
   const dataToExport: ExportData = {
     project: {
@@ -69,6 +78,8 @@ export async function exportProjectToJSON(
     useCases,
     testCases,
     information,
+    risks: projectRisks,
+    links,
     exportedAt: new Date().toISOString(),
   };
 

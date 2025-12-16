@@ -107,22 +107,19 @@ export async function createDemoProject(): Promise<Project> {
   project.lastModified = now;
   await diskProjectService.updateProject(project);
 
-  // 6. Create links between artifacts in parallel
-  const linkPromises = DEMO_ARTIFACTS.links
-    .map((linkDef) => {
-      const sourceId = getArtifactId(linkDef.sourceType, linkDef.sourceIndex, createdIds);
-      const targetId = getArtifactId(linkDef.targetType, linkDef.targetIndex, createdIds);
+  // 6. Create links between artifacts SEQUENTIALLY to avoid race condition on counter file
+  // Note: Promise.all() was causing all links to get the same ID because getNextId()
+  // reads/writes a counter file, and parallel calls all read the same counter value.
+  for (const linkDef of DEMO_ARTIFACTS.links) {
+    const sourceId = getArtifactId(linkDef.sourceType, linkDef.sourceIndex, createdIds);
+    const targetId = getArtifactId(linkDef.targetType, linkDef.targetIndex, createdIds);
 
-      if (sourceId && targetId) {
-        // Global links have empty projectIds, project links include this project's ID
-        const projectIds = linkDef.scope === 'global' ? [] : [project.id];
-        return diskLinkService.createLink(sourceId, targetId, linkDef.type, projectIds);
-      }
-      return null;
-    })
-    .filter(Boolean);
-
-  await Promise.all(linkPromises);
+    if (sourceId && targetId) {
+      // Global links have empty projectIds, project links include this project's ID
+      const projectIds = linkDef.scope === 'global' ? [] : [project.id];
+      await diskLinkService.createLink(sourceId, targetId, linkDef.type, projectIds);
+    }
+  }
 
   return project;
 }

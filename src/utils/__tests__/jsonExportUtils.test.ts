@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { exportProjectToJSON } from '../jsonExportUtils';
 import type { Project, Requirement, UseCase, TestCase, Information } from '../../types';
+import { diskLinkService } from '../../services/diskLinkService';
+
+// Mock diskLinkService
+vi.mock('../../services/diskLinkService', () => ({
+  diskLinkService: {
+    getLinksForProject: vi.fn(),
+  },
+}));
 
 // Mock window.showSaveFilePicker
 const mockShowSaveFilePicker = vi.fn();
@@ -44,6 +52,9 @@ describe('jsonExportUtils', () => {
       download: '',
       click: mockClick,
     });
+
+    // Mock diskLinkService
+    vi.mocked(diskLinkService.getLinksForProject).mockResolvedValue([]);
   });
 
   const mockProject: Project = {
@@ -56,6 +67,7 @@ describe('jsonExportUtils', () => {
     informationIds: ['i1'],
     lastModified: 0,
     currentBaseline: 'Baseline 1.0',
+    riskIds: [],
   };
 
   const mockReq: Requirement = {
@@ -145,8 +157,9 @@ describe('jsonExportUtils', () => {
     // Links are now in each artifact's linkedArtifacts, not a separate array
     expect(data.requirements[0].linkedArtifacts).toHaveLength(2);
     expect(data.requirements[0].linkedArtifacts[0].targetId).toBe('u1');
-    // Links are no longer exported as a separate array
-    expect(data.links).toBeUndefined();
+    // Links are now exported as a separate array from diskLinkService
+    expect(data.links).toBeDefined();
+    expect(Array.isArray(data.links)).toBe(true);
   });
 
   it('should use showSaveFilePicker if available', async () => {

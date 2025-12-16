@@ -7,10 +7,14 @@ import type {
   Information,
   Project,
   ProjectBaseline,
+  Link,
+  Risk,
 } from '../types';
 import { formatDate } from './dateUtils';
 import { realGitService } from '../services/realGitService';
 import { fileSystemService } from '../services/fileSystemService';
+import { diskLinkService } from '../services/diskLinkService';
+import { LINK_TYPE_LABELS } from './linkTypes';
 import type { CommitInfo } from '../types';
 
 // Additional types
@@ -178,6 +182,7 @@ export async function exportProjectToPDF(
     useCases: UseCase[];
     testCases: TestCase[];
     information: Information[];
+    risks?: Risk[];
   },
   projectRequirementIds: string[],
   projectUseCaseIds: string[],
@@ -222,10 +227,36 @@ export async function exportProjectToPDF(
   addCoverPage(doc, project, selectedBaseline, currentUserName);
   currentPage++;
 
-  // 2. Table of Contents (placeholder, will update after)
-  doc.addPage();
-  const tocPage = currentPage;
-  currentPage++;
+  // 2. Estimate ToC pages needed based on artifact counts
+  // Each artifact type adds 1 section header + entries per artifact
+  // We estimate links count here - will be fetched later, assume average of 20 if we have artifacts
+  const hasArtifacts =
+    projectRequirementIds.length > 0 ||
+    projectUseCaseIds.length > 0 ||
+    projectTestCaseIds.length > 0 ||
+    projectInformationIds.length > 0;
+  const estimatedLinksCount = hasArtifacts ? 30 : 0; // Conservative estimate
+  const estimatedRisksCount = (globalState.risks || []).filter(
+    (r: Risk) => project.riskIds?.includes(r.id) && !r.isDeleted
+  ).length;
+
+  const estimatedTocEntries =
+    (projectRequirementIds.length > 0 ? 1 + projectRequirementIds.length : 0) +
+    (projectUseCaseIds.length > 0 ? 1 + projectUseCaseIds.length : 0) +
+    (projectTestCaseIds.length > 0 ? 1 + projectTestCaseIds.length : 0) +
+    (projectInformationIds.length > 0 ? 1 + projectInformationIds.length : 0) +
+    (estimatedRisksCount > 0 ? 1 + estimatedRisksCount : 0) + // Risks section + individual risks
+    (estimatedLinksCount > 0 ? 1 + estimatedLinksCount : 0) + // Links section + individual links
+    1; // Revision history if present
+
+  const tocPagesNeeded = calculateTocPages(estimatedTocEntries);
+  const tocStartPage = currentPage;
+
+  // Reserve ToC pages
+  for (let i = 0; i < tocPagesNeeded; i++) {
+    doc.addPage();
+    currentPage++;
+  }
 
   // 3. Fetch git commit history since last baseline
   // Sort all artifacts by their numeric ID suffix for consistent ordering
@@ -429,9 +460,26 @@ export async function exportProjectToPDF(
     currentPage = await addInformationSection(doc, projectInformation, currentPage, tocEntries);
   }
 
-  // Add TOC (go back to page 2)
-  doc.setPage(tocPage);
-  addTableOfContents(doc, tocEntries);
+  // 9. Risks Section - filter from globalState if provided
+  const projectRisks = sortByIdNumber(
+    (globalState.risks || []).filter((r: Risk) => project.riskIds?.includes(r.id) && !r.isDeleted)
+  );
+  if (projectRisks.length > 0) {
+    doc.addPage();
+    tocEntries.push({ title: 'Risks', page: currentPage, level: 0 });
+    currentPage = addRisksSection(doc, projectRisks, currentPage, tocEntries);
+  }
+
+  // 10. Links Section - fetch from diskLinkService
+  const projectLinks = await diskLinkService.getLinksForProject(project.id);
+  if (projectLinks.length > 0) {
+    doc.addPage();
+    tocEntries.push({ title: 'Links', page: currentPage, level: 0 });
+    currentPage = addLinksSection(doc, projectLinks, currentPage, tocEntries);
+  }
+
+  // Add TOC (go back to reserved ToC pages and render)
+  addTableOfContents(doc, tocEntries, tocStartPage, tocPagesNeeded);
 
   // Add page numbers to all pages
   addPageNumbers(doc);
@@ -504,7 +552,18 @@ function addCoverPage(
 }
 
 // Table of Contents
-function addTableOfContents(doc: jsPDF, entries: TOCEntry[]): void {
+// NOTE: This function must be called AFTER all content pages are generated,
+// and we go back to page 2 to render it. To handle overflow, we use multiple
+// reserved ToC pages calculated upfront.
+function addTableOfContents(
+  doc: jsPDF,
+  entries: TOCEntry[],
+  tocStartPage: number,
+  tocPagesReserved: number
+): void {
+  let currentTocPage = 0;
+  doc.setPage(tocStartPage);
+
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
   doc.text('Table of Contents', 20, 20);
@@ -515,7 +574,10 @@ function addTableOfContents(doc: jsPDF, entries: TOCEntry[]): void {
   let yPos = 35;
   entries.forEach((entry) => {
     if (yPos > 270) {
-      doc.addPage();
+      currentTocPage++;
+      if (currentTocPage < tocPagesReserved) {
+        doc.setPage(tocStartPage + currentTocPage);
+      }
       yPos = 20;
     }
 
@@ -541,7 +603,9 @@ function addTableOfContents(doc: jsPDF, entries: TOCEntry[]): void {
 
     // Dotted line leader
     const titleWidth = doc.getTextWidth(title);
-    const pageText = String(entry.page);
+    // Adjust page number to account for reserved ToC pages
+    const adjustedPageNum = entry.page + (tocPagesReserved - 1);
+    const pageText = String(adjustedPageNum);
     const pageWidth = doc.getTextWidth(pageText);
     const dotsStart = 25 + indent + titleWidth + 2;
     const dotsEnd = 180 - pageWidth - 2;
@@ -555,6 +619,17 @@ function addTableOfContents(doc: jsPDF, entries: TOCEntry[]): void {
     doc.text(pageText, 180, yPos, { align: 'right' });
     yPos += entry.level === 0 ? 8 : 6;
   });
+}
+
+/**
+ * Calculate how many pages the ToC will need based on entry count
+ */
+function calculateTocPages(entryCount: number): number {
+  // Approximately 30 entries per page (level 0 takes 8pt spacing, level 1 takes 6pt)
+  // Usable height per page is about 250mm (35mm start to 270mm end)
+  // Average spacing is ~7pt, so roughly 35 entries per page
+  const entriesPerPage = 30;
+  return Math.max(1, Math.ceil(entryCount / entriesPerPage));
 }
 
 // Requirements Section
@@ -1406,4 +1481,194 @@ function addPageNumbers(doc: jsPDF): void {
       { align: 'center' }
     );
   }
+}
+
+// Links Section
+function addLinksSection(
+  doc: jsPDF,
+  links: Link[],
+  startPage: number,
+  tocEntries: TOCEntry[]
+): number {
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Links', 20, 20);
+
+  let page = startPage;
+
+  // Sort links by ID
+  const sortedLinks = [...links].sort((a, b) => {
+    const numA = parseInt(a.id.match(/\d+$/)?.[0] || '0', 10);
+    const numB = parseInt(b.id.match(/\d+$/)?.[0] || '0', 10);
+    return numA - numB;
+  });
+
+  // Add each link to ToC
+  for (const link of sortedLinks) {
+    const linkLabel = `${link.id}: ${link.sourceId} -> ${link.targetId}`;
+    tocEntries.push({ title: linkLabel, page: page, level: 1 });
+  }
+
+  // Create table data
+  const tableData = sortedLinks.map((link) => [
+    link.id,
+    link.sourceId,
+    LINK_TYPE_LABELS[link.type] || link.type,
+    link.targetId,
+    link.projectIds.length === 0 ? 'Global' : 'Project',
+  ]);
+
+  autoTable(doc, {
+    startY: 30,
+    head: [['Link ID', 'Source', 'Type', 'Target', 'Scope']],
+    body: tableData,
+    styles: {
+      fontSize: 8,
+      cellPadding: 3,
+    },
+    headStyles: {
+      fillColor: [100, 100, 100],
+      fontStyle: 'bold',
+    },
+    columnStyles: {
+      0: { cellWidth: 25 },
+      1: { cellWidth: 30 },
+      2: { cellWidth: 40 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 25 },
+    },
+    didDrawPage: () => {
+      page++;
+    },
+  });
+
+  return page;
+}
+
+// Risks Section
+function addRisksSection(
+  doc: jsPDF,
+  risks: Risk[],
+  startPage: number,
+  tocEntries: TOCEntry[]
+): number {
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Risks', 20, 20);
+
+  let yPos = 30;
+  let page = startPage;
+
+  for (const risk of risks) {
+    // Check if we need a new page
+    if (yPos > 230) {
+      doc.addPage();
+      page++;
+      yPos = 20;
+    }
+
+    const boxLeft = 15;
+    const boxWidth = 180;
+    const boxTop = yPos;
+    let currentY = boxTop;
+
+    // Draw outer box border
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+
+    // Header section with shaded background
+    const headerHeight = 10;
+    doc.setFillColor(255, 235, 235); // Light red for risks
+    doc.rect(boxLeft, currentY, boxWidth, headerHeight, 'FD');
+
+    // Risk ID and Title
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    const title = `${risk.id} - ${risk.title}`;
+    doc.text(title, boxLeft + 3, currentY + 7);
+
+    // Revision (right-aligned)
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const revText = `Rev: ${risk.revision || '01'}`;
+    doc.text(revText, boxLeft + boxWidth - 3, currentY + 7, { align: 'right' });
+
+    // Add to TOC
+    tocEntries.push({ title: `${risk.id} - ${risk.title}`, page: page, level: 1 });
+
+    currentY += headerHeight;
+
+    // Metadata bar (Category | Probability | Impact | Status)
+    doc.setFillColor(250, 250, 250);
+    doc.rect(boxLeft, currentY, boxWidth, 6, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    const capitalizeWord = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+    const metadataText = `Category: ${capitalizeWord(risk.category)}  |  Probability: ${capitalizeWord(risk.probability)}  |  Impact: ${capitalizeWord(risk.impact)}  |  Status: ${capitalizeWord(risk.status)}`;
+    doc.text(metadataText, boxLeft + 3, currentY + 4);
+    currentY += 6;
+
+    // Content sections
+    const contentLeft = boxLeft + 3;
+    const contentWidth = boxWidth - 6;
+    currentY += 3;
+
+    // Description
+    if (risk.description) {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Description:', contentLeft, currentY);
+      currentY += 4;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      const descLines = doc.splitTextToSize(risk.description, contentWidth);
+      doc.text(descLines, contentLeft, currentY);
+      currentY += descLines.length * 4 + 3;
+    }
+
+    // Mitigation
+    if (risk.mitigation) {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Mitigation Strategy:', contentLeft, currentY);
+      currentY += 4;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      const mitigationLines = doc.splitTextToSize(risk.mitigation, contentWidth);
+      doc.text(mitigationLines, contentLeft, currentY);
+      currentY += mitigationLines.length * 4 + 3;
+    }
+
+    // Contingency
+    if (risk.contingency) {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Contingency Plan:', contentLeft, currentY);
+      currentY += 4;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      const contingencyLines = doc.splitTextToSize(risk.contingency, contentWidth);
+      doc.text(contingencyLines, contentLeft, currentY);
+      currentY += contingencyLines.length * 4 + 3;
+    }
+
+    // Footer metadata bar
+    currentY += 1;
+    doc.setFillColor(250, 250, 250);
+    doc.rect(boxLeft, currentY, boxWidth, 6, 'F');
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    const footerText = `Owner: ${risk.owner || 'N/A'}  |  Created: ${formatDate(risk.dateCreated)}  |  Modified: ${formatDate(risk.lastModified)}`;
+    doc.text(footerText, boxLeft + 3, currentY + 4);
+    currentY += 6;
+
+    // Draw final box border
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
+
+    yPos = currentY + 5; // Space between risks
+  }
+
+  return page;
 }

@@ -15,6 +15,7 @@ const mockProjects: Project[] = [
     useCaseIds: ['UC-001'],
     testCaseIds: ['TC-001'],
     informationIds: ['INFO-001'],
+    riskIds: [],
     lastModified: 1000000,
   },
   {
@@ -25,6 +26,7 @@ const mockProjects: Project[] = [
     useCaseIds: [],
     testCaseIds: [],
     informationIds: [],
+    riskIds: [],
     lastModified: 2000000,
   },
 ];
@@ -41,6 +43,7 @@ const mockFsCreateProject = vi
       useCaseIds: [],
       testCaseIds: [],
       informationIds: [],
+      riskIds: [],
       lastModified: Date.now(),
     };
     return newProject;

@@ -188,6 +188,7 @@ export const ProjectLayout: React.FC = () => {
       onImportExcel={importExport.handleImportExcel}
       onOpenGlobalLibrary={() => ui.setIsLibraryPanelOpen(true)}
       onOpenLibraryTab={ui.handleOpenLibrary}
+      onOpenExportModal={() => ui.setIsExportModalOpen(true)}
       onViewHistory={() => ui.setIsVersionHistoryOpen(true)}
       onOpenUserSettings={() => ui.setIsUserSettingsModalOpen(true)}
       currentUserName={currentUser?.name}

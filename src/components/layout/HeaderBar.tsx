@@ -37,7 +37,9 @@ export interface HeaderBarProps {
   onImport?: () => void;
   onImportExcel?: () => void;
   onOpenGlobalLibrary?: () => void;
-  // Export dropdown
+  // Export - opens modal
+  onOpenExportModal?: () => void;
+  // Legacy export handlers (kept for backward compatibility)
   onExport?: () => void;
   onExportPDF?: (selectedBaseline: ProjectBaseline | null) => void;
   onExportExcel?: () => void;
@@ -65,6 +67,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onImport,
   onImportExcel,
   onOpenGlobalLibrary,
+  onOpenExportModal,
   onExport,
   onExportPDF,
   onExportExcel,
@@ -381,102 +384,112 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           )}
         </div>
 
-        {/* Export Dropdown */}
-        <div style={{ position: 'relative' }} ref={exportMenuRef}>
-          <button
-            onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-            style={headerButtonStyle}
-            data-testid="export-button"
-          >
+        {/* Export Button */}
+        {onOpenExportModal && (
+          <button onClick={onOpenExportModal} style={headerButtonStyle} data-testid="export-button">
             <Download size={18} />
             Export
-            <ChevronDown size={14} />
           </button>
+        )}
 
-          {isExportMenuOpen && (
-            <div data-testid="export-dropdown" style={dropdownMenuStyle}>
-              {/* E2E debug indicator */}
-              {typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__ && (
-                <div
-                  style={{
-                    background: 'red',
-                    color: 'white',
-                    padding: 4,
-                    fontSize: 12,
-                    textAlign: 'center',
-                  }}
-                >
-                  E2E EXPORT DROPDOWN OPEN
-                </div>
-              )}
-              {typeof window !== 'undefined' &&
-                (window as any).__E2E_TEST_MODE__ &&
-                console.log('E2E: Export dropdown rendered')}
+        {/* Legacy Export Dropdown (kept for E2E tests and backward compatibility) */}
+        {!onOpenExportModal && (
+          <div style={{ position: 'relative' }} ref={exportMenuRef}>
+            <button
+              onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+              style={headerButtonStyle}
+              data-testid="export-button-legacy"
+            >
+              <Download size={18} />
+              Export
+              <ChevronDown size={14} />
+            </button>
 
-              {/* PDF Export with baseline selection */}
-              {onExportPDF && (
-                <div style={{ padding: '0.5rem 1rem' }}>
-                  <label
-                    htmlFor="baseline-select"
+            {isExportMenuOpen && (
+              <div data-testid="export-dropdown" style={dropdownMenuStyle}>
+                {/* E2E debug indicator */}
+                {typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__ && (
+                  <div
                     style={{
-                      fontSize: 'var(--font-size-sm)',
-                      fontWeight: 500,
-                      display: 'block',
-                      marginBottom: 4,
+                      background: 'red',
+                      color: 'white',
+                      padding: 4,
+                      fontSize: 12,
+                      textAlign: 'center',
                     }}
                   >
-                    Export Version:
-                  </label>
-                  <select
-                    id="baseline-select"
-                    value={selectedBaselineId}
-                    onChange={(e) => setSelectedBaselineId(e.target.value)}
-                    style={{
-                      width: '100%',
-                      marginBottom: 8,
-                      padding: '0.25rem',
-                      borderRadius: 4,
+                    E2E EXPORT DROPDOWN OPEN
+                  </div>
+                )}
+                {typeof window !== 'undefined' &&
+                  (window as any).__E2E_TEST_MODE__ &&
+                  console.log('E2E: Export dropdown rendered')}
+
+                {/* PDF Export with baseline selection */}
+                {onExportPDF && (
+                  <div style={{ padding: '0.5rem 1rem' }}>
+                    <label
+                      htmlFor="baseline-select"
+                      style={{
+                        fontSize: 'var(--font-size-sm)',
+                        fontWeight: 500,
+                        display: 'block',
+                        marginBottom: 4,
+                      }}
+                    >
+                      Export Version:
+                    </label>
+                    <select
+                      id="baseline-select"
+                      value={selectedBaselineId}
+                      onChange={(e) => setSelectedBaselineId(e.target.value)}
+                      style={{
+                        width: '100%',
+                        marginBottom: 8,
+                        padding: '0.25rem',
+                        borderRadius: 4,
+                      }}
+                    >
+                      <option value="current">Current State</option>
+                      {baselines.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name} ({b.version})
+                        </option>
+                      ))}
+                    </select>
+                    <button onClick={handleExportPDF} style={dropdownItemStyle} {...hoverHandlers}>
+                      <FileText size={16} />
+                      Export to PDF
+                    </button>
+                  </div>
+                )}
+
+                {/* Excel Export */}
+                {onExportExcel && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      onExportExcel();
+                      setIsExportMenuOpen(false);
                     }}
-                  >
-                    <option value="current">Current State</option>
-                    {baselines.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name} ({b.version})
-                      </option>
-                    ))}
-                  </select>
-                  <button onClick={handleExportPDF} style={dropdownItemStyle} {...hoverHandlers}>
-                    <FileText size={16} />
-                    Export to PDF
-                  </button>
-                </div>
-              )}
+                    icon={FileSpreadsheet}
+                    label="Export to Excel"
+                  />
+                )}
 
-              {/* Excel Export */}
-              {onExportExcel && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    onExportExcel();
-                    setIsExportMenuOpen(false);
-                  }}
-                  icon={FileSpreadsheet}
-                  label="Export to Excel"
-                />
-              )}
-
-              {/* JSON Export */}
-              {onExport && (
-                <DropdownMenuItem
-                  onClick={handleExportJSON}
-                  icon={Download}
-                  label="Export JSON"
-                  showBorder
-                  testId="export-json"
-                />
-              )}
-            </div>
-          )}
-        </div>
+                {/* JSON Export */}
+                {onExport && (
+                  <DropdownMenuItem
+                    onClick={handleExportJSON}
+                    icon={Download}
+                    label="Export JSON"
+                    showBorder
+                    testId="export-json"
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Theme Toggle */}
         <ThemeToggle />

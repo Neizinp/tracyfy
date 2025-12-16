@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   RequirementModal,
   LinkModal,
@@ -9,6 +9,7 @@ import {
   ProjectSettingsModal,
   CreateProjectModal,
   GlobalLibraryModal,
+  ExportModal,
 } from './';
 import { RiskModal } from './RiskModal';
 import { UserSettingsModal } from './UserSettingsModal';
@@ -21,11 +22,18 @@ import {
   useTestCases,
   useInformation,
   useFileSystem,
+  useUser,
+  useBackgroundTasks,
 } from '../app/providers';
 import type { Information, Risk } from '../types';
 import type { LinkModalResult } from './LinkModal';
 import { diskLinkService } from '../services/diskLinkService';
 import type { LinkType } from '../utils/linkTypes';
+import type { Link } from '../types';
+import type { ExportOptions } from './ExportModal';
+import { exportProjectToPDF } from '../utils/pdfExportUtils';
+import { exportProjectToExcel } from '../utils/excelExportUtils';
+import { exportProjectToJSON } from '../utils/jsonExportUtils';
 
 export const ModalManager: React.FC = () => {
   // UI state
@@ -57,8 +65,113 @@ export const ModalManager: React.FC = () => {
   // FileSystem state - includes risk operations
   const { baselines, createBaseline, reloadData, risks, saveRisk, getNextId } = useFileSystem();
 
+  // User context - for PDF export author
+  const { currentUser } = useUser();
+
+  // Background tasks - for showing export progress
+  const { startTask, endTask } = useBackgroundTasks();
+
+  // Links state - fetch for export modal count
+  const [projectLinks, setProjectLinks] = useState<Link[]>([]);
+
+  // Fetch links when project changes
+  useEffect(() => {
+    if (currentProjectId) {
+      diskLinkService.getLinksForProject(currentProjectId).then(setProjectLinks);
+    }
+  }, [currentProjectId]);
+
   // Track selected risk for editing
   const [selectedRisk, setSelectedRisk] = React.useState<Risk | null>(null);
+
+  // Handler for export - calls the appropriate export function based on format
+  const handleExport = useCallback(
+    async (options: ExportOptions) => {
+      if (!currentProject) {
+        console.error('No project selected for export');
+        return;
+      }
+
+      // Filter artifact IDs based on user's selections
+      const reqIds = options.includeRequirements ? currentProject.requirementIds : [];
+      const ucIds = options.includeUseCases ? currentProject.useCaseIds : [];
+      const tcIds = options.includeTestCases ? currentProject.testCaseIds : [];
+      const infoIds = options.includeInformation ? currentProject.informationIds : [];
+
+      const globalState = {
+        requirements: globalRequirements,
+        useCases: globalUseCases,
+        testCases: globalTestCases,
+        information: globalInformation,
+        risks: risks,
+      };
+
+      try {
+        switch (options.format) {
+          case 'pdf': {
+            const taskId = startTask('Exporting PDF...');
+            try {
+              await exportProjectToPDF(
+                currentProject,
+                globalState,
+                reqIds,
+                ucIds,
+                tcIds,
+                infoIds,
+                baselines,
+                options.baseline,
+                currentUser?.name
+              );
+            } finally {
+              endTask(taskId);
+            }
+            break;
+          }
+          case 'excel': {
+            const taskId = startTask('Exporting Excel...');
+            try {
+              // Excel always exports all artifacts
+              await exportProjectToExcel(
+                currentProject,
+                globalState,
+                currentProject.requirementIds,
+                currentProject.useCaseIds,
+                currentProject.testCaseIds,
+                currentProject.informationIds,
+                baselines
+              );
+            } finally {
+              endTask(taskId);
+            }
+            break;
+          }
+          case 'json': {
+            const taskId = startTask('Exporting JSON...');
+            try {
+              await exportProjectToJSON(currentProject, globalState, reqIds, ucIds, tcIds, infoIds);
+            } finally {
+              endTask(taskId);
+            }
+            break;
+          }
+        }
+      } catch (error) {
+        console.error('Export failed:', error);
+      }
+    },
+    [
+      currentProject,
+      globalRequirements,
+      globalUseCases,
+      globalTestCases,
+      globalInformation,
+      risks,
+      baselines,
+      currentUser,
+      startTask,
+      endTask,
+    ]
+  );
 
   // Handler for creating a Link entity - now uses diskLinkService
   const handleAddArtifactLink = useCallback(
@@ -310,6 +423,29 @@ export const ModalManager: React.FC = () => {
       <UserSettingsModal
         isOpen={ui.isUserSettingsModalOpen}
         onClose={() => ui.setIsUserSettingsModalOpen(false)}
+      />
+
+      <ExportModal
+        isOpen={ui.isExportModalOpen}
+        onClose={() => ui.setIsExportModalOpen(false)}
+        baselines={baselines}
+        onExport={handleExport}
+        artifactCounts={{
+          requirements: globalRequirements.filter(
+            (r) => !r.isDeleted && currentProject?.requirementIds.includes(r.id)
+          ).length,
+          useCases: globalUseCases.filter(
+            (u) => !u.isDeleted && currentProject?.useCaseIds.includes(u.id)
+          ).length,
+          testCases: globalTestCases.filter(
+            (t) => !t.isDeleted && currentProject?.testCaseIds.includes(t.id)
+          ).length,
+          information: globalInformation.filter(
+            (i) => !i.isDeleted && currentProject?.informationIds.includes(i.id)
+          ).length,
+          risks: risks.filter((r) => !r.isDeleted && currentProject?.riskIds.includes(r.id)).length,
+          links: projectLinks.length,
+        }}
       />
     </>
   );
