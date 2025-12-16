@@ -22,10 +22,14 @@ import { useUser } from '../app/providers';
 import { useUI } from '../app/providers';
 import type { Workflow } from '../types';
 import { WorkflowDetailPanel } from '../components/WorkflowDetailPanel';
+import { useToast } from '../app/providers/ToastProvider';
+
+const NOTIFIED_APPROVALS_KEY = 'workflow_notified_approvals';
 
 export const WorkflowsPage: React.FC = () => {
   const { currentUser, users } = useUser();
   const { setIsWorkflowModalOpen } = useUI();
+  const { showToast } = useToast();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
@@ -45,6 +49,33 @@ export const WorkflowsPage: React.FC = () => {
   useEffect(() => {
     loadWorkflows();
   }, [loadWorkflows]);
+
+  // Check for newly approved workflows and show toast notification
+  useEffect(() => {
+    if (!currentUser || workflows.length === 0) return;
+
+    // Get list of already notified approval IDs
+    const notifiedIds = new Set<string>(
+      JSON.parse(localStorage.getItem(NOTIFIED_APPROVALS_KEY) || '[]')
+    );
+
+    // Find workflows created by current user that are now approved but not yet notified
+    const newlyApproved = workflows.filter(
+      (wf) => wf.createdBy === currentUser.id && wf.status === 'approved' && !notifiedIds.has(wf.id)
+    );
+
+    // Show toast for each newly approved workflow
+    newlyApproved.forEach((wf) => {
+      const approverName = users.find((u) => u.id === wf.approvedBy)?.name || 'Someone';
+      showToast(`🎉 Your workflow "${wf.title}" was approved by ${approverName}!`, 'success');
+      notifiedIds.add(wf.id);
+    });
+
+    // Save updated notified IDs
+    if (newlyApproved.length > 0) {
+      localStorage.setItem(NOTIFIED_APPROVALS_KEY, JSON.stringify([...notifiedIds]));
+    }
+  }, [currentUser, workflows, users, showToast]);
 
   // Workflows assigned to current user (pending)
   const waitingForMe = workflows.filter(
