@@ -1,5 +1,18 @@
 import type { Requirement, UseCase, TestCase, Information, User, Project, Risk } from '../types';
-import type { CustomAttributeDefinition } from '../types/customAttributes';
+import type { CustomAttributeDefinition, CustomAttributeValue } from '../types/customAttributes';
+
+/**
+ * Filter out corrupted custom attribute values (strings like "[object Object]")
+ * that may have been saved due to previous serialization bugs
+ */
+function filterValidCustomAttributes(
+  attrs: CustomAttributeValue[] | undefined
+): CustomAttributeValue[] {
+  return (attrs || []).filter(
+    (attr): attr is CustomAttributeValue =>
+      typeof attr === 'object' && attr !== null && 'attributeId' in attr
+  );
+}
 
 /**
  * Convert a JavaScript object to YAML frontmatter string
@@ -215,7 +228,7 @@ export function requirementToMarkdown(requirement: Requirement): string {
     approvalDate: requirement.approvalDate || null,
     isDeleted: requirement.isDeleted || false,
     deletedAt: requirement.deletedAt || null,
-    customAttributes: requirement.customAttributes || [],
+    customAttributes: filterValidCustomAttributes(requirement.customAttributes),
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -307,7 +320,7 @@ export function convertUseCaseToMarkdown(useCase: UseCase): string {
     linkedArtifacts: useCase.linkedArtifacts || [],
     isDeleted: useCase.isDeleted || false,
     deletedAt: useCase.deletedAt || null,
-    customAttributes: useCase.customAttributes || [],
+    customAttributes: filterValidCustomAttributes(useCase.customAttributes),
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -402,7 +415,7 @@ export function testCaseToMarkdown(testCase: TestCase): string {
     linkedArtifacts: testCase.linkedArtifacts || [],
     isDeleted: testCase.isDeleted || false,
     deletedAt: testCase.deletedAt || null,
-    customAttributes: testCase.customAttributes || [],
+    customAttributes: filterValidCustomAttributes(testCase.customAttributes),
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -481,7 +494,7 @@ export function informationToMarkdown(information: Information): string {
     linkedArtifacts: information.linkedArtifacts || [],
     isDeleted: information.isDeleted || false,
     deletedAt: information.deletedAt || null,
-    customAttributes: information.customAttributes || [],
+    customAttributes: filterValidCustomAttributes(information.customAttributes),
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -625,7 +638,7 @@ export function riskToMarkdown(risk: Risk): string {
     linkedArtifacts: risk.linkedArtifacts || [],
     isDeleted: risk.isDeleted || false,
     deletedAt: risk.deletedAt || null,
-    customAttributes: risk.customAttributes || [],
+    customAttributes: filterValidCustomAttributes(risk.customAttributes),
   };
 
   const yaml = objectToYaml(frontmatter);
