@@ -15,6 +15,8 @@ import {
 import { RiskModal } from './RiskModal';
 import { UserSettingsModal } from './UserSettingsModal';
 import { AdvancedSearchModal } from './AdvancedSearchModal';
+import { CustomAttributeDefinitionModal } from './CustomAttributeDefinitionModal';
+import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
 import {
   useUI,
   useProject,
@@ -497,6 +499,17 @@ export const ModalManager: React.FC = () => {
               break;
             }
           }
+        }}
+      />
+
+      {/* Custom Attribute Definition Modal - for creating new custom attributes */}
+      <CustomAttributeDefinitionModal
+        isOpen={ui.isCustomAttributeModalOpen}
+        definition={null}
+        onClose={() => ui.setIsCustomAttributeModalOpen(false)}
+        onSubmit={async (data) => {
+          await diskCustomAttributeService.createDefinition(data);
+          ui.setIsCustomAttributeModalOpen(false);
         }}
       />
     </>

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
 import type {
   CustomAttributeDefinition,
@@ -32,7 +31,6 @@ export const CustomAttributesPage: React.FC = () => {
   const [editingDefinition, setEditingDefinition] = useState<CustomAttributeDefinition | null>(
     null
   );
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
   const loadDefinitions = useCallback(async () => {
     setLoading(true);
@@ -50,24 +48,9 @@ export const CustomAttributesPage: React.FC = () => {
     loadDefinitions();
   }, [loadDefinitions]);
 
-  const handleCreate = () => {
-    setEditingDefinition(null);
-    setIsModalOpen(true);
-  };
-
   const handleEdit = (def: CustomAttributeDefinition) => {
     setEditingDefinition(def);
     setIsModalOpen(true);
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      await diskCustomAttributeService.deleteDefinition(id);
-      await loadDefinitions();
-      setShowDeleteConfirm(null);
-    } catch (error) {
-      console.error('Failed to delete attribute:', error);
-    }
   };
 
   const handleModalClose = () => {
@@ -116,36 +99,15 @@ export const CustomAttributesPage: React.FC = () => {
       }}
     >
       {/* Header */}
-      <div
+      <p
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          color: 'var(--color-text-secondary)',
+          fontSize: 'var(--font-size-sm)',
           marginBottom: 'var(--spacing-lg)',
         }}
       >
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-          Define custom fields that can be added to artifacts across all projects.
-        </p>
-        <button
-          onClick={handleCreate}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--spacing-xs)',
-            padding: 'var(--spacing-sm) var(--spacing-md)',
-            backgroundColor: 'var(--color-accent)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontWeight: 500,
-          }}
-        >
-          <Plus size={16} />
-          New Attribute
-        </button>
-      </div>
+        Define custom fields that can be added to artifacts across all projects.
+      </p>
 
       {/* Empty State */}
       {definitions.length === 0 ? (
@@ -158,26 +120,9 @@ export const CustomAttributesPage: React.FC = () => {
             border: '1px solid var(--color-border)',
           }}
         >
-          <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--spacing-md)' }}>
-            No custom attributes defined yet.
+          <p style={{ color: 'var(--color-text-muted)' }}>
+            No custom attributes defined yet. Use "Create New" in the header to add one.
           </p>
-          <button
-            onClick={handleCreate}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-xs)',
-              padding: 'var(--spacing-sm) var(--spacing-md)',
-              backgroundColor: 'var(--color-accent)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-            }}
-          >
-            <Plus size={16} />
-            Create Your First Attribute
-          </button>
         </div>
       ) : (
         /* Definitions List */
@@ -191,6 +136,7 @@ export const CustomAttributesPage: React.FC = () => {
           {definitions.map((def) => (
             <div
               key={def.id}
+              onClick={() => handleEdit(def)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -199,12 +145,17 @@ export const CustomAttributesPage: React.FC = () => {
                 backgroundColor: 'var(--color-bg-card)',
                 borderRadius: '8px',
                 border: '1px solid var(--color-border)',
-                transition: 'border-color 0.15s',
+                transition: 'border-color 0.15s, background-color 0.15s',
+                cursor: 'pointer',
               }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.borderColor = 'var(--color-border-hover)')
-              }
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--color-border)')}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-border-hover)';
+                e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-border)';
+                e.currentTarget.style.backgroundColor = 'var(--color-bg-card)';
+              }}
             >
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
@@ -279,87 +230,6 @@ export const CustomAttributesPage: React.FC = () => {
                     </span>
                   ))}
                 </div>
-              </div>
-
-              {/* Actions */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
-                {showDeleteConfirm === def.id ? (
-                  <>
-                    <button
-                      onClick={() => setShowDeleteConfirm(null)}
-                      style={{
-                        padding: '6px 12px',
-                        border: '1px solid var(--color-border)',
-                        borderRadius: '4px',
-                        backgroundColor: 'var(--color-bg-card)',
-                        color: 'var(--color-text-secondary)',
-                        cursor: 'pointer',
-                        fontSize: 'var(--font-size-sm)',
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => handleDelete(def.id)}
-                      style={{
-                        padding: '6px 12px',
-                        border: 'none',
-                        borderRadius: '4px',
-                        backgroundColor: 'var(--color-error)',
-                        color: 'white',
-                        cursor: 'pointer',
-                        fontSize: 'var(--font-size-sm)',
-                      }}
-                    >
-                      Confirm Delete
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => handleEdit(def)}
-                      style={{
-                        padding: '6px',
-                        border: 'none',
-                        borderRadius: '4px',
-                        backgroundColor: 'transparent',
-                        color: 'var(--color-text-muted)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                      title="Edit"
-                      onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-accent)')}
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.color = 'var(--color-text-muted)')
-                      }
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => setShowDeleteConfirm(def.id)}
-                      style={{
-                        padding: '6px',
-                        border: 'none',
-                        borderRadius: '4px',
-                        backgroundColor: 'transparent',
-                        color: 'var(--color-text-muted)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                      title="Delete"
-                      onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-error)')}
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.color = 'var(--color-text-muted)')
-                      }
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </>
-                )}
               </div>
             </div>
           ))}

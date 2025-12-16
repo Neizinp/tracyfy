@@ -34,6 +34,8 @@ export interface HeaderBarProps {
   onNewTestCase?: () => void;
   onNewInformation?: () => void;
   onNewRisk?: () => void;
+  onNewLink?: () => void;
+  onNewCustomAttribute?: () => void;
   // Import dropdown
   onImport?: () => void;
   onImportExcel?: () => void;
@@ -66,6 +68,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onNewTestCase,
   onNewInformation,
   onNewRisk,
+  onNewLink,
+  onNewCustomAttribute,
   onImport,
   onImportExcel,
   onOpenGlobalLibrary,
@@ -328,6 +332,28 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   }}
                   icon={Plus}
                   label="New Risk"
+                  showBorder
+                />
+              )}
+              {onNewLink && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    onNewLink();
+                    setIsCreateMenuOpen(false);
+                  }}
+                  icon={Plus}
+                  label="New Link"
+                  showBorder
+                />
+              )}
+              {onNewCustomAttribute && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    onNewCustomAttribute();
+                    setIsCreateMenuOpen(false);
+                  }}
+                  icon={Plus}
+                  label="New Custom Attribute"
                   showBorder
                 />
               )}

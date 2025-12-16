@@ -28,6 +28,8 @@ export interface LayoutProps {
   onSearch?: (query: string) => void;
   onNewInformation?: () => void;
   onNewRisk?: () => void;
+  onNewLink?: () => void;
+  onNewCustomAttribute?: () => void;
   baselines?: ProjectBaseline[];
   rightPanel?: React.ReactNode;
   onOpenUserSettings?: () => void;
@@ -63,6 +65,8 @@ export const Layout: React.FC<LayoutProps> = ({
   onSearch,
   onNewInformation,
   onNewRisk,
+  onNewLink,
+  onNewCustomAttribute,
   baselines = [],
   rightPanel,
   onOpenUserSettings,
@@ -91,6 +95,8 @@ export const Layout: React.FC<LayoutProps> = ({
           onNewTestCase={onNewTestCase}
           onNewInformation={onNewInformation}
           onNewRisk={onNewRisk}
+          onNewLink={onNewLink}
+          onNewCustomAttribute={onNewCustomAttribute}
           onImport={onImport}
           onImportExcel={onImportExcel}
           onOpenGlobalLibrary={onOpenGlobalLibrary}

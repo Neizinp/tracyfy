@@ -1,10 +1,10 @@
 /**
-import { debug } from '../utils/debug';
  * LinksPage
  *
  * Page wrapper for LinksView component
  */
 
+import { debug } from '../utils/debug';
 import { LinksView } from '../components/LinksView';
 import { useUI, useProject } from '../app/providers';
 

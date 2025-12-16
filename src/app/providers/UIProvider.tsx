@@ -47,6 +47,10 @@ interface UIContextValue {
   setIsExportModalOpen: (isOpen: boolean) => void;
   isAdvancedSearchOpen: boolean;
   setIsAdvancedSearchOpen: (isOpen: boolean) => void;
+  isNewLinkModalOpen: boolean;
+  setIsNewLinkModalOpen: (isOpen: boolean) => void;
+  isCustomAttributeModalOpen: boolean;
+  setIsCustomAttributeModalOpen: (isOpen: boolean) => void;
 
   // Selections
   selectedRequirementId: string | null;

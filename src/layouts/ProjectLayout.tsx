@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Layout, ColumnSelector, GlobalLibraryPanel, ModalManager } from '../components';
 import { GenericColumnSelector } from '../components/GenericColumnSelector';
 import {
@@ -86,6 +86,7 @@ const riskColumns: {
 export const ProjectLayout: React.FC = () => {
   const { projects, currentProjectId, currentProject, switchProject, addToProject } = useProject();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // UI context
   const ui = useUI();
@@ -210,6 +211,8 @@ export const ProjectLayout: React.FC = () => {
       onNewTestCase={() => ui.setIsNewTestCaseModalOpen(true)}
       onNewInformation={() => ui.setIsInformationModalOpen(true)}
       onNewRisk={() => ui.setIsRiskModalOpen(true)}
+      onNewLink={() => navigate('/links')}
+      onNewCustomAttribute={() => ui.setIsCustomAttributeModalOpen(true)}
       onExport={importExport.handleExport}
       onImport={importExport.handleImport}
       onImportExcel={importExport.handleImportExcel}
