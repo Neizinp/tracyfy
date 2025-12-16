@@ -10,7 +10,7 @@ import { X, Search, Save, Trash2, Plus, ChevronDown, ChevronUp, Filter } from 'l
 import { useFileSystem } from '../app/providers';
 import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { diskFilterService } from '../services/diskFilterService';
-import type { SavedFilter } from '../types/filters';
+import type { SavedFilter, FilterState } from '../types/filters';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 interface AdvancedSearchModalProps {
@@ -26,6 +26,11 @@ interface SearchCriterion {
   property: string;
   condition: string;
   value: string;
+}
+
+// Type for saved filter state with criteria
+interface CriteriaFilterState {
+  criteria: SearchCriterion[];
 }
 
 interface SearchResult {
@@ -372,14 +377,17 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
     const filterState = {
       criteria: criteria.filter((c) => c.value || c.condition.includes('Empty')),
     };
-    await diskFilterService.createFilter(saveFilterName.trim(), filterState as any);
+    await diskFilterService.createFilter(
+      saveFilterName.trim(),
+      filterState as unknown as FilterState
+    );
     setSavedFilters(await diskFilterService.getAllFilters());
     setSaveFilterName('');
     setShowSaveDialog(false);
   }, [saveFilterName, criteria]);
 
   const handleLoadFilter = useCallback((filter: SavedFilter) => {
-    const saved = filter.filters as any;
+    const saved = filter.filters as unknown as CriteriaFilterState;
     if (saved.criteria) {
       setCriteria(saved.criteria);
     }
