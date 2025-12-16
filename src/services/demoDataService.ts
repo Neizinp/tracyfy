@@ -68,8 +68,12 @@ export async function createDemoProject(): Promise<Project> {
     if (existing) {
       createdAttrIds.push(existing.id);
     } else {
-      const newDef = await diskCustomAttributeService.createDefinition(attrDef);
-      createdAttrIds.push(newDef.id);
+      try {
+        const newDef = await diskCustomAttributeService.createDefinition(attrDef);
+        createdAttrIds.push(newDef.id);
+      } catch (error) {
+        console.error('Failed to create custom attribute:', attrDef.name, error);
+      }
     }
   }
 
