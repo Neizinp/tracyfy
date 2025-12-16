@@ -71,9 +71,10 @@ export function PendingChangesPanel() {
         else if (typeStr === 'projects') type = 'project';
         else if (typeStr === 'assets') type = 'asset';
         else if (typeStr === 'users') type = 'user';
-        else if (typeStr === 'counters') type = 'counter';
-        else if (typeStr === 'links') type = 'link';
-        else if (typeStr === 'custom-attributes') type = 'custom-attribute';
+        // Skip internal files - these should be auto-committed, not shown for manual commits
+        else if (typeStr === 'counters') return null;
+        else if (typeStr === 'links') return null;
+        else if (typeStr === 'custom-attributes') return null;
         else if (typeStr === 'saved-filters') type = 'saved-filter';
         else return null;
 

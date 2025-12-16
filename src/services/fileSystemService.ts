@@ -1,11 +1,12 @@
 /**
-import { debug } from '../utils/debug';
  * File System Service - Real disk storage using Electron IPC or File System Access API
  *
  * This service handles reading/writing to a real directory on disk,
  * with git integration for version control.
  * In Electron, uses Node fs via IPC. In browser, uses File System Access API.
  */
+
+import { debug } from '../utils/debug';
 
 // Store the directory handle in IndexedDB for persistence
 const DB_NAME = 'tracyfy-fs-handles';

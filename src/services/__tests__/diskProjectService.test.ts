@@ -207,7 +207,7 @@ lastModified: 1700000000000
       const ids = await diskProjectService.getNextIds('useCases', 2);
 
       expect(ids).toEqual(['UC-011', 'UC-012']);
-      expect(fileSystemService.writeFile).toHaveBeenCalledWith('counters/useCases.md', '12');
+      expect(fileSystemService.writeFile).toHaveBeenCalledWith('counters/usecases.md', '12');
     });
 
     it('should work with different artifact types', async () => {

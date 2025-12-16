@@ -1,11 +1,11 @@
 /**
-import { debug } from '../utils/debug';
  * Real Git Service - Uses isomorphic-git with File System Access API or Electron IPC
  *
  * In Electron, routes git operations through IPC to the main process (which uses Node fs).
  * In browsers, uses an adapter over the File System Access API.
  */
 
+import { debug } from '../utils/debug';
 import git from 'isomorphic-git';
 import { fileSystemService } from './fileSystemService';
 import { fsAdapter } from './fsAdapter';
@@ -598,7 +598,11 @@ class RealGitService {
       const allFiles = await this.listFilesAtCommit(commitHash);
 
       // Helper to load and parse files
-      const loadFiles = async (prefix: string, parser: (md: string) => any, targetArray: any[]) => {
+      const loadFiles = async <T>(
+        prefix: string,
+        parser: (md: string) => T | null,
+        targetArray: T[]
+      ) => {
         const files = allFiles.filter((f) => f.startsWith(prefix) && f.endsWith('.md'));
         for (const file of files) {
           const content = await this.readFileAtCommit(file, commitHash);
@@ -1174,8 +1178,8 @@ class RealGitService {
       // Get counter files from remote
       const counterFiles = [
         'counters/requirements.md',
-        'counters/useCases.md',
-        'counters/testCases.md',
+        'counters/usecases.md',
+        'counters/testcases.md',
         'counters/information.md',
         'counters/risks.md',
         'counters/users.md',
@@ -1220,8 +1224,8 @@ class RealGitService {
       // Stage and commit counter files
       const counterFiles = [
         'counters/requirements.md',
-        'counters/useCases.md',
-        'counters/testCases.md',
+        'counters/usecases.md',
+        'counters/testcases.md',
         'counters/information.md',
         'counters/risks.md',
         'counters/users.md',

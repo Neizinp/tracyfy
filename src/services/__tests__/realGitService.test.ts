@@ -7,7 +7,9 @@ describe('readFileAtCommit', () => {
 
   it('returns file content when readBlob succeeds', async () => {
     const mockContent = new TextEncoder().encode('hello world');
-    vi.mocked(git.readBlob).mockResolvedValue({ blob: mockContent } as any);
+    vi.mocked(git.readBlob).mockResolvedValue({ blob: mockContent } as Awaited<
+      ReturnType<typeof git.readBlob>
+    >);
     const result = await realGitService.readFileAtCommit('foo.md', 'abc123');
     expect(result).toBe('hello world');
   });
@@ -53,6 +55,12 @@ describe('readFileAtCommit', () => {
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Requirement, UseCase, TestCase, Information } from '../../types';
+
+// Mock debug utility to prevent ReferenceError
+vi.mock('../../utils/debug', () => ({
+  debug: { log: vi.fn(), warn: vi.fn(), info: vi.fn() },
+  isDebug: () => false,
+}));
 
 // Mock fileSystemService
 vi.mock('../fileSystemService', () => ({
@@ -811,7 +819,7 @@ Rationale
             },
           },
         },
-      ] as any);
+      ] as Awaited<ReturnType<typeof git.log>>);
 
       const result = await realGitService.getHistory();
 
@@ -844,7 +852,7 @@ Rationale
             },
           },
         },
-      ] as any);
+      ] as Awaited<ReturnType<typeof git.log>>);
 
       const history = await realGitService.getHistory('requirements/REQ-001.md');
 
@@ -881,7 +889,7 @@ Rationale
             },
           },
         },
-      ] as any);
+      ] as Awaited<ReturnType<typeof git.log>>);
 
       // Mock file contents at each commit
       vi.spyOn(realGitService, 'readFileAtCommit').mockImplementation(async (_file, hash) => {

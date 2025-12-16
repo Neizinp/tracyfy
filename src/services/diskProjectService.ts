@@ -1,5 +1,4 @@
 /**
-import { debug } from '../utils/debug';
  * Disk-based Project Service
  *
  * All data is stored on disk, nothing in localStorage.
@@ -21,6 +20,7 @@ import { debug } from '../utils/debug';
  * config.json            # {currentProjectId, counters: {req, uc, tc, info}}
  */
 
+import { debug } from '../utils/debug';
 import { fileSystemService } from './fileSystemService';
 import { realGitService } from './realGitService';
 import type { Project, Requirement, UseCase, TestCase, Information, User, Risk } from '../types';
@@ -118,6 +118,16 @@ class DiskProjectService {
 
   // ============ COUNTER OPERATIONS ============
 
+  // Map API type names to lowercase filenames for consistency
+  private counterFilenameMap: Record<string, string> = {
+    requirements: 'requirements',
+    useCases: 'usecases',
+    testCases: 'testcases',
+    information: 'information',
+    users: 'users',
+    risks: 'risks',
+  };
+
   /**
    * Get counter value from file
    * File format: just the number, e.g., "42"
@@ -125,7 +135,8 @@ class DiskProjectService {
   private async getCounter(
     type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users' | 'risks'
   ): Promise<number> {
-    const filename = `${COUNTERS_DIR}/${type}.md`;
+    const filenameBase = this.counterFilenameMap[type] || type.toLowerCase();
+    const filename = `${COUNTERS_DIR}/${filenameBase}.md`;
     try {
       const content = await fileSystemService.readFile(filename);
       if (content) {
@@ -144,7 +155,8 @@ class DiskProjectService {
     type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users' | 'risks',
     value: number
   ): Promise<void> {
-    const filename = `${COUNTERS_DIR}/${type}.md`;
+    const filenameBase = this.counterFilenameMap[type] || type.toLowerCase();
+    const filename = `${COUNTERS_DIR}/${filenameBase}.md`;
     await fileSystemService.writeFile(filename, String(value));
 
     // Auto-commit the counter update in the background
