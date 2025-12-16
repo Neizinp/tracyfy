@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus } from 'lucide-react';
 import type { Project, Requirement, UseCase, TestCase, Information } from '../types';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 interface GlobalLibraryModalProps {
   isOpen: boolean;
@@ -40,6 +41,9 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
   const [selectedUseCases, setSelectedUseCases] = useState<Set<string>>(new Set());
   const [selectedTestCases, setSelectedTestCases] = useState<Set<string>>(new Set());
   const [selectedInformation, setSelectedInformation] = useState<Set<string>>(new Set());
+
+  // Close modal on Escape key
+  useKeyboardShortcuts({ onClose });
 
   // Reset selection when modal opens
   useEffect(() => {

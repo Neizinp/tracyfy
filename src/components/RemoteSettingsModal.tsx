@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Globe, Key, Check, AlertCircle, Loader2, Trash2 } from 'lucide-react';
 import { realGitService } from '../services/realGitService';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 export interface RemoteSettingsModalProps {
   isOpen: boolean;
@@ -15,6 +16,9 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
+
+  // Close modal on Escape key
+  useKeyboardShortcuts({ onClose });
 
   // Load existing remotes on open
   useEffect(() => {

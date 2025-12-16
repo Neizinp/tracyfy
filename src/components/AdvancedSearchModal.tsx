@@ -11,6 +11,7 @@ import { useFileSystem } from '../app/providers';
 import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { diskFilterService } from '../services/diskFilterService';
 import type { SavedFilter } from '../types/filters';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 interface AdvancedSearchModalProps {
   isOpen: boolean;
@@ -173,6 +174,9 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
   const [saveFilterName, setSaveFilterName] = useState('');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+
+  // Close modal on Escape key
+  useKeyboardShortcuts({ onClose });
 
   // Build property options including custom attributes
   const allPropertyOptions = useMemo(() => {

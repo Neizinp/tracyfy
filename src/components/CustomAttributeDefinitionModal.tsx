@@ -6,6 +6,7 @@ import type {
   ApplicableArtifactType,
 } from '../types/customAttributes';
 import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 interface CustomAttributeDefinitionModalProps {
   isOpen: boolean;
@@ -49,6 +50,9 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
   const [appliesTo, setAppliesTo] = useState<ApplicableArtifactType[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Close modal on Escape key
+  useKeyboardShortcuts({ onClose });
 
   // Reset form when modal opens/closes or definition changes
   useEffect(() => {
