@@ -1,5 +1,6 @@
 import React, { useCallback, useRef } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import { Layout, ColumnSelector, GlobalLibraryPanel, ModalManager } from '../components';
 import { GenericColumnSelector } from '../components/GenericColumnSelector';
 import {
@@ -323,48 +324,201 @@ export const ProjectLayout: React.FC = () => {
           <div style={{ display: 'flex', gap: '8px' }}>
             {(location.pathname === '/requirements' ||
               location.pathname.includes('/requirements/detailed')) && (
-              <ColumnSelector
-                visibleColumns={ui.columnVisibility}
-                onColumnVisibilityChange={(columns) => {
-                  ui.setColumnVisibility(columns);
-                  try {
-                    localStorage.setItem(
-                      `column-visibility-${currentProjectId}`,
-                      JSON.stringify(columns)
-                    );
-                  } catch (error) {
-                    console.error('Failed to save column visibility:', error);
-                  }
-                }}
-              />
+              <>
+                <button
+                  onClick={() => ui.setIsNewRequirementModalOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 12px',
+                    backgroundColor: 'var(--color-accent)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 500,
+                  }}
+                >
+                  <Plus size={16} />
+                  Add
+                </button>
+                <ColumnSelector
+                  visibleColumns={ui.columnVisibility}
+                  onColumnVisibilityChange={(columns) => {
+                    ui.setColumnVisibility(columns);
+                    try {
+                      localStorage.setItem(
+                        `column-visibility-${currentProjectId}`,
+                        JSON.stringify(columns)
+                      );
+                    } catch (error) {
+                      console.error('Failed to save column visibility:', error);
+                    }
+                  }}
+                />
+              </>
             )}
             {location.pathname.includes('/use-cases') && (
-              <GenericColumnSelector
-                columns={useCaseColumns}
-                visibleColumns={ui.useCaseColumnVisibility}
-                onColumnVisibilityChange={ui.setUseCaseColumnVisibility}
-              />
+              <>
+                <button
+                  onClick={() => {
+                    ui.setEditingUseCase(null);
+                    ui.setIsUseCaseModalOpen(true);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 12px',
+                    backgroundColor: 'var(--color-accent)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 500,
+                  }}
+                >
+                  <Plus size={16} />
+                  Add
+                </button>
+                <GenericColumnSelector
+                  columns={useCaseColumns}
+                  visibleColumns={ui.useCaseColumnVisibility}
+                  onColumnVisibilityChange={ui.setUseCaseColumnVisibility}
+                />
+              </>
             )}
             {location.pathname.includes('/test-cases') && (
-              <GenericColumnSelector
-                columns={testCaseColumns}
-                visibleColumns={ui.testCaseColumnVisibility}
-                onColumnVisibilityChange={ui.setTestCaseColumnVisibility}
-              />
+              <>
+                <button
+                  onClick={() => ui.setIsNewTestCaseModalOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 12px',
+                    backgroundColor: 'var(--color-accent)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 500,
+                  }}
+                >
+                  <Plus size={16} />
+                  Add
+                </button>
+                <GenericColumnSelector
+                  columns={testCaseColumns}
+                  visibleColumns={ui.testCaseColumnVisibility}
+                  onColumnVisibilityChange={ui.setTestCaseColumnVisibility}
+                />
+              </>
             )}
             {location.pathname.includes('/information') && (
-              <GenericColumnSelector
-                columns={informationColumns}
-                visibleColumns={ui.informationColumnVisibility}
-                onColumnVisibilityChange={ui.setInformationColumnVisibility}
-              />
+              <>
+                <button
+                  onClick={() => {
+                    ui.setSelectedInformation(null);
+                    ui.setIsInformationModalOpen(true);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 12px',
+                    backgroundColor: 'var(--color-accent)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 500,
+                  }}
+                >
+                  <Plus size={16} />
+                  Add
+                </button>
+                <GenericColumnSelector
+                  columns={informationColumns}
+                  visibleColumns={ui.informationColumnVisibility}
+                  onColumnVisibilityChange={ui.setInformationColumnVisibility}
+                />
+              </>
             )}
             {location.pathname.includes('/risks') && (
-              <GenericColumnSelector
-                columns={riskColumns}
-                visibleColumns={ui.riskColumnVisibility}
-                onColumnVisibilityChange={ui.setRiskColumnVisibility}
-              />
+              <>
+                <button
+                  onClick={() => ui.setIsRiskModalOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 12px',
+                    backgroundColor: 'var(--color-accent)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 500,
+                  }}
+                >
+                  <Plus size={16} />
+                  Add
+                </button>
+                <GenericColumnSelector
+                  columns={riskColumns}
+                  visibleColumns={ui.riskColumnVisibility}
+                  onColumnVisibilityChange={ui.setRiskColumnVisibility}
+                />
+              </>
+            )}
+            {location.pathname.includes('/links') && (
+              <button
+                onClick={() => ui.setIsLinkModalOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  backgroundColor: 'var(--color-accent)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: 'var(--font-size-sm)',
+                  fontWeight: 500,
+                }}
+              >
+                <Plus size={16} />
+                Add
+              </button>
+            )}
+            {location.pathname.includes('/custom-attributes') && (
+              <button
+                onClick={() => ui.setIsCustomAttributeModalOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  backgroundColor: 'var(--color-accent)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: 'var(--font-size-sm)',
+                  fontWeight: 500,
+                }}
+              >
+                <Plus size={16} />
+                Add
+              </button>
             )}
           </div>
         </div>

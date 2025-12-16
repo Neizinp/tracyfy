@@ -1,8 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
+import React from 'react';
 import { TraceabilityDashboard } from '../TraceabilityDashboard';
 import type { Requirement, UseCase, TestCase, Information, Link } from '../../types';
 import { diskLinkService } from '../../services/diskLinkService';
+import { UIProvider } from '../../app/providers';
+
+// Wrapper that provides UIProvider context for Links tab tests
+const renderWithProviders = (ui: React.ReactElement) => {
+  return render(<UIProvider>{ui}</UIProvider>);
+};
 
 // Mock the diskLinkService for LinksView
 vi.mock('../../services/diskLinkService', () => ({
@@ -156,7 +163,7 @@ describe('TraceabilityDashboard', () => {
     });
 
     it('switches to Links tab when clicked', async () => {
-      render(<TraceabilityDashboard {...defaultProps} />);
+      renderWithProviders(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
       // LinksView shows header like "Links (N)"
@@ -243,7 +250,7 @@ describe('TraceabilityDashboard', () => {
     });
 
     it('displays LinksView with table headers', async () => {
-      render(<TraceabilityDashboard {...defaultProps} />);
+      renderWithProviders(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
       await waitFor(() => {
@@ -255,7 +262,7 @@ describe('TraceabilityDashboard', () => {
     });
 
     it('shows links from diskLinkService', async () => {
-      render(<TraceabilityDashboard {...defaultProps} />);
+      renderWithProviders(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
       await waitFor(() => {
@@ -267,7 +274,7 @@ describe('TraceabilityDashboard', () => {
     });
 
     it('displays link types in the table', async () => {
-      render(<TraceabilityDashboard {...defaultProps} />);
+      renderWithProviders(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
       await waitFor(() => {

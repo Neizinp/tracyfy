@@ -5,8 +5,27 @@ import type { ArtifactType, UnifiedArtifact, GapInfo } from './traceability';
 import { TYPE_COLORS, SummaryCard, GapItem, ImpactAnalysisPanel } from './traceability';
 import { TraceabilityGraph } from './graph/TraceabilityGraph';
 import { LinksView } from './LinksView';
+import { useUI } from '../app/providers';
 
 type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
+
+// Separate component for Links tab to access useUI hook
+const LinksTabContent: React.FC<{
+  onSelectArtifact?: (artifactId: string) => void;
+  projects: Project[];
+}> = ({ onSelectArtifact, projects }) => {
+  const { setIsLinkModalOpen } = useUI();
+
+  return (
+    <LinksView
+      onNavigateToArtifact={(id) => {
+        if (onSelectArtifact) onSelectArtifact(id);
+      }}
+      projects={projects}
+      onAdd={() => setIsLinkModalOpen(true)}
+    />
+  );
+};
 
 interface TraceabilityDashboardProps {
   requirements: Requirement[];
@@ -593,12 +612,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
 
       {/* Links Tab - Using LinksView component with edit functionality */}
       {activeTab === 'links' && (
-        <LinksView
-          onNavigateToArtifact={(id, _type) => {
-            if (onSelectArtifact) onSelectArtifact(id);
-          }}
-          projects={projects}
-        />
+        <LinksTabContent onSelectArtifact={onSelectArtifact} projects={projects} />
       )}
 
       {/* Impact Tab */}

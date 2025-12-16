@@ -13,6 +13,7 @@ import {
   Folder,
   ChevronUp,
   ChevronDown,
+  Plus,
 } from 'lucide-react';
 import { diskLinkService } from '../services/diskLinkService';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
@@ -23,9 +24,14 @@ import { EditLinkModal } from './EditLinkModal';
 interface LinksViewProps {
   onNavigateToArtifact?: (id: string, type: string) => void;
   projects?: Project[];
+  onAdd?: () => void; // Callback to open Add Link modal
 }
 
-export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, projects = [] }) => {
+export const LinksView: React.FC<LinksViewProps> = ({
+  onNavigateToArtifact,
+  projects = [],
+  onAdd,
+}) => {
   const [links, setLinks] = useState<Link[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
@@ -208,24 +214,47 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, proj
           <LinkIcon size={24} style={{ color: 'var(--color-accent)' }} />
           Links ({sortedLinks.length})
         </h2>
-        <button
-          onClick={loadLinks}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '6px 12px',
-            borderRadius: '6px',
-            border: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-bg-card)',
-            color: 'var(--color-text-primary)',
-            cursor: 'pointer',
-            fontSize: 'var(--font-size-sm)',
-          }}
-        >
-          <RefreshCw size={14} />
-          Refresh
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {onAdd && (
+            <button
+              onClick={onAdd}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 12px',
+                backgroundColor: 'var(--color-accent)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 500,
+              }}
+            >
+              <Plus size={16} />
+              Add
+            </button>
+          )}
+          <button
+            onClick={loadLinks}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '6px 12px',
+              borderRadius: '6px',
+              border: '1px solid var(--color-border)',
+              backgroundColor: 'var(--color-bg-card)',
+              color: 'var(--color-text-primary)',
+              cursor: 'pointer',
+              fontSize: 'var(--font-size-sm)',
+            }}
+          >
+            <RefreshCw size={14} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
