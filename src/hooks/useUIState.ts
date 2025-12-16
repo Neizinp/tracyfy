@@ -28,6 +28,7 @@ export function useUIState() {
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [isNewLinkModalOpen, setIsNewLinkModalOpen] = useState(false);
   const [isCustomAttributeModalOpen, setIsCustomAttributeModalOpen] = useState(false);
+  const [isWorkflowModalOpen, setIsWorkflowModalOpen] = useState(false);
 
   // Selection States
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
@@ -171,6 +172,8 @@ export function useUIState() {
     setIsNewLinkModalOpen,
     isCustomAttributeModalOpen,
     setIsCustomAttributeModalOpen,
+    isWorkflowModalOpen,
+    setIsWorkflowModalOpen,
 
     // Selections
     selectedRequirementId,

@@ -51,6 +51,8 @@ interface UIContextValue {
   setIsNewLinkModalOpen: (isOpen: boolean) => void;
   isCustomAttributeModalOpen: boolean;
   setIsCustomAttributeModalOpen: (isOpen: boolean) => void;
+  isWorkflowModalOpen: boolean;
+  setIsWorkflowModalOpen: (isOpen: boolean) => void;
 
   // Selections
   selectedRequirementId: string | null;

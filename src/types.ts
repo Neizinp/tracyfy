@@ -123,6 +123,23 @@ export interface Risk {
   customAttributes?: CustomAttributeValue[];
 }
 
+export interface Workflow {
+  id: string; // e.g., "WF-001"
+  title: string;
+  description: string; // Markdown content
+  createdBy: string; // User ID who created
+  assignedTo: string; // User ID who must approve
+  status: 'pending' | 'approved' | 'rejected';
+  artifactIds: string[]; // Required: artifacts to approve (REQ-001, UC-002, etc.)
+  approvedBy?: string; // User ID who approved
+  approvalDate?: number;
+  approverComment?: string; // Comment from approver
+  dateCreated: number;
+  lastModified: number;
+  isDeleted?: boolean;
+  deletedAt?: number;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -252,7 +269,8 @@ export interface ArtifactChange {
     | 'counter'
     | 'link'
     | 'custom-attribute'
-    | 'saved-filter';
+    | 'saved-filter'
+    | 'workflow';
   title: string;
   status: 'new' | 'modified'; // No 'deleted' - artifacts can only be removed from projects
   path: string;
