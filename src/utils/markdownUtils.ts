@@ -27,6 +27,9 @@ function objectToYaml(obj: Record<string, any>): string {
         value.forEach((item) => {
           if (typeof item === 'string') {
             lines.push(`  - "${item}"`);
+          } else if (typeof item === 'object' && item !== null) {
+            // Serialize objects as JSON for proper storage
+            lines.push(`  - ${JSON.stringify(item)}`);
           } else {
             lines.push(`  - ${item}`);
           }
@@ -81,13 +84,20 @@ function parseYamlFrontmatter(content: string): { frontmatter: Record<string, an
   for (const line of frontmatterLines) {
     if (line.trim() === '') continue;
 
-    // Handle YAML array list items (  - "value" or   - value)
+    // Handle YAML array list items (  - "value" or   - value or   - {json})
     if (isArrayList) {
       if (line.startsWith('  - ')) {
         const itemValue = line.substring(4).trim();
         // Parse the array item value
         if (itemValue.startsWith('"') && itemValue.endsWith('"')) {
           currentArray.push(itemValue.slice(1, -1).replace(/\\"/g, '"'));
+        } else if (itemValue.startsWith('{') && itemValue.endsWith('}')) {
+          // Parse JSON object
+          try {
+            currentArray.push(JSON.parse(itemValue));
+          } catch {
+            currentArray.push(itemValue);
+          }
         } else if (itemValue === 'true' || itemValue === 'false') {
           currentArray.push(itemValue === 'true');
         } else if (!isNaN(Number(itemValue)) && itemValue !== '') {
