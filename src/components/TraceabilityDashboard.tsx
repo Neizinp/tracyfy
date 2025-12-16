@@ -300,7 +300,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
             onClick={() => setActiveTab('links')}
             style={tabStyle(activeTab === 'links')}
           >
-            Links ({allLinks.length})
+            Links ({standaloneLinks.length})
           </button>
           <button
             type="button"
@@ -396,7 +396,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                   color: 'var(--color-accent)',
                 }}
               >
-                {allLinks.length}
+                {standaloneLinks.length}
               </div>
               <div
                 style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}
