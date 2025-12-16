@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Link as LinkIcon, ArrowRight, RefreshCw, Globe, Folder, Edit2 } from 'lucide-react';
+import { Link as LinkIcon, ArrowRight, RefreshCw, Globe, Folder } from 'lucide-react';
 import { diskLinkService } from '../services/diskLinkService';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import type { Link, Project } from '../types';
@@ -327,16 +327,6 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, proj
                 >
                   Scope
                 </th>
-                <th
-                  style={{
-                    padding: '12px',
-                    textAlign: 'right',
-                    fontWeight: 600,
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Actions
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -434,30 +424,6 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, proj
                       {link.projectIds.length === 0 ? <Globe size={10} /> : <Folder size={10} />}
                       {getProjectNames(link.projectIds)}
                     </span>
-                  </td>
-                  <td style={{ padding: '12px', textAlign: 'right' }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditLink(link);
-                      }}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--color-text-muted)',
-                        cursor: 'pointer',
-                        padding: '4px',
-                        borderRadius: '4px',
-                        transition: 'color 0.15s',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-accent)')}
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.color = 'var(--color-text-muted)')
-                      }
-                      title="Edit link"
-                    >
-                      <Edit2 size={16} />
-                    </button>
                   </td>
                 </tr>
               ))}
