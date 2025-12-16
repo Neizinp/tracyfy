@@ -9,6 +9,7 @@ import {
   Link2,
   ShieldAlert,
   Settings2,
+  ChevronRight,
 } from 'lucide-react';
 import type { Project } from '../../types';
 import { ProjectSidebarItem } from '../ProjectSidebarItem';
@@ -18,6 +19,7 @@ import { RepositoryButton } from './RepositoryButton';
 import { sectionHeaderStyle } from './layoutStyles';
 
 const SIDEBAR_WIDTH_KEY = 'sidebar-width';
+const COLLAPSED_SECTIONS_KEY = 'sidebar-collapsed-sections';
 const DEFAULT_WIDTH = 260;
 const MIN_WIDTH = 180;
 const MAX_WIDTH = 400;
@@ -61,6 +63,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
   });
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
+
+  // Collapsed sections state with localStorage persistence
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem(COLLAPSED_SECTIONS_KEY);
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  // Save collapsed sections to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(COLLAPSED_SECTIONS_KEY, JSON.stringify([...collapsedSections]));
+    } catch {
+      // Ignore in test environment
+    }
+  }, [collapsedSections]);
+
+  const toggleSection = (section: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(section)) {
+        next.delete(section);
+      } else {
+        next.add(section);
+      }
+      return next;
+    });
+  };
 
   // Save width to localStorage
   useEffect(() => {
@@ -144,11 +177,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: 'var(--spacing-sm)',
+              marginBottom: collapsedSections.has('projects') ? 0 : 'var(--spacing-sm)',
+              cursor: 'pointer',
             }}
+            onClick={() => toggleSection('projects')}
           >
-            <h2 style={sectionHeaderStyle}>Projects</h2>
-            <div style={{ display: 'flex', gap: '2px' }}>
+            <h2
+              style={{ ...sectionHeaderStyle, display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              <ChevronRight
+                size={12}
+                style={{
+                  transform: collapsedSections.has('projects') ? 'rotate(0deg)' : 'rotate(90deg)',
+                  transition: 'transform 0.15s',
+                }}
+              />
+              Projects
+            </h2>
+            <div style={{ display: 'flex', gap: '2px' }} onClick={(e) => e.stopPropagation()}>
               {onCreateDemoProject && (
                 <button
                   onClick={onCreateDemoProject}
@@ -196,88 +242,147 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
-            {projects
-              .filter((p) => !p.isDeleted)
-              .map((project) => (
-                <ProjectSidebarItem
-                  key={project.id}
-                  project={project}
-                  isActive={project.id === currentProjectId}
-                  onSwitchProject={onSwitchProject}
-                  onOpenProjectSettings={onOpenProjectSettings}
-                />
-              ))}
-          </div>
+          {!collapsedSections.has('projects') && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
+              {projects
+                .filter((p) => !p.isDeleted)
+                .map((project) => (
+                  <ProjectSidebarItem
+                    key={project.id}
+                    project={project}
+                    isActive={project.id === currentProjectId}
+                    onSwitchProject={onSwitchProject}
+                    onOpenProjectSettings={onOpenProjectSettings}
+                  />
+                ))}
+            </div>
+          )}
         </div>
 
         {/* Pending Changes Section */}
         <div style={{ marginBottom: 'var(--spacing-lg)' }}>
           <h2
+            onClick={() => toggleSection('pendingChanges')}
             style={{
               ...sectionHeaderStyle,
-              margin: '0 0 var(--spacing-sm) 0',
+              margin:
+                '0 0 ' +
+                (collapsedSections.has('pendingChanges') ? '0' : 'var(--spacing-sm)') +
+                ' 0',
               display: 'flex',
               alignItems: 'center',
               gap: 'var(--spacing-xs)',
+              cursor: 'pointer',
             }}
           >
+            <ChevronRight
+              size={12}
+              style={{
+                transform: collapsedSections.has('pendingChanges')
+                  ? 'rotate(0deg)'
+                  : 'rotate(90deg)',
+                transition: 'transform 0.15s',
+              }}
+            />
             <GitBranch size={12} />
             Pending Changes
           </h2>
-          <PendingChangesPanel />
+          {!collapsedSections.has('pendingChanges') && <PendingChangesPanel />}
         </div>
 
         {/* Views Navigation */}
         <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-          <h2 style={{ ...sectionHeaderStyle, margin: '0 0 var(--spacing-sm) 0' }}>Views</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <NavLink
-              to="/traceability"
-              icon={LayoutGrid}
-              label="Traceability Dashboard"
-              iconStyle={{ transform: 'rotate(45deg)' }}
+          <h2
+            onClick={() => toggleSection('views')}
+            style={{
+              ...sectionHeaderStyle,
+              margin: '0 0 ' + (collapsedSections.has('views') ? '0' : 'var(--spacing-sm)') + ' 0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            <ChevronRight
+              size={12}
+              style={{
+                transform: collapsedSections.has('views') ? 'rotate(0deg)' : 'rotate(90deg)',
+                transition: 'transform 0.15s',
+              }}
             />
-            <NavLink to="/requirements" icon={FileText} label="Requirements" />
-            <NavLink to="/use-cases" icon={FileText} label="Use Cases" />
-            <NavLink to="/test-cases" icon={FileText} label="Test Cases" />
-            <NavLink to="/information" icon={FileText} label="Information" />
-            <NavLink to="/risks" icon={ShieldAlert} label="Risks" />
-            <NavLink to="/traceability?tab=links" icon={Link2} label="Links" />
-            <NavLink to="/custom-attributes" icon={Settings2} label="Custom Attributes" />
-          </div>
+            Views
+          </h2>
+          {!collapsedSections.has('views') && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <NavLink
+                to="/traceability"
+                icon={LayoutGrid}
+                label="Traceability Dashboard"
+                iconStyle={{ transform: 'rotate(45deg)' }}
+              />
+              <NavLink to="/requirements" icon={FileText} label="Requirements" />
+              <NavLink to="/use-cases" icon={FileText} label="Use Cases" />
+              <NavLink to="/test-cases" icon={FileText} label="Test Cases" />
+              <NavLink to="/information" icon={FileText} label="Information" />
+              <NavLink to="/risks" icon={ShieldAlert} label="Risks" />
+              <NavLink to="/traceability?tab=links" icon={Link2} label="Links" />
+              <NavLink to="/custom-attributes" icon={Settings2} label="Custom Attributes" />
+            </div>
+          )}
         </div>
 
         {/* Repository Navigation */}
         <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-          <h2 style={{ ...sectionHeaderStyle, margin: '0 0 var(--spacing-sm) 0' }}>Repository</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <RepositoryButton
-              onClick={() => onOpenLibraryTab?.('requirements')}
-              icon={BookOpen}
-              label="Requirements"
+          <h2
+            onClick={() => toggleSection('repository')}
+            style={{
+              ...sectionHeaderStyle,
+              margin:
+                '0 0 ' + (collapsedSections.has('repository') ? '0' : 'var(--spacing-sm)') + ' 0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            <ChevronRight
+              size={12}
+              style={{
+                transform: collapsedSections.has('repository') ? 'rotate(0deg)' : 'rotate(90deg)',
+                transition: 'transform 0.15s',
+              }}
             />
-            <RepositoryButton
-              onClick={() => onOpenLibraryTab?.('usecases')}
-              icon={BookOpen}
-              label="Use Cases"
-            />
-            <RepositoryButton
-              onClick={() => onOpenLibraryTab?.('testcases')}
-              icon={BookOpen}
-              label="Test Cases"
-            />
-            <RepositoryButton
-              onClick={() => onOpenLibraryTab?.('information')}
-              icon={BookOpen}
-              label="Information"
-            />
-            <RepositoryButton
-              onClick={() => onOpenLibraryTab?.('risks')}
-              icon={BookOpen}
-              label="Risks"
-            />
-          </div>
+            Repository
+          </h2>
+          {!collapsedSections.has('repository') && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <RepositoryButton
+                onClick={() => onOpenLibraryTab?.('requirements')}
+                icon={BookOpen}
+                label="Requirements"
+              />
+              <RepositoryButton
+                onClick={() => onOpenLibraryTab?.('usecases')}
+                icon={BookOpen}
+                label="Use Cases"
+              />
+              <RepositoryButton
+                onClick={() => onOpenLibraryTab?.('testcases')}
+                icon={BookOpen}
+                label="Test Cases"
+              />
+              <RepositoryButton
+                onClick={() => onOpenLibraryTab?.('information')}
+                icon={BookOpen}
+                label="Information"
+              />
+              <RepositoryButton
+                onClick={() => onOpenLibraryTab?.('risks')}
+                icon={BookOpen}
+                label="Risks"
+              />
+            </div>
+          )}
         </div>
       </nav>
 
