@@ -21,13 +21,14 @@ import { diskWorkflowService } from '../services/diskWorkflowService';
 import { useUser } from '../app/providers';
 import { useUI } from '../app/providers';
 import type { Workflow } from '../types';
+import { WorkflowDetailPanel } from '../components/WorkflowDetailPanel';
 
 export const WorkflowsPage: React.FC = () => {
   const { currentUser, users } = useUser();
   const { setIsWorkflowModalOpen } = useUI();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [_selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
+  const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
 
   const loadWorkflows = useCallback(async () => {
     setLoading(true);
@@ -463,6 +464,17 @@ export const WorkflowsPage: React.FC = () => {
             )}
           </section>
         </>
+      )}
+      {/* Workflow Detail Panel */}
+      {selectedWorkflow && (
+        <WorkflowDetailPanel
+          workflow={selectedWorkflow}
+          onClose={() => setSelectedWorkflow(null)}
+          onUpdate={() => {
+            loadWorkflows();
+            setSelectedWorkflow(null);
+          }}
+        />
       )}
     </div>
   );
