@@ -8,6 +8,7 @@ import {
   FlaskConical,
   Link2,
   ShieldAlert,
+  Settings2,
 } from 'lucide-react';
 import type { Project } from '../../types';
 import { ProjectSidebarItem } from '../ProjectSidebarItem';
@@ -243,6 +244,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <NavLink to="/information" icon={FileText} label="Information" />
             <NavLink to="/risks" icon={ShieldAlert} label="Risks" />
             <NavLink to="/traceability?tab=links" icon={Link2} label="Links" />
+            <NavLink to="/custom-attributes" icon={Settings2} label="Custom Attributes" />
           </div>
         </div>
 
@@ -280,7 +282,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       <div style={{ padding: 'var(--spacing-md)', borderTop: '1px solid var(--color-border)' }}>
-        {/* Global Settings or User Profile could go here */}
+        {/* Reserved for future use */}
       </div>
 
       {/* Resize handle */}

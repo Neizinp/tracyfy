@@ -6,7 +6,13 @@
 
 import { diskProjectService } from './diskProjectService';
 import { diskLinkService } from './diskLinkService';
-import { DEMO_PROJECT, DEMO_ARTIFACTS } from '../utils/demoData';
+import { diskCustomAttributeService } from './diskCustomAttributeService';
+import {
+  DEMO_PROJECT,
+  DEMO_ARTIFACTS,
+  DEMO_CUSTOM_ATTRIBUTES,
+  createDemoAttributeValues,
+} from '../utils/demoData';
 import type { Project, Requirement, UseCase, TestCase, Information, Risk } from '../types';
 
 interface CreatedArtifactIds {
@@ -52,6 +58,29 @@ export async function createDemoProject(): Promise<Project> {
   // Set as current user so editing works
   await diskProjectService.setCurrentUserId(demoUser.id);
 
+  // 0.5 Create custom attribute definitions (if they don't exist)
+  const existingDefs = await diskCustomAttributeService.getAllDefinitions();
+  const createdAttrIds: string[] = [];
+
+  for (const attrDef of DEMO_CUSTOM_ATTRIBUTES) {
+    // Check if attribute with same name already exists
+    const existing = existingDefs.find((d) => d.name === attrDef.name);
+    if (existing) {
+      createdAttrIds.push(existing.id);
+    } else {
+      try {
+        const newDef = await diskCustomAttributeService.createDefinition(attrDef);
+        createdAttrIds.push(newDef.id);
+      } catch (error) {
+        console.error('Failed to create custom attribute:', attrDef.name, error);
+      }
+    }
+  }
+
+  // Get custom attribute values for demo artifacts
+  const { requirementValues, useCaseValues, testCaseValues } =
+    createDemoAttributeValues(createdAttrIds);
+
   // 1. Create the project
   const project = await diskProjectService.createProject(projectName, DEMO_PROJECT.description);
 
@@ -70,23 +99,26 @@ export async function createDemoProject(): Promise<Project> {
   createdIds.information = infoIds;
   createdIds.risks = riskIds;
 
-  // 3. Prepare all artifacts with their IDs
+  // 3. Prepare all artifacts with their IDs and custom attribute values
   const requirements: Requirement[] = DEMO_ARTIFACTS.requirements.map((reqData, i) => ({
     ...reqData,
     id: reqIds[i],
     lastModified: now,
+    customAttributes: requirementValues[i] || [],
   }));
 
   const useCases: UseCase[] = DEMO_ARTIFACTS.useCases.map((ucData, i) => ({
     ...ucData,
     id: ucIds[i],
     lastModified: now,
+    customAttributes: useCaseValues[i] || [],
   }));
 
   const testCases: TestCase[] = DEMO_ARTIFACTS.testCases.map((tcData, i) => ({
     ...tcData,
     id: tcIds[i],
     lastModified: now,
+    customAttributes: testCaseValues[i] || [],
   }));
 
   const informationItems: Information[] = DEMO_ARTIFACTS.information.map((infoData, i) => ({

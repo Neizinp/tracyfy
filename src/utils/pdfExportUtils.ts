@@ -10,10 +10,12 @@ import type {
   Link,
   Risk,
 } from '../types';
+import type { CustomAttributeDefinition, CustomAttributeValue } from '../types/customAttributes';
 import { formatDate } from './dateUtils';
 import { realGitService } from '../services/realGitService';
 import { fileSystemService } from '../services/fileSystemService';
 import { diskLinkService } from '../services/diskLinkService';
+import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
 import { LINK_TYPE_LABELS } from './linkTypes';
 import type { CommitInfo } from '../types';
 
@@ -26,6 +28,30 @@ interface TOCEntry {
 
 // Image cache to avoid loading the same image multiple times
 const imageCache = new Map<string, string>();
+
+/**
+ * Format a custom attribute value for display
+ */
+function formatCustomAttributeValue(
+  value: CustomAttributeValue,
+  definitions: CustomAttributeDefinition[]
+): { name: string; displayValue: string } | null {
+  const def = definitions.find((d) => d.id === value.attributeId);
+  if (!def) return null;
+
+  let displayValue: string;
+  if (value.value === undefined || value.value === null || value.value === '') {
+    displayValue = '-';
+  } else if (def.type === 'checkbox') {
+    displayValue = value.value ? 'Yes' : 'No';
+  } else if (def.type === 'date' && typeof value.value === 'number') {
+    displayValue = formatDate(value.value);
+  } else {
+    displayValue = String(value.value);
+  }
+
+  return { name: def.name, displayValue };
+}
 
 /**
  * Extract image paths from markdown content
@@ -258,6 +284,9 @@ export async function exportProjectToPDF(
     currentPage++;
   }
 
+  // Fetch custom attribute definitions for displaying values
+  const customAttributeDefinitions = await diskCustomAttributeService.getAllDefinitions();
+
   // 3. Fetch git commit history since last baseline
   // Sort all artifacts by their numeric ID suffix for consistent ordering
   const projectRequirements = sortByIdNumber(
@@ -446,7 +475,8 @@ export async function exportProjectToPDF(
       projectRequirements,
       currentPage,
       tocEntries,
-      sectionNumber
+      sectionNumber,
+      customAttributeDefinitions
     );
   }
 
@@ -460,7 +490,8 @@ export async function exportProjectToPDF(
       projectUseCases,
       currentPage,
       tocEntries,
-      sectionNumber
+      sectionNumber,
+      customAttributeDefinitions
     );
   }
 
@@ -474,7 +505,8 @@ export async function exportProjectToPDF(
       projectTestCases,
       currentPage,
       tocEntries,
-      sectionNumber
+      sectionNumber,
+      customAttributeDefinitions
     );
   }
 
@@ -488,7 +520,8 @@ export async function exportProjectToPDF(
       projectInformation,
       currentPage,
       tocEntries,
-      sectionNumber
+      sectionNumber,
+      customAttributeDefinitions
     );
   }
 
@@ -672,7 +705,8 @@ async function addRequirementsSection(
   requirements: Requirement[],
   startPage: number,
   tocEntries: TOCEntry[],
-  sectionNumber: number
+  sectionNumber: number,
+  customAttributeDefinitions: CustomAttributeDefinition[]
 ): Promise<number> {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
@@ -864,6 +898,34 @@ async function addRequirementsSection(
       page = pageRef.page;
     }
 
+    // Custom Attributes
+    if (req.customAttributes && req.customAttributes.length > 0) {
+      const formattedAttrs = req.customAttributes
+        .map((attr) => formatCustomAttributeValue(attr, customAttributeDefinitions))
+        .filter((x): x is { name: string; displayValue: string } => x !== null);
+
+      if (formattedAttrs.length > 0) {
+        if (currentY > 260) {
+          doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
+          doc.addPage();
+          page++;
+          currentY = 20;
+          boxTop = 20;
+        }
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Custom Attributes:', contentLeft, currentY);
+        currentY += 4;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        for (const attr of formattedAttrs) {
+          doc.text(`${attr.name}: ${attr.displayValue}`, contentLeft, currentY);
+          currentY += 4;
+        }
+        currentY += 2;
+      }
+    }
+
     // Footer metadata bar
     currentY += 1;
     doc.setFillColor(250, 250, 250);
@@ -890,7 +952,8 @@ async function addUseCasesSection(
   useCases: UseCase[],
   startPage: number,
   tocEntries: TOCEntry[],
-  sectionNumber: number
+  sectionNumber: number,
+  customAttributeDefinitions: CustomAttributeDefinition[]
 ): Promise<number> {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
@@ -1108,6 +1171,34 @@ async function addUseCasesSection(
       page = pageRef.page;
     }
 
+    // Custom Attributes
+    if (useCase.customAttributes && useCase.customAttributes.length > 0) {
+      const formattedAttrs = useCase.customAttributes
+        .map((attr) => formatCustomAttributeValue(attr, customAttributeDefinitions))
+        .filter((x): x is { name: string; displayValue: string } => x !== null);
+
+      if (formattedAttrs.length > 0) {
+        if (currentY > 260) {
+          doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
+          doc.addPage();
+          page++;
+          currentY = 20;
+          boxTop = 20;
+        }
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Custom Attributes:', contentLeft, currentY);
+        currentY += 4;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        for (const attr of formattedAttrs) {
+          doc.text(`${attr.name}: ${attr.displayValue}`, contentLeft, currentY);
+          currentY += 4;
+        }
+        currentY += 2;
+      }
+    }
+
     // Footer metadata bar (Dates)
     currentY += 1;
     doc.setFillColor(250, 250, 250);
@@ -1134,7 +1225,8 @@ async function addTestCasesSection(
   testCases: TestCase[],
   startPage: number,
   tocEntries: TOCEntry[],
-  sectionNumber: number
+  sectionNumber: number,
+  customAttributeDefinitions: CustomAttributeDefinition[]
 ): Promise<number> {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
@@ -1247,6 +1339,34 @@ async function addTestCasesSection(
       currentY += 7;
     }
 
+    // Custom Attributes
+    if (testCase.customAttributes && testCase.customAttributes.length > 0) {
+      const formattedAttrs = testCase.customAttributes
+        .map((attr) => formatCustomAttributeValue(attr, customAttributeDefinitions))
+        .filter((x): x is { name: string; displayValue: string } => x !== null);
+
+      if (formattedAttrs.length > 0) {
+        if (currentY > 260) {
+          doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
+          doc.addPage();
+          page++;
+          currentY = 20;
+          boxTop = 20;
+        }
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Custom Attributes:', contentLeft, currentY);
+        currentY += 4;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        for (const attr of formattedAttrs) {
+          doc.text(`${attr.name}: ${attr.displayValue}`, contentLeft, currentY);
+          currentY += 4;
+        }
+        currentY += 2;
+      }
+    }
+
     // Footer metadata bar (Dates)
     currentY += 1;
     doc.setFillColor(250, 250, 250);
@@ -1273,7 +1393,8 @@ async function addInformationSection(
   information: Information[],
   startPage: number,
   tocEntries: TOCEntry[],
-  sectionNumber: number
+  sectionNumber: number,
+  customAttributeDefinitions: CustomAttributeDefinition[]
 ): Promise<number> {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
@@ -1356,6 +1477,34 @@ async function addInformationSection(
         pageRef
       );
       page = pageRef.page;
+    }
+
+    // Custom Attributes
+    if (info.customAttributes && info.customAttributes.length > 0) {
+      const formattedAttrs = info.customAttributes
+        .map((attr) => formatCustomAttributeValue(attr, customAttributeDefinitions))
+        .filter((x): x is { name: string; displayValue: string } => x !== null);
+
+      if (formattedAttrs.length > 0) {
+        if (currentY > 260) {
+          doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
+          doc.addPage();
+          page++;
+          currentY = 20;
+          boxTop = 20;
+        }
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Custom Attributes:', contentLeft, currentY);
+        currentY += 4;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        for (const attr of formattedAttrs) {
+          doc.text(`${attr.name}: ${attr.displayValue}`, contentLeft, currentY);
+          currentY += 4;
+        }
+        currentY += 2;
+      }
     }
 
     // Footer metadata bar (Dates)

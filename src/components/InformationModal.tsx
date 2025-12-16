@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { Information } from '../types';
+import type { CustomAttributeValue } from '../types/customAttributes';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
+import { CustomAttributeEditor } from './CustomAttributeEditor';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import { MarkdownEditor } from './MarkdownEditor';
 
@@ -18,7 +21,7 @@ interface InformationModalProps {
   ) => void;
 }
 
-type Tab = 'overview' | 'relationships' | 'history';
+type Tab = 'overview' | 'relationships' | 'customFields' | 'history';
 
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
@@ -43,15 +46,21 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     artifactId: information?.id,
   });
 
+  // Get custom attribute definitions
+  const { definitions: customAttributeDefinitions } = useCustomAttributes();
+  const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
+
   useEffect(() => {
     if (information) {
       setTitle(information.title);
       setContent(information.content);
       setType(information.type);
+      setCustomAttributes(information.customAttributes || []);
     } else {
       setTitle('');
       setContent('');
       setType('note');
+      setCustomAttributes([]);
     }
   }, [information, isOpen]);
 
@@ -60,10 +69,10 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     if (information) {
       onSubmit({
         id: information.id,
-        updates: { title, content, type },
+        updates: { title, content, type, customAttributes },
       });
     } else {
-      onSubmit({ title, content, type, revision: '01' });
+      onSubmit({ title, content, type, customAttributes, revision: '01' });
     }
     onClose();
   };
@@ -78,6 +87,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     ...(information ? [{ id: 'relationships' as Tab, label: 'Relationships' }] : []),
+    { id: 'customFields', label: 'Custom Fields' },
     ...(information ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
   ];
 
@@ -489,6 +499,17 @@ export const InformationModal: React.FC<InformationModalProps> = ({
 
           {activeTab === 'history' && information && (
             <RevisionHistoryTab artifactId={information.id} artifactType="information" />
+          )}
+
+          {activeTab === 'customFields' && (
+            <div>
+              <CustomAttributeEditor
+                definitions={customAttributeDefinitions}
+                values={customAttributes}
+                onChange={setCustomAttributes}
+                artifactType="information"
+              />
+            </div>
           )}
         </form>
       </div>

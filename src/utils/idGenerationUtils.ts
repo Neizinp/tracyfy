@@ -55,3 +55,13 @@ export function generateNextInfoId(usedInfoNumbers: Set<number>): string {
   const nextNumber = findLowestAvailableNumber(usedInfoNumbers);
   return `INFO-${String(nextNumber).padStart(3, '0')}`;
 }
+
+/**
+ * Generates a new custom attribute ID (format: ATTR-###)
+ * @param usedAttrNumbers - Set of already-used attribute numbers
+ * @returns New unique attribute ID
+ */
+export function generateNextAttributeId(usedAttrNumbers: Set<number>): string {
+  const nextNumber = findLowestAvailableNumber(usedAttrNumbers);
+  return `ATTR-${String(nextNumber).padStart(3, '0')}`;
+}

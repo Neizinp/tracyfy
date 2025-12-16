@@ -8,6 +8,7 @@ import {
   InformationPage,
   RisksPage,
   GlobalLibraryPage,
+  CustomAttributesPage,
 } from '../pages';
 import { LinksPage } from '../pages/LinksPage';
 
@@ -27,6 +28,8 @@ export function AppRoutes() {
         <Route path="risks" element={<RisksPage />} />
 
         <Route path="library/:type" element={<GlobalLibraryPage />} />
+
+        <Route path="custom-attributes" element={<CustomAttributesPage />} />
       </Route>
     </Routes>
   );

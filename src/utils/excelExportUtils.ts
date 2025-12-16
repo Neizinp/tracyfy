@@ -8,12 +8,69 @@ import type {
   ProjectBaseline,
   ArtifactLink,
 } from '../types';
+import type { CustomAttributeDefinition, CustomAttributeValue } from '../types/customAttributes';
 import { formatDate } from './dateUtils';
 import { realGitService } from '../services/realGitService';
+import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
 
 // Helper to sanitize text for Excel (remove newlines if needed, or keep them)
 // Excel handles newlines in cells if wrapText is on.
 const sanitize = (text: string | undefined) => text || '';
+
+/**
+ * Format a custom attribute value for display in Excel
+ */
+function formatCustomAttributeValue(
+  value: CustomAttributeValue,
+  definitions: CustomAttributeDefinition[]
+): { name: string; displayValue: string } | null {
+  const def = definitions.find((d) => d.id === value.attributeId);
+  if (!def) return null;
+
+  let displayValue: string;
+  if (value.value === undefined || value.value === null || value.value === '') {
+    displayValue = '';
+  } else if (def.type === 'checkbox') {
+    displayValue = value.value ? 'Yes' : 'No';
+  } else if (def.type === 'date' && typeof value.value === 'number') {
+    displayValue = formatDate(value.value);
+  } else {
+    displayValue = String(value.value);
+  }
+
+  return { name: def.name, displayValue };
+}
+
+/**
+ * Add custom attribute columns to an artifact data row
+ */
+function addCustomAttributeColumns(
+  artifact: { customAttributes?: CustomAttributeValue[] },
+  definitions: CustomAttributeDefinition[],
+  applicableType: string
+): Record<string, string> {
+  const result: Record<string, string> = {};
+
+  // Get applicable definitions for this artifact type
+  const applicableDefs = definitions.filter((d) => d.appliesTo.includes(applicableType as any));
+
+  // Initialize all applicable columns with empty string
+  for (const def of applicableDefs) {
+    result[def.name] = '';
+  }
+
+  // Fill in values that exist
+  if (artifact.customAttributes) {
+    for (const attrValue of artifact.customAttributes) {
+      const formatted = formatCustomAttributeValue(attrValue, definitions);
+      if (formatted) {
+        result[formatted.name] = formatted.displayValue;
+      }
+    }
+  }
+
+  return result;
+}
 
 /**
  * Sort artifacts by their numeric ID suffix (e.g., REQ-001, REQ-002)
@@ -42,6 +99,9 @@ export async function exportProjectToExcel(
   baselines: ProjectBaseline[]
 ): Promise<void> {
   const wb = XLSX.utils.book_new();
+
+  // Fetch custom attribute definitions for column headers
+  const customAttributeDefinitions = await diskCustomAttributeService.getAllDefinitions();
 
   // Filter artifacts and sort by ID number for consistent ordering
   const projectRequirements = sortByIdNumber(
@@ -132,6 +192,7 @@ export async function exportProjectToExcel(
       Created: formatDate(req.dateCreated),
       'Last Modified': formatDate(req.lastModified),
       Approved: req.approvalDate ? formatDate(req.approvalDate) : '',
+      ...addCustomAttributeColumns(req, customAttributeDefinitions, 'requirement'),
     }));
 
     const wsReq = XLSX.utils.json_to_sheet(reqData);
@@ -169,6 +230,7 @@ export async function exportProjectToExcel(
       'Alternative Flows': sanitize(uc.alternativeFlows),
       Postconditions: sanitize(uc.postconditions),
       'Last Modified': formatDate(uc.lastModified),
+      ...addCustomAttributeColumns(uc, customAttributeDefinitions, 'useCase'),
     }));
 
     const wsUc = XLSX.utils.json_to_sheet(ucData);
@@ -203,6 +265,7 @@ export async function exportProjectToExcel(
       Created: formatDate(tc.dateCreated),
       'Last Modified': formatDate(tc.lastModified),
       'Last Run': tc.lastRun ? formatDate(tc.lastRun) : '',
+      ...addCustomAttributeColumns(tc, customAttributeDefinitions, 'testCase'),
     }));
 
     const wsTc = XLSX.utils.json_to_sheet(tcData);
@@ -232,6 +295,7 @@ export async function exportProjectToExcel(
       Content: sanitize(info.content),
       Created: formatDate(info.dateCreated),
       'Last Modified': formatDate(info.lastModified),
+      ...addCustomAttributeColumns(info, customAttributeDefinitions, 'information'),
     }));
 
     const wsInfo = XLSX.utils.json_to_sheet(infoData);

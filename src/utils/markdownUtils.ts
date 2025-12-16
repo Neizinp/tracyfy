@@ -1,4 +1,18 @@
 import type { Requirement, UseCase, TestCase, Information, User, Project, Risk } from '../types';
+import type { CustomAttributeDefinition, CustomAttributeValue } from '../types/customAttributes';
+
+/**
+ * Filter out corrupted custom attribute values (strings like "[object Object]")
+ * that may have been saved due to previous serialization bugs
+ */
+function filterValidCustomAttributes(
+  attrs: CustomAttributeValue[] | undefined
+): CustomAttributeValue[] {
+  return (attrs || []).filter(
+    (attr): attr is CustomAttributeValue =>
+      typeof attr === 'object' && attr !== null && 'attributeId' in attr
+  );
+}
 
 /**
  * Convert a JavaScript object to YAML frontmatter string
@@ -26,6 +40,9 @@ function objectToYaml(obj: Record<string, any>): string {
         value.forEach((item) => {
           if (typeof item === 'string') {
             lines.push(`  - "${item}"`);
+          } else if (typeof item === 'object' && item !== null) {
+            // Serialize objects as JSON for proper storage
+            lines.push(`  - ${JSON.stringify(item)}`);
           } else {
             lines.push(`  - ${item}`);
           }
@@ -80,13 +97,20 @@ function parseYamlFrontmatter(content: string): { frontmatter: Record<string, an
   for (const line of frontmatterLines) {
     if (line.trim() === '') continue;
 
-    // Handle YAML array list items (  - "value" or   - value)
+    // Handle YAML array list items (  - "value" or   - value or   - {json})
     if (isArrayList) {
       if (line.startsWith('  - ')) {
         const itemValue = line.substring(4).trim();
         // Parse the array item value
         if (itemValue.startsWith('"') && itemValue.endsWith('"')) {
           currentArray.push(itemValue.slice(1, -1).replace(/\\"/g, '"'));
+        } else if (itemValue.startsWith('{') && itemValue.endsWith('}')) {
+          // Parse JSON object
+          try {
+            currentArray.push(JSON.parse(itemValue));
+          } catch {
+            currentArray.push(itemValue);
+          }
         } else if (itemValue === 'true' || itemValue === 'false') {
           currentArray.push(itemValue === 'true');
         } else if (!isNaN(Number(itemValue)) && itemValue !== '') {
@@ -204,6 +228,7 @@ export function requirementToMarkdown(requirement: Requirement): string {
     approvalDate: requirement.approvalDate || null,
     isDeleted: requirement.isDeleted || false,
     deletedAt: requirement.deletedAt || null,
+    customAttributes: filterValidCustomAttributes(requirement.customAttributes),
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -276,6 +301,7 @@ export function markdownToRequirement(markdown: string): Requirement {
     isDeleted: frontmatter.isDeleted || false,
     deletedAt: frontmatter.deletedAt || undefined,
     revision: frontmatter.revision || '01',
+    customAttributes: frontmatter.customAttributes || [],
   };
 }
 
@@ -294,6 +320,7 @@ export function convertUseCaseToMarkdown(useCase: UseCase): string {
     linkedArtifacts: useCase.linkedArtifacts || [],
     isDeleted: useCase.isDeleted || false,
     deletedAt: useCase.deletedAt || null,
+    customAttributes: filterValidCustomAttributes(useCase.customAttributes),
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -366,6 +393,7 @@ export function markdownToUseCase(markdown: string): UseCase {
     isDeleted: frontmatter.isDeleted || false,
     deletedAt: frontmatter.deletedAt || undefined,
     revision: frontmatter.revision || '01',
+    customAttributes: frontmatter.customAttributes || [],
   };
 }
 
@@ -387,6 +415,7 @@ export function testCaseToMarkdown(testCase: TestCase): string {
     linkedArtifacts: testCase.linkedArtifacts || [],
     isDeleted: testCase.isDeleted || false,
     deletedAt: testCase.deletedAt || null,
+    customAttributes: filterValidCustomAttributes(testCase.customAttributes),
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -447,6 +476,7 @@ export function markdownToTestCase(markdown: string): TestCase {
     isDeleted: frontmatter.isDeleted || false,
     deletedAt: frontmatter.deletedAt || undefined,
     revision: frontmatter.revision || '01',
+    customAttributes: frontmatter.customAttributes || [],
   };
 }
 
@@ -464,6 +494,7 @@ export function informationToMarkdown(information: Information): string {
     linkedArtifacts: information.linkedArtifacts || [],
     isDeleted: information.isDeleted || false,
     deletedAt: information.deletedAt || null,
+    customAttributes: filterValidCustomAttributes(information.customAttributes),
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -497,6 +528,7 @@ export function markdownToInformation(markdown: string): Information {
     isDeleted: frontmatter.isDeleted || false,
     deletedAt: frontmatter.deletedAt || undefined,
     revision: frontmatter.revision || '01',
+    customAttributes: frontmatter.customAttributes || [],
   };
 }
 
@@ -606,6 +638,7 @@ export function riskToMarkdown(risk: Risk): string {
     linkedArtifacts: risk.linkedArtifacts || [],
     isDeleted: risk.isDeleted || false,
     deletedAt: risk.deletedAt || null,
+    customAttributes: filterValidCustomAttributes(risk.customAttributes),
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -671,5 +704,57 @@ export function markdownToRisk(markdown: string): Risk {
     isDeleted: frontmatter.isDeleted || false,
     deletedAt: frontmatter.deletedAt || undefined,
     revision: frontmatter.revision || '01',
+    customAttributes: frontmatter.customAttributes || [],
+  };
+}
+
+/**
+ * Convert a CustomAttributeDefinition to Markdown with YAML frontmatter
+ */
+export function customAttributeDefinitionToMarkdown(def: CustomAttributeDefinition): string {
+  const frontmatter = {
+    id: def.id,
+    name: def.name,
+    type: def.type,
+    description: def.description || '',
+    required: def.required || false,
+    defaultValue: def.defaultValue ?? null,
+    options: def.options || [],
+    appliesTo: def.appliesTo,
+    dateCreated: def.dateCreated,
+    lastModified: def.lastModified,
+    isDeleted: def.isDeleted || false,
+    deletedAt: def.deletedAt || null,
+  };
+
+  const yaml = objectToYaml(frontmatter);
+
+  const body = `# ${def.name}
+
+${def.description || 'No description provided.'}
+`.trim();
+
+  return `${yaml}\n\n${body}`;
+}
+
+/**
+ * Parse Markdown content into a CustomAttributeDefinition object
+ */
+export function markdownToCustomAttributeDefinition(markdown: string): CustomAttributeDefinition {
+  const { frontmatter } = parseYamlFrontmatter(markdown);
+
+  return {
+    id: frontmatter.id || '',
+    name: frontmatter.name || '',
+    type: frontmatter.type || 'text',
+    description: frontmatter.description || undefined,
+    required: frontmatter.required || false,
+    defaultValue: frontmatter.defaultValue ?? undefined,
+    options: frontmatter.options || undefined,
+    appliesTo: frontmatter.appliesTo || [],
+    dateCreated: frontmatter.dateCreated || Date.now(),
+    lastModified: frontmatter.lastModified || Date.now(),
+    isDeleted: frontmatter.isDeleted || false,
+    deletedAt: frontmatter.deletedAt || undefined,
   };
 }
