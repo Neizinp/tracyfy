@@ -18,14 +18,40 @@ interface DirectoryState {
   path?: string;
 }
 
-// Check if running in Electron
-function isElectron(): boolean {
-  return typeof window !== 'undefined' && !!(window as any).electronAPI?.isElectron;
+// Electron API interface for file system operations
+interface ElectronFsAPI {
+  isElectron: boolean;
+  fs: {
+    selectDirectory: () => Promise<{ canceled: boolean; path: string }>;
+    checkExists: (path: string) => Promise<{ exists: boolean }>;
+    readFile: (path: string) => Promise<{ content?: string; notFound?: boolean; error?: string }>;
+    readFileBinary: (
+      path: string
+    ) => Promise<{ data?: number[]; notFound?: boolean; error?: string }>;
+    writeFile: (path: string, content: string) => Promise<{ error?: string }>;
+    writeFileBinary: (path: string, data: number[]) => Promise<{ error?: string }>;
+    deleteFile: (path: string) => Promise<void>;
+    listFiles: (path: string) => Promise<{ files: string[]; error?: string }>;
+    listEntries: (path: string) => Promise<{ entries: string[]; error?: string }>;
+    mkdir: (path: string) => Promise<void>;
+  };
 }
 
-// Get Electron API if available
-function getElectronAPI(): any {
-  return (window as any).electronAPI;
+// Check if running in Electron
+function isElectron(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    !!(window as unknown as { electronAPI?: ElectronFsAPI }).electronAPI?.isElectron
+  );
+}
+
+// Get Electron API - throws if not available (caller must check isElectron() first)
+function getElectronAPI(): ElectronFsAPI {
+  const api = (window as unknown as { electronAPI?: ElectronFsAPI }).electronAPI;
+  if (!api) {
+    throw new Error('Electron API not available');
+  }
+  return api;
 }
 
 class FileSystemService {
@@ -301,7 +327,7 @@ class FileSystemService {
 
       if (result.notFound) return null;
       if (result.error) throw new Error(result.error);
-      return result.content;
+      return result.content ?? null;
     }
 
     // Browser path: use FSA
@@ -347,6 +373,7 @@ class FileSystemService {
 
       if (result.notFound) return null;
       if (result.error) throw new Error(result.error);
+      if (!result.data) return null;
       return new Uint8Array(result.data);
     }
 

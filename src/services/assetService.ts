@@ -1,5 +1,4 @@
 /**
-import { debug } from '../utils/debug';
  * Asset Service - Manages image and file assets for artifacts
  *
  * Images are stored in the assets/ folder at the root of the project.
@@ -7,6 +6,7 @@ import { debug } from '../utils/debug';
  * Reference format: ![alt](./assets/uuid.png)
  */
 
+import { debug } from '../utils/debug';
 import { fileSystemService } from './fileSystemService';
 
 const ASSETS_DIR = 'assets';

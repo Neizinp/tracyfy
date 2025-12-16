@@ -281,60 +281,81 @@ describe('TraceabilityDashboard', () => {
   });
 
   describe('Impact Tab', () => {
+    // Mock standalone links for impact analysis
+    const mockStandaloneLinks: Link[] = [
+      {
+        id: 'LINK-001',
+        sourceId: 'REQ-001',
+        targetId: 'UC-001',
+        type: 'satisfies',
+        projectIds: [],
+        dateCreated: Date.now(),
+        lastModified: Date.now(),
+      },
+      {
+        id: 'LINK-002',
+        sourceId: 'TC-001',
+        targetId: 'REQ-001',
+        type: 'verifies',
+        projectIds: [],
+        dateCreated: Date.now(),
+        lastModified: Date.now(),
+      },
+    ];
+
     it('shows artifact selector dropdown', () => {
-      render(<TraceabilityDashboard {...defaultProps} />);
+      render(<TraceabilityDashboard {...defaultProps} standaloneLinks={mockStandaloneLinks} />);
       clickTab('Impact');
 
-      expect(screen.getByText('Select an artifact to see its connections:')).toBeInTheDocument();
+      // ImpactAnalysisPanel has a label "Select Artifact" and a select dropdown
+      expect(screen.getByText('Select Artifact')).toBeInTheDocument();
       expect(screen.getByRole('combobox')).toBeInTheDocument();
     });
 
     it('shows empty state when no artifact selected', () => {
-      render(<TraceabilityDashboard {...defaultProps} />);
+      render(<TraceabilityDashboard {...defaultProps} standaloneLinks={mockStandaloneLinks} />);
       clickTab('Impact');
 
-      expect(screen.getByText(/Select an artifact above to explore/)).toBeInTheDocument();
+      expect(screen.getByText(/Select an artifact above to analyze/)).toBeInTheDocument();
     });
 
     it('shows connections when artifact is selected', () => {
-      render(<TraceabilityDashboard {...defaultProps} />);
+      render(<TraceabilityDashboard {...defaultProps} standaloneLinks={mockStandaloneLinks} />);
       clickTab('Impact');
 
       // Select REQ-001
       fireEvent.change(screen.getByRole('combobox'), { target: { value: 'REQ-001' } });
 
-      // Should show the selected artifact
+      // Should show the selected artifact (appears in header)
       expect(screen.getAllByText('REQ-001').length).toBeGreaterThan(0);
-      // Should show outgoing links section
-      expect(screen.getByText(/Outgoing Links/)).toBeInTheDocument();
+      // Should show impact chain with connected artifacts
+      expect(screen.getAllByText('UC-001').length).toBeGreaterThan(0);
     });
 
     it('shows incoming links for requirements from TestCases', () => {
-      render(<TraceabilityDashboard {...defaultProps} />);
+      render(<TraceabilityDashboard {...defaultProps} standaloneLinks={mockStandaloneLinks} />);
       clickTab('Impact');
 
-      // Select REQ-001 which is referenced by TC-001 via requirementIds
+      // Select REQ-001 which has incoming link from TC-001
       fireEvent.change(screen.getByRole('combobox'), { target: { value: 'REQ-001' } });
 
-      // Should show incoming links from TC-001
-      expect(screen.getByText(/Incoming Links/)).toBeInTheDocument();
-      // TC-001 should appear as incoming
+      // TC-001 should appear in the impact chain (labeled with verifies)
       const tcElements = screen.getAllByText('TC-001');
       expect(tcElements.length).toBeGreaterThan(0);
     });
 
     it('allows clicking connected artifacts to navigate', () => {
-      render(<TraceabilityDashboard {...defaultProps} />);
+      render(<TraceabilityDashboard {...defaultProps} standaloneLinks={mockStandaloneLinks} />);
       clickTab('Impact');
 
       // Select REQ-001
       fireEvent.change(screen.getByRole('combobox'), { target: { value: 'REQ-001' } });
 
-      // Click on UC-001 in outgoing links - should update selection
+      // Click on UC-001 in impact tree - should update selection
       const ucLink = screen.getAllByText('UC-001')[0];
       fireEvent.click(ucLink);
 
-      // Now UC-001 should be the selected artifact (shown in header)
+      // Now UC-001 should be the selected artifact (shown in header with bold styling)
       const headerElements = screen.getAllByText('UC-001');
       expect(headerElements.length).toBeGreaterThan(0);
     });

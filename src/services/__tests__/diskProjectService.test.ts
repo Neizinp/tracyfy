@@ -22,6 +22,17 @@ vi.mock('../fileSystemService', () => ({
   },
 }));
 
+// Mock the realGitService
+vi.mock('../realGitService', () => ({
+  realGitService: {
+    pullCounters: vi.fn(() => Promise.resolve(true)),
+    pushCounters: vi.fn(() => Promise.resolve(true)),
+    hasRemote: vi.fn(() => Promise.resolve(false)),
+    isInitialized: vi.fn(() => true),
+    commitFile: vi.fn(() => Promise.resolve()),
+  },
+}));
+
 describe('DiskProjectService - User Operations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -224,16 +235,6 @@ lastModified: 1700000000000
   });
 
   describe('getNextIdWithSync', () => {
-    // Mock realGitService
-    vi.mock('../realGitService', () => ({
-      realGitService: {
-        pullCounters: vi.fn().mockResolvedValue(true),
-        pushCounters: vi.fn().mockResolvedValue(true),
-        hasRemote: vi.fn().mockResolvedValue(false),
-        isInitialized: vi.fn().mockReturnValue(true),
-      },
-    }));
-
     it('should return a valid ID even when pull fails', async () => {
       vi.mocked(fileSystemService.readFile).mockResolvedValue('5');
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);

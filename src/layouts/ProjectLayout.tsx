@@ -298,7 +298,11 @@ export const ProjectLayout: React.FC = () => {
             onSelectAll={(ids) => ui.setGlobalLibrarySelection(new Set(ids))}
             onDeselectAll={() => ui.setGlobalLibrarySelection(new Set())}
             activeTab={ui.activeLibraryTab}
-            onTabChange={(tab) => ui.setActiveLibraryTab(tab as any)}
+            onTabChange={(tab) =>
+              ui.setActiveLibraryTab(
+                tab as 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
+              )
+            }
             onAddToProject={handleAddFromLibrary}
           />
         ) : undefined

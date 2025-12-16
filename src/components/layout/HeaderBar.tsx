@@ -24,6 +24,12 @@ import {
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { ThemeToggle } from './ThemeToggle';
 
+// Type for E2E test mode window properties
+interface E2EWindow extends Window {
+  __E2E_TEST_MODE__?: boolean;
+  __E2E_EXPORT_MENU_OPENED?: boolean;
+}
+
 export interface HeaderBarProps {
   currentProjectName: string;
   onSearch?: (query: string) => void;
@@ -94,12 +100,12 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   useEffect(() => {
     // Always open export dropdown in E2E mode
     let e2eInterval: ReturnType<typeof setInterval> | null = null;
-    if (typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__) {
+    if (typeof window !== 'undefined' && (window as E2EWindow).__E2E_TEST_MODE__) {
       setIsExportMenuOpen(true);
-      (window as any).__E2E_EXPORT_MENU_OPENED = true;
+      (window as E2EWindow).__E2E_EXPORT_MENU_OPENED = true;
       e2eInterval = setInterval(() => {
         setIsExportMenuOpen(true);
-        (window as any).__E2E_EXPORT_MENU_OPENED = true;
+        (window as E2EWindow).__E2E_EXPORT_MENU_OPENED = true;
       }, 500);
     }
 
@@ -142,7 +148,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   });
 
   const handleExportPDF = () => {
-    if (typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__) {
+    if (typeof window !== 'undefined' && (window as E2EWindow).__E2E_TEST_MODE__) {
       // E2E fallback: always trigger a dummy PDF download
       const blob = new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d])], {
         type: 'application/pdf',
@@ -170,7 +176,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   };
 
   const handleExportJSON = () => {
-    if (typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__) {
+    if (typeof window !== 'undefined' && (window as E2EWindow).__E2E_TEST_MODE__) {
       // E2E fallback: always trigger a dummy download
       const blob = new Blob(
         [
@@ -451,7 +457,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             {isExportMenuOpen && (
               <div data-testid="export-dropdown" style={dropdownMenuStyle}>
                 {/* E2E debug indicator */}
-                {typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__ && (
+                {typeof window !== 'undefined' && (window as E2EWindow).__E2E_TEST_MODE__ && (
                   <div
                     style={{
                       background: 'red',
@@ -465,8 +471,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   </div>
                 )}
                 {typeof window !== 'undefined' &&
-                  (window as any).__E2E_TEST_MODE__ &&
-                  debug.log('E2E: Export dropdown rendered')}
+                  (window as E2EWindow).__E2E_TEST_MODE__ &&
+                  (debug.log('E2E: Export dropdown rendered'), null)}
 
                 {/* PDF Export with baseline selection */}
                 {onExportPDF && (
