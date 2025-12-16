@@ -66,8 +66,9 @@ const mockInfo: Information = {
 };
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { exportProjectToPDF } from '../pdfExportUtils';
-import type { Project, Requirement, UseCase, TestCase, Information } from '../../types';
+import type { Project, Requirement, UseCase, TestCase, Information, Risk } from '../../types';
 import { formatDate } from '../dateUtils';
+import { diskLinkService } from '../../services/diskLinkService';
 
 // Mock jsPDF
 const mockText = vi.fn();
@@ -922,6 +923,154 @@ describe('pdfExportUtils', () => {
           options.head && options.head[0] && options.head[0].includes('Changes')
       );
       expect(revisionHistoryCalls.length).toBe(0);
+    });
+  });
+
+  describe('Links Section', () => {
+    it('should include links section when project has links', async () => {
+      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+        createWritable: vi.fn().mockResolvedValue({
+          write: vi.fn(),
+          close: vi.fn(),
+        }),
+      });
+
+      // Mock diskLinkService to return links
+      vi.mocked(diskLinkService.getLinksForProject).mockResolvedValue([
+        {
+          id: 'LINK-001',
+          sourceId: 'REQ-001',
+          targetId: 'UC-001',
+          type: 'derived_from',
+          projectIds: ['p1'],
+          dateCreated: Date.now(),
+          lastModified: Date.now(),
+        },
+      ]);
+
+      await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
+
+      // Verify Links section heading is added
+      expect(mockText).toHaveBeenCalledWith('Links', 20, 20);
+
+      // Verify autoTable was called for links (Links table has specific headers)
+      const autoTableCalls = (autoTable as any).mock.calls;
+      const linksTableCall = autoTableCalls.find(
+        ([_doc, options]: [any, any]) =>
+          options.head && options.head[0] && options.head[0].includes('Link ID')
+      );
+      expect(linksTableCall).toBeDefined();
+    });
+
+    it('should not include links section when project has no links', async () => {
+      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+        createWritable: vi.fn().mockResolvedValue({
+          write: vi.fn(),
+          close: vi.fn(),
+        }),
+      });
+
+      // Mock diskLinkService to return empty array
+      vi.mocked(diskLinkService.getLinksForProject).mockResolvedValue([]);
+
+      await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
+
+      // Verify Links section heading is NOT added
+      const textCalls = mockText.mock.calls.map(([text]) => text);
+      const hasLinksHeading = textCalls.some(
+        (text) => typeof text === 'string' && text === 'Links'
+      );
+      expect(hasLinksHeading).toBe(false);
+    });
+  });
+
+  describe('Risks Section', () => {
+    const mockRisk: Risk = {
+      id: 'RISK-001',
+      title: 'Security Risk',
+      description: 'Potential data breach',
+      category: 'technical',
+      probability: 'medium',
+      impact: 'high',
+      mitigation: 'Implement encryption',
+      contingency: 'Incident response plan',
+      status: 'mitigating',
+      owner: 'Security Team',
+      dateCreated: Date.now(),
+      lastModified: Date.now(),
+      revision: '01',
+    };
+
+    const projectWithRisks: Project = {
+      ...mockProject,
+      riskIds: ['RISK-001'],
+    };
+
+    const globalStateWithRisks = {
+      ...globalState,
+      risks: [mockRisk],
+    };
+
+    it('should include risks section when project has risks', async () => {
+      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+        createWritable: vi.fn().mockResolvedValue({
+          write: vi.fn(),
+          close: vi.fn(),
+        }),
+      });
+
+      await exportProjectToPDF(projectWithRisks, globalStateWithRisks, [], [], [], [], [], null);
+
+      // Verify Risks section heading is added
+      expect(mockText).toHaveBeenCalledWith('Risks', 20, 20);
+
+      // Verify risk title is rendered
+      expect(mockText).toHaveBeenCalledWith(
+        'RISK-001 - Security Risk',
+        expect.any(Number),
+        expect.any(Number)
+      );
+    });
+
+    it('should not include risks section when project has no risks', async () => {
+      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+        createWritable: vi.fn().mockResolvedValue({
+          write: vi.fn(),
+          close: vi.fn(),
+        }),
+      });
+
+      await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
+
+      // Verify Risks section heading is NOT added
+      const textCalls = mockText.mock.calls.map(([text]) => text);
+      const hasRisksHeading = textCalls.some(
+        (text) => typeof text === 'string' && text === 'Risks'
+      );
+      expect(hasRisksHeading).toBe(false);
+    });
+
+    it('should render risk attributes correctly', async () => {
+      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+        createWritable: vi.fn().mockResolvedValue({
+          write: vi.fn(),
+          close: vi.fn(),
+        }),
+      });
+
+      await exportProjectToPDF(projectWithRisks, globalStateWithRisks, [], [], [], [], [], null);
+
+      // Verify metadata bar contains category, probability, impact, status
+      expect(mockText).toHaveBeenCalledWith(
+        expect.stringContaining('Category: Technical'),
+        expect.any(Number),
+        expect.any(Number)
+      );
+      expect(mockText).toHaveBeenCalledWith(
+        expect.stringContaining('Probability: Medium'),
+        expect.any(Number),
+        expect.any(Number)
+      );
     });
   });
 });

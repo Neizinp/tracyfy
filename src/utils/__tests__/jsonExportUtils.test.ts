@@ -188,4 +188,50 @@ describe('jsonExportUtils', () => {
     expect(mockClick).toHaveBeenCalled();
     expect(mockRemoveChild).toHaveBeenCalled();
   });
+
+  it('should export risks when included in globalState', async () => {
+    const mockRisk = {
+      id: 'RISK-001',
+      title: 'Security Risk',
+      description: 'Potential data breach',
+      category: 'technical' as const,
+      probability: 'medium' as const,
+      impact: 'high' as const,
+      mitigation: 'Implement encryption',
+      contingency: 'Incident response plan',
+      status: 'mitigating' as const,
+      owner: 'Security Team',
+      dateCreated: Date.now(),
+      lastModified: Date.now(),
+      revision: '01',
+    };
+
+    const projectWithRisks = {
+      ...mockProject,
+      riskIds: ['RISK-001'],
+    };
+
+    const globalStateWithRisks = {
+      ...globalState,
+      risks: [mockRisk],
+    };
+
+    await exportProjectToJSON(projectWithRisks, globalStateWithRisks, [], [], [], []);
+
+    expect(mockWrite).toHaveBeenCalled();
+    const callArg = mockWrite.mock.calls[0][0];
+    expect(callArg).toBeInstanceOf(Blob);
+
+    const text = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsText(callArg);
+    });
+
+    const data = JSON.parse(text);
+    expect(data.risks).toBeDefined();
+    expect(data.risks).toHaveLength(1);
+    expect(data.risks[0].id).toBe('RISK-001');
+    expect(data.risks[0].title).toBe('Security Risk');
+  });
 });
