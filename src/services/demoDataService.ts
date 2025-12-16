@@ -7,13 +7,14 @@
 import { diskProjectService } from './diskProjectService';
 import { diskLinkService } from './diskLinkService';
 import { DEMO_PROJECT, DEMO_ARTIFACTS } from '../utils/demoData';
-import type { Project, Requirement, UseCase, TestCase, Information } from '../types';
+import type { Project, Requirement, UseCase, TestCase, Information, Risk } from '../types';
 
 interface CreatedArtifactIds {
   requirements: string[];
   useCases: string[];
   testCases: string[];
   information: string[];
+  risks: string[];
 }
 
 /**
@@ -29,6 +30,7 @@ export async function createDemoProject(): Promise<Project> {
     useCases: [],
     testCases: [],
     information: [],
+    risks: [],
   };
 
   // Use the simple demo project name
@@ -54,17 +56,19 @@ export async function createDemoProject(): Promise<Project> {
   const project = await diskProjectService.createProject(projectName, DEMO_PROJECT.description);
 
   // 2. Batch allocate all IDs at once (single disk write per type)
-  const [reqIds, ucIds, tcIds, infoIds] = await Promise.all([
+  const [reqIds, ucIds, tcIds, infoIds, riskIds] = await Promise.all([
     diskProjectService.getNextIds('requirements', DEMO_ARTIFACTS.requirements.length),
     diskProjectService.getNextIds('useCases', DEMO_ARTIFACTS.useCases.length),
     diskProjectService.getNextIds('testCases', DEMO_ARTIFACTS.testCases.length),
     diskProjectService.getNextIds('information', DEMO_ARTIFACTS.information.length),
+    diskProjectService.getNextIds('risks', DEMO_ARTIFACTS.risks.length),
   ]);
 
   createdIds.requirements = reqIds;
   createdIds.useCases = ucIds;
   createdIds.testCases = tcIds;
   createdIds.information = infoIds;
+  createdIds.risks = riskIds;
 
   // 3. Prepare all artifacts with their IDs
   const requirements: Requirement[] = DEMO_ARTIFACTS.requirements.map((reqData, i) => ({
@@ -91,12 +95,19 @@ export async function createDemoProject(): Promise<Project> {
     lastModified: now,
   }));
 
+  const risks: Risk[] = DEMO_ARTIFACTS.risks.map((riskData, i) => ({
+    ...riskData,
+    id: riskIds[i],
+    lastModified: now,
+  }));
+
   // 4. Save all artifacts in parallel
   await Promise.all([
     ...requirements.map((r) => diskProjectService.saveRequirement(r)),
     ...useCases.map((u) => diskProjectService.saveUseCase(u)),
     ...testCases.map((t) => diskProjectService.saveTestCase(t)),
     ...informationItems.map((i) => diskProjectService.saveInformation(i)),
+    ...risks.map((r) => diskProjectService.saveRisk(r)),
   ]);
 
   // 5. Update project with artifact IDs
@@ -104,6 +115,7 @@ export async function createDemoProject(): Promise<Project> {
   project.useCaseIds = createdIds.useCases;
   project.testCaseIds = createdIds.testCases;
   project.informationIds = createdIds.information;
+  project.riskIds = createdIds.risks;
   project.lastModified = now;
   await diskProjectService.updateProject(project);
 
@@ -128,7 +140,7 @@ export async function createDemoProject(): Promise<Project> {
  * Get artifact ID from type and index
  */
 function getArtifactId(
-  type: 'req' | 'uc' | 'tc' | 'info',
+  type: 'req' | 'uc' | 'tc' | 'info' | 'risk',
   index: number,
   ids: CreatedArtifactIds
 ): string | null {
@@ -141,6 +153,8 @@ function getArtifactId(
       return ids.testCases[index] ?? null;
     case 'info':
       return ids.information[index] ?? null;
+    case 'risk':
+      return ids.risks[index] ?? null;
     default:
       return null;
   }

@@ -5,7 +5,7 @@
  * Used to populate the app for testing and exploration.
  */
 
-import type { Requirement, UseCase, TestCase, Information } from '../types';
+import type { Requirement, UseCase, TestCase, Information, Risk } from '../types';
 import type { LinkType } from './linkTypes';
 
 // Placeholder IDs will be replaced with real generated IDs
@@ -14,11 +14,12 @@ export interface DemoArtifacts {
   useCases: Omit<UseCase, 'id' | 'lastModified'>[];
   testCases: Omit<TestCase, 'id' | 'lastModified'>[];
   information: Omit<Information, 'id' | 'lastModified'>[];
+  risks: Omit<Risk, 'id' | 'lastModified'>[];
   links: {
     sourceIndex: number;
-    sourceType: 'req' | 'uc' | 'tc' | 'info';
+    sourceType: 'req' | 'uc' | 'tc' | 'info' | 'risk';
     targetIndex: number;
-    targetType: 'req' | 'uc' | 'tc' | 'info';
+    targetType: 'req' | 'uc' | 'tc' | 'info' | 'risk';
     type: LinkType;
     scope: 'global' | 'project'; // 'global' = visible everywhere, 'project' = only in this project
   }[];
@@ -900,6 +901,85 @@ All APIs will use URL-based versioning: \`/api/v1/...\`
     },
   ],
 
+  // Risk artifacts for the project
+  risks: [
+    {
+      title: 'Data Breach Risk',
+      description:
+        'Unauthorized access to user data could result in significant legal and reputational damage.',
+      category: 'technical' as const,
+      probability: 'medium' as const,
+      impact: 'high' as const,
+      mitigation:
+        'Implement encryption at rest and in transit, regular security audits, penetration testing, and security awareness training.',
+      contingency:
+        'Incident response plan, breach notification procedures, data backup restoration, legal counsel engagement.',
+      status: 'mitigating' as const,
+      owner: 'Security Team',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Third-Party Service Dependency',
+      description:
+        'Critical dependency on external authentication provider could cause service outage if provider is unavailable.',
+      category: 'external' as const,
+      probability: 'low' as const,
+      impact: 'high' as const,
+      mitigation:
+        'Implement fallback authentication, service health monitoring, and SLA agreements with provider.',
+      contingency: 'Switch to backup provider, implement temporary bypass for critical users.',
+      status: 'identified' as const,
+      owner: 'Operations Team',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Performance Degradation Under Load',
+      description: 'System may not meet SLA requirements during peak usage periods.',
+      category: 'technical' as const,
+      probability: 'medium' as const,
+      impact: 'medium' as const,
+      mitigation:
+        'Load testing before releases, auto-scaling infrastructure, performance monitoring dashboards.',
+      contingency:
+        'Emergency scaling procedures, traffic throttling, priority queue for critical operations.',
+      status: 'mitigating' as const,
+      owner: 'Platform Team',
+      dateCreated: now,
+      revision: '02',
+    },
+    {
+      title: 'Key Personnel Dependency',
+      description:
+        'Critical knowledge concentrated in single team members could impact delivery if they leave.',
+      category: 'resource' as const,
+      probability: 'medium' as const,
+      impact: 'medium' as const,
+      mitigation: 'Documentation requirements, knowledge sharing sessions, cross-training program.',
+      contingency: 'External contractor engagement, accelerated knowledge transfer.',
+      status: 'analyzing' as const,
+      owner: 'Demo User',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Regulatory Compliance Changes',
+      description:
+        'New GDPR interpretations or regulations could require significant system changes.',
+      category: 'external' as const,
+      probability: 'low' as const,
+      impact: 'high' as const,
+      mitigation:
+        'Monitor regulatory updates, quarterly compliance reviews, flexible data architecture.',
+      contingency: 'Legal consultation, compliance sprint allocation, customer communication plan.',
+      status: 'accepted' as const,
+      owner: 'Legal Team',
+      dateCreated: now,
+      revision: '01',
+    },
+  ],
+
   // Links between artifacts (indices refer to arrays above)
   // scope: 'global' = visible in all projects, 'project' = only in this project
   links: [
@@ -1292,5 +1372,56 @@ All APIs will use URL-based versioning: \`/api/v1/...\`
       type: 'related_to',
       scope: 'project',
     }, // Error Handling -> Perf
+
+    // === RISK LINKS ===
+    // Risks linked to requirements they affect
+    {
+      sourceIndex: 0,
+      sourceType: 'risk',
+      targetIndex: 7,
+      targetType: 'req',
+      type: 'related_to',
+      scope: 'project',
+    }, // Data Breach Risk -> Encryption
+    {
+      sourceIndex: 0,
+      sourceType: 'risk',
+      targetIndex: 0,
+      targetType: 'req',
+      type: 'related_to',
+      scope: 'project',
+    }, // Data Breach Risk -> Authentication
+    {
+      sourceIndex: 1,
+      sourceType: 'risk',
+      targetIndex: 0,
+      targetType: 'req',
+      type: 'related_to',
+      scope: 'project',
+    }, // Third-Party Dependency -> Authentication
+    {
+      sourceIndex: 2,
+      sourceType: 'risk',
+      targetIndex: 8,
+      targetType: 'req',
+      type: 'related_to',
+      scope: 'project',
+    }, // Performance Risk -> Performance SLA
+    {
+      sourceIndex: 2,
+      sourceType: 'risk',
+      targetIndex: 9,
+      targetType: 'req',
+      type: 'related_to',
+      scope: 'project',
+    }, // Performance Risk -> Horizontal Scalability
+    {
+      sourceIndex: 4,
+      sourceType: 'risk',
+      targetIndex: 4,
+      targetType: 'req',
+      type: 'related_to',
+      scope: 'project',
+    }, // Regulatory Compliance -> Data Export (GDPR)
   ],
 };

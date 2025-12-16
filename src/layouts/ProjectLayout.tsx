@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Layout, ColumnSelector, GlobalLibraryPanel, ModalManager } from '../components';
 import { GenericColumnSelector } from '../components/GenericColumnSelector';
@@ -10,6 +10,7 @@ import {
   useFileSystem,
   useUser,
   useBackgroundTasks,
+  useToast,
 } from '../app/providers';
 import { exportProjectToPDF } from '../utils/pdfExportUtils';
 import { exportProjectToExcel } from '../utils/excelExportUtils';
@@ -117,23 +118,48 @@ export const ProjectLayout: React.FC = () => {
     },
     [ui]
   );
+  // Demo project creation with double-click confirmation
+  const { showToast } = useToast();
+  const demoConfirmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const demoConfirmedRef = useRef(false);
 
-  // Create demo project handler
   const handleCreateDemoProject = useCallback(async () => {
+    // If not confirmed yet, show toast and wait for second click
+    if (!demoConfirmedRef.current) {
+      demoConfirmedRef.current = true;
+      showToast('Click again to confirm creating a demo project.', 'info');
+
+      // Reset after 3 seconds
+      if (demoConfirmTimeoutRef.current) {
+        clearTimeout(demoConfirmTimeoutRef.current);
+      }
+      demoConfirmTimeoutRef.current = setTimeout(() => {
+        demoConfirmedRef.current = false;
+      }, 3000);
+      return;
+    }
+
+    // Clear the timeout and reset
+    if (demoConfirmTimeoutRef.current) {
+      clearTimeout(demoConfirmTimeoutRef.current);
+    }
+    demoConfirmedRef.current = false;
+
     const taskId = startTask('Creating demo project...');
     try {
       const demoProject = await createDemoProject();
       await reloadData();
       await refreshStatus(); // Refresh git status so pending changes show up
       switchProject(demoProject.id);
+      showToast('Demo project created successfully!', 'success');
     } catch (error) {
       console.error('Failed to create demo project:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      alert(`Failed to create demo project: ${errorMessage}`);
+      showToast(`Failed to create demo project: ${errorMessage}`, 'error');
     } finally {
       endTask(taskId);
     }
-  }, [reloadData, refreshStatus, switchProject, startTask, endTask]);
+  }, [reloadData, refreshStatus, switchProject, startTask, endTask, showToast]);
 
   // Get page title from current route
   const getPageTitle = () => {
