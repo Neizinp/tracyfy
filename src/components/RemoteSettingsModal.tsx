@@ -120,12 +120,13 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          backgroundColor: 'var(--color-bg-primary)',
+          backgroundColor: '#1a1a2e',
           borderRadius: '12px',
           padding: 'var(--spacing-lg)',
           width: '500px',
           maxWidth: '90vw',
-          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.3)',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
+          border: '1px solid var(--color-border)',
         }}
       >
         {/* Header */}
