@@ -934,6 +934,335 @@ class RealGitService {
     }
   }
 
+  // ========== REMOTE OPERATIONS ==========
+
+  /**
+   * Add a remote repository
+   */
+  async addRemote(name: string, url: string): Promise<void> {
+    if (!this.initialized) {
+      throw new Error('Git service not initialized');
+    }
+
+    await git.addRemote({
+      fs: fsAdapter,
+      dir: this.getRootDir(),
+      remote: name,
+      url,
+    });
+    console.log(`[addRemote] Added remote '${name}': ${url}`);
+  }
+
+  /**
+   * Remove a remote repository
+   */
+  async removeRemote(name: string): Promise<void> {
+    if (!this.initialized) {
+      throw new Error('Git service not initialized');
+    }
+
+    await git.deleteRemote({
+      fs: fsAdapter,
+      dir: this.getRootDir(),
+      remote: name,
+    });
+    console.log(`[removeRemote] Removed remote '${name}'`);
+  }
+
+  /**
+   * List all configured remotes
+   */
+  async getRemotes(): Promise<{ name: string; url: string }[]> {
+    if (!this.initialized) {
+      return [];
+    }
+
+    try {
+      const remotes = await git.listRemotes({
+        fs: fsAdapter,
+        dir: this.getRootDir(),
+      });
+      return remotes.map((r) => ({ name: r.remote, url: r.url }));
+    } catch (error) {
+      console.error('[getRemotes] Failed:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Check if a remote is configured
+   */
+  async hasRemote(name: string = 'origin'): Promise<boolean> {
+    const remotes = await this.getRemotes();
+    return remotes.some((r) => r.name === name);
+  }
+
+  /**
+   * Get stored authentication token from localStorage
+   */
+  private getAuthToken(): string | null {
+    try {
+      return localStorage.getItem('git-remote-token');
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Set authentication token in localStorage
+   */
+  setAuthToken(token: string): void {
+    try {
+      localStorage.setItem('git-remote-token', token);
+    } catch {
+      console.warn('[setAuthToken] Failed to store token');
+    }
+  }
+
+  /**
+   * Clear authentication token
+   */
+  clearAuthToken(): void {
+    try {
+      localStorage.removeItem('git-remote-token');
+    } catch {
+      // Ignore
+    }
+  }
+
+  /**
+   * Create auth callback for git operations
+   */
+  private getAuthCallback() {
+    const token = this.getAuthToken();
+    if (!token) return undefined;
+
+    return {
+      onAuth: () => ({
+        username: token,
+        password: 'x-oauth-basic', // GitHub PAT format
+      }),
+    };
+  }
+
+  /**
+   * Fetch from remote repository
+   */
+  async fetch(remote: string = 'origin', branch?: string): Promise<void> {
+    if (!this.initialized) {
+      throw new Error('Git service not initialized');
+    }
+
+    const auth = this.getAuthCallback();
+    if (!auth) {
+      throw new Error('No authentication token configured. Please set a token first.');
+    }
+
+    await git.fetch({
+      fs: fsAdapter,
+      http: await import('isomorphic-git/http/web').then((m) => m.default),
+      dir: this.getRootDir(),
+      remote,
+      ref: branch,
+      singleBranch: !!branch,
+      ...auth,
+    });
+    console.log(`[fetch] Fetched from ${remote}${branch ? '/' + branch : ''}`);
+  }
+
+  /**
+   * Push to remote repository
+   */
+  async push(remote: string = 'origin', branch: string = 'main'): Promise<void> {
+    if (!this.initialized) {
+      throw new Error('Git service not initialized');
+    }
+
+    const auth = this.getAuthCallback();
+    if (!auth) {
+      throw new Error('No authentication token configured. Please set a token first.');
+    }
+
+    await git.push({
+      fs: fsAdapter,
+      http: await import('isomorphic-git/http/web').then((m) => m.default),
+      dir: this.getRootDir(),
+      remote,
+      ref: branch,
+      ...auth,
+    });
+    console.log(`[push] Pushed to ${remote}/${branch}`);
+  }
+
+  /**
+   * Pull from remote repository (fetch + merge)
+   * Returns list of conflicted files if merge conflicts occur
+   */
+  async pull(
+    remote: string = 'origin',
+    branch: string = 'main'
+  ): Promise<{ success: boolean; conflicts: string[] }> {
+    if (!this.initialized) {
+      throw new Error('Git service not initialized');
+    }
+
+    const auth = this.getAuthCallback();
+    if (!auth) {
+      throw new Error('No authentication token configured. Please set a token first.');
+    }
+
+    try {
+      await git.pull({
+        fs: fsAdapter,
+        http: await import('isomorphic-git/http/web').then((m) => m.default),
+        dir: this.getRootDir(),
+        remote,
+        ref: branch,
+        author: { name: 'Tracyfy User', email: 'user@tracyfy.local' },
+        ...auth,
+      });
+      console.log(`[pull] Pulled from ${remote}/${branch}`);
+      return { success: true, conflicts: [] };
+    } catch (error: unknown) {
+      const err = error as { code?: string; data?: { filepaths?: string[] } };
+      if (err?.code === 'MergeConflictError' || err?.code === 'CheckoutConflictError') {
+        const conflicts = err.data?.filepaths || [];
+        console.warn(`[pull] Merge conflicts in: ${conflicts.join(', ')}`);
+        return { success: false, conflicts };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Pull only the counters folder (for ID synchronization)
+   * This is a lightweight operation for artifact creation
+   */
+  async pullCounters(remote: string = 'origin', branch: string = 'main'): Promise<boolean> {
+    if (!this.initialized || !(await this.hasRemote(remote))) {
+      return false; // No remote configured, skip sync
+    }
+
+    try {
+      // Fetch latest from remote
+      await this.fetch(remote, branch);
+
+      // Check if counters have changed
+      const remoteRef = `${remote}/${branch}`;
+      const localHead = await git.resolveRef({
+        fs: fsAdapter,
+        dir: this.getRootDir(),
+        ref: 'HEAD',
+      });
+      let remoteHead: string;
+      try {
+        remoteHead = await git.resolveRef({
+          fs: fsAdapter,
+          dir: this.getRootDir(),
+          ref: remoteRef,
+        });
+      } catch {
+        // Remote ref doesn't exist yet
+        return false;
+      }
+
+      if (localHead === remoteHead) {
+        return true; // Already up to date
+      }
+
+      // Get counter files from remote
+      const counterFiles = [
+        'counters/requirements.md',
+        'counters/useCases.md',
+        'counters/testCases.md',
+        'counters/information.md',
+        'counters/risks.md',
+        'counters/users.md',
+      ];
+
+      for (const file of counterFiles) {
+        try {
+          const content = await this.readFileAtCommit(file, remoteHead);
+          if (content) {
+            // Read local counter
+            const localContent = await fileSystemService.readFile(file);
+            const remoteValue = parseInt(content.trim(), 10) || 0;
+            const localValue = parseInt(localContent?.trim() || '0', 10);
+
+            // Take the higher value (merge strategy for counters)
+            if (remoteValue > localValue) {
+              await fileSystemService.writeFile(file, String(remoteValue));
+              console.log(`[pullCounters] Updated ${file}: ${localValue} -> ${remoteValue}`);
+            }
+          }
+        } catch {
+          // File might not exist on remote
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.warn('[pullCounters] Failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Push counters folder to remote (for ID synchronization)
+   */
+  async pushCounters(remote: string = 'origin', branch: string = 'main'): Promise<boolean> {
+    if (!this.initialized || !(await this.hasRemote(remote))) {
+      return false; // No remote configured, skip sync
+    }
+
+    try {
+      // Stage and commit counter files
+      const counterFiles = [
+        'counters/requirements.md',
+        'counters/useCases.md',
+        'counters/testCases.md',
+        'counters/information.md',
+        'counters/risks.md',
+        'counters/users.md',
+      ];
+      const cache = {};
+      let hasChanges = false;
+
+      for (const file of counterFiles) {
+        try {
+          const content = await fileSystemService.readFile(file);
+          if (content) {
+            await git.add({ fs: fsAdapter, dir: this.getRootDir(), filepath: file, cache });
+            hasChanges = true;
+          }
+        } catch {
+          // File might not exist
+        }
+      }
+
+      if (!hasChanges) {
+        return true; // Nothing to push
+      }
+
+      // Commit counter update
+      await git.commit({
+        fs: fsAdapter,
+        dir: this.getRootDir(),
+        message: 'Sync: Update artifact counters',
+        author: { name: 'Tracyfy Sync', email: 'sync@tracyfy.local' },
+        cache,
+      });
+
+      // Push to remote
+      await this.push(remote, branch);
+      console.log('[pushCounters] Pushed counter updates');
+      return true;
+    } catch (error) {
+      console.warn('[pushCounters] Failed:', error);
+      return false;
+    }
+  }
+
   /**
    * Check if initialized
    */

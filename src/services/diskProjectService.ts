@@ -244,6 +244,43 @@ class DiskProjectService {
     return ids;
   }
 
+  /**
+   * Get next artifact ID with remote sync (for collaboration)
+   *
+   * When a remote is configured, this method:
+   * 1. Pulls latest counters from remote
+   * 2. Increments local counter
+   * 3. Pushes updated counter to remote
+   *
+   * This ensures unique IDs across collaborators.
+   * Falls back to normal getNextId if no remote is configured.
+   */
+  async getNextIdWithSync(
+    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users' | 'risks'
+  ): Promise<string> {
+    try {
+      // Pull latest counters from remote (silently fails if no remote)
+      await realGitService.pullCounters();
+    } catch (err) {
+      console.warn('[getNextIdWithSync] Failed to pull counters:', err);
+      // Continue anyway - better to create with potential conflict than fail
+    }
+
+    // Get next ID locally
+    const id = await this.getNextId(type);
+
+    try {
+      // Push counter update to remote (background, don't block)
+      realGitService.pushCounters().catch((err) => {
+        console.warn('[getNextIdWithSync] Failed to push counters:', err);
+      });
+    } catch (err) {
+      console.warn('[getNextIdWithSync] Failed to initiate push:', err);
+    }
+
+    return id;
+  }
+
   // ============ PROJECT OPERATIONS ============
 
   /**

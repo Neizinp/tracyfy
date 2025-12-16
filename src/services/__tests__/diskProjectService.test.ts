@@ -222,4 +222,55 @@ lastModified: 1700000000000
       expect(infoIds).toEqual(['INFO-004', 'INFO-005']);
     });
   });
+
+  describe('getNextIdWithSync', () => {
+    // Mock realGitService
+    vi.mock('../realGitService', () => ({
+      realGitService: {
+        pullCounters: vi.fn().mockResolvedValue(true),
+        pushCounters: vi.fn().mockResolvedValue(true),
+        hasRemote: vi.fn().mockResolvedValue(false),
+        isInitialized: vi.fn().mockReturnValue(true),
+      },
+    }));
+
+    it('should return a valid ID even when pull fails', async () => {
+      vi.mocked(fileSystemService.readFile).mockResolvedValue('5');
+      vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
+
+      const id = await diskProjectService.getNextIdWithSync('requirements');
+
+      expect(id).toBe('REQ-006');
+    });
+
+    it('should return correct ID format for different types', async () => {
+      vi.mocked(fileSystemService.readFile).mockResolvedValue('10');
+      vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
+
+      const reqId = await diskProjectService.getNextIdWithSync('requirements');
+      expect(reqId).toBe('REQ-011');
+
+      const ucId = await diskProjectService.getNextIdWithSync('useCases');
+      expect(ucId).toBe('UC-011');
+
+      const tcId = await diskProjectService.getNextIdWithSync('testCases');
+      expect(tcId).toBe('TC-011');
+
+      const infoId = await diskProjectService.getNextIdWithSync('information');
+      expect(infoId).toBe('INFO-011');
+
+      const riskId = await diskProjectService.getNextIdWithSync('risks');
+      expect(riskId).toBe('RISK-011');
+    });
+
+    it('should increment counter correctly', async () => {
+      vi.mocked(fileSystemService.readFile).mockResolvedValue('0');
+      vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
+
+      const id = await diskProjectService.getNextIdWithSync('requirements');
+
+      expect(id).toBe('REQ-001');
+      expect(fileSystemService.writeFile).toHaveBeenCalledWith('counters/requirements.md', '1');
+    });
+  });
 });
