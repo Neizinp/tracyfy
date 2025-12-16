@@ -58,6 +58,7 @@ export function PendingChangesPanel() {
           | 'project'
           | 'asset'
           | 'risk'
+          | 'user'
           | 'saved-filter';
         if (typeStr === 'requirements') type = 'requirement';
         else if (typeStr === 'usecases') type = 'usecase';
@@ -66,6 +67,7 @@ export function PendingChangesPanel() {
         else if (typeStr === 'risks') type = 'risk';
         else if (typeStr === 'projects') type = 'project';
         else if (typeStr === 'assets') type = 'asset';
+        else if (typeStr === 'users') type = 'user';
         else if (typeStr === 'saved-filters') type = 'saved-filter';
         else return null;
 
@@ -134,6 +136,13 @@ export function PendingChangesPanel() {
         if (change.type === 'saved-filter') {
           defaults[change.id] =
             change.status === 'new' ? 'Add saved search' : 'Update saved search';
+          processedDefaultsRef.current.add(change.id);
+          continue;
+        }
+
+        // For users, use appropriate default
+        if (change.type === 'user') {
+          defaults[change.id] = change.status === 'new' ? 'Add user' : 'Update user';
           processedDefaultsRef.current.add(change.id);
           continue;
         }
@@ -297,9 +306,11 @@ export function PendingChangesPanel() {
                 ? 'Assets'
                 : change.type === 'risk'
                   ? 'Risks'
-                  : change.type === 'saved-filter'
-                    ? 'Saved Searches'
-                    : 'Information';
+                  : change.type === 'user'
+                    ? 'Users'
+                    : change.type === 'saved-filter'
+                      ? 'Saved Searches'
+                      : 'Information';
     if (!groupedChanges[typeName]) {
       groupedChanges[typeName] = [];
     }

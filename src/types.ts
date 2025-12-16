@@ -248,6 +248,7 @@ export interface ArtifactChange {
     | 'project'
     | 'asset'
     | 'risk'
+    | 'user'
     | 'saved-filter';
   title: string;
   status: 'new' | 'modified'; // No 'deleted' - artifacts can only be removed from projects
