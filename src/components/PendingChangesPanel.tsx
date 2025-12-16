@@ -57,7 +57,8 @@ export function PendingChangesPanel() {
           | 'information'
           | 'project'
           | 'asset'
-          | 'risk';
+          | 'risk'
+          | 'saved-filter';
         if (typeStr === 'requirements') type = 'requirement';
         else if (typeStr === 'usecases') type = 'usecase';
         else if (typeStr === 'testcases') type = 'testcase';
@@ -65,6 +66,7 @@ export function PendingChangesPanel() {
         else if (typeStr === 'risks') type = 'risk';
         else if (typeStr === 'projects') type = 'project';
         else if (typeStr === 'assets') type = 'asset';
+        else if (typeStr === 'saved-filters') type = 'saved-filter';
         else return null;
 
         const status = fs.status === 'new' ? 'new' : 'modified';
@@ -78,6 +80,8 @@ export function PendingChangesPanel() {
         } else if (type === 'asset') {
           // For assets, show a friendlier name
           title = `Image: ${filename}`;
+        } else if (type === 'saved-filter') {
+          title = `Saved Search: ${id}`;
         }
 
         return {
@@ -122,6 +126,14 @@ export function PendingChangesPanel() {
         // For assets (images), use "Picture added" as default
         if (change.type === 'asset') {
           defaults[change.id] = 'Picture added';
+          processedDefaultsRef.current.add(change.id);
+          continue;
+        }
+
+        // For saved filters, use appropriate default
+        if (change.type === 'saved-filter') {
+          defaults[change.id] =
+            change.status === 'new' ? 'Add saved search' : 'Update saved search';
           processedDefaultsRef.current.add(change.id);
           continue;
         }
@@ -285,7 +297,9 @@ export function PendingChangesPanel() {
                 ? 'Assets'
                 : change.type === 'risk'
                   ? 'Risks'
-                  : 'Information';
+                  : change.type === 'saved-filter'
+                    ? 'Saved Searches'
+                    : 'Information';
     if (!groupedChanges[typeName]) {
       groupedChanges[typeName] = [];
     }

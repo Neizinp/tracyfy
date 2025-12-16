@@ -1,15 +1,16 @@
 /**
- * Advanced Search Modal
+ * Advanced Search Modal - Query Builder Style
  *
- * Full-featured search and filter modal with saved searches.
- * Polished UI with modern styling.
+ * Vault-style search with Property → Condition → Value criteria rows.
+ * Users can dynamically add multiple search criteria.
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { X, Search, Save, Trash2, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Search, Save, Trash2, Plus, ChevronDown, ChevronUp, Filter } from 'lucide-react';
 import { useFileSystem } from '../app/providers';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { diskFilterService } from '../services/diskFilterService';
-import type { FilterState, SavedFilter } from '../types/filters';
+import type { SavedFilter } from '../types/filters';
 
 interface AdvancedSearchModalProps {
   isOpen: boolean;
@@ -19,6 +20,13 @@ interface AdvancedSearchModalProps {
 
 type ArtifactType = 'requirement' | 'useCase' | 'testCase' | 'information' | 'risk';
 
+interface SearchCriterion {
+  id: string;
+  property: string;
+  condition: string;
+  value: string;
+}
+
 interface SearchResult {
   id: string;
   title: string;
@@ -27,25 +35,100 @@ interface SearchResult {
   priority: string;
   description: string;
   dateCreated?: number;
+  [key: string]: unknown;
 }
 
-const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft', color: '#9ca3af' },
-  { value: 'active', label: 'Active', color: '#3b82f6' },
-  { value: 'approved', label: 'Approved', color: '#22c55e' },
-  { value: 'deprecated', label: 'Deprecated', color: '#ef4444' },
-  { value: 'passed', label: 'Passed', color: '#22c55e' },
-  { value: 'failed', label: 'Failed', color: '#ef4444' },
-  { value: 'blocked', label: 'Blocked', color: '#f59e0b' },
-  { value: 'pending', label: 'Pending', color: '#8b5cf6' },
+// All searchable properties with metadata
+const PROPERTY_OPTIONS = [
+  { value: 'any', label: 'Any Field', type: 'text' },
+  // Common
+  { value: 'id', label: 'ID', type: 'text' },
+  { value: 'title', label: 'Title', type: 'text' },
+  { value: 'description', label: 'Description', type: 'text' },
+  {
+    value: 'status',
+    label: 'Status',
+    type: 'select',
+    options: [
+      'draft',
+      'active',
+      'approved',
+      'deprecated',
+      'passed',
+      'failed',
+      'blocked',
+      'pending',
+    ],
+  },
+  {
+    value: 'priority',
+    label: 'Priority',
+    type: 'select',
+    options: ['critical', 'high', 'medium', 'low'],
+  },
+  { value: 'revision', label: 'Revision', type: 'text' },
+  { value: 'dateCreated', label: 'Created Date', type: 'date' },
+  { value: 'lastModified', label: 'Modified Date', type: 'date' },
+  // Requirement-specific
+  { value: 'text', label: 'Requirement Text', type: 'text' },
+  { value: 'rationale', label: 'Rationale', type: 'text' },
+  { value: 'author', label: 'Author', type: 'text' },
+  { value: 'verificationMethod', label: 'Verification Method', type: 'text' },
+  { value: 'comments', label: 'Comments', type: 'text' },
+  // Use Case-specific
+  { value: 'actor', label: 'Actor', type: 'text' },
+  { value: 'preconditions', label: 'Preconditions', type: 'text' },
+  { value: 'postconditions', label: 'Postconditions', type: 'text' },
+  { value: 'mainFlow', label: 'Main Flow', type: 'text' },
+  // Test Case-specific
+  { value: 'steps', label: 'Test Steps', type: 'text' },
+  { value: 'expectedResult', label: 'Expected Result', type: 'text' },
+  // Risk-specific
+  { value: 'category', label: 'Risk Category', type: 'text' },
+  {
+    value: 'probability',
+    label: 'Probability',
+    type: 'select',
+    options: ['very-low', 'low', 'medium', 'high', 'very-high'],
+  },
+  {
+    value: 'impact',
+    label: 'Impact',
+    type: 'select',
+    options: ['negligible', 'minor', 'moderate', 'major', 'severe'],
+  },
+  { value: 'mitigation', label: 'Mitigation', type: 'text' },
+  { value: 'owner', label: 'Owner', type: 'text' },
+  // Artifact type filter
+  {
+    value: '_type',
+    label: 'Artifact Type',
+    type: 'select',
+    options: ['requirement', 'useCase', 'testCase', 'information', 'risk'],
+  },
 ];
 
-const PRIORITY_OPTIONS = [
-  { value: 'critical', label: 'Critical', color: '#dc2626' },
-  { value: 'high', label: 'High', color: '#ea580c' },
-  { value: 'medium', label: 'Medium', color: '#eab308' },
-  { value: 'low', label: 'Low', color: '#22c55e' },
-];
+const CONDITIONS = {
+  text: [
+    { value: 'contains', label: 'Contains' },
+    { value: 'equals', label: 'Equals' },
+    { value: 'startsWith', label: 'Starts with' },
+    { value: 'endsWith', label: 'Ends with' },
+    { value: 'notContains', label: 'Does not contain' },
+    { value: 'isEmpty', label: 'Is empty' },
+    { value: 'isNotEmpty', label: 'Is not empty' },
+  ],
+  select: [
+    { value: 'equals', label: 'Is' },
+    { value: 'notEquals', label: 'Is not' },
+  ],
+  date: [
+    { value: 'equals', label: 'On' },
+    { value: 'before', label: 'Before' },
+    { value: 'after', label: 'After' },
+    { value: 'between', label: 'Between' },
+  ],
+};
 
 const TYPE_CONFIG: Record<ArtifactType, { label: string; color: string; bgColor: string }> = {
   requirement: { label: 'REQ', color: '#3b82f6', bgColor: 'rgba(59, 130, 246, 0.15)' },
@@ -55,18 +138,23 @@ const TYPE_CONFIG: Record<ArtifactType, { label: string; color: string; bgColor:
   risk: { label: 'RSK', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)' },
 };
 
-const chipStyle = (selected: boolean, color: string): React.CSSProperties => ({
-  padding: '4px 10px',
-  borderRadius: '16px',
-  border: `1.5px solid ${selected ? color : 'var(--color-border)'}`,
-  fontSize: '12px',
-  fontWeight: 500,
-  cursor: 'pointer',
-  backgroundColor: selected ? `${color}20` : 'transparent',
-  color: selected ? color : 'var(--color-text-secondary)',
-  transition: 'all 0.15s ease',
-  whiteSpace: 'nowrap' as const,
-});
+const selectStyle: React.CSSProperties = {
+  padding: '8px 12px',
+  borderRadius: '6px',
+  border: '1px solid var(--color-border)',
+  backgroundColor: 'var(--color-bg-app)',
+  color: 'var(--color-text-primary)',
+  fontSize: '13px',
+  minWidth: '140px',
+};
+
+const inputStyle: React.CSSProperties = {
+  ...selectStyle,
+  flex: 1,
+  minWidth: '120px',
+};
+
+let criterionIdCounter = 0;
 
 export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
   isOpen,
@@ -74,209 +162,217 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
   onNavigateToArtifact,
 }) => {
   const { requirements, useCases, testCases, information, risks } = useFileSystem();
+  const { definitions: customAttrDefs } = useCustomAttributes();
 
-  // Filter state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTypes, setSelectedTypes] = useState<ArtifactType[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [showFilters, setShowFilters] = useState(true);
+  // Query builder criteria
+  const [criteria, setCriteria] = useState<SearchCriterion[]>([
+    { id: String(++criterionIdCounter), property: 'any', condition: 'contains', value: '' },
+  ]);
+  const [showCriteria, setShowCriteria] = useState(true);
 
   // Saved filters
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
   const [saveFilterName, setSaveFilterName] = useState('');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
 
-  // Load saved filters
+  // Build property options including custom attributes
+  const allPropertyOptions = useMemo(() => {
+    const customProps = customAttrDefs.map((def) => ({
+      value: `custom_${def.id}`,
+      label: `[Custom] ${def.name}`,
+      type: def.type === 'dropdown' ? 'select' : def.type === 'date' ? 'date' : 'text',
+      options: def.type === 'dropdown' ? def.options : undefined,
+    }));
+    return [...PROPERTY_OPTIONS, ...customProps];
+  }, [customAttrDefs]);
+
   useEffect(() => {
     if (isOpen) {
       diskFilterService.getAllFilters().then(setSavedFilters);
     }
   }, [isOpen]);
 
-  // Build current filter state
-  const currentFilters: FilterState = useMemo(
-    () => ({
-      searchQuery: searchQuery || undefined,
-      status: selectedStatuses.length > 0 ? selectedStatuses : undefined,
-      priority: selectedPriorities.length > 0 ? selectedPriorities : undefined,
-      dateCreatedFrom: dateFrom ? new Date(dateFrom).getTime() : undefined,
-      dateCreatedTo: dateTo ? new Date(dateTo).getTime() : undefined,
-    }),
-    [searchQuery, selectedStatuses, selectedPriorities, dateFrom, dateTo]
+  // Add new criterion
+  const addCriterion = useCallback(() => {
+    setCriteria((prev) => [
+      ...prev,
+      { id: String(++criterionIdCounter), property: 'any', condition: 'contains', value: '' },
+    ]);
+  }, []);
+
+  // Remove criterion
+  const removeCriterion = useCallback((id: string) => {
+    setCriteria((prev) => (prev.length > 1 ? prev.filter((c) => c.id !== id) : prev));
+  }, []);
+
+  // Update criterion
+  const updateCriterion = useCallback(
+    (id: string, field: keyof SearchCriterion, value: string) => {
+      setCriteria((prev) =>
+        prev.map((c) => {
+          if (c.id !== id) return c;
+          const updated = { ...c, [field]: value };
+          // Reset condition when property type changes
+          if (field === 'property') {
+            const prop = allPropertyOptions.find((p) => p.value === value);
+            const type = prop?.type || 'text';
+            updated.condition =
+              CONDITIONS[type as keyof typeof CONDITIONS]?.[0]?.value || 'contains';
+            updated.value = '';
+          }
+          return updated;
+        })
+      );
+    },
+    [allPropertyOptions]
   );
 
-  // Count active filters
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (selectedTypes.length > 0) count++;
-    if (selectedStatuses.length > 0) count++;
-    if (selectedPriorities.length > 0) count++;
-    if (dateFrom || dateTo) count++;
-    return count;
-  }, [selectedTypes, selectedStatuses, selectedPriorities, dateFrom, dateTo]);
+  // Check if value matches criterion
+  const matchesCriterion = useCallback(
+    (fieldValue: unknown, criterion: SearchCriterion): boolean => {
+      const { condition, value } = criterion;
 
-  // Apply filters and get results
+      if (condition === 'isEmpty') return !fieldValue || String(fieldValue).trim() === '';
+      if (condition === 'isNotEmpty') return !!fieldValue && String(fieldValue).trim() !== '';
+
+      if (!value && condition !== 'isEmpty' && condition !== 'isNotEmpty') return true; // Empty value = no filter
+
+      const strValue = String(fieldValue || '').toLowerCase();
+      const searchValue = value.toLowerCase();
+
+      switch (condition) {
+        case 'contains':
+          return strValue.includes(searchValue);
+        case 'equals':
+          return strValue === searchValue;
+        case 'notEquals':
+          return strValue !== searchValue;
+        case 'startsWith':
+          return strValue.startsWith(searchValue);
+        case 'endsWith':
+          return strValue.endsWith(searchValue);
+        case 'notContains':
+          return !strValue.includes(searchValue);
+        case 'before':
+        case 'after': {
+          if (!fieldValue) return false;
+          // Convert timestamp to date for comparison (handle both timestamps and date strings)
+          const fieldDate =
+            typeof fieldValue === 'number'
+              ? new Date(fieldValue).toISOString().split('T')[0]
+              : String(fieldValue).split('T')[0];
+          const searchDate = value; // Already in YYYY-MM-DD from date input
+          return condition === 'before' ? fieldDate < searchDate : fieldDate > searchDate;
+        }
+        default:
+          return strValue.includes(searchValue);
+      }
+    },
+    []
+  );
+
+  // Get field value from artifact
+  const getFieldValue = useCallback((artifact: SearchResult, property: string): unknown => {
+    if (property === 'any') {
+      return `${artifact.id} ${artifact.title} ${artifact.description || ''} ${artifact.text || ''} ${artifact.rationale || ''}`;
+    }
+    if (property === '_type') return artifact.type;
+    if (property.startsWith('custom_')) {
+      const attrId = property.replace('custom_', '');
+      const customAttrs = artifact.customAttributes as
+        | Array<{ attributeId: string; value: unknown }>
+        | undefined;
+      const attr = customAttrs?.find((a) => a.attributeId === attrId);
+      return attr?.value;
+    }
+    return artifact[property];
+  }, []);
+
+  // Apply all criteria and get results
   const results: SearchResult[] = useMemo(() => {
     const allArtifacts: SearchResult[] = [];
 
-    const matchesFilters = (
-      artifact: {
-        id: string;
-        title: string;
-        status: string;
-        priority: string;
-        description?: string;
-        dateCreated?: number;
-      },
-      type: ArtifactType
-    ): boolean => {
-      if (selectedTypes.length > 0 && !selectedTypes.includes(type)) return false;
-      if (selectedStatuses.length > 0 && !selectedStatuses.includes(artifact.status)) return false;
-      if (selectedPriorities.length > 0 && !selectedPriorities.includes(artifact.priority))
-        return false;
-      if (dateFrom && artifact.dateCreated && artifact.dateCreated < new Date(dateFrom).getTime())
-        return false;
-      if (dateTo && artifact.dateCreated && artifact.dateCreated > new Date(dateTo).getTime())
-        return false;
-
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchesText =
-          artifact.id.toLowerCase().includes(query) ||
-          artifact.title.toLowerCase().includes(query) ||
-          (artifact.description || '').toLowerCase().includes(query);
-        if (!matchesText) return false;
-      }
-
-      return true;
-    };
-
+    // Collect all artifacts
     requirements
       .filter((r) => !r.isDeleted)
       .forEach((r) => {
-        if (matchesFilters(r, 'requirement')) {
-          allArtifacts.push({
-            id: r.id,
-            title: r.title,
-            type: 'requirement',
-            status: r.status,
-            priority: r.priority,
-            description: r.description,
-            dateCreated: r.dateCreated,
-          });
-        }
+        allArtifacts.push({ ...r, type: 'requirement' as ArtifactType });
       });
-
     useCases
       .filter((u) => !u.isDeleted)
       .forEach((u) => {
-        if (matchesFilters(u, 'useCase')) {
-          allArtifacts.push({
-            id: u.id,
-            title: u.title,
-            type: 'useCase',
-            status: u.status,
-            priority: u.priority,
-            description: u.description,
-          });
-        }
+        allArtifacts.push({ ...u, type: 'useCase' as ArtifactType });
       });
-
     testCases
       .filter((t) => !t.isDeleted)
       .forEach((t) => {
-        if (matchesFilters(t, 'testCase')) {
-          allArtifacts.push({
-            id: t.id,
-            title: t.title,
-            type: 'testCase',
-            status: t.status,
-            priority: t.priority,
-            description: t.description,
-          });
-        }
+        allArtifacts.push({ ...t, type: 'testCase' as ArtifactType });
       });
-
     information
       .filter((i) => !i.isDeleted)
       .forEach((i) => {
-        if (matchesFilters({ ...i, status: 'active', priority: 'medium' }, 'information')) {
-          allArtifacts.push({
-            id: i.id,
-            title: i.title,
-            type: 'information',
-            status: 'active',
-            priority: 'medium',
-            description: i.content,
-          });
-        }
+        allArtifacts.push({
+          ...i,
+          type: 'information' as ArtifactType,
+          status: 'active',
+          priority: 'medium',
+          description: i.content,
+        });
       });
-
     risks
       .filter((r) => !r.isDeleted)
       .forEach((r) => {
-        if (matchesFilters({ ...r, priority: r.impact }, 'risk')) {
-          allArtifacts.push({
-            id: r.id,
-            title: r.title,
-            type: 'risk',
-            status: r.status,
-            priority: r.impact,
-            description: r.description,
-          });
-        }
+        allArtifacts.push({ ...r, type: 'risk' as ArtifactType, priority: r.impact });
       });
 
-    return allArtifacts;
+    // Filter by all criteria (AND logic)
+    return allArtifacts.filter((artifact) => {
+      return criteria.every((criterion) => {
+        if (
+          !criterion.value &&
+          criterion.condition !== 'isEmpty' &&
+          criterion.condition !== 'isNotEmpty'
+        ) {
+          return true; // Empty criteria = no filter
+        }
+        const fieldValue = getFieldValue(artifact, criterion.property);
+        return matchesCriterion(fieldValue, criterion);
+      });
+    });
   }, [
     requirements,
     useCases,
     testCases,
     information,
     risks,
-    searchQuery,
-    selectedTypes,
-    selectedStatuses,
-    selectedPriorities,
-    dateFrom,
-    dateTo,
+    criteria,
+    getFieldValue,
+    matchesCriterion,
   ]);
 
-  const handleClearFilters = useCallback(() => {
-    setSearchQuery('');
-    setSelectedTypes([]);
-    setSelectedStatuses([]);
-    setSelectedPriorities([]);
-    setDateFrom('');
-    setDateTo('');
+  const handleClearAll = useCallback(() => {
+    setCriteria([
+      { id: String(++criterionIdCounter), property: 'any', condition: 'contains', value: '' },
+    ]);
   }, []);
 
   const handleSaveFilter = useCallback(async () => {
     if (!saveFilterName.trim()) return;
-    await diskFilterService.createFilter(saveFilterName.trim(), currentFilters);
-    const filters = await diskFilterService.getAllFilters();
-    setSavedFilters(filters);
+    // Save criteria as filter
+    const filterState = {
+      criteria: criteria.filter((c) => c.value || c.condition.includes('Empty')),
+    };
+    await diskFilterService.createFilter(saveFilterName.trim(), filterState as any);
+    setSavedFilters(await diskFilterService.getAllFilters());
     setSaveFilterName('');
     setShowSaveDialog(false);
-  }, [saveFilterName, currentFilters]);
+  }, [saveFilterName, criteria]);
 
   const handleLoadFilter = useCallback((filter: SavedFilter) => {
-    setSearchQuery(filter.filters.searchQuery || '');
-    setSelectedStatuses(filter.filters.status || []);
-    setSelectedPriorities(filter.filters.priority || []);
-    setDateFrom(
-      filter.filters.dateCreatedFrom
-        ? new Date(filter.filters.dateCreatedFrom).toISOString().split('T')[0]
-        : ''
-    );
-    setDateTo(
-      filter.filters.dateCreatedTo
-        ? new Date(filter.filters.dateCreatedTo).toISOString().split('T')[0]
-        : ''
-    );
+    const saved = filter.filters as any;
+    if (saved.criteria) {
+      setCriteria(saved.criteria);
+    }
   }, []);
 
   const handleDeleteFilter = useCallback(async (id: string) => {
@@ -292,11 +388,11 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
     [onNavigateToArtifact, onClose]
   );
 
-  const toggleValue = <T,>(arr: T[], value: T, setter: (v: T[]) => void) => {
-    setter(arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]);
-  };
-
   if (!isOpen) return null;
+
+  const activeCriteriaCount = criteria.filter(
+    (c) => c.value || c.condition.includes('Empty')
+  ).length;
 
   return (
     <div
@@ -308,7 +404,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'center',
-        paddingTop: '8vh',
+        paddingTop: '6vh',
         zIndex: 1000,
       }}
       onClick={onClose}
@@ -318,8 +414,8 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
           backgroundColor: 'var(--color-bg-card)',
           borderRadius: '16px',
           width: '95%',
-          maxWidth: '800px',
-          maxHeight: '80vh',
+          maxWidth: '950px',
+          maxHeight: '85vh',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -328,55 +424,47 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Search Header */}
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Search size={22} style={{ color: 'var(--color-accent)', flexShrink: 0 }} />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search artifacts by ID, title, or description..."
-              autoFocus
-              style={{
-                flex: 1,
-                padding: '10px 0',
-                border: 'none',
-                backgroundColor: 'transparent',
-                fontSize: '16px',
-                color: 'var(--color-text-primary)',
-                outline: 'none',
-              }}
-            />
-            <button
-              onClick={onClose}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--color-text-muted)',
-                padding: '4px',
-                borderRadius: '6px',
-              }}
-            >
-              <X size={20} />
-            </button>
-          </div>
-        </div>
-
-        {/* Filter Toggle & Actions */}
+        {/* Header */}
         <div
           style={{
-            padding: '10px 20px',
+            padding: '16px 20px',
             borderBottom: '1px solid var(--color-border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Search size={22} style={{ color: 'var(--color-accent)' }} />
+            <span style={{ fontSize: '18px', fontWeight: 600 }}>Advanced Search</span>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-text-muted)',
+              padding: '4px',
+            }}
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Criteria Toggle */}
+        <div
+          style={{
+            padding: '10px 20px',
             backgroundColor: 'var(--color-bg-secondary)',
+            borderBottom: '1px solid var(--color-border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
           <button
-            onClick={() => setShowFilters(!showFilters)}
+            onClick={() => setShowCriteria(!showCriteria)}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -390,8 +478,8 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
             }}
           >
             <Filter size={14} />
-            Filters
-            {activeFilterCount > 0 && (
+            Search Criteria
+            {activeCriteriaCount > 0 && (
               <span
                 style={{
                   backgroundColor: 'var(--color-accent)',
@@ -402,29 +490,27 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                   fontWeight: 600,
                 }}
               >
-                {activeFilterCount}
+                {activeCriteriaCount}
               </span>
             )}
-            {showFilters ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {showCriteria ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
 
           <div style={{ display: 'flex', gap: '8px' }}>
-            {activeFilterCount > 0 && (
-              <button
-                onClick={handleClearFilters}
-                style={{
-                  padding: '5px 10px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'transparent',
-                  color: 'var(--color-text-secondary)',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                }}
-              >
-                Clear All
-              </button>
-            )}
+            <button
+              onClick={handleClearAll}
+              style={{
+                padding: '5px 10px',
+                borderRadius: '6px',
+                border: '1px solid var(--color-border)',
+                backgroundColor: 'transparent',
+                color: 'var(--color-text-secondary)',
+                fontSize: '12px',
+                cursor: 'pointer',
+              }}
+            >
+              Clear All
+            </button>
             <button
               onClick={() => setShowSaveDialog(true)}
               style={{
@@ -441,171 +527,191 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                 gap: '4px',
               }}
             >
-              <Save size={12} />
-              Save Search
+              <Save size={12} /> Save Search
             </button>
           </div>
         </div>
 
-        {/* Filters Panel */}
-        {showFilters && (
+        {/* Criteria Builder */}
+        {showCriteria && (
           <div
             style={{
               padding: '16px 20px',
               borderBottom: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-secondary)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '14px',
             }}
           >
-            {/* Artifact Types */}
-            <div>
-              <div
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: 'var(--color-text-muted)',
-                  marginBottom: '8px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                Artifact Type
-              </div>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {(
-                  Object.entries(TYPE_CONFIG) as [
-                    ArtifactType,
-                    (typeof TYPE_CONFIG)[ArtifactType],
-                  ][]
-                ).map(([type, config]) => (
-                  <button
-                    key={type}
-                    onClick={() => toggleValue(selectedTypes, type, setSelectedTypes)}
-                    style={chipStyle(selectedTypes.includes(type), config.color)}
-                  >
-                    {config.label} -{' '}
-                    {type === 'requirement'
-                      ? 'Requirements'
-                      : type === 'useCase'
-                        ? 'Use Cases'
-                        : type === 'testCase'
-                          ? 'Test Cases'
-                          : type === 'information'
-                            ? 'Information'
-                            : 'Risks'}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {criteria.map((criterion, index) => {
+              const prop = allPropertyOptions.find((p) => p.value === criterion.property);
+              const propType = prop?.type || 'text';
+              const conditions = CONDITIONS[propType as keyof typeof CONDITIONS] || CONDITIONS.text;
 
-            {/* Status */}
-            <div>
-              <div
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: 'var(--color-text-muted)',
-                  marginBottom: '8px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                Status
-              </div>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {STATUS_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => toggleValue(selectedStatuses, opt.value, setSelectedStatuses)}
-                    style={chipStyle(selectedStatuses.includes(opt.value), opt.color)}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Priority */}
-            <div>
-              <div
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: 'var(--color-text-muted)',
-                  marginBottom: '8px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                Priority
-              </div>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {PRIORITY_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() =>
-                      toggleValue(selectedPriorities, opt.value, setSelectedPriorities)
-                    }
-                    style={chipStyle(selectedPriorities.includes(opt.value), opt.color)}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Date Range */}
-            <div>
-              <div
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: 'var(--color-text-muted)',
-                  marginBottom: '8px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                Created Date
-              </div>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
+              return (
+                <div
+                  key={criterion.id}
                   style={{
-                    padding: '6px 10px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    fontSize: '13px',
+                    display: 'flex',
+                    gap: '10px',
+                    alignItems: 'center',
+                    marginBottom: '10px',
                   }}
-                />
-                <span style={{ color: 'var(--color-text-muted)', fontSize: '12px' }}>to</span>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  style={{
-                    padding: '6px 10px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    fontSize: '13px',
-                  }}
-                />
-              </div>
-            </div>
+                >
+                  {index > 0 && (
+                    <span
+                      style={{ fontSize: '12px', color: 'var(--color-text-muted)', width: '30px' }}
+                    >
+                      AND
+                    </span>
+                  )}
+                  {index === 0 && <span style={{ width: '30px' }} />}
+
+                  {/* Property selector */}
+                  <select
+                    value={criterion.property}
+                    onChange={(e) => updateCriterion(criterion.id, 'property', e.target.value)}
+                    style={selectStyle}
+                  >
+                    <optgroup label="Common">
+                      {PROPERTY_OPTIONS.slice(0, 9).map((p) => (
+                        <option key={p.value} value={p.value}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Requirement">
+                      {PROPERTY_OPTIONS.slice(9, 14).map((p) => (
+                        <option key={p.value} value={p.value}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Use Case">
+                      {PROPERTY_OPTIONS.slice(14, 18).map((p) => (
+                        <option key={p.value} value={p.value}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Test Case">
+                      {PROPERTY_OPTIONS.slice(18, 20).map((p) => (
+                        <option key={p.value} value={p.value}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Risk">
+                      {PROPERTY_OPTIONS.slice(20, 25).map((p) => (
+                        <option key={p.value} value={p.value}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Filter">
+                      {PROPERTY_OPTIONS.slice(25).map((p) => (
+                        <option key={p.value} value={p.value}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    {customAttrDefs.length > 0 && (
+                      <optgroup label="Custom Attributes">
+                        {customAttrDefs.map((def) => (
+                          <option key={def.id} value={`custom_${def.id}`}>
+                            [Custom] {def.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+
+                  {/* Condition selector */}
+                  <select
+                    value={criterion.condition}
+                    onChange={(e) => updateCriterion(criterion.id, 'condition', e.target.value)}
+                    style={{ ...selectStyle, minWidth: '120px' }}
+                  >
+                    {conditions.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Value input */}
+                  {!criterion.condition.includes('Empty') &&
+                    (prop?.options ? (
+                      <select
+                        value={criterion.value}
+                        onChange={(e) => updateCriterion(criterion.id, 'value', e.target.value)}
+                        style={inputStyle}
+                      >
+                        <option value="">Select...</option>
+                        {prop.options.map((o) => (
+                          <option key={o} value={o}>
+                            {o}
+                          </option>
+                        ))}
+                      </select>
+                    ) : propType === 'date' ? (
+                      <input
+                        type="date"
+                        value={criterion.value}
+                        onChange={(e) => updateCriterion(criterion.id, 'value', e.target.value)}
+                        style={inputStyle}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={criterion.value}
+                        onChange={(e) => updateCriterion(criterion.id, 'value', e.target.value)}
+                        placeholder="Enter value..."
+                        style={inputStyle}
+                      />
+                    ))}
+
+                  {/* Remove button */}
+                  <button
+                    onClick={() => removeCriterion(criterion.id)}
+                    disabled={criteria.length === 1}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: criteria.length > 1 ? 'pointer' : 'default',
+                      color:
+                        criteria.length > 1 ? 'var(--color-text-muted)' : 'var(--color-border)',
+                      padding: '4px',
+                    }}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              );
+            })}
+
+            <button
+              onClick={addCriterion}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                marginTop: '4px',
+                background: 'none',
+                border: '1px dashed var(--color-border)',
+                borderRadius: '6px',
+                padding: '8px 14px',
+                cursor: 'pointer',
+                color: 'var(--color-text-secondary)',
+                fontSize: '13px',
+              }}
+            >
+              <Plus size={14} /> Add Criterion
+            </button>
           </div>
         )}
 
         {/* Results & Saved Searches */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 }}>
-          {/* Results List */}
+          {/* Results */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
             <div
               style={{
@@ -629,7 +735,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                 <div style={{ fontSize: '14px' }}>No artifacts match your search criteria</div>
               </div>
             ) : (
-              results.map((result) => {
+              results.slice(0, 100).map((result) => {
                 const typeConfig = TYPE_CONFIG[result.type];
                 return (
                   <div
@@ -662,7 +768,6 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                           borderRadius: '4px',
                           backgroundColor: typeConfig.bgColor,
                           color: typeConfig.color,
-                          letterSpacing: '0.3px',
                         }}
                       >
                         {result.id}
@@ -676,6 +781,15 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                       >
                         {result.title}
                       </span>
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          color: 'var(--color-text-muted)',
+                          marginLeft: 'auto',
+                        }}
+                      >
+                        {result.status}
+                      </span>
                     </div>
                     {result.description && (
                       <div
@@ -686,7 +800,6 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
-                          maxWidth: '100%',
                         }}
                       >
                         {result.description}
@@ -696,9 +809,21 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                 );
               })
             )}
+            {results.length > 100 && (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '10px',
+                  color: 'var(--color-text-muted)',
+                  fontSize: '12px',
+                }}
+              >
+                Showing first 100 of {results.length} results
+              </div>
+            )}
           </div>
 
-          {/* Saved Searches Sidebar */}
+          {/* Saved Searches */}
           <div
             style={{
               width: '180px',
@@ -729,7 +854,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                   padding: '20px 0',
                 }}
               >
-                No saved searches yet
+                No saved searches
               </div>
             ) : (
               savedFilters.map((filter) => (
@@ -745,7 +870,6 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                     cursor: 'pointer',
                     backgroundColor: 'var(--color-bg-secondary)',
                     fontSize: '13px',
-                    transition: 'background-color 0.15s',
                   }}
                   onClick={() => handleLoadFilter(filter)}
                   onMouseEnter={(e) =>
@@ -779,8 +903,6 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                       padding: '2px',
                       opacity: 0.6,
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.6')}
                   >
                     <Trash2 size={12} />
                   </button>
@@ -790,13 +912,13 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
           </div>
         </div>
 
-        {/* Save Filter Dialog */}
+        {/* Save Dialog */}
         {showSaveDialog && (
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.4)',
+              backgroundColor: 'rgba(0,0,0,0.4)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -821,7 +943,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                 type="text"
                 value={saveFilterName}
                 onChange={(e) => setSaveFilterName(e.target.value)}
-                placeholder="Enter a name for this search..."
+                placeholder="Enter search name..."
                 autoFocus
                 style={{
                   width: '100%',
