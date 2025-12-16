@@ -1,4 +1,5 @@
 import type { Requirement, UseCase, TestCase, Information, User, Project, Risk } from '../types';
+import type { CustomAttributeDefinition } from '../types/customAttributes';
 
 /**
  * Convert a JavaScript object to YAML frontmatter string
@@ -204,6 +205,7 @@ export function requirementToMarkdown(requirement: Requirement): string {
     approvalDate: requirement.approvalDate || null,
     isDeleted: requirement.isDeleted || false,
     deletedAt: requirement.deletedAt || null,
+    customAttributes: requirement.customAttributes || [],
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -276,6 +278,7 @@ export function markdownToRequirement(markdown: string): Requirement {
     isDeleted: frontmatter.isDeleted || false,
     deletedAt: frontmatter.deletedAt || undefined,
     revision: frontmatter.revision || '01',
+    customAttributes: frontmatter.customAttributes || [],
   };
 }
 
@@ -294,6 +297,7 @@ export function convertUseCaseToMarkdown(useCase: UseCase): string {
     linkedArtifacts: useCase.linkedArtifacts || [],
     isDeleted: useCase.isDeleted || false,
     deletedAt: useCase.deletedAt || null,
+    customAttributes: useCase.customAttributes || [],
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -366,6 +370,7 @@ export function markdownToUseCase(markdown: string): UseCase {
     isDeleted: frontmatter.isDeleted || false,
     deletedAt: frontmatter.deletedAt || undefined,
     revision: frontmatter.revision || '01',
+    customAttributes: frontmatter.customAttributes || [],
   };
 }
 
@@ -387,6 +392,7 @@ export function testCaseToMarkdown(testCase: TestCase): string {
     linkedArtifacts: testCase.linkedArtifacts || [],
     isDeleted: testCase.isDeleted || false,
     deletedAt: testCase.deletedAt || null,
+    customAttributes: testCase.customAttributes || [],
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -447,6 +453,7 @@ export function markdownToTestCase(markdown: string): TestCase {
     isDeleted: frontmatter.isDeleted || false,
     deletedAt: frontmatter.deletedAt || undefined,
     revision: frontmatter.revision || '01',
+    customAttributes: frontmatter.customAttributes || [],
   };
 }
 
@@ -464,6 +471,7 @@ export function informationToMarkdown(information: Information): string {
     linkedArtifacts: information.linkedArtifacts || [],
     isDeleted: information.isDeleted || false,
     deletedAt: information.deletedAt || null,
+    customAttributes: information.customAttributes || [],
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -497,6 +505,7 @@ export function markdownToInformation(markdown: string): Information {
     isDeleted: frontmatter.isDeleted || false,
     deletedAt: frontmatter.deletedAt || undefined,
     revision: frontmatter.revision || '01',
+    customAttributes: frontmatter.customAttributes || [],
   };
 }
 
@@ -606,6 +615,7 @@ export function riskToMarkdown(risk: Risk): string {
     linkedArtifacts: risk.linkedArtifacts || [],
     isDeleted: risk.isDeleted || false,
     deletedAt: risk.deletedAt || null,
+    customAttributes: risk.customAttributes || [],
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -671,5 +681,57 @@ export function markdownToRisk(markdown: string): Risk {
     isDeleted: frontmatter.isDeleted || false,
     deletedAt: frontmatter.deletedAt || undefined,
     revision: frontmatter.revision || '01',
+    customAttributes: frontmatter.customAttributes || [],
+  };
+}
+
+/**
+ * Convert a CustomAttributeDefinition to Markdown with YAML frontmatter
+ */
+export function customAttributeDefinitionToMarkdown(def: CustomAttributeDefinition): string {
+  const frontmatter = {
+    id: def.id,
+    name: def.name,
+    type: def.type,
+    description: def.description || '',
+    required: def.required || false,
+    defaultValue: def.defaultValue ?? null,
+    options: def.options || [],
+    appliesTo: def.appliesTo,
+    dateCreated: def.dateCreated,
+    lastModified: def.lastModified,
+    isDeleted: def.isDeleted || false,
+    deletedAt: def.deletedAt || null,
+  };
+
+  const yaml = objectToYaml(frontmatter);
+
+  const body = `# ${def.name}
+
+${def.description || 'No description provided.'}
+`.trim();
+
+  return `${yaml}\n\n${body}`;
+}
+
+/**
+ * Parse Markdown content into a CustomAttributeDefinition object
+ */
+export function markdownToCustomAttributeDefinition(markdown: string): CustomAttributeDefinition {
+  const { frontmatter } = parseYamlFrontmatter(markdown);
+
+  return {
+    id: frontmatter.id || '',
+    name: frontmatter.name || '',
+    type: frontmatter.type || 'text',
+    description: frontmatter.description || undefined,
+    required: frontmatter.required || false,
+    defaultValue: frontmatter.defaultValue ?? undefined,
+    options: frontmatter.options || undefined,
+    appliesTo: frontmatter.appliesTo || [],
+    dateCreated: frontmatter.dateCreated || Date.now(),
+    lastModified: frontmatter.lastModified || Date.now(),
+    isDeleted: frontmatter.isDeleted || false,
+    deletedAt: frontmatter.deletedAt || undefined,
   };
 }

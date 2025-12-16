@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import type { Requirement, ArtifactLink } from '../types';
+import type { CustomAttributeValue } from '../types/customAttributes';
 import { MarkdownEditor } from './MarkdownEditor';
 import { formatDateTime } from '../utils/dateUtils';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI, useGlobalState, useUser } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
+import { CustomAttributeEditor } from './CustomAttributeEditor';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 
 interface RequirementModalProps {
@@ -17,7 +20,7 @@ interface RequirementModalProps {
   onDelete: (id: string) => void;
 }
 
-type Tab = 'overview' | 'details' | 'relationships' | 'comments' | 'history';
+type Tab = 'overview' | 'details' | 'relationships' | 'comments' | 'customFields' | 'history';
 
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
@@ -47,7 +50,6 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
   const { currentUser } = useUser();
   const isEditMode = requirement !== null;
 
-  // Get links using the new link service
   const {
     outgoingLinks,
     incomingLinks,
@@ -55,6 +57,9 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
   } = useLinkService({
     artifactId: requirement?.id,
   });
+
+  // Get custom attribute definitions
+  const { definitions: customAttributeDefinitions } = useCustomAttributes();
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [title, setTitle] = useState('');
@@ -68,6 +73,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
   const [comments, setComments] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [linkedArtifacts, setLinkedArtifacts] = useState<ArtifactLink[]>([]);
+  const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
 
   // Reset form when modal opens/closes or requirement changes
   useEffect(() => {
@@ -83,6 +89,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
         setVerificationMethod(requirement.verificationMethod || '');
         setComments(requirement.comments || '');
         setLinkedArtifacts(requirement.linkedArtifacts || []);
+        setCustomAttributes(requirement.customAttributes || []);
       } else {
         // Create mode: reset to defaults
         setTitle('');
@@ -94,6 +101,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
         setVerificationMethod('');
         setComments('');
         setLinkedArtifacts([]);
+        setCustomAttributes([]);
       }
       setActiveTab('overview');
       setShowDeleteConfirm(false);
@@ -115,6 +123,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
         linkedArtifacts,
         verificationMethod,
         comments,
+        customAttributes,
       });
     } else {
       // Create new requirement
@@ -127,6 +136,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
         author: currentUser?.name || undefined,
         verificationMethod: verificationMethod || undefined,
         comments: comments || undefined,
+        customAttributes,
         dateCreated: Date.now(),
         status: 'draft',
         revision: '01',
@@ -207,6 +217,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
     { id: 'details', label: 'Details' },
     { id: 'relationships', label: 'Relationships' },
     { id: 'comments', label: 'Comments' },
+    { id: 'customFields', label: 'Custom Fields' },
     ...(isEditMode ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
   ];
 
@@ -797,6 +808,17 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
                 onChange={setComments}
                 height={400}
                 placeholder="Add comments with Markdown..."
+              />
+            </div>
+          )}
+
+          {activeTab === 'customFields' && (
+            <div>
+              <CustomAttributeEditor
+                definitions={customAttributeDefinitions}
+                values={customAttributes}
+                onChange={setCustomAttributes}
+                artifactType="requirement"
               />
             </div>
           )}

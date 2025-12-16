@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { UseCase } from '../types';
+import type { CustomAttributeValue } from '../types/customAttributes';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
+import { CustomAttributeEditor } from './CustomAttributeEditor';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import { MarkdownEditor } from './MarkdownEditor';
 
@@ -16,7 +19,7 @@ interface UseCaseModalProps {
   ) => void;
 }
 
-type Tab = 'overview' | 'flows' | 'conditions' | 'relationships' | 'history';
+type Tab = 'overview' | 'flows' | 'conditions' | 'relationships' | 'customFields' | 'history';
 
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
@@ -47,6 +50,10 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     artifactId: useCase?.id,
   });
 
+  // Get custom attribute definitions
+  const { definitions: customAttributeDefinitions } = useCustomAttributes();
+  const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
+
   useEffect(() => {
     if (useCase) {
       setTitle(useCase.title);
@@ -58,6 +65,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
       setAlternativeFlows(useCase.alternativeFlows || '');
       setPriority(useCase.priority);
       setStatus(useCase.status);
+      setCustomAttributes(useCase.customAttributes || []);
     } else {
       // Reset form for new use case
       setTitle('');
@@ -69,6 +77,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
       setAlternativeFlows('');
       setPriority('medium');
       setStatus('draft');
+      setCustomAttributes([]);
     }
   }, [useCase, isOpen]);
 
@@ -88,6 +97,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
           alternativeFlows,
           priority,
           status,
+          customAttributes,
         },
       });
     } else {
@@ -101,6 +111,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
         alternativeFlows,
         priority,
         status,
+        customAttributes,
         revision: '01',
       });
     }
@@ -119,6 +130,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     { id: 'flows', label: 'Flows' },
     { id: 'conditions', label: 'Conditions' },
     { id: 'relationships', label: 'Relationships' },
+    { id: 'customFields', label: 'Custom Fields' },
     { id: 'history', label: 'Revision History' },
   ].filter((tab) => {
     // Only show relationships and history for existing use cases
@@ -628,6 +640,17 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
 
           {activeTab === 'history' && useCase && (
             <RevisionHistoryTab artifactId={useCase.id} artifactType="usecases" />
+          )}
+
+          {activeTab === 'customFields' && (
+            <div>
+              <CustomAttributeEditor
+                definitions={customAttributeDefinitions}
+                values={customAttributes}
+                onChange={setCustomAttributes}
+                artifactType="useCase"
+              />
+            </div>
           )}
         </form>
 

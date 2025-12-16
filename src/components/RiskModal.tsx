@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { Risk } from '../types';
+import type { CustomAttributeValue } from '../types/customAttributes';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
+import { CustomAttributeEditor } from './CustomAttributeEditor';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import { MarkdownEditor } from './MarkdownEditor';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -17,7 +20,7 @@ interface RiskModalProps {
   ) => void;
 }
 
-type Tab = 'overview' | 'mitigation' | 'relationships' | 'history';
+type Tab = 'overview' | 'mitigation' | 'relationships' | 'customFields' | 'history';
 
 export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onSubmit }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
@@ -41,6 +44,10 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
     artifactId: risk?.id,
   });
 
+  // Get custom attribute definitions
+  const { definitions: customAttributeDefinitions } = useCustomAttributes();
+  const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
+
   useEffect(() => {
     if (risk) {
       setTitle(risk.title);
@@ -52,6 +59,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
       setOwner(risk.owner || '');
       setMitigation(risk.mitigation);
       setContingency(risk.contingency);
+      setCustomAttributes(risk.customAttributes || []);
     } else {
       setTitle('');
       setDescription('');
@@ -62,6 +70,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
       setOwner('');
       setMitigation('');
       setContingency('');
+      setCustomAttributes([]);
     }
   }, [risk, isOpen]);
 
@@ -80,6 +89,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
           owner: owner || undefined,
           mitigation,
           contingency,
+          customAttributes,
         },
       });
     } else {
@@ -93,6 +103,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
         owner: owner || undefined,
         mitigation,
         contingency,
+        customAttributes,
         revision: '01',
       });
     }
@@ -110,6 +121,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
     { id: 'overview', label: 'Overview' },
     { id: 'mitigation', label: 'Mitigation' },
     ...(risk ? [{ id: 'relationships' as Tab, label: 'Relationships' }] : []),
+    { id: 'customFields', label: 'Custom Fields' },
     ...(risk ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
   ];
 
@@ -730,6 +742,17 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
 
           {activeTab === 'history' && risk && (
             <RevisionHistoryTab artifactId={risk.id} artifactType="risks" />
+          )}
+
+          {activeTab === 'customFields' && (
+            <div>
+              <CustomAttributeEditor
+                definitions={customAttributeDefinitions}
+                values={customAttributes}
+                onChange={setCustomAttributes}
+                artifactType="risk"
+              />
+            </div>
           )}
         </form>
       </div>

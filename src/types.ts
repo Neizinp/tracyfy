@@ -1,3 +1,5 @@
+import type { CustomAttributeValue } from './types/customAttributes';
+
 // Link stored within an artifact (DEPRECATED - use Link instead)
 export interface ArtifactLink {
   targetId: string;
@@ -25,6 +27,7 @@ export interface Link {
   projectIds: string[]; // Empty = global (all projects), populated = project-specific
   dateCreated: number;
   lastModified: number;
+  customAttributes?: CustomAttributeValue[];
 }
 
 export interface Requirement {
@@ -46,6 +49,7 @@ export interface Requirement {
   isDeleted?: boolean;
   deletedAt?: number;
   revision: string;
+  customAttributes?: CustomAttributeValue[];
 }
 
 export interface UseCase {
@@ -64,6 +68,7 @@ export interface UseCase {
   isDeleted?: boolean;
   deletedAt?: number;
   revision: string;
+  customAttributes?: CustomAttributeValue[];
 }
 
 export interface TestCase {
@@ -81,6 +86,7 @@ export interface TestCase {
   isDeleted?: boolean;
   deletedAt?: number;
   revision: string;
+  customAttributes?: CustomAttributeValue[];
 }
 
 export interface Information {
@@ -94,6 +100,7 @@ export interface Information {
   isDeleted?: boolean;
   deletedAt?: number;
   revision: string;
+  customAttributes?: CustomAttributeValue[];
 }
 
 export interface Risk {
@@ -113,6 +120,7 @@ export interface Risk {
   isDeleted?: boolean;
   deletedAt?: number;
   revision: string;
+  customAttributes?: CustomAttributeValue[];
 }
 
 export interface Project {

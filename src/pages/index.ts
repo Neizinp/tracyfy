@@ -7,3 +7,4 @@ export { RisksPage } from './RisksPage';
 export { BaselinesPage } from './BaselinesPage';
 export { BaselineHistoryPage } from './BaselineHistoryPage';
 export { GlobalLibraryPage } from './GlobalLibraryPage';
+export { CustomAttributesPage } from './CustomAttributesPage';

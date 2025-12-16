@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { TestCase } from '../types';
+import type { CustomAttributeValue } from '../types/customAttributes';
 import { formatDateTime } from '../utils/dateUtils';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI, useUser } from '../app/providers';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useLinkService } from '../hooks/useLinkService';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
+import { CustomAttributeEditor } from './CustomAttributeEditor';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import { MarkdownEditor } from './MarkdownEditor';
 
@@ -18,7 +21,7 @@ interface TestCaseModalProps {
   onDelete: (id: string) => void;
 }
 
-type Tab = 'overview' | 'relationships' | 'history';
+type Tab = 'overview' | 'relationships' | 'customFields' | 'history';
 
 export const TestCaseModal: React.FC<TestCaseModalProps> = ({
   isOpen,
@@ -48,6 +51,10 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
     artifactId: testCase?.id,
   });
 
+  // Get custom attribute definitions
+  const { definitions: customAttributeDefinitions } = useCustomAttributes();
+  const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
+
   // Reset form when modal opens/closes or testCase changes
   useEffect(() => {
     if (isOpen) {
@@ -57,12 +64,14 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
         setDescription(testCase.description);
         setPriority(testCase.priority);
         setStatus(testCase.status);
+        setCustomAttributes(testCase.customAttributes || []);
       } else {
         // Create mode: reset to defaults
         setTitle('');
         setDescription('');
         setPriority('medium');
         setStatus('draft');
+        setCustomAttributes([]);
       }
       setActiveTab('overview');
       setShowDeleteConfirm(false);
@@ -79,6 +88,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
         description,
         priority,
         status,
+        customAttributes,
         lastModified: Date.now(),
       };
 
@@ -96,6 +106,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
         priority,
         author: currentUser?.name || undefined,
         requirementIds: [],
+        customAttributes,
         status: 'draft',
         revision: '01',
       });
@@ -225,6 +236,28 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
             }}
           >
             Relationships
+          </button>
+          <button
+            onClick={() => setActiveTab('customFields')}
+            style={{
+              padding: '12px 24px',
+              border: 'none',
+              backgroundColor:
+                activeTab === 'customFields' ? 'var(--color-bg-card)' : 'transparent',
+              color:
+                activeTab === 'customFields'
+                  ? 'var(--color-accent)'
+                  : 'var(--color-text-secondary)',
+              cursor: 'pointer',
+              fontWeight: activeTab === 'customFields' ? 600 : 400,
+              borderBottom:
+                activeTab === 'customFields'
+                  ? '2px solid var(--color-accent)'
+                  : '2px solid transparent',
+              transition: 'all 0.2s',
+            }}
+          >
+            Custom Fields
           </button>
           {isEditMode && (
             <button
@@ -829,6 +862,17 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
 
           {activeTab === 'history' && testCase && (
             <RevisionHistoryTab artifactId={testCase.id} artifactType="testcases" />
+          )}
+
+          {activeTab === 'customFields' && (
+            <div>
+              <CustomAttributeEditor
+                definitions={customAttributeDefinitions}
+                values={customAttributes}
+                onChange={setCustomAttributes}
+                artifactType="testCase"
+              />
+            </div>
           )}
         </form>
       </div>
