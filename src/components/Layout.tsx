@@ -21,7 +21,9 @@ export interface LayoutProps {
   onExportExcel?: () => void;
   onImportExcel?: () => void;
   onOpenGlobalLibrary?: () => void;
-  onOpenLibraryTab?: (tab: 'requirements' | 'usecases' | 'testcases' | 'information') => void;
+  onOpenLibraryTab?: (
+    tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
+  ) => void;
   onSearch?: (query: string) => void;
   onNewInformation?: () => void;
   onNewRisk?: () => void;

@@ -28,7 +28,9 @@ export interface SidebarProps {
   onCreateProject: () => void;
   onCreateDemoProject?: () => void;
   onOpenProjectSettings: (project: Project) => void;
-  onOpenLibraryTab?: (tab: 'requirements' | 'usecases' | 'testcases' | 'information') => void;
+  onOpenLibraryTab?: (
+    tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
+  ) => void;
 }
 
 /**
@@ -267,6 +269,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => onOpenLibraryTab?.('information')}
               icon={BookOpen}
               label="Information"
+            />
+            <RepositoryButton
+              onClick={() => onOpenLibraryTab?.('risks')}
+              icon={BookOpen}
+              label="Risks"
             />
           </div>
         </div>

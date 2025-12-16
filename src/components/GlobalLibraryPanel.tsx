@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Search, FileText, BookOpen, CheckSquare, Info, Plus } from 'lucide-react';
-import type { Requirement, UseCase, TestCase, Information, Project } from '../types';
+import { Search, FileText, BookOpen, CheckSquare, Info, Plus, ShieldAlert } from 'lucide-react';
+import type { Requirement, UseCase, TestCase, Information, Risk, Project } from '../types';
 
 interface GlobalLibraryPanelProps {
   isOpen: boolean;
@@ -9,6 +9,7 @@ interface GlobalLibraryPanelProps {
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
+  risks: Risk[];
   projects: Project[];
   selectedItems: Set<string>;
   onToggleSelect: (id: string) => void;
@@ -19,7 +20,7 @@ interface GlobalLibraryPanelProps {
   onAddToProject?: (ids: string[]) => void;
 }
 
-type Tab = 'requirements' | 'usecases' | 'testcases' | 'information';
+type Tab = 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks';
 
 const LibraryItem = ({
   id,
@@ -115,6 +116,7 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
   useCases,
   testCases,
   information,
+  risks,
   projects,
   selectedItems,
   onToggleSelect,
@@ -154,6 +156,8 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
             return p.testCaseIds.includes(itemId);
           case 'information':
             return p.informationIds.includes(itemId);
+          case 'risks':
+            return p.riskIds.includes(itemId);
           default:
             return false;
         }
@@ -222,6 +226,18 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
             type="information"
             projectNames={getProjectNames(info.id, 'information')}
             isSelected={selectedItems.has(info.id)}
+            onToggleSelect={onToggleSelect}
+          />
+        ));
+      case 'risks':
+        return filterItems(risks).map((risk) => (
+          <LibraryItem
+            key={risk.id}
+            id={risk.id}
+            title={risk.title}
+            type="risk"
+            projectNames={getProjectNames(risk.id, 'risks')}
+            isSelected={selectedItems.has(risk.id)}
             onToggleSelect={onToggleSelect}
           />
         ));
@@ -301,6 +317,7 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
           { id: 'usecases', icon: BookOpen, label: 'UC' },
           { id: 'testcases', icon: CheckSquare, label: 'TC' },
           { id: 'information', icon: Info, label: 'Info' },
+          { id: 'risks', icon: ShieldAlert, label: 'Risks' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -349,6 +366,8 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
                   return filterItems(testCases).map((tc) => tc.id);
                 case 'information':
                   return filterItems(information).map((info) => info.id);
+                case 'risks':
+                  return filterItems(risks).map((risk) => risk.id);
               }
             })();
             onSelectAll?.(currentTabIds);

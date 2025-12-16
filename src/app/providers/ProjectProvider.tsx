@@ -21,6 +21,7 @@ interface ProjectContextValue {
       useCases: string[];
       testCases: string[];
       information: string[];
+      risks?: string[];
     },
     targetProjectId?: string
   ) => Promise<void>;
@@ -89,6 +90,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         useCases: string[];
         testCases: string[];
         information: string[];
+        risks?: string[];
       },
       targetProjectId: string = currentProjectId
     ) => {
@@ -101,6 +103,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         useCaseIds: Array.from(new Set([...project.useCaseIds, ...artifacts.useCases])),
         testCaseIds: Array.from(new Set([...project.testCaseIds, ...artifacts.testCases])),
         informationIds: Array.from(new Set([...project.informationIds, ...artifacts.information])),
+        riskIds: Array.from(new Set([...project.riskIds, ...(artifacts.risks || [])])),
         lastModified: Date.now(),
       };
 

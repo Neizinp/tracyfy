@@ -59,8 +59,10 @@ interface UIContextValue {
   setProjectToEdit: (project: Project | null) => void;
 
   // Library state
-  activeLibraryTab: 'requirements' | 'usecases' | 'testcases' | 'information';
-  setActiveLibraryTab: (tab: 'requirements' | 'usecases' | 'testcases' | 'information') => void;
+  activeLibraryTab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks';
+  setActiveLibraryTab: (
+    tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
+  ) => void;
   globalLibrarySelection: Set<string>;
   setGlobalLibrarySelection: (
     selection: Set<string> | ((prev: Set<string>) => Set<string>)
@@ -95,7 +97,9 @@ interface UIContextValue {
 
   // Helper functions
   handleGlobalLibrarySelect: (id: string) => void;
-  handleOpenLibrary: (tab: 'requirements' | 'usecases' | 'testcases' | 'information') => void;
+  handleOpenLibrary: (
+    tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
+  ) => void;
 }
 
 const UIContext = createContext<UIContextValue | undefined>(undefined);

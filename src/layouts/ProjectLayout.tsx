@@ -94,7 +94,7 @@ export const ProjectLayout: React.FC = () => {
     useGlobalState();
 
   // FileSystem context
-  const { baselines, reloadData, refreshStatus } = useFileSystem();
+  const { baselines, reloadData, refreshStatus, risks } = useFileSystem();
 
   // Import/Export handlers
   const importExport = useImportExport();
@@ -158,12 +158,14 @@ export const ProjectLayout: React.FC = () => {
     const ucIds = ids.filter((id) => globalUseCases.some((u) => u.id === id));
     const tcIds = ids.filter((id) => globalTestCases.some((t) => t.id === id));
     const infoIds = ids.filter((id) => globalInformation.some((i) => i.id === id));
+    const riskIds = ids.filter((id) => risks.some((r) => r.id === id));
 
     await addToProject({
       requirements: reqIds,
       useCases: ucIds,
       testCases: tcIds,
       information: infoIds,
+      risks: riskIds,
     });
   };
 
@@ -257,6 +259,7 @@ export const ProjectLayout: React.FC = () => {
             useCases={globalUseCases}
             testCases={globalTestCases}
             information={globalInformation}
+            risks={risks}
             projects={projects}
             selectedItems={ui.globalLibrarySelection}
             onToggleSelect={ui.handleGlobalLibrarySelect}

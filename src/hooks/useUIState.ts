@@ -43,7 +43,7 @@ export function useUIState() {
 
   // Library States
   const [activeLibraryTab, setActiveLibraryTab] = useState<
-    'requirements' | 'usecases' | 'testcases' | 'information'
+    'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
   >('requirements');
   const [globalLibrarySelection, setGlobalLibrarySelection] = useState<Set<string>>(new Set());
 
@@ -218,7 +218,9 @@ export function useUIState() {
         return newSelection;
       });
     },
-    handleOpenLibrary: (tab: 'requirements' | 'usecases' | 'testcases' | 'information') => {
+    handleOpenLibrary: (
+      tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
+    ) => {
       setActiveLibraryTab(tab);
       setIsLibraryPanelOpen(true);
     },

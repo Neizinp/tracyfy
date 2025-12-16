@@ -24,6 +24,7 @@ describe('Sidebar', () => {
       useCaseIds: [],
       testCaseIds: [],
       informationIds: [],
+      riskIds: [],
       lastModified: 1000000,
     },
     {
@@ -34,6 +35,7 @@ describe('Sidebar', () => {
       useCaseIds: [],
       testCaseIds: [],
       informationIds: [],
+      riskIds: [],
       lastModified: 2000000,
     },
   ];
@@ -87,6 +89,20 @@ describe('Sidebar', () => {
       expect(screen.getAllByText('Use Cases').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Test Cases').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Information').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Risks').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should render all artifact types in both Views and Repository sections', () => {
+      renderWithRouter(<Sidebar {...defaultProps} />);
+
+      // Define all artifact types that should be present
+      const artifactTypes = ['Requirements', 'Use Cases', 'Test Cases', 'Information', 'Risks'];
+
+      // Each artifact type should appear at least twice (once in Views, once in Repository)
+      artifactTypes.forEach((artifactType) => {
+        const elements = screen.getAllByText(artifactType);
+        expect(elements.length).toBeGreaterThanOrEqual(2);
+      });
     });
 
     it('should render Repository section', () => {
@@ -151,6 +167,16 @@ describe('Sidebar', () => {
       fireEvent.click(infoButtons[infoButtons.length - 1]);
 
       expect(onOpenLibraryTab).toHaveBeenCalledWith('information');
+    });
+
+    it('should call onOpenLibraryTab with risks when Risks is clicked', () => {
+      const onOpenLibraryTab = vi.fn();
+      renderWithRouter(<Sidebar {...defaultProps} onOpenLibraryTab={onOpenLibraryTab} />);
+
+      const riskButtons = screen.getAllByText('Risks');
+      fireEvent.click(riskButtons[riskButtons.length - 1]);
+
+      expect(onOpenLibraryTab).toHaveBeenCalledWith('risks');
     });
   });
 
