@@ -16,6 +16,7 @@ import { RiskModal } from './RiskModal';
 import { UserSettingsModal } from './UserSettingsModal';
 import { AdvancedSearchModal } from './AdvancedSearchModal';
 import { CustomAttributeDefinitionModal } from './CustomAttributeDefinitionModal';
+import { WorkflowModal } from './WorkflowModal';
 import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
 import {
   useUI,
@@ -511,6 +512,12 @@ export const ModalManager: React.FC = () => {
           await diskCustomAttributeService.createDefinition(data);
           ui.setIsCustomAttributeModalOpen(false);
         }}
+      />
+
+      {/* Workflow Modal - for creating and editing workflows */}
+      <WorkflowModal
+        isOpen={ui.isWorkflowModalOpen}
+        onClose={() => ui.setIsWorkflowModalOpen(false)}
       />
     </>
   );
