@@ -5,7 +5,15 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Link as LinkIcon, ArrowRight, RefreshCw, Globe, Folder } from 'lucide-react';
+import {
+  Link as LinkIcon,
+  ArrowRight,
+  RefreshCw,
+  Globe,
+  Folder,
+  ChevronUp,
+  ChevronDown,
+} from 'lucide-react';
 import { diskLinkService } from '../services/diskLinkService';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import type { Link, Project } from '../types';
@@ -23,6 +31,11 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, proj
   const [filter, setFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [scopeFilter, setScopeFilter] = useState<'all' | 'global' | 'project'>('all');
+
+  // Sort state
+  type SortColumn = 'id' | 'source' | 'type' | 'target' | 'scope';
+  const [sortColumn, setSortColumn] = useState<SortColumn>('id');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Edit modal state
   const [editingLink, setEditingLink] = useState<Link | null>(null);
@@ -127,11 +140,49 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, proj
     return matchesSearch && matchesType && matchesScope;
   });
 
-  // Sort by link ID (LINK-001, LINK-002, etc.)
+  // Toggle sort column
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Sort links by selected column
   const sortedLinks = [...filteredLinks].sort((a, b) => {
-    const numA = parseInt(a.id.replace(/\D/g, ''), 10) || 0;
-    const numB = parseInt(b.id.replace(/\D/g, ''), 10) || 0;
-    return numA - numB;
+    let valA: string | number;
+    let valB: string | number;
+
+    switch (sortColumn) {
+      case 'id':
+        valA = parseInt(a.id.replace(/\D/g, ''), 10) || 0;
+        valB = parseInt(b.id.replace(/\D/g, ''), 10) || 0;
+        break;
+      case 'source':
+        valA = a.sourceId.toLowerCase();
+        valB = b.sourceId.toLowerCase();
+        break;
+      case 'target':
+        valA = a.targetId.toLowerCase();
+        valB = b.targetId.toLowerCase();
+        break;
+      case 'type':
+        valA = a.type.toLowerCase();
+        valB = b.type.toLowerCase();
+        break;
+      case 'scope':
+        valA = a.projectIds.length === 0 ? 'global' : 'project';
+        valB = b.projectIds.length === 0 ? 'global' : 'project';
+        break;
+      default:
+        return 0;
+    }
+
+    if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+    if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
   });
 
   return (
@@ -285,54 +336,116 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, proj
                 }}
               >
                 <th
+                  onClick={() => handleSort('id')}
                   style={{
                     padding: '12px',
                     textAlign: 'left',
                     fontWeight: 600,
                     fontSize: 'var(--font-size-sm)',
+                    cursor: 'pointer',
+                    userSelect: 'none',
                   }}
                 >
-                  ID
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    ID
+                    {sortColumn === 'id' &&
+                      (sortDirection === 'asc' ? (
+                        <ChevronUp size={14} />
+                      ) : (
+                        <ChevronDown size={14} />
+                      ))}
+                  </span>
                 </th>
                 <th
+                  onClick={() => handleSort('source')}
                   style={{
                     padding: '12px',
                     textAlign: 'left',
                     fontWeight: 600,
                     fontSize: 'var(--font-size-sm)',
+                    cursor: 'pointer',
+                    userSelect: 'none',
                   }}
                 >
-                  Source
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    Source
+                    {sortColumn === 'source' &&
+                      (sortDirection === 'asc' ? (
+                        <ChevronUp size={14} />
+                      ) : (
+                        <ChevronDown size={14} />
+                      ))}
+                  </span>
                 </th>
                 <th
+                  onClick={() => handleSort('type')}
                   style={{
                     padding: '12px',
                     textAlign: 'center',
                     fontWeight: 600,
                     fontSize: 'var(--font-size-sm)',
+                    cursor: 'pointer',
+                    userSelect: 'none',
                   }}
                 >
-                  Type
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    Type
+                    {sortColumn === 'type' &&
+                      (sortDirection === 'asc' ? (
+                        <ChevronUp size={14} />
+                      ) : (
+                        <ChevronDown size={14} />
+                      ))}
+                  </span>
                 </th>
                 <th
+                  onClick={() => handleSort('target')}
                   style={{
                     padding: '12px',
                     textAlign: 'left',
                     fontWeight: 600,
                     fontSize: 'var(--font-size-sm)',
+                    cursor: 'pointer',
+                    userSelect: 'none',
                   }}
                 >
-                  Target
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    Target
+                    {sortColumn === 'target' &&
+                      (sortDirection === 'asc' ? (
+                        <ChevronUp size={14} />
+                      ) : (
+                        <ChevronDown size={14} />
+                      ))}
+                  </span>
                 </th>
                 <th
+                  onClick={() => handleSort('scope')}
                   style={{
                     padding: '12px',
                     textAlign: 'left',
                     fontWeight: 600,
                     fontSize: 'var(--font-size-sm)',
+                    cursor: 'pointer',
+                    userSelect: 'none',
                   }}
                 >
-                  Scope
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    Scope
+                    {sortColumn === 'scope' &&
+                      (sortDirection === 'asc' ? (
+                        <ChevronUp size={14} />
+                      ) : (
+                        <ChevronDown size={14} />
+                      ))}
+                  </span>
                 </th>
               </tr>
             </thead>
