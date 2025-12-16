@@ -123,10 +123,9 @@ const CONDITIONS = {
     { value: 'notEquals', label: 'Is not' },
   ],
   date: [
-    { value: 'equals', label: 'On' },
+    { value: 'on', label: 'On' },
     { value: 'before', label: 'Before' },
     { value: 'after', label: 'After' },
-    { value: 'between', label: 'Between' },
   ],
 };
 
@@ -254,15 +253,22 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
         case 'notContains':
           return !strValue.includes(searchValue);
         case 'before':
-        case 'after': {
+        case 'after':
+        case 'on': {
+          // Handle date comparisons - convert timestamps (numbers) to YYYY-MM-DD
           if (!fieldValue) return false;
-          // Convert timestamp to date for comparison (handle both timestamps and date strings)
-          const fieldDate =
-            typeof fieldValue === 'number'
-              ? new Date(fieldValue).toISOString().split('T')[0]
-              : String(fieldValue).split('T')[0];
-          const searchDate = value; // Already in YYYY-MM-DD from date input
-          return condition === 'before' ? fieldDate < searchDate : fieldDate > searchDate;
+          let fieldDate: string;
+          if (typeof fieldValue === 'number') {
+            // Unix timestamp in milliseconds
+            fieldDate = new Date(fieldValue).toISOString().split('T')[0];
+          } else {
+            // Already a date string - extract just the date part
+            fieldDate = String(fieldValue).split('T')[0];
+          }
+          const searchDate = value; // Already YYYY-MM-DD from date input
+          if (condition === 'before') return fieldDate < searchDate;
+          if (condition === 'after') return fieldDate > searchDate;
+          return fieldDate === searchDate; // 'on' / 'equals' for dates
         }
         default:
           return strValue.includes(searchValue);
@@ -654,9 +660,11 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                       </select>
                     ) : propType === 'date' ? (
                       <input
-                        type="date"
+                        type="text"
                         value={criterion.value}
                         onChange={(e) => updateCriterion(criterion.id, 'value', e.target.value)}
+                        placeholder="YYYY-MM-DD"
+                        pattern="\d{4}-\d{2}-\d{2}"
                         style={inputStyle}
                       />
                     ) : (
