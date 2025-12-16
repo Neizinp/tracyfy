@@ -127,6 +127,13 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, proj
     return matchesSearch && matchesType && matchesScope;
   });
 
+  // Sort by link ID (LINK-001, LINK-002, etc.)
+  const sortedLinks = [...filteredLinks].sort((a, b) => {
+    const numA = parseInt(a.id.replace(/\D/g, ''), 10) || 0;
+    const numB = parseInt(b.id.replace(/\D/g, ''), 10) || 0;
+    return numA - numB;
+  });
+
   return (
     <div style={{ padding: 'var(--spacing-lg)', height: '100%', overflow: 'auto' }}>
       {/* Header */}
@@ -148,7 +155,7 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, proj
           }}
         >
           <LinkIcon size={24} style={{ color: 'var(--color-accent)' }} />
-          Links ({filteredLinks.length})
+          Links ({sortedLinks.length})
         </h2>
         <button
           onClick={loadLinks}
@@ -243,7 +250,7 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, proj
         >
           Loading links...
         </div>
-      ) : filteredLinks.length === 0 ? (
+      ) : sortedLinks.length === 0 ? (
         <div
           style={{
             padding: 'var(--spacing-xl)',
@@ -330,7 +337,7 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, proj
               </tr>
             </thead>
             <tbody>
-              {filteredLinks.map((link) => (
+              {sortedLinks.map((link) => (
                 <tr
                   key={link.id}
                   onClick={() => handleEditLink(link)}
