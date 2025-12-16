@@ -10,6 +10,12 @@ import {
   ShieldAlert,
   Settings2,
   ChevronRight,
+  Upload,
+  Download,
+  Settings,
+  Globe,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import type { Project } from '../../types';
 import { ProjectSidebarItem } from '../ProjectSidebarItem';
@@ -17,6 +23,8 @@ import { PendingChangesPanel } from '../PendingChangesPanel';
 import { NavLink } from './NavLink';
 import { RepositoryButton } from './RepositoryButton';
 import { sectionHeaderStyle } from './layoutStyles';
+import { realGitService } from '../../services/realGitService';
+import { RemoteSettingsModal } from '../RemoteSettingsModal';
 
 const SIDEBAR_WIDTH_KEY = 'sidebar-width';
 const COLLAPSED_SECTIONS_KEY = 'sidebar-collapsed-sections';
@@ -93,6 +101,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
       }
       return next;
     });
+  };
+
+  // Remote sync state
+  const [hasRemote, setHasRemote] = useState(false);
+  const [isPushing, setIsPushing] = useState(false);
+  const [isPulling, setIsPulling] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [isRemoteSettingsOpen, setIsRemoteSettingsOpen] = useState(false);
+
+  // Check for remote on mount
+  useEffect(() => {
+    realGitService.hasRemote().then(setHasRemote);
+  }, []);
+
+  const handlePush = async () => {
+    setIsPushing(true);
+    setSyncError(null);
+    try {
+      await realGitService.push();
+      console.log('[Sidebar] Push successful');
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : 'Push failed');
+    } finally {
+      setIsPushing(false);
+    }
+  };
+
+  const handlePull = async () => {
+    setIsPulling(true);
+    setSyncError(null);
+    try {
+      const result = await realGitService.pull();
+      if (!result.success && result.conflicts.length > 0) {
+        setSyncError(`Merge conflicts in: ${result.conflicts.join(', ')}`);
+      } else {
+        console.log('[Sidebar] Pull successful');
+      }
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : 'Pull failed');
+    } finally {
+      setIsPulling(false);
+    }
   };
 
   // Save width to localStorage
@@ -289,6 +339,175 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </h2>
           {!collapsedSections.has('pendingChanges') && <PendingChangesPanel />}
         </div>
+
+        {/* Remote Sync Section */}
+        <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: collapsedSections.has('remoteSync') ? 0 : 'var(--spacing-sm)',
+            }}
+          >
+            <h2
+              onClick={() => toggleSection('remoteSync')}
+              style={{
+                ...sectionHeaderStyle,
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                cursor: 'pointer',
+                flex: 1,
+              }}
+            >
+              <ChevronRight
+                size={12}
+                style={{
+                  transform: collapsedSections.has('remoteSync') ? 'rotate(0deg)' : 'rotate(90deg)',
+                  transition: 'transform 0.15s',
+                }}
+              />
+              <Globe size={12} />
+              Remote Sync
+            </h2>
+            <button
+              onClick={() => setIsRemoteSettingsOpen(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--color-text-muted)',
+                padding: '4px',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+              title="Remote Settings"
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <Settings size={14} />
+            </button>
+          </div>
+
+          {!collapsedSections.has('remoteSync') && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {!hasRemote ? (
+                <div
+                  style={{
+                    padding: '8px 12px',
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    borderRadius: '6px',
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--color-text-muted)',
+                    textAlign: 'center',
+                  }}
+                >
+                  No remote configured.{' '}
+                  <button
+                    onClick={() => setIsRemoteSettingsOpen(true)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--color-accent)',
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      padding: 0,
+                    }}
+                  >
+                    Add one
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      onClick={handlePull}
+                      disabled={isPulling}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        backgroundColor: 'var(--color-bg-secondary)',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: '6px',
+                        cursor: isPulling ? 'wait' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        color: 'var(--color-text-primary)',
+                        fontSize: 'var(--font-size-sm)',
+                      }}
+                    >
+                      {isPulling ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Download size={14} />
+                      )}
+                      Pull
+                    </button>
+                    <button
+                      onClick={handlePush}
+                      disabled={isPushing}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        backgroundColor: 'var(--color-accent)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: isPushing ? 'wait' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        color: 'white',
+                        fontSize: 'var(--font-size-sm)',
+                      }}
+                    >
+                      {isPushing ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Upload size={14} />
+                      )}
+                      Push
+                    </button>
+                  </div>
+                  {syncError && (
+                    <div
+                      style={{
+                        padding: '8px 12px',
+                        backgroundColor: 'color-mix(in srgb, var(--color-error) 10%, transparent)',
+                        border: '1px solid var(--color-error)',
+                        borderRadius: '6px',
+                        color: 'var(--color-error)',
+                        fontSize: 'var(--font-size-xs)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <AlertCircle size={12} />
+                      {syncError}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* RemoteSettingsModal */}
+        <RemoteSettingsModal
+          isOpen={isRemoteSettingsOpen}
+          onClose={() => {
+            setIsRemoteSettingsOpen(false);
+            realGitService.hasRemote().then(setHasRemote);
+          }}
+        />
 
         {/* Views Navigation */}
         <div style={{ marginBottom: 'var(--spacing-lg)' }}>
