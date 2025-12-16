@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { debug } from '../../utils/debug';
 import { fileSystemService } from '../../services/fileSystemService';
 import { realGitService, type FileStatus, type CommitInfo } from '../../services/realGitService';
 import { diskProjectService } from '../../services/diskProjectService';
@@ -91,12 +92,12 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const { startTask, endTask } = useBackgroundTasks();
 
   const refreshStatus = useCallback(async () => {
-    console.log('[refreshStatus] Called');
+    debug.log('[refreshStatus] Called');
     if (realGitService.isInitialized()) {
       const taskId = startTask('Refreshing git status...');
       try {
         const status = await realGitService.getStatus();
-        console.log('[refreshStatus] Updated pendingChanges:', status);
+        debug.log('[refreshStatus] Updated pendingChanges:', status);
         setPendingChanges(status);
       } finally {
         endTask(taskId);
@@ -126,7 +127,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const reloadData = useCallback(async () => {
     const taskId = startTask('Loading data...');
     try {
-      console.log('[reloadData] Loading all data from disk...');
+      debug.log('[reloadData] Loading all data from disk...');
       const data = await diskProjectService.loadAll();
       setProjects(data.projects);
       setCurrentProjectIdState(data.currentProjectId);
@@ -138,7 +139,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       // Recalculate counters to make sure they're in sync
       await diskProjectService.recalculateCounters();
-      console.log('[reloadData] Data loaded:', {
+      debug.log('[reloadData] Data loaded:', {
         projects: data.projects.length,
         requirements: data.requirements.length,
         useCases: data.useCases.length,
@@ -163,7 +164,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       try {
         // For e2e tests: if E2E_TEST_MODE is set, use in-memory storage
         if (typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__) {
-          console.log('[FileSystemProvider] E2E test mode enabled');
+          debug.log('[FileSystemProvider] E2E test mode enabled');
           setDirectoryName('E2E Test Directory');
           // Initialize with empty data for E2E tests
           setProjects([]);
@@ -235,7 +236,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       // Load git status
       const status = await realGitService.getStatus();
-      console.log('[selectDirectory] Setting pendingChanges to:', status);
+      debug.log('[selectDirectory] Setting pendingChanges to:', status);
       setPendingChanges(status);
 
       // Load baselines
@@ -525,7 +526,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (filepath: string, message: string, authorName?: string) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (isE2EMode()) return; // Skip git operations in E2E mode
-      console.log(
+      debug.log(
         `[commitFile] Committing ${filepath} with message: ${message} by ${authorName || 'Tracyfy User'} `
       );
       await realGitService.commitFile(filepath, message, authorName);
@@ -533,7 +534,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // Calling it after every commit causes massive performance issues
       // when committing multiple files. The PendingChangesPanel handles
       // removing items from the UI optimistically.
-      console.log(`[commitFile] Committed ${filepath} successfully`);
+      debug.log(`[commitFile] Committed ${filepath} successfully`);
     },
     [isReady]
   );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { debug } from '../../utils/debug';
 import {
   LayoutGrid,
   Plus,
@@ -120,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setSyncError(null);
     try {
       await realGitService.push();
-      console.log('[Sidebar] Push successful');
+      debug.log('[Sidebar] Push successful');
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : 'Push failed');
     } finally {
@@ -136,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       if (!result.success && result.conflicts.length > 0) {
         setSyncError(`Merge conflicts in: ${result.conflicts.join(', ')}`);
       } else {
-        console.log('[Sidebar] Pull successful');
+        debug.log('[Sidebar] Pull successful');
       }
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : 'Pull failed');

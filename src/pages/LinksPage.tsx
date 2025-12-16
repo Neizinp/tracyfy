@@ -1,4 +1,5 @@
 /**
+import { debug } from '../utils/debug';
  * LinksPage
  *
  * Page wrapper for LinksView component
@@ -24,7 +25,7 @@ export function LinksPage() {
     switch (type) {
       case 'requirement':
         // Would need to find the requirement object - for now just log
-        console.log(`Navigate to requirement: ${id}`);
+        debug.log(`Navigate to requirement: ${id}`);
         break;
       case 'usecase':
         setEditingUseCase(null); // Would need the actual use case

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react';
+import { debug } from '../../../utils/debug';
 import type { ReactNode } from 'react';
 import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
@@ -41,7 +42,7 @@ export const UseCasesProvider: React.FC<{ children: ReactNode }> = ({ children }
   // Sync use cases from filesystem on initial load
   useEffect(() => {
     if (isReady && fsUseCases.length > 0 && !hasSyncedInitial.current) {
-      console.log('[UseCasesProvider] Syncing from filesystem:', fsUseCases.length, 'use cases');
+      debug.log('[UseCasesProvider] Syncing from filesystem:', fsUseCases.length, 'use cases');
       setUseCases(fsUseCases);
       hasSyncedInitial.current = true;
     }

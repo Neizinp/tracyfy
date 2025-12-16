@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { debug } from '../utils/debug';
 import {
   RequirementModal,
   LinkModal,
@@ -189,7 +190,7 @@ export const ModalManager: React.FC = () => {
           newLink.type as LinkType,
           newLink.projectIds
         );
-        console.log(
+        debug.log(
           `Link created: ${sourceId} -> ${newLink.targetId} (${newLink.type}) [${newLink.projectIds.length === 0 ? 'Global' : newLink.projectIds.join(', ')}]`
         );
       } catch (error) {

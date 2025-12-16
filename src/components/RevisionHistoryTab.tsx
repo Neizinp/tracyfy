@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { debug } from '../utils/debug';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import type { CommitInfo } from '../services/realGitService';
 import { formatDateTime } from '../utils/dateUtils';
@@ -38,10 +39,10 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
           try {
             // Extra debug logging
 
-            console.log('[RevisionHistoryTab][DEBUG] filePath:', filePath, 'commit:', commit.hash);
+            debug.log('[RevisionHistoryTab][DEBUG] filePath:', filePath, 'commit:', commit.hash);
             const content = await realGitService.readFileAtCommit(filePath, commit.hash);
 
-            console.log(
+            debug.log(
               '[RevisionHistoryTab][DEBUG] Content for',
               filePath,
               'at',
@@ -65,7 +66,7 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
               }
               // Extra debug log
 
-              console.log(
+              debug.log(
                 '[RevisionHistoryTab][DEBUG] commit:',
                 commit.hash,
                 'parsed:',
@@ -159,7 +160,7 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
             {history.map((commit) => {
               const revision = revisions[commit.hash] || '—';
 
-              console.log('[RevisionHistoryTab] UI row commit', commit.hash, 'revision:', revision);
+              debug.log('[RevisionHistoryTab] UI row commit', commit.hash, 'revision:', revision);
               return (
                 <tr
                   key={commit.hash}

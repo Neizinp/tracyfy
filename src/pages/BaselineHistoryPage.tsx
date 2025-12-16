@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { debug } from '../utils/debug';
 import { useParams, Navigate } from 'react-router-dom';
 import { BaselineRevisionHistory } from '../components';
 import { useFileSystem, useProject } from '../app/providers';
@@ -95,7 +96,7 @@ export const BaselineHistoryPage: React.FC = () => {
               ) || null
         }
         onViewArtifact={(artifactId, commitHash) => {
-          console.log('View artifact', artifactId, commitHash);
+          debug.log('View artifact', artifactId, commitHash);
           alert(`View artifact ${artifactId} at ${commitHash} - Not implemented yet`);
         }}
       />

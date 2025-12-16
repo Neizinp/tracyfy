@@ -1,4 +1,5 @@
 import React from 'react';
+import { debug } from '../utils/debug';
 import { BaselineManager } from '../components';
 import { useFileSystem, useUI } from '../app/providers';
 
@@ -11,7 +12,7 @@ export const BaselinesPage: React.FC = () => {
   };
 
   const handleViewBaselineHistory = (baselineId: string) => {
-    console.log('View baseline history', baselineId);
+    debug.log('View baseline history', baselineId);
     // TODO: Implement navigation to baseline details or open modal
   };
 

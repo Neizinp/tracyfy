@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { debug } from '../utils/debug';
 import { X, Clock, Save, Tag, GitCommit } from 'lucide-react';
 import type { ProjectBaseline, CommitInfo } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
@@ -61,7 +62,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   const loadTags = useCallback(async () => {
     try {
       const tags = await realGitService.getTagsWithDetails();
-      console.log('[VersionHistory] Tags loaded:', tags);
+      debug.log('[VersionHistory] Tags loaded:', tags);
 
       // Map commit hash to array of tag names for the commits view
       const hashToTags = new Map<string, string[]>();

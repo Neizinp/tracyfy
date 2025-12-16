@@ -1,4 +1,5 @@
 /**
+import { debug } from '../utils/debug';
  * File System Service - Real disk storage using Electron IPC or File System Access API
  *
  * This service handles reading/writing to a real directory on disk,
@@ -332,7 +333,7 @@ class FileSystemService {
    * Read a file as binary data
    */
   async readFileBinary(path: string): Promise<Uint8Array | null> {
-    console.log('[readFileBinary] Called for path:', path);
+    debug.log('[readFileBinary] Called for path:', path);
 
     // Electron path: use IPC
     if (isElectron()) {
@@ -358,14 +359,14 @@ class FileSystemService {
       const fileName = parts.pop()!;
       const dirPath = parts.join('/');
 
-      console.log('[readFileBinary] fileName:', fileName, 'dirPath:', dirPath);
+      debug.log('[readFileBinary] fileName:', fileName, 'dirPath:', dirPath);
 
       let dir = this.directoryHandle;
       if (dirPath) {
         // Use getDirectory (doesn't create) instead of getOrCreateDirectory
         const existingDir = await this.getDirectory(dirPath);
         if (!existingDir) {
-          console.log('[readFileBinary] Directory not found:', dirPath);
+          debug.log('[readFileBinary] Directory not found:', dirPath);
           return null;
         }
         dir = existingDir;
@@ -374,10 +375,10 @@ class FileSystemService {
       const fileHandle = await dir.getFileHandle(fileName);
       const file = await fileHandle.getFile();
       const arrayBuffer = await file.arrayBuffer();
-      console.log('[readFileBinary] Success, bytes:', arrayBuffer.byteLength);
+      debug.log('[readFileBinary] Success, bytes:', arrayBuffer.byteLength);
       return new Uint8Array(arrayBuffer);
     } catch (e) {
-      console.log('[readFileBinary] Error reading file:', path, e);
+      debug.log('[readFileBinary] Error reading file:', path, e);
       return null;
     }
   }
@@ -386,7 +387,7 @@ class FileSystemService {
    * Write text to a file
    */
   async writeFile(path: string, content: string): Promise<void> {
-    console.log(`[writeFile] Called for path: ${path}`);
+    debug.log(`[writeFile] Called for path: ${path}`);
 
     // Electron path: use IPC
     if (isElectron()) {
@@ -410,7 +411,7 @@ class FileSystemService {
         console.error(`[writeFile] Error writing file: ${path}`, result.error);
         throw new Error(result.error);
       }
-      console.log(`[writeFile] Successfully wrote file: ${path}`);
+      debug.log(`[writeFile] Successfully wrote file: ${path}`);
       return;
     }
 
@@ -434,7 +435,7 @@ class FileSystemService {
       const writable = await fileHandle.createWritable();
       await writable.write(content);
       await writable.close();
-      console.log(`[writeFile] Successfully wrote file: ${path}`);
+      debug.log(`[writeFile] Successfully wrote file: ${path}`);
     } catch (error) {
       // If path exists as directory instead of file, remove it and retry
       if (error instanceof DOMException && error.name === 'TypeMismatchError') {
@@ -446,7 +447,7 @@ class FileSystemService {
           const writable = await fileHandle.createWritable();
           await writable.write(content);
           await writable.close();
-          console.log(`[writeFile] Successfully wrote file after cleanup: ${path}`);
+          debug.log(`[writeFile] Successfully wrote file after cleanup: ${path}`);
           return;
         } catch (retryError) {
           console.error(`[writeFile] Retry failed for: ${path}`, retryError);
@@ -462,7 +463,7 @@ class FileSystemService {
    * Write binary data to a file
    */
   async writeFileBinary(path: string, content: Uint8Array | ArrayBuffer): Promise<void> {
-    console.log(`[writeFileBinary] Called for path: ${path}`);
+    debug.log(`[writeFileBinary] Called for path: ${path}`);
 
     // Electron path: use IPC
     if (isElectron()) {
@@ -490,7 +491,7 @@ class FileSystemService {
         console.error(`[writeFileBinary] Error writing binary file: ${path}`, result.error);
         throw new Error(result.error);
       }
-      console.log(`[writeFileBinary] Successfully wrote binary file: ${path}`);
+      debug.log(`[writeFileBinary] Successfully wrote binary file: ${path}`);
       return;
     }
 
@@ -519,7 +520,7 @@ class FileSystemService {
           : content.buffer.slice(content.byteOffset, content.byteOffset + content.byteLength);
       await writable.write(buffer as ArrayBuffer);
       await writable.close();
-      console.log(`[writeFileBinary] Successfully wrote binary file: ${path}`);
+      debug.log(`[writeFileBinary] Successfully wrote binary file: ${path}`);
     } catch (error) {
       // If path exists as directory instead of file, remove it and retry
       if (error instanceof DOMException && error.name === 'TypeMismatchError') {
@@ -535,7 +536,7 @@ class FileSystemService {
               : content.buffer.slice(content.byteOffset, content.byteOffset + content.byteLength);
           await writable.write(buffer as ArrayBuffer);
           await writable.close();
-          console.log(`[writeFileBinary] Successfully wrote binary file after cleanup: ${path}`);
+          debug.log(`[writeFileBinary] Successfully wrote binary file after cleanup: ${path}`);
           return;
         } catch (retryError) {
           console.error(`[writeFileBinary] Retry failed for: ${path}`, retryError);

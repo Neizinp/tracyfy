@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { debug } from '../../utils/debug';
 import {
   Plus,
   Download,
@@ -439,7 +440,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 )}
                 {typeof window !== 'undefined' &&
                   (window as any).__E2E_TEST_MODE__ &&
-                  console.log('E2E: Export dropdown rendered')}
+                  debug.log('E2E: Export dropdown rendered')}
 
                 {/* PDF Export with baseline selection */}
                 {onExportPDF && (

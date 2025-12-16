@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react';
+import { debug } from '../../../utils/debug';
 import type { ReactNode } from 'react';
 import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
@@ -40,7 +41,7 @@ export const InformationProvider: React.FC<{ children: ReactNode }> = ({ childre
   // Sync information from filesystem on initial load
   useEffect(() => {
     if (isReady && fsInformation.length > 0 && !hasSyncedInitial.current) {
-      console.log(
+      debug.log(
         '[InformationProvider] Syncing from filesystem:',
         fsInformation.length,
         'information items'

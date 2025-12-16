@@ -1,4 +1,5 @@
 /**
+import { debug } from '../utils/debug';
  * Disk-based Project Service
  *
  * All data is stored on disk, nothing in localStorage.
@@ -92,7 +93,7 @@ class DiskProjectService {
         // If the current filename is NOT the expected filename
         // This handles cases where filename is the ID, or anything else mismatching
         if (file !== expectedFilename) {
-          console.log(`Migrating project file: ${file} -> ${expectedFilename}`);
+          debug.log(`Migrating project file: ${file} -> ${expectedFilename}`);
 
           // Check if target already differs to avoid overwrite if we have duplicates?
           // For now assume safe migration, or check existence

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react';
+import { debug } from '../../../utils/debug';
 import type { ReactNode } from 'react';
 import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
@@ -50,7 +51,7 @@ export const RequirementsProvider: React.FC<{ children: ReactNode }> = ({ childr
   // Sync requirements from filesystem on initial load
   useEffect(() => {
     if (isReady && fsRequirements.length > 0 && !hasSyncedInitial.current) {
-      console.log(
+      debug.log(
         '[RequirementsProvider] Syncing from filesystem:',
         fsRequirements.length,
         'requirements'

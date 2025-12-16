@@ -1,4 +1,5 @@
 /**
+import { debug } from '../utils/debug';
  * Real Git Service - Uses isomorphic-git with File System Access API or Electron IPC
  *
  * In Electron, routes git operations through IPC to the main process (which uses Node fs).
@@ -145,7 +146,7 @@ class RealGitService {
       for (const [hash, files] of Object.entries(data)) {
         this.commitFilesCache.set(hash, files);
       }
-      console.log(
+      debug.log(
         `[RealGitService] Loaded ${Object.keys(data).length} cached commit files from disk`
       );
     } catch {
@@ -207,7 +208,7 @@ class RealGitService {
 
       // In Electron, use IPC to initialize git - auto-init without prompting
       if (isElectronEnv()) {
-        console.log('[init] Auto-initializing git repository...');
+        debug.log('[init] Auto-initializing git repository...');
 
         const rootDir = this.getRootDir();
         const result = await window.electronAPI!.git.init(rootDir);
@@ -221,7 +222,7 @@ class RealGitService {
       }
 
       // Browser path: auto-initialize git without prompting
-      console.log('[init] Auto-initializing git repository (browser)...');
+      debug.log('[init] Auto-initializing git repository (browser)...');
 
       // Initialize git repository
       await git.init({
@@ -360,7 +361,7 @@ class RealGitService {
       cache,
     });
 
-    console.log(`[renameFile] Committed rename: ${oldPath} -> ${newPath}`);
+    debug.log(`[renameFile] Committed rename: ${oldPath} -> ${newPath}`);
   }
 
   /**
@@ -414,7 +415,7 @@ class RealGitService {
         try {
           const files = await fileSystemService.listFiles(type);
           if (type === 'assets') {
-            console.log(`[getStatus] Assets folder contains: ${files.length} files`, files);
+            debug.log(`[getStatus] Assets folder contains: ${files.length} files`, files);
           }
           for (const file of files) {
             const isMarkdown = file.endsWith('.md');
@@ -423,7 +424,7 @@ class RealGitService {
             if (isMarkdown || isImage) {
               const filePath = `${type}/${file}`;
               if (!trackedPaths.has(filePath)) {
-                console.log(`[getStatus] Found untracked file: ${filePath}`);
+                debug.log(`[getStatus] Found untracked file: ${filePath}`);
                 untrackedFiles.push({ path: filePath, status: 'new' });
               }
             }
@@ -431,7 +432,7 @@ class RealGitService {
         } catch (err) {
           // Directory might not exist yet
           if (type === 'assets') {
-            console.log(`[getStatus] Assets folder does not exist or error:`, err);
+            debug.log(`[getStatus] Assets folder does not exist or error:`, err);
           }
         }
       }
@@ -474,7 +475,7 @@ class RealGitService {
         cache,
       });
 
-      console.log(
+      debug.log(
         `[commitFile] Successfully committed ${filepath} by ${authorNameToUse}, SHA: ${commitOid}`
       );
 
@@ -950,7 +951,7 @@ class RealGitService {
       remote: name,
       url,
     });
-    console.log(`[addRemote] Added remote '${name}': ${url}`);
+    debug.log(`[addRemote] Added remote '${name}': ${url}`);
   }
 
   /**
@@ -966,7 +967,7 @@ class RealGitService {
       dir: this.getRootDir(),
       remote: name,
     });
-    console.log(`[removeRemote] Removed remote '${name}'`);
+    debug.log(`[removeRemote] Removed remote '${name}'`);
   }
 
   /**
@@ -1067,7 +1068,7 @@ class RealGitService {
       singleBranch: !!branch,
       ...auth,
     });
-    console.log(`[fetch] Fetched from ${remote}${branch ? '/' + branch : ''}`);
+    debug.log(`[fetch] Fetched from ${remote}${branch ? '/' + branch : ''}`);
   }
 
   /**
@@ -1091,7 +1092,7 @@ class RealGitService {
       ref: branch,
       ...auth,
     });
-    console.log(`[push] Pushed to ${remote}/${branch}`);
+    debug.log(`[push] Pushed to ${remote}/${branch}`);
   }
 
   /**
@@ -1121,7 +1122,7 @@ class RealGitService {
         author: { name: 'Tracyfy User', email: 'user@tracyfy.local' },
         ...auth,
       });
-      console.log(`[pull] Pulled from ${remote}/${branch}`);
+      debug.log(`[pull] Pulled from ${remote}/${branch}`);
       return { success: true, conflicts: [] };
     } catch (error: unknown) {
       const err = error as { code?: string; data?: { filepaths?: string[] } };
@@ -1192,7 +1193,7 @@ class RealGitService {
             // Take the higher value (merge strategy for counters)
             if (remoteValue > localValue) {
               await fileSystemService.writeFile(file, String(remoteValue));
-              console.log(`[pullCounters] Updated ${file}: ${localValue} -> ${remoteValue}`);
+              debug.log(`[pullCounters] Updated ${file}: ${localValue} -> ${remoteValue}`);
             }
           }
         } catch {
@@ -1255,7 +1256,7 @@ class RealGitService {
 
       // Push to remote
       await this.push(remote, branch);
-      console.log('[pushCounters] Pushed counter updates');
+      debug.log('[pushCounters] Pushed counter updates');
       return true;
     } catch (error) {
       console.warn('[pushCounters] Failed:', error);

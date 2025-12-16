@@ -1,4 +1,5 @@
 /**
+import { debug } from '../utils/debug';
  * Asset Service - Manages image and file assets for artifacts
  *
  * Images are stored in the assets/ folder at the root of the project.
@@ -66,18 +67,18 @@ class AssetService {
     const filename = `${uuid}.${ext}`;
     const path = `${ASSETS_DIR}/${filename}`;
 
-    console.log(`[uploadAsset] Uploading image: ${file.name} -> ${path}`);
+    debug.log(`[uploadAsset] Uploading image: ${file.name} -> ${path}`);
 
     // Read file as ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
 
-    console.log(`[uploadAsset] Writing ${uint8Array.length} bytes to ${path}`);
+    debug.log(`[uploadAsset] Writing ${uint8Array.length} bytes to ${path}`);
 
     // Write to disk
     await fileSystemService.writeFileBinary(path, uint8Array);
 
-    console.log(`[uploadAsset] Successfully wrote to ${path}`);
+    debug.log(`[uploadAsset] Successfully wrote to ${path}`);
 
     // Return relative path for markdown
     return `./${path}`;

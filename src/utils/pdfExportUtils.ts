@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { debug } from './debug';
 import autoTable from 'jspdf-autotable';
 import type {
   Requirement,
@@ -236,7 +237,7 @@ export async function exportProjectToPDF(
       });
     }
   } catch (error) {
-    console.log('Save dialog cancelled or not supported, will fallback to download');
+    debug.log('Save dialog cancelled or not supported, will fallback to download');
     // If user cancelled, we might want to stop?
     // But usually we just let it fall back or stop.
     // If it was a cancel, error.name === 'AbortError'
