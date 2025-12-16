@@ -7,6 +7,7 @@
 
 import type { Requirement, UseCase, TestCase, Information, Risk } from '../types';
 import type { LinkType } from './linkTypes';
+import type { CustomAttributeDefinition, CustomAttributeValue } from '../types/customAttributes';
 
 // Placeholder IDs will be replaced with real generated IDs
 export interface DemoArtifacts {
@@ -32,6 +33,260 @@ export const DEMO_PROJECT = {
 };
 
 const now = Date.now();
+
+/**
+ * Demo Custom Attribute Definitions
+ * IDs will be replaced with real generated IDs when created
+ */
+export const DEMO_CUSTOM_ATTRIBUTES: Omit<
+  CustomAttributeDefinition,
+  'id' | 'dateCreated' | 'lastModified'
+>[] = [
+  {
+    name: 'Target Release',
+    type: 'dropdown',
+    description: 'The planned release version for this artifact.',
+    options: ['v1.0', 'v1.1', 'v2.0', 'v2.1', 'v3.0', 'Backlog'],
+    appliesTo: ['requirement', 'useCase', 'testCase'],
+    required: false,
+  },
+  {
+    name: 'Component',
+    type: 'dropdown',
+    description: 'The system component this artifact relates to.',
+    options: [
+      'Authentication',
+      'Data Management',
+      'UI/Frontend',
+      'API/Backend',
+      'Database',
+      'Security',
+      'Infrastructure',
+    ],
+    appliesTo: ['requirement', 'useCase', 'testCase', 'risk'],
+    required: false,
+  },
+  {
+    name: 'Safety Critical',
+    type: 'checkbox',
+    description: 'Indicates if this artifact is safety-critical and requires additional review.',
+    appliesTo: ['requirement', 'testCase', 'risk'],
+    required: false,
+  },
+  {
+    name: 'Effort Estimate (Hours)',
+    type: 'number',
+    description: 'Estimated implementation effort in hours.',
+    appliesTo: ['requirement', 'useCase'],
+    required: false,
+  },
+  {
+    name: 'Review Deadline',
+    type: 'date',
+    description: 'Date by which this artifact should be reviewed.',
+    appliesTo: ['requirement', 'useCase', 'testCase', 'information'],
+    required: false,
+  },
+  {
+    name: 'External Reference',
+    type: 'text',
+    description: 'Link to external documentation, JIRA ticket, or reference material.',
+    appliesTo: ['requirement', 'useCase', 'testCase', 'information', 'risk'],
+    required: false,
+  },
+];
+
+/**
+ * Helper to create custom attribute values for demo artifacts
+ * Uses indices into DEMO_CUSTOM_ATTRIBUTES
+ */
+export function createDemoAttributeValues(attrIds: string[]): {
+  requirementValues: CustomAttributeValue[][];
+  useCaseValues: CustomAttributeValue[][];
+  testCaseValues: CustomAttributeValue[][];
+} {
+  // Sample values for requirements (indices match DEMO_ARTIFACTS.requirements)
+  const requirementValues: CustomAttributeValue[][] = [
+    // 0: User Authentication
+    [
+      { attributeId: attrIds[0], value: 'v1.0' }, // Target Release
+      { attributeId: attrIds[1], value: 'Authentication' }, // Component
+      { attributeId: attrIds[2], value: true }, // Safety Critical
+      { attributeId: attrIds[3], value: 40 }, // Effort
+      { attributeId: attrIds[5], value: 'JIRA-AUTH-001' }, // External Reference
+    ],
+    // 1: Two-Factor Authentication
+    [
+      { attributeId: attrIds[0], value: 'v1.1' },
+      { attributeId: attrIds[1], value: 'Authentication' },
+      { attributeId: attrIds[2], value: true },
+      { attributeId: attrIds[3], value: 24 },
+    ],
+    // 2: Role-Based Access Control
+    [
+      { attributeId: attrIds[0], value: 'v1.0' },
+      { attributeId: attrIds[1], value: 'Security' },
+      { attributeId: attrIds[2], value: true },
+      { attributeId: attrIds[3], value: 32 },
+    ],
+    // 3: Session Management
+    [
+      { attributeId: attrIds[0], value: 'v1.0' },
+      { attributeId: attrIds[1], value: 'Authentication' },
+      { attributeId: attrIds[2], value: true },
+    ],
+    // 4: Data Export
+    [
+      { attributeId: attrIds[0], value: 'v1.1' },
+      { attributeId: attrIds[1], value: 'Data Management' },
+      { attributeId: attrIds[3], value: 16 },
+    ],
+    // 5: Data Import
+    [
+      { attributeId: attrIds[0], value: 'v1.1' },
+      { attributeId: attrIds[1], value: 'Data Management' },
+      { attributeId: attrIds[3], value: 24 },
+    ],
+    // 6: Data Backup
+    [
+      { attributeId: attrIds[0], value: 'v1.0' },
+      { attributeId: attrIds[1], value: 'Infrastructure' },
+      { attributeId: attrIds[2], value: true },
+    ],
+    // 7: Data Encryption
+    [
+      { attributeId: attrIds[0], value: 'v1.0' },
+      { attributeId: attrIds[1], value: 'Security' },
+      { attributeId: attrIds[2], value: true },
+    ],
+    // 8: Performance SLA
+    [
+      { attributeId: attrIds[0], value: 'v1.0' },
+      { attributeId: attrIds[1], value: 'Infrastructure' },
+    ],
+    // 9: Horizontal Scalability
+    [
+      { attributeId: attrIds[0], value: 'v2.0' },
+      { attributeId: attrIds[1], value: 'Infrastructure' },
+      { attributeId: attrIds[3], value: 80 },
+    ],
+    // 10: Caching Strategy
+    [
+      { attributeId: attrIds[0], value: 'v1.1' },
+      { attributeId: attrIds[1], value: 'API/Backend' },
+    ],
+    // 11: Accessibility Compliance
+    [
+      { attributeId: attrIds[0], value: 'v1.0' },
+      { attributeId: attrIds[1], value: 'UI/Frontend' },
+      { attributeId: attrIds[3], value: 60 },
+    ],
+    // 12: Responsive Design
+    [
+      { attributeId: attrIds[0], value: 'v1.0' },
+      { attributeId: attrIds[1], value: 'UI/Frontend' },
+    ],
+    // 13: Dark Mode Support
+    [
+      { attributeId: attrIds[0], value: 'v1.0' },
+      { attributeId: attrIds[1], value: 'UI/Frontend' },
+      { attributeId: attrIds[3], value: 8 },
+    ],
+    // 14: Email Notifications
+    [
+      { attributeId: attrIds[0], value: 'v1.1' },
+      { attributeId: attrIds[1], value: 'API/Backend' },
+    ],
+    // 15: In-App Notifications
+    [
+      { attributeId: attrIds[0], value: 'v2.0' },
+      { attributeId: attrIds[1], value: 'UI/Frontend' },
+    ],
+  ];
+
+  // Sample values for use cases
+  const useCaseValues: CustomAttributeValue[][] = [
+    // 0: User Login Flow
+    [
+      { attributeId: attrIds[0], value: 'v1.0' },
+      { attributeId: attrIds[3], value: 16 },
+    ],
+    // 1: Password Reset
+    [
+      { attributeId: attrIds[0], value: 'v1.0' },
+      { attributeId: attrIds[3], value: 8 },
+    ],
+    // 2: Enable Two-Factor Auth
+    [
+      { attributeId: attrIds[0], value: 'v1.1' },
+      { attributeId: attrIds[3], value: 12 },
+    ],
+    // 3: User Registration
+    [
+      { attributeId: attrIds[0], value: 'v1.0' },
+      { attributeId: attrIds[3], value: 16 },
+    ],
+    // 4: Export Report
+    [{ attributeId: attrIds[0], value: 'v1.1' }],
+    // 5: Import Data
+    [{ attributeId: attrIds[0], value: 'v1.1' }],
+    // 6: Bulk Delete Items
+    [{ attributeId: attrIds[0], value: 'v2.0' }],
+    // 7: Manage User Roles
+    [{ attributeId: attrIds[0], value: 'v1.0' }],
+    // 8: View Audit Log
+    [{ attributeId: attrIds[0], value: 'v2.0' }],
+  ];
+
+  // Sample values for test cases
+  const testCaseValues: CustomAttributeValue[][] = [
+    // 0: Test Valid Login
+    [
+      { attributeId: attrIds[0], value: 'v1.0' },
+      { attributeId: attrIds[1], value: 'Authentication' },
+      { attributeId: attrIds[2], value: true },
+    ],
+    // 1: Test Invalid Login
+    [
+      { attributeId: attrIds[0], value: 'v1.0' },
+      { attributeId: attrIds[1], value: 'Authentication' },
+    ],
+    // 2: Test Account Lockout
+    [
+      { attributeId: attrIds[0], value: 'v1.0' },
+      { attributeId: attrIds[1], value: 'Security' },
+      { attributeId: attrIds[2], value: true },
+    ],
+    // 3-5: More auth tests
+    [],
+    [],
+    [],
+    // 6-9: Data management tests
+    [],
+    [],
+    [],
+    [],
+    // 10-12: Performance tests
+    [{ attributeId: attrIds[1], value: 'Infrastructure' }],
+    [{ attributeId: attrIds[1], value: 'Infrastructure' }],
+    [{ attributeId: attrIds[1], value: 'Database' }],
+    // 13-15: Accessibility tests
+    [{ attributeId: attrIds[1], value: 'UI/Frontend' }],
+    [{ attributeId: attrIds[1], value: 'UI/Frontend' }],
+    [{ attributeId: attrIds[1], value: 'UI/Frontend' }],
+    // 16-17: Security tests
+    [
+      { attributeId: attrIds[1], value: 'Security' },
+      { attributeId: attrIds[2], value: true },
+    ],
+    [
+      { attributeId: attrIds[1], value: 'Security' },
+      { attributeId: attrIds[2], value: true },
+    ],
+  ];
+
+  return { requirementValues, useCaseValues, testCaseValues };
+}
 
 export const DEMO_ARTIFACTS: DemoArtifacts = {
   requirements: [
