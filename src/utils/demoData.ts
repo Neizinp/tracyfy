@@ -293,8 +293,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     // Authentication & Security (0-3)
     {
       title: 'User Authentication',
-      description: 'The system shall provide secure user authentication.',
-      text: `Users must be able to authenticate using email and password credentials.
+      description: 'Core authentication functionality for user login and security.',
+      text: `The system shall provide secure user authentication.
+
+Users must be able to authenticate using email and password credentials.
 
 ## Acceptance Criteria
 - Login form with email and password fields
@@ -312,8 +314,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     },
     {
       title: 'Two-Factor Authentication',
-      description: 'The system shall support optional two-factor authentication.',
-      text: `Users can enable 2FA for additional security.
+      description: 'Optional enhanced security via two-factor authentication.',
+      text: `The system shall support optional two-factor authentication.
+
+Users can enable 2FA for additional security.
 
 ## Acceptance Criteria
 - Support TOTP authenticator apps
@@ -331,8 +335,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     },
     {
       title: 'Role-Based Access Control',
-      description: 'The system shall implement role-based permissions.',
-      text: `Access to features shall be controlled by user roles.
+      description: 'Permission system based on user roles.',
+      text: `The system shall implement role-based permissions.
+
+Access to features shall be controlled by user roles.
 
 ## Roles
 - **Admin**: Full system access
@@ -350,8 +356,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     },
     {
       title: 'Session Management',
-      description: 'The system shall securely manage user sessions.',
-      text: `Sessions must be properly managed throughout their lifecycle.
+      description: 'User session lifecycle and security management.',
+      text: `The system shall securely manage user sessions.
+
+Sessions must be properly managed throughout their lifecycle.
 
 ## Requirements
 - Secure session tokens
@@ -371,8 +379,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     // Data Management (4-7)
     {
       title: 'Data Export',
-      description: 'Users shall be able to export their data in multiple formats.',
-      text: `The system must support exporting data to CSV, JSON, and PDF formats.
+      description: 'Export user data in various file formats.',
+      text: `Users shall be able to export their data in multiple formats.
+
+The system must support exporting data to CSV, JSON, and PDF formats.
 
 ## Acceptance Criteria
 - Export button accessible from main dashboard
@@ -389,8 +399,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     },
     {
       title: 'Data Import',
-      description: 'Users shall be able to import data from external sources.',
-      text: `The system must support importing data from CSV and JSON files.
+      description: 'Import data from external files.',
+      text: `Users shall be able to import data from external sources.
+
+The system must support importing data from CSV and JSON files.
 
 ## Acceptance Criteria
 - File upload interface
@@ -408,8 +420,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     },
     {
       title: 'Data Backup',
-      description: 'The system shall automatically backup user data.',
-      text: `Automatic backups ensure data recovery capability.
+      description: 'Automated backup system for data protection.',
+      text: `The system shall automatically backup user data.
+
+Automatic backups ensure data recovery capability.
 
 ## Requirements
 - Daily incremental backups
@@ -427,8 +441,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     },
     {
       title: 'Data Encryption',
-      description: 'All sensitive data shall be encrypted at rest and in transit.',
-      text: `Data protection through encryption.
+      description: 'Encryption for data at rest and in transit.',
+      text: `All sensitive data shall be encrypted at rest and in transit.
+
+Data protection through encryption.
 
 ## Requirements
 - AES-256 encryption at rest
@@ -448,8 +464,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     // Performance & Scalability (8-10)
     {
       title: 'Performance SLA',
-      description: 'The system shall meet performance service level agreements.',
-      text: `All API responses must complete within 200ms for 95th percentile.
+      description: 'Performance targets and service level agreements.',
+      text: `The system shall meet performance service level agreements.
+
+All API responses must complete within 200ms for 95th percentile.
 
 ## Metrics
 - Page load time < 2 seconds
@@ -466,8 +484,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     },
     {
       title: 'Horizontal Scalability',
-      description: 'The system shall support horizontal scaling.',
-      text: `Application must scale horizontally to handle load.
+      description: 'Support for scaling across multiple instances.',
+      text: `The system shall support horizontal scaling.
+
+Application must scale horizontally to handle load.
 
 ## Requirements
 - Stateless application design
@@ -485,8 +505,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     },
     {
       title: 'Caching Strategy',
-      description: 'The system shall implement efficient caching.',
-      text: `Caching improves performance and reduces load.
+      description: 'Multi-layer caching for performance.',
+      text: `The system shall implement efficient caching.
+
+Caching improves performance and reduces load.
 
 ## Requirements
 - Browser caching for static assets
@@ -506,8 +528,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     // Accessibility & UX (11-13)
     {
       title: 'Accessibility Compliance',
-      description: 'The application shall comply with WCAG 2.1 AA standards.',
-      text: `All user interfaces must be accessible to users with disabilities.
+      description: 'WCAG 2.1 AA accessibility standards for all users.',
+      text: `The application shall comply with WCAG 2.1 AA standards.
+
+All user interfaces must be accessible to users with disabilities.
 
 ## Requirements
 - Keyboard navigation for all features
@@ -525,8 +549,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     },
     {
       title: 'Responsive Design',
-      description: 'The UI shall be responsive across device sizes.',
-      text: `Application must work on desktop, tablet, and mobile.
+      description: 'UI adaptation for all screen sizes.',
+      text: `The UI shall be responsive across device sizes.
+
+Application must work on desktop, tablet, and mobile.
 
 ## Breakpoints
 - Desktop: 1024px+
@@ -543,8 +569,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     },
     {
       title: 'Dark Mode Support',
-      description: 'The application shall support dark mode.',
-      text: `Users can switch between light and dark themes.
+      description: 'Light and dark theme options.',
+      text: `The application shall support dark mode.
+
+Users can switch between light and dark themes.
 
 ## Requirements
 - System preference detection
@@ -564,8 +592,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     // Notifications & Communication (14-15)
     {
       title: 'Email Notifications',
-      description: 'The system shall send email notifications for key events.',
-      text: `Users receive email alerts for important activities.
+      description: 'Email alerts for important events.',
+      text: `The system shall send email notifications for key events.
+
+Users receive email alerts for important activities.
 
 ## Events
 - Account security changes
@@ -583,8 +613,10 @@ export const DEMO_ARTIFACTS: DemoArtifacts = {
     },
     {
       title: 'In-App Notifications',
-      description: 'The system shall display real-time in-app notifications.',
-      text: `Users see notifications within the application.
+      description: 'Real-time notification system within the application.',
+      text: `The system shall display real-time in-app notifications.
+
+Users see notifications within the application.
 
 ## Requirements
 - Notification center
