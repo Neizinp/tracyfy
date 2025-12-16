@@ -422,42 +422,74 @@ export async function exportProjectToPDF(
     }
   }
 
+  // Section numbering counter - starts at 1 for Table of Contents
+  let sectionNumber = 1; // TOC is section 1
+
   // 4. Revision History (NEW POSITION - after TOC)
   // ONLY show revision history if there's a previous baseline to compare against
   // If no previous baseline exists, there's nothing to compare - skip entirely
   if (previousBaseline && (artifactCommits.length > 0 || removedArtifacts.length > 0)) {
     doc.addPage();
-    tocEntries.push({ title: 'Revision History', page: currentPage, level: 0 });
-    addRevisionHistory(doc, artifactCommits, removedArtifacts);
+    sectionNumber++;
+    tocEntries.push({ title: `${sectionNumber}. Revision History`, page: currentPage, level: 0 });
+    addRevisionHistory(doc, artifactCommits, removedArtifacts, sectionNumber);
     currentPage++;
   }
 
   // 5. Requirements Section
   if (projectRequirements.length > 0) {
     doc.addPage();
-    tocEntries.push({ title: 'Requirements', page: currentPage, level: 0 });
-    currentPage = await addRequirementsSection(doc, projectRequirements, currentPage, tocEntries);
+    sectionNumber++;
+    tocEntries.push({ title: `${sectionNumber}. Requirements`, page: currentPage, level: 0 });
+    currentPage = await addRequirementsSection(
+      doc,
+      projectRequirements,
+      currentPage,
+      tocEntries,
+      sectionNumber
+    );
   }
 
   // 6. Use Cases Section
   if (projectUseCases.length > 0) {
     doc.addPage();
-    tocEntries.push({ title: 'Use Cases', page: currentPage, level: 0 });
-    currentPage = await addUseCasesSection(doc, projectUseCases, currentPage, tocEntries);
+    sectionNumber++;
+    tocEntries.push({ title: `${sectionNumber}. Use Cases`, page: currentPage, level: 0 });
+    currentPage = await addUseCasesSection(
+      doc,
+      projectUseCases,
+      currentPage,
+      tocEntries,
+      sectionNumber
+    );
   }
 
   // 7. Test Cases Section
   if (projectTestCases.length > 0) {
     doc.addPage();
-    tocEntries.push({ title: 'Test Cases', page: currentPage, level: 0 });
-    currentPage = await addTestCasesSection(doc, projectTestCases, currentPage, tocEntries);
+    sectionNumber++;
+    tocEntries.push({ title: `${sectionNumber}. Test Cases`, page: currentPage, level: 0 });
+    currentPage = await addTestCasesSection(
+      doc,
+      projectTestCases,
+      currentPage,
+      tocEntries,
+      sectionNumber
+    );
   }
 
   // 8. Information Section
   if (projectInformation.length > 0) {
     doc.addPage();
-    tocEntries.push({ title: 'Information', page: currentPage, level: 0 });
-    currentPage = await addInformationSection(doc, projectInformation, currentPage, tocEntries);
+    sectionNumber++;
+    tocEntries.push({ title: `${sectionNumber}. Information`, page: currentPage, level: 0 });
+    currentPage = await addInformationSection(
+      doc,
+      projectInformation,
+      currentPage,
+      tocEntries,
+      sectionNumber
+    );
   }
 
   // 9. Risks Section - filter from globalState if provided
@@ -466,16 +498,18 @@ export async function exportProjectToPDF(
   );
   if (projectRisks.length > 0) {
     doc.addPage();
-    tocEntries.push({ title: 'Risks', page: currentPage, level: 0 });
-    currentPage = addRisksSection(doc, projectRisks, currentPage, tocEntries);
+    sectionNumber++;
+    tocEntries.push({ title: `${sectionNumber}. Risks`, page: currentPage, level: 0 });
+    currentPage = addRisksSection(doc, projectRisks, currentPage, tocEntries, sectionNumber);
   }
 
   // 10. Links Section - fetch from diskLinkService
   const projectLinks = await diskLinkService.getLinksForProject(project.id);
   if (projectLinks.length > 0) {
     doc.addPage();
-    tocEntries.push({ title: 'Links', page: currentPage, level: 0 });
-    currentPage = addLinksSection(doc, projectLinks, currentPage, tocEntries);
+    sectionNumber++;
+    tocEntries.push({ title: `${sectionNumber}. Links`, page: currentPage, level: 0 });
+    currentPage = addLinksSection(doc, projectLinks, currentPage, tocEntries, sectionNumber);
   }
 
   // Add TOC (go back to reserved ToC pages and render)
@@ -566,7 +600,7 @@ function addTableOfContents(
 
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
-  doc.text('Table of Contents', 20, 20);
+  doc.text('1. Table of Contents', 20, 20);
 
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
@@ -637,11 +671,12 @@ async function addRequirementsSection(
   doc: jsPDF,
   requirements: Requirement[],
   startPage: number,
-  tocEntries: TOCEntry[]
+  tocEntries: TOCEntry[],
+  sectionNumber: number
 ): Promise<number> {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Requirements', 20, 20);
+  doc.text(`${sectionNumber}. Requirements`, 20, 20);
 
   let yPos = 30;
   let page = startPage;
@@ -854,11 +889,12 @@ async function addUseCasesSection(
   doc: jsPDF,
   useCases: UseCase[],
   startPage: number,
-  tocEntries: TOCEntry[]
+  tocEntries: TOCEntry[],
+  sectionNumber: number
 ): Promise<number> {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Use Cases', 20, 20);
+  doc.text(`${sectionNumber}. Use Cases`, 20, 20);
 
   let yPos = 30;
   let page = startPage;
@@ -1097,11 +1133,12 @@ async function addTestCasesSection(
   doc: jsPDF,
   testCases: TestCase[],
   startPage: number,
-  tocEntries: TOCEntry[]
+  tocEntries: TOCEntry[],
+  sectionNumber: number
 ): Promise<number> {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Test Cases', 20, 20);
+  doc.text(`${sectionNumber}. Test Cases`, 20, 20);
 
   let yPos = 30;
   let page = startPage;
@@ -1235,11 +1272,12 @@ async function addInformationSection(
   doc: jsPDF,
   information: Information[],
   startPage: number,
-  tocEntries: TOCEntry[]
+  tocEntries: TOCEntry[],
+  sectionNumber: number
 ): Promise<number> {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Information', 20, 20);
+  doc.text(`${sectionNumber}. Information`, 20, 20);
 
   let yPos = 30;
   let page = startPage;
@@ -1357,11 +1395,12 @@ interface RemovedArtifact {
 function addRevisionHistory(
   doc: jsPDF,
   artifactCommits: ArtifactCommit[],
-  removedArtifacts: RemovedArtifact[]
+  removedArtifacts: RemovedArtifact[],
+  sectionNumber: number
 ): void {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Revision History', 20, 20);
+  doc.text(`${sectionNumber}. Revision History`, 20, 20);
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
@@ -1488,11 +1527,12 @@ function addLinksSection(
   doc: jsPDF,
   links: Link[],
   startPage: number,
-  tocEntries: TOCEntry[]
+  tocEntries: TOCEntry[],
+  sectionNumber: number
 ): number {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Links', 20, 20);
+  doc.text(`${sectionNumber}. Links`, 20, 20);
 
   let page = startPage;
 
@@ -1550,11 +1590,12 @@ function addRisksSection(
   doc: jsPDF,
   risks: Risk[],
   startPage: number,
-  tocEntries: TOCEntry[]
+  tocEntries: TOCEntry[],
+  sectionNumber: number
 ): number {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Risks', 20, 20);
+  doc.text(`${sectionNumber}. Risks`, 20, 20);
 
   let yPos = 30;
   let page = startPage;
@@ -1576,9 +1617,9 @@ function addRisksSection(
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.5);
 
-    // Header section with shaded background
+    // Header section with shaded background (gray like other artifacts)
     const headerHeight = 10;
-    doc.setFillColor(255, 235, 235); // Light red for risks
+    doc.setFillColor(240, 240, 240);
     doc.rect(boxLeft, currentY, boxWidth, headerHeight, 'FD');
 
     // Risk ID and Title
@@ -1595,7 +1636,7 @@ function addRisksSection(
     doc.text(revText, boxLeft + boxWidth - 3, currentY + 7, { align: 'right' });
 
     // Add to TOC
-    tocEntries.push({ title: `${risk.id} - ${risk.title}`, page: page, level: 1 });
+    tocEntries.push({ title: title, page: page, level: 1 });
 
     currentY += headerHeight;
 

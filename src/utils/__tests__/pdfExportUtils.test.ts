@@ -297,20 +297,27 @@ describe('pdfExportUtils', () => {
 
     await exportProjectToPDF(mockProject, globalState, ['r1'], ['u1'], ['t1'], ['i1'], [], null);
 
-    // Header
-    expect(mockText).toHaveBeenCalledWith('Table of Contents', 20, 20);
+    // Header (now numbered as section 1)
+    expect(mockText).toHaveBeenCalledWith('1. Table of Contents', 20, 20);
 
-    // Sections
-    expect(mockText).toHaveBeenCalledWith('Requirements', expect.any(Number), expect.any(Number));
-    expect(mockText).toHaveBeenCalledWith('Use Cases', expect.any(Number), expect.any(Number));
-    expect(mockText).toHaveBeenCalledWith('Test Cases', expect.any(Number), expect.any(Number));
-    expect(mockText).toHaveBeenCalledWith('Information', expect.any(Number), expect.any(Number));
+    // Helper to check for section entries in TOC (with section numbers)
+    const textCalls = mockText.mock.calls.map(([text]) => text);
+    const hasTocEntry = (suffix: string) =>
+      textCalls.some((t) => typeof t === 'string' && t.endsWith(`. ${suffix}`));
+    const hasTocItem = (partialTitle: string) =>
+      textCalls.some((t) => typeof t === 'string' && t.includes(partialTitle));
 
-    // Granular Items (indented)
-    expect(mockText).toHaveBeenCalledWith('r1 - My Requirement', 35, expect.any(Number));
-    expect(mockText).toHaveBeenCalledWith('u1 - My Use Case', 35, expect.any(Number));
-    expect(mockText).toHaveBeenCalledWith('t1 - My Test Case', 35, expect.any(Number));
-    expect(mockText).toHaveBeenCalledWith('i1 - My Info', 35, expect.any(Number));
+    // Sections (numbered in TOC)
+    expect(hasTocEntry('Requirements')).toBe(true);
+    expect(hasTocEntry('Use Cases')).toBe(true);
+    expect(hasTocEntry('Test Cases')).toBe(true);
+    expect(hasTocEntry('Information')).toBe(true);
+
+    // Granular Items (indented, with section.item prefix)
+    expect(hasTocItem('r1 - My Requirement')).toBe(true);
+    expect(hasTocItem('u1 - My Use Case')).toBe(true);
+    expect(hasTocItem('t1 - My Test Case')).toBe(true);
+    expect(hasTocItem('i1 - My Info')).toBe(true);
   });
 
   it('should include all artifact sections with correct content', async () => {
@@ -323,14 +330,16 @@ describe('pdfExportUtils', () => {
 
     await exportProjectToPDF(mockProject, globalState, ['r1'], ['u1'], ['t1'], ['i1'], [], null);
 
+    // Helper to check for section headings and item titles (with section numbers)
+    const textCalls = mockText.mock.calls.map(([text]) => text);
+    const hasHeading = (suffix: string) =>
+      textCalls.some((t) => typeof t === 'string' && t.endsWith(`. ${suffix}`));
+    const hasItem = (partialTitle: string) =>
+      mockText.mock.calls.some(([text]) => typeof text === 'string' && text.includes(partialTitle));
+
     // Requirements Section
-    expect(mockText).toHaveBeenCalledWith('Requirements', 20, 20);
-    // Header
-    expect(mockText).toHaveBeenCalledWith(
-      'r1 - My Requirement',
-      expect.any(Number),
-      expect.any(Number)
-    );
+    expect(hasHeading('Requirements')).toBe(true);
+    expect(hasItem('r1 - My Requirement')).toBe(true);
     // Metadata Bar
     expect(mockText).toHaveBeenCalledWith(
       expect.stringContaining('Status: draft'),
@@ -353,12 +362,8 @@ describe('pdfExportUtils', () => {
     expect(mockText).toHaveBeenCalledWith(['Rationale'], expect.any(Number), expect.any(Number));
 
     // Use Cases Section
-    expect(mockText).toHaveBeenCalledWith('Use Cases', 20, 20);
-    expect(mockText).toHaveBeenCalledWith(
-      'u1 - My Use Case',
-      expect.any(Number),
-      expect.any(Number)
-    );
+    expect(hasHeading('Use Cases')).toBe(true);
+    expect(hasItem('u1 - My Use Case')).toBe(true);
     expect(mockText).toHaveBeenCalledWith('Main Flow:', expect.any(Number), expect.any(Number));
     expect(mockText).toHaveBeenCalledWith(
       ['Step 1. Do this.'],
@@ -367,18 +372,14 @@ describe('pdfExportUtils', () => {
     );
 
     // Test Cases Section
-    expect(mockText).toHaveBeenCalledWith('Test Cases', 20, 20);
-    expect(mockText).toHaveBeenCalledWith(
-      't1 - My Test Case',
-      expect.any(Number),
-      expect.any(Number)
-    );
+    expect(hasHeading('Test Cases')).toBe(true);
+    expect(hasItem('t1 - My Test Case')).toBe(true);
     expect(mockText).toHaveBeenCalledWith('Description:', expect.any(Number), expect.any(Number));
     expect(mockText).toHaveBeenCalledWith(['Test Steps'], expect.any(Number), expect.any(Number));
 
     // Information Section
-    expect(mockText).toHaveBeenCalledWith('Information', 20, 20);
-    expect(mockText).toHaveBeenCalledWith('i1 - My Info', expect.any(Number), expect.any(Number));
+    expect(hasHeading('Information')).toBe(true);
+    expect(hasItem('i1 - My Info')).toBe(true);
     expect(mockText).toHaveBeenCalledWith(['Info Content'], expect.any(Number), expect.any(Number));
   });
 
@@ -644,9 +645,17 @@ describe('pdfExportUtils', () => {
       null
     );
 
-    // Verify Information section is created
-    expect(mockText).toHaveBeenCalledWith('Information', 20, 20);
-    expect(mockText).toHaveBeenCalledWith('i1 - My Info', expect.any(Number), expect.any(Number));
+    // Verify Information section is created (with section number)
+    const textCalls = mockText.mock.calls.map(([text]) => text);
+    const hasInfoHeading = textCalls.some(
+      (text) => typeof text === 'string' && text.endsWith('. Information')
+    );
+    expect(hasInfoHeading).toBe(true);
+    // Verify info item is rendered (with section number prefix)
+    const infoTitleCalls = mockText.mock.calls.filter(
+      ([text]) => typeof text === 'string' && text.includes('i1 - My Info')
+    );
+    expect(infoTitleCalls.length).toBeGreaterThan(0);
 
     // Verify Metadata
     expect(mockText).toHaveBeenCalledWith(
@@ -950,8 +959,12 @@ describe('pdfExportUtils', () => {
 
       await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
 
-      // Verify Links section heading is added
-      expect(mockText).toHaveBeenCalledWith('Links', 20, 20);
+      // Verify Links section heading is added (with section number)
+      const textCalls = mockText.mock.calls.map(([text]) => text);
+      const hasLinksHeading = textCalls.some(
+        (text) => typeof text === 'string' && text.endsWith('. Links')
+      );
+      expect(hasLinksHeading).toBe(true);
 
       // Verify autoTable was called for links (Links table has specific headers)
       const autoTableCalls = (autoTable as any).mock.calls;
@@ -1021,15 +1034,18 @@ describe('pdfExportUtils', () => {
 
       await exportProjectToPDF(projectWithRisks, globalStateWithRisks, [], [], [], [], [], null);
 
-      // Verify Risks section heading is added
-      expect(mockText).toHaveBeenCalledWith('Risks', 20, 20);
-
-      // Verify risk title is rendered
-      expect(mockText).toHaveBeenCalledWith(
-        'RISK-001 - Security Risk',
-        expect.any(Number),
-        expect.any(Number)
+      // Verify Risks section heading is added (with section number)
+      const textCalls = mockText.mock.calls.map(([text]) => text);
+      const hasRisksHeading = textCalls.some(
+        (text) => typeof text === 'string' && text.endsWith('. Risks')
       );
+      expect(hasRisksHeading).toBe(true);
+
+      // Verify risk title is rendered (with section number prefix)
+      const riskTitleCalls = mockText.mock.calls.filter(
+        ([text]) => typeof text === 'string' && text.includes('RISK-001 - Security Risk')
+      );
+      expect(riskTitleCalls.length).toBeGreaterThan(0);
     });
 
     it('should not include risks section when project has no risks', async () => {
@@ -1045,7 +1061,7 @@ describe('pdfExportUtils', () => {
       // Verify Risks section heading is NOT added
       const textCalls = mockText.mock.calls.map(([text]) => text);
       const hasRisksHeading = textCalls.some(
-        (text) => typeof text === 'string' && text === 'Risks'
+        (text) => typeof text === 'string' && text.includes('. Risks')
       );
       expect(hasRisksHeading).toBe(false);
     });
