@@ -28,6 +28,7 @@ export interface LayoutProps {
   onSearch?: (query: string) => void;
   onNewInformation?: () => void;
   onNewRisk?: () => void;
+  onNewWorkflow?: () => void;
   onNewLink?: () => void;
   onNewCustomAttribute?: () => void;
   baselines?: ProjectBaseline[];
@@ -65,6 +66,7 @@ export const Layout: React.FC<LayoutProps> = ({
   onSearch,
   onNewInformation,
   onNewRisk,
+  onNewWorkflow,
   onNewLink,
   onNewCustomAttribute,
   baselines = [],
@@ -95,6 +97,7 @@ export const Layout: React.FC<LayoutProps> = ({
           onNewTestCase={onNewTestCase}
           onNewInformation={onNewInformation}
           onNewRisk={onNewRisk}
+          onNewWorkflow={onNewWorkflow}
           onNewLink={onNewLink}
           onNewCustomAttribute={onNewCustomAttribute}
           onImport={onImport}

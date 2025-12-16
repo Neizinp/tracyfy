@@ -212,6 +212,7 @@ export const ProjectLayout: React.FC = () => {
       onNewTestCase={() => ui.setIsNewTestCaseModalOpen(true)}
       onNewInformation={() => ui.setIsInformationModalOpen(true)}
       onNewRisk={() => ui.setIsRiskModalOpen(true)}
+      onNewWorkflow={() => ui.setIsWorkflowModalOpen(true)}
       onNewLink={() => navigate('/links')}
       onNewCustomAttribute={() => ui.setIsCustomAttributeModalOpen(true)}
       onExport={importExport.handleExport}

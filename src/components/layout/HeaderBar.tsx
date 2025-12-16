@@ -40,6 +40,7 @@ export interface HeaderBarProps {
   onNewTestCase?: () => void;
   onNewInformation?: () => void;
   onNewRisk?: () => void;
+  onNewWorkflow?: () => void;
   onNewLink?: () => void;
   onNewCustomAttribute?: () => void;
   // Import dropdown
@@ -74,6 +75,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onNewTestCase,
   onNewInformation,
   onNewRisk,
+  onNewWorkflow,
   onNewLink,
   onNewCustomAttribute,
   onImport,
@@ -338,6 +340,17 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   }}
                   icon={Plus}
                   label="New Risk"
+                  showBorder
+                />
+              )}
+              {onNewWorkflow && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    onNewWorkflow();
+                    setIsCreateMenuOpen(false);
+                  }}
+                  icon={Plus}
+                  label="New Workflow"
                   showBorder
                 />
               )}
