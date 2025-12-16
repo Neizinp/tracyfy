@@ -124,20 +124,9 @@ export const CustomAttributesPage: React.FC = () => {
           marginBottom: 'var(--spacing-lg)',
         }}
       >
-        <div>
-          <h1
-            style={{
-              fontSize: 'var(--font-size-xl)',
-              fontWeight: 600,
-              marginBottom: 'var(--spacing-xs)',
-            }}
-          >
-            Custom Attributes
-          </h1>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-            Define custom fields that can be added to artifacts across all projects.
-          </p>
-        </div>
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+          Define custom fields that can be added to artifacts across all projects.
+        </p>
         <button
           onClick={handleCreate}
           style={{
