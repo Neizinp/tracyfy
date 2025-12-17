@@ -7,19 +7,9 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import {
-  GitBranch,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  RefreshCw,
-  Plus,
-  User,
-  FileText,
-} from 'lucide-react';
+import { GitBranch, Clock, CheckCircle2, XCircle, User, FileText } from 'lucide-react';
 import { diskWorkflowService } from '../services/diskWorkflowService';
 import { useUser } from '../app/providers';
-import { useUI } from '../app/providers';
 import type { Workflow } from '../types';
 import { WorkflowDetailPanel } from '../components/WorkflowDetailPanel';
 import { useToast } from '../app/providers/ToastProvider';
@@ -28,7 +18,6 @@ const NOTIFIED_APPROVALS_KEY = 'workflow_notified_approvals';
 
 export const WorkflowsPage: React.FC = () => {
   const { currentUser, users } = useUser();
-  const { setIsWorkflowModalOpen } = useUI();
   const { showToast } = useToast();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,11 +122,6 @@ export const WorkflowsPage: React.FC = () => {
 
   const handleWorkflowClick = (workflow: Workflow) => {
     setSelectedWorkflow(workflow);
-    // TODO: Open workflow detail/approve modal
-  };
-
-  const handleAddWorkflow = () => {
-    setIsWorkflowModalOpen(true);
   };
 
   if (!currentUser) {
@@ -156,68 +140,6 @@ export const WorkflowsPage: React.FC = () => {
 
   return (
     <div style={{ padding: 'var(--spacing-lg)', height: '100%', overflow: 'auto' }}>
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 'var(--spacing-lg)',
-        }}
-      >
-        <h2
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--spacing-sm)',
-            fontWeight: 600,
-            fontSize: 'var(--font-size-xl)',
-          }}
-        >
-          <GitBranch size={24} style={{ color: 'var(--color-accent)' }} />
-          My Workflows
-        </h2>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={handleAddWorkflow}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 12px',
-              backgroundColor: 'var(--color-accent)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: 'var(--font-size-sm)',
-              fontWeight: 500,
-            }}
-          >
-            <Plus size={16} />
-            New Workflow
-          </button>
-          <button
-            onClick={loadWorkflows}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-bg-card)',
-              color: 'var(--color-text-primary)',
-              cursor: 'pointer',
-              fontSize: 'var(--font-size-sm)',
-            }}
-          >
-            <RefreshCw size={14} />
-            Refresh
-          </button>
-        </div>
-      </div>
-
       {loading ? (
         <div
           style={{

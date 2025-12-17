@@ -172,12 +172,13 @@ export const ProjectLayout: React.FC = () => {
     if (location.pathname.includes('/test-cases')) return 'Test Cases';
     if (location.pathname.includes('/information')) return 'Information';
     if (location.pathname.includes('/risks')) return 'Risks';
+    if (location.pathname.includes('/workflows')) return 'Workflows';
     if (location.pathname.includes('/custom-attributes')) return 'Custom Attributes';
     if (location.pathname.includes('/library/requirements')) return 'Requirements';
     if (location.pathname.includes('/library/use-cases')) return 'Use Cases';
     if (location.pathname.includes('/library/test-cases')) return 'Test Cases';
     if (location.pathname.includes('/library/information')) return 'Information';
-    return 'Requirements';
+    return '';
   };
 
   // Handle adding selected items from library to project
@@ -503,6 +504,27 @@ export const ProjectLayout: React.FC = () => {
             {location.pathname.includes('/custom-attributes') && (
               <button
                 onClick={() => ui.setIsCustomAttributeModalOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  backgroundColor: 'var(--color-accent)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: 'var(--font-size-sm)',
+                  fontWeight: 500,
+                }}
+              >
+                <Plus size={16} />
+                Add
+              </button>
+            )}
+            {location.pathname.includes('/workflows') && (
+              <button
+                onClick={() => ui.setIsWorkflowModalOpen(true)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
