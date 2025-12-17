@@ -6,12 +6,15 @@ import type {
   Information,
   Project,
   ProjectBaseline,
-  ArtifactLink,
+  Risk,
+  Link,
 } from '../types';
 import type { CustomAttributeDefinition, CustomAttributeValue } from '../types/customAttributes';
 import { formatDate } from './dateUtils';
 import { realGitService } from '../services/realGitService';
 import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
+import { diskLinkService } from '../services/diskLinkService';
+import { LINK_TYPE_LABELS } from './linkTypes';
 
 // Helper to sanitize text for Excel (remove newlines if needed, or keep them)
 // Excel handles newlines in cells if wrapText is on.
@@ -91,6 +94,7 @@ export async function exportProjectToExcel(
     useCases: UseCase[];
     testCases: TestCase[];
     information: Information[];
+    risks?: Risk[];
   },
   projectRequirementIds: string[],
   projectUseCaseIds: string[],
@@ -98,6 +102,39 @@ export async function exportProjectToExcel(
   projectInformationIds: string[],
   baselines: ProjectBaseline[]
 ): Promise<void> {
+  // 0. Request File Handle FIRST (to ensure user activation is valid)
+  // The File System Access API requires a recent user gesture to show the file picker.
+  // If we do async work first, the user activation expires and the picker won't show.
+  let fileHandle: any = null;
+  let defaultFilename = `${project.name.replace(/[^a-z0-9]/gi, '_')}`;
+  if (project.currentBaseline) {
+    defaultFilename += `_${project.currentBaseline.replace(/[^a-z0-9]/gi, '_')}`;
+  }
+  defaultFilename += '-export.xlsx';
+
+  try {
+    if ('showSaveFilePicker' in window) {
+      fileHandle = await (window as any).showSaveFilePicker({
+        suggestedName: defaultFilename,
+        types: [
+          {
+            description: 'Excel Spreadsheet',
+            accept: {
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+            },
+          },
+        ],
+      });
+    }
+  } catch (err) {
+    // If user cancelled, stop export
+    if ((err as any).name === 'AbortError') {
+      return;
+    }
+    console.error('Error with save file picker:', err);
+    // Continue to fallback download
+  }
+
   const wb = XLSX.utils.book_new();
 
   // Fetch custom attribute definitions for column headers
@@ -116,6 +153,9 @@ export async function exportProjectToExcel(
   const projectInformation = sortByIdNumber(
     globalState.information.filter((i) => projectInformationIds.includes(i.id) && !i.isDeleted)
   );
+  const projectRisks = sortByIdNumber(
+    (globalState.risks || []).filter((r) => project.riskIds?.includes(r.id) && !r.isDeleted)
+  );
 
   // 1. Revision History
   const sortedBaselines = [...baselines].sort((a, b) => b.timestamp - a.timestamp);
@@ -125,7 +165,7 @@ export async function exportProjectToExcel(
 
   // Helper to fetch and format history
   const fetchHistory = async (
-    type: 'requirements' | 'usecases' | 'testcases' | 'information',
+    type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks',
     id: string,
     title: string
   ) => {
@@ -156,6 +196,7 @@ export async function exportProjectToExcel(
   for (const uc of projectUseCases) await fetchHistory('usecases', uc.id, uc.title);
   for (const tc of projectTestCases) await fetchHistory('testcases', tc.id, tc.title);
   for (const info of projectInformation) await fetchHistory('information', info.id, info.title);
+  for (const risk of projectRisks) await fetchHistory('risks', risk.id, risk.title);
 
   // Sort history by date descending
   historyData.sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime());
@@ -311,52 +352,92 @@ export async function exportProjectToExcel(
     XLSX.utils.book_append_sheet(wb, wsInfo, 'Information');
   }
 
-  // 6. Traceability Matrix (all artifact types)
-  const allArtifacts = [
-    ...projectRequirements.map((r) => ({
-      id: r.id,
-      type: 'REQ',
-      linkedArtifacts: r.linkedArtifacts || [],
-    })),
-    ...projectUseCases.map((u) => ({
-      id: u.id,
-      type: 'UC',
-      linkedArtifacts: u.linkedArtifacts || [],
-    })),
-    ...projectTestCases.map((t) => ({
-      id: t.id,
-      type: 'TC',
-      linkedArtifacts: [
-        ...(t.linkedArtifacts || []),
-        // Include legacy requirementIds as verifies links
-        ...(t.requirementIds || []).map((reqId) => ({
-          targetId: reqId,
-          type: 'verifies' as const,
-        })),
-      ],
-    })),
-    ...projectInformation.map((i) => ({
-      id: i.id,
-      type: 'INFO',
-      linkedArtifacts: i.linkedArtifacts || [],
-    })),
+  // 6. Risks Sheet
+  if (projectRisks.length > 0) {
+    const capitalizeWord = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+    const riskData = projectRisks.map((risk) => ({
+      ID: risk.id,
+      Title: risk.title,
+      Revision: risk.revision || '01',
+      Category: capitalizeWord(risk.category),
+      Probability: capitalizeWord(risk.probability),
+      Impact: capitalizeWord(risk.impact),
+      Status: capitalizeWord(risk.status),
+      Owner: risk.owner || '',
+      Description: sanitize(risk.description),
+      Mitigation: sanitize(risk.mitigation),
+      Contingency: sanitize(risk.contingency),
+      Created: formatDate(risk.dateCreated),
+      'Last Modified': formatDate(risk.lastModified),
+      ...addCustomAttributeColumns(risk, customAttributeDefinitions, 'risk'),
+    }));
+
+    const wsRisks = XLSX.utils.json_to_sheet(riskData);
+    wsRisks['!cols'] = [
+      { wch: 12 }, // ID
+      { wch: 30 }, // Title
+      { wch: 8 }, // Rev
+      { wch: 12 }, // Category
+      { wch: 10 }, // Probability
+      { wch: 10 }, // Impact
+      { wch: 12 }, // Status
+      { wch: 15 }, // Owner
+      { wch: 40 }, // Description
+      { wch: 40 }, // Mitigation
+      { wch: 40 }, // Contingency
+      { wch: 15 }, // Created
+      { wch: 15 }, // Modified
+    ];
+    XLSX.utils.book_append_sheet(wb, wsRisks, 'Risks');
+  }
+
+  // 7. Links Sheet - fetch from diskLinkService
+  const projectLinks = await diskLinkService.getLinksForProject(project.id);
+  if (projectLinks.length > 0) {
+    const sortedLinks = sortByIdNumber(projectLinks);
+    const linkData = sortedLinks.map((link: Link) => ({
+      'Link ID': link.id,
+      Source: link.sourceId,
+      Type: LINK_TYPE_LABELS[link.type] || link.type,
+      Target: link.targetId,
+      Scope: link.projectIds.length === 0 ? 'Global' : 'Project',
+      Created: formatDate(link.dateCreated),
+      'Last Modified': formatDate(link.lastModified),
+    }));
+
+    const wsLinks = XLSX.utils.json_to_sheet(linkData);
+    wsLinks['!cols'] = [
+      { wch: 12 }, // Link ID
+      { wch: 15 }, // Source
+      { wch: 20 }, // Type
+      { wch: 15 }, // Target
+      { wch: 10 }, // Scope
+      { wch: 15 }, // Created
+      { wch: 15 }, // Modified
+    ];
+    XLSX.utils.book_append_sheet(wb, wsLinks, 'Links');
+  }
+
+  // 8. Traceability Matrix (all artifact types including Risks, using Link entities)
+  const allArtifactIds = [
+    ...projectRequirements.map((r) => ({ id: r.id, type: 'REQ' })),
+    ...projectUseCases.map((u) => ({ id: u.id, type: 'UC' })),
+    ...projectTestCases.map((t) => ({ id: t.id, type: 'TC' })),
+    ...projectInformation.map((i) => ({ id: i.id, type: 'INFO' })),
+    ...projectRisks.map((r) => ({ id: r.id, type: 'RISK' })),
   ];
 
-  if (allArtifacts.length > 0) {
+  if (allArtifactIds.length > 0) {
     const matrixData: any[] = [];
 
-    // Build ID set for validation
-    const artifactIds = new Set(allArtifacts.map((a) => a.id));
-
-    // Helper to find link between two artifacts
-    const getLink = (fromId: string, toId: string): ArtifactLink | undefined => {
-      const fromArtifact = allArtifacts.find((a) => a.id === fromId);
-      if (fromArtifact) {
-        const link = fromArtifact.linkedArtifacts.find((l) => l.targetId === toId);
-        if (link) return link;
+    // Build a lookup map for links: sourceId -> { targetId: linkType }
+    const linkMap = new Map<string, Map<string, string>>();
+    for (const link of projectLinks) {
+      if (!linkMap.has(link.sourceId)) {
+        linkMap.set(link.sourceId, new Map());
       }
-      return undefined;
-    };
+      linkMap.get(link.sourceId)!.set(link.targetId, link.type);
+    }
 
     // Link type abbreviations for readability
     const linkAbbreviations: Record<string, string> = {
@@ -374,10 +455,10 @@ export async function exportProjectToExcel(
       related_to: 'REL',
     };
 
-    allArtifacts.forEach((rowArtifact) => {
+    allArtifactIds.forEach((rowArtifact) => {
       const row: any = { 'From / To': rowArtifact.id };
 
-      allArtifacts.forEach((colArtifact) => {
+      allArtifactIds.forEach((colArtifact) => {
         if (rowArtifact.id === colArtifact.id) {
           row[colArtifact.id] = '-';
           return;
@@ -385,10 +466,13 @@ export async function exportProjectToExcel(
 
         let cellValue = '';
 
-        // Check for link from row to col
-        const link = getLink(rowArtifact.id, colArtifact.id);
-        if (link && artifactIds.has(link.targetId)) {
-          cellValue = linkAbbreviations[link.type] || link.type;
+        // Check for link from row to col using the new Link entities
+        const sourceLinks = linkMap.get(rowArtifact.id);
+        if (sourceLinks) {
+          const linkType = sourceLinks.get(colArtifact.id);
+          if (linkType) {
+            cellValue = linkAbbreviations[linkType] || linkType;
+          }
         }
 
         row[colArtifact.id] = cellValue;
@@ -401,7 +485,7 @@ export async function exportProjectToExcel(
 
     // Set column widths
     const cols = [{ wch: 15 }]; // First column width
-    allArtifacts.forEach(() => cols.push({ wch: 6 })); // Other columns width
+    allArtifactIds.forEach(() => cols.push({ wch: 6 })); // Other columns width
     wsMatrix['!cols'] = cols;
 
     XLSX.utils.book_append_sheet(wb, wsMatrix, 'Traceability Matrix');
@@ -462,42 +546,19 @@ export async function exportProjectToExcel(
     XLSX.utils.book_append_sheet(wb, wsLegend, 'Matrix Legend');
   }
 
-  // Write file
-  let defaultFilename = `${project.name.replace(/[^a-z0-9]/gi, '_')}`;
-  if (project.currentBaseline) {
-    defaultFilename += `_${project.currentBaseline.replace(/[^a-z0-9]/gi, '_')}`;
-  }
-  defaultFilename += '-export.xlsx';
-
-  // Try to use File System Access API if available (for "Save As")
-  try {
-    if ('showSaveFilePicker' in window) {
-      const handle = await (window as any).showSaveFilePicker({
-        suggestedName: defaultFilename,
-        types: [
-          {
-            description: 'Excel Spreadsheet',
-            accept: {
-              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-            },
-          },
-        ],
-      });
-      const writable = await handle.createWritable();
+  // Write file using the file handle obtained at the start, or fallback to download
+  if (fileHandle) {
+    try {
+      const writable = await fileHandle.createWritable();
       const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
       await writable.write(new Blob([wbout], { type: 'application/octet-stream' }));
       await writable.close();
-      return;
+    } catch (err) {
+      console.error('Error writing to file:', err);
+      XLSX.writeFile(wb, defaultFilename);
     }
-  } catch (err) {
-    // Fallback to download if cancelled or not supported
-    if ((err as any).name !== 'AbortError') {
-      console.error('Error with save file picker:', err);
-    } else {
-      return; // User cancelled
-    }
+  } else {
+    // Fallback download
+    XLSX.writeFile(wb, defaultFilename);
   }
-
-  // Fallback download
-  XLSX.writeFile(wb, defaultFilename);
 }

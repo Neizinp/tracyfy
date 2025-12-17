@@ -133,7 +133,7 @@ export const ModalManager: React.FC = () => {
             break;
           }
           case 'excel': {
-            const taskId = startTask('Exporting Excel...');
+            const taskId = startTask('Exporting to Excel...');
             try {
               // Excel always exports all artifacts
               await exportProjectToExcel(
