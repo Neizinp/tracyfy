@@ -149,20 +149,24 @@ class DiskProjectService {
   }
 
   /**
-   * Set counter value (and auto-commit)
+   * Set counter value
+   * @param skipCommit - If true, skip auto-commit (used by recalculateCounters on app load)
    */
   private async setCounter(
     type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users' | 'risks',
-    value: number
+    value: number,
+    skipCommit: boolean = false
   ): Promise<void> {
     const filenameBase = this.counterFilenameMap[type] || type.toLowerCase();
     const filename = `${COUNTERS_DIR}/${filenameBase}.md`;
     await fileSystemService.writeFile(filename, String(value));
 
-    // Auto-commit the counter update in the background
-    realGitService.commitFile(filename, `Update ${type} counter`).catch(() => {
-      // Silently ignore commit errors - counter is still updated locally
-    });
+    // Auto-commit the counter update (unless skipped, e.g., during recalculation)
+    if (!skipCommit) {
+      realGitService.commitFile(filename, `Update ${type} counter`).catch(() => {
+        // Silently ignore commit errors - counter is still updated locally
+      });
+    }
   }
 
   /**
@@ -891,12 +895,13 @@ class DiskProjectService {
       if (match) maxRisk = Math.max(maxRisk, parseInt(match[1], 10));
     }
 
+    // Skip commits here - this is just syncing local counters from existing files
     await Promise.all([
-      this.setCounter('requirements', maxReq),
-      this.setCounter('useCases', maxUc),
-      this.setCounter('testCases', maxTc),
-      this.setCounter('information', maxInfo),
-      this.setCounter('risks', maxRisk),
+      this.setCounter('requirements', maxReq, true),
+      this.setCounter('useCases', maxUc, true),
+      this.setCounter('testCases', maxTc, true),
+      this.setCounter('information', maxInfo, true),
+      this.setCounter('risks', maxRisk, true),
     ]);
   }
 }

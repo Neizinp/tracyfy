@@ -84,7 +84,7 @@ describe('BaselineManager', () => {
       render(<BaselineManager {...defaultProps} />);
 
       // Check header
-      expect(screen.getByText('Project History')).toBeInTheDocument();
+      expect(screen.getByText('History')).toBeInTheDocument();
 
       // Check baseline items
       // v1.0 helps identifying the baseline. It appears twice (version and name), so getAllByText is needed.
@@ -128,8 +128,8 @@ describe('BaselineManager', () => {
 
   describe('Commits Tab', () => {
     it('should switch to Commits tab and load history', async () => {
-      (realGitService.getHistory as any).mockResolvedValue(mockCommits);
-      (realGitService.getTagsWithDetails as any).mockResolvedValue(mockTags);
+      vi.mocked(realGitService.getHistory).mockResolvedValue(mockCommits);
+      vi.mocked(realGitService.getTagsWithDetails).mockResolvedValue(mockTags);
 
       render(<BaselineManager {...defaultProps} />);
 
@@ -147,8 +147,8 @@ describe('BaselineManager', () => {
     });
 
     it('should display tags on commits', async () => {
-      (realGitService.getHistory as any).mockResolvedValue(mockCommits);
-      (realGitService.getTagsWithDetails as any).mockResolvedValue(mockTags);
+      vi.mocked(realGitService.getHistory).mockResolvedValue(mockCommits);
+      vi.mocked(realGitService.getTagsWithDetails).mockResolvedValue(mockTags);
 
       render(<BaselineManager {...defaultProps} />);
       fireEvent.click(screen.getByText('Commits'));
@@ -165,8 +165,8 @@ describe('BaselineManager', () => {
     });
 
     it('should handle empty commits history', async () => {
-      (realGitService.getHistory as any).mockResolvedValue([]);
-      (realGitService.getTagsWithDetails as any).mockResolvedValue([]);
+      vi.mocked(realGitService.getHistory).mockResolvedValue([]);
+      vi.mocked(realGitService.getTagsWithDetails).mockResolvedValue([]);
 
       render(<BaselineManager {...defaultProps} />);
       fireEvent.click(screen.getByText('Commits'));
@@ -178,7 +178,7 @@ describe('BaselineManager', () => {
 
     it('should handle error loading commits', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      (realGitService.getHistory as any).mockRejectedValue(new Error('Git error'));
+      vi.mocked(realGitService.getHistory).mockRejectedValue(new Error('Git error'));
 
       render(<BaselineManager {...defaultProps} />);
       fireEvent.click(screen.getByText('Commits'));

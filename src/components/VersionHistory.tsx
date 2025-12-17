@@ -213,7 +213,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
         >
           <h3 style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Clock size={20} />
-            Project History
+            History
           </h3>
           <button
             onClick={onClose}

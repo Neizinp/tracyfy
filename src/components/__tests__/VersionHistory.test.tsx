@@ -39,13 +39,13 @@ describe('VersionHistory', () => {
   it('should render when open', () => {
     render(<VersionHistory {...defaultProps} />);
 
-    expect(screen.getByText(/Project History/i)).toBeInTheDocument();
+    expect(screen.getByText(/History/i)).toBeInTheDocument();
   });
 
   it('should not render when closed', () => {
     render(<VersionHistory {...defaultProps} isOpen={false} />);
 
-    expect(screen.queryByText(/Project History/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/History/i)).not.toBeInTheDocument();
   });
 
   describe('Tabs', () => {

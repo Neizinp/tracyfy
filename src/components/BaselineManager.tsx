@@ -60,7 +60,7 @@ export function BaselineManager({
     <div className="h-full flex flex-col bg-gray-900">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-700">
-        <h2 className="text-xl font-semibold text-white">Project History</h2>
+        <h2 className="text-xl font-semibold text-white">History</h2>
         <button
           onClick={onCreateBaseline}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
