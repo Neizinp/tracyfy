@@ -1005,7 +1005,7 @@ class RealGitService {
   /**
    * Get stored authentication token from localStorage
    */
-  private getAuthToken(): string | null {
+  getAuthToken(): string | null {
     try {
       return localStorage.getItem('git-remote-token');
     } catch {
@@ -1044,8 +1044,8 @@ class RealGitService {
 
     return {
       onAuth: () => ({
-        username: token,
-        password: 'x-oauth-basic', // GitHub PAT format
+        username: 'x-access-token',
+        password: token, // GitHub PAT as password
       }),
     };
   }
@@ -1063,17 +1063,22 @@ class RealGitService {
       throw new Error('No authentication token configured. Please set a token first.');
     }
 
-    await git.fetch({
-      fs: fsAdapter,
-      http: await import('isomorphic-git/http/web').then((m) => m.default),
-      dir: this.getRootDir(),
-      corsProxy: 'https://cors.isomorphic-git.org',
-      remote,
-      ref: branch,
-      singleBranch: !!branch,
-      ...auth,
-    });
-    debug.log(`[fetch] Fetched from ${remote}${branch ? '/' + branch : ''}`);
+    try {
+      await git.fetch({
+        fs: fsAdapter,
+        http: await import('isomorphic-git/http/web').then((m) => m.default),
+        dir: this.getRootDir(),
+        corsProxy: 'https://corsproxy.io/?',
+        remote,
+        ref: branch,
+        singleBranch: !!branch,
+        ...auth,
+      });
+      debug.log(`[fetch] Fetched from ${remote}${branch ? '/' + branch : ''}`);
+    } catch (error) {
+      console.error('[fetch] Failed:', error);
+      throw error;
+    }
   }
 
   /**
@@ -1093,7 +1098,7 @@ class RealGitService {
       fs: fsAdapter,
       http: await import('isomorphic-git/http/web').then((m) => m.default),
       dir: this.getRootDir(),
-      corsProxy: 'https://cors.isomorphic-git.org',
+      corsProxy: 'https://corsproxy.io/?',
       remote,
       ref: branch,
       ...auth,
@@ -1123,7 +1128,7 @@ class RealGitService {
         fs: fsAdapter,
         http: await import('isomorphic-git/http/web').then((m) => m.default),
         dir: this.getRootDir(),
-        corsProxy: 'https://cors.isomorphic-git.org',
+        corsProxy: 'https://corsproxy.io/?',
         remote,
         ref: branch,
         author: { name: 'Tracyfy User', email: 'user@tracyfy.local' },

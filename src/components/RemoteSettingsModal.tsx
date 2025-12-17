@@ -24,6 +24,11 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
   useEffect(() => {
     if (isOpen) {
       loadRemotes();
+      // Load saved token
+      const savedToken = realGitService.getAuthToken();
+      if (savedToken) {
+        setToken(savedToken);
+      }
     }
   }, [isOpen]);
 
