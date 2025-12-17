@@ -352,7 +352,7 @@ Access to features shall be controlled by user roles.
       verificationMethod: 'Permission matrix testing',
       comments: '',
       dateCreated: now,
-      revision: '02',
+      revision: '01',
     },
     {
       title: 'Session Management',
@@ -480,7 +480,7 @@ All API responses must complete within 200ms for 95th percentile.
       verificationMethod: 'Load testing with 1000 concurrent users',
       comments: 'Performance baseline established.',
       dateCreated: now,
-      revision: '02',
+      revision: '01',
     },
     {
       title: 'Horizontal Scalability',
@@ -936,7 +936,7 @@ Users see notifications within the application.
       author: 'QA Team',
       lastRun: now - 172800000,
       dateCreated: now,
-      revision: '02',
+      revision: '01',
     },
     {
       title: 'Test Concurrent Users',
@@ -1156,7 +1156,7 @@ All APIs will use URL-based versioning: \`/api/v1/...\`
 - [ ] Notify stakeholders`,
       type: 'note' as const,
       dateCreated: now,
-      revision: '02',
+      revision: '01',
     },
     {
       title: 'Error Handling Guidelines',
