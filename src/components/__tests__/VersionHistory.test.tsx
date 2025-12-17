@@ -164,4 +164,164 @@ describe('VersionHistory', () => {
       expect(screen.getByText(/Snapshot:/i)).toBeInTheDocument();
     });
   });
+
+  describe('Artifact Type Filters', () => {
+    it('should show filter buttons on All Commits tab', async () => {
+      const { realGitService } = await import('../../services/realGitService');
+      vi.mocked(realGitService.getHistory).mockResolvedValue([
+        {
+          hash: 'abc123',
+          message: 'Test commit',
+          author: 'Test User',
+          timestamp: Date.now(),
+        },
+      ]);
+      vi.mocked(realGitService.getCommitFiles).mockResolvedValue(['requirements/REQ-001.md']);
+
+      render(<VersionHistory {...defaultProps} />);
+
+      // Switch to All Commits tab
+      fireEvent.click(screen.getByText('All Commits'));
+
+      // Wait for commits to load
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // Filter buttons should be visible
+      expect(screen.getByText('REQ')).toBeInTheDocument();
+      expect(screen.getByText('UC')).toBeInTheDocument();
+      expect(screen.getByText('TC')).toBeInTheDocument();
+      expect(screen.getByText('INFO')).toBeInTheDocument();
+      expect(screen.getByText('RISK')).toBeInTheDocument();
+      expect(screen.getByText('PROJ')).toBeInTheDocument();
+      expect(screen.getByText('LINK')).toBeInTheDocument();
+      expect(screen.getByText('WF')).toBeInTheDocument();
+      expect(screen.getByText('USER')).toBeInTheDocument();
+      expect(screen.getByText('CTR')).toBeInTheDocument();
+      expect(screen.getByText('OTHER')).toBeInTheDocument();
+    });
+
+    it('should toggle filter when filter button is clicked', async () => {
+      const { realGitService } = await import('../../services/realGitService');
+      vi.mocked(realGitService.getHistory).mockResolvedValue([
+        {
+          hash: 'abc123',
+          message: 'Update requirement',
+          author: 'Test User',
+          timestamp: Date.now(),
+        },
+      ]);
+      vi.mocked(realGitService.getCommitFiles).mockResolvedValue(['requirements/REQ-001.md']);
+
+      render(<VersionHistory {...defaultProps} />);
+
+      // Switch to All Commits tab
+      fireEvent.click(screen.getByText('All Commits'));
+
+      // Wait for commits to load
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // REQ button should be active (colored background)
+      const reqButton = screen.getByText('REQ');
+      expect(reqButton).toHaveStyle({ backgroundColor: 'var(--color-info)' });
+
+      // Click to deselect
+      fireEvent.click(reqButton);
+
+      // After toggle, button should NOT have the active color anymore
+      expect(reqButton).not.toHaveStyle({ backgroundColor: 'var(--color-info)' });
+    });
+
+    it('should filter commits based on selected artifact types', async () => {
+      const { realGitService } = await import('../../services/realGitService');
+      vi.mocked(realGitService.getHistory).mockResolvedValue([
+        {
+          hash: 'commit1',
+          message: 'Update requirement',
+          author: 'Test User',
+          timestamp: Date.now(),
+        },
+        {
+          hash: 'commit2',
+          message: 'Update use case',
+          author: 'Test User',
+          timestamp: Date.now() - 1000,
+        },
+      ]);
+      vi.mocked(realGitService.getCommitFiles).mockImplementation(async (hash: string) => {
+        if (hash === 'commit1') return ['requirements/REQ-001.md'];
+        if (hash === 'commit2') return ['usecases/UC-001.md'];
+        return [];
+      });
+
+      render(<VersionHistory {...defaultProps} />);
+
+      // Switch to All Commits tab
+      fireEvent.click(screen.getByText('All Commits'));
+
+      // Wait for commits to load
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      // Both commits should be visible initially
+      expect(screen.getByText('Update requirement')).toBeInTheDocument();
+      expect(screen.getByText('Update use case')).toBeInTheDocument();
+
+      // Deselect UC filter
+      fireEvent.click(screen.getByText('UC'));
+
+      // Wait for re-render
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // Only requirement commit should be visible
+      expect(screen.getByText('Update requirement')).toBeInTheDocument();
+      expect(screen.queryByText('Update use case')).not.toBeInTheDocument();
+    });
+
+    it('should show empty message when no commits match filters', async () => {
+      const { realGitService } = await import('../../services/realGitService');
+      vi.mocked(realGitService.getHistory).mockResolvedValue([
+        {
+          hash: 'commit1',
+          message: 'Update requirement',
+          author: 'Test User',
+          timestamp: Date.now(),
+        },
+      ]);
+      vi.mocked(realGitService.getCommitFiles).mockResolvedValue(['requirements/REQ-001.md']);
+
+      render(<VersionHistory {...defaultProps} />);
+
+      // Switch to All Commits tab
+      fireEvent.click(screen.getByText('All Commits'));
+
+      // Wait for commits to load
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // Deselect REQ filter
+      fireEvent.click(screen.getByText('REQ'));
+
+      // Wait for re-render
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // Should show no matches message
+      expect(screen.getByText(/No commits match the selected filters/i)).toBeInTheDocument();
+    });
+
+    it('should show updated tip text about filters on All Commits tab', async () => {
+      const { realGitService } = await import('../../services/realGitService');
+      vi.mocked(realGitService.getHistory).mockResolvedValue([]);
+
+      render(<VersionHistory {...defaultProps} />);
+
+      // Switch to All Commits tab
+      fireEvent.click(screen.getByText('All Commits'));
+
+      // Wait for load
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Should show filter tip
+      expect(
+        screen.getByText(/Use the filter buttons to show commits for specific artifact types/i)
+      ).toBeInTheDocument();
+    });
+  });
 });

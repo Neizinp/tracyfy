@@ -59,6 +59,83 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
 
   const [tagToCommitHash, setTagToCommitHash] = useState<Map<string, string>>(new Map());
 
+  // Artifact type filter state for All Commits tab
+  const [selectedTypes, setSelectedTypes] = useState<Set<string>>(
+    new Set([
+      'requirements',
+      'usecases',
+      'testcases',
+      'information',
+      'risks',
+      'projects',
+      'links',
+      'workflows',
+      'users',
+      'counters',
+      'other', // Catch-all for assets, custom-attributes, saved-filters, etc.
+    ])
+  );
+
+  // Configuration for artifact type filters
+  const ARTIFACT_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
+    requirements: { label: 'REQ', color: 'var(--color-info)' },
+    usecases: { label: 'UC', color: 'var(--color-accent)' },
+    testcases: { label: 'TC', color: 'var(--color-success)' },
+    information: { label: 'INFO', color: 'var(--color-warning)' },
+    risks: { label: 'RISK', color: 'var(--color-error)' },
+    projects: { label: 'PROJ', color: 'var(--color-text-muted)' },
+    links: { label: 'LINK', color: 'var(--color-text-secondary)' },
+    workflows: { label: 'WF', color: 'var(--color-info-light)' },
+    users: { label: 'USER', color: 'var(--color-accent)' },
+    counters: { label: 'CTR', color: 'var(--color-text-muted)' },
+    other: { label: 'OTHER', color: 'var(--color-text-muted)' },
+  };
+
+  // Folders that map to known artifact types
+  const FOLDER_TO_TYPE: Record<string, string> = {
+    requirements: 'requirements',
+    usecases: 'usecases',
+    testcases: 'testcases',
+    information: 'information',
+    risks: 'risks',
+    projects: 'projects',
+    links: 'links',
+    workflows: 'workflows',
+    users: 'users',
+    counters: 'counters',
+  };
+
+  // Get artifact type from file path (returns 'other' for unrecognized folders)
+  const getArtifactTypeFromPath = (filePath: string): string => {
+    const folderName = filePath.split('/')[0];
+    return FOLDER_TO_TYPE[folderName] || 'other';
+  };
+
+  // Toggle artifact type filter
+  const handleToggleType = (type: string) => {
+    setSelectedTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
+  };
+
+  // Filter global commits based on selected types
+  const filteredGlobalCommits = globalCommits.filter((commit) => {
+    const files = commitFiles.get(commit.hash) || [];
+    if (files.length === 0) return true; // Show commits while loading files
+
+    // A commit is shown if ANY of its files match a selected type
+    return files.some((file) => {
+      const artifactType = getArtifactTypeFromPath(file);
+      return selectedTypes.has(artifactType);
+    });
+  });
+
   const loadTags = useCallback(async () => {
     try {
       const tags = await realGitService.getTagsWithDetails();
@@ -660,146 +737,205 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                 <p>No commits in repository.</p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {globalCommits.map((commit, index) => {
-                  const baselineTags = baselineCommitHashes.get(commit.hash);
-                  const isBaseline = baselineTags && baselineTags.length > 0;
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* Filter Buttons */}
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '6px',
+                    flexWrap: 'wrap',
+                    padding: '8px 0',
+                    borderBottom: '1px solid var(--color-border)',
+                    marginBottom: '4px',
+                  }}
+                >
+                  {Object.entries(ARTIFACT_TYPE_CONFIG).map(([type, config]) => {
+                    const isSelected = selectedTypes.has(type);
+                    return (
+                      <button
+                        key={type}
+                        onClick={() => handleToggleType(type)}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '14px',
+                          border: `1px solid ${isSelected ? config.color : 'var(--color-border)'}`,
+                          backgroundColor: isSelected ? config.color : 'transparent',
+                          color: isSelected ? 'white' : 'var(--color-text-muted)',
+                          fontSize: 'var(--font-size-xs)',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                          opacity: isSelected ? 1 : 0.7,
+                        }}
+                      >
+                        {config.label}
+                      </button>
+                    );
+                  })}
+                </div>
 
-                  return (
-                    <div
-                      key={commit.hash}
-                      style={{
-                        padding: 'var(--spacing-md)',
-                        borderRadius: '6px',
-                        border: isBaseline
-                          ? '1px solid var(--color-info-bg)'
-                          : '1px solid var(--color-border)',
-                        backgroundColor: isBaseline
-                          ? 'var(--color-info-bg)'
-                          : 'var(--color-bg-secondary)',
-                        transition: 'background-color 0.2s',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                        <div style={{ marginTop: '2px' }}>
-                          {isBaseline ? (
-                            <Tag size={16} style={{ color: 'var(--color-info)' }} />
-                          ) : (
-                            <GitCommit size={16} style={{ color: 'var(--color-text-muted)' }} />
-                          )}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              flexWrap: 'wrap',
-                            }}
-                          >
-                            <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                              {commit.message.split('\n')[0]}
-                            </span>
-                            {isBaseline &&
-                              baselineTags.map((tagName) => (
-                                <span
-                                  key={tagName}
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                    padding: '2px 8px',
-                                    borderRadius: '12px',
-                                    backgroundColor: 'var(--color-info-bg)',
-                                    color: 'var(--color-info-light)',
-                                    fontSize: 'var(--font-size-xs)',
-                                    fontWeight: 500,
-                                  }}
-                                >
-                                  <Tag size={10} />
-                                  {tagName}
-                                </span>
-                              ))}
-                            {index === 0 && (
-                              <span
+                {/* Filtered Commits */}
+                {filteredGlobalCommits.length === 0 ? (
+                  <div
+                    style={{
+                      textAlign: 'center',
+                      padding: 'var(--spacing-xl)',
+                      color: 'var(--color-text-muted)',
+                    }}
+                  >
+                    <p>No commits match the selected filters.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {filteredGlobalCommits.map((commit, index) => {
+                      const baselineTags = baselineCommitHashes.get(commit.hash);
+                      const isBaseline = baselineTags && baselineTags.length > 0;
+
+                      return (
+                        <div
+                          key={commit.hash}
+                          style={{
+                            padding: 'var(--spacing-md)',
+                            borderRadius: '6px',
+                            border: isBaseline
+                              ? '1px solid var(--color-info-bg)'
+                              : '1px solid var(--color-border)',
+                            backgroundColor: isBaseline
+                              ? 'var(--color-info-bg)'
+                              : 'var(--color-bg-secondary)',
+                            transition: 'background-color 0.2s',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                            <div style={{ marginTop: '2px' }}>
+                              {isBaseline ? (
+                                <Tag size={16} style={{ color: 'var(--color-info)' }} />
+                              ) : (
+                                <GitCommit size={16} style={{ color: 'var(--color-text-muted)' }} />
+                              )}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div
                                 style={{
-                                  display: 'inline-flex',
+                                  display: 'flex',
                                   alignItems: 'center',
-                                  padding: '2px 8px',
-                                  borderRadius: '12px',
-                                  backgroundColor: 'var(--color-success-bg)',
-                                  color: 'var(--color-success-light)',
-                                  fontSize: 'var(--font-size-xs)',
-                                  fontWeight: 500,
+                                  gap: '8px',
+                                  flexWrap: 'wrap',
                                 }}
                               >
-                                HEAD
-                              </span>
-                            )}
-                          </div>
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              marginTop: '4px',
-                              fontSize: 'var(--font-size-sm)',
-                              color: 'var(--color-text-muted)',
-                            }}
-                          >
-                            <span
-                              style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-xs)' }}
-                            >
-                              {commit.hash.substring(0, 7)}
-                            </span>
-                            <span>•</span>
-                            <span>{commit.author}</span>
-                            <span>•</span>
-                            <span>{formatDateTime(commit.timestamp)}</span>
-                            <span>•</span>
-                            {(() => {
-                              const filePath = commitFiles.get(commit.hash)?.[0];
-                              if (!commitFiles.has(commit.hash)) {
-                                return (
-                                  <span style={{ color: 'var(--color-text-muted)' }}>...</span>
-                                );
-                              }
-                              if (!filePath) {
-                                return <span style={{ color: 'var(--color-text-muted)' }}>—</span>;
-                              }
-                              const fileName = filePath.split('/').pop()?.replace('.md', '') || '';
-                              const artifactType = filePath.split('/')[0]; // e.g., "requirements", "usecases"
-                              return (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onSelectArtifact) {
-                                      onSelectArtifact(fileName, artifactType);
-                                      onClose();
-                                    }
-                                  }}
-                                  style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    padding: 0,
-                                    color: 'var(--color-accent)',
-                                    fontWeight: 500,
-                                    cursor: onSelectArtifact ? 'pointer' : 'default',
-                                    textDecoration: onSelectArtifact ? 'underline' : 'none',
-                                    font: 'inherit',
-                                  }}
-                                  disabled={!onSelectArtifact}
+                                <span
+                                  style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}
                                 >
-                                  {fileName}
-                                </button>
-                              );
-                            })()}
+                                  {commit.message.split('\n')[0]}
+                                </span>
+                                {isBaseline &&
+                                  baselineTags.map((tagName) => (
+                                    <span
+                                      key={tagName}
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        padding: '2px 8px',
+                                        borderRadius: '12px',
+                                        backgroundColor: 'var(--color-info-bg)',
+                                        color: 'var(--color-info-light)',
+                                        fontSize: 'var(--font-size-xs)',
+                                        fontWeight: 500,
+                                      }}
+                                    >
+                                      <Tag size={10} />
+                                      {tagName}
+                                    </span>
+                                  ))}
+                                {index === 0 && (
+                                  <span
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      padding: '2px 8px',
+                                      borderRadius: '12px',
+                                      backgroundColor: 'var(--color-success-bg)',
+                                      color: 'var(--color-success-light)',
+                                      fontSize: 'var(--font-size-xs)',
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    HEAD
+                                  </span>
+                                )}
+                              </div>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  marginTop: '4px',
+                                  fontSize: 'var(--font-size-sm)',
+                                  color: 'var(--color-text-muted)',
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    fontFamily: 'monospace',
+                                    fontSize: 'var(--font-size-xs)',
+                                  }}
+                                >
+                                  {commit.hash.substring(0, 7)}
+                                </span>
+                                <span>•</span>
+                                <span>{commit.author}</span>
+                                <span>•</span>
+                                <span>{formatDateTime(commit.timestamp)}</span>
+                                <span>•</span>
+                                {(() => {
+                                  const filePath = commitFiles.get(commit.hash)?.[0];
+                                  if (!commitFiles.has(commit.hash)) {
+                                    return (
+                                      <span style={{ color: 'var(--color-text-muted)' }}>...</span>
+                                    );
+                                  }
+                                  if (!filePath) {
+                                    return (
+                                      <span style={{ color: 'var(--color-text-muted)' }}>—</span>
+                                    );
+                                  }
+                                  const fileName =
+                                    filePath.split('/').pop()?.replace('.md', '') || '';
+                                  const artifactType = filePath.split('/')[0]; // e.g., "requirements", "usecases"
+                                  return (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onSelectArtifact) {
+                                          onSelectArtifact(fileName, artifactType);
+                                          onClose();
+                                        }
+                                      }}
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        padding: 0,
+                                        color: 'var(--color-accent)',
+                                        fontWeight: 500,
+                                        cursor: onSelectArtifact ? 'pointer' : 'default',
+                                        textDecoration: onSelectArtifact ? 'underline' : 'none',
+                                        font: 'inherit',
+                                      }}
+                                      disabled={!onSelectArtifact}
+                                    >
+                                      {fileName}
+                                    </button>
+                                  );
+                                })()}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             ))}
         </div>
@@ -816,7 +952,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
             ? '💡 Tip: Create baselines to save named snapshots of your project (e.g., "v1.0 Release").'
             : activeTab === 'commits'
               ? '💡 Tip: Shows commits to the project file only (project metadata changes).'
-              : '💡 Tip: Shows all commits across all files (artifacts, projects, etc.).'}
+              : '💡 Tip: Use the filter buttons to show commits for specific artifact types.'}
         </div>
       </div>
 
