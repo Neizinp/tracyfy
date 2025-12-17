@@ -74,6 +74,7 @@ name: "${name}"
         useCaseIds: [],
         testCaseIds: [],
         informationIds: [],
+        riskIds: [],
         lastModified: Date.now(),
       };
 
@@ -137,6 +138,7 @@ name: "${newName}"
         useCaseIds: [],
         testCaseIds: [],
         informationIds: [],
+        riskIds: [],
         lastModified: 0,
       };
 

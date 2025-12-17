@@ -38,6 +38,7 @@ describe('useImportExport', () => {
         useCaseIds: ['UC-001'],
         testCaseIds: ['TC-001'],
         informationIds: ['INFO-001'],
+        riskIds: [],
         lastModified: 1000000,
       },
     ];
@@ -123,10 +124,16 @@ describe('useImportExport', () => {
       useCases: mockUseCases,
       testCases: mockTestCases,
       information: mockInformation,
-      setRequirements: mockSetRequirements as any,
-      setUseCases: mockSetUseCases as any,
-      setTestCases: mockSetTestCases as any,
-      setInformation: mockSetInformation as any,
+      setRequirements: mockSetRequirements as (
+        reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])
+      ) => void,
+      setUseCases: mockSetUseCases as (ucs: UseCase[] | ((prev: UseCase[]) => UseCase[])) => void,
+      setTestCases: mockSetTestCases as (
+        tcs: TestCase[] | ((prev: TestCase[]) => TestCase[])
+      ) => void,
+      setInformation: mockSetInformation as (
+        info: Information[] | ((prev: Information[]) => Information[])
+      ) => void,
     });
 
   describe('handleExport', () => {

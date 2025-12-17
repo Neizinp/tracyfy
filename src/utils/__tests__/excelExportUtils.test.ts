@@ -2,9 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { exportProjectToExcel } from '../excelExportUtils';
 import type { Project, Requirement, UseCase, TestCase, Information } from '../../types';
 
+// Types for XLSX library mocks
+type WorkBook = { Sheets: Record<string, unknown>; SheetNames: string[] };
+type WorkSheet = Record<string, unknown>;
+
 // Mock XLSX
 const mockBookNew = vi.fn(() => ({ Sheets: {}, SheetNames: [] }));
-const mockJsonToSheet = vi.fn((_data: any) => ({}));
+const mockJsonToSheet = vi.fn((_data: unknown[]) => ({}));
 const mockBookAppendSheet = vi.fn();
 const mockWriteFile = vi.fn();
 const mockWrite = vi.fn();
@@ -12,11 +16,12 @@ const mockWrite = vi.fn();
 vi.mock('xlsx', () => ({
   utils: {
     book_new: () => mockBookNew(),
-    json_to_sheet: (data: any) => mockJsonToSheet(data),
-    book_append_sheet: (wb: any, ws: any, name: string) => mockBookAppendSheet(wb, ws, name),
+    json_to_sheet: (data: unknown[]) => mockJsonToSheet(data),
+    book_append_sheet: (wb: WorkBook, ws: WorkSheet, name: string) =>
+      mockBookAppendSheet(wb, ws, name),
   },
-  writeFile: (wb: any, filename: string) => mockWriteFile(wb, filename),
-  write: (wb: any, options: any) => mockWrite(wb, options),
+  writeFile: (wb: WorkBook, filename: string) => mockWriteFile(wb, filename),
+  write: (wb: WorkBook, options: { type: string; bookType: string }) => mockWrite(wb, options),
 }));
 
 // Mock gitService
@@ -39,6 +44,7 @@ describe('excelExportUtils', () => {
     useCaseIds: ['u1'],
     testCaseIds: ['t1'],
     informationIds: ['i1'],
+    riskIds: [],
     lastModified: 0,
     currentBaseline: 'Baseline 1.0',
   };
@@ -156,13 +162,16 @@ describe('excelExportUtils', () => {
     const calls = mockJsonToSheet.mock.calls;
     // Find the call that corresponds to requirements
     const reqCall = calls.find(
-      (call) => Array.isArray(call[0]) && call[0].length > 0 && call[0][0].ID === 'r1'
+      (call) =>
+        Array.isArray(call[0]) &&
+        call[0].length > 0 &&
+        (call[0][0] as Record<string, unknown>).ID === 'r1'
     );
 
     expect(reqCall).toBeDefined();
     if (reqCall) {
       expect(reqCall[0]).toHaveLength(1);
-      expect(reqCall[0][0].ID).toBe('r1');
+      expect((reqCall[0] as Record<string, unknown>[])[0].ID).toBe('r1');
     }
   });
 
@@ -174,17 +183,17 @@ describe('excelExportUtils', () => {
     // Since mockJsonToSheet returns {}, the code assigns to {}.!cols.
     // We can make mockJsonToSheet return an object we can inspect.
 
-    const mockSheet = {};
+    const mockSheet: Record<string, unknown> = {};
     mockJsonToSheet.mockReturnValue(mockSheet);
 
     await exportProjectToExcel(mockProject, globalState, ['r1'], [], [], [], []);
 
-    expect((mockSheet as any)['!cols']).toBeDefined();
-    expect((mockSheet as any)['!cols'].length).toBeGreaterThan(0);
+    expect(mockSheet['!cols']).toBeDefined();
+    expect((mockSheet['!cols'] as unknown[]).length).toBeGreaterThan(0);
   });
 
   it('should fallback to writeFile if showSaveFilePicker is not available', async () => {
-    delete (window as any).showSaveFilePicker;
+    delete (window as unknown as Record<string, unknown>).showSaveFilePicker;
 
     await exportProjectToExcel(mockProject, globalState, ['r1'], [], [], [], []);
 

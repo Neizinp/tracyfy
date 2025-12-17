@@ -43,6 +43,7 @@ export const loadProjects = (): {
         useCases: [],
         testCases: [],
         information: [],
+        risks: [],
       },
     };
   } catch (error) {
@@ -55,6 +56,7 @@ export const loadProjects = (): {
         useCases: [],
         testCases: [],
         information: [],
+        risks: [],
       },
     };
   }

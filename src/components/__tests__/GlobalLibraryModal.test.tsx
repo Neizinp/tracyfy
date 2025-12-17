@@ -15,6 +15,7 @@ describe('GlobalLibraryModal', () => {
     useCaseIds: [],
     testCaseIds: [],
     informationIds: [],
+    riskIds: [],
     lastModified: Date.now(),
   };
 

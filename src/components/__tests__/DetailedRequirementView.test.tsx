@@ -165,6 +165,7 @@ describe('DetailedRequirementView', () => {
         useCaseIds: [],
         testCaseIds: [],
         informationIds: [],
+        riskIds: [],
         lastModified: Date.now(),
       },
     ];

@@ -16,6 +16,7 @@ describe('ProjectSettingsModal', () => {
     useCaseIds: [],
     testCaseIds: [],
     informationIds: [],
+    riskIds: [],
     lastModified: 1000000,
   };
 

@@ -950,6 +950,7 @@ describe('Project Markdown Conversion', () => {
         useCaseIds: ['UC-001'],
         testCaseIds: ['TC-001', 'TC-002'],
         informationIds: [],
+        riskIds: [],
         lastModified: 1700000000000,
       };
 
@@ -978,6 +979,7 @@ describe('Project Markdown Conversion', () => {
         useCaseIds: [],
         testCaseIds: [],
         informationIds: [],
+        riskIds: [],
         lastModified: 1700000000000,
       };
 
@@ -998,6 +1000,7 @@ describe('Project Markdown Conversion', () => {
         useCaseIds: [],
         testCaseIds: [],
         informationIds: [],
+        riskIds: [],
         lastModified: 1700000000000,
       };
 
@@ -1084,6 +1087,7 @@ name: "Minimal Project"
         useCaseIds: ['UC-001'],
         testCaseIds: ['TC-001', 'TC-002'],
         informationIds: ['INF-001'],
+        riskIds: [],
         lastModified: 1700000000000,
       };
 
@@ -1110,6 +1114,7 @@ name: "Minimal Project"
         useCaseIds: [],
         testCaseIds: [],
         informationIds: [],
+        riskIds: [],
         lastModified: 1700000000000,
       };
 

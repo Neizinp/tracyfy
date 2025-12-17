@@ -15,6 +15,7 @@ describe('GlobalLibraryPanel', () => {
     useCaseIds: ['UC-001'],
     testCaseIds: [],
     informationIds: [],
+    riskIds: [],
     lastModified: Date.now(),
   };
 
@@ -100,6 +101,7 @@ describe('GlobalLibraryPanel', () => {
         useCases={mockUseCases}
         testCases={mockTestCases}
         information={mockInformation}
+        risks={[]}
         projects={[mockProject]}
         selectedItems={new Set()}
         onToggleSelect={mockOnToggleSelect}
@@ -117,6 +119,7 @@ describe('GlobalLibraryPanel', () => {
         useCases={mockUseCases}
         testCases={mockTestCases}
         information={mockInformation}
+        risks={[]}
         projects={[mockProject]}
         selectedItems={new Set()}
         onToggleSelect={mockOnToggleSelect}
@@ -137,6 +140,7 @@ describe('GlobalLibraryPanel', () => {
         useCases={mockUseCases}
         testCases={mockTestCases}
         information={mockInformation}
+        risks={[]}
         projects={[mockProject]}
         selectedItems={new Set()}
         onToggleSelect={mockOnToggleSelect}
@@ -159,6 +163,7 @@ describe('GlobalLibraryPanel', () => {
         useCases={mockUseCases}
         testCases={mockTestCases}
         information={mockInformation}
+        risks={[]}
         projects={[mockProject]}
         selectedItems={new Set()}
         onToggleSelect={mockOnToggleSelect}
@@ -179,6 +184,7 @@ describe('GlobalLibraryPanel', () => {
         useCases={mockUseCases}
         testCases={mockTestCases}
         information={mockInformation}
+        risks={[]}
         projects={[mockProject]}
         selectedItems={new Set()}
         onToggleSelect={mockOnToggleSelect}
@@ -198,6 +204,7 @@ describe('GlobalLibraryPanel', () => {
         useCases={mockUseCases}
         testCases={mockTestCases}
         information={mockInformation}
+        risks={[]}
         projects={[mockProject]}
         selectedItems={new Set()}
         onToggleSelect={mockOnToggleSelect}
@@ -220,6 +227,7 @@ describe('GlobalLibraryPanel', () => {
         useCases={mockUseCases}
         testCases={mockTestCases}
         information={mockInformation}
+        risks={[]}
         projects={[mockProject]}
         selectedItems={new Set()}
         onToggleSelect={mockOnToggleSelect}
@@ -239,6 +247,7 @@ describe('GlobalLibraryPanel', () => {
         useCases={mockUseCases}
         testCases={mockTestCases}
         information={mockInformation}
+        risks={[]}
         projects={[mockProject]}
         selectedItems={new Set(['REQ-001', 'REQ-002'])}
         onToggleSelect={mockOnToggleSelect}

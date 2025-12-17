@@ -60,6 +60,7 @@ describe('LinksView', () => {
       useCaseIds: [],
       testCaseIds: [],
       informationIds: [],
+      riskIds: [],
     },
   ];
 

@@ -15,6 +15,7 @@ describe('LinkModal', () => {
     useCaseIds: ['UC-001'],
     testCaseIds: ['TC-001'],
     informationIds: [],
+    riskIds: [],
     lastModified: 1000000,
   };
 

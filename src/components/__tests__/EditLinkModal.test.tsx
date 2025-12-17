@@ -40,6 +40,7 @@ describe('EditLinkModal', () => {
       useCaseIds: [],
       testCaseIds: [],
       informationIds: [],
+      riskIds: [],
     },
     {
       id: 'PRJ-002',
@@ -50,6 +51,7 @@ describe('EditLinkModal', () => {
       useCaseIds: [],
       testCaseIds: [],
       informationIds: [],
+      riskIds: [],
     },
   ];
 
