@@ -8,3 +8,4 @@ export { BaselinesPage } from './BaselinesPage';
 export { BaselineHistoryPage } from './BaselineHistoryPage';
 export { GlobalLibraryPage } from './GlobalLibraryPage';
 export { CustomAttributesPage } from './CustomAttributesPage';
+export { ProjectManual } from './ProjectManual';

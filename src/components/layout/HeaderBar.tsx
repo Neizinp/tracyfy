@@ -11,6 +11,7 @@ import {
   Search,
   FolderOpen,
   User,
+  HelpCircle,
 } from 'lucide-react';
 import type { ProjectBaseline } from '../../types';
 import { DropdownMenuItem } from './DropdownMenuItem';
@@ -57,6 +58,7 @@ export interface HeaderBarProps {
   onOpenUserSettings?: () => void;
   currentUserName?: string;
   onOpenAdvancedSearch?: () => void;
+  onHelp?: () => void;
 }
 
 /**
@@ -89,6 +91,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onOpenUserSettings,
   currentUserName,
   onOpenAdvancedSearch,
+  onHelp,
 }) => {
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [selectedBaselineId, setSelectedBaselineId] = useState<string>('current');
@@ -147,6 +150,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       setIsImportMenuOpen(false);
       setIsCreateMenuOpen(false);
     },
+    onHelp,
   });
 
   const handleExportPDF = () => {
@@ -393,6 +397,14 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           <button onClick={onOpenUserSettings} style={headerButtonStyle} title="User Settings">
             <User size={18} />
             {currentUserName || 'User'}
+          </button>
+        )}
+
+        {/* Help Button */}
+        {onHelp && (
+          <button onClick={onHelp} style={headerButtonStyle} title="Help (F1)">
+            <HelpCircle size={18} />
+            Help
           </button>
         )}
 

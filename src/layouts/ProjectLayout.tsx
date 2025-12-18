@@ -225,6 +225,7 @@ export const ProjectLayout: React.FC = () => {
       onOpenAdvancedSearch={() => ui.setIsAdvancedSearchOpen(true)}
       onViewHistory={() => ui.setIsVersionHistoryOpen(true)}
       onOpenUserSettings={() => ui.setIsUserSettingsModalOpen(true)}
+      onHelp={() => navigate('/help')}
       currentUserName={currentUser?.name}
       baselines={baselines}
       onExportPDF={async (selectedBaseline) => {

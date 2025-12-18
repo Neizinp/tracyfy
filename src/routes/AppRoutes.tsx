@@ -9,6 +9,7 @@ import {
   RisksPage,
   GlobalLibraryPage,
   CustomAttributesPage,
+  ProjectManual as HelpPage,
 } from '../pages';
 import { LinksPage } from '../pages/LinksPage';
 import { WorkflowsPage } from '../pages/WorkflowsPage';
@@ -32,6 +33,7 @@ export function AppRoutes() {
         <Route path="library/:type" element={<GlobalLibraryPage />} />
 
         <Route path="custom-attributes" element={<CustomAttributesPage />} />
+        <Route path="help" element={<HelpPage />} />
       </Route>
     </Routes>
   );

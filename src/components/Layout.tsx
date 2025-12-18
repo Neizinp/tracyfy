@@ -36,6 +36,7 @@ export interface LayoutProps {
   onOpenUserSettings?: () => void;
   currentUserName?: string;
   onOpenAdvancedSearch?: () => void;
+  onHelp?: () => void;
 }
 
 /**
@@ -74,6 +75,7 @@ export const Layout: React.FC<LayoutProps> = ({
   onOpenUserSettings,
   currentUserName,
   onOpenAdvancedSearch,
+  onHelp,
 }) => {
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -111,6 +113,7 @@ export const Layout: React.FC<LayoutProps> = ({
           onOpenUserSettings={onOpenUserSettings}
           currentUserName={currentUserName}
           onOpenAdvancedSearch={onOpenAdvancedSearch}
+          onHelp={onHelp}
         />
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
