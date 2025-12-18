@@ -54,6 +54,9 @@ function getElectronAPI(): ElectronFsAPI {
   return api;
 }
 
+// LocalStorage key for persisting Electron directory path
+const ELECTRON_DIR_KEY = 'tracyfy-electron-dir';
+
 class FileSystemService {
   private directoryHandle: FileSystemDirectoryHandle | null = null;
   private db: IDBDatabase | null = null;
@@ -142,6 +145,13 @@ class FileSystemService {
 
       this.rootPath = result.path;
 
+      // Persist the directory path for later restoration
+      try {
+        localStorage.setItem(ELECTRON_DIR_KEY, result.path);
+      } catch {
+        console.warn('[selectDirectory] Could not persist directory path');
+      }
+
       // Check if .git exists
       const gitPath = `${this.rootPath}/.git`;
       const gitExists = await api.fs.checkExists(gitPath);
@@ -182,9 +192,32 @@ class FileSystemService {
    * Returns null if no permission or handle not found
    */
   async restoreDirectory(): Promise<DirectoryState | null> {
-    // Electron: no restore needed, directory is always accessible via IPC
+    // Electron: restore the persisted directory path
     if (isElectron()) {
-      return null;
+      try {
+        const storedPath = localStorage.getItem(ELECTRON_DIR_KEY);
+        if (!storedPath) {
+          return null;
+        }
+
+        const api = getElectronAPI();
+        // Verify the directory still exists
+        const exists = await api.fs.checkExists(storedPath);
+        if (!exists.exists) {
+          localStorage.removeItem(ELECTRON_DIR_KEY);
+          return null;
+        }
+
+        this.rootPath = storedPath;
+
+        // Check if .git exists
+        const gitPath = `${storedPath}/.git`;
+        const gitExists = await api.fs.checkExists(gitPath);
+
+        return { path: storedPath, hasGit: gitExists.exists };
+      } catch {
+        return null;
+      }
     }
 
     // Browser: try to restore FSA handle
@@ -240,6 +273,19 @@ class FileSystemService {
    * Get or create a subdirectory
    */
   async getOrCreateDirectory(path: string): Promise<FileSystemDirectoryHandle> {
+    // Electron path: use IPC to create directory
+    if (isElectron()) {
+      if (!this.rootPath) {
+        throw new Error('No directory selected');
+      }
+      const api = getElectronAPI();
+      const fullPath = `${this.rootPath}/${path}`;
+      await api.fs.mkdir(fullPath);
+      // Return a dummy handle - Electron doesn't use FSA handles
+      return {} as FileSystemDirectoryHandle;
+    }
+
+    // Browser path: use FSA
     if (!this.directoryHandle) {
       throw new Error('No directory selected');
     }

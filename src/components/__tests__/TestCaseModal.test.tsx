@@ -13,6 +13,18 @@ vi.mock('../../utils/dateUtils', () => ({
   formatDateTime: (timestamp: number) => new Date(timestamp).toISOString(),
 }));
 
+vi.mock('../../hooks/useCustomAttributes', () => ({
+  useCustomAttributes: () => ({
+    definitions: [],
+    isLoading: false,
+    getApplicableDefinitions: () => [],
+    getDefinitionById: () => null,
+    createDefinition: vi.fn(),
+    updateDefinition: vi.fn(),
+    deleteDefinition: vi.fn(),
+  }),
+}));
+
 vi.mock('../../app/providers', async () => {
   const actual = await vi.importActual('../../app/providers');
   return {

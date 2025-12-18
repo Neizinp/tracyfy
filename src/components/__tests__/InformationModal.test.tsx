@@ -9,6 +9,18 @@ vi.mock('../RevisionHistoryTab', () => ({
   RevisionHistoryTab: () => <div data-testid="revision-history">Revision History</div>,
 }));
 
+vi.mock('../../hooks/useCustomAttributes', () => ({
+  useCustomAttributes: () => ({
+    definitions: [],
+    isLoading: false,
+    getApplicableDefinitions: () => [],
+    getDefinitionById: () => null,
+    createDefinition: vi.fn(),
+    updateDefinition: vi.fn(),
+    deleteDefinition: vi.fn(),
+  }),
+}));
+
 const renderWithProvider = (ui: React.ReactElement) => {
   return render(<UIProvider>{ui}</UIProvider>);
 };

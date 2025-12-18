@@ -17,6 +17,18 @@ vi.mock('../../hooks/useIncomingLinks', () => ({
   useIncomingLinks: () => [],
 }));
 
+vi.mock('../../hooks/useCustomAttributes', () => ({
+  useCustomAttributes: () => ({
+    definitions: [],
+    isLoading: false,
+    getApplicableDefinitions: () => [],
+    getDefinitionById: () => null,
+    createDefinition: vi.fn(),
+    updateDefinition: vi.fn(),
+    deleteDefinition: vi.fn(),
+  }),
+}));
+
 vi.mock('../../app/providers', async () => {
   const actual = await vi.importActual('../../app/providers');
   return {

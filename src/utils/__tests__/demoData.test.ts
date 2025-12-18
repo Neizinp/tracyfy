@@ -8,7 +8,7 @@ import { DEMO_PROJECT, DEMO_ARTIFACTS } from '../demoData';
 describe('Demo Data', () => {
   describe('DEMO_PROJECT', () => {
     it('should have the correct name without timestamp suffix', () => {
-      expect(DEMO_PROJECT.name).toBe('Demo Project');
+      expect(DEMO_PROJECT.name).toBe('Tracyfy Management System');
     });
 
     it('should have a description', () => {

@@ -201,13 +201,26 @@ class RealGitService {
    * Initialize git with the selected directory
    */
   async init(directoryHandle?: FileSystemDirectoryHandle): Promise<boolean> {
+    console.log('[realGitService.init] Starting, isElectron:', isElectronEnv());
+
     // Browser path: set FSA handle
     if (!isElectronEnv() && directoryHandle) {
       fsAdapter.setRoot(directoryHandle);
     }
 
+    // For Electron, verify we have a root path
+    if (isElectronEnv()) {
+      const rootPath = fileSystemService.getRootPath();
+      console.log('[realGitService.init] Electron rootPath:', rootPath);
+      if (!rootPath) {
+        console.error('[realGitService.init] No root path set in Electron mode!');
+        return false;
+      }
+    }
+
     // Check if .git exists
     const hasGit = await fileSystemService.checkGitExists();
+    console.log('[realGitService.init] hasGit:', hasGit);
 
     // Check if HEAD exists (valid repo)
     let hasValidRepo = false;
@@ -219,6 +232,7 @@ class RealGitService {
         hasValidRepo = false;
       }
     }
+    console.log('[realGitService.init] hasValidRepo:', hasValidRepo);
 
     if (!hasGit || !hasValidRepo) {
       if (hasGit && !hasValidRepo) {
@@ -238,6 +252,7 @@ class RealGitService {
         debug.log('[init] Auto-initializing git repository...');
 
         const rootDir = this.getRootDir();
+        console.log('[realGitService.init] Calling git.init with rootDir:', rootDir);
         const result = await window.electronAPI!.git.init(rootDir);
         if (result.error) {
           console.error('[init] Git init failed:', result.error);
@@ -245,6 +260,7 @@ class RealGitService {
         }
 
         this.initialized = true;
+        console.log('[realGitService.init] Success! initialized =', this.initialized);
         return true;
       }
 

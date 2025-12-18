@@ -13,6 +13,9 @@ vi.mock('../../app/providers/FileSystemProvider', async () => {
 
 import { useFileSystem } from '../../app/providers/FileSystemProvider';
 
+// Type for the mock return value
+type MockFileSystemContext = ReturnType<typeof useFileSystem>;
+
 describe('DirectorySelector', () => {
   const mockSelectDirectory = vi.fn();
   const mockOnReady = vi.fn();
@@ -29,7 +32,7 @@ describe('DirectorySelector', () => {
       selectDirectory: mockSelectDirectory,
       directoryName: null,
       isApiSupported: true,
-    } as any);
+    } as unknown as MockFileSystemContext);
 
     render(<DirectorySelector />);
 
@@ -43,7 +46,7 @@ describe('DirectorySelector', () => {
       error: null,
       selectDirectory: mockSelectDirectory,
       directoryName: 'test-dir',
-    } as any);
+    } as unknown as MockFileSystemContext);
 
     render(<DirectorySelector />);
 
@@ -57,7 +60,7 @@ describe('DirectorySelector', () => {
       error: null,
       selectDirectory: mockSelectDirectory,
       directoryName: 'test-dir',
-    } as any);
+    } as unknown as MockFileSystemContext);
 
     render(<DirectorySelector onReady={mockOnReady} />);
 
@@ -71,7 +74,7 @@ describe('DirectorySelector', () => {
       error: 'Failed to access directory',
       selectDirectory: mockSelectDirectory,
       directoryName: null,
-    } as any);
+    } as unknown as MockFileSystemContext);
 
     render(<DirectorySelector />);
 
@@ -86,13 +89,15 @@ describe('DirectorySelector', () => {
       selectDirectory: mockSelectDirectory,
       directoryName: null,
       isApiSupported: true,
-    } as any);
+    } as unknown as MockFileSystemContext);
 
-    render(<DirectorySelector />);
+    const { container } = render(<DirectorySelector />);
 
-    // Loading spinner should be present
-    const loader = screen.getByText(/Loading/i);
-    expect(loader).toBeInTheDocument();
+    // Loading spinner should be present - just a spinner icon, no other content
+    const svg = container.querySelector('svg');
+    expect(svg).toBeInTheDocument();
+    // The "Select Project Directory" text should NOT be present since it's showing spinner-only UI
+    expect(screen.queryByText('Select Project Directory')).not.toBeInTheDocument();
   });
 
   it('should call selectDirectory when button clicked', () => {
@@ -103,7 +108,7 @@ describe('DirectorySelector', () => {
       selectDirectory: mockSelectDirectory,
       directoryName: null,
       isApiSupported: true,
-    } as any);
+    } as unknown as MockFileSystemContext);
 
     render(<DirectorySelector />);
 
@@ -121,7 +126,7 @@ describe('DirectorySelector', () => {
       selectDirectory: mockSelectDirectory,
       directoryName: null,
       isApiSupported: true,
-    } as any);
+    } as unknown as MockFileSystemContext);
 
     render(<DirectorySelector />);
 
@@ -136,7 +141,7 @@ describe('DirectorySelector', () => {
       selectDirectory: mockSelectDirectory,
       directoryName: null,
       isApiSupported: true,
-    } as any);
+    } as unknown as MockFileSystemContext);
 
     const { container } = render(<DirectorySelector />);
 
@@ -152,7 +157,7 @@ describe('DirectorySelector', () => {
       selectDirectory: mockSelectDirectory,
       directoryName: null,
       isApiSupported: false,
-    } as any);
+    } as unknown as MockFileSystemContext);
 
     render(<DirectorySelector />);
 

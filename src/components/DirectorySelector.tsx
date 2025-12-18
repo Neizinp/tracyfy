@@ -16,8 +16,34 @@ export const DirectorySelector: React.FC<DirectorySelectorProps> = ({ onReady })
     }
   }, [isReady, onReady]);
 
+  // Don't render when ready
   if (isReady) {
-    return null; // Don't render anything when ready
+    return null;
+  }
+
+  // Show loading spinner during initial restore (prevents "No directory" flicker)
+  if (isLoading && !directoryName && !error) {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'var(--color-bg-app)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+        }}
+      >
+        <Loader2
+          size={48}
+          style={{ color: 'var(--color-accent)', animation: 'spin 1s linear infinite' }}
+        />
+      </div>
+    );
   }
 
   return (

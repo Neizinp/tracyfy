@@ -31,6 +31,36 @@ vi.mock('../../services/gitService', () => ({
   },
 }));
 
+// Mock diskCustomAttributeService
+vi.mock('../../services/diskCustomAttributeService', () => ({
+  diskCustomAttributeService: {
+    getAllDefinitions: vi.fn().mockResolvedValue([]),
+  },
+}));
+
+// Mock diskLinkService
+vi.mock('../../services/diskLinkService', () => ({
+  diskLinkService: {
+    getLinksForProject: vi.fn().mockResolvedValue([]),
+  },
+}));
+
+// Default export options for tests
+const defaultOptions = {
+  format: 'excel' as const,
+  baseline: null,
+  includeRequirements: true,
+  includeUseCases: true,
+  includeTestCases: true,
+  includeInformation: true,
+  includeRisks: false,
+  includeLinks: false,
+  includeRevisionHistory: false,
+  includeTraceability: true,
+  includeVerificationMatrix: false,
+  includeTitlePage: false,
+};
+
 describe('excelExportUtils', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -107,7 +137,16 @@ describe('excelExportUtils', () => {
   };
 
   it('should create separate sheets for each artifact type', async () => {
-    await exportProjectToExcel(mockProject, globalState, ['r1'], ['u1'], ['t1'], ['i1'], []);
+    await exportProjectToExcel(
+      mockProject,
+      globalState,
+      ['r1'],
+      ['u1'],
+      ['t1'],
+      ['i1'],
+      [],
+      defaultOptions
+    );
 
     // Verify sheets are appended
     expect(mockBookAppendSheet).toHaveBeenCalledWith(
@@ -150,7 +189,8 @@ describe('excelExportUtils', () => {
       [],
       [],
       [],
-      []
+      [],
+      defaultOptions
     );
 
     // Check that json_to_sheet was called with only 1 requirement
@@ -186,7 +226,7 @@ describe('excelExportUtils', () => {
     const mockSheet: Record<string, unknown> = {};
     mockJsonToSheet.mockReturnValue(mockSheet);
 
-    await exportProjectToExcel(mockProject, globalState, ['r1'], [], [], [], []);
+    await exportProjectToExcel(mockProject, globalState, ['r1'], [], [], [], [], defaultOptions);
 
     expect(mockSheet['!cols']).toBeDefined();
     expect((mockSheet['!cols'] as unknown[]).length).toBeGreaterThan(0);
@@ -195,7 +235,7 @@ describe('excelExportUtils', () => {
   it('should fallback to writeFile if showSaveFilePicker is not available', async () => {
     delete (window as unknown as Record<string, unknown>).showSaveFilePicker;
 
-    await exportProjectToExcel(mockProject, globalState, ['r1'], [], [], [], []);
+    await exportProjectToExcel(mockProject, globalState, ['r1'], [], [], [], [], defaultOptions);
 
     expect(mockWriteFile).toHaveBeenCalledWith(
       expect.anything(),
