@@ -288,3 +288,88 @@ ipcMain.handle('fs:mkdir', async (_event, dirPath) => {
     return { error: error.message };
   }
 });
+
+// ========== REMOTE GIT OPERATIONS ==========
+
+ipcMain.handle('git:addRemote', async (_event, dir, name, url) => {
+  try {
+    await git.addRemote({ fs, dir, remote: name, url });
+    return { ok: true };
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('git:removeRemote', async (_event, dir, name) => {
+  try {
+    await git.deleteRemote({ fs, dir, remote: name });
+    return { ok: true };
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('git:listRemotes', async (_event, dir) => {
+  try {
+    const remotes = await git.listRemotes({ fs, dir });
+    return remotes.map((r) => ({ name: r.remote, url: r.url }));
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('git:fetch', async (_event, dir, remote, branch, token) => {
+  try {
+    const http = await import('isomorphic-git/http/node').then((m) => m.default);
+    await git.fetch({
+      fs,
+      http,
+      dir,
+      remote: remote || 'origin',
+      ref: branch,
+      singleBranch: !!branch,
+      onAuth: token ? () => ({ username: 'x-access-token', password: token }) : undefined,
+    });
+    return { ok: true };
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('git:push', async (_event, dir, remote, branch, token) => {
+  try {
+    const http = await import('isomorphic-git/http/node').then((m) => m.default);
+    await git.push({
+      fs,
+      http,
+      dir,
+      remote: remote || 'origin',
+      ref: branch || 'main',
+      onAuth: token ? () => ({ username: 'x-access-token', password: token }) : undefined,
+    });
+    return { ok: true };
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('git:pull', async (_event, dir, remote, branch, token, author) => {
+  try {
+    const http = await import('isomorphic-git/http/node').then((m) => m.default);
+    await git.pull({
+      fs,
+      http,
+      dir,
+      remote: remote || 'origin',
+      ref: branch || 'main',
+      author: author || { name: 'Tracyfy User', email: 'user@tracyfy.local' },
+      onAuth: token ? () => ({ username: 'x-access-token', password: token }) : undefined,
+    });
+    return { ok: true, conflicts: [] };
+  } catch (error) {
+    if (error.code === 'MergeConflictError' || error.code === 'CheckoutConflictError') {
+      return { ok: false, conflicts: error.data?.filepaths || [] };
+    }
+    return { error: error.message };
+  }
+});
