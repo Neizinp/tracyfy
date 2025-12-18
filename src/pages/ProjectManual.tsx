@@ -119,8 +119,8 @@ export const ProjectManual: React.FC = () => {
 
       <Section title="Getting Started" icon={<Book size={20} />}>
         <FeatureCard
-          title="What is Tracyfy?"
-          description="Tracyfy is a modern requirements engineering tool designed for hardware and software projects. It helps you manage requirements, use cases, test cases, and risks with full traceability powered by Git."
+          title="The Atomic Philosophy"
+          description="Tracyfy is built on the philosophy of 'Atomic Markdown.' Every requirement, risk, or test case is stored as an individual, human-readable Markdown file. This ensures your data remains portable, transparent, and perfectly suited for version control."
         />
         <FeatureCard
           title="Project Navigation"
