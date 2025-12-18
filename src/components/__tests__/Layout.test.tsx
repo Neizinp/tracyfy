@@ -16,7 +16,6 @@ describe('Layout', () => {
           <Layout
             projects={[]}
             currentProjectId=""
-            currentProjectName=""
             onCreateProject={vi.fn()}
             onSwitchProject={vi.fn()}
             onOpenProjectSettings={vi.fn()}

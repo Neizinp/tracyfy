@@ -23,6 +23,7 @@ import type {
   InformationColumnVisibility,
   RiskColumnVisibility,
 } from '../types';
+import type { ExportOptions } from '../components/ExportModal';
 
 // Column configurations for each artifact type
 const useCaseColumns: {
@@ -201,7 +202,6 @@ export const ProjectLayout: React.FC = () => {
 
   return (
     <Layout
-      currentProjectName={currentProject?.name || 'No Project'}
       projects={projects}
       currentProjectId={currentProjectId}
       onSwitchProject={switchProject}
@@ -276,7 +276,21 @@ export const ProjectLayout: React.FC = () => {
             currentProject.useCaseIds,
             currentProject.testCaseIds,
             currentProject.informationIds,
-            baselines
+            baselines,
+            {
+              format: 'excel',
+              baseline: null,
+              includeRequirements: true,
+              includeUseCases: true,
+              includeTestCases: true,
+              includeInformation: true,
+              includeRisks: true,
+              includeLinks: true,
+              includeTitlePage: true,
+              includeRevisionHistory: true,
+              includeTraceability: true,
+              includeVerificationMatrix: true,
+            } as ExportOptions
           );
         } finally {
           endTask(taskId);

@@ -5,7 +5,6 @@ import type { ProjectBaseline } from '../../../types';
 
 describe('HeaderBar', () => {
   const defaultProps = {
-    currentProjectName: 'Test Project',
     onNewRequirement: vi.fn(),
   };
 
@@ -14,11 +13,9 @@ describe('HeaderBar', () => {
   });
 
   describe('rendering', () => {
-    it('should render project name in breadcrumb', () => {
+    it('should render basic elements', () => {
       render(<HeaderBar {...defaultProps} />);
-
-      expect(screen.getByText('Test Project')).toBeInTheDocument();
-      expect(screen.getByText('Projects /')).toBeInTheDocument();
+      expect(screen.getByText('Create New')).toBeInTheDocument();
     });
 
     it('should render Create New button', () => {

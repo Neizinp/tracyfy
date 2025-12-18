@@ -32,7 +32,6 @@ interface E2EWindow extends Window {
 }
 
 export interface HeaderBarProps {
-  currentProjectName: string;
   onSearch?: (query: string) => void;
   onViewHistory?: () => void;
   // Create dropdown
@@ -69,7 +68,6 @@ export interface HeaderBarProps {
  * - Create, Import, Export dropdown menus
  */
 export const HeaderBar: React.FC<HeaderBarProps> = ({
-  currentProjectName,
   onSearch,
   onViewHistory,
   onNewRequirement,
@@ -227,11 +225,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         backgroundColor: 'var(--color-bg-app)',
       }}
     >
-      {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-        <span style={{ color: 'var(--color-text-muted)' }}>Projects /</span>
-        <span style={{ fontWeight: 500 }}>{currentProjectName}</span>
-      </div>
+      <div />
 
       {/* Search Bar */}
       {onSearch && (

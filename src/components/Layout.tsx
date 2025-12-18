@@ -4,7 +4,6 @@ import { HeaderBar } from './layout/HeaderBar';
 
 export interface LayoutProps {
   children: React.ReactNode;
-  currentProjectName: string;
   projects: Project[];
   currentProjectId: string;
   onSwitchProject: (projectId: string) => void;
@@ -45,7 +44,6 @@ export interface LayoutProps {
  */
 export const Layout: React.FC<LayoutProps> = ({
   children,
-  currentProjectName,
   projects,
   currentProjectId,
   onSwitchProject,
@@ -91,7 +89,6 @@ export const Layout: React.FC<LayoutProps> = ({
 
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <HeaderBar
-          currentProjectName={currentProjectName}
           onSearch={onSearch}
           onViewHistory={onViewHistory}
           onNewRequirement={onNewRequirement}
