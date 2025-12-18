@@ -12,6 +12,7 @@ import {
   FolderOpen,
   User,
   HelpCircle,
+  SlidersHorizontal,
 } from 'lucide-react';
 import type { ProjectBaseline } from '../../types';
 import { DropdownMenuItem } from './DropdownMenuItem';
@@ -21,6 +22,10 @@ import {
   dropdownMenuStyle,
   dropdownItemStyle,
   hoverHandlers,
+  searchContainerStyle,
+  searchInputStyle,
+  searchIconStyle,
+  advancedSearchButtonStyle,
 } from './layoutStyles';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { ThemeToggle } from './ThemeToggle';
@@ -227,55 +232,35 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     >
       <div />
 
-      {/* Search Bar */}
+      {/* Unified Search Bar */}
       {onSearch && (
-        <div
-          style={{
-            position: 'relative',
-            width: '300px',
-            margin: '0 var(--spacing-md)',
-          }}
-        >
-          <Search
-            size={16}
-            style={{
-              position: 'absolute',
-              left: '10px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--color-text-muted)',
-            }}
-          />
+        <div style={searchContainerStyle}>
+          <Search size={16} style={searchIconStyle} />
           <input
             ref={searchInputRef}
             type="text"
             placeholder="Search... (Ctrl+K)"
             onChange={(e) => onSearch(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 12px 8px 36px',
-              borderRadius: '6px',
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-bg-secondary)',
-              color: 'var(--color-text-primary)',
-              fontSize: 'var(--font-size-sm)',
-            }}
+            style={searchInputStyle}
           />
+          {onOpenAdvancedSearch && (
+            <button
+              onClick={onOpenAdvancedSearch}
+              style={advancedSearchButtonStyle}
+              title="Advanced Search (Ctrl+Shift+F)"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--color-accent)';
+                e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--color-text-muted)';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <SlidersHorizontal size={16} />
+            </button>
+          )}
         </div>
-      )}
-
-      {/* Advanced Search Button */}
-      {onOpenAdvancedSearch && (
-        <button
-          onClick={onOpenAdvancedSearch}
-          style={{
-            ...headerButtonStyle,
-            padding: '6px 10px',
-          }}
-          title="Advanced Search (Ctrl+Shift+F)"
-        >
-          <Search size={16} />
-        </button>
       )}
 
       <div style={{ display: 'flex', gap: '8px' }}>

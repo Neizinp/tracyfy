@@ -202,3 +202,53 @@ export const emptyStateTextStyle: CSSProperties = {
   color: 'var(--color-text-secondary)',
   margin: 0,
 };
+
+// Unified Search Styles
+export const searchContainerStyle: CSSProperties = {
+  position: 'relative',
+  display: 'flex',
+  alignItems: 'center',
+  width: '320px',
+  backgroundColor: 'var(--color-bg-secondary)',
+  border: '1px solid var(--color-border)',
+  borderRadius: '8px',
+  transition: 'border-color 0.2s, box-shadow 0.2s',
+  margin: '0 var(--spacing-md)',
+};
+
+export const searchInputStyle: CSSProperties = {
+  width: '100%',
+  padding: '8px 40px 8px 36px',
+  borderRadius: '8px',
+  border: 'none',
+  backgroundColor: 'transparent',
+  color: 'var(--color-text-primary)',
+  fontSize: 'var(--font-size-sm)',
+  outline: 'none',
+};
+
+export const searchIconStyle: CSSProperties = {
+  position: 'absolute',
+  left: '10px',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  color: 'var(--color-text-muted)',
+  pointerEvents: 'none',
+};
+
+export const advancedSearchButtonStyle: CSSProperties = {
+  position: 'absolute',
+  right: '4px',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  background: 'transparent',
+  border: 'none',
+  padding: '6px',
+  borderRadius: '6px',
+  color: 'var(--color-text-muted)',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'all 0.2s',
+};
