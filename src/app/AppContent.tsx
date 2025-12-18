@@ -1,20 +1,10 @@
 import { AppRoutes } from '../routes/AppRoutes';
-import { LoadingOverlay, DirectorySelector, UserOnboardingModal } from '../components';
-import { useProject, useFileSystem, useUser } from './providers';
+import { DirectorySelector, UserOnboardingModal } from '../components';
+import { useFileSystem, useUser } from './providers';
 
 export function AppContent() {
-  const { isLoading } = useProject();
   const fileSystem = useFileSystem();
-  const { users, createUser, switchUser } = useUser();
-
-  // Show directory selector if filesystem not ready
-  if (!fileSystem.isReady) {
-    return <DirectorySelector />;
-  }
-
-  if (isLoading) {
-    return <LoadingOverlay isLoading={true} />;
-  }
+  const { users, isLoading: isUserLoading, createUser, switchUser } = useUser();
 
   // Show user onboarding if no users exist
   const handleCreateFirstUser = async (name: string) => {
@@ -24,10 +14,14 @@ export function AppContent() {
     }
   };
 
+  const showDirectorySelector = !fileSystem.isReady && !fileSystem.isLoading;
+  const showUserOnboarding = fileSystem.isReady && !isUserLoading && users.length === 0;
+
   return (
     <>
       <AppRoutes />
-      <UserOnboardingModal isOpen={users.length === 0} onCreateUser={handleCreateFirstUser} />
+      {showDirectorySelector && <DirectorySelector />}
+      <UserOnboardingModal isOpen={showUserOnboarding} onCreateUser={handleCreateFirstUser} />
     </>
   );
 }

@@ -66,7 +66,12 @@ interface FileSystemContextValue {
 export const FileSystemContext = createContext<FileSystemContextValue | undefined>(undefined);
 
 // Check if we're in E2E test mode (skip disk operations)
-const isE2EMode = () => typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__;
+interface ExtendedWindow extends Window {
+  __E2E_TEST_MODE__?: boolean;
+}
+
+const isE2EMode = () =>
+  typeof window !== 'undefined' && (window as unknown as ExtendedWindow).__E2E_TEST_MODE__;
 
 export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isReady, setIsReady] = useState(false);
@@ -163,7 +168,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       try {
         // For e2e tests: if E2E_TEST_MODE is set, use in-memory storage
-        if (typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__) {
+        if (
+          typeof window !== 'undefined' &&
+          (window as unknown as ExtendedWindow).__E2E_TEST_MODE__
+        ) {
           debug.log('[FileSystemProvider] E2E test mode enabled');
           setDirectoryName('E2E Test Directory');
           // Initialize with empty data for E2E tests
@@ -180,25 +188,30 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
         const result = await fileSystemService.restoreDirectory();
         if (result && (result.handle || result.path)) {
-          // Initialize git with the restored directory (handle for browser, path for Electron)
-          const gitInitialized = await realGitService.init(result.handle);
-          if (gitInitialized) {
-            setDirectoryName(fileSystemService.getDirectoryName());
+          const initTaskId = startTask('Loading project...');
+          try {
+            // Initialize git with the restored directory (handle for browser, path for Electron)
+            const gitInitialized = await realGitService.init(result.handle);
+            if (gitInitialized) {
+              setDirectoryName(fileSystemService.getDirectoryName());
 
-            // Initialize disk project service directories
-            await diskProjectService.initialize();
+              // Initialize disk project service directories
+              await diskProjectService.initialize();
 
-            // Load all data from disk
-            await reloadData();
+              // Load all data from disk
+              await reloadData();
 
-            // Load git status
-            const status = await realGitService.getStatus();
-            setPendingChanges(status);
+              // Load git status
+              const status = await realGitService.getStatus();
+              setPendingChanges(status);
 
-            // Load baselines
-            await refreshBaselines();
+              // Load baselines
+              await refreshBaselines();
 
-            setIsReady(true);
+              setIsReady(true);
+            }
+          } finally {
+            endTask(initTaskId);
           }
         }
       } catch (err) {
@@ -209,11 +222,12 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
 
     tryRestore();
-  }, [reloadData, refreshBaselines]);
+  }, [reloadData, refreshBaselines, startTask, endTask]);
 
   const selectDirectory = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    const taskId = startTask('Loading project...');
 
     try {
       const result = await fileSystemService.selectDirectory();
@@ -223,6 +237,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (!gitInitialized) {
         setError('Git initialization was cancelled. A git repository is required.');
         setIsLoading(false);
+        endTask(taskId);
         return;
       }
 
@@ -245,10 +260,11 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setIsReady(true);
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      endTask(taskId);
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
-  }, [reloadData, refreshBaselines]);
+  }, [reloadData, refreshBaselines, startTask, endTask]);
 
   // CRUD operations - Requirements
   const saveRequirement = useCallback(
