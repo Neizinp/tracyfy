@@ -156,8 +156,8 @@ export const ProjectManual: React.FC = () => {
 
       <Section title="Version Control & Baselines" icon={<GitBranch size={20} />}>
         <FeatureCard
-          title="Automatic Git Tracking"
-          description="Every change you make is tracked in a local Git repository. Use the Version History to see exactly who changed what and when."
+          title="Atomic Commits"
+          description="Tracyfy follows an 'atomic commit' pattern where each file is committed separately. This keeps your version history clean and provides a precise audit trail for every individual requirement or artifact."
         />
         <FeatureCard
           title="Creating Baselines"
