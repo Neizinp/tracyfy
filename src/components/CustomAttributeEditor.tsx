@@ -10,6 +10,7 @@ interface CustomAttributeEditorProps {
   values: CustomAttributeValue[];
   onChange: (values: CustomAttributeValue[]) => void;
   artifactType: ApplicableArtifactType;
+  loading?: boolean;
 }
 
 /**
@@ -21,7 +22,38 @@ export const CustomAttributeEditor: React.FC<CustomAttributeEditorProps> = ({
   values,
   onChange,
   artifactType,
+  loading = false,
 }) => {
+  if (loading) {
+    return (
+      <div
+        style={{
+          padding: 'var(--spacing-lg)',
+          textAlign: 'center',
+          color: 'var(--color-text-muted)',
+        }}
+      >
+        <div
+          style={{
+            width: '24px',
+            height: '24px',
+            border: '2px solid var(--color-border)',
+            borderTopColor: 'var(--color-accent)',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto var(--spacing-sm)',
+          }}
+        />
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+        <p>Loading custom attributes...</p>
+      </div>
+    );
+  }
+
   // Filter definitions to only those applicable to this artifact type
   const applicableDefinitions = definitions.filter((def) => def.appliesTo.includes(artifactType));
 
@@ -71,7 +103,7 @@ export const CustomAttributeEditor: React.FC<CustomAttributeEditorProps> = ({
       >
         <p>No custom attributes defined for this artifact type.</p>
         <p style={{ fontSize: 'var(--font-size-sm)', marginTop: 'var(--spacing-xs)' }}>
-          Go to Settings → Custom Attributes to create attribute definitions.
+          Go to Custom Attributes in the sidebar to create attribute definitions.
         </p>
       </div>
     );

@@ -47,7 +47,8 @@ export const InformationModal: React.FC<InformationModalProps> = ({
   });
 
   // Get custom attribute definitions
-  const { definitions: customAttributeDefinitions } = useCustomAttributes();
+  const { definitions: customAttributeDefinitions, loading: attributesLoading } =
+    useCustomAttributes();
   const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
 
   useEffect(() => {
@@ -87,7 +88,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     ...(information ? [{ id: 'relationships' as Tab, label: 'Relationships' }] : []),
-    { id: 'customFields', label: 'Custom Fields' },
+    { id: 'customFields', label: 'Custom Attributes' },
     ...(information ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
   ];
 
@@ -508,6 +509,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                 values={customAttributes}
                 onChange={setCustomAttributes}
                 artifactType="information"
+                loading={attributesLoading}
               />
             </div>
           )}

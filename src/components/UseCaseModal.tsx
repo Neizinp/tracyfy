@@ -51,7 +51,8 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
   });
 
   // Get custom attribute definitions
-  const { definitions: customAttributeDefinitions } = useCustomAttributes();
+  const { definitions: customAttributeDefinitions, loading: attributesLoading } =
+    useCustomAttributes();
   const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
 
   useEffect(() => {
@@ -130,7 +131,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     { id: 'flows', label: 'Flows' },
     { id: 'conditions', label: 'Conditions' },
     { id: 'relationships', label: 'Relationships' },
-    { id: 'customFields', label: 'Custom Fields' },
+    { id: 'customFields', label: 'Custom Attributes' },
     { id: 'history', label: 'Revision History' },
   ].filter((tab) => {
     // Only show relationships and history for existing use cases
@@ -649,6 +650,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                 values={customAttributes}
                 onChange={setCustomAttributes}
                 artifactType="useCase"
+                loading={attributesLoading}
               />
             </div>
           )}

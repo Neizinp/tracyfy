@@ -45,7 +45,8 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
   });
 
   // Get custom attribute definitions
-  const { definitions: customAttributeDefinitions } = useCustomAttributes();
+  const { definitions: customAttributeDefinitions, loading: attributesLoading } =
+    useCustomAttributes();
   const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
 
   useEffect(() => {
@@ -121,7 +122,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
     { id: 'overview', label: 'Overview' },
     { id: 'mitigation', label: 'Mitigation' },
     ...(risk ? [{ id: 'relationships' as Tab, label: 'Relationships' }] : []),
-    { id: 'customFields', label: 'Custom Fields' },
+    { id: 'customFields', label: 'Custom Attributes' },
     ...(risk ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
   ];
 
@@ -751,6 +752,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
                 values={customAttributes}
                 onChange={setCustomAttributes}
                 artifactType="risk"
+                loading={attributesLoading}
               />
             </div>
           )}

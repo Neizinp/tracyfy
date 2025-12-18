@@ -13,6 +13,7 @@ import {
   UserProvider,
   BackgroundTasksProvider,
   ToastProvider,
+  CustomAttributeProvider,
 } from './providers';
 
 export const AppProviders: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -24,15 +25,17 @@ export const AppProviders: React.FC<{ children: ReactNode }> = ({ children }) =>
             <ProjectProvider>
               <UIProvider>
                 <GlobalStateProvider>
-                  <RequirementsProvider>
-                    <UseCasesProvider>
-                      <TestCasesProvider>
-                        <InformationProvider>
-                          <ImportExportProvider>{children}</ImportExportProvider>
-                        </InformationProvider>
-                      </TestCasesProvider>
-                    </UseCasesProvider>
-                  </RequirementsProvider>
+                  <CustomAttributeProvider>
+                    <RequirementsProvider>
+                      <UseCasesProvider>
+                        <TestCasesProvider>
+                          <InformationProvider>
+                            <ImportExportProvider>{children}</ImportExportProvider>
+                          </InformationProvider>
+                        </TestCasesProvider>
+                      </UseCasesProvider>
+                    </RequirementsProvider>
+                  </CustomAttributeProvider>
                 </GlobalStateProvider>
               </UIProvider>
             </ProjectProvider>

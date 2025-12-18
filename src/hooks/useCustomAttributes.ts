@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
-import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
+import { useCustomAttributeContext } from '../app/providers/CustomAttributeProvider';
 import type { CustomAttributeDefinition, ApplicableArtifactType } from '../types/customAttributes';
 
 interface UseCustomAttributesResult {
@@ -11,42 +10,17 @@ interface UseCustomAttributesResult {
 }
 
 /**
- * Hook to access custom attribute definitions
+ * Hook to access custom attribute definitions.
+ * Now uses centralized CustomAttributeProvider for efficient, consistent state.
  */
 export const useCustomAttributes = (): UseCustomAttributesResult => {
-  const [definitions, setDefinitions] = useState<CustomAttributeDefinition[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchDefinitions = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const defs = await diskCustomAttributeService.getAllDefinitions();
-      setDefinitions(defs);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch custom attributes'));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchDefinitions();
-  }, [fetchDefinitions]);
-
-  const getDefinitionsForType = useCallback(
-    (type: ApplicableArtifactType): CustomAttributeDefinition[] => {
-      return definitions.filter((def) => def.appliesTo.includes(type));
-    },
-    [definitions]
-  );
+  const context = useCustomAttributeContext();
 
   return {
-    definitions,
-    loading,
-    error,
-    refetch: fetchDefinitions,
-    getDefinitionsForType,
+    definitions: context.definitions,
+    loading: context.loading,
+    error: context.error,
+    refetch: context.refetch,
+    getDefinitionsForType: context.getDefinitionsForType,
   };
 };

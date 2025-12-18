@@ -59,7 +59,8 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
   });
 
   // Get custom attribute definitions
-  const { definitions: customAttributeDefinitions } = useCustomAttributes();
+  const { definitions: customAttributeDefinitions, loading: attributesLoading } =
+    useCustomAttributes();
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [title, setTitle] = useState('');
@@ -217,7 +218,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
     { id: 'details', label: 'Details' },
     { id: 'relationships', label: 'Relationships' },
     { id: 'comments', label: 'Comments' },
-    { id: 'customFields', label: 'Custom Fields' },
+    { id: 'customFields', label: 'Custom Attributes' },
     ...(isEditMode ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
   ];
 
@@ -819,6 +820,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
                 values={customAttributes}
                 onChange={setCustomAttributes}
                 artifactType="requirement"
+                loading={attributesLoading}
               />
             </div>
           )}

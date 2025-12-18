@@ -94,56 +94,126 @@ export function createDemoAttributeValues(attrIds: string[]): {
 } {
   // Sample values for requirements (Target Release, Component, Priority, Verification Status)
   const requirementValues: CustomAttributeValue[][] = [
-    // 0: Atomic Data Model
+    // 0: Atomic Storage
     [
       { attributeId: attrIds[0], value: 'v1.0 (MVP)' },
       { attributeId: attrIds[1], value: 'Atomic Storage' },
       { attributeId: attrIds[2], value: 'P0 (Critical)' },
       { attributeId: attrIds[3], value: 'Verified' },
     ],
-    // 1: Local-First Privacy
+    // 1: URI Mapping
+    [
+      { attributeId: attrIds[0], value: 'v1.0 (MVP)' },
+      { attributeId: attrIds[1], value: 'Atomic Storage' },
+      { attributeId: attrIds[2], value: 'P0 (Critical)' },
+      { attributeId: attrIds[3], value: 'Verified' },
+    ],
+    // 2: Local-First Indexing
     [
       { attributeId: attrIds[0], value: 'v1.0 (MVP)' },
       { attributeId: attrIds[1], value: 'Security & Privacy' },
       { attributeId: attrIds[2], value: 'P0 (Critical)' },
       { attributeId: attrIds[3], value: 'Verified' },
     ],
-    // 2: Git Infrastructure
+    // 3: Data Privacy
+    [
+      { attributeId: attrIds[0], value: 'v1.0 (MVP)' },
+      { attributeId: attrIds[1], value: 'Security & Privacy' },
+      { attributeId: attrIds[2], value: 'P0 (Critical)' },
+      { attributeId: attrIds[3], value: 'Verified' },
+    ],
+    // 4: Commit Orchestration
     [
       { attributeId: attrIds[0], value: 'v1.0 (MVP)' },
       { attributeId: attrIds[1], value: 'Git Integration' },
       { attributeId: attrIds[2], value: 'P0 (Critical)' },
       { attributeId: attrIds[3], value: 'Verified' },
     ],
-    // 3: Traceability Engine
+    // 5: Commit Signing
+    [
+      { attributeId: attrIds[0], value: 'v1.0 (MVP)' },
+      { attributeId: attrIds[1], value: 'Git Integration' },
+      { attributeId: attrIds[2], value: 'P1 (Important)' },
+      { attributeId: attrIds[3], value: 'Verified' },
+    ],
+    // 6: Integrated History
+    [
+      { attributeId: attrIds[0], value: 'v1.0 (MVP)' },
+      { attributeId: attrIds[1], value: 'Git Integration' },
+      { attributeId: attrIds[2], value: 'P1 (Important)' },
+      { attributeId: attrIds[3], value: 'Verified' },
+    ],
+    // 7: Universal Linking
     [
       { attributeId: attrIds[0], value: 'v1.0 (MVP)' },
       { attributeId: attrIds[1], value: 'Traceability Engine' },
       { attributeId: attrIds[2], value: 'P0 (Critical)' },
       { attributeId: attrIds[3], value: 'Verified' },
     ],
-    // 4: Advanced Export
+    // 8: Link Typing
+    [
+      { attributeId: attrIds[0], value: 'v1.0 (MVP)' },
+      { attributeId: attrIds[1], value: 'Traceability Engine' },
+      { attributeId: attrIds[2], value: 'P1 (Important)' },
+      { attributeId: attrIds[3], value: 'Verified' },
+    ],
+    // 9: Matrix Automation
+    [
+      { attributeId: attrIds[0], value: 'v1.0 (MVP)' },
+      { attributeId: attrIds[1], value: 'Traceability Engine' },
+      { attributeId: attrIds[2], value: 'P1 (Important)' },
+      { attributeId: attrIds[3], value: 'Verified' },
+    ],
+    // 10: Bidirectional Navigation
+    [
+      { attributeId: attrIds[0], value: 'v1.0 (MVP)' },
+      { attributeId: attrIds[1], value: 'Traceability Engine' },
+      { attributeId: attrIds[2], value: 'P1 (Important)' },
+      { attributeId: attrIds[3], value: 'Verified' },
+    ],
+    // 11: PDF Generation
     [
       { attributeId: attrIds[0], value: 'v1.1 (Enhancements)' },
       { attributeId: attrIds[1], value: 'Export System' },
       { attributeId: attrIds[2], value: 'P1 (Important)' },
       { attributeId: attrIds[3], value: 'Verified' },
     ],
-    // 5: Impact Analysis
+    // 12: Excel Data Export
+    [
+      { attributeId: attrIds[0], value: 'v1.1 (Enhancements)' },
+      { attributeId: attrIds[1], value: 'Export System' },
+      { attributeId: attrIds[2], value: 'P1 (Important)' },
+      { attributeId: attrIds[3], value: 'Verified' },
+    ],
+    // 13: Dependency Traversal
     [
       { attributeId: attrIds[0], value: 'v1.1 (Enhancements)' },
       { attributeId: attrIds[1], value: 'Traceability Engine' },
       { attributeId: attrIds[2], value: 'P1 (Important)' },
       { attributeId: attrIds[3], value: 'Unverified' },
     ],
-    // 6: Smart Search
+    // 14: Suspect Link Flagging
+    [
+      { attributeId: attrIds[0], value: 'v1.1 (Enhancements)' },
+      { attributeId: attrIds[1], value: 'Traceability Engine' },
+      { attributeId: attrIds[2], value: 'P1 (Important)' },
+      { attributeId: attrIds[3], value: 'Unverified' },
+    ],
+    // 15: Full-Text Search
     [
       { attributeId: attrIds[0], value: 'v1.1 (Enhancements)' },
       { attributeId: attrIds[1], value: 'Frontend UI' },
       { attributeId: attrIds[2], value: 'P2 (Nice to have)' },
       { attributeId: attrIds[3], value: 'Verified' },
     ],
-    // 7: Theme Engine
+    // 16: Responsive UX
+    [
+      { attributeId: attrIds[0], value: 'v1.1 (Enhancements)' },
+      { attributeId: attrIds[1], value: 'Frontend UI' },
+      { attributeId: attrIds[2], value: 'P2 (Nice to have)' },
+      { attributeId: attrIds[3], value: 'Verified' },
+    ],
+    // 17: Visual Identity (Design Language)
     [
       { attributeId: attrIds[0], value: 'v1.0 (MVP)' },
       { attributeId: attrIds[1], value: 'Frontend UI' },
@@ -214,39 +284,50 @@ export function createDemoAttributeValues(attrIds: string[]): {
 export const DEMO_ARTIFACTS: DemoArtifacts = {
   requirements: [
     {
-      title: 'Atomic Persistence Model',
-      description: 'The foundation of Tracyfy: artifacts as separate, manageable files.',
-      text: `## The Atomic Philosophy
-Tracyfy shall store every artifact (Requirement, Use Case, etc.) as a standalone Markdown file.
-
-This approach ensures:
-- **Zero Lock-in**: Your data is just files on your disk.
-- **Granular History**: Every change to a *specific* artifact is a Git commit.
-- **Human Readable**: You can read and edit your requirements in any text editor.
-
-### Technical Requirement
-The filesystem service shall map each Unique ID to a structured path: \`/{type}/{id}.md\`.`,
+      title: 'Atomic Storage Format',
+      description: 'Storing artifacts as individual, human-readable Markdown files.',
+      text: 'The system shall store each artifact (Requirement, Use Case, TestCase, Information, Risk) as a standalone Markdown file.',
       rationale:
-        'Atomic storage enables powerful versioning and prevents database corruption bottlenecks.',
+        'Atomic storage prevents monolithic data corruption and facilitates granular version control.',
       status: 'approved',
       priority: 'high',
       author: 'Tracyfy Core Team',
       verificationMethod: 'Filesystem integration test',
-      comments: 'This is the core differentiator of the tool.',
+      comments: 'Fundamental to the "Atomic Philosophy".',
       dateCreated: now,
       revision: '01',
     },
     {
-      title: 'Local-First Privacy',
-      description: 'Ensuring user data never leaves their local environment by default.',
-      text: `## Privacy by Design
-The system shall perform all data processing and indexing within the user's browser environment.
-
-### Security Constraints:
-- No telemetry or data collection by default.
-- File access must be explicitly granted via the File System Access API.
-- All Git operations must occur locally using isomorphic-git.`,
-      rationale: "Engineering data is highly sensitive and belongs on the engineer's machine.",
+      title: 'Artifact-to-Path Mapping',
+      description: 'Translating Unique IDs to structured filesystem paths.',
+      text: 'The system shall map each artifact ID to a dedicated filesystem path using the pattern: `/{type}/{id}.md`.',
+      rationale: 'Predictable mapping is required for direct file access and indexing.',
+      status: 'approved',
+      priority: 'high',
+      author: 'Tracyfy Core Team',
+      verificationMethod: 'Unit test',
+      comments: '',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Browser-Based Data Indexing',
+      description: 'Indexing artifacts within the local runtime environment.',
+      text: 'The system shall maintain and update all project indices exclusively within the browser runtime environment.',
+      rationale: 'Enables high-performance search without requiring a server-side database.',
+      status: 'approved',
+      priority: 'high',
+      author: 'Security Lead',
+      verificationMethod: 'Browser memory profiling',
+      comments: '',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Local Data Privacy',
+      description: 'Ensuring engineering data remains under local control.',
+      text: 'The system shall ensure that no engineering data is transmitted to external servers without explicit user consent.',
+      rationale: 'Compliance with enterprise security requirements.',
       status: 'approved',
       priority: 'high',
       author: 'Security Lead',
@@ -256,108 +337,183 @@ The system shall perform all data processing and indexing within the user's brow
       revision: '01',
     },
     {
-      title: 'Structural Git Integration',
-      description: 'Using Git as the authoritative source of truth for history and audit.',
-      text: `The system shall automatically record a Git commit for every artifact save operation.
-
-### Commit Requirements:
-- Commit messages must include the change description.
-- Commits must be signed by the local user identity.
-- The Git history shall be viewable directly within the Tracyfy UI via the 'History' panel.`,
-      rationale: 'Leveraging world-class version control for engineering audit trails.',
+      title: 'Automated Git Commit Orchestration',
+      description: 'Recording changes automatically in the local repository.',
+      text: 'The system shall automatically execute a Git commit operation for every successful preservation of an artifact.',
+      rationale: 'Automates the audit trail and ensures no local changes are lost.',
       status: 'approved',
       priority: 'high',
       author: 'Git Integration Lead',
-      verificationMethod: 'Automated Git log verification',
-      comments: 'Integration with existing developer workflows.',
+      verificationMethod: 'Git log analysis',
+      comments: '',
       dateCreated: now,
       revision: '01',
     },
     {
-      title: 'Cross-Artifact Traceability',
-      description: 'The ability to link any two artifacts regardless of type.',
-      text: `The system shall allow users to establish 'Traceability Links' between any two artifacts.
-
-### Link Logic:
-- Links shall have types (e.g., 'verifies', 'satisfies', 'relates to').
-- The Traceability Matrix shall automatically update when links are changed.
-- Bidirectional navigation must be supported.`,
-      rationale:
-        'Traceability is the "Tracy" in "Tracyfy". It is the core feature for impact analysis.',
+      title: 'Local Git Identity Signing',
+      description: 'Attributing changes to the local user.',
+      text: 'The system shall sign every Git commit using the local user identity configured in the browser environment.',
+      rationale: 'Essential for accountability in regulated industries.',
+      status: 'approved',
+      priority: 'high',
+      author: 'Git Integration Lead',
+      verificationMethod: 'Commit metadata inspection',
+      comments: '',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Integrated Revision History View',
+      description: 'Exposing the Git audit trail within the UI.',
+      text: 'The system shall provide a human-readable visualization of the artifact revision history derived directly from Git logs.',
+      rationale: 'Provides transparent visibility into change evolution.',
+      status: 'approved',
+      priority: 'medium',
+      author: 'Git Integration Lead',
+      verificationMethod: 'UI verification',
+      comments: '',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Universal Cross-Type Linking',
+      description: 'Establishing relationships between heterogeneous artifact types.',
+      text: 'The system shall allow the creation of traceability links between any two artifacts, regardless of their specific type.',
+      rationale: 'Enables complete end-to-end traceability across the development lifecycle.',
       status: 'approved',
       priority: 'high',
       author: 'Traceability Team',
-      verificationMethod: 'Link integrity unit tests',
+      verificationMethod: 'Boundary testing',
       comments: '',
       dateCreated: now,
-      revision: '03',
+      revision: '01',
     },
     {
-      title: 'Advanced Document Export',
-      description: 'Generating human-ready documents from atomic data.',
-      text: `The system shall generate professional PDF and Excel exports from the live artifact data.
-
-### Export Capabilities:
-- **PDF**: Table of Contents, Section separation, and Traceability Chapters.
-- **Excel**: Multi-sheet workbooks with Revision History and Verification Matrices.`,
-      rationale: "Requirements must be sharable with stakeholders who don't use the tool.",
+      title: 'Typed Relationship Support',
+      description: 'Categorizing links with specific relationship types.',
+      text: 'The system shall support the assignment of relationship types (e.g., "satisfies", "verifies") to every traceability link.',
+      rationale: 'Adds semantic meaning to the links for better analysis.',
+      status: 'approved',
+      priority: 'high',
+      author: 'Traceability Team',
+      verificationMethod: 'Link metadata validation',
+      comments: '',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Automated Traceability Matrix Generation',
+      description: 'Synchronizing matrix views with the underlying link data.',
+      text: 'The system shall automatically update all traceability matrix visualizations whenever an underlying link is modified.',
+      rationale: 'Ensures the consistency of the project status view.',
+      status: 'approved',
+      priority: 'high',
+      author: 'Traceability Team',
+      verificationMethod: 'Integration test',
+      comments: '',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Bidirectional Link Navigation',
+      description: 'Navigating through the link graph in both directions.',
+      text: 'The system shall provide navigation shortcuts to move between source and target artifacts of any traceability link.',
+      rationale: 'Speeds up impact analysis and verification workflows.',
+      status: 'approved',
+      priority: 'medium',
+      author: 'Traceability Team',
+      verificationMethod: 'UI testing',
+      comments: '',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Sectioned PDF Generation',
+      description: 'Creating professional PDF documentation.',
+      text: 'The system shall generate PDF reports that include a Table of Contents and distinct sections for each artifact type.',
+      rationale: 'Produces documentation suitable for formal reviews.',
       status: 'approved',
       priority: 'medium',
       author: 'Export Specialist',
-      verificationMethod: 'Export template validation',
-      comments: 'Highly requested feature for compliance reviews.',
-      dateCreated: now,
-      revision: '02',
-    },
-    {
-      title: 'Automated Impact Analysis',
-      description: 'Calculating the "blast radius" of a requirement change.',
-      text: `The system shall visualize the 'impacted' nodes when a source artifact is modified.
-
-### Calculation Logic:
-- Downstream dependencies (Test Cases, derived Requirements) must be flagged.
-- Visual status indicators (Suspect Links) should appear in the UI.`,
-      rationale: 'Avoid missing verification steps when requirements change.',
-      status: 'approved',
-      priority: 'medium',
-      author: 'Analysis Architect',
-      verificationMethod: 'Graph traversal algorithm test',
-      comments: 'Crucial for large-scale projects.',
-      dateCreated: now,
-      revision: '01',
-    },
-    {
-      title: 'Lightning-Fast Search',
-      description: 'Finding needles in the haystack of Markdown files.',
-      text: `The system shall maintain a fast full-text index of all project artifacts.
-
-### Search Features:
-- Filter by artifact type, status, and custom attributes.
-- Keyboard shortcut (Ctrl+K) for quick access.
-- Real-time results as the user types.`,
-      rationale: 'Speed is a feature. Users should never wait for data retrieval.',
-      status: 'approved',
-      priority: 'medium',
-      author: 'Search Engineer',
-      verificationMethod: 'Performance benchmarking',
+      verificationMethod: 'PDF layout inspection',
       comments: '',
       dateCreated: now,
       revision: '01',
     },
     {
-      title: 'Professional Visual Identity',
-      description: 'A UI that feels premium, dark-mode first, and high efficiency.',
-      text: `The system UI shall follow the 'Premium Aesthetics' guide.
-
-### UI Guidelines:
-- High-contrast typography (Inter/Outfit).
-- Subtle micro-animations for feedback.
-- Dark-mode first design with glassmorphism effects.`,
-      rationale: 'Engineers spend all day in tools; they should be beautiful and efficient.',
+      title: 'Multi-Sheet Excel Workbook Export',
+      description: 'Exporting flat data for external analysis.',
+      text: 'The system shall export project data into Microsoft Excel workbooks using separate sheets for each artifact category.',
+      rationale: 'Allows for custom calculations and project management tracking.',
+      status: 'approved',
+      priority: 'medium',
+      author: 'Export Specialist',
+      verificationMethod: 'Excel data validation',
+      comments: '',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Recursive Dependency Traversal',
+      description: 'Calculating the downstream effects of a change.',
+      text: 'The system shall automatically identify all downstream dependencies when evaluating the impact of an artifact modification.',
+      rationale: 'Ensures that nothing is missed when requirements are updated.',
+      status: 'approved',
+      priority: 'high',
+      author: 'Analysis Architect',
+      verificationMethod: 'Graph traversal test',
+      comments: '',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Suspect Link Dependency Highlighting',
+      description: 'Visual cues for potential verification gaps.',
+      text: 'The system shall visually flag established links as "suspect" whenever the source artifact of the link is modified.',
+      rationale: 'Directly informs the user of which verification items need re-run.',
+      status: 'approved',
+      priority: 'high',
+      author: 'Analysis Architect',
+      verificationMethod: 'UI animation test',
+      comments: '',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Global Full-Text Indexing',
+      description: 'Maintaining a comprehensive search index.',
+      text: 'The system shall maintain a global full-text index covering all artifact titles, descriptions, and specification text.',
+      rationale: 'Prerequisite for high-speed search across large projects.',
+      status: 'approved',
+      priority: 'medium',
+      author: 'Search Engineer',
+      verificationMethod: 'Index coverage test',
+      comments: '',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Real-Time Search UI Integration',
+      description: 'Providing instant feedback during text retrieval.',
+      text: 'The system shall provide filtered search results to the user in real-time as they enter their query.',
+      rationale: 'User efficiency depends on high-responsiveness in navigation.',
+      status: 'approved',
+      priority: 'medium',
+      author: 'Search Engineer',
+      verificationMethod: 'Latency benchmarking',
+      comments: '',
+      dateCreated: now,
+      revision: '01',
+    },
+    {
+      title: 'Premium Visual Design Language',
+      description: 'Providing a high-efficiency professional interface.',
+      text: 'The system UI shall utilize high-contrast typography and subtle micro-animations to enhance user focus and feedback.',
+      rationale: 'Reduces cognitive load and increases tool delight.',
       status: 'approved',
       priority: 'low',
       author: 'UX Designer',
-      verificationMethod: 'Design review',
+      verificationMethod: 'Expert review',
       comments: '',
       dateCreated: now,
       revision: '01',
@@ -565,31 +721,31 @@ Most Requirement Management Tools (RMTs) use a single monolithic database. This 
       targetType: 'req',
       type: 'verifies',
       scope: 'project',
-    }, // Verify Atomic Save -> Atomic Persistence Model
+    }, // Verify Atomic Save -> Atomic Storage
     {
       sourceIndex: 1,
+      sourceType: 'tc',
+      targetIndex: 7,
+      targetType: 'req',
+      type: 'verifies',
+      scope: 'project',
+    }, // Test Link Integrity -> Universal Linking
+    {
+      sourceIndex: 2,
       sourceType: 'tc',
       targetIndex: 3,
       targetType: 'req',
       type: 'verifies',
       scope: 'project',
-    }, // Test Link Integrity -> Cross-Artifact Traceability
-    {
-      sourceIndex: 2,
-      sourceType: 'tc',
-      targetIndex: 1,
-      targetType: 'req',
-      type: 'verifies',
-      scope: 'project',
-    }, // Verify Privacy -> Local-First Privacy
+    }, // Verify Privacy -> Data Privacy
     {
       sourceIndex: 3,
       sourceType: 'tc',
-      targetIndex: 4,
+      targetIndex: 11,
       targetType: 'req',
       type: 'verifies',
       scope: 'project',
-    }, // Check PDF -> Advanced Export
+    }, // Check PDF -> PDF Generation
     {
       sourceIndex: 0,
       sourceType: 'uc',
@@ -597,38 +753,38 @@ Most Requirement Management Tools (RMTs) use a single monolithic database. This 
       targetType: 'req',
       type: 'satisfies',
       scope: 'project',
-    }, // Create Artifact -> Atomic Persistence Model
+    }, // Create Artifact -> Atomic Storage
     {
       sourceIndex: 1,
       sourceType: 'uc',
-      targetIndex: 3,
+      targetIndex: 7,
       targetType: 'req',
       type: 'satisfies',
       scope: 'project',
-    }, // Establish Link -> Cross-Artifact Traceability
+    }, // Establish Link -> Universal Linking
     {
       sourceIndex: 2,
       sourceType: 'uc',
-      targetIndex: 5,
+      targetIndex: 13,
       targetType: 'req',
       type: 'satisfies',
       scope: 'project',
-    }, // Run Analysis -> Impact Analysis
+    }, // Run Analysis -> Dependency Traversal
     {
       sourceIndex: 0,
       sourceType: 'risk',
-      targetIndex: 1,
+      targetIndex: 2,
       targetType: 'req',
       type: 'related_to',
       scope: 'project',
-    }, // Browser Compatibility -> Local-First Privacy
+    }, // Browser Compatibility -> Local-First Indexing
     {
       sourceIndex: 1,
       sourceType: 'risk',
-      targetIndex: 6,
+      targetIndex: 15,
       targetType: 'req',
       type: 'related_to',
       scope: 'project',
-    }, // Performance Scale -> Fast Search
+    }, // Performance Scale -> Full-Text Search
   ],
 };

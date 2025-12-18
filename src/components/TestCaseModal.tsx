@@ -52,7 +52,8 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
   });
 
   // Get custom attribute definitions
-  const { definitions: customAttributeDefinitions } = useCustomAttributes();
+  const { definitions: customAttributeDefinitions, loading: attributesLoading } =
+    useCustomAttributes();
   const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
 
   // Reset form when modal opens/closes or testCase changes
@@ -257,7 +258,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
               transition: 'all 0.2s',
             }}
           >
-            Custom Fields
+            Custom Attributes
           </button>
           {isEditMode && (
             <button
@@ -871,6 +872,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
                 values={customAttributes}
                 onChange={setCustomAttributes}
                 artifactType="testCase"
+                loading={attributesLoading}
               />
             </div>
           )}
