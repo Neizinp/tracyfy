@@ -55,7 +55,9 @@ function addCustomAttributeColumns(
   const result: Record<string, string> = {};
 
   // Get applicable definitions for this artifact type
-  const applicableDefs = definitions.filter((d) => d.appliesTo.includes(applicableType as any));
+  const applicableDefs = definitions.filter((d) =>
+    (d.appliesTo as string[]).includes(applicableType)
+  );
 
   // Initialize all applicable columns with empty string
   for (const def of applicableDefs) {
@@ -100,12 +102,13 @@ export async function exportProjectToExcel(
   projectUseCaseIds: string[],
   projectTestCaseIds: string[],
   projectInformationIds: string[],
-  baselines: ProjectBaseline[]
+  baselines: ProjectBaseline[],
+  includeVerificationMatrix?: boolean
 ): Promise<void> {
   // 0. Request File Handle FIRST (to ensure user activation is valid)
   // The File System Access API requires a recent user gesture to show the file picker.
   // If we do async work first, the user activation expires and the picker won't show.
-  let fileHandle: any = null;
+  let fileHandle: FileSystemFileHandle | null = null;
   let defaultFilename = `${project.name.replace(/[^a-z0-9]/gi, '_')}`;
   if (project.currentBaseline) {
     defaultFilename += `_${project.currentBaseline.replace(/[^a-z0-9]/gi, '_')}`;
@@ -114,7 +117,15 @@ export async function exportProjectToExcel(
 
   try {
     if ('showSaveFilePicker' in window) {
-      fileHandle = await (window as any).showSaveFilePicker({
+      const picker = (
+        window as unknown as {
+          showSaveFilePicker: (options: {
+            suggestedName: string;
+            types: unknown[];
+          }) => Promise<FileSystemFileHandle>;
+        }
+      ).showSaveFilePicker;
+      fileHandle = await picker({
         suggestedName: defaultFilename,
         types: [
           {
@@ -128,7 +139,7 @@ export async function exportProjectToExcel(
     }
   } catch (err) {
     // If user cancelled, stop export
-    if ((err as any).name === 'AbortError') {
+    if (err instanceof Error && err.name === 'AbortError') {
       return;
     }
     console.error('Error with save file picker:', err);
@@ -161,7 +172,15 @@ export async function exportProjectToExcel(
   const sortedBaselines = [...baselines].sort((a, b) => b.timestamp - a.timestamp);
   const lastBaseline = sortedBaselines.length > 0 ? sortedBaselines[0] : null;
 
-  const historyData: any[] = [];
+  const historyData: {
+    'Artifact Type': string;
+    ID: string;
+    Title: string;
+    Date: string;
+    Author: string;
+    Message: string;
+    Hash: string;
+  }[] = [];
 
   // Helper to fetch and format history
   const fetchHistory = async (
@@ -428,7 +447,7 @@ export async function exportProjectToExcel(
   ];
 
   if (allArtifactIds.length > 0) {
-    const matrixData: any[] = [];
+    const matrixData: Record<string, string>[] = [];
 
     // Build a lookup map for links: sourceId -> { targetId: linkType }
     const linkMap = new Map<string, Map<string, string>>();
@@ -456,7 +475,7 @@ export async function exportProjectToExcel(
     };
 
     allArtifactIds.forEach((rowArtifact) => {
-      const row: any = { 'From / To': rowArtifact.id };
+      const row: Record<string, string> = { 'From / To': rowArtifact.id };
 
       allArtifactIds.forEach((colArtifact) => {
         if (rowArtifact.id === colArtifact.id) {
@@ -544,6 +563,100 @@ export async function exportProjectToExcel(
     const wsLegend = XLSX.utils.json_to_sheet(legendData);
     wsLegend['!cols'] = [{ wch: 12 }, { wch: 15 }, { wch: 50 }];
     XLSX.utils.book_append_sheet(wb, wsLegend, 'Matrix Legend');
+  }
+
+  // 9. Verification Matrix (Worksheet for test engineers)
+  if (includeVerificationMatrix && projectRequirements.length > 0 && projectTestCases.length > 0) {
+    const verificationData: Record<string, string>[] = [];
+
+    // Add instructions rows
+    verificationData.push({
+      'Requirement ID': 'INSTRUCTIONS:',
+      'Requirement Title': 'Test engineers: Record verification results in columns E-H.',
+    });
+    verificationData.push({
+      'Requirement ID': 'STATUS OPTIONS:',
+      'Requirement Title': 'Pass, Fail, Blocked, In Progress, N/A',
+    });
+    verificationData.push({}); // Empty row for spacing
+
+    // Find all 'verifies' links
+    const verificationLinks = projectLinks.filter((l) => l.type === 'verifies');
+
+    // Create a map: Requirement ID (target) -> Test Case IDs (sources)
+    const reqToTestMap = new Map<string, string[]>();
+    verificationLinks.forEach((link) => {
+      // Logic Fix: Requirement is usually the target of a verification link from a Test Case
+      const reqId = link.targetId;
+      const tcId = link.sourceId;
+
+      if (!reqToTestMap.has(reqId)) {
+        reqToTestMap.set(reqId, []);
+      }
+      reqToTestMap.get(reqId)!.push(tcId);
+    });
+
+    projectRequirements.forEach((req) => {
+      const linkedTestIds = reqToTestMap.get(req.id) || [];
+
+      if (linkedTestIds.length > 0) {
+        linkedTestIds.forEach((tcId) => {
+          const tc = projectTestCases.find((t) => t.id === tcId);
+          verificationData.push({
+            'Requirement ID': req.id,
+            'Requirement Title': req.title,
+            'Test Case ID': tcId,
+            'Test Case Title': tc?.title || 'Unknown',
+            'Verification Status': '', // To be filled by engineer
+            Tester: '',
+            Date: '',
+            'Evidence / Notes': '',
+          });
+        });
+      } else {
+        // Requirement without a test case (unverified)
+        verificationData.push({
+          'Requirement ID': req.id,
+          'Requirement Title': req.title,
+          'Test Case ID': 'NOT LINKED',
+          'Test Case Title': 'No verification test case found',
+          'Verification Status': 'N/A',
+          Tester: 'N/A',
+          Date: 'N/A',
+          'Evidence / Notes': 'Warning: Requirement has no linked verification test case',
+        });
+      }
+    });
+
+    const wsVerification = XLSX.utils.json_to_sheet(verificationData);
+
+    // Set column widths
+    wsVerification['!cols'] = [
+      { wch: 15 }, // Req ID
+      { wch: 30 }, // Req Title
+      { wch: 15 }, // TC ID
+      { wch: 30 }, // TC Title
+      { wch: 18 }, // Status
+      { wch: 15 }, // Tester
+      { wch: 12 }, // Date
+      { wch: 50 }, // Evidence
+    ];
+
+    // Add Data Validation (Dropdowns) for the 'Verification Status' column
+    // The Status column is the 5th column (Index 4, column 'E')
+    // We apply this to all data rows (skipping header)
+    const range = XLSX.utils.decode_range(wsVerification['!ref'] || 'A1');
+    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+      const address = XLSX.utils.encode_cell({ r: R, c: 4 });
+      if (!wsVerification[address]) continue; // Skip if cell is mysteriously missing
+
+      // Note: Full data validation support in xlsx (SheetJS) pro version usually,
+      // but for basic cell dropdowns in standard XLSX format, we can try to inject it.
+      // However, the standard SheetJS community version doesn't support writing Data Validation (dropdowns).
+      // We will instead follow the standard and just provide a clear header/instruction.
+    }
+
+    XLSX.utils.book_append_sheet(wb, wsVerification, 'Verification Matrix');
   }
 
   // Write file using the file handle obtained at the start, or fallback to download

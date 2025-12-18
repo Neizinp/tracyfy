@@ -143,7 +143,8 @@ export const ModalManager: React.FC = () => {
                 currentProject.useCaseIds,
                 currentProject.testCaseIds,
                 currentProject.informationIds,
-                baselines
+                baselines,
+                options.includeVerificationMatrix
               );
             } finally {
               endTask(taskId);

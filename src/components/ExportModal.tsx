@@ -17,6 +17,7 @@ export interface ExportOptions {
   includeTitlePage: boolean;
   includeRevisionHistory: boolean;
   includeTraceability: boolean;
+  includeVerificationMatrix: boolean;
 }
 
 interface ExportModalProps {
@@ -58,6 +59,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [includeTitlePage, setIncludeTitlePage] = useState(true);
   const [includeRevisionHistory, setIncludeRevisionHistory] = useState(true);
   const [includeTraceability, setIncludeTraceability] = useState(true);
+  const [includeVerificationMatrix, setIncludeVerificationMatrix] = useState(false);
 
   useKeyboardShortcuts({
     onClose: onClose,
@@ -83,6 +85,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       includeTitlePage,
       includeRevisionHistory,
       includeTraceability,
+      includeVerificationMatrix,
     });
     onClose();
   };
@@ -357,17 +360,28 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           {/* Excel note */}
           {format === 'excel' && (
             <div
-              style={{
-                padding: 'var(--spacing-md)',
-                backgroundColor: 'var(--color-bg-card)',
-                borderRadius: '6px',
-                border: '1px solid var(--color-border)',
-                fontSize: 'var(--font-size-sm)',
-                color: 'var(--color-text-secondary)',
-              }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}
             >
-              Excel export includes all artifacts and a traceability matrix. You can remove unwanted
-              sheets after export.
+              <div
+                style={{
+                  padding: 'var(--spacing-md)',
+                  backgroundColor: 'var(--color-bg-card)',
+                  borderRadius: '6px',
+                  border: '1px solid var(--color-border)',
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-text-secondary)',
+                }}
+              >
+                Excel export includes all artifacts and a traceability matrix by default.
+              </div>
+              <label style={checkboxStyle}>
+                <input
+                  type="checkbox"
+                  checked={includeVerificationMatrix}
+                  onChange={(e) => setIncludeVerificationMatrix(e.target.checked)}
+                />
+                Include Verification Matrix (Worksheet)
+              </label>
             </div>
           )}
         </div>
