@@ -9,6 +9,9 @@ import {
   ArrowLeft,
   Keyboard,
   Info,
+  Search,
+  Lock,
+  Download,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -112,9 +115,6 @@ export const ProjectManual: React.FC = () => {
         >
           Tracyfy Help Center
         </h1>
-        <p style={{ fontSize: 'var(--font-size-lg)', color: 'var(--color-text-secondary)' }}>
-          Everything you need to know about managing requirements and ensuring traceability.
-        </p>
       </header>
 
       <Section title="Getting Started" icon={<Book size={20} />}>
@@ -176,6 +176,39 @@ export const ProjectManual: React.FC = () => {
         <FeatureCard
           title="Analyzing Risks"
           description="Identify technical and project risks early. Assign probability, impact, and mitigation strategies to ensure project success."
+        />
+      </Section>
+
+      <Section title="Search & Discovery" icon={<Search size={20} />}>
+        <FeatureCard
+          title="Quick Search (Ctrl + K)"
+          description="The global search bar allows for instant lookup of any artifact by ID, title, or content. It's the fastest way to jump between requirements."
+        />
+        <FeatureCard
+          title="Advanced Filtering"
+          description="Use the filter bar on page views to narrow down artifacts by status, priority, or custom attributes. Combined with column visibility, you can create custom views for your specific needs."
+        />
+      </Section>
+
+      <Section title="Data Ownership & Privacy" icon={<Lock size={20} />}>
+        <FeatureCard
+          title="Local-First Engineering"
+          description="Your engineering data stays where it belongs: on your machine. Tracyfy works directly with your local file system, ensuring zero dependency on cloud services for core work."
+        />
+        <FeatureCard
+          title="Markdown Transparency"
+          description="Every artifact is stored as a standard Markdown file. There are no proprietary database formats, meaning your data is always accessible, portable, and future-proof."
+        />
+      </Section>
+
+      <Section title="Import & Export Workflows" icon={<Download size={20} />}>
+        <FeatureCard
+          title="Professional PDF Reporting"
+          description="Generate comprehensive PDF documents for milestones or compliance reviews. You can customize the sections, including title pages and traceability matrices."
+        />
+        <FeatureCard
+          title="Excel & JSON Exports"
+          description="Export data to Excel for external stakeholders or use JSON for integration with other engineering toolchains. Tracyfy ensures all linked data is preserved in the export."
         />
       </Section>
 
