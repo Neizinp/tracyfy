@@ -135,16 +135,17 @@ export const ModalManager: React.FC = () => {
           case 'excel': {
             const taskId = startTask('Exporting to Excel...');
             try {
-              // Excel always exports all artifacts
+              // Excel now accepts full ExportOptions
               await exportProjectToExcel(
                 currentProject,
                 globalState,
-                currentProject.requirementIds,
-                currentProject.useCaseIds,
-                currentProject.testCaseIds,
-                currentProject.informationIds,
+                // Pass IDs based on options
+                options.includeRequirements ? currentProject.requirementIds : [],
+                options.includeUseCases ? currentProject.useCaseIds : [],
+                options.includeTestCases ? currentProject.testCaseIds : [],
+                options.includeInformation ? currentProject.informationIds : [],
                 baselines,
-                options.includeVerificationMatrix
+                options
               );
             } finally {
               endTask(taskId);

@@ -89,6 +89,8 @@ function sortByIdNumber<T extends { id: string }>(artifacts: T[]): T[] {
   });
 }
 
+import type { ExportOptions } from '../components/ExportModal';
+
 export async function exportProjectToExcel(
   project: Project,
   globalState: {
@@ -103,8 +105,19 @@ export async function exportProjectToExcel(
   projectTestCaseIds: string[],
   projectInformationIds: string[],
   baselines: ProjectBaseline[],
-  includeVerificationMatrix?: boolean
+  options: ExportOptions
 ): Promise<void> {
+  const {
+    includeRequirements,
+    includeUseCases,
+    includeTestCases,
+    includeInformation,
+    includeRisks,
+    includeLinks,
+    includeRevisionHistory,
+    includeTraceability,
+    includeVerificationMatrix,
+  } = options;
   // 0. Request File Handle FIRST (to ensure user activation is valid)
   // The File System Access API requires a recent user gesture to show the file picker.
   // If we do async work first, the user activation expires and the picker won't show.
@@ -168,75 +181,93 @@ export async function exportProjectToExcel(
     (globalState.risks || []).filter((r) => project.riskIds?.includes(r.id) && !r.isDeleted)
   );
 
+  // Pre-fetch links and build artifact ID list if needed for Matrices or Links sheet
+  const projectLinks =
+    includeLinks || includeTraceability || includeVerificationMatrix
+      ? await diskLinkService.getLinksForProject(project.id)
+      : [];
+
+  const allArtifactIds = includeTraceability
+    ? [
+        ...projectRequirements.map((r) => ({ id: r.id, type: 'REQ' })),
+        ...projectUseCases.map((u) => ({ id: u.id, type: 'UC' })),
+        ...projectTestCases.map((t) => ({ id: t.id, type: 'TC' })),
+        ...projectInformation.map((i) => ({ id: i.id, type: 'INFO' })),
+        ...projectRisks.map((r) => ({ id: r.id, type: 'RISK' })),
+      ]
+    : [];
+
   // 1. Revision History
-  const sortedBaselines = [...baselines].sort((a, b) => b.timestamp - a.timestamp);
-  const lastBaseline = sortedBaselines.length > 0 ? sortedBaselines[0] : null;
+  if (includeRevisionHistory) {
+    const sortedBaselines = [...baselines].sort((a, b) => b.timestamp - a.timestamp);
+    const lastBaseline = sortedBaselines.length > 0 ? sortedBaselines[0] : null;
 
-  const historyData: {
-    'Artifact Type': string;
-    ID: string;
-    Title: string;
-    Date: string;
-    Author: string;
-    Message: string;
-    Hash: string;
-  }[] = [];
+    const historyData: {
+      'Artifact Type': string;
+      ID: string;
+      Title: string;
+      Date: string;
+      Author: string;
+      Message: string;
+      Hash: string;
+    }[] = [];
 
-  // Helper to fetch and format history
-  const fetchHistory = async (
-    type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks',
-    id: string,
-    title: string
-  ) => {
-    try {
-      const history = await realGitService.getHistory(`${type}/${id}.md`);
-      const filteredHistory = lastBaseline
-        ? history.filter((commit) => commit.timestamp > lastBaseline.timestamp)
-        : history;
+    // Helper to fetch and format history
+    const fetchHistory = async (
+      type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks',
+      id: string,
+      title: string
+    ) => {
+      try {
+        const history = await realGitService.getHistory(`${type}/${id}.md`);
+        const filteredHistory = lastBaseline
+          ? history.filter((commit) => commit.timestamp > lastBaseline.timestamp)
+          : history;
 
-      filteredHistory.forEach((commit) => {
-        historyData.push({
-          'Artifact Type': type.charAt(0).toUpperCase() + type.slice(1, -1), // Remove 's' and capitalize
-          ID: id,
-          Title: title,
-          Date: formatDate(commit.timestamp),
-          Author: commit.author,
-          Message: commit.message,
-          Hash: commit.hash.substring(0, 7),
+        filteredHistory.forEach((commit) => {
+          historyData.push({
+            'Artifact Type': type.charAt(0).toUpperCase() + type.slice(1, -1), // Remove 's' and capitalize
+            ID: id,
+            Title: title,
+            Date: formatDate(commit.timestamp),
+            Author: commit.author,
+            Message: commit.message,
+            Hash: commit.hash.substring(0, 7),
+          });
         });
-      });
-    } catch (error) {
-      console.error(`Failed to fetch history for ${id}`, error);
+      } catch (error) {
+        console.error(`Failed to fetch history for ${id}`, error);
+      }
+    };
+
+    // Fetch history for all artifacts
+    for (const req of projectRequirements) await fetchHistory('requirements', req.id, req.title);
+    for (const uc of projectUseCases) await fetchHistory('usecases', uc.id, uc.title);
+    for (const tc of projectTestCases) await fetchHistory('testcases', tc.id, tc.title);
+    for (const info of projectInformation) await fetchHistory('information', info.id, info.title);
+    for (const risk of projectRisks) await fetchHistory('risks', risk.id, risk.title);
+
+    // Sort history by date descending
+    historyData.sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime());
+
+    if (historyData.length > 0) {
+      const wsHistory = XLSX.utils.json_to_sheet(historyData);
+      // Set column widths
+      wsHistory['!cols'] = [
+        { wch: 15 }, // Type
+        { wch: 15 }, // ID
+        { wch: 30 }, // Title
+        { wch: 20 }, // Date
+        { wch: 15 }, // Author
+        { wch: 50 }, // Message
+        { wch: 10 }, // Hash
+      ];
+      XLSX.utils.book_append_sheet(wb, wsHistory, 'Revision History');
     }
-  };
-
-  // Fetch history for all artifacts
-  for (const req of projectRequirements) await fetchHistory('requirements', req.id, req.title);
-  for (const uc of projectUseCases) await fetchHistory('usecases', uc.id, uc.title);
-  for (const tc of projectTestCases) await fetchHistory('testcases', tc.id, tc.title);
-  for (const info of projectInformation) await fetchHistory('information', info.id, info.title);
-  for (const risk of projectRisks) await fetchHistory('risks', risk.id, risk.title);
-
-  // Sort history by date descending
-  historyData.sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime());
-
-  if (historyData.length > 0) {
-    const wsHistory = XLSX.utils.json_to_sheet(historyData);
-    // Set column widths
-    wsHistory['!cols'] = [
-      { wch: 15 }, // Type
-      { wch: 15 }, // ID
-      { wch: 30 }, // Title
-      { wch: 20 }, // Date
-      { wch: 15 }, // Author
-      { wch: 50 }, // Message
-      { wch: 10 }, // Hash
-    ];
-    XLSX.utils.book_append_sheet(wb, wsHistory, 'Revision History');
   }
 
   // 2. Requirements Sheet
-  if (projectRequirements.length > 0) {
+  if (includeRequirements && projectRequirements.length > 0) {
     const reqData = projectRequirements.map((req) => ({
       ID: req.id,
       Title: req.title,
@@ -276,7 +307,7 @@ export async function exportProjectToExcel(
   }
 
   // 3. Use Cases Sheet
-  if (projectUseCases.length > 0) {
+  if (includeUseCases && projectUseCases.length > 0) {
     const ucData = projectUseCases.map((uc) => ({
       ID: uc.id,
       Title: uc.title,
@@ -312,7 +343,7 @@ export async function exportProjectToExcel(
   }
 
   // 4. Test Cases Sheet
-  if (projectTestCases.length > 0) {
+  if (includeTestCases && projectTestCases.length > 0) {
     const tcData = projectTestCases.map((tc) => ({
       ID: tc.id,
       Title: tc.title,
@@ -346,7 +377,7 @@ export async function exportProjectToExcel(
   }
 
   // 5. Information Sheet
-  if (projectInformation.length > 0) {
+  if (includeInformation && projectInformation.length > 0) {
     const infoData = projectInformation.map((info) => ({
       ID: info.id,
       Title: info.title,
@@ -372,7 +403,7 @@ export async function exportProjectToExcel(
   }
 
   // 6. Risks Sheet
-  if (projectRisks.length > 0) {
+  if (includeRisks && projectRisks.length > 0) {
     const capitalizeWord = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
     const riskData = projectRisks.map((risk) => ({
       ID: risk.id,
@@ -411,10 +442,9 @@ export async function exportProjectToExcel(
   }
 
   // 7. Links Sheet - fetch from diskLinkService
-  const projectLinks = await diskLinkService.getLinksForProject(project.id);
-  if (projectLinks.length > 0) {
-    const sortedLinks = sortByIdNumber(projectLinks);
-    const linkData = sortedLinks.map((link: Link) => ({
+  if (includeLinks && projectLinks.length > 0) {
+    const sortedLinks = sortByIdNumber(projectLinks) as Link[];
+    const linkData = sortedLinks.map((link) => ({
       'Link ID': link.id,
       Source: link.sourceId,
       Type: LINK_TYPE_LABELS[link.type] || link.type,
@@ -438,15 +468,7 @@ export async function exportProjectToExcel(
   }
 
   // 8. Traceability Matrix (all artifact types including Risks, using Link entities)
-  const allArtifactIds = [
-    ...projectRequirements.map((r) => ({ id: r.id, type: 'REQ' })),
-    ...projectUseCases.map((u) => ({ id: u.id, type: 'UC' })),
-    ...projectTestCases.map((t) => ({ id: t.id, type: 'TC' })),
-    ...projectInformation.map((i) => ({ id: i.id, type: 'INFO' })),
-    ...projectRisks.map((r) => ({ id: r.id, type: 'RISK' })),
-  ];
-
-  if (allArtifactIds.length > 0) {
+  if (includeTraceability && allArtifactIds.length > 0) {
     const matrixData: Record<string, string>[] = [];
 
     // Build a lookup map for links: sourceId -> { targetId: linkType }
@@ -581,11 +603,11 @@ export async function exportProjectToExcel(
     verificationData.push({}); // Empty row for spacing
 
     // Find all 'verifies' links
-    const verificationLinks = projectLinks.filter((l) => l.type === 'verifies');
+    const verificationLinks = projectLinks.filter((l: Link) => l.type === 'verifies');
 
     // Create a map: Requirement ID (target) -> Test Case IDs (sources)
     const reqToTestMap = new Map<string, string[]>();
-    verificationLinks.forEach((link) => {
+    verificationLinks.forEach((link: Link) => {
       // Logic Fix: Requirement is usually the target of a verification link from a Test Case
       const reqId = link.targetId;
       const tcId = link.sourceId;

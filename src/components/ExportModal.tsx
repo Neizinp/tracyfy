@@ -243,8 +243,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </select>
           </div>
 
-          {/* Artifact Selection (not for Excel) */}
-          {format !== 'excel' && (
+          {/* Artifact Selection (not for JSON) */}
+          {format !== 'json' && (
             <div style={{ marginBottom: 'var(--spacing-lg)' }}>
               <label
                 style={{
@@ -315,8 +315,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </div>
           )}
 
-          {/* PDF-specific options */}
-          {format === 'pdf' && (
+          {/* PDF & Excel Sections */}
+          {(format === 'pdf' || format === 'excel') && (
             <div style={{ marginBottom: 'var(--spacing-lg)' }}>
               <label
                 style={{
@@ -326,17 +326,19 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   marginBottom: '8px',
                 }}
               >
-                PDF Sections
+                {format === 'pdf' ? 'PDF Sections' : 'Excel Sheets'}
               </label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={checkboxStyle}>
-                  <input
-                    type="checkbox"
-                    checked={includeTitlePage}
-                    onChange={(e) => setIncludeTitlePage(e.target.checked)}
-                  />
-                  Title Page
-                </label>
+                {format === 'pdf' && (
+                  <label style={checkboxStyle}>
+                    <input
+                      type="checkbox"
+                      checked={includeTitlePage}
+                      onChange={(e) => setIncludeTitlePage(e.target.checked)}
+                    />
+                    Title Page
+                  </label>
+                )}
                 <label style={checkboxStyle}>
                   <input
                     type="checkbox"
@@ -351,37 +353,19 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     checked={includeTraceability}
                     onChange={(e) => setIncludeTraceability(e.target.checked)}
                   />
-                  Traceability (Linked Artifacts)
+                  {format === 'pdf' ? 'Traceability (Linked Artifacts)' : 'Traceability Matrix'}
                 </label>
+                {format === 'excel' && (
+                  <label style={checkboxStyle}>
+                    <input
+                      type="checkbox"
+                      checked={includeVerificationMatrix}
+                      onChange={(e) => setIncludeVerificationMatrix(e.target.checked)}
+                    />
+                    Verification Matrix (Worksheet)
+                  </label>
+                )}
               </div>
-            </div>
-          )}
-
-          {/* Excel note */}
-          {format === 'excel' && (
-            <div
-              style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}
-            >
-              <div
-                style={{
-                  padding: 'var(--spacing-md)',
-                  backgroundColor: 'var(--color-bg-card)',
-                  borderRadius: '6px',
-                  border: '1px solid var(--color-border)',
-                  fontSize: 'var(--font-size-sm)',
-                  color: 'var(--color-text-secondary)',
-                }}
-              >
-                Excel export includes all artifacts and a traceability matrix by default.
-              </div>
-              <label style={checkboxStyle}>
-                <input
-                  type="checkbox"
-                  checked={includeVerificationMatrix}
-                  onChange={(e) => setIncludeVerificationMatrix(e.target.checked)}
-                />
-                Include Verification Matrix (Worksheet)
-              </label>
             </div>
           )}
         </div>
