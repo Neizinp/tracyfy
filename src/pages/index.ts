@@ -9,3 +9,5 @@ export { BaselineHistoryPage } from './BaselineHistoryPage';
 export { GlobalLibraryPage } from './GlobalLibraryPage';
 export { CustomAttributesPage } from './CustomAttributesPage';
 export { ProjectManual } from './ProjectManual';
+export { HelpCenter } from './HelpCenter';
+export { EngineeringGuide } from './EngineeringGuide';

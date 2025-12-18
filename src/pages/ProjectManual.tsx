@@ -86,7 +86,7 @@ export const ProjectManual: React.FC = () => {
       }}
     >
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => navigate('/help')}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -102,7 +102,7 @@ export const ProjectManual: React.FC = () => {
         }}
       >
         <ArrowLeft size={16} />
-        Back to Project
+        Back to Knowledge Hub
       </button>
 
       <header style={{ marginBottom: 'var(--spacing-2xl)' }}>
@@ -113,7 +113,7 @@ export const ProjectManual: React.FC = () => {
             marginBottom: 'var(--spacing-sm)',
           }}
         >
-          Tracyfy Help Center
+          Tracyfy User Manual
         </h1>
       </header>
 
