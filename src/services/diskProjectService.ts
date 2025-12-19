@@ -28,10 +28,12 @@
  */
 
 import { fileSystemService } from './fileSystemService';
-import { realGitService } from './realGitService';
 import { debug } from '../utils/debug';
+import { idService } from './idService';
+import { ARTIFACT_CONFIG } from '../constants/artifactConfig';
 import type { Project, Requirement, UseCase, TestCase, Information, User, Risk } from '../types';
 import {
+  ALL_ARTIFACT_SERVICES,
   requirementService,
   useCaseService,
   testCaseService,
@@ -50,90 +52,13 @@ class DiskProjectService {
    */
   async initialize(): Promise<void> {
     // Services handle directory creation on save, but we can ensure they exist
-    await fileSystemService.getOrCreateDirectory('requirements');
-    await fileSystemService.getOrCreateDirectory('usecases');
-    await fileSystemService.getOrCreateDirectory('testcases');
-    await fileSystemService.getOrCreateDirectory('information');
-    await fileSystemService.getOrCreateDirectory('risks');
-    await fileSystemService.getOrCreateDirectory('links');
-    await fileSystemService.getOrCreateDirectory('projects');
-    await fileSystemService.getOrCreateDirectory('users');
+    for (const config of Object.values(ARTIFACT_CONFIG)) {
+      await fileSystemService.getOrCreateDirectory(config.folder);
+    }
     await fileSystemService.getOrCreateDirectory('counters');
   }
 
-  // ============ COUNTER OPERATIONS ============
-
-  // Map API type names to lowercase filenames for consistency
-  private counterFilenameMap: Record<string, string> = {
-    requirements: 'requirements',
-    useCases: 'usecases',
-    testCases: 'testcases',
-    information: 'information',
-    users: 'users',
-    risks: 'risks',
-    links: 'links',
-    customAttributes: 'custom-attributes',
-    workflows: 'workflows',
-  };
-
-  /**
-   * Get counter value from file
-   * File format: just the number, e.g., "42"
-   */
-  private async getCounter(
-    type:
-      | 'requirements'
-      | 'useCases'
-      | 'testCases'
-      | 'information'
-      | 'users'
-      | 'risks'
-      | 'links'
-      | 'customAttributes'
-      | 'workflows'
-  ): Promise<number> {
-    const filenameBase = this.counterFilenameMap[type] || type.toLowerCase();
-    const filename = `counters/${filenameBase}.md`;
-    try {
-      const content = await fileSystemService.readFile(filename);
-      if (content) {
-        return parseInt(content.trim(), 10) || 0;
-      }
-    } catch {
-      // File doesn't exist
-    }
-    return 0;
-  }
-
-  /**
-   * Set counter value
-   * @param skipCommit - If true, skip auto-commit (used by recalculateCounters on app load)
-   */
-  private async setCounter(
-    type:
-      | 'requirements'
-      | 'useCases'
-      | 'testCases'
-      | 'information'
-      | 'users'
-      | 'risks'
-      | 'links'
-      | 'customAttributes'
-      | 'workflows',
-    value: number,
-    skipCommit: boolean = false
-  ): Promise<void> {
-    const filenameBase = this.counterFilenameMap[type] || type.toLowerCase();
-    const filename = `counters/${filenameBase}.md`;
-    await fileSystemService.writeFile(filename, String(value));
-
-    // Auto-commit the counter update (unless skipped, e.g., during recalculation)
-    if (!skipCommit) {
-      realGitService.commitFile(filename, `Update ${type} counter`).catch(() => {
-        // Silently ignore commit errors - counter is still updated locally
-      });
-    }
-  }
+  // ============ COUNTER OPERATIONS (Delegated to IdService) ============
 
   /**
    * Get current project ID
@@ -182,103 +107,29 @@ class DiskProjectService {
   /**
    * Get next artifact ID and increment counter
    */
-  async getNextId(
-    type:
-      | 'requirements'
-      | 'useCases'
-      | 'testCases'
-      | 'information'
-      | 'users'
-      | 'risks'
-      | 'links'
-      | 'customAttributes'
-      | 'workflows'
-  ): Promise<string> {
-    const current = await this.getCounter(type);
-    const next = current + 1;
-    await this.setCounter(type, next);
-
-    const prefixMap = {
-      requirements: 'REQ',
-      useCases: 'UC',
-      testCases: 'TC',
-      information: 'INFO',
-      users: 'USER',
-      risks: 'RISK',
-      links: 'LINK',
-      customAttributes: 'ATTR',
-      workflows: 'WF',
-    };
-
-    return `${prefixMap[type]}-${String(next).padStart(3, '0')}`;
+  async getNextId(type: string): Promise<string> {
+    // Standardize key name if legacy camelCase is used
+    const standardizedType =
+      type === 'useCases' ? 'usecases' : type === 'testCases' ? 'testcases' : type;
+    return idService.getNextId(standardizedType);
   }
 
   /**
    * Get multiple artifact IDs at once (batch allocation)
-   * More efficient than calling getNextId repeatedly
    */
-  async getNextIds(
-    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users' | 'risks',
-    count: number
-  ): Promise<string[]> {
-    if (count <= 0) return [];
-
-    const current = await this.getCounter(type);
-    const nextEnd = current + count;
-    await this.setCounter(type, nextEnd);
-
-    const prefixMap = {
-      requirements: 'REQ',
-      useCases: 'UC',
-      testCases: 'TC',
-      information: 'INFO',
-      users: 'USER',
-      risks: 'RISK',
-    };
-
-    const ids: string[] = [];
-    for (let i = current + 1; i <= nextEnd; i++) {
-      ids.push(`${prefixMap[type]}-${String(i).padStart(3, '0')}`);
-    }
-
-    return ids;
+  async getNextIds(type: string, count: number): Promise<string[]> {
+    const standardizedType =
+      type === 'useCases' ? 'usecases' : type === 'testCases' ? 'testcases' : type;
+    return idService.getNextIds(standardizedType, count);
   }
 
   /**
    * Get next artifact ID with remote sync (for collaboration)
    */
-  async getNextIdWithSync(
-    type:
-      | 'requirements'
-      | 'useCases'
-      | 'testCases'
-      | 'information'
-      | 'users'
-      | 'risks'
-      | 'links'
-      | 'customAttributes'
-      | 'workflows'
-  ): Promise<string> {
-    try {
-      // Pull latest counters from remote (silently fails if no remote)
-      await realGitService.pullCounters();
-    } catch (err) {
-      console.warn('[getNextIdWithSync] Failed to pull counters:', err);
-    }
-
-    // Get next ID locally
-    const id = await this.getNextId(type);
-
-    try {
-      // Push counter update to remote (background, don't block)
-      realGitService.pushCounters().catch((err) => {
-        console.warn('[getNextIdWithSync] Failed to push counters:', err);
-      });
-    } catch (err) {
-      console.warn('[getNextIdWithSync] Failed to initiate push:', err);
-    }
-
-    return id;
+  async getNextIdWithSync(type: string): Promise<string> {
+    const standardizedType =
+      type === 'useCases' ? 'usecases' : type === 'testCases' ? 'testcases' : type;
+    return idService.getNextIdWithSync(standardizedType);
   }
 
   // ============ PROJECT OPERATIONS ============
@@ -596,54 +447,31 @@ class DiskProjectService {
    * Call this after loading to ensure counters are in sync
    */
   async recalculateCounters(): Promise<void> {
-    const [requirements, useCases, testCases, information, risks] = await Promise.all([
-      this.loadAllRequirements(),
-      this.loadAllUseCases(),
-      this.loadAllTestCases(),
-      this.loadAllInformation(),
-      this.loadAllRisks(),
-    ]);
+    await Promise.all(
+      Object.entries(ALL_ARTIFACT_SERVICES).map(async ([key, service]) => {
+        // Skip projects - they use timestamps or names usually (proj-...)
+        if (key === 'projects' || key === 'users') {
+          // Users might have USER- prefix, but currently userService is separate?
+          // Let's check users prefix.
+        }
 
-    // Find max number for each type
-    let maxReq = 0,
-      maxUc = 0,
-      maxTc = 0,
-      maxInfo = 0,
-      maxRisk = 0;
+        const items = await service.loadAll();
+        const config = ARTIFACT_CONFIG[key];
+        if (!config || !config.idPrefix) return;
 
-    for (const req of requirements) {
-      const match = req.id.match(/REQ-(\d+)/);
-      if (match) maxReq = Math.max(maxReq, parseInt(match[1], 10));
-    }
+        let maxId = 0;
+        const idRegex = new RegExp(`${config.idPrefix}-(\\d+)`);
 
-    for (const uc of useCases) {
-      const match = uc.id.match(/UC-(\d+)/);
-      if (match) maxUc = Math.max(maxUc, parseInt(match[1], 10));
-    }
+        for (const item of items) {
+          const match = item.id.match(idRegex);
+          if (match) {
+            maxId = Math.max(maxId, parseInt(match[1], 10));
+          }
+        }
 
-    for (const tc of testCases) {
-      const match = tc.id.match(/TC-(\d+)/);
-      if (match) maxTc = Math.max(maxTc, parseInt(match[1], 10));
-    }
-
-    for (const info of information) {
-      const match = info.id.match(/INFO-(\d+)/);
-      if (match) maxInfo = Math.max(maxInfo, parseInt(match[1], 10));
-    }
-
-    for (const risk of risks) {
-      const match = risk.id.match(/RISK-(\d+)/);
-      if (match) maxRisk = Math.max(maxRisk, parseInt(match[1], 10));
-    }
-
-    // Skip commits here - this is just syncing local counters from existing files
-    await Promise.all([
-      this.setCounter('requirements', maxReq, true),
-      this.setCounter('useCases', maxUc, true),
-      this.setCounter('testCases', maxTc, true),
-      this.setCounter('information', maxInfo, true),
-      this.setCounter('risks', maxRisk, true),
-    ]);
+        await idService.setCounter(key, maxId, true);
+      })
+    );
   }
 
   /**

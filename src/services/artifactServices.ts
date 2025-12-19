@@ -77,3 +77,14 @@ const userSerializer: ArtifactSerializer<User> = {
   deserialize: markdownToUser,
 };
 export const userService = new BaseArtifactService<User>('users', userSerializer);
+
+// Registry of all artifact services for generic iteration
+export const ALL_ARTIFACT_SERVICES: Record<string, BaseArtifactService<{ id: string }>> = {
+  requirements: requirementService,
+  usecases: useCaseService,
+  testcases: testCaseService,
+  information: informationService,
+  risks: riskService,
+  users: userService,
+  projects: projectService,
+};
