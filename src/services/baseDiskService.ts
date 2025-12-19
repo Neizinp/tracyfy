@@ -132,6 +132,41 @@ export class BaseDiskService {
     const content = JSON.stringify(data, null, 2);
     await this.writeTextFile(path, content, commitMessage);
   }
+
+  /**
+   * Read a binary file
+   */
+  async readBinaryFile(path: string): Promise<Uint8Array | null> {
+    try {
+      return await fileSystemService.readFileBinary(path);
+    } catch (err) {
+      debug.log(`[BaseDiskService] Failed to read binary file ${path}:`, err);
+      return null;
+    }
+  }
+
+  /**
+   * Write a binary file and optionally commit it to Git
+   */
+  async writeBinaryFile(path: string, content: Uint8Array, commitMessage?: string): Promise<void> {
+    try {
+      // Ensure parent directory exists
+      const lastSlash = path.lastIndexOf('/');
+      if (lastSlash !== -1) {
+        const dir = path.substring(0, lastSlash);
+        await this.ensureDirectory(dir);
+      }
+
+      await fileSystemService.writeFileBinary(path, content);
+
+      if (commitMessage) {
+        await realGitService.commitFile(path, commitMessage);
+      }
+    } catch (err) {
+      debug.log(`[BaseDiskService] Failed to write binary file ${path}:`, err);
+      throw err;
+    }
+  }
 }
 
 export const baseDiskService = new BaseDiskService();

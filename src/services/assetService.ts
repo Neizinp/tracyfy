@@ -1,13 +1,5 @@
-/**
- * Asset Service - Manages image and file assets for artifacts
- *
- * Images are stored in the assets/ folder at the root of the project.
- * Files are named with UUIDs to avoid conflicts.
- * Reference format: ![alt](./assets/uuid.png)
- */
-
 import { debug } from '../utils/debug';
-import { fileSystemService } from './fileSystemService';
+import { BaseDiskService } from './baseDiskService';
 
 const ASSETS_DIR = 'assets';
 
@@ -49,7 +41,7 @@ function getExtensionFromFilename(filename: string): string {
   return 'png';
 }
 
-class AssetService {
+class AssetService extends BaseDiskService {
   /**
    * Upload an asset (image file) and return the markdown reference path
    * @param file - The file to upload (from input or clipboard)
@@ -67,18 +59,14 @@ class AssetService {
     const filename = `${uuid}.${ext}`;
     const path = `${ASSETS_DIR}/${filename}`;
 
-    debug.log(`[uploadAsset] Uploading image: ${file.name} -> ${path}`);
+    debug.log(`[AssetService] Uploading image: ${file.name} -> ${path}`);
 
     // Read file as ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
 
-    debug.log(`[uploadAsset] Writing ${uint8Array.length} bytes to ${path}`);
-
     // Write to disk
-    await fileSystemService.writeFileBinary(path, uint8Array);
-
-    debug.log(`[uploadAsset] Successfully wrote to ${path}`);
+    await this.writeBinaryFile(path, uint8Array, `Upload asset: ${filename}`);
 
     // Return relative path for markdown
     return `./${path}`;
@@ -98,12 +86,14 @@ class AssetService {
     const filename = `${uuid}.${ext}`;
     const path = `${ASSETS_DIR}/${filename}`;
 
+    debug.log(`[AssetService] Uploading blob to ${path}`);
+
     // Read blob as ArrayBuffer
     const arrayBuffer = await blob.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
 
     // Write to disk
-    await fileSystemService.writeFileBinary(path, uint8Array);
+    await this.writeBinaryFile(path, uint8Array, `Upload asset from blob: ${filename}`);
 
     // Return relative path for markdown
     return `./${path}`;
@@ -119,8 +109,8 @@ class AssetService {
     const normalizedPath = relativePath.replace(/^\.\//, '');
 
     // Read the binary data
-    const data = await fileSystemService.readFileBinary(normalizedPath);
-    if (!data) {
+    const uint8Array = await this.readBinaryFile(normalizedPath);
+    if (!uint8Array) {
       console.warn(`[AssetService] Asset not found: ${relativePath}`);
       return null;
     }
@@ -139,12 +129,12 @@ class AssetService {
     };
     const mimeType = mimeTypes[ext] || 'image/png';
 
-    // Create blob URL - cast to ArrayBuffer to satisfy TypeScript
-    const arrayBuffer = data.buffer.slice(
-      data.byteOffset,
-      data.byteOffset + data.byteLength
-    ) as ArrayBuffer;
-    const blob = new Blob([arrayBuffer], { type: mimeType });
+    // Create blob URL
+    const arrayBuffer = uint8Array.buffer.slice(
+      uint8Array.byteOffset,
+      uint8Array.byteOffset + uint8Array.byteLength
+    );
+    const blob = new Blob([arrayBuffer as BlobPart], { type: mimeType });
     return URL.createObjectURL(blob);
   }
 
@@ -154,7 +144,7 @@ class AssetService {
    */
   async listAssets(): Promise<string[]> {
     try {
-      const files = await fileSystemService.listFiles(ASSETS_DIR);
+      const files = await this.listFiles(ASSETS_DIR);
       return files.filter((f) => {
         const ext = f.split('.').pop()?.toLowerCase();
         return ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'tiff'].includes(ext || '');
@@ -170,7 +160,7 @@ class AssetService {
    */
   async deleteAsset(relativePath: string): Promise<void> {
     const normalizedPath = relativePath.replace(/^\.\//, '');
-    await fileSystemService.deleteFile(normalizedPath);
+    await this.deleteFile(normalizedPath, `Delete asset: ${normalizedPath}`);
   }
 }
 
