@@ -490,7 +490,24 @@ export function PendingChangesPanel() {
         }}
       >
         <AlertCircle size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
-        <div>Changes are saved to disk automatically. Commit each file separately when ready.</div>
+        <div>
+          Changes are saved to disk automatically. Commit each file separately when ready.{' '}
+          <button
+            onClick={() => refreshStatus()}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              color: 'var(--color-accent)',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              fontSize: 'inherit',
+              fontFamily: 'inherit',
+            }}
+          >
+            Refresh List
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -9,6 +9,10 @@ const __dirname = path.dirname(__filename);
 
 const isDev = !!process.env.VITE_DEV_SERVER_URL;
 
+console.log('🚀 Electron Main Process Starting...');
+console.log(`Working directory: ${process.cwd()}`);
+console.log(`isDev: ${isDev}`);
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
@@ -44,6 +48,8 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+ipcMain.handle('git:test', () => 'OK');
 
 // Git IPC handlers - run in Node context with real fs
 ipcMain.handle('git:status', async (_event, dir, filepath) => {
@@ -136,6 +142,26 @@ ipcMain.handle('git:resolveRef', async (_event, dir, ref) => {
   try {
     return await git.resolveRef({ fs, dir, ref });
   } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('git:isDescendent', async (_event, dir, oid, ancestor, depth) => {
+  try {
+    console.log(`[IPC] git:isDescendent dir=${dir} oid=${oid} ancestor=${ancestor}`);
+    return await git.isDescendent({ fs, dir, oid, ancestor, depth });
+  } catch (error) {
+    console.error(`[IPC] git:isDescendent error: ${error.message}`);
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('git:currentBranch', async (_event, dir) => {
+  try {
+    console.log(`[IPC] git:currentBranch dir=${dir}`);
+    return await git.currentBranch({ fs, dir });
+  } catch (error) {
+    console.error(`[IPC] git:currentBranch error: ${error.message}`);
     return { error: error.message };
   }
 });

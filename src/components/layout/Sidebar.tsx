@@ -17,6 +17,7 @@ import {
   Globe,
   Loader2,
   AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import type { Project } from '../../types';
 import { ProjectSidebarItem } from '../ProjectSidebarItem';
@@ -113,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isRemoteSettingsOpen, setIsRemoteSettingsOpen] = useState(false);
 
   // Check for remote on mount or when filesystem is ready
-  const { isReady } = useFileSystem();
+  const { isReady, refreshStatus } = useFileSystem();
   useEffect(() => {
     if (isReady) {
       realGitService.hasRemote().then(setHasRemote);
@@ -339,8 +340,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 transition: 'transform 0.15s',
               }}
             />
-            <GitBranch size={12} />
-            Pending Changes
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)', flex: 1 }}
+            >
+              <GitBranch size={12} />
+              Pending Changes
+            </div>
+            {!collapsedSections.has('pendingChanges') && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  refreshStatus();
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  color: 'var(--color-text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  borderRadius: '4px',
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
+                }
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                title="Refresh pending changes"
+              >
+                <RefreshCw size={12} />
+              </button>
+            )}
           </h2>
           {!collapsedSections.has('pendingChanges') && <PendingChangesPanel />}
         </div>
@@ -362,7 +392,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 margin: 0,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: 'var(--spacing-xs)',
                 cursor: 'pointer',
                 flex: 1,
               }}
@@ -377,6 +407,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Globe size={12} />
               Remote Sync
             </h2>
+            {!collapsedSections.has('remoteSync') && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.dispatchEvent(new CustomEvent('git-check'));
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  color: 'var(--color-text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  borderRadius: '4px',
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
+                }
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                title="Refresh sync status"
+              >
+                <RefreshCw size={12} />
+              </button>
+            )}
             <button
               onClick={() => setIsRemoteSettingsOpen(true)}
               style={{

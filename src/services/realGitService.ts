@@ -9,7 +9,9 @@ import { debug } from '../utils/debug';
 import git from 'isomorphic-git';
 import { fileSystemService } from './fileSystemService';
 import { fsAdapter } from './fsAdapter';
-import type { Requirement, UseCase, TestCase, Information } from '../types';
+import type { Requirement, UseCase, TestCase, Information, CommitInfo, SyncStatus } from '../types';
+
+export type { CommitInfo, SyncStatus };
 import {
   requirementToMarkdown,
   markdownToRequirement,
@@ -49,6 +51,13 @@ declare global {
           filepath: string
         ) => Promise<{ blob?: number[]; error?: string }>;
         resolveRef: (dir: string, ref: string) => Promise<string>;
+        isDescendent: (
+          dir: string,
+          oid: string,
+          ancestor: string,
+          depth?: number
+        ) => Promise<boolean | { error: string }>;
+        currentBranch: (dir: string) => Promise<string | null>;
         init: (dir: string) => Promise<{ ok?: boolean; error?: string }>;
         annotatedTag: (
           dir: string,
@@ -99,14 +108,6 @@ declare global {
 }
 
 const isElectronEnv = () => typeof window !== 'undefined' && !!window.electronAPI?.isElectron;
-
-export interface CommitInfo {
-  hash: string;
-  message: string;
-  author: string;
-  timestamp: number;
-  parent?: string[];
-}
 
 export interface FileStatus {
   path: string;
@@ -721,7 +722,11 @@ class RealGitService {
   /**
    * Get git log for a specific file or all files
    */
-  async getHistory(filepath?: string): Promise<CommitInfo[]> {
+  async getHistory(
+    filepath?: string,
+    depth: number = 100,
+    ref: string = 'HEAD'
+  ): Promise<CommitInfo[]> {
     if (!this.initialized) {
       return [];
     }
@@ -731,14 +736,14 @@ class RealGitService {
 
       // Electron path: use IPC
       if (isElectronEnv()) {
-        commits = await window.electronAPI!.git.log(this.getRootDir(), 100, filepath);
+        commits = await window.electronAPI!.git.log(this.getRootDir(), depth, filepath, ref);
       } else {
         // Browser path: use fsAdapter
         const logs = await git.log({
           fs: fsAdapter,
           dir: this.getRootDir(),
-          depth: 100,
-          ref: 'HEAD',
+          depth: depth,
+          ref: ref,
           filepath: filepath || undefined,
         });
         commits = logs.map((log) => ({
@@ -746,6 +751,7 @@ class RealGitService {
           message: log.commit.message,
           author: log.commit.author.name,
           timestamp: log.commit.author.timestamp * 1000,
+          parent: log.commit.parent,
         }));
       }
 
@@ -1482,6 +1488,146 @@ class RealGitService {
     } catch (error) {
       console.warn('[pushCounters] Failed:', error);
       return false;
+    }
+  }
+
+  /**
+   * Check if initialized
+   */
+  /**
+   * Get current branch name
+   */
+  async getCurrentBranch(): Promise<string> {
+    if (!this.initialized) return 'main';
+    try {
+      if (isElectronEnv()) {
+        const branch = await window.electronAPI!.git.currentBranch(this.getRootDir());
+        return branch || 'main';
+      }
+      return (await git.currentBranch({ fs: fsAdapter, dir: this.getRootDir() })) || 'main';
+    } catch {
+      return 'main';
+    }
+  }
+
+  /**
+   * Get sync status between local and remote
+   */
+  async getSyncStatus(remote: string = 'origin', branch?: string): Promise<SyncStatus> {
+    if (!this.initialized) return { ahead: false, behind: false, diverged: false };
+
+    try {
+      const activeBranch = branch || (await this.getCurrentBranch());
+      const rootDir = this.getRootDir();
+      const remoteRef = `${remote}/${activeBranch}`;
+
+      let localOID: string | undefined;
+      let remoteOID: string | undefined;
+
+      // Component: helper to get commit details
+      const getCommits = async (lRef: string, rRef: string) => {
+        try {
+          const localLog = await this.getHistory(undefined, 50, lRef);
+          const remoteLog = await this.getHistory(undefined, 50, rRef);
+
+          const localHashes = new Set(localLog.map((c) => c.hash));
+          const remoteHashes = new Set(remoteLog.map((c) => c.hash));
+
+          const aheadCommits = localLog.filter((c) => !remoteHashes.has(c.hash));
+          const behindCommits = remoteLog.filter((c) => !localHashes.has(c.hash));
+
+          return { aheadCommits, behindCommits };
+        } catch (e) {
+          console.error('[getSyncStatus] Failed to get commit details:', e);
+          return { aheadCommits: [], behindCommits: [] };
+        }
+      };
+
+      if (isElectronEnv()) {
+        try {
+          localOID = await window.electronAPI!.git.resolveRef(rootDir, 'HEAD');
+        } catch {
+          return { ahead: false, behind: false, diverged: false };
+        }
+
+        try {
+          remoteOID = await window.electronAPI!.git.resolveRef(rootDir, remoteRef);
+        } catch {
+          // If no remote yet, all local is "ahead" if it exists
+          return { ahead: !!localOID, behind: false, diverged: false, aheadCommits: [] };
+        }
+
+        if (localOID === remoteOID) return { ahead: false, behind: false, diverged: false };
+
+        const aheadResult = await window.electronAPI!.git.isDescendent(
+          rootDir,
+          localOID,
+          remoteOID
+        );
+        const behindResult = await window.electronAPI!.git.isDescendent(
+          rootDir,
+          remoteOID,
+          localOID
+        );
+
+        const ahead = aheadResult === true;
+        const behind = behindResult === true;
+        const diverged = !ahead && !behind;
+
+        const { aheadCommits, behindCommits } = await getCommits('HEAD', remoteRef);
+
+        return {
+          ahead: ahead && !behind,
+          behind: behind && !ahead,
+          diverged,
+          aheadCommits,
+          behindCommits,
+        };
+      } else {
+        try {
+          localOID = await git.resolveRef({ fs: fsAdapter, dir: rootDir, ref: 'HEAD' });
+        } catch {
+          return { ahead: false, behind: false, diverged: false };
+        }
+
+        try {
+          remoteOID = await git.resolveRef({ fs: fsAdapter, dir: rootDir, ref: remoteRef });
+        } catch {
+          return { ahead: !!localOID, behind: false, diverged: false };
+        }
+
+        if (localOID === remoteOID) return { ahead: false, behind: false, diverged: false };
+
+        const aheadResult = await git.isDescendent({
+          fs: fsAdapter,
+          dir: rootDir,
+          oid: localOID!,
+          ancestor: remoteOID!,
+        });
+        const behindResult = await git.isDescendent({
+          fs: fsAdapter,
+          dir: rootDir,
+          oid: remoteOID!,
+          ancestor: localOID!,
+        });
+
+        const ahead = aheadResult === true;
+        const behind = behindResult === true;
+        const diverged = !ahead && !behind;
+
+        const { aheadCommits, behindCommits } = await getCommits('HEAD', remoteRef);
+
+        return {
+          ahead: ahead && !behind,
+          behind: behind && !ahead,
+          diverged,
+          aheadCommits,
+          behindCommits,
+        };
+      }
+    } catch (error) {
+      console.error('[getSyncStatus] Failed:', error);
+      return { ahead: false, behind: false, diverged: false };
     }
   }
 

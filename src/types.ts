@@ -289,6 +289,16 @@ export interface CommitInfo {
   message: string;
   author: string;
   timestamp: number;
+  parent?: string[];
+}
+
+export interface SyncStatus {
+  ahead: boolean;
+  behind: boolean;
+  diverged: boolean;
+  aheadCommits?: CommitInfo[];
+  behindCommits?: CommitInfo[];
+  lastFetched?: number;
 }
 
 export interface ProjectBaseline {

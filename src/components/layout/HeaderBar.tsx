@@ -29,6 +29,7 @@ import {
 } from './layoutStyles';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { ThemeToggle } from './ThemeToggle';
+import { GitSyncStatus } from './GitSyncStatus';
 
 // Type for E2E test mode window properties
 interface E2EWindow extends Window {
@@ -362,6 +363,9 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             </div>
           )}
         </div>
+
+        {/* Git Sync Status */}
+        <GitSyncStatus />
 
         {/* History Button */}
         {onViewHistory && (

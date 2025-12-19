@@ -551,6 +551,9 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // when committing multiple files. The PendingChangesPanel handles
       // removing items from the UI optimistically.
       debug.log(`[commitFile] Committed ${filepath} successfully`);
+
+      // Trigger sync status update
+      window.dispatchEvent(new CustomEvent('git-check'));
     },
     [isReady]
   );

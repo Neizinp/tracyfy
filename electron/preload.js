@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Git operations
   git: {
+    test: () => ipcRenderer.invoke('git:test'),
     status: (dir, filepath) => ipcRenderer.invoke('git:status', dir, filepath),
     statusMatrix: (dir) => ipcRenderer.invoke('git:statusMatrix', dir),
     add: (dir, filepath) => ipcRenderer.invoke('git:add', dir, filepath),
@@ -27,6 +28,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     listFiles: (dir, ref) => ipcRenderer.invoke('git:listFiles', dir, ref),
     readBlob: (dir, oid, filepath) => ipcRenderer.invoke('git:readBlob', dir, oid, filepath),
     resolveRef: (dir, ref) => ipcRenderer.invoke('git:resolveRef', dir, ref),
+    isDescendent: (dir, oid, ancestor, depth) =>
+      ipcRenderer.invoke('git:isDescendent', dir, oid, ancestor, depth),
+    currentBranch: (dir) => ipcRenderer.invoke('git:currentBranch', dir),
     init: (dir) => ipcRenderer.invoke('git:init', dir),
     annotatedTag: (dir, ref, message, tagger) =>
       ipcRenderer.invoke('git:annotatedTag', dir, ref, message, tagger),
