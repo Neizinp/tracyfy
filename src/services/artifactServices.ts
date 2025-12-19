@@ -79,7 +79,8 @@ const userSerializer: ArtifactSerializer<User> = {
 export const userService = new BaseArtifactService<User>('users', userSerializer);
 
 // Registry of all artifact services for generic iteration
-export const ALL_ARTIFACT_SERVICES: Record<string, BaseArtifactService<{ id: string }>> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const ALL_ARTIFACT_SERVICES: Record<string, BaseArtifactService<any>> = {
   requirements: requirementService,
   usecases: useCaseService,
   testcases: testCaseService,

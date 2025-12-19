@@ -20,6 +20,7 @@ export function workflowToMarkdown(workflow: Workflow): string {
     `artifactIds: ${workflow.artifactIds.join(', ')}`,
     `dateCreated: ${workflow.dateCreated}`,
     `lastModified: ${workflow.lastModified}`,
+    `revision: ${workflow.revision}`,
   ];
 
   // Optional fields
@@ -144,5 +145,6 @@ export function parseMarkdownWorkflow(content: string): Workflow | null {
     lastModified: parseInt(data.lastModified, 10) || Date.now(),
     isDeleted: data.isDeleted === 'true',
     deletedAt: data.deletedAt ? parseInt(data.deletedAt, 10) : undefined,
+    revision: data.revision || '1',
   };
 }

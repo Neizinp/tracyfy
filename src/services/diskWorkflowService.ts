@@ -141,6 +141,7 @@ class DiskWorkflowService {
       artifactIds,
       dateCreated: now,
       lastModified: now,
+      revision: '1',
     };
 
     // Write to file

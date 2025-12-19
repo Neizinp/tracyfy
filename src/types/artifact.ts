@@ -1,35 +1,5 @@
 import type { CustomAttributeValue } from './customAttributes';
-import type { LinkType } from '../utils/linkTypes';
-
-// Link stored within an artifact (DEPRECATED - use Link instead)
-export interface ArtifactLink {
-  targetId: string;
-  type:
-    | 'parent' // Hierarchical decomposition - this is a parent of target
-    | 'child' // Hierarchical decomposition - this is a child of target
-    | 'derived_from' // Logical derivation, not strict hierarchy
-    | 'depends_on' // Dependency
-    | 'conflicts_with' // Mutual exclusivity
-    | 'duplicates' // Redundancy or overlap (Similar To)
-    | 'refines' // Adds detail without changing intent
-    | 'satisfies' // Links to design or implementation (Implements)
-    | 'verifies' // Links to test cases or validation
-    | 'constrains' // Imposes restrictions on another requirement
-    | 'requires' // Precondition for another requirement
-    | 'related_to'; // Generic association for context
-}
-
-// Standalone link entity stored in links/ folder
-export interface Link {
-  id: string; // LINK-001, LINK-002, etc.
-  sourceId: string; // The artifact creating the link (e.g., REQ-001)
-  targetId: string; // The artifact being linked to (e.g., UC-003)
-  type: LinkType; // Link relationship type
-  projectIds: string[]; // Empty = global (all projects), populated = project-specific
-  dateCreated: number;
-  lastModified: number;
-  customAttributes?: CustomAttributeValue[];
-}
+import type { ArtifactLink } from './link';
 
 export interface Requirement {
   id: string;
@@ -140,34 +110,4 @@ export interface Workflow {
   isDeleted?: boolean;
   deletedAt?: number;
   revision: string;
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  requirementIds: string[];
-  useCaseIds: string[];
-  testCaseIds: string[];
-  informationIds: string[];
-  riskIds: string[];
-  baselines?: string[]; // IDs of baselines for this project
-  currentBaseline?: string; // ID of current baseline
-  isDeleted?: boolean; // Soft delete flag
-  lastModified: number;
-}
-
-export interface GlobalState {
-  requirements: Requirement[];
-  useCases: UseCase[];
-  testCases: TestCase[];
-  information: Information[];
-  risks: Risk[];
-}
-
-export interface User {
-  id: string; // e.g., "USER-001"
-  name: string;
-  dateCreated: number;
-  lastModified: number;
 }

@@ -5,7 +5,14 @@ import { gitHistoryService } from './gitHistoryService';
 import { gitSyncService } from './gitSyncService';
 import { gitRemoteService } from './gitRemoteService';
 import { gitBaselineService } from './gitBaselineService';
-import { type FileStatus, type CommitInfo, type SyncStatus, type ArtifactFolder } from './types';
+import {
+  type FileStatus,
+  type CommitInfo,
+  type SyncStatus,
+  type ArtifactFolder,
+  type TagDetails,
+  type PullResult,
+} from './types';
 import type { Requirement, UseCase, TestCase, Information } from '../../types';
 
 class CompositeGitService {
@@ -110,7 +117,12 @@ class CompositeGitService {
     return gitCoreService.commitFile(path, msg, author);
   }
 
-  async loadAllArtifacts(): Promise<object> {
+  async loadAllArtifacts(): Promise<{
+    requirements: Requirement[];
+    useCases: UseCase[];
+    testCases: TestCase[];
+    information: Information[];
+  }> {
     return gitCoreService.loadAllArtifacts();
   }
 
@@ -120,7 +132,12 @@ class CompositeGitService {
     return gitHistoryService.listFilesAtCommit(hash);
   }
 
-  async loadProjectSnapshot(hash: string): Promise<object> {
+  async loadProjectSnapshot(hash: string): Promise<{
+    requirements: Requirement[];
+    useCases: UseCase[];
+    testCases: TestCase[];
+    information: Information[];
+  }> {
     return gitHistoryService.loadProjectSnapshot(hash);
   }
 
@@ -154,7 +171,7 @@ class CompositeGitService {
     return gitBaselineService.listTags();
   }
 
-  async getTagsWithDetails(): Promise<object[]> {
+  async getTagsWithDetails(): Promise<TagDetails[]> {
     return gitBaselineService.getTagsWithDetails();
   }
 
@@ -202,7 +219,7 @@ class CompositeGitService {
     return gitRemoteService.push(remote, branch);
   }
 
-  async pull(remote: string = 'origin', branch: string = 'main'): Promise<object> {
+  async pull(remote: string = 'origin', branch: string = 'main'): Promise<PullResult> {
     return gitRemoteService.pull(remote, branch);
   }
 
