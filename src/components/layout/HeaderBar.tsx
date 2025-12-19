@@ -1,4 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+/**
+ * HeaderBar Component
+ *
+ * Header bar containing breadcrumb navigation, search bar, action buttons,
+ * and Create/Import/Export dropdown menus.
+ * Uses useHeaderBar hook for menu state management.
+ */
+
+import React from 'react';
 import { debug } from '../../utils/debug';
 import {
   Plus,
@@ -15,19 +23,20 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import type { ProjectBaseline } from '../../types';
-import { DropdownMenuItem } from './DropdownMenuItem';
 import {
   headerButtonStyle,
-  primaryButtonStyle,
   dropdownMenuStyle,
+  searchContainerStyle,
+  searchIconStyle,
+  searchInputStyle,
   dropdownItemStyle,
   hoverHandlers,
-  searchContainerStyle,
-  searchInputStyle,
-  searchIconStyle,
+  primaryButtonStyle,
   advancedSearchButtonStyle,
 } from './layoutStyles';
+import { DropdownMenuItem } from './DropdownMenuItem';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
+import { useHeaderBar } from '../../hooks/useHeaderBar';
 import { ThemeToggle } from './ThemeToggle';
 import { GitSyncStatus } from './GitSyncStatus';
 
@@ -37,10 +46,9 @@ interface E2EWindow extends Window {
   __E2E_EXPORT_MENU_OPENED?: boolean;
 }
 
-export interface HeaderBarProps {
+interface HeaderBarProps {
   onSearch?: (query: string) => void;
   onViewHistory?: () => void;
-  // Create dropdown
   onNewRequirement: () => void;
   onNewUseCase?: () => void;
   onNewTestCase?: () => void;
@@ -49,13 +57,10 @@ export interface HeaderBarProps {
   onNewWorkflow?: () => void;
   onNewLink?: () => void;
   onNewCustomAttribute?: () => void;
-  // Import dropdown
   onImport?: () => void;
   onImportExcel?: () => void;
   onOpenGlobalLibrary?: () => void;
-  // Export - opens modal
   onOpenExportModal?: () => void;
-  // Legacy export handlers (kept for backward compatibility)
   onExport?: () => void;
   onExportPDF?: (selectedBaseline: ProjectBaseline | null) => void;
   onExportExcel?: () => void;
@@ -66,13 +71,6 @@ export interface HeaderBarProps {
   onHelp?: () => void;
 }
 
-/**
- * Header bar component containing:
- * - Breadcrumb navigation
- * - Search bar
- * - Action buttons (History)
- * - Create, Import, Export dropdown menus
- */
 export const HeaderBar: React.FC<HeaderBarProps> = ({
   onSearch,
   onViewHistory,
@@ -97,69 +95,35 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onOpenAdvancedSearch,
   onHelp,
 }) => {
-  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
-  const [selectedBaselineId, setSelectedBaselineId] = useState<string>('current');
-  const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
-  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
-
-  const exportMenuRef = useRef<HTMLDivElement>(null);
-  const importMenuRef = useRef<HTMLDivElement>(null);
-  const createMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Always open export dropdown in E2E mode
-    let e2eInterval: ReturnType<typeof setInterval> | null = null;
-    if (typeof window !== 'undefined' && (window as E2EWindow).__E2E_TEST_MODE__) {
-      setIsExportMenuOpen(true);
-      (window as E2EWindow).__E2E_EXPORT_MENU_OPENED = true;
-      e2eInterval = setInterval(() => {
-        setIsExportMenuOpen(true);
-        (window as E2EWindow).__E2E_EXPORT_MENU_OPENED = true;
-      }, 500);
-    }
-
-    function handleClickOutside(event: MouseEvent) {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
-        setIsExportMenuOpen(false);
-      }
-      if (importMenuRef.current && !importMenuRef.current.contains(event.target as Node)) {
-        setIsImportMenuOpen(false);
-      }
-      if (createMenuRef.current && !createMenuRef.current.contains(event.target as Node)) {
-        setIsCreateMenuOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      if (e2eInterval) clearInterval(e2eInterval);
-    };
-  }, []);
-
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const {
+    isExportMenuOpen,
+    setIsExportMenuOpen,
+    isImportMenuOpen,
+    setIsImportMenuOpen,
+    isCreateMenuOpen,
+    setIsCreateMenuOpen,
+    selectedBaselineId,
+    setSelectedBaselineId,
+    exportMenuRef,
+    importMenuRef,
+    createMenuRef,
+    searchInputRef,
+    closeAllMenus,
+    focusSearch,
+    blurSearch,
+  } = useHeaderBar();
 
   useKeyboardShortcuts({
-    onSearch: () => {
-      if (searchInputRef.current) {
-        searchInputRef.current.focus();
-      }
-    },
+    onSearch: focusSearch,
     onClose: () => {
-      // Blur search and close menus on Esc
-      if (searchInputRef.current && document.activeElement === searchInputRef.current) {
-        searchInputRef.current.blur();
-      }
-      setIsExportMenuOpen(false);
-      setIsImportMenuOpen(false);
-      setIsCreateMenuOpen(false);
+      blurSearch();
+      closeAllMenus();
     },
     onHelp,
   });
 
   const handleExportPDF = () => {
     if (typeof window !== 'undefined' && (window as E2EWindow).__E2E_TEST_MODE__) {
-      // E2E fallback: always trigger a dummy PDF download
       const blob = new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d])], {
         type: 'application/pdf',
       });
@@ -187,7 +151,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
   const handleExportJSON = () => {
     if (typeof window !== 'undefined' && (window as E2EWindow).__E2E_TEST_MODE__) {
-      // E2E fallback: always trigger a dummy download
       const blob = new Blob(
         [
           JSON.stringify({

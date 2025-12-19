@@ -1,5 +1,14 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * ProjectSettingsModal Component
+ *
+ * Modal for editing project settings, copying, and deleting projects.
+ * Uses useProjectSettingsForm hook for form state management.
+ */
+
+import React from 'react';
 import type { Project } from '../types';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useProjectSettingsForm } from '../hooks/useProjectSettingsForm';
 
 interface ProjectSettingsModalProps {
   project: Project;
@@ -10,8 +19,6 @@ interface ProjectSettingsModalProps {
   onCopy?: (originalProject: Project, newName: string, newDescription: string) => Promise<void>;
 }
 
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-
 export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   project,
   isOpen,
@@ -20,76 +27,37 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   onDelete,
   onCopy,
 }) => {
-  const [name, setName] = useState(project.name);
-  const [description, setDescription] = useState(project.description);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showRenameConfirm, setShowRenameConfirm] = useState(false);
-  const [showCopyMode, setShowCopyMode] = useState(false);
-  const [copyName, setCopyName] = useState('');
-  const [copyDescription, setCopyDescription] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      setName(project.name);
-      setDescription(project.description);
-      setShowDeleteConfirm(false);
-      setShowRenameConfirm(false);
-      setShowCopyMode(false);
-      setCopyName(`${project.name} (Copy)`);
-      setCopyDescription(project.description);
-      setError(null);
-      setIsSubmitting(false);
-    }
-  }, [isOpen, project]);
-
-  const isNameChanged = name.trim() !== project.name;
-
-  const doSave = async () => {
-    setError(null);
-    setIsSubmitting(true);
-    setShowRenameConfirm(false);
-
-    try {
-      await onUpdate(project.id, name, description);
-      onClose();
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-
-    // If name changed, show confirmation dialog
-    if (isNameChanged) {
-      setShowRenameConfirm(true);
-      return;
-    }
-
-    // Otherwise, save directly
-    await doSave();
-  };
-
-  const handleCopyProject = async () => {
-    if (!copyName.trim()) {
-      setError('Please enter a name for the new project');
-      return;
-    }
-    setError(null);
-    setIsSubmitting(true);
-    try {
-      await onCopy?.(project, copyName.trim(), copyDescription.trim());
-      setIsSubmitting(false);
-      onClose();
-    } catch (err) {
-      setError((err as Error).message);
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    name,
+    setName,
+    description,
+    setDescription,
+    copyName,
+    setCopyName,
+    copyDescription,
+    setCopyDescription,
+    showCopyMode,
+    startCopyMode,
+    cancelCopyMode,
+    showDeleteConfirm,
+    startDeleteConfirm,
+    cancelDeleteConfirm,
+    showRenameConfirm,
+    cancelRenameConfirm,
+    error,
+    isSubmitting,
+    handleSubmit,
+    handleCopyProject,
+    handleDelete,
+    doSave,
+  } = useProjectSettingsForm({
+    isOpen,
+    project,
+    onClose,
+    onUpdate,
+    onDelete,
+    onCopy,
+  });
 
   useKeyboardShortcuts({
     onSave: handleSubmit,
@@ -111,7 +79,6 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
-        // no blur
       }}
     >
       <div
@@ -253,7 +220,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
               <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
                 <button
                   type="button"
-                  onClick={() => setShowRenameConfirm(false)}
+                  onClick={cancelRenameConfirm}
                   style={{
                     flex: 1,
                     padding: '6px 12px',
@@ -344,7 +311,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                 {!showCopyMode ? (
                   <button
                     type="button"
-                    onClick={() => setShowCopyMode(true)}
+                    onClick={startCopyMode}
                     style={{
                       width: '100%',
                       padding: '8px 16px',
@@ -445,7 +412,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                     <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
                       <button
                         type="button"
-                        onClick={() => setShowCopyMode(false)}
+                        onClick={cancelCopyMode}
                         style={{
                           flex: 1,
                           padding: '8px 16px',
@@ -494,7 +461,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
               {!showDeleteConfirm ? (
                 <button
                   type="button"
-                  onClick={() => setShowDeleteConfirm(true)}
+                  onClick={startDeleteConfirm}
                   style={{
                     width: '100%',
                     padding: '8px 16px',
@@ -546,7 +513,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                   <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
                     <button
                       type="button"
-                      onClick={() => setShowDeleteConfirm(false)}
+                      onClick={cancelDeleteConfirm}
                       style={{
                         flex: 1,
                         padding: '6px 12px',
@@ -563,10 +530,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        onDelete(project.id);
-                        onClose();
-                      }}
+                      onClick={handleDelete}
                       style={{
                         flex: 1,
                         padding: '6px 12px',
