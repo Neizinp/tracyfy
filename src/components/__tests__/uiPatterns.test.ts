@@ -19,7 +19,7 @@ const ARTIFACT_LIST_FILES = {
   TestCaseList: () => import('../TestCaseList.tsx?raw'),
   InformationList: () => import('../InformationList.tsx?raw'),
   RiskList: () => import('../RiskList.tsx?raw'),
-  DetailedRequirementView: () => import('../DetailedRequirementView.tsx?raw'),
+  RequirementList: () => import('../RequirementList.tsx?raw'),
   LinksView: () => import('../LinksView.tsx?raw'),
 };
 
@@ -77,13 +77,18 @@ describe('UI Pattern: No inline edit/delete buttons on artifact rows', () => {
         const module = await loadFile();
         const content = (module as { default: string }).default;
 
-        // Should have onClick handler somewhere
+        // Should have onClick handler somewhere OR pass onEdit to BaseArtifactTable
         const hasOnClick = /onClick\s*[=:]/.test(content);
+        const hasOnEditDelegation = /onEdit\s*[=:]/.test(content);
 
-        // Should have cursor: pointer somewhere
+        // Should have cursor: pointer somewhere OR use BaseArtifactTable
         const hasCursorPointer = /cursor:\s*['"]?pointer/.test(content);
+        const usesBaseTable = content.includes('BaseArtifactTable');
 
-        expect(hasOnClick || hasCursorPointer, `${name} should have clickable rows`).toBe(true);
+        expect(
+          hasOnClick || hasOnEditDelegation || hasCursorPointer || usesBaseTable,
+          `${name} should have clickable rows`
+        ).toBe(true);
       });
     });
   });

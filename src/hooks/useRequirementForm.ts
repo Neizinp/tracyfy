@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Requirement, ArtifactLink } from '../types';
 import type { CustomAttributeValue } from '../types/customAttributes';
 import { useUser, useUI, useGlobalState } from '../app/providers';
+import { useBaseArtifactForm } from './useBaseArtifactForm';
 
 interface UseRequirementFormOptions {
   isOpen: boolean;
@@ -18,6 +19,8 @@ interface UseRequirementFormOptions {
   onUpdate: (id: string, updates: Partial<Requirement>) => void;
   onDelete: (id: string) => void;
 }
+
+type Tab = 'overview' | 'details' | 'relationships' | 'comments' | 'customFields' | 'history';
 
 export function useRequirementForm({
   isOpen,
@@ -40,12 +43,23 @@ export function useRequirementForm({
   } = useUI();
   const { requirements, useCases, information } = useGlobalState();
 
-  const isEditMode = requirement !== null;
+  const {
+    isEditMode,
+    activeTab,
+    setActiveTab,
+    showDeleteConfirm,
+    handleDelete,
+    confirmDelete,
+    cancelDelete,
+  } = useBaseArtifactForm<Requirement, Tab>({
+    isOpen,
+    artifact: requirement,
+    defaultTab: 'overview',
+    onClose,
+    onDelete,
+  });
 
-  // Form state
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'details' | 'relationships' | 'comments' | 'customFields' | 'history'
-  >('overview');
+  // Form state fields
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [text, setText] = useState('');
@@ -54,11 +68,10 @@ export function useRequirementForm({
   const [status, setStatus] = useState<Requirement['status']>('draft');
   const [verificationMethod, setVerificationMethod] = useState('');
   const [comments, setComments] = useState('');
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [linkedArtifacts, setLinkedArtifacts] = useState<ArtifactLink[]>([]);
   const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
 
-  // Reset form when modal opens/closes or requirement changes
+  // Reset form when modal opens or requirement changes
   useEffect(() => {
     if (isOpen) {
       if (requirement) {
@@ -86,8 +99,6 @@ export function useRequirementForm({
         setLinkedArtifacts([]);
         setCustomAttributes([]);
       }
-      setActiveTab('overview');
-      setShowDeleteConfirm(false);
     }
   }, [isOpen, requirement]);
 
@@ -150,21 +161,6 @@ export function useRequirementForm({
     setLinkedArtifacts((prev) => prev.filter((link) => link.targetId !== targetId));
   }, []);
 
-  const handleDelete = useCallback(() => {
-    setShowDeleteConfirm(true);
-  }, []);
-
-  const confirmDelete = useCallback(() => {
-    if (requirement) {
-      onDelete(requirement.id);
-      onClose();
-    }
-  }, [requirement, onDelete, onClose]);
-
-  const cancelDelete = useCallback(() => {
-    setShowDeleteConfirm(false);
-  }, []);
-
   // Navigate to a linked artifact by opening its edit modal
   const handleNavigateToArtifact = useCallback(
     (sourceId: string, sourceType: string) => {
@@ -223,7 +219,7 @@ export function useRequirementForm({
     isEditMode,
     currentUser,
 
-    // Tab state
+    // Tab state (from base hook)
     activeTab,
     setActiveTab,
 
@@ -249,15 +245,13 @@ export function useRequirementForm({
     customAttributes,
     setCustomAttributes,
 
-    // Delete confirmation
-    showDeleteConfirm,
-    handleDelete,
-    confirmDelete,
-    cancelDelete,
-
-    // Actions
+    // Actions (including from base hook)
     handleSubmit,
     handleRemoveLink,
     handleNavigateToArtifact,
+    handleDelete,
+    confirmDelete,
+    cancelDelete,
+    showDeleteConfirm,
   };
 }

@@ -84,6 +84,8 @@ describe('UseCaseList', () => {
         requirements={mockRequirements}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
+        sortConfig={{ key: 'id', direction: 'asc' }}
+        onSortChange={vi.fn()}
       />
     );
 
@@ -99,6 +101,8 @@ describe('UseCaseList', () => {
         requirements={mockRequirements}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
+        sortConfig={{ key: 'id', direction: 'asc' }}
+        onSortChange={vi.fn()}
       />
     );
 
@@ -113,6 +117,8 @@ describe('UseCaseList', () => {
         requirements={mockRequirements}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
+        sortConfig={{ key: 'id', direction: 'asc' }}
+        onSortChange={vi.fn()}
       />
     );
 

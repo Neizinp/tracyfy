@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { TestCase } from '../types';
 import type { CustomAttributeValue } from '../types/customAttributes';
 import { useUser } from '../app/providers';
+import { useBaseArtifactForm } from './useBaseArtifactForm';
 
 interface UseTestCaseFormOptions {
   isOpen: boolean;
@@ -31,18 +32,30 @@ export function useTestCaseForm({
 }: UseTestCaseFormOptions) {
   const { currentUser } = useUser();
 
-  const isEditMode = testCase !== null;
+  const {
+    isEditMode,
+    activeTab,
+    setActiveTab,
+    showDeleteConfirm,
+    handleDelete,
+    confirmDelete,
+    cancelDelete,
+  } = useBaseArtifactForm<TestCase, Tab>({
+    isOpen,
+    artifact: testCase,
+    defaultTab: 'overview',
+    onClose,
+    onDelete,
+  });
 
-  // Form state
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  // Form state fields
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TestCase['priority']>('medium');
   const [status, setStatus] = useState<TestCase['status']>('draft');
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
 
-  // Reset form when modal opens/closes or testCase changes
+  // Reset form when modal opens or testCase changes
   useEffect(() => {
     if (isOpen) {
       if (testCase) {
@@ -60,8 +73,6 @@ export function useTestCaseForm({
         setStatus('draft');
         setCustomAttributes([]);
       }
-      setActiveTab('overview');
-      setShowDeleteConfirm(false);
     }
   }, [isOpen, testCase]);
 
@@ -116,28 +127,12 @@ export function useTestCaseForm({
     ]
   );
 
-  const confirmDelete = useCallback(() => {
-    if (testCase) {
-      onDelete(testCase.id);
-      setShowDeleteConfirm(false);
-      onClose();
-    }
-  }, [testCase, onDelete, onClose]);
-
-  const handleDelete = useCallback(() => {
-    setShowDeleteConfirm(true);
-  }, []);
-
-  const cancelDelete = useCallback(() => {
-    setShowDeleteConfirm(false);
-  }, []);
-
   return {
     // Mode
     isEditMode,
     currentUser,
 
-    // Tab state
+    // Tab state (from base hook)
     activeTab,
     setActiveTab,
 
@@ -153,13 +148,11 @@ export function useTestCaseForm({
     customAttributes,
     setCustomAttributes,
 
-    // Delete confirmation
-    showDeleteConfirm,
+    // Actions (including from base hook)
+    handleSubmit,
     handleDelete,
     confirmDelete,
     cancelDelete,
-
-    // Actions
-    handleSubmit,
+    showDeleteConfirm,
   };
 }

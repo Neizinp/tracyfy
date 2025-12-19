@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { DetailedRequirementView } from '../DetailedRequirementView';
+import { RequirementList } from '../RequirementList';
 import type { Requirement, ColumnVisibility, Project } from '../../types';
 
 // Mock ReactMarkdown to avoid ESM issues and simplify testing
@@ -47,7 +47,7 @@ vi.mock('react-virtuoso', () => ({
   },
 }));
 
-describe('DetailedRequirementView', () => {
+describe('RequirementList', () => {
   const mockRequirements: Requirement[] = [
     {
       id: 'REQ-001',
@@ -97,10 +97,12 @@ describe('DetailedRequirementView', () => {
 
   it('renders requirements correctly', () => {
     render(
-      <DetailedRequirementView
+      <RequirementList
         requirements={mockRequirements}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
+        sortConfig={{ key: 'id', direction: 'asc' }}
+        onSortChange={vi.fn()}
       />
     );
 
@@ -112,10 +114,12 @@ describe('DetailedRequirementView', () => {
 
   it('handles row click to edit', () => {
     render(
-      <DetailedRequirementView
+      <RequirementList
         requirements={mockRequirements}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
+        sortConfig={{ key: 'id', direction: 'asc' }}
+        onSortChange={vi.fn()}
       />
     );
 
@@ -131,10 +135,12 @@ describe('DetailedRequirementView', () => {
     };
 
     render(
-      <DetailedRequirementView
+      <RequirementList
         requirements={mockRequirements}
         onEdit={mockOnEdit}
         visibleColumns={hiddenColumns}
+        sortConfig={{ key: 'id', direction: 'asc' }}
+        onSortChange={vi.fn()}
       />
     );
 
@@ -145,10 +151,12 @@ describe('DetailedRequirementView', () => {
 
   it('renders empty state message', () => {
     render(
-      <DetailedRequirementView
+      <RequirementList
         requirements={[]}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
+        sortConfig={{ key: 'id', direction: 'asc' }}
+        onSortChange={vi.fn()}
       />
     );
 
@@ -171,12 +179,14 @@ describe('DetailedRequirementView', () => {
     ];
 
     render(
-      <DetailedRequirementView
+      <RequirementList
         requirements={mockRequirements}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
         showProjectColumn={true}
         projects={mockProjects}
+        sortConfig={{ key: 'id', direction: 'asc' }}
+        onSortChange={vi.fn()}
       />
     );
 

@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { UseCase } from '../types';
 import type { CustomAttributeValue } from '../types/customAttributes';
+import { useBaseArtifactForm } from './useBaseArtifactForm';
 
 interface UseUseCaseFormOptions {
   isOpen: boolean;
@@ -21,10 +22,14 @@ interface UseUseCaseFormOptions {
 type Tab = 'overview' | 'flows' | 'conditions' | 'relationships' | 'customFields' | 'history';
 
 export function useUseCaseForm({ isOpen, useCase, onClose, onSubmit }: UseUseCaseFormOptions) {
-  const isEditMode = useCase !== null && useCase !== undefined;
+  const { isEditMode, activeTab, setActiveTab } = useBaseArtifactForm<UseCase, Tab>({
+    isOpen,
+    artifact: useCase,
+    defaultTab: 'overview',
+    onClose,
+  });
 
   // Form state
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [actor, setActor] = useState('');
@@ -36,30 +41,32 @@ export function useUseCaseForm({ isOpen, useCase, onClose, onSubmit }: UseUseCas
   const [status, setStatus] = useState<UseCase['status']>('draft');
   const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
 
-  // Reset form when modal opens/closes or useCase changes
+  // Reset form when modal opens or useCase changes
   useEffect(() => {
-    if (useCase) {
-      setTitle(useCase.title);
-      setDescription(useCase.description);
-      setActor(useCase.actor);
-      setPreconditions(useCase.preconditions);
-      setPostconditions(useCase.postconditions);
-      setMainFlow(useCase.mainFlow);
-      setAlternativeFlows(useCase.alternativeFlows || '');
-      setPriority(useCase.priority);
-      setStatus(useCase.status);
-      setCustomAttributes(useCase.customAttributes || []);
-    } else {
-      setTitle('');
-      setDescription('');
-      setActor('');
-      setPreconditions('');
-      setPostconditions('');
-      setMainFlow('');
-      setAlternativeFlows('');
-      setPriority('medium');
-      setStatus('draft');
-      setCustomAttributes([]);
+    if (isOpen) {
+      if (useCase) {
+        setTitle(useCase.title);
+        setDescription(useCase.description);
+        setActor(useCase.actor);
+        setPreconditions(useCase.preconditions);
+        setPostconditions(useCase.postconditions);
+        setMainFlow(useCase.mainFlow);
+        setAlternativeFlows(useCase.alternativeFlows || '');
+        setPriority(useCase.priority);
+        setStatus(useCase.status);
+        setCustomAttributes(useCase.customAttributes || []);
+      } else {
+        setTitle('');
+        setDescription('');
+        setActor('');
+        setPreconditions('');
+        setPostconditions('');
+        setMainFlow('');
+        setAlternativeFlows('');
+        setPriority('medium');
+        setStatus('draft');
+        setCustomAttributes([]);
+      }
     }
   }, [useCase, isOpen]);
 

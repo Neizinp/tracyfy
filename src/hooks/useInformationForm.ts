@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Information } from '../types';
 import type { CustomAttributeValue } from '../types/customAttributes';
+import { useBaseArtifactForm } from './useBaseArtifactForm';
 
 interface UseInformationFormOptions {
   isOpen: boolean;
@@ -28,27 +29,33 @@ export function useInformationForm({
   onClose,
   onSubmit,
 }: UseInformationFormOptions) {
-  const isEditMode = information !== null;
+  const { isEditMode, activeTab, setActiveTab } = useBaseArtifactForm<Information, Tab>({
+    isOpen,
+    artifact: information,
+    defaultTab: 'overview',
+    onClose,
+  });
 
   // Form state
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [type, setType] = useState<Information['type']>('note');
   const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
 
-  // Reset form when modal opens/closes or information changes
+  // Reset form when modal opens or information changes
   useEffect(() => {
-    if (information) {
-      setTitle(information.title);
-      setContent(information.content);
-      setType(information.type);
-      setCustomAttributes(information.customAttributes || []);
-    } else {
-      setTitle('');
-      setContent('');
-      setType('note');
-      setCustomAttributes([]);
+    if (isOpen) {
+      if (information) {
+        setTitle(information.title);
+        setContent(information.content);
+        setType(information.type);
+        setCustomAttributes(information.customAttributes || []);
+      } else {
+        setTitle('');
+        setContent('');
+        setType('note');
+        setCustomAttributes([]);
+      }
     }
   }, [information, isOpen]);
 
@@ -72,7 +79,7 @@ export function useInformationForm({
     // Mode
     isEditMode,
 
-    // Tab state
+    // Tab state (from base hook)
     activeTab,
     setActiveTab,
 

@@ -1,36 +1,22 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React from 'react';
 import { UseCaseList } from '../components';
 import { useUseCases, useRequirements, useUI } from '../app/providers';
-import { type SortConfig, toggleSort } from '../components/SortableHeader';
+import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
 
 export const UseCasesPage: React.FC = () => {
   const { useCases, handleEditUseCase } = useUseCases();
   const { requirements } = useRequirements();
   const { searchQuery, useCaseColumnVisibility } = useUI();
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'id', direction: 'asc' });
 
-  const handleSortChange = useCallback((key: string) => {
-    setSortConfig((prev) => toggleSort(prev, key));
-  }, []);
-
-  // Memoize filtered use cases to avoid re-filtering on every render
-  const filteredUseCases = useMemo(() => {
-    return useCases.filter((uc) => {
-      if (uc.isDeleted) return false;
-      if (!searchQuery) return true;
-      const query = searchQuery.toLowerCase();
-      return (
-        uc.id.toLowerCase().includes(query) ||
-        uc.title.toLowerCase().includes(query) ||
-        uc.description.toLowerCase().includes(query) ||
-        uc.actor.toLowerCase().includes(query)
-      );
-    });
-  }, [useCases, searchQuery]);
+  const { sortedData, sortConfig, handleSortChange } = useArtifactFilteredData(
+    useCases,
+    searchQuery,
+    ['id', 'title', 'description', 'actor']
+  );
 
   return (
     <UseCaseList
-      useCases={filteredUseCases}
+      useCases={sortedData}
       requirements={requirements}
       onEdit={handleEditUseCase}
       visibleColumns={useCaseColumnVisibility}

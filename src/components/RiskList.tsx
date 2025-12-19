@@ -1,16 +1,18 @@
-import React, { useMemo } from 'react';
-import { TableVirtuoso } from 'react-virtuoso';
+import React, { useMemo, useCallback } from 'react';
 import { ShieldAlert } from 'lucide-react';
-import type { Risk, RiskColumnVisibility } from '../types';
+import type { Risk, RiskColumnVisibility, Project } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
-import { SortableHeader, sortItems, type SortConfig } from './SortableHeader';
+import { BaseArtifactTable, type ColumnDef } from './BaseArtifactTable';
+import type { SortConfig } from './SortableHeader';
 
 interface RiskListProps {
   risks: Risk[];
   onEdit: (risk: Risk) => void;
   visibleColumns: RiskColumnVisibility;
-  sortConfig?: SortConfig;
-  onSortChange?: (key: string) => void;
+  sortConfig: SortConfig;
+  onSortChange: (key: string) => void;
+  showProjectColumn?: boolean;
+  projects?: Project[];
 }
 
 const getProbabilityStyle = (probability: string) => {
@@ -54,35 +56,58 @@ const getStatusStyle = (status: string) => {
   }
 };
 
-// Memoized row component
-const RiskRow = React.memo<{
-  risk: Risk;
-  visibleColumns: RiskColumnVisibility;
-}>(({ risk, visibleColumns }) => {
-  const tdStyle: React.CSSProperties = {
-    padding: '12px 16px',
-    verticalAlign: 'top',
-    fontSize: 'var(--font-size-sm)',
-  };
+export const RiskList: React.FC<RiskListProps> = ({
+  risks,
+  onEdit,
+  visibleColumns,
+  sortConfig,
+  onSortChange,
+  showProjectColumn,
+  projects,
+}) => {
+  const badgeStyle: React.CSSProperties = useMemo(
+    () => ({
+      padding: '2px 8px',
+      borderRadius: '4px',
+      fontSize: 'var(--font-size-xs)',
+      fontWeight: 500,
+      textTransform: 'capitalize',
+    }),
+    []
+  );
 
-  const badgeStyle: React.CSSProperties = {
-    padding: '2px 8px',
-    borderRadius: '4px',
-    fontSize: 'var(--font-size-xs)',
-    fontWeight: 500,
-    textTransform: 'capitalize',
-  };
+  const getProjectNames = useCallback(
+    (riskId: string) => {
+      if (!projects) return '';
+      return projects
+        .filter((p: Project) => p.riskIds?.includes(riskId))
+        .map((p: Project) => p.name)
+        .join(', ');
+    },
+    [projects]
+  );
 
-  return (
-    <>
-      <td style={tdStyle}>
-        <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '4px' }}>
-          {risk.id}
-        </div>
-        <div style={{ color: 'var(--color-text-primary)' }}>{risk.title}</div>
-      </td>
-      {visibleColumns.revision && (
-        <td style={tdStyle}>
+  const columns = useMemo<ColumnDef<Risk>[]>(
+    () => [
+      {
+        key: 'id',
+        label: 'ID / Title',
+        width: '250px',
+        render: (risk) => (
+          <>
+            <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '4px' }}>
+              {risk.id}
+            </div>
+            <div style={{ color: 'var(--color-text-primary)' }}>{risk.title}</div>
+          </>
+        ),
+      },
+      {
+        key: 'revision',
+        label: 'Rev',
+        width: '60px',
+        visible: visibleColumns.revision,
+        render: (risk) => (
           <span
             style={{
               fontSize: 'var(--font-size-xs)',
@@ -95,10 +120,45 @@ const RiskRow = React.memo<{
           >
             {risk.revision || '01'}
           </span>
-        </td>
-      )}
-      {visibleColumns.category && (
-        <td style={tdStyle}>
+        ),
+      },
+      {
+        key: 'projects',
+        label: 'Project(s)',
+        width: '150px',
+        visible: showProjectColumn,
+        sortable: false,
+        render: (risk) => (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+            {getProjectNames(risk.id)
+              .split(', ')
+              .map(
+                (name: string, i: number) =>
+                  name && (
+                    <span
+                      key={i}
+                      style={{
+                        fontSize: 'var(--font-size-xs)',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        background: 'var(--color-bg-tertiary)',
+                        color: 'var(--color-text-secondary)',
+                        border: '1px solid var(--color-border)',
+                      }}
+                    >
+                      {name}
+                    </span>
+                  )
+              )}
+          </div>
+        ),
+      },
+      {
+        key: 'category',
+        label: 'Category',
+        width: '120px',
+        visible: visibleColumns.category,
+        render: (risk) => (
           <span
             style={{
               ...badgeStyle,
@@ -108,10 +168,14 @@ const RiskRow = React.memo<{
           >
             {risk.category}
           </span>
-        </td>
-      )}
-      {visibleColumns.probability && (
-        <td style={tdStyle}>
+        ),
+      },
+      {
+        key: 'probability',
+        label: 'Probability',
+        width: '100px',
+        visible: visibleColumns.probability,
+        render: (risk) => (
           <span
             style={{
               ...badgeStyle,
@@ -121,10 +185,14 @@ const RiskRow = React.memo<{
           >
             {risk.probability}
           </span>
-        </td>
-      )}
-      {visibleColumns.impact && (
-        <td style={tdStyle}>
+        ),
+      },
+      {
+        key: 'impact',
+        label: 'Impact',
+        width: '100px',
+        visible: visibleColumns.impact,
+        render: (risk) => (
           <span
             style={{
               ...badgeStyle,
@@ -134,10 +202,14 @@ const RiskRow = React.memo<{
           >
             {risk.impact}
           </span>
-        </td>
-      )}
-      {visibleColumns.status && (
-        <td style={tdStyle}>
+        ),
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        width: '120px',
+        visible: visibleColumns.status,
+        render: (risk) => (
           <span
             style={{
               ...badgeStyle,
@@ -147,54 +219,50 @@ const RiskRow = React.memo<{
           >
             {risk.status}
           </span>
-        </td>
-      )}
-      {visibleColumns.owner && (
-        <td style={{ ...tdStyle, color: 'var(--color-text-secondary)' }}>{risk.owner || '—'}</td>
-      )}
-      {visibleColumns.description && (
-        <td
-          style={{
-            ...tdStyle,
-            color: 'var(--color-text-secondary)',
-            maxWidth: '300px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {risk.description.length > 100
-            ? risk.description.slice(0, 100) + '...'
-            : risk.description}
-        </td>
-      )}
-      {visibleColumns.created && (
-        <td style={{ ...tdStyle, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
-          {formatDateTime(risk.dateCreated)}
-        </td>
-      )}
-    </>
+        ),
+      },
+      {
+        key: 'owner',
+        label: 'Owner',
+        width: '120px',
+        visible: visibleColumns.owner,
+        render: (risk) => (
+          <span style={{ color: 'var(--color-text-secondary)' }}>{risk.owner || '—'}</span>
+        ),
+      },
+      {
+        key: 'description',
+        label: 'Description',
+        minWidth: '200px',
+        visible: visibleColumns.description,
+        render: (risk) => (
+          <div
+            style={{
+              color: 'var(--color-text-secondary)',
+              maxWidth: '300px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {risk.description}
+          </div>
+        ),
+      },
+      {
+        key: 'dateCreated',
+        label: 'Created',
+        width: '140px',
+        visible: visibleColumns.created,
+        render: (risk) => (
+          <span style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
+            {formatDateTime(risk.dateCreated)}
+          </span>
+        ),
+      },
+    ],
+    [visibleColumns, badgeStyle, getProjectNames, showProjectColumn]
   );
-});
-RiskRow.displayName = 'RiskRow';
-
-export const RiskList: React.FC<RiskListProps> = ({
-  risks,
-  onEdit,
-  visibleColumns,
-  sortConfig,
-  onSortChange,
-}) => {
-  // Memoize sorted risks
-  const sortedRisks = useMemo(() => sortItems(risks, sortConfig), [risks, sortConfig]);
-
-  const thStyle: React.CSSProperties = {
-    padding: '12px 16px',
-    textAlign: 'left',
-    fontSize: 'var(--font-size-sm)',
-    fontWeight: 600,
-    color: 'var(--color-text-secondary)',
-  };
 
   if (risks.length === 0) {
     return (
@@ -219,103 +287,13 @@ export const RiskList: React.FC<RiskListProps> = ({
   }
 
   return (
-    <div
-      style={{
-        background: 'var(--color-bg-primary)',
-        borderRadius: '8px',
-        border: '1px solid var(--color-border)',
-        overflow: 'hidden',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <TableVirtuoso
-        style={{ flex: 1 }}
-        data={sortedRisks}
-        overscan={5}
-        fixedHeaderContent={() => (
-          <tr
-            style={{
-              background: 'var(--color-bg-secondary)',
-              borderBottom: '1px solid var(--color-border)',
-            }}
-          >
-            <SortableHeader
-              label="ID / Title"
-              sortKey="id"
-              currentSort={sortConfig}
-              onSort={onSortChange || (() => {})}
-              style={{ width: '200px' }}
-            />
-            {visibleColumns.revision && (
-              <SortableHeader
-                label="Rev"
-                sortKey="revision"
-                currentSort={sortConfig}
-                onSort={onSortChange || (() => {})}
-                style={{ width: '60px' }}
-              />
-            )}
-            {visibleColumns.category && <th style={{ ...thStyle, width: '100px' }}>Category</th>}
-            {visibleColumns.probability && (
-              <th style={{ ...thStyle, width: '100px' }}>Probability</th>
-            )}
-            {visibleColumns.impact && <th style={{ ...thStyle, width: '80px' }}>Impact</th>}
-            {visibleColumns.status && (
-              <SortableHeader
-                label="Status"
-                sortKey="status"
-                currentSort={sortConfig}
-                onSort={onSortChange || (() => {})}
-                style={{ width: '100px' }}
-              />
-            )}
-            {visibleColumns.owner && <th style={{ ...thStyle, width: '120px' }}>Owner</th>}
-            {visibleColumns.description && (
-              <th style={{ ...thStyle, minWidth: '200px' }}>Description</th>
-            )}
-            {visibleColumns.created && <th style={{ ...thStyle, width: '140px' }}>Created</th>}
-          </tr>
-        )}
-        itemContent={(_index, risk) => <RiskRow risk={risk} visibleColumns={visibleColumns} />}
-        components={{
-          Table: ({ style, ...props }) => (
-            <table
-              {...props}
-              style={{
-                ...style,
-                width: '100%',
-                borderCollapse: 'collapse',
-                fontSize: 'var(--font-size-sm)',
-              }}
-            />
-          ),
-          TableHead: React.forwardRef(({ style, ...props }, ref) => (
-            <thead
-              ref={ref}
-              {...props}
-              style={{ ...style, position: 'sticky', top: 0, zIndex: 1 }}
-            />
-          )),
-          TableRow: ({ item: risk, ...props }) => (
-            <tr
-              {...props}
-              onClick={() => onEdit(risk)}
-              style={{
-                borderBottom: '1px solid var(--color-border)',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s',
-                backgroundColor: 'var(--color-bg-card)',
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
-              }
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-card)')}
-            />
-          ),
-        }}
-      />
-    </div>
+    <BaseArtifactTable
+      data={risks}
+      columns={columns}
+      sortConfig={sortConfig}
+      onSortChange={onSortChange}
+      onRowClick={onEdit}
+      emptyMessage="No risks found."
+    />
   );
 };

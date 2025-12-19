@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Risk } from '../types';
 import type { CustomAttributeValue } from '../types/customAttributes';
+import { useBaseArtifactForm } from './useBaseArtifactForm';
 
 interface UseRiskFormOptions {
   isOpen: boolean;
@@ -21,10 +22,14 @@ interface UseRiskFormOptions {
 type Tab = 'overview' | 'mitigation' | 'relationships' | 'customFields' | 'history';
 
 export function useRiskForm({ isOpen, risk, onClose, onSubmit }: UseRiskFormOptions) {
-  const isEditMode = risk !== null;
+  const { isEditMode, activeTab, setActiveTab } = useBaseArtifactForm<Risk, Tab>({
+    isOpen,
+    artifact: risk,
+    defaultTab: 'overview',
+    onClose,
+  });
 
   // Form state
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<Risk['category']>('other');
@@ -36,30 +41,32 @@ export function useRiskForm({ isOpen, risk, onClose, onSubmit }: UseRiskFormOpti
   const [contingency, setContingency] = useState('');
   const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
 
-  // Reset form when modal opens/closes or risk changes
+  // Reset form when modal opens or risk changes
   useEffect(() => {
-    if (risk) {
-      setTitle(risk.title);
-      setDescription(risk.description);
-      setCategory(risk.category);
-      setProbability(risk.probability);
-      setImpact(risk.impact);
-      setStatus(risk.status);
-      setOwner(risk.owner || '');
-      setMitigation(risk.mitigation);
-      setContingency(risk.contingency);
-      setCustomAttributes(risk.customAttributes || []);
-    } else {
-      setTitle('');
-      setDescription('');
-      setCategory('other');
-      setProbability('medium');
-      setImpact('medium');
-      setStatus('identified');
-      setOwner('');
-      setMitigation('');
-      setContingency('');
-      setCustomAttributes([]);
+    if (isOpen) {
+      if (risk) {
+        setTitle(risk.title);
+        setDescription(risk.description);
+        setCategory(risk.category);
+        setProbability(risk.probability);
+        setImpact(risk.impact);
+        setStatus(risk.status);
+        setOwner(risk.owner || '');
+        setMitigation(risk.mitigation);
+        setContingency(risk.contingency);
+        setCustomAttributes(risk.customAttributes || []);
+      } else {
+        setTitle('');
+        setDescription('');
+        setCategory('other');
+        setProbability('medium');
+        setImpact('medium');
+        setStatus('identified');
+        setOwner('');
+        setMitigation('');
+        setContingency('');
+        setCustomAttributes([]);
+      }
     }
   }, [risk, isOpen]);
 

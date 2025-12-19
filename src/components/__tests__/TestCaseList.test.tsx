@@ -16,9 +16,9 @@ vi.mock('react-virtuoso', () => ({
     itemContent: (index: number, item: TestCase) => React.ReactNode;
     components: {
       Table: React.FC<{ style?: React.CSSProperties; children?: React.ReactNode }>;
-      TableHead: React.ForwardRefExoticComponent<
-        { children?: React.ReactNode } & React.RefAttributes<HTMLTableSectionElement>
-      >;
+      TableHead: React.ForwardRefExoticComponent<{
+        children?: React.RefAttributes<HTMLTableSectionElement>;
+      }>;
       TableRow: React.FC<{ item: TestCase; children?: React.ReactNode }>;
     };
   }) => {
@@ -74,18 +74,30 @@ describe('TestCaseList', () => {
 
   it('renders test cases', () => {
     render(
-      <TestCaseList testCases={mockTestCases} onEdit={mockOnEdit} visibleColumns={defaultColumns} />
+      <TestCaseList
+        testCases={mockTestCases}
+        onEdit={mockOnEdit}
+        visibleColumns={defaultColumns}
+        sortConfig={{ key: 'id', direction: 'asc' }}
+        onSortChange={vi.fn()}
+      />
     );
 
     expect(screen.getByText('TC-001')).toBeInTheDocument();
     expect(screen.getByText('Verify Login')).toBeInTheDocument();
     expect(screen.getByText('Check login with valid creds')).toBeInTheDocument();
-    expect(screen.getByText('passed')).toBeInTheDocument();
+    expect(screen.getByText('Passed')).toBeInTheDocument();
   });
 
   it('calls onEdit when row is clicked', () => {
     render(
-      <TestCaseList testCases={mockTestCases} onEdit={mockOnEdit} visibleColumns={defaultColumns} />
+      <TestCaseList
+        testCases={mockTestCases}
+        onEdit={mockOnEdit}
+        visibleColumns={defaultColumns}
+        sortConfig={{ key: 'id', direction: 'asc' }}
+        onSortChange={vi.fn()}
+      />
     );
 
     fireEvent.click(screen.getByText('Verify Login'));
@@ -93,7 +105,15 @@ describe('TestCaseList', () => {
   });
 
   it('renders empty state', () => {
-    render(<TestCaseList testCases={[]} onEdit={mockOnEdit} visibleColumns={defaultColumns} />);
+    render(
+      <TestCaseList
+        testCases={[]}
+        onEdit={mockOnEdit}
+        visibleColumns={defaultColumns}
+        sortConfig={{ key: 'id', direction: 'asc' }}
+        onSortChange={vi.fn()}
+      />
+    );
 
     expect(screen.getByText('No test cases found. Create one to get started.')).toBeInTheDocument();
   });

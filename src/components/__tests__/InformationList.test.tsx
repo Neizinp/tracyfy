@@ -16,9 +16,9 @@ vi.mock('react-virtuoso', () => ({
     itemContent: (index: number, item: Information) => React.ReactNode;
     components: {
       Table: React.FC<{ style?: React.CSSProperties; children?: React.ReactNode }>;
-      TableHead: React.ForwardRefExoticComponent<
-        { children?: React.ReactNode } & React.RefAttributes<HTMLTableSectionElement>
-      >;
+      TableHead: React.ForwardRefExoticComponent<{
+        children?: React.RefAttributes<HTMLTableSectionElement>;
+      }>;
       TableRow: React.FC<{ item: Information; children?: React.ReactNode }>;
     };
   }) => {
@@ -72,6 +72,8 @@ describe('InformationList', () => {
         information={mockInformation}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
+        sortConfig={{ key: 'id', direction: 'asc' }}
+        onSortChange={vi.fn()}
       />
     );
 
@@ -87,6 +89,8 @@ describe('InformationList', () => {
         information={mockInformation}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
+        sortConfig={{ key: 'id', direction: 'asc' }}
+        onSortChange={vi.fn()}
       />
     );
 
@@ -96,7 +100,13 @@ describe('InformationList', () => {
 
   it('renders empty state', () => {
     render(
-      <InformationList information={[]} onEdit={mockOnEdit} visibleColumns={defaultColumns} />
+      <InformationList
+        information={[]}
+        onEdit={mockOnEdit}
+        visibleColumns={defaultColumns}
+        sortConfig={{ key: 'id', direction: 'asc' }}
+        onSortChange={vi.fn()}
+      />
     );
 
     expect(
