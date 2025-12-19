@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Risk } from '../types';
-import { useUI, useGlobalState } from '../app/providers';
+import { useUI } from '../app/providers';
 import { useArtifactForm } from './useArtifactForm';
+import { useArtifactNavigation } from './useArtifactNavigation';
 
 interface UseRiskFormOptions {
   isOpen: boolean;
@@ -15,17 +16,8 @@ interface UseRiskFormOptions {
 type Tab = 'overview' | 'mitigation' | 'relationships' | 'customFields' | 'history';
 
 export function useRiskForm({ isOpen, risk, onClose, onSubmit }: UseRiskFormOptions) {
-  const {
-    setEditingRequirement,
-    setIsEditRequirementModalOpen,
-    setEditingUseCase,
-    setIsUseCaseModalOpen,
-    setSelectedTestCaseId,
-    setIsEditTestCaseModalOpen,
-    setSelectedInformation,
-    setIsInformationModalOpen,
-  } = useUI();
-  const { requirements, useCases, information } = useGlobalState();
+  useUI();
+  const handleNavigateToArtifact = useArtifactNavigation(onClose);
 
   // Specialized fields for Risks
   const [category, setCategory] = useState<Risk['category']>('other');
@@ -58,7 +50,8 @@ export function useRiskForm({ isOpen, risk, onClose, onSubmit }: UseRiskFormOpti
     isOpen,
     artifact: risk,
     onClose,
-    onCreate: (data) => onSubmit(data as any),
+    onCreate: (data) =>
+      onSubmit(data as unknown as Omit<Risk, 'id' | 'lastModified' | 'dateCreated'>),
     onUpdate: (id, updates) => onSubmit({ id, updates }),
     onDelete: () => {},
     defaultTab: 'overview',
@@ -114,59 +107,6 @@ export function useRiskForm({ isOpen, risk, onClose, onSubmit }: UseRiskFormOpti
         ? 'var(--color-warning)'
         : 'var(--color-error)';
   }, [riskLevel]);
-
-  // Navigate to a linked artifact
-  const handleNavigateToArtifact = useCallback(
-    (sourceId: string, sourceType: string) => {
-      onClose();
-
-      switch (sourceType) {
-        case 'requirement': {
-          const req = requirements.find((r) => r.id === sourceId);
-          if (req) {
-            setEditingRequirement(req);
-            setIsEditRequirementModalOpen(true);
-          }
-          break;
-        }
-        case 'useCase': {
-          const uc = useCases.find((u) => u.id === sourceId);
-          if (uc) {
-            setEditingUseCase(uc);
-            setIsUseCaseModalOpen(true);
-          }
-          break;
-        }
-        case 'testCase': {
-          setSelectedTestCaseId(sourceId);
-          setIsEditTestCaseModalOpen(true);
-          break;
-        }
-        case 'information': {
-          const info = information.find((i) => i.id === sourceId);
-          if (info) {
-            setSelectedInformation(info);
-            setIsInformationModalOpen(true);
-          }
-          break;
-        }
-      }
-    },
-    [
-      onClose,
-      requirements,
-      useCases,
-      information,
-      setEditingRequirement,
-      setIsEditRequirementModalOpen,
-      setEditingUseCase,
-      setIsUseCaseModalOpen,
-      setSelectedTestCaseId,
-      setIsEditTestCaseModalOpen,
-      setSelectedInformation,
-      setIsInformationModalOpen,
-    ]
-  );
 
   return {
     // Mode

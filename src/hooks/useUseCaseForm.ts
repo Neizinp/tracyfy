@@ -7,8 +7,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { UseCase } from '../types';
-import { useUI, useGlobalState } from '../app/providers';
+import { useUI } from '../app/providers';
 import { useArtifactForm } from './useArtifactForm';
+import { useArtifactNavigation } from './useArtifactNavigation';
 
 interface UseUseCaseFormOptions {
   isOpen: boolean;
@@ -22,17 +23,8 @@ interface UseUseCaseFormOptions {
 type Tab = 'overview' | 'flows' | 'conditions' | 'relationships' | 'customFields' | 'history';
 
 export function useUseCaseForm({ isOpen, useCase, onClose, onSubmit }: UseUseCaseFormOptions) {
-  const {
-    setEditingRequirement,
-    setIsEditRequirementModalOpen,
-    setEditingUseCase,
-    setIsUseCaseModalOpen,
-    setSelectedTestCaseId,
-    setIsEditTestCaseModalOpen,
-    setSelectedInformation,
-    setIsInformationModalOpen,
-  } = useUI();
-  const { requirements, useCases, information } = useGlobalState();
+  useUI();
+  const handleNavigateToArtifact = useArtifactNavigation(onClose);
 
   // Specialized fields for Use Cases
   const [actor, setActor] = useState('');
@@ -66,7 +58,7 @@ export function useUseCaseForm({ isOpen, useCase, onClose, onSubmit }: UseUseCas
     isOpen,
     artifact: useCase as UseCase | null,
     onClose,
-    onCreate: (data) => onSubmit(data as any),
+    onCreate: (data) => onSubmit(data as unknown as Omit<UseCase, 'id' | 'lastModified'>),
     onUpdate: (id, updates) => onSubmit({ id, updates }),
     onDelete: () => {},
     defaultTab: 'overview',
@@ -99,59 +91,6 @@ export function useUseCaseForm({ isOpen, useCase, onClose, onSubmit }: UseUseCas
       } as Partial<UseCase>);
     },
     [baseHandleSubmit, actor, preconditions, postconditions, alternativeFlows]
-  );
-
-  // Navigate to a linked artifact
-  const handleNavigateToArtifact = useCallback(
-    (sourceId: string, sourceType: string) => {
-      onClose();
-
-      switch (sourceType) {
-        case 'requirement': {
-          const req = requirements.find((r) => r.id === sourceId);
-          if (req) {
-            setEditingRequirement(req);
-            setIsEditRequirementModalOpen(true);
-          }
-          break;
-        }
-        case 'useCase': {
-          const uc = useCases.find((u) => u.id === sourceId);
-          if (uc) {
-            setEditingUseCase(uc);
-            setIsUseCaseModalOpen(true);
-          }
-          break;
-        }
-        case 'testCase': {
-          setSelectedTestCaseId(sourceId);
-          setIsEditTestCaseModalOpen(true);
-          break;
-        }
-        case 'information': {
-          const info = information.find((i) => i.id === sourceId);
-          if (info) {
-            setSelectedInformation(info);
-            setIsInformationModalOpen(true);
-          }
-          break;
-        }
-      }
-    },
-    [
-      onClose,
-      requirements,
-      useCases,
-      information,
-      setEditingRequirement,
-      setIsEditRequirementModalOpen,
-      setEditingUseCase,
-      setIsUseCaseModalOpen,
-      setSelectedTestCaseId,
-      setIsEditTestCaseModalOpen,
-      setSelectedInformation,
-      setIsInformationModalOpen,
-    ]
   );
 
   return {
