@@ -1,27 +1,32 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * TestCaseModal Component
+ *
+ * Modal for creating and editing test cases.
+ * Uses useTestCaseForm hook for form state and handlers.
+ */
+
+import React from 'react';
 import { X } from 'lucide-react';
 import type { TestCase } from '../types';
-import type { CustomAttributeValue } from '../types/customAttributes';
 import { formatDateTime } from '../utils/dateUtils';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
-import { useUI, useUser } from '../app/providers';
+import { useUI } from '../app/providers';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useLinkService } from '../hooks/useLinkService';
 import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { CustomAttributeEditor } from './CustomAttributeEditor';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import { MarkdownEditor } from './MarkdownEditor';
+import { useTestCaseForm } from '../hooks/useTestCaseForm';
 
 interface TestCaseModalProps {
   isOpen: boolean;
-  testCase: TestCase | null; // null = create mode, TestCase = edit mode
+  testCase: TestCase | null;
   onClose: () => void;
   onCreate: (testCase: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated'>) => void;
   onUpdate: (id: string, updates: Partial<TestCase>) => void;
   onDelete: (id: string) => void;
 }
-
-type Tab = 'overview' | 'relationships' | 'customFields' | 'history';
 
 export const TestCaseModal: React.FC<TestCaseModalProps> = ({
   isOpen,
@@ -32,17 +37,37 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
   onDelete,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
-  const { currentUser } = useUser();
-  const isEditMode = testCase !== null;
 
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<TestCase['priority']>('medium');
-  const [status, setStatus] = useState<TestCase['status']>('draft');
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Use the extracted hook for form state and handlers
+  const {
+    isEditMode,
+    currentUser,
+    activeTab,
+    setActiveTab,
+    title,
+    setTitle,
+    description,
+    setDescription,
+    priority,
+    setPriority,
+    status,
+    setStatus,
+    customAttributes,
+    setCustomAttributes,
+    showDeleteConfirm,
+    handleDelete,
+    confirmDelete,
+    cancelDelete,
+    handleSubmit,
+  } = useTestCaseForm({
+    isOpen,
+    testCase,
+    onClose,
+    onCreate,
+    onUpdate,
+    onDelete,
+  });
 
-  // Get links using the new link service
   const {
     outgoingLinks,
     incomingLinks,
@@ -51,69 +76,8 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
     artifactId: testCase?.id,
   });
 
-  // Get custom attribute definitions
   const { definitions: customAttributeDefinitions, loading: attributesLoading } =
     useCustomAttributes();
-  const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
-
-  // Reset form when modal opens/closes or testCase changes
-  useEffect(() => {
-    if (isOpen) {
-      if (testCase) {
-        // Edit mode: populate from testCase
-        setTitle(testCase.title);
-        setDescription(testCase.description);
-        setPriority(testCase.priority);
-        setStatus(testCase.status);
-        setCustomAttributes(testCase.customAttributes || []);
-      } else {
-        // Create mode: reset to defaults
-        setTitle('');
-        setDescription('');
-        setPriority('medium');
-        setStatus('draft');
-        setCustomAttributes([]);
-      }
-      setActiveTab('overview');
-      setShowDeleteConfirm(false);
-    }
-  }, [isOpen, testCase]);
-
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-
-    if (isEditMode && testCase) {
-      // Update existing
-      const updates: Partial<TestCase> = {
-        title,
-        description,
-        priority,
-        status,
-        customAttributes,
-        lastModified: Date.now(),
-      };
-
-      // Update lastRun when status changes to passed/failed
-      if ((status === 'passed' || status === 'failed') && testCase.status !== status) {
-        updates.lastRun = Date.now();
-      }
-
-      onUpdate(testCase.id, updates);
-    } else {
-      // Create new
-      onCreate({
-        title,
-        description,
-        priority,
-        author: currentUser?.name || undefined,
-        requirementIds: [],
-        customAttributes,
-        status: 'draft',
-        revision: '01',
-      });
-    }
-    onClose();
-  };
 
   useKeyboardShortcuts({
     onSave: handleSubmit,
@@ -122,16 +86,19 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
 
   if (!isOpen) return null;
 
-  const confirmDelete = () => {
-    if (testCase) {
-      onDelete(testCase.id);
-      setShowDeleteConfirm(false);
-      onClose();
-    }
-  };
-
   const modalTitle = isEditMode ? `Edit Test Case - ${testCase?.id}` : 'New Test Case';
   const submitLabel = isEditMode ? 'Save Changes' : 'Create Test Case';
+
+  const tabStyle = (isActive: boolean) => ({
+    padding: '12px 24px',
+    border: 'none',
+    backgroundColor: isActive ? 'var(--color-bg-card)' : 'transparent',
+    color: isActive ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+    cursor: 'pointer',
+    fontWeight: isActive ? 600 : 400,
+    borderBottom: isActive ? '2px solid var(--color-accent)' : '2px solid transparent',
+    transition: 'all 0.2s',
+  });
 
   return (
     <div
@@ -162,6 +129,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         }}
       >
+        {/* Header */}
         <div
           style={{
             padding: 'var(--spacing-md)',
@@ -199,84 +167,26 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
         >
           <button
             onClick={() => setActiveTab('overview')}
-            style={{
-              padding: '12px 24px',
-              border: 'none',
-              backgroundColor: activeTab === 'overview' ? 'var(--color-bg-card)' : 'transparent',
-              color:
-                activeTab === 'overview' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-              cursor: 'pointer',
-              fontWeight: activeTab === 'overview' ? 600 : 400,
-              borderBottom:
-                activeTab === 'overview'
-                  ? '2px solid var(--color-accent)'
-                  : '2px solid transparent',
-              transition: 'all 0.2s',
-            }}
+            style={tabStyle(activeTab === 'overview')}
           >
             Overview
           </button>
           <button
             onClick={() => setActiveTab('relationships')}
-            style={{
-              padding: '12px 24px',
-              border: 'none',
-              backgroundColor:
-                activeTab === 'relationships' ? 'var(--color-bg-card)' : 'transparent',
-              color:
-                activeTab === 'relationships'
-                  ? 'var(--color-accent)'
-                  : 'var(--color-text-secondary)',
-              cursor: 'pointer',
-              fontWeight: activeTab === 'relationships' ? 600 : 400,
-              borderBottom:
-                activeTab === 'relationships'
-                  ? '2px solid var(--color-accent)'
-                  : '2px solid transparent',
-              transition: 'all 0.2s',
-            }}
+            style={tabStyle(activeTab === 'relationships')}
           >
             Relationships
           </button>
           <button
             onClick={() => setActiveTab('customFields')}
-            style={{
-              padding: '12px 24px',
-              border: 'none',
-              backgroundColor:
-                activeTab === 'customFields' ? 'var(--color-bg-card)' : 'transparent',
-              color:
-                activeTab === 'customFields'
-                  ? 'var(--color-accent)'
-                  : 'var(--color-text-secondary)',
-              cursor: 'pointer',
-              fontWeight: activeTab === 'customFields' ? 600 : 400,
-              borderBottom:
-                activeTab === 'customFields'
-                  ? '2px solid var(--color-accent)'
-                  : '2px solid transparent',
-              transition: 'all 0.2s',
-            }}
+            style={tabStyle(activeTab === 'customFields')}
           >
             Custom Attributes
           </button>
           {isEditMode && (
             <button
               onClick={() => setActiveTab('history')}
-              style={{
-                padding: '12px 24px',
-                border: 'none',
-                backgroundColor: activeTab === 'history' ? 'var(--color-bg-card)' : 'transparent',
-                color:
-                  activeTab === 'history' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-                cursor: 'pointer',
-                fontWeight: activeTab === 'history' ? 600 : 400,
-                borderBottom:
-                  activeTab === 'history'
-                    ? '2px solid var(--color-accent)'
-                    : '2px solid transparent',
-                transition: 'all 0.2s',
-              }}
+              style={tabStyle(activeTab === 'history')}
             >
               Revision History
             </button>
@@ -505,7 +415,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
                 </div>
               )}
 
-              {isEditMode && showDeleteConfirm ? (
+              {isEditMode && showDeleteConfirm && (
                 <div
                   style={{
                     padding: 'var(--spacing-md)',
@@ -551,7 +461,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setShowDeleteConfirm(false)}
+                      onClick={cancelDelete}
                       style={{
                         padding: '8px 16px',
                         borderRadius: '6px',
@@ -565,7 +475,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
                     </button>
                   </div>
                 </div>
-              ) : null}
+              )}
 
               <div
                 style={{
@@ -577,7 +487,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
                 {isEditMode && (
                   <button
                     type="button"
-                    onClick={() => setShowDeleteConfirm(true)}
+                    onClick={handleDelete}
                     disabled={showDeleteConfirm}
                     style={{
                       padding: '8px 16px',
