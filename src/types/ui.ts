@@ -74,3 +74,33 @@ export type ViewType =
   | 'library-testcases'
   | 'library-information'
   | 'library-risks';
+
+export type ModalType =
+  | 'requirement'
+  | 'usecase'
+  | 'testcase'
+  | 'information'
+  | 'risk'
+  | 'project'
+  | 'project-settings'
+  | 'user-settings'
+  | 'onboarding'
+  | 'link'
+  | 'export'
+  | 'history'
+  | 'search'
+  | 'custom-attribute'
+  | 'workflow'
+  | 'global-library'
+  | null;
+
+export interface ActiveModal {
+  type: ModalType;
+  isEdit?: boolean;
+}
+
+export interface SelectedArtifact {
+  id: string;
+  type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk' | 'project' | 'user';
+  data?: Record<string, unknown>;
+}

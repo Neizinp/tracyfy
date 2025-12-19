@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { X } from 'lucide-react';
+import { BaseArtifactModal } from './BaseArtifactModal';
 import type { Risk } from '../types';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI } from '../app/providers';
@@ -89,626 +89,477 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
   ];
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'var(--color-bg-overlay, #222)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: '#222',
-          borderRadius: '8px',
-          width: '700px',
-          maxWidth: '90vw',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)',
-        }}
-      >
-        {/* Header */}
-        <div
-          style={{
-            padding: 'var(--spacing-lg)',
-            borderBottom: '1px solid var(--color-border)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            backgroundColor: 'var(--color-bg-primary)',
-            zIndex: 1,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)' }}>
-              {isEditMode ? `Edit Risk - ${risk?.id}` : 'New Risk'}
-            </h2>
-            {isEditMode && (
-              <span
-                style={{
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  backgroundColor: riskColor,
-                  color: 'white',
-                  fontSize: 'var(--font-size-xs)',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                }}
-              >
-                {riskLevel} risk
-              </span>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--color-text-secondary)',
-            }}
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Tab Navigation */}
-        <div
-          style={{
-            display: 'flex',
-            borderBottom: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-bg-secondary)',
-          }}
-        >
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+    <BaseArtifactModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+          <span>{isEditMode ? `Edit Risk - ${risk?.id}` : 'New Risk'}</span>
+          {isEditMode && (
+            <span
               style={{
-                padding: '12px 24px',
-                border: 'none',
-                backgroundColor: activeTab === tab.id ? 'var(--color-bg-primary)' : 'transparent',
-                color: activeTab === tab.id ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-                cursor: 'pointer',
-                fontWeight: activeTab === tab.id ? 600 : 400,
-                borderBottom:
-                  activeTab === tab.id ? '2px solid var(--color-accent)' : '2px solid transparent',
-                transition: 'all 0.2s',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                backgroundColor: riskColor,
+                color: 'white',
+                fontSize: 'var(--font-size-xs)',
+                fontWeight: 600,
+                textTransform: 'uppercase',
               }}
             >
-              {tab.label}
-            </button>
-          ))}
+              {riskLevel} risk
+            </span>
+          )}
         </div>
+      }
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={(id) => setActiveTab(id as Tab)}
+      onSubmit={handleSubmit}
+      submitLabel={isEditMode ? 'Save Changes' : 'Create Risk'}
+    >
+      {activeTab === 'overview' && (
+        <>
+          <div style={{ marginBottom: 'var(--spacing-md)' }}>
+            <label
+              htmlFor="risk-title"
+              style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}
+            >
+              Title
+            </label>
+            <input
+              id="risk-title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid var(--color-border)',
+                backgroundColor: 'var(--color-bg-secondary)',
+                color: 'var(--color-text-primary)',
+              }}
+            />
+          </div>
 
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            padding: 'var(--spacing-lg)',
-            overflowY: 'auto',
-            flex: 1,
-            minHeight: 0,
-          }}
-        >
-          {activeTab === 'overview' && (
-            <>
-              <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                <label
-                  htmlFor="risk-title"
-                  style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}
-                >
-                  Title
-                </label>
-                <input
-                  id="risk-title"
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    color: 'var(--color-text-primary)',
-                  }}
-                />
-              </div>
+          <div style={{ marginBottom: 'var(--spacing-md)' }}>
+            <MarkdownEditor
+              label="Description"
+              value={description}
+              onChange={setDescription}
+              height={120}
+            />
+          </div>
 
-              <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                <MarkdownEditor
-                  label="Description"
-                  value={description}
-                  onChange={setDescription}
-                  height={120}
-                />
-              </div>
-
-              <div
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 'var(--spacing-md)',
+              marginBottom: 'var(--spacing-md)',
+            }}
+          >
+            <div>
+              <label
+                style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}
+              >
+                Category
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value as Risk['category'])}
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: 'var(--spacing-md)',
-                  marginBottom: 'var(--spacing-md)',
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  color: 'var(--color-text-primary)',
                 }}
               >
-                <div>
-                  <label
-                    style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}
-                  >
-                    Category
-                  </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as Risk['category'])}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--color-border)',
-                      backgroundColor: 'var(--color-bg-secondary)',
-                      color: 'var(--color-text-primary)',
-                    }}
-                  >
-                    <option value="technical">Technical</option>
-                    <option value="schedule">Schedule</option>
-                    <option value="resource">Resource</option>
-                    <option value="external">External</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}
-                  >
-                    Status
-                  </label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as Risk['status'])}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--color-border)',
-                      backgroundColor: 'var(--color-bg-secondary)',
-                      color: 'var(--color-text-primary)',
-                    }}
-                  >
-                    <option value="identified">Identified</option>
-                    <option value="analyzing">Analyzing</option>
-                    <option value="mitigating">Mitigating</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="accepted">Accepted</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}
-                  >
-                    Probability
-                  </label>
-                  <select
-                    value={probability}
-                    onChange={(e) => setProbability(e.target.value as Risk['probability'])}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--color-border)',
-                      backgroundColor: 'var(--color-bg-secondary)',
-                      color: 'var(--color-text-primary)',
-                    }}
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}
-                  >
-                    Impact
-                  </label>
-                  <select
-                    value={impact}
-                    onChange={(e) => setImpact(e.target.value as Risk['impact'])}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--color-border)',
-                      backgroundColor: 'var(--color-bg-secondary)',
-                      color: 'var(--color-text-primary)',
-                    }}
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <label
-                  htmlFor="risk-owner"
-                  style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}
-                >
-                  Owner (optional)
-                </label>
-                <input
-                  id="risk-owner"
-                  type="text"
-                  value={owner}
-                  onChange={(e) => setOwner(e.target.value)}
-                  placeholder="Person responsible for this risk"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    color: 'var(--color-text-primary)',
-                  }}
-                />
-              </div>
-
-              <div
-                style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-md)' }}
-              >
-                <button
-                  type="button"
-                  onClick={onClose}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-card)',
-                    color: 'var(--color-text-primary)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    backgroundColor: 'var(--color-accent)',
-                    color: 'white',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {isEditMode ? 'Save Changes' : 'Create Risk'}
-                </button>
-              </div>
-            </>
-          )}
-
-          {activeTab === 'mitigation' && (
-            <>
-              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <MarkdownEditor
-                  label="Mitigation Strategy"
-                  value={mitigation}
-                  onChange={setMitigation}
-                  height={180}
-                />
-                <p
-                  style={{
-                    fontSize: 'var(--font-size-xs)',
-                    color: 'var(--color-text-muted)',
-                    marginTop: '4px',
-                  }}
-                >
-                  Actions to reduce the probability or impact of this risk
-                </p>
-              </div>
-
-              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <MarkdownEditor
-                  label="Contingency Plan"
-                  value={contingency}
-                  onChange={setContingency}
-                  height={180}
-                />
-                <p
-                  style={{
-                    fontSize: 'var(--font-size-xs)',
-                    color: 'var(--color-text-muted)',
-                    marginTop: '4px',
-                  }}
-                >
-                  Actions to take if the risk occurs
-                </p>
-              </div>
-
-              <div
-                style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-md)' }}
-              >
-                <button
-                  type="button"
-                  onClick={onClose}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-card)',
-                    color: 'var(--color-text-primary)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    backgroundColor: 'var(--color-accent)',
-                    color: 'white',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Save Changes
-                </button>
-              </div>
-            </>
-          )}
-
-          {activeTab === 'relationships' && risk && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    marginBottom: 'var(--spacing-xs)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Linked Items
-                </label>
-                <div
-                  style={{
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '6px',
-                    padding: '8px',
-                    backgroundColor: 'var(--color-bg-app)',
-                    minHeight: '100px',
-                    maxHeight: '200px',
-                    overflowY: 'auto',
-                  }}
-                >
-                  {linksLoading ? (
-                    <div
-                      style={{
-                        padding: '8px',
-                        color: 'var(--color-text-muted)',
-                        fontSize: 'var(--font-size-sm)',
-                      }}
-                    >
-                      Loading links...
-                    </div>
-                  ) : outgoingLinks.length === 0 ? (
-                    <div
-                      style={{
-                        padding: '8px',
-                        color: 'var(--color-text-muted)',
-                        fontSize: 'var(--font-size-sm)',
-                      }}
-                    >
-                      No links found.
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLinkSourceId(risk.id);
-                          setLinkSourceType('risk');
-                          setIsLinkModalOpen(true);
-                        }}
-                        style={{
-                          display: 'block',
-                          marginTop: '8px',
-                          color: 'var(--color-accent)',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontWeight: 500,
-                        }}
-                      >
-                        + Create Link
-                      </button>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <div
-                        style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setLinkSourceId(risk.id);
-                            setLinkSourceType('risk');
-                            setIsLinkModalOpen(true);
-                          }}
-                          style={{
-                            fontSize: 'var(--font-size-xs)',
-                            color: 'var(--color-accent)',
-                            background: 'none',
-                            border: '1px solid var(--color-accent)',
-                            borderRadius: '4px',
-                            padding: '2px 8px',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          + Add Link
-                        </button>
-                      </div>
-                      {outgoingLinks.map((link) => (
-                        <div
-                          key={link.id}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '6px 8px',
-                            backgroundColor: 'var(--color-bg-card)',
-                            borderRadius: '4px',
-                            border: '1px solid var(--color-border)',
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              fontSize: 'var(--font-size-sm)',
-                            }}
-                          >
-                            <span
-                              style={{
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                backgroundColor: 'var(--color-bg-secondary)',
-                                fontSize: 'var(--font-size-xs)',
-                                fontFamily: 'monospace',
-                              }}
-                            >
-                              {LINK_TYPE_LABELS[link.type] || link.type.replace('_', ' ')}
-                            </span>
-                            <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
-                            <span style={{ fontWeight: 500 }}>{link.targetId}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Incoming Links Section */}
-              <div>
-                <label
-                  style={{
-                    fontSize: 'var(--font-size-sm)',
-                    marginBottom: 'var(--spacing-xs)',
-                    display: 'block',
-                  }}
-                >
-                  Incoming Links
-                  <span
-                    style={{
-                      fontSize: 'var(--font-size-xs)',
-                      color: 'var(--color-text-muted)',
-                      marginLeft: '8px',
-                    }}
-                  >
-                    (artifacts that link to this)
-                  </span>
-                </label>
-                <div
-                  style={{
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '6px',
-                    padding: '8px',
-                    backgroundColor: 'var(--color-bg-app)',
-                    minHeight: '80px',
-                    maxHeight: '150px',
-                    overflowY: 'auto',
-                  }}
-                >
-                  {incomingLinks.length === 0 ? (
-                    <div
-                      style={{
-                        padding: '8px',
-                        color: 'var(--color-text-muted)',
-                        fontSize: 'var(--font-size-sm)',
-                      }}
-                    >
-                      No incoming links. Other artifacts can link to this risk.
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      {incomingLinks.map((link, index) => (
-                        <div
-                          key={`${link.sourceId}-${index}`}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '6px 8px',
-                            backgroundColor: 'var(--color-bg-card)',
-                            borderRadius: '4px',
-                            border: '1px solid var(--color-border)',
-                            fontSize: 'var(--font-size-sm)',
-                            gap: '8px',
-                          }}
-                        >
-                          <span style={{ fontWeight: 500, color: 'var(--color-accent)' }}>
-                            {link.sourceId}
-                          </span>
-                          <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
-                          <span
-                            style={{
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              backgroundColor: 'var(--color-bg-secondary)',
-                              fontSize: 'var(--font-size-xs)',
-                              fontFamily: 'monospace',
-                            }}
-                          >
-                            {link.linkType.replace('_', ' ')}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: 'var(--font-size-xs)',
-                              color: 'var(--color-text-muted)',
-                              marginLeft: 'auto',
-                            }}
-                          >
-                            ({link.sourceType})
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+                <option value="technical">Technical</option>
+                <option value="schedule">Schedule</option>
+                <option value="resource">Resource</option>
+                <option value="external">External</option>
+                <option value="other">Other</option>
+              </select>
             </div>
-          )}
 
-          {activeTab === 'history' && risk && (
-            <RevisionHistoryTab artifactId={risk.id} artifactType="risks" />
-          )}
-
-          {activeTab === 'customFields' && (
             <div>
-              <CustomAttributeEditor
-                definitions={customAttributeDefinitions}
-                values={customAttributes}
-                onChange={setCustomAttributes}
-                artifactType="risk"
-                loading={attributesLoading}
-              />
+              <label
+                style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}
+              >
+                Status
+              </label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as Risk['status'])}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                <option value="identified">Identified</option>
+                <option value="analyzing">Analyzing</option>
+                <option value="mitigating">Mitigating</option>
+                <option value="resolved">Resolved</option>
+                <option value="accepted">Accepted</option>
+              </select>
             </div>
-          )}
-        </form>
-      </div>
-    </div>
+
+            <div>
+              <label
+                style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}
+              >
+                Probability
+              </label>
+              <select
+                value={probability}
+                onChange={(e) => setProbability(e.target.value as Risk['probability'])}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}
+              >
+                Impact
+              </label>
+              <select
+                value={impact}
+                onChange={(e) => setImpact(e.target.value as Risk['impact'])}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+            <label
+              htmlFor="risk-owner"
+              style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}
+            >
+              Owner (optional)
+            </label>
+            <input
+              id="risk-owner"
+              type="text"
+              value={owner}
+              onChange={(e) => setOwner(e.target.value)}
+              placeholder="Person responsible for this risk"
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid var(--color-border)',
+                backgroundColor: 'var(--color-bg-secondary)',
+                color: 'var(--color-text-primary)',
+              }}
+            />
+          </div>
+        </>
+      )}
+
+      {activeTab === 'mitigation' && (
+        <>
+          <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+            <MarkdownEditor
+              label="Mitigation Strategy"
+              value={mitigation}
+              onChange={setMitigation}
+              height={180}
+            />
+            <p
+              style={{
+                fontSize: 'var(--font-size-xs)',
+                color: 'var(--color-text-muted)',
+                marginTop: '4px',
+              }}
+            >
+              Actions to reduce the probability or impact of this risk
+            </p>
+          </div>
+
+          <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+            <MarkdownEditor
+              label="Contingency Plan"
+              value={contingency}
+              onChange={setContingency}
+              height={180}
+            />
+            <p
+              style={{
+                fontSize: 'var(--font-size-xs)',
+                color: 'var(--color-text-muted)',
+                marginTop: '4px',
+              }}
+            >
+              Actions to take if the risk occurs
+            </p>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'relationships' && risk && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+          <div>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: 'var(--spacing-xs)',
+                fontSize: 'var(--font-size-sm)',
+              }}
+            >
+              Linked Items
+            </label>
+            <div
+              style={{
+                border: '1px solid var(--color-border)',
+                borderRadius: '6px',
+                padding: '8px',
+                backgroundColor: 'var(--color-bg-app)',
+                minHeight: '100px',
+                maxHeight: '200px',
+                overflowY: 'auto',
+              }}
+            >
+              {linksLoading ? (
+                <div
+                  style={{
+                    padding: '8px',
+                    color: 'var(--color-text-muted)',
+                    fontSize: 'var(--font-size-sm)',
+                  }}
+                >
+                  Loading links...
+                </div>
+              ) : outgoingLinks.length === 0 ? (
+                <div
+                  style={{
+                    padding: '8px',
+                    color: 'var(--color-text-muted)',
+                    fontSize: 'var(--font-size-sm)',
+                  }}
+                >
+                  No links found.
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLinkSourceId(risk.id);
+                      setLinkSourceType('risk');
+                      setIsLinkModalOpen(true);
+                    }}
+                    style={{
+                      display: 'block',
+                      marginTop: '8px',
+                      color: 'var(--color-accent)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontWeight: 500,
+                    }}
+                  >
+                    + Create Link
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLinkSourceId(risk.id);
+                        setLinkSourceType('risk');
+                        setIsLinkModalOpen(true);
+                      }}
+                      style={{
+                        fontSize: 'var(--font-size-xs)',
+                        color: 'var(--color-accent)',
+                        background: 'none',
+                        border: '1px solid var(--color-accent)',
+                        borderRadius: '4px',
+                        padding: '2px 8px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      + Add Link
+                    </button>
+                  </div>
+                  {outgoingLinks.map((link) => (
+                    <div
+                      key={link.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '6px 8px',
+                        backgroundColor: 'var(--color-bg-card)',
+                        borderRadius: '4px',
+                        border: '1px solid var(--color-border)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: 'var(--font-size-sm)',
+                        }}
+                      >
+                        <span
+                          style={{
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            backgroundColor: 'var(--color-bg-secondary)',
+                            fontSize: 'var(--font-size-xs)',
+                            fontFamily: 'monospace',
+                          }}
+                        >
+                          {LINK_TYPE_LABELS[link.type] || link.type.replace('_', ' ')}
+                        </span>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
+                        <span style={{ fontWeight: 500 }}>{link.targetId}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Incoming Links Section */}
+          <div>
+            <label
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                marginBottom: 'var(--spacing-xs)',
+                display: 'block',
+              }}
+            >
+              Incoming Links
+              <span
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-muted)',
+                  marginLeft: '8px',
+                }}
+              >
+                (artifacts that link to this)
+              </span>
+            </label>
+            <div
+              style={{
+                border: '1px solid var(--color-border)',
+                borderRadius: '6px',
+                padding: '8px',
+                backgroundColor: 'var(--color-bg-app)',
+                minHeight: '80px',
+                maxHeight: '150px',
+                overflowY: 'auto',
+              }}
+            >
+              {incomingLinks.length === 0 ? (
+                <div
+                  style={{
+                    padding: '8px',
+                    color: 'var(--color-text-muted)',
+                    fontSize: 'var(--font-size-sm)',
+                  }}
+                >
+                  No incoming links. Other artifacts can link to this risk.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {incomingLinks.map((link, index) => (
+                    <div
+                      key={`${link.sourceId}-${index}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '6px 8px',
+                        backgroundColor: 'var(--color-bg-card)',
+                        borderRadius: '4px',
+                        border: '1px solid var(--color-border)',
+                        fontSize: 'var(--font-size-sm)',
+                        gap: '8px',
+                      }}
+                    >
+                      <span style={{ fontWeight: 500, color: 'var(--color-accent)' }}>
+                        {link.sourceId}
+                      </span>
+                      <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
+                      <span
+                        style={{
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          backgroundColor: 'var(--color-bg-secondary)',
+                          fontSize: 'var(--font-size-xs)',
+                          fontFamily: 'monospace',
+                        }}
+                      >
+                        {link.linkType.replace('_', ' ')}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 'var(--font-size-xs)',
+                          color: 'var(--color-text-muted)',
+                          marginLeft: 'auto',
+                        }}
+                      >
+                        ({link.sourceType})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'history' && risk && (
+        <RevisionHistoryTab artifactId={risk.id} artifactType="risks" />
+      )}
+
+      {activeTab === 'customFields' && (
+        <div>
+          <CustomAttributeEditor
+            definitions={customAttributeDefinitions}
+            values={customAttributes}
+            onChange={setCustomAttributes}
+            artifactType="risk"
+            loading={attributesLoading}
+          />
+        </div>
+      )}
+    </BaseArtifactModal>
   );
 };

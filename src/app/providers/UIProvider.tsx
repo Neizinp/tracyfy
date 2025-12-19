@@ -11,10 +11,21 @@ import type {
   TestCaseColumnVisibility,
   InformationColumnVisibility,
   RiskColumnVisibility,
+  ActiveModal,
+  SelectedArtifact,
+  ModalType,
 } from '../../types';
 
 interface UIContextValue {
-  // Modal states
+  // New States
+  activeModal: ActiveModal;
+  setActiveModal: (modal: ActiveModal) => void;
+  selectedArtifact: SelectedArtifact | null;
+  setSelectedArtifact: (artifact: SelectedArtifact | null) => void;
+  openModal: (type: ModalType, isEdit?: boolean, artifact?: SelectedArtifact) => void;
+  closeModal: () => void;
+
+  // Modal states (Legacy compatibility)
   isNewRequirementModalOpen: boolean;
   setIsNewRequirementModalOpen: (isOpen: boolean) => void;
   isLinkModalOpen: boolean;
@@ -54,9 +65,11 @@ interface UIContextValue {
   isWorkflowModalOpen: boolean;
   setIsWorkflowModalOpen: (isOpen: boolean) => void;
 
-  // Selections
+  // Selections (Legacy compatibility)
   selectedRequirementId: string | null;
   setSelectedRequirementId: (id: string | null) => void;
+  selectedUseCaseId: string | null;
+  setSelectedUseCaseId: (id: string | null) => void;
   selectedTestCaseId: string | null;
   setSelectedTestCaseId: (id: string | null) => void;
   selectedInformation: Information | null;

@@ -86,9 +86,6 @@ export const ModalManager: React.FC = () => {
     }
   }, [currentProjectId]);
 
-  // Track selected risk for editing
-  const [selectedRisk, setSelectedRisk] = React.useState<Risk | null>(null);
-
   // Handler for export - calls the appropriate export function based on format
   const handleExport = useCallback(
     async (options: ExportOptions) => {
@@ -293,31 +290,29 @@ export const ModalManager: React.FC = () => {
   );
 
   // Determine which TestCase to show (edit mode) or null (create mode)
-  const selectedTestCase = ui.isEditTestCaseModalOpen
-    ? testCases.find((t) => t.id === ui.selectedTestCaseId) || null
-    : null;
+  const selectedTestCase =
+    ui.activeModal.type === 'testcase' && ui.activeModal.isEdit
+      ? testCases.find((t) => t.id === ui.selectedArtifact?.id) || null
+      : null;
 
   // Determine which Requirement to show (edit mode) or null (create mode)
-  const selectedRequirement = ui.isEditRequirementModalOpen ? ui.editingRequirement : null;
+  const selectedRequirement =
+    ui.activeModal.type === 'requirement' && ui.activeModal.isEdit ? ui.editingRequirement : null;
 
   return (
     <>
       {/* Unified RequirementModal for both create and edit */}
       <RequirementModal
-        isOpen={ui.isNewRequirementModalOpen || ui.isEditRequirementModalOpen}
+        isOpen={ui.activeModal.type === 'requirement'}
         requirement={selectedRequirement}
-        onClose={() => {
-          ui.setIsNewRequirementModalOpen(false);
-          ui.setIsEditRequirementModalOpen(false);
-          ui.setEditingRequirement(null);
-        }}
+        onClose={ui.closeModal}
         onCreate={handleAddRequirement}
         onUpdate={handleUpdateRequirement}
         onDelete={handleDeleteRequirement}
       />
 
       <LinkModal
-        isOpen={ui.isLinkModalOpen}
+        isOpen={ui.activeModal.type === 'link'}
         sourceArtifactId={ui.linkSourceId || ui.selectedRequirementId} // Fallback for backward compatibility
         sourceArtifactType={ui.linkSourceType || 'requirement'}
         projects={projects}
@@ -326,71 +321,59 @@ export const ModalManager: React.FC = () => {
         globalUseCases={globalUseCases}
         globalTestCases={globalTestCases}
         globalInformation={globalInformation}
-        onClose={() => ui.setIsLinkModalOpen(false)}
+        onClose={ui.closeModal}
         onAddLink={handleAddArtifactLink}
       />
 
       <UseCaseModal
-        isOpen={ui.isUseCaseModalOpen}
+        isOpen={ui.activeModal.type === 'usecase'}
         useCase={ui.editingUseCase}
-        onClose={() => {
-          ui.setIsUseCaseModalOpen(false);
-          ui.setEditingUseCase(null);
-        }}
+        onClose={ui.closeModal}
         onSubmit={handleAddUseCase}
       />
 
       {/* Unified TestCaseModal for both create and edit */}
       <TestCaseModal
-        isOpen={ui.isNewTestCaseModalOpen || ui.isEditTestCaseModalOpen}
+        isOpen={ui.activeModal.type === 'testcase'}
         testCase={selectedTestCase}
-        onClose={() => {
-          ui.setIsNewTestCaseModalOpen(false);
-          ui.setIsEditTestCaseModalOpen(false);
-          ui.setSelectedTestCaseId(null);
-        }}
+        onClose={ui.closeModal}
         onCreate={handleAddTestCase}
         onUpdate={handleUpdateTestCase}
         onDelete={handleDeleteTestCase}
       />
 
       <InformationModal
-        isOpen={ui.isInformationModalOpen}
+        isOpen={ui.activeModal.type === 'information'}
         information={ui.selectedInformation}
-        onClose={() => {
-          ui.setIsInformationModalOpen(false);
-          ui.setSelectedInformation(null);
-        }}
+        onClose={ui.closeModal}
         onSubmit={handleInformationSubmit}
       />
 
       <RiskModal
-        isOpen={ui.isRiskModalOpen}
-        risk={selectedRisk}
-        onClose={() => {
-          ui.setIsRiskModalOpen(false);
-          setSelectedRisk(null);
-        }}
+        isOpen={ui.activeModal.type === 'risk'}
+        risk={
+          ui.selectedArtifact?.type === 'risk'
+            ? (ui.selectedArtifact.data as unknown as Risk)
+            : null
+        }
+        onClose={ui.closeModal}
         onSubmit={handleRiskSubmit}
       />
 
       <VersionHistory
-        isOpen={ui.isVersionHistoryOpen}
+        isOpen={ui.activeModal.type === 'history'}
         baselines={baselines}
         projectName={currentProject?.name ?? null}
-        onClose={() => ui.setIsVersionHistoryOpen(false)}
+        onClose={ui.closeModal}
         onCreateBaseline={createBaseline}
         onSelectArtifact={handleSelectArtifact}
       />
 
-      {ui.isProjectSettingsOpen && ui.projectToEdit && (
+      {ui.activeModal.type === 'project-settings' && ui.projectToEdit && (
         <ProjectSettingsModal
-          isOpen={ui.isProjectSettingsOpen}
+          isOpen={true}
           project={ui.projectToEdit}
-          onClose={() => {
-            ui.setIsProjectSettingsOpen(false);
-            ui.setProjectToEdit(null);
-          }}
+          onClose={ui.closeModal}
           onUpdate={async (projectId, name, description) => {
             const project = projects.find((p) => p.id === projectId);
             if (project) {
@@ -407,17 +390,13 @@ export const ModalManager: React.FC = () => {
         />
       )}
 
-      {ui.isCreateProjectModalOpen && (
-        <CreateProjectModal
-          isOpen={ui.isCreateProjectModalOpen}
-          onClose={() => ui.setIsCreateProjectModalOpen(false)}
-          onSubmit={createProject}
-        />
+      {ui.activeModal.type === 'project' && !ui.activeModal.isEdit && (
+        <CreateProjectModal isOpen={true} onClose={ui.closeModal} onSubmit={createProject} />
       )}
 
       <GlobalLibraryModal
-        isOpen={ui.isGlobalLibraryModalOpen}
-        onClose={() => ui.setIsGlobalLibraryModalOpen(false)}
+        isOpen={ui.activeModal.type === 'global-library'}
+        onClose={ui.closeModal}
         projects={projects}
         currentProjectId={currentProjectId}
         globalRequirements={globalRequirements}
@@ -427,14 +406,11 @@ export const ModalManager: React.FC = () => {
         onAddToProject={addToProject}
       />
 
-      <UserSettingsModal
-        isOpen={ui.isUserSettingsModalOpen}
-        onClose={() => ui.setIsUserSettingsModalOpen(false)}
-      />
+      <UserSettingsModal isOpen={ui.activeModal.type === 'user-settings'} onClose={ui.closeModal} />
 
       <ExportModal
-        isOpen={ui.isExportModalOpen}
-        onClose={() => ui.setIsExportModalOpen(false)}
+        isOpen={ui.activeModal.type === 'export'}
+        onClose={ui.closeModal}
         baselines={baselines}
         onExport={handleExport}
         artifactCounts={{
@@ -456,48 +432,59 @@ export const ModalManager: React.FC = () => {
       />
 
       <AdvancedSearchModal
-        isOpen={ui.isAdvancedSearchOpen}
-        onClose={() => ui.setIsAdvancedSearchOpen(false)}
+        isOpen={ui.activeModal.type === 'search'}
+        onClose={ui.closeModal}
         onNavigateToArtifact={(type, id) => {
           // Navigate to the artifact by opening its modal
           switch (type) {
             case 'requirement': {
               const req = globalRequirements.find((r) => r.id === id);
               if (req) {
-                ui.setEditingRequirement(req);
-                ui.setIsEditRequirementModalOpen(true);
+                ui.openModal('requirement', true, {
+                  id,
+                  type: 'requirement',
+                  data: req as unknown as Record<string, unknown>,
+                });
               }
               break;
             }
             case 'useCase': {
               const uc = globalUseCases.find((u) => u.id === id);
               if (uc) {
-                ui.setEditingUseCase(uc);
-                ui.setIsUseCaseModalOpen(true);
+                ui.openModal('usecase', true, {
+                  id,
+                  type: 'usecase',
+                  data: uc as unknown as Record<string, unknown>,
+                });
               }
               break;
             }
             case 'testCase': {
               const tc = globalTestCases.find((t) => t.id === id);
               if (tc) {
-                ui.setSelectedTestCaseId(tc.id);
-                ui.setIsEditTestCaseModalOpen(true);
+                ui.openModal('testcase', true, { id, type: 'testcase' });
               }
               break;
             }
             case 'information': {
               const info = globalInformation.find((i) => i.id === id);
               if (info) {
-                ui.setSelectedInformation(info);
-                ui.setIsInformationModalOpen(true);
+                ui.openModal('information', true, {
+                  id,
+                  type: 'information',
+                  data: info as unknown as Record<string, unknown>,
+                });
               }
               break;
             }
             case 'risk': {
               const risk = risks.find((r) => r.id === id);
               if (risk) {
-                setSelectedRisk(risk);
-                ui.setIsRiskModalOpen(true);
+                ui.openModal('risk', true, {
+                  id,
+                  type: 'risk',
+                  data: risk as unknown as Record<string, unknown>,
+                });
               }
               break;
             }
@@ -507,20 +494,17 @@ export const ModalManager: React.FC = () => {
 
       {/* Custom Attribute Definition Modal - for creating new custom attributes */}
       <CustomAttributeDefinitionModal
-        isOpen={ui.isCustomAttributeModalOpen}
+        isOpen={ui.activeModal.type === 'custom-attribute'}
         definition={null}
-        onClose={() => ui.setIsCustomAttributeModalOpen(false)}
+        onClose={ui.closeModal}
         onSubmit={async (data) => {
           await diskCustomAttributeService.createDefinition(data);
-          ui.setIsCustomAttributeModalOpen(false);
+          ui.closeModal();
         }}
       />
 
       {/* Workflow Modal - for creating and editing workflows */}
-      <WorkflowModal
-        isOpen={ui.isWorkflowModalOpen}
-        onClose={() => ui.setIsWorkflowModalOpen(false)}
-      />
+      <WorkflowModal isOpen={ui.activeModal.type === 'workflow'} onClose={ui.closeModal} />
     </>
   );
 };
