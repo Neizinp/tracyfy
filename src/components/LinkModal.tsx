@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * LinkModal Component
+ *
+ * Modal for creating links between artifacts.
+ * Uses useLinkModal hook for state management.
+ */
+
+import React from 'react';
 import { X, Search, Link as LinkIcon, Globe, Folder } from 'lucide-react';
 import type { Requirement, ArtifactLink, Project, UseCase, TestCase, Information } from '../types';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useLinkModal, type LinkModalResult } from '../hooks/useLinkModal';
 
-// Extended link data that includes project scope
-export interface LinkModalResult {
-  targetId: string;
-  type: ArtifactLink['type'];
-  projectIds: string[]; // Empty = global, populated = project-specific
-}
+export type { LinkModalResult };
 
 interface LinkModalProps {
   isOpen: boolean;
@@ -25,8 +29,6 @@ interface LinkModalProps {
 
 type ArtifactType = 'requirement' | 'usecase' | 'testcase' | 'information';
 
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-
 export const LinkModal: React.FC<LinkModalProps> = ({
   isOpen,
   sourceArtifactId,
@@ -40,78 +42,33 @@ export const LinkModal: React.FC<LinkModalProps> = ({
   onClose,
   onAddLink,
 }) => {
-  const [targetType, setTargetType] = useState<ArtifactType>('requirement');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTargetId, setSelectedTargetId] = useState('');
-  const [linkType, setLinkType] = useState<ArtifactLink['type']>('related_to');
-  const [linkScope, setLinkScope] = useState<'global' | 'project'>('project'); // Default to current project
-
-  useEffect(() => {
-    if (isOpen) {
-      setTargetType('requirement');
-      setSearchQuery('');
-      setSelectedTargetId('');
-      setLinkType('related_to');
-      setLinkScope('project'); // Default to project-specific
-    }
-  }, [isOpen]);
-
-  // Helper to find which project an artifact belongs to
-  const findProjectForArtifact = (id: string): Project | undefined => {
-    return projects.find(
-      (p) =>
-        p.requirementIds.includes(id) ||
-        p.useCaseIds.includes(id) ||
-        p.testCaseIds.includes(id) ||
-        p.informationIds.includes(id)
-    );
-  };
-
-  // Filter artifacts based on type and search
-  const getFilteredArtifacts = () => {
-    let artifacts: { id: string; title: string; description?: string }[] = [];
-
-    if (targetType === 'requirement') artifacts = globalRequirements;
-    else if (targetType === 'usecase') artifacts = globalUseCases;
-    else if (targetType === 'testcase') artifacts = globalTestCases;
-    else if (targetType === 'information')
-      artifacts = globalInformation.map((i) => ({
-        id: i.id,
-        title: i.title,
-        // Information has 'content' but usually strict 'description' is displayed.
-        // We can map content to description or just use title.
-        description: i.content.length > 100 ? i.content.substring(0, 100) + '...' : i.content,
-      }));
-
-    // Filter out source artifact (can't link to self)
-    artifacts = artifacts.filter((a) => a.id !== sourceArtifactId);
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      artifacts = artifacts.filter(
-        (a) =>
-          a.id.toLowerCase().includes(query) ||
-          a.title.toLowerCase().includes(query) ||
-          (a.description && a.description.toLowerCase().includes(query))
-      );
-    }
-
-    return artifacts;
-  };
-
-  const filteredArtifacts = getFilteredArtifacts();
-
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (selectedTargetId) {
-      onAddLink({
-        targetId: selectedTargetId,
-        type: linkType,
-        projectIds: linkScope === 'global' ? [] : [currentProjectId],
-      });
-      onClose();
-    }
-  };
+  const {
+    targetType,
+    selectTargetType,
+    searchQuery,
+    setSearchQuery,
+    selectedTargetId,
+    setSelectedTargetId,
+    linkType,
+    setLinkType,
+    linkScope,
+    setLinkScope,
+    filteredArtifacts,
+    findProjectForArtifact,
+    handleSubmit,
+  } = useLinkModal({
+    isOpen,
+    sourceArtifactId,
+    sourceArtifactType,
+    projects,
+    currentProjectId,
+    globalRequirements,
+    globalUseCases,
+    globalTestCases,
+    globalInformation,
+    onClose,
+    onAddLink,
+  });
 
   useKeyboardShortcuts({
     onSave: handleSubmit,
@@ -274,10 +231,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                     <button
                       key={type}
                       type="button"
-                      onClick={() => {
-                        setTargetType(type);
-                        setSelectedTargetId('');
-                      }}
+                      onClick={() => selectTargetType(type)}
                       style={{
                         flex: 1,
                         padding: '0.375rem 0.5rem',

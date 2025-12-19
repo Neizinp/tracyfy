@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * InformationModal Component
+ *
+ * Modal for creating and editing information artifacts.
+ * Uses useInformationForm hook for form state management.
+ */
+
+import React from 'react';
 import { X } from 'lucide-react';
 import type { Information } from '../types';
-import type { CustomAttributeValue } from '../types/customAttributes';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
@@ -9,6 +15,8 @@ import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { CustomAttributeEditor } from './CustomAttributeEditor';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import { MarkdownEditor } from './MarkdownEditor';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useInformationForm } from '../hooks/useInformationForm';
 
 interface InformationModalProps {
   isOpen: boolean;
@@ -23,8 +31,6 @@ interface InformationModalProps {
 
 type Tab = 'overview' | 'relationships' | 'customFields' | 'history';
 
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-
 export const InformationModal: React.FC<InformationModalProps> = ({
   isOpen,
   information,
@@ -32,12 +38,23 @@ export const InformationModal: React.FC<InformationModalProps> = ({
   onSubmit,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [type, setType] = useState<Information['type']>('note');
 
-  // Get links using the new link service
+  // Use the extracted hook for form state and handlers
+  const {
+    isEditMode,
+    activeTab,
+    setActiveTab,
+    title,
+    setTitle,
+    content,
+    setContent,
+    type,
+    setType,
+    customAttributes,
+    setCustomAttributes,
+    handleSubmit,
+  } = useInformationForm({ isOpen, information, onClose, onSubmit });
+
   const {
     outgoingLinks,
     incomingLinks,
@@ -46,37 +63,8 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     artifactId: information?.id,
   });
 
-  // Get custom attribute definitions
   const { definitions: customAttributeDefinitions, loading: attributesLoading } =
     useCustomAttributes();
-  const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
-
-  useEffect(() => {
-    if (information) {
-      setTitle(information.title);
-      setContent(information.content);
-      setType(information.type);
-      setCustomAttributes(information.customAttributes || []);
-    } else {
-      setTitle('');
-      setContent('');
-      setType('note');
-      setCustomAttributes([]);
-    }
-  }, [information, isOpen]);
-
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (information) {
-      onSubmit({
-        id: information.id,
-        updates: { title, content, type, customAttributes },
-      });
-    } else {
-      onSubmit({ title, content, type, customAttributes, revision: '01' });
-    }
-    onClose();
-  };
 
   useKeyboardShortcuts({
     onSave: handleSubmit,
@@ -132,7 +120,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
           }}
         >
           <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)' }}>
-            {information ? `Edit Information - ${information.id}` : 'New Information'}
+            {isEditMode ? `Edit Information - ${information?.id}` : 'New Information'}
           </h2>
           <button
             onClick={onClose}
@@ -273,7 +261,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                     cursor: 'pointer',
                   }}
                 >
-                  {information ? 'Save Changes' : 'Create Information'}
+                  {isEditMode ? 'Save Changes' : 'Create Information'}
                 </button>
               </div>
             </>
