@@ -6,6 +6,7 @@
  */
 
 import { fileSystemService } from './fileSystemService';
+import { diskProjectService } from './diskProjectService';
 import type { Link } from '../types';
 import type { LinkType } from '../utils/linkTypes';
 import { getInverseType } from '../utils/linkTypes';
@@ -147,7 +148,7 @@ class DiskLinkService {
     await this.initialize();
 
     // Generate new ID
-    const id = await this.getNextId();
+    const id = await diskProjectService.getNextIdWithSync('links');
     const now = Date.now();
 
     const link: Link = {

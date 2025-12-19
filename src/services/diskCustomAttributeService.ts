@@ -6,6 +6,7 @@
  */
 
 import { fileSystemService } from './fileSystemService';
+import { diskProjectService } from './diskProjectService';
 import type { CustomAttributeDefinition, ApplicableArtifactType } from '../types/customAttributes';
 import {
   customAttributeDefinitionToMarkdown,
@@ -170,7 +171,7 @@ class DiskCustomAttributeService {
     await this.initialize();
 
     // Generate new ID
-    const id = await this.getNextId();
+    const id = await diskProjectService.getNextIdWithSync('customAttributes');
     const now = Date.now();
 
     const definition: CustomAttributeDefinition = {

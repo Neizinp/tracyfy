@@ -126,6 +126,9 @@ class DiskProjectService {
     information: 'information',
     users: 'users',
     risks: 'risks',
+    links: 'links',
+    customAttributes: 'custom-attributes',
+    workflows: 'workflows',
   };
 
   /**
@@ -133,7 +136,16 @@ class DiskProjectService {
    * File format: just the number, e.g., "42"
    */
   private async getCounter(
-    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users' | 'risks'
+    type:
+      | 'requirements'
+      | 'useCases'
+      | 'testCases'
+      | 'information'
+      | 'users'
+      | 'risks'
+      | 'links'
+      | 'customAttributes'
+      | 'workflows'
   ): Promise<number> {
     const filenameBase = this.counterFilenameMap[type] || type.toLowerCase();
     const filename = `${COUNTERS_DIR}/${filenameBase}.md`;
@@ -153,7 +165,16 @@ class DiskProjectService {
    * @param skipCommit - If true, skip auto-commit (used by recalculateCounters on app load)
    */
   private async setCounter(
-    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users' | 'risks',
+    type:
+      | 'requirements'
+      | 'useCases'
+      | 'testCases'
+      | 'information'
+      | 'users'
+      | 'risks'
+      | 'links'
+      | 'customAttributes'
+      | 'workflows',
     value: number,
     skipCommit: boolean = false
   ): Promise<void> {
@@ -217,7 +238,16 @@ class DiskProjectService {
    * Get next artifact ID and increment counter
    */
   async getNextId(
-    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users' | 'risks'
+    type:
+      | 'requirements'
+      | 'useCases'
+      | 'testCases'
+      | 'information'
+      | 'users'
+      | 'risks'
+      | 'links'
+      | 'customAttributes'
+      | 'workflows'
   ): Promise<string> {
     const current = await this.getCounter(type);
     const next = current + 1;
@@ -230,6 +260,9 @@ class DiskProjectService {
       information: 'INFO',
       users: 'USER',
       risks: 'RISK',
+      links: 'LINK',
+      customAttributes: 'ATTR',
+      workflows: 'WF',
     };
 
     return `${prefixMap[type]}-${String(next).padStart(3, '0')}`;
@@ -278,7 +311,16 @@ class DiskProjectService {
    * Falls back to normal getNextId if no remote is configured.
    */
   async getNextIdWithSync(
-    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'users' | 'risks'
+    type:
+      | 'requirements'
+      | 'useCases'
+      | 'testCases'
+      | 'information'
+      | 'users'
+      | 'risks'
+      | 'links'
+      | 'customAttributes'
+      | 'workflows'
   ): Promise<string> {
     try {
       // Pull latest counters from remote (silently fails if no remote)

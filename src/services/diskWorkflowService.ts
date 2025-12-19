@@ -7,6 +7,7 @@
 
 import { fileSystemService } from './fileSystemService';
 import { realGitService } from './realGitService';
+import { diskProjectService } from './diskProjectService';
 import type { Workflow } from '../types';
 import { workflowToMarkdown, parseMarkdownWorkflow } from '../utils/workflowMarkdownUtils';
 
@@ -127,7 +128,7 @@ class DiskWorkflowService {
     await this.initialize();
 
     // Generate new ID
-    const id = await this.getNextId();
+    const id = await diskProjectService.getNextIdWithSync('workflows');
     const now = Date.now();
 
     const workflow: Workflow = {

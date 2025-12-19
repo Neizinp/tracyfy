@@ -1393,6 +1393,9 @@ class RealGitService {
         'counters/information.md',
         'counters/risks.md',
         'counters/users.md',
+        'counters/links.md',
+        'counters/custom-attributes.md',
+        'counters/workflows.md',
       ];
 
       for (const file of counterFiles) {

@@ -91,7 +91,16 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [risks, setRisks] = useState<Risk[]>([]);
 
   // Counter for E2E mode to generate unique IDs
-  const [e2eCounters, setE2eCounters] = useState({ req: 0, uc: 0, tc: 0, info: 0, risk: 0 });
+  const [e2eCounters, setE2eCounters] = useState({
+    req: 0,
+    uc: 0,
+    tc: 0,
+    info: 0,
+    risk: 0,
+    link: 0,
+    attr: 0,
+    wf: 0,
+  });
 
   // Background tasks for status bar
   const { startTask, endTask } = useBackgroundTasks();
@@ -510,7 +519,15 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Get next ID
   const getNextId = useCallback(
     async (
-      type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'risks'
+      type:
+        | 'requirements'
+        | 'useCases'
+        | 'testCases'
+        | 'information'
+        | 'risks'
+        | 'links'
+        | 'customAttributes'
+        | 'workflows'
     ): Promise<string> => {
       if (isE2EMode()) {
         // In E2E mode, use local counter
@@ -520,6 +537,9 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           testCases: 'TC',
           information: 'INFO',
           risks: 'RISK',
+          links: 'LINK',
+          customAttributes: 'ATTR',
+          workflows: 'WF',
         }[type];
         const counterKey = {
           requirements: 'req',
@@ -527,6 +547,9 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           testCases: 'tc',
           information: 'info',
           risks: 'risk',
+          links: 'link',
+          customAttributes: 'attr',
+          workflows: 'wf',
         }[type] as keyof typeof e2eCounters;
         const nextNum = e2eCounters[counterKey] + 1;
         setE2eCounters((prev) => ({ ...prev, [counterKey]: nextNum }));
