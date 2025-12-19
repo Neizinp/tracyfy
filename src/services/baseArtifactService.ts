@@ -41,9 +41,8 @@ export class BaseArtifactService<T extends { id: string }> {
 
   private getFilePath(id: string): string {
     const folder = this.config.folder;
-    // Use .md for everything except counters which are .json per project standard
-    const extension = folder === 'counters' ? '.json' : '.md';
-    return `${folder}/${id}${extension}`;
+    // Standardize on .md for all text-based storage including counters
+    return `${folder}/${id}.md`;
   }
 
   /**
@@ -82,7 +81,7 @@ export class BaseArtifactService<T extends { id: string }> {
   async loadAll(): Promise<T[]> {
     const items: T[] = [];
     const folder = this.config.folder;
-    const extension = folder === 'counters' ? '.json' : '.md';
+    const extension = '.md';
 
     try {
       const files = await fileSystemService.listFiles(folder);
