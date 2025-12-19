@@ -1,19 +1,27 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * RequirementModal Component
+ *
+ * Modal for creating and editing requirements.
+ * Uses useRequirementForm hook for form state and handlers.
+ */
+
+import React from 'react';
 import { X, Trash2 } from 'lucide-react';
-import type { Requirement, ArtifactLink } from '../types';
-import type { CustomAttributeValue } from '../types/customAttributes';
+import type { Requirement } from '../types';
 import { MarkdownEditor } from './MarkdownEditor';
 import { formatDateTime } from '../utils/dateUtils';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
-import { useUI, useGlobalState, useUser } from '../app/providers';
+import { useUI } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
 import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { CustomAttributeEditor } from './CustomAttributeEditor';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useRequirementForm } from '../hooks/useRequirementForm';
 
 interface RequirementModalProps {
   isOpen: boolean;
-  requirement: Requirement | null; // null = create mode
+  requirement: Requirement | null;
   onClose: () => void;
   onCreate: (req: Omit<Requirement, 'id' | 'children' | 'lastModified'>) => void;
   onUpdate: (id: string, updates: Partial<Requirement>) => void;
@@ -21,8 +29,6 @@ interface RequirementModalProps {
 }
 
 type Tab = 'overview' | 'details' | 'relationships' | 'comments' | 'customFields' | 'history';
-
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 export const RequirementModal: React.FC<RequirementModalProps> = ({
   isOpen,
@@ -32,23 +38,47 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
   onUpdate,
   onDelete,
 }) => {
+  const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
+
+  // Use the extracted hook for form state and handlers
   const {
-    setIsLinkModalOpen,
-    setLinkSourceId,
-    setLinkSourceType,
-    // For navigating to other artifacts
-    setEditingRequirement,
-    setIsEditRequirementModalOpen,
-    setEditingUseCase,
-    setIsUseCaseModalOpen,
-    setSelectedTestCaseId,
-    setIsEditTestCaseModalOpen,
-    setSelectedInformation,
-    setIsInformationModalOpen,
-  } = useUI();
-  const { requirements, useCases, information } = useGlobalState();
-  const { currentUser } = useUser();
-  const isEditMode = requirement !== null;
+    isEditMode,
+    currentUser,
+    activeTab,
+    setActiveTab,
+    title,
+    setTitle,
+    description,
+    setDescription,
+    text,
+    setText,
+    rationale,
+    setRationale,
+    priority,
+    setPriority,
+    status,
+    setStatus,
+    verificationMethod,
+    setVerificationMethod,
+    comments,
+    setComments,
+    customAttributes,
+    setCustomAttributes,
+    showDeleteConfirm,
+    handleDelete,
+    confirmDelete,
+    cancelDelete,
+    handleSubmit,
+    handleRemoveLink,
+    handleNavigateToArtifact,
+  } = useRequirementForm({
+    isOpen,
+    requirement,
+    onClose,
+    onCreate,
+    onUpdate,
+    onDelete,
+  });
 
   const {
     outgoingLinks,
@@ -58,161 +88,19 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
     artifactId: requirement?.id,
   });
 
-  // Get custom attribute definitions
   const { definitions: customAttributeDefinitions, loading: attributesLoading } =
     useCustomAttributes();
-
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [text, setText] = useState('');
-  const [rationale, setRationale] = useState('');
-  const [priority, setPriority] = useState<Requirement['priority']>('medium');
-  const [status, setStatus] = useState<Requirement['status']>('draft');
-
-  const [verificationMethod, setVerificationMethod] = useState('');
-  const [comments, setComments] = useState('');
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [linkedArtifacts, setLinkedArtifacts] = useState<ArtifactLink[]>([]);
-  const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
-
-  // Reset form when modal opens/closes or requirement changes
-  useEffect(() => {
-    if (isOpen) {
-      if (requirement) {
-        // Edit mode: populate from requirement
-        setTitle(requirement.title);
-        setDescription(requirement.description);
-        setText(requirement.text);
-        setRationale(requirement.rationale);
-        setPriority(requirement.priority);
-        setStatus(requirement.status);
-        setVerificationMethod(requirement.verificationMethod || '');
-        setComments(requirement.comments || '');
-        setLinkedArtifacts(requirement.linkedArtifacts || []);
-        setCustomAttributes(requirement.customAttributes || []);
-      } else {
-        // Create mode: reset to defaults
-        setTitle('');
-        setDescription('');
-        setText('');
-        setRationale('');
-        setPriority('medium');
-        setStatus('draft');
-        setVerificationMethod('');
-        setComments('');
-        setLinkedArtifacts([]);
-        setCustomAttributes([]);
-      }
-      setActiveTab('overview');
-      setShowDeleteConfirm(false);
-    }
-  }, [isOpen, requirement]);
-
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-
-    if (isEditMode && requirement) {
-      // Update existing requirement
-      onUpdate(requirement.id, {
-        title,
-        description,
-        text,
-        rationale,
-        priority,
-        status,
-        linkedArtifacts,
-        verificationMethod,
-        comments,
-        customAttributes,
-      });
-    } else {
-      // Create new requirement
-      onCreate({
-        title,
-        description,
-        text,
-        rationale,
-        priority,
-        author: currentUser?.name || undefined,
-        verificationMethod: verificationMethod || undefined,
-        comments: comments || undefined,
-        customAttributes,
-        dateCreated: Date.now(),
-        status: 'draft',
-        revision: '01',
-      });
-    }
-    onClose();
-  };
-
-  const handleRemoveLink = (targetId: string) => {
-    setLinkedArtifacts((prev) => prev.filter((link) => link.targetId !== targetId));
-  };
 
   useKeyboardShortcuts({
     onSave: handleSubmit,
     onClose: onClose,
   });
 
-  const handleDelete = () => {
-    setShowDeleteConfirm(true);
-  };
-
-  const confirmDelete = () => {
-    if (requirement) {
-      onDelete(requirement.id);
-      onClose();
-    }
-  };
-
-  const cancelDelete = () => {
-    setShowDeleteConfirm(false);
-  };
-
-  // Navigate to a linked artifact by opening its edit modal
-  const handleNavigateToArtifact = (sourceId: string, sourceType: string) => {
-    onClose(); // Close current modal first
-
-    switch (sourceType) {
-      case 'requirement': {
-        const req = requirements.find((r) => r.id === sourceId);
-        if (req) {
-          setEditingRequirement(req);
-          setIsEditRequirementModalOpen(true);
-        }
-        break;
-      }
-      case 'useCase': {
-        const uc = useCases.find((u) => u.id === sourceId);
-        if (uc) {
-          setEditingUseCase(uc);
-          setIsUseCaseModalOpen(true);
-        }
-        break;
-      }
-      case 'testCase': {
-        setSelectedTestCaseId(sourceId);
-        setIsEditTestCaseModalOpen(true);
-        break;
-      }
-      case 'information': {
-        const info = information.find((i) => i.id === sourceId);
-        if (info) {
-          setSelectedInformation(info);
-          setIsInformationModalOpen(true);
-        }
-        break;
-      }
-    }
-  };
-
   if (!isOpen) return null;
 
   const modalTitle = isEditMode ? `Edit Requirement - ${requirement?.id}` : 'New Requirement';
   const submitLabel = isEditMode ? 'Save Changes' : 'Create Requirement';
 
-  // Filter tabs based on mode
   const allTabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'details', label: 'Details' },
@@ -538,13 +426,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
                     marginBottom: 'var(--spacing-xs)',
                   }}
                 >
-                  <label
-                    style={{
-                      fontSize: 'var(--font-size-sm)',
-                    }}
-                  >
-                    Linked Items
-                  </label>
+                  <label style={{ fontSize: 'var(--font-size-sm)' }}>Linked Items</label>
                   {isEditMode && requirement && (
                     <button
                       type="button"
@@ -607,8 +489,8 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
                         fontSize: 'var(--font-size-sm)',
                       }}
                     >
-                      No linked items. Click "+ Add Link" to create relationships with other
-                      artifacts.
+                      No linked items. Click &quot;+ Add Link&quot; to create relationships with
+                      other artifacts.
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -634,7 +516,6 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
                         >
                           <div
                             onClick={() => {
-                              // Determine artifact type from ID prefix
                               const id = link.targetId;
                               let type = 'requirement';
                               if (id.startsWith('UC-')) type = 'useCase';
