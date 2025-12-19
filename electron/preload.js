@@ -18,7 +18,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Git operations
   git: {
-    test: () => ipcRenderer.invoke('git:test'),
     status: (dir, filepath) => ipcRenderer.invoke('git:status', dir, filepath),
     statusMatrix: (dir) => ipcRenderer.invoke('git:statusMatrix', dir),
     add: (dir, filepath) => ipcRenderer.invoke('git:add', dir, filepath),

@@ -93,11 +93,21 @@ export const GitSyncStatus: React.FC = () => {
 
   const getIcon = () => {
     if (status.diverged)
-      return <AlertCircle size={18} className="text-error" color="var(--color-error)" />;
-    if (status.ahead && status.behind) return <RefreshCw size={18} />;
-    if (status.ahead) return <CloudUpload size={18} color="var(--color-accent)" />;
-    if (status.behind) return <CloudDownload size={18} color="var(--color-accent)" />;
-    return <Cloud size={18} color="var(--color-text-muted)" />;
+      return (
+        <AlertCircle
+          size={18}
+          className="text-error"
+          color="var(--color-error)"
+          data-testid="sync-icon-diverged"
+        />
+      );
+    if (status.ahead && status.behind)
+      return <RefreshCw size={18} data-testid="sync-icon-diverged" />;
+    if (status.ahead)
+      return <CloudUpload size={18} color="var(--color-accent)" data-testid="sync-icon-ahead" />;
+    if (status.behind)
+      return <CloudDownload size={18} color="var(--color-accent)" data-testid="sync-icon-behind" />;
+    return <Cloud size={18} color="var(--color-text-muted)" data-testid="sync-icon-synced" />;
   };
 
   const getTooltip = () => {
@@ -235,6 +245,7 @@ export const GitSyncStatus: React.FC = () => {
             <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 600 }}>Git Sync Details</h3>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <button
+                data-testid="manual-refresh-button"
                 onClick={async (e) => {
                   e.stopPropagation();
                   setIsSyncing(true);
@@ -263,6 +274,7 @@ export const GitSyncStatus: React.FC = () => {
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
+                data-testid="sync-now-button"
                 style={{
                   ...headerButtonStyle,
                   backgroundColor: 'var(--color-accent)',

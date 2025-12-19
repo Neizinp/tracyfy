@@ -100,6 +100,8 @@ vi.mock('isomorphic-git', () => ({
     listFiles: vi.fn(),
     status: vi.fn(),
     remove: vi.fn(),
+    isDescendent: vi.fn(),
+    currentBranch: vi.fn(),
   },
 }));
 
@@ -917,6 +919,119 @@ Rationale
         expect(parsed.revision).not.toBe('—');
         expect(parsed.revision).toMatch(/^0[12]$/); // '01' or '02'
       }
+    });
+  });
+
+  describe('getSyncStatus', () => {
+    beforeEach(async () => {
+      vi.mocked(fileSystemService.checkGitExists).mockResolvedValue(true);
+      vi.mocked(fileSystemService.readFile).mockImplementation(async (path: string) => {
+        if (path === '.git/HEAD') return 'ref: refs/heads/main\n';
+        return null;
+      });
+      await realGitService.init();
+    });
+
+    it('should identify as ahead when local has more commits', async () => {
+      vi.mocked(git.resolveRef).mockImplementation(async ({ ref }) => {
+        if (ref === 'HEAD') return 'local-oid';
+        if (ref === 'origin/main') return 'remote-oid';
+        return '';
+      });
+
+      vi.mocked(git.isDescendent).mockImplementation(async ({ oid, ancestor }) => {
+        if (oid === 'local-oid' && ancestor === 'remote-oid') return true;
+        if (oid === 'remote-oid' && ancestor === 'local-oid') return false;
+        return false;
+      });
+
+      // Mock getHistory for the commits list
+      const historySpy = vi
+        .spyOn(realGitService, 'getHistory')
+        .mockImplementation(async (_path, _depth, ref) => {
+          if (ref === 'HEAD')
+            return [
+              { hash: 'local-oid', message: 'Local commit', author: 'User', timestamp: Date.now() },
+            ];
+          if (ref === 'origin/main') return [];
+          return [];
+        });
+
+      const status = await realGitService.getSyncStatus();
+
+      expect(status.ahead).toBe(true);
+      expect(status.behind).toBe(false);
+      expect(status.aheadCommits).toHaveLength(1);
+      expect(status.aheadCommits![0].hash).toBe('local-oid');
+
+      historySpy.mockRestore();
+    });
+
+    it('should identify as behind when remote has more commits', async () => {
+      vi.mocked(git.resolveRef).mockImplementation(async ({ ref }) => {
+        if (ref === 'HEAD') return 'local-oid';
+        if (ref === 'origin/main') return 'remote-oid';
+        return '';
+      });
+
+      vi.mocked(git.isDescendent).mockImplementation(async ({ oid, ancestor }) => {
+        if (oid === 'local-oid' && ancestor === 'remote-oid') return false;
+        if (oid === 'remote-oid' && ancestor === 'local-oid') return true;
+        return false;
+      });
+
+      // Mock getHistory
+      const historySpy = vi
+        .spyOn(realGitService, 'getHistory')
+        .mockImplementation(async (_path, _depth, ref) => {
+          if (ref === 'HEAD') return [];
+          if (ref === 'origin/main')
+            return [
+              {
+                hash: 'remote-oid',
+                message: 'Remote commit',
+                author: 'User',
+                timestamp: Date.now(),
+              },
+            ];
+          return [];
+        });
+
+      const status = await realGitService.getSyncStatus();
+
+      expect(status.behind).toBe(true);
+      expect(status.ahead).toBe(false);
+      expect(status.behindCommits).toHaveLength(1);
+
+      historySpy.mockRestore();
+    });
+
+    it('should identify as diverged when neither is descendent', async () => {
+      vi.mocked(git.resolveRef).mockImplementation(async ({ ref }) => {
+        if (ref === 'HEAD') return 'local-oid';
+        if (ref === 'origin/main') return 'remote-oid';
+        return '';
+      });
+
+      vi.mocked(git.isDescendent).mockResolvedValue(false);
+
+      const status = await realGitService.getSyncStatus();
+
+      expect(status.diverged).toBe(true);
+      expect(status.ahead).toBe(false);
+      expect(status.behind).toBe(false);
+    });
+
+    it('should handle no remote configured', async () => {
+      vi.mocked(git.resolveRef).mockImplementation(async ({ ref }) => {
+        if (ref === 'HEAD') return 'local-oid';
+        throw new Error('NotFoundError');
+      });
+
+      const status = await realGitService.getSyncStatus();
+
+      expect(status.ahead).toBe(true);
+      expect(status.behind).toBe(false);
     });
   });
 
