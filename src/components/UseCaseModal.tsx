@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * UseCaseModal Component
+ *
+ * Modal for creating and editing use cases.
+ * Uses useUseCaseForm hook for form state and handlers.
+ */
+
+import React from 'react';
 import { X } from 'lucide-react';
 import type { UseCase } from '../types';
-import type { CustomAttributeValue } from '../types/customAttributes';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
@@ -9,6 +15,8 @@ import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { CustomAttributeEditor } from './CustomAttributeEditor';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import { MarkdownEditor } from './MarkdownEditor';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useUseCaseForm } from '../hooks/useUseCaseForm';
 
 interface UseCaseModalProps {
   isOpen: boolean;
@@ -21,8 +29,6 @@ interface UseCaseModalProps {
 
 type Tab = 'overview' | 'flows' | 'conditions' | 'relationships' | 'customFields' | 'history';
 
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-
 export const UseCaseModal: React.FC<UseCaseModalProps> = ({
   isOpen,
   useCase,
@@ -30,18 +36,35 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
   onSubmit,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [actor, setActor] = useState('');
-  const [preconditions, setPreconditions] = useState('');
-  const [postconditions, setPostconditions] = useState('');
-  const [mainFlow, setMainFlow] = useState('');
-  const [alternativeFlows, setAlternativeFlows] = useState('');
-  const [priority, setPriority] = useState<UseCase['priority']>('medium');
-  const [status, setStatus] = useState<UseCase['status']>('draft');
 
-  // Get links using the new link service
+  // Use the extracted hook for form state and handlers
+  const {
+    isEditMode,
+    activeTab,
+    setActiveTab,
+    title,
+    setTitle,
+    description,
+    setDescription,
+    actor,
+    setActor,
+    preconditions,
+    setPreconditions,
+    postconditions,
+    setPostconditions,
+    mainFlow,
+    setMainFlow,
+    alternativeFlows,
+    setAlternativeFlows,
+    priority,
+    setPriority,
+    status,
+    setStatus,
+    customAttributes,
+    setCustomAttributes,
+    handleSubmit,
+  } = useUseCaseForm({ isOpen, useCase, onClose, onSubmit });
+
   const {
     outgoingLinks,
     incomingLinks,
@@ -50,74 +73,8 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     artifactId: useCase?.id,
   });
 
-  // Get custom attribute definitions
   const { definitions: customAttributeDefinitions, loading: attributesLoading } =
     useCustomAttributes();
-  const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
-
-  useEffect(() => {
-    if (useCase) {
-      setTitle(useCase.title);
-      setDescription(useCase.description);
-      setActor(useCase.actor);
-      setPreconditions(useCase.preconditions);
-      setPostconditions(useCase.postconditions);
-      setMainFlow(useCase.mainFlow);
-      setAlternativeFlows(useCase.alternativeFlows || '');
-      setPriority(useCase.priority);
-      setStatus(useCase.status);
-      setCustomAttributes(useCase.customAttributes || []);
-    } else {
-      // Reset form for new use case
-      setTitle('');
-      setDescription('');
-      setActor('');
-      setPreconditions('');
-      setPostconditions('');
-      setMainFlow('');
-      setAlternativeFlows('');
-      setPriority('medium');
-      setStatus('draft');
-      setCustomAttributes([]);
-    }
-  }, [useCase, isOpen]);
-
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-
-    if (useCase) {
-      onSubmit({
-        id: useCase.id,
-        updates: {
-          title,
-          description,
-          actor,
-          preconditions,
-          postconditions,
-          mainFlow,
-          alternativeFlows,
-          priority,
-          status,
-          customAttributes,
-        },
-      });
-    } else {
-      onSubmit({
-        title,
-        description,
-        actor,
-        preconditions,
-        postconditions,
-        mainFlow,
-        alternativeFlows,
-        priority,
-        status,
-        customAttributes,
-        revision: '01',
-      });
-    }
-    onClose();
-  };
 
   useKeyboardShortcuts({
     onSave: handleSubmit,
@@ -130,16 +87,10 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     { id: 'overview', label: 'Overview' },
     { id: 'flows', label: 'Flows' },
     { id: 'conditions', label: 'Conditions' },
-    { id: 'relationships', label: 'Relationships' },
+    ...(isEditMode ? [{ id: 'relationships' as Tab, label: 'Relationships' }] : []),
     { id: 'customFields', label: 'Custom Attributes' },
-    { id: 'history', label: 'Revision History' },
-  ].filter((tab) => {
-    // Only show relationships and history for existing use cases
-    if (tab.id === 'relationships' || tab.id === 'history') {
-      return useCase !== null && useCase !== undefined;
-    }
-    return true;
-  }) as { id: Tab; label: string }[];
+    ...(isEditMode ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
+  ];
 
   return (
     <div
@@ -182,7 +133,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
           }}
         >
           <h3 style={{ fontWeight: 600 }}>
-            {useCase ? `Edit Use Case - ${useCase.id}` : 'New Use Case'}
+            {isEditMode ? `Edit Use Case - ${useCase?.id}` : 'New Use Case'}
           </h3>
           <button
             onClick={onClose}
@@ -694,7 +645,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
               fontWeight: 500,
             }}
           >
-            {useCase ? 'Save Changes' : 'Create Use Case'}
+            {isEditMode ? 'Save Changes' : 'Create Use Case'}
           </button>
         </div>
       </div>

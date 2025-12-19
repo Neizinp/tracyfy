@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * RiskModal Component
+ *
+ * Modal for creating and editing risks.
+ * Uses useRiskForm hook for form state and handlers.
+ */
+
+import React from 'react';
 import { X } from 'lucide-react';
 import type { Risk } from '../types';
-import type { CustomAttributeValue } from '../types/customAttributes';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
 import { useUI } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
@@ -10,6 +16,7 @@ import { CustomAttributeEditor } from './CustomAttributeEditor';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import { MarkdownEditor } from './MarkdownEditor';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useRiskForm } from '../hooks/useRiskForm';
 
 interface RiskModalProps {
   isOpen: boolean;
@@ -24,18 +31,37 @@ type Tab = 'overview' | 'mitigation' | 'relationships' | 'customFields' | 'histo
 
 export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onSubmit }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<Risk['category']>('other');
-  const [probability, setProbability] = useState<Risk['probability']>('medium');
-  const [impact, setImpact] = useState<Risk['impact']>('medium');
-  const [status, setStatus] = useState<Risk['status']>('identified');
-  const [owner, setOwner] = useState('');
-  const [mitigation, setMitigation] = useState('');
-  const [contingency, setContingency] = useState('');
 
-  // Get links using the link service
+  // Use the extracted hook for form state and handlers
+  const {
+    isEditMode,
+    activeTab,
+    setActiveTab,
+    title,
+    setTitle,
+    description,
+    setDescription,
+    category,
+    setCategory,
+    probability,
+    setProbability,
+    impact,
+    setImpact,
+    status,
+    setStatus,
+    owner,
+    setOwner,
+    mitigation,
+    setMitigation,
+    contingency,
+    setContingency,
+    customAttributes,
+    setCustomAttributes,
+    riskLevel,
+    riskColor,
+    handleSubmit,
+  } = useRiskForm({ isOpen, risk, onClose, onSubmit });
+
   const {
     outgoingLinks,
     incomingLinks,
@@ -44,72 +70,8 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
     artifactId: risk?.id,
   });
 
-  // Get custom attribute definitions
   const { definitions: customAttributeDefinitions, loading: attributesLoading } =
     useCustomAttributes();
-  const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
-
-  useEffect(() => {
-    if (risk) {
-      setTitle(risk.title);
-      setDescription(risk.description);
-      setCategory(risk.category);
-      setProbability(risk.probability);
-      setImpact(risk.impact);
-      setStatus(risk.status);
-      setOwner(risk.owner || '');
-      setMitigation(risk.mitigation);
-      setContingency(risk.contingency);
-      setCustomAttributes(risk.customAttributes || []);
-    } else {
-      setTitle('');
-      setDescription('');
-      setCategory('other');
-      setProbability('medium');
-      setImpact('medium');
-      setStatus('identified');
-      setOwner('');
-      setMitigation('');
-      setContingency('');
-      setCustomAttributes([]);
-    }
-  }, [risk, isOpen]);
-
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (risk) {
-      onSubmit({
-        id: risk.id,
-        updates: {
-          title,
-          description,
-          category,
-          probability,
-          impact,
-          status,
-          owner: owner || undefined,
-          mitigation,
-          contingency,
-          customAttributes,
-        },
-      });
-    } else {
-      onSubmit({
-        title,
-        description,
-        category,
-        probability,
-        impact,
-        status,
-        owner: owner || undefined,
-        mitigation,
-        contingency,
-        customAttributes,
-        revision: '01',
-      });
-    }
-    onClose();
-  };
 
   useKeyboardShortcuts({
     onSave: handleSubmit,
@@ -125,18 +87,6 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
     { id: 'customFields', label: 'Custom Attributes' },
     ...(risk ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
   ];
-
-  // Calculate risk score for visual indicator
-  const probValue = probability === 'low' ? 1 : probability === 'medium' ? 2 : 3;
-  const impactValue = impact === 'low' ? 1 : impact === 'medium' ? 2 : 3;
-  const riskScore = probValue * impactValue;
-  const riskLevel = riskScore <= 2 ? 'low' : riskScore <= 4 ? 'medium' : 'high';
-  const riskColor =
-    riskLevel === 'low'
-      ? 'var(--color-success)'
-      : riskLevel === 'medium'
-        ? 'var(--color-warning)'
-        : 'var(--color-error)';
 
   return (
     <div
@@ -166,6 +116,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
           boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)',
         }}
       >
+        {/* Header */}
         <div
           style={{
             padding: 'var(--spacing-lg)',
@@ -179,9 +130,9 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
             <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)' }}>
-              {risk ? `Edit Risk - ${risk.id}` : 'New Risk'}
+              {isEditMode ? `Edit Risk - ${risk?.id}` : 'New Risk'}
             </h2>
-            {risk && (
+            {isEditMode && (
               <span
                 style={{
                   padding: '4px 8px',
@@ -444,7 +395,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
                     cursor: 'pointer',
                   }}
                 >
-                  {risk ? 'Save Changes' : 'Create Risk'}
+                  {isEditMode ? 'Save Changes' : 'Create Risk'}
                 </button>
               </div>
             </>
