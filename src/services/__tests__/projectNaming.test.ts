@@ -13,10 +13,13 @@ vi.mock('../fileSystemService', () => ({
   },
 }));
 
-// Mock markdownUtils to avoid complex parsing logic in tests if possible,
-// or just rely on the real one since it's a utility.
-// Actually, real utils are better to ensure integration works.
-// We mocked fileSystemService, so we control what readFile returns.
+// Mock realGitService
+vi.mock('../realGitService', () => ({
+  realGitService: {
+    commitFile: vi.fn().mockResolvedValue(undefined),
+    isInitialized: vi.fn().mockReturnValue(true),
+  },
+}));
 
 describe('DiskProjectService - Project Naming and Storage', () => {
   beforeEach(() => {
@@ -30,14 +33,14 @@ describe('DiskProjectService - Project Naming and Storage', () => {
   });
 
   describe('createProject', () => {
-    it('should save project with name as filename', async () => {
+    it('should save project with ID as filename', async () => {
       const name = 'My New Project';
       const description = 'A description';
 
-      await diskProjectService.createProject(name, description);
+      const project = await diskProjectService.createProject(name, description);
 
       expect(fileSystemService.writeFile).toHaveBeenCalledWith(
-        expect.stringMatching(/projects\/My New Project\.md$/),
+        expect.stringMatching(new RegExp(`projects/${project.id}\\.md$`)),
         expect.any(String)
       );
     });
@@ -46,10 +49,10 @@ describe('DiskProjectService - Project Naming and Storage', () => {
       const name = 'Existing Project';
 
       // Setup existing project file
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue(['Existing Project.md']);
+      vi.mocked(fileSystemService.listFiles).mockResolvedValue(['proj-123.md']);
 
       vi.mocked(fileSystemService.readFile).mockResolvedValue(`---
-id: "proj-existing"
+id: "proj-123"
 name: "${name}"
 ---
 # ${name}`);
@@ -61,7 +64,7 @@ name: "${name}"
   });
 
   describe('updateProject', () => {
-    it('should rename file if project name changes', async () => {
+    it('should not rename file if project name changes (uses ID)', async () => {
       const oldName = 'Old Name';
       const newName = 'New Name';
       const projectId = 'proj-123';
@@ -78,12 +81,12 @@ name: "${name}"
         lastModified: Date.now(),
       };
 
-      // Mock listFiles to return the old file
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue([`${oldName}.md`]);
+      // Mock listFiles to return the file
+      vi.mocked(fileSystemService.listFiles).mockResolvedValue([`${projectId}.md`]);
 
-      // Mock readFile to return content when searching for ID
+      // Mock readFile to return content
       vi.mocked(fileSystemService.readFile).mockImplementation(async (path) => {
-        if (path === `projects/${oldName}.md`) {
+        if (path === `projects/${projectId}.md`) {
           return `---
 id: "${projectId}"
 name: "${oldName}"
@@ -97,31 +100,34 @@ name: "${oldName}"
 
       await diskProjectService.updateProject(updatedProject);
 
-      // Should delete old file and write new file
-      expect(fileSystemService.deleteFile).toHaveBeenCalledWith(`projects/${oldName}.md`);
+      // Should updated existing file, no delete/rename needed
+      expect(fileSystemService.deleteFile).not.toHaveBeenCalled();
       expect(fileSystemService.writeFile).toHaveBeenCalledWith(
-        `projects/${newName}.md`,
-        expect.any(String)
+        `projects/${projectId}.md`,
+        expect.stringContaining(`name: "${newName}"`)
       );
     });
 
-    it('should throw error if renaming to existing name', async () => {
+    it('should throw error if updating to another existing project name', async () => {
       const oldName = 'Old Name';
       const newName = 'Existing Name';
       const projectId = 'proj-123';
       const otherProjectId = 'proj-456';
 
       // Mock files: Old Project and Existing Project
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue([`${oldName}.md`, `${newName}.md`]);
+      vi.mocked(fileSystemService.listFiles).mockResolvedValue([
+        `${projectId}.md`,
+        `${otherProjectId}.md`,
+      ]);
 
       vi.mocked(fileSystemService.readFile).mockImplementation(async (path) => {
-        if (path.includes(oldName)) {
+        if (path.includes(projectId)) {
           return `---
 id: "${projectId}"
 name: "${oldName}"
 ---`;
         }
-        if (path.includes(newName)) {
+        if (path.includes(otherProjectId)) {
           return `---
 id: "${otherProjectId}"
 name: "${newName}"
@@ -149,20 +155,12 @@ name: "${newName}"
   });
 
   describe('loadProject', () => {
-    it('should find project by ID regardless of filename', async () => {
+    it('should load project by its ID-based filename', async () => {
       const projectId = 'proj-target';
       const projectName = 'Target Project';
 
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue(['Other.md', `${projectName}.md`]);
-
       vi.mocked(fileSystemService.readFile).mockImplementation(async (path) => {
-        if (path.endsWith('Other.md')) {
-          return `---
-id: "proj-other"
-name: "Other"
----`;
-        }
-        if (path.endsWith(`${projectName}.md`)) {
+        if (path === `projects/${projectId}.md`) {
           return `---
 id: "${projectId}"
 name: "${projectName}"
@@ -184,9 +182,8 @@ name: "${projectName}"
       const projectId = 'proj-del';
       const projectName = 'Delete Me';
 
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue([`${projectName}.md`]);
       vi.mocked(fileSystemService.readFile).mockImplementation(async (path) => {
-        if (path.endsWith(`${projectName}.md`)) {
+        if (path.includes(projectId)) {
           return `---
 id: "${projectId}"
 name: "${projectName}"
@@ -200,31 +197,21 @@ lastModified: 12345
 
       // Should write file with isDeleted: true
       expect(fileSystemService.writeFile).toHaveBeenCalled();
-      const writeCall = vi.mocked(fileSystemService.writeFile).mock.calls[0];
-      expect(writeCall[0]).toContain(`${projectName}.md`);
-      expect(writeCall[1]).toContain('isDeleted: true');
+      const writeCall = vi
+        .mocked(fileSystemService.writeFile)
+        .mock.calls.find((call) => call[0].includes(projectId));
+      expect(writeCall).toBeDefined();
+      expect(writeCall![1]).toContain('isDeleted: true');
     });
   });
 
   describe('permanentDeleteProject', () => {
     it('should delete file corresponding to the project ID', async () => {
       const projectId = 'proj-del';
-      const projectName = 'Delete Me';
-
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue([`${projectName}.md`]);
-      vi.mocked(fileSystemService.readFile).mockImplementation(async (path) => {
-        if (path.endsWith(`${projectName}.md`)) {
-          return `---
-id: "${projectId}"
-name: "${projectName}"
----`;
-        }
-        return null;
-      });
 
       await diskProjectService.permanentDeleteProject(projectId);
 
-      expect(fileSystemService.deleteFile).toHaveBeenCalledWith(`projects/${projectName}.md`);
+      expect(fileSystemService.deleteFile).toHaveBeenCalledWith(`projects/${projectId}.md`);
     });
   });
 });

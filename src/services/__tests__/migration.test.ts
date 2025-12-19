@@ -22,39 +22,39 @@ describe('DiskProjectService - Migration', () => {
     vi.resetAllMocks();
   });
 
-  it('should migrate legacy ID-named files to Name-named files', async () => {
-    const legacyId = 'proj-123';
-    const projectName = 'Legacy Project';
+  it('should migrate legacy Name-named files to ID-named files', async () => {
+    const legacyName = 'Legacy Project';
+    const projectId = 'proj-123';
 
-    // Mock listFiles to return a legacy file
-    vi.mocked(fileSystemService.listFiles).mockResolvedValue([`${legacyId}.md`]);
+    // Mock listFiles to return a name-based file
+    vi.mocked(fileSystemService.listFiles).mockResolvedValue([`${legacyName}.md`]);
 
     // Mock readFile to return content
     vi.mocked(fileSystemService.readFile).mockResolvedValue(`---
-id: "${legacyId}"
-name: "${projectName}"
+id: "${projectId}"
+name: "${legacyName}"
 ---
-# ${projectName}`);
+# ${legacyName}`);
 
-    // We assume initialize or a specific migration method will trigger this
     await diskProjectService.migrateLegacyProjectFiles();
 
-    // Should write new file with name
+    // Should write new file with ID
     expect(fileSystemService.writeFile).toHaveBeenCalledWith(
-      `projects/${projectName}.md`,
-      expect.stringContaining(`name: "${projectName}"`)
+      `projects/${projectId}.md`,
+      expect.stringContaining(`id: "${projectId}"`)
     );
 
-    // Should delete old file
-    expect(fileSystemService.deleteFile).toHaveBeenCalledWith(`projects/${legacyId}.md`);
+    // Should delete old file with name
+    expect(fileSystemService.deleteFile).toHaveBeenCalledWith(`projects/${legacyName}.md`);
   });
 
-  it('should not touch files that are already correctly named', async () => {
+  it('should not touch files that are already correctly named (ID-based)', async () => {
+    const projectId = 'proj-456';
     const projectName = 'Correct Name';
 
-    vi.mocked(fileSystemService.listFiles).mockResolvedValue([`${projectName}.md`]);
+    vi.mocked(fileSystemService.listFiles).mockResolvedValue([`${projectId}.md`]);
     vi.mocked(fileSystemService.readFile).mockResolvedValue(`---
-id: "proj-456"
+id: "${projectId}"
 name: "${projectName}"
 ---`);
 

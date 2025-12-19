@@ -15,41 +15,32 @@
  * /information/
  *   INFO-001.md
  * /projects/
- *   ProjectA.json        # {name, description, requirementIds: [...], ...}
- *   ProjectB.json
- * config.json            # {currentProjectId, counters: {req, uc, tc, info}}
+ *   ProjectA.md        # YAML frontmatter + markdown
+ *   ProjectB.md
+ * /users/
+ *   USER-001.md
+ * /counters/
+ *   requirements.md    # just the number
+ *   usecases.md
+ *   ...
+ * current-project.md   # current project ID
+ * current-user.md      # current user ID
  */
 
-import { debug } from '../utils/debug';
 import { fileSystemService } from './fileSystemService';
 import { realGitService } from './realGitService';
+import { debug } from '../utils/debug';
 import type { Project, Requirement, UseCase, TestCase, Information, User, Risk } from '../types';
 import {
-  requirementToMarkdown,
-  markdownToRequirement,
-  convertUseCaseToMarkdown,
-  markdownToUseCase,
-  testCaseToMarkdown,
-  markdownToTestCase,
-  informationToMarkdown,
-  markdownToInformation,
-  riskToMarkdown,
-  markdownToRisk,
-  userToMarkdown,
-  markdownToUser,
-  projectToMarkdown,
-  markdownToProject,
-} from '../utils/markdownUtils';
+  requirementService,
+  useCaseService,
+  testCaseService,
+  informationService,
+  riskService,
+  projectService,
+  userService,
+} from './artifactServices';
 
-const REQUIREMENTS_DIR = 'requirements';
-const USECASES_DIR = 'usecases';
-const TESTCASES_DIR = 'testcases';
-const INFORMATION_DIR = 'information';
-const RISKS_DIR = 'risks';
-const LINKS_DIR = 'links';
-const PROJECTS_DIR = 'projects';
-const USERS_DIR = 'users';
-const COUNTERS_DIR = 'counters';
 const CURRENT_PROJECT_FILE = 'current-project.md';
 const CURRENT_USER_FILE = 'current-user.md';
 
@@ -58,62 +49,16 @@ class DiskProjectService {
    * Initialize directory structure
    */
   async initialize(): Promise<void> {
-    await fileSystemService.getOrCreateDirectory(REQUIREMENTS_DIR);
-    await fileSystemService.getOrCreateDirectory(USECASES_DIR);
-    await fileSystemService.getOrCreateDirectory(TESTCASES_DIR);
-    await fileSystemService.getOrCreateDirectory(INFORMATION_DIR);
-    await fileSystemService.getOrCreateDirectory(RISKS_DIR);
-    await fileSystemService.getOrCreateDirectory(LINKS_DIR);
-    await fileSystemService.getOrCreateDirectory(PROJECTS_DIR);
-    await fileSystemService.getOrCreateDirectory(USERS_DIR);
-    await fileSystemService.getOrCreateDirectory(COUNTERS_DIR);
-
-    // Auto-migrate legacy files
-    await this.migrateLegacyProjectFiles();
-  }
-
-  /**
-   * Migrate legacy project files (ID-based filenames) to Name-based filenames
-   */
-  async migrateLegacyProjectFiles(): Promise<void> {
-    try {
-      const files = await fileSystemService.listFiles(PROJECTS_DIR);
-
-      for (const file of files) {
-        if (!file.endsWith('.md')) continue;
-
-        const content = await fileSystemService.readFile(`${PROJECTS_DIR}/${file}`);
-        if (!content) continue;
-
-        const project = markdownToProject(content);
-        if (!project) continue;
-
-        const expectedFilename = `${project.name}.md`;
-
-        // If the current filename is NOT the expected filename
-        // This handles cases where filename is the ID, or anything else mismatching
-        if (file !== expectedFilename) {
-          debug.log(`Migrating project file: ${file} -> ${expectedFilename}`);
-
-          // Check if target already differs to avoid overwrite if we have duplicates?
-          // For now assume safe migration, or check existence
-          if (await this.checkProjectNameExists(project.name, project.id)) {
-            console.warn(
-              `Cannot migrate ${file} to ${expectedFilename}: Target file already exists`
-            );
-            continue;
-          }
-
-          // Write new file
-          await fileSystemService.writeFile(`${PROJECTS_DIR}/${expectedFilename}`, content);
-
-          // Delete old file
-          await fileSystemService.deleteFile(`${PROJECTS_DIR}/${file}`);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to migrate project files:', err);
-    }
+    // Services handle directory creation on save, but we can ensure they exist
+    await fileSystemService.getOrCreateDirectory('requirements');
+    await fileSystemService.getOrCreateDirectory('usecases');
+    await fileSystemService.getOrCreateDirectory('testcases');
+    await fileSystemService.getOrCreateDirectory('information');
+    await fileSystemService.getOrCreateDirectory('risks');
+    await fileSystemService.getOrCreateDirectory('links');
+    await fileSystemService.getOrCreateDirectory('projects');
+    await fileSystemService.getOrCreateDirectory('users');
+    await fileSystemService.getOrCreateDirectory('counters');
   }
 
   // ============ COUNTER OPERATIONS ============
@@ -148,7 +93,7 @@ class DiskProjectService {
       | 'workflows'
   ): Promise<number> {
     const filenameBase = this.counterFilenameMap[type] || type.toLowerCase();
-    const filename = `${COUNTERS_DIR}/${filenameBase}.md`;
+    const filename = `counters/${filenameBase}.md`;
     try {
       const content = await fileSystemService.readFile(filename);
       if (content) {
@@ -179,7 +124,7 @@ class DiskProjectService {
     skipCommit: boolean = false
   ): Promise<void> {
     const filenameBase = this.counterFilenameMap[type] || type.toLowerCase();
-    const filename = `${COUNTERS_DIR}/${filenameBase}.md`;
+    const filename = `counters/${filenameBase}.md`;
     await fileSystemService.writeFile(filename, String(value));
 
     // Auto-commit the counter update (unless skipped, e.g., during recalculation)
@@ -301,14 +246,6 @@ class DiskProjectService {
 
   /**
    * Get next artifact ID with remote sync (for collaboration)
-   *
-   * When a remote is configured, this method:
-   * 1. Pulls latest counters from remote
-   * 2. Increments local counter
-   * 3. Pushes updated counter to remote
-   *
-   * This ensures unique IDs across collaborators.
-   * Falls back to normal getNextId if no remote is configured.
    */
   async getNextIdWithSync(
     type:
@@ -327,7 +264,6 @@ class DiskProjectService {
       await realGitService.pullCounters();
     } catch (err) {
       console.warn('[getNextIdWithSync] Failed to pull counters:', err);
-      // Continue anyway - better to create with potential conflict than fail
     }
 
     // Get next ID locally
@@ -348,79 +284,20 @@ class DiskProjectService {
   // ============ PROJECT OPERATIONS ============
 
   /**
-   * List all projects from disk
+   * Load a single project
    */
-  async listProjects(): Promise<Project[]> {
-    const projects: Project[] = [];
-
-    try {
-      const files = await fileSystemService.listFiles(PROJECTS_DIR);
-
-      for (const file of files) {
-        if (file.endsWith('.md')) {
-          const content = await fileSystemService.readFile(`${PROJECTS_DIR}/${file}`);
-          if (content) {
-            const project = markdownToProject(content);
-            if (project) {
-              projects.push(project);
-            }
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Failed to list projects:', err);
-    }
-
-    return projects;
-  }
-
-  /**
-   * Helper: Find project filename by ID
-   */
-  private async findProjectFilenameById(id: string): Promise<string | null> {
-    try {
-      const files = await fileSystemService.listFiles(PROJECTS_DIR);
-      for (const file of files) {
-        if (file.endsWith('.md')) {
-          const content = await fileSystemService.readFile(`${PROJECTS_DIR}/${file}`);
-          if (content) {
-            const project = markdownToProject(content);
-            if (project && project.id === id) {
-              return file;
-            }
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Failed to search project files:', err);
-    }
-    return null;
+  async loadProject(projectId: string): Promise<Project | null> {
+    return projectService.load(projectId);
   }
 
   /**
    * Helper: Check if project name exists
    */
   private async checkProjectNameExists(name: string, excludeId?: string): Promise<boolean> {
-    try {
-      const files = await fileSystemService.listFiles(PROJECTS_DIR);
-      for (const file of files) {
-        if (file.endsWith('.md')) {
-          const content = await fileSystemService.readFile(`${PROJECTS_DIR}/${file}`);
-          if (content) {
-            const project = markdownToProject(content);
-            if (project && project.name === name) {
-              if (excludeId && project.id === excludeId) {
-                continue; // It's the same project
-              }
-              return true;
-            }
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Failed to check project names:', err);
-    }
-    return false;
+    const allProjects = await projectService.loadAll();
+    return allProjects.some(
+      (p) => p.name.toLowerCase() === name.toLowerCase() && p.id !== excludeId
+    );
   }
 
   /**
@@ -445,8 +322,7 @@ class DiskProjectService {
       lastModified: Date.now(),
     };
 
-    const markdown = projectToMarkdown(project);
-    await fileSystemService.writeFile(`${PROJECTS_DIR}/${name}.md`, markdown);
+    await projectService.save(project);
 
     // Set as current project if none set
     const currentId = await this.getCurrentProjectId();
@@ -465,30 +341,12 @@ class DiskProjectService {
       throw new Error(`Project with name "${project.name}" already exists`);
     }
 
-    const oldFilename = await this.findProjectFilenameById(project.id);
-
     const updatedProject: Project = {
       ...project,
       lastModified: Date.now(),
     };
 
-    const markdown = projectToMarkdown(updatedProject);
-    const newFilename = `${project.name}.md`;
-    const oldPath = oldFilename ? `${PROJECTS_DIR}/${oldFilename}` : null;
-    const newPath = `${PROJECTS_DIR}/${newFilename}`;
-
-    // If filename changed, use git rename to preserve history and auto-commit
-    if (oldPath && oldFilename !== newFilename && realGitService.isInitialized()) {
-      await realGitService.renameFile(oldPath, newPath, markdown);
-    } else {
-      // Just write the file (no rename needed)
-      await fileSystemService.writeFile(newPath, markdown);
-
-      // If filename changed but git not initialized, delete old file manually
-      if (oldFilename && oldFilename !== newFilename) {
-        await fileSystemService.deleteFile(`${PROJECTS_DIR}/${oldFilename}`);
-      }
-    }
+    await projectService.save(updatedProject);
   }
 
   /**
@@ -523,26 +381,11 @@ class DiskProjectService {
    * Permanently delete a project (removes file, auto-commits)
    */
   async permanentDeleteProject(projectId: string): Promise<void> {
-    const project = await this.loadProject(projectId);
-    const projectName = project?.name || projectId;
-
-    const filename = await this.findProjectFilenameById(projectId);
-    if (filename) {
-      const filepath = `${PROJECTS_DIR}/${filename}`;
-      await fileSystemService.deleteFile(filepath);
-
-      // Auto-commit the deletion
-      if (realGitService.isInitialized()) {
-        await realGitService.commitFile(filepath, `Project deleted: ${projectName}`);
-      }
-    } else {
-      console.warn(`Could not find file for project ${projectId} to permanently delete`);
-    }
+    await projectService.delete(projectId, `Project deleted: ${projectId}`);
   }
 
   /**
    * Copy a project with a new name and description
-   * Artifacts are global, so the copy just references the same artifact IDs
    */
   async copyProject(
     originalProject: Project,
@@ -555,7 +398,6 @@ class DiskProjectService {
       throw new Error(`A project named "${newName}" already exists`);
     }
 
-    // Create new project ID
     const newId = `proj-${Date.now()}`;
 
     const newProject: Project = {
@@ -563,7 +405,6 @@ class DiskProjectService {
       name: newName,
       description: newDescription,
       lastModified: Date.now(),
-      // Copy artifact references
       requirementIds: [...originalProject.requirementIds],
       useCaseIds: [...originalProject.useCaseIds],
       testCaseIds: [...originalProject.testCaseIds],
@@ -571,31 +412,15 @@ class DiskProjectService {
       riskIds: [...(originalProject.riskIds || [])],
     };
 
-    // Save to disk
-    const content = projectToMarkdown(newProject);
-    const safeName = newName.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const filename = `${safeName}.md`;
-    await fileSystemService.writeFile(`${PROJECTS_DIR}/${filename}`, content);
-
+    await projectService.save(newProject);
     return newProject;
   }
 
   /**
-   * Load a single project
+   * Load all projects (global)
    */
-  async loadProject(projectId: string): Promise<Project | null> {
-    try {
-      const filename = await this.findProjectFilenameById(projectId);
-      if (!filename) return null;
-
-      const content = await fileSystemService.readFile(`${PROJECTS_DIR}/${filename}`);
-      if (content) {
-        return markdownToProject(content);
-      }
-    } catch {
-      // Project not found
-    }
-    return null;
+  async loadAllProjects(): Promise<Project[]> {
+    return projectService.loadAll();
   }
 
   // ============ GLOBAL ARTIFACT OPERATIONS ============
@@ -604,168 +429,84 @@ class DiskProjectService {
    * Save a requirement to disk (global)
    */
   async saveRequirement(requirement: Requirement): Promise<void> {
-    const markdown = requirementToMarkdown(requirement);
-    await fileSystemService.writeFile(`${REQUIREMENTS_DIR}/${requirement.id}.md`, markdown);
+    await requirementService.save(requirement);
   }
 
   /**
    * Load all requirements (global)
    */
   async loadAllRequirements(): Promise<Requirement[]> {
-    const requirements: Requirement[] = [];
-
-    try {
-      const files = await fileSystemService.listFiles(REQUIREMENTS_DIR);
-
-      for (const file of files) {
-        if (file.endsWith('.md')) {
-          const content = await fileSystemService.readFile(`${REQUIREMENTS_DIR}/${file}`);
-          if (content) {
-            const requirement = markdownToRequirement(content);
-            if (requirement) {
-              requirements.push(requirement);
-            }
-          }
-        }
-      }
-    } catch {
-      // Directory might not exist
-    }
-
-    return requirements;
+    return requirementService.loadAll();
   }
 
   /**
    * Delete a requirement from disk
    */
   async deleteRequirement(requirementId: string): Promise<void> {
-    await fileSystemService.deleteFile(`${REQUIREMENTS_DIR}/${requirementId}.md`);
+    await requirementService.delete(requirementId);
   }
 
   /**
    * Save a use case to disk (global)
    */
   async saveUseCase(useCase: UseCase): Promise<void> {
-    const markdown = convertUseCaseToMarkdown(useCase);
-    await fileSystemService.writeFile(`${USECASES_DIR}/${useCase.id}.md`, markdown);
+    await useCaseService.save(useCase);
   }
 
   /**
    * Load all use cases (global)
    */
   async loadAllUseCases(): Promise<UseCase[]> {
-    const useCases: UseCase[] = [];
-
-    try {
-      const files = await fileSystemService.listFiles(USECASES_DIR);
-
-      for (const file of files) {
-        if (file.endsWith('.md')) {
-          const content = await fileSystemService.readFile(`${USECASES_DIR}/${file}`);
-          if (content) {
-            const useCase = markdownToUseCase(content);
-            if (useCase) {
-              useCases.push(useCase);
-            }
-          }
-        }
-      }
-    } catch {
-      // Directory might not exist
-    }
-
-    return useCases;
+    return useCaseService.loadAll();
   }
 
   /**
    * Delete a use case from disk
    */
   async deleteUseCase(useCaseId: string): Promise<void> {
-    await fileSystemService.deleteFile(`${USECASES_DIR}/${useCaseId}.md`);
+    await useCaseService.delete(useCaseId);
   }
 
   /**
    * Save a test case to disk (global)
    */
   async saveTestCase(testCase: TestCase): Promise<void> {
-    const markdown = testCaseToMarkdown(testCase);
-    await fileSystemService.writeFile(`${TESTCASES_DIR}/${testCase.id}.md`, markdown);
+    await testCaseService.save(testCase);
   }
 
   /**
    * Load all test cases (global)
    */
   async loadAllTestCases(): Promise<TestCase[]> {
-    const testCases: TestCase[] = [];
-
-    try {
-      const files = await fileSystemService.listFiles(TESTCASES_DIR);
-
-      for (const file of files) {
-        if (file.endsWith('.md')) {
-          const content = await fileSystemService.readFile(`${TESTCASES_DIR}/${file}`);
-          if (content) {
-            const testCase = markdownToTestCase(content);
-            if (testCase) {
-              testCases.push(testCase);
-            }
-          }
-        }
-      }
-    } catch {
-      // Directory might not exist
-    }
-
-    return testCases;
+    return testCaseService.loadAll();
   }
 
   /**
    * Delete a test case from disk
    */
   async deleteTestCase(testCaseId: string): Promise<void> {
-    await fileSystemService.deleteFile(`${TESTCASES_DIR}/${testCaseId}.md`);
+    await testCaseService.delete(testCaseId);
   }
 
   /**
    * Save information to disk (global)
    */
   async saveInformation(info: Information): Promise<void> {
-    const markdown = informationToMarkdown(info);
-    await fileSystemService.writeFile(`${INFORMATION_DIR}/${info.id}.md`, markdown);
+    await informationService.save(info);
   }
 
   /**
    * Load all information (global)
    */
   async loadAllInformation(): Promise<Information[]> {
-    const infoList: Information[] = [];
-
-    try {
-      const files = await fileSystemService.listFiles(INFORMATION_DIR);
-
-      for (const file of files) {
-        if (file.endsWith('.md')) {
-          const content = await fileSystemService.readFile(`${INFORMATION_DIR}/${file}`);
-          if (content) {
-            const info = markdownToInformation(content);
-            if (info) {
-              infoList.push(info);
-            }
-          }
-        }
-      }
-    } catch {
-      // Directory might not exist
-    }
-
-    return infoList;
+    return informationService.loadAll();
   }
 
   /**
    * Delete information from disk
    */
   async deleteInformation(infoId: string): Promise<void> {
-    await fileSystemService.deleteFile(`${INFORMATION_DIR}/${infoId}.md`);
+    await informationService.delete(infoId);
   }
 
   // ============ RISK OPERATIONS ============
@@ -774,42 +515,21 @@ class DiskProjectService {
    * Save a risk to disk (global)
    */
   async saveRisk(risk: Risk): Promise<void> {
-    const markdown = riskToMarkdown(risk);
-    await fileSystemService.writeFile(`${RISKS_DIR}/${risk.id}.md`, markdown);
+    await riskService.save(risk);
   }
 
   /**
    * Load all risks (global)
    */
   async loadAllRisks(): Promise<Risk[]> {
-    const risks: Risk[] = [];
-
-    try {
-      const files = await fileSystemService.listFiles(RISKS_DIR);
-
-      for (const file of files) {
-        if (file.endsWith('.md')) {
-          const content = await fileSystemService.readFile(`${RISKS_DIR}/${file}`);
-          if (content) {
-            const risk = markdownToRisk(content);
-            if (risk) {
-              risks.push(risk);
-            }
-          }
-        }
-      }
-    } catch {
-      // Directory might not exist
-    }
-
-    return risks;
+    return riskService.loadAll();
   }
 
   /**
    * Delete a risk from disk
    */
   async deleteRisk(riskId: string): Promise<void> {
-    await fileSystemService.deleteFile(`${RISKS_DIR}/${riskId}.md`);
+    await riskService.delete(riskId);
   }
 
   // ============ USER OPERATIONS ============
@@ -818,42 +538,21 @@ class DiskProjectService {
    * Save a user to disk
    */
   async saveUser(user: User): Promise<void> {
-    const markdown = userToMarkdown(user);
-    await fileSystemService.writeFile(`${USERS_DIR}/${user.id}.md`, markdown);
+    await userService.save(user);
   }
 
   /**
    * Load all users
    */
   async loadAllUsers(): Promise<User[]> {
-    const users: User[] = [];
-
-    try {
-      const files = await fileSystemService.listFiles(USERS_DIR);
-
-      for (const file of files) {
-        if (file.endsWith('.md')) {
-          const content = await fileSystemService.readFile(`${USERS_DIR}/${file}`);
-          if (content) {
-            const user = markdownToUser(content);
-            if (user) {
-              users.push(user);
-            }
-          }
-        }
-      }
-    } catch {
-      // Directory might not exist
-    }
-
-    return users;
+    return userService.loadAll();
   }
 
   /**
    * Delete a user from disk
    */
   async deleteUser(userId: string): Promise<void> {
-    await fileSystemService.deleteFile(`${USERS_DIR}/${userId}.md`);
+    await userService.delete(userId);
   }
 
   // ============ BULK OPERATIONS ============
@@ -872,7 +571,7 @@ class DiskProjectService {
   }> {
     const [projects, requirements, useCases, testCases, information, risks, currentProjectId] =
       await Promise.all([
-        this.listProjects(),
+        this.loadAllProjects(),
         this.loadAllRequirements(),
         this.loadAllUseCases(),
         this.loadAllTestCases(),
@@ -945,6 +644,39 @@ class DiskProjectService {
       this.setCounter('information', maxInfo, true),
       this.setCounter('risks', maxRisk, true),
     ]);
+  }
+
+  /**
+   * Migrate legacy project files (Name-based) to ID-based filenames.
+   * This is part of the refactoring to ensure all artifacts use ID as filename.
+   */
+  async migrateLegacyProjectFiles(): Promise<void> {
+    try {
+      const files = await fileSystemService.listFiles('projects');
+      for (const file of files) {
+        if (!file.endsWith('.md')) continue;
+
+        // If the filename starts with 'proj-', it's already using ID
+        if (file.startsWith('proj-')) continue;
+
+        const content = await fileSystemService.readFile(`projects/${file}`);
+        if (content) {
+          const project = projectService.deserialize(content);
+          if (project && project.id) {
+            const newPath = `projects/${project.id}.md`;
+            const oldPath = `projects/${file}`;
+
+            if (newPath !== oldPath) {
+              await fileSystemService.writeFile(newPath, content);
+              await fileSystemService.deleteFile(oldPath);
+              debug.log(`[Migration] Migrated project ${file} to ${project.id}.md`);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      debug.log('[Migration] Failed to migrate project files:', err);
+    }
   }
 }
 
