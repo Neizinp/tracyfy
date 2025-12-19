@@ -1346,21 +1346,33 @@ class RealGitService {
 
       // Check if counters have changed
       const remoteRef = `${remote}/${branch}`;
-      const localHead = await git.resolveRef({
-        fs: fsAdapter,
-        dir: this.getRootDir(),
-        ref: 'HEAD',
-      });
+      let localHead: string;
       let remoteHead: string;
-      try {
-        remoteHead = await git.resolveRef({
+
+      if (isElectronEnv()) {
+        const rootDir = this.getRootDir();
+        localHead = await window.electronAPI!.git.resolveRef(rootDir, 'HEAD');
+        try {
+          remoteHead = await window.electronAPI!.git.resolveRef(rootDir, remoteRef);
+        } catch {
+          return false;
+        }
+      } else {
+        localHead = await git.resolveRef({
           fs: fsAdapter,
           dir: this.getRootDir(),
-          ref: remoteRef,
+          ref: 'HEAD',
         });
-      } catch {
-        // Remote ref doesn't exist yet
-        return false;
+        try {
+          remoteHead = await git.resolveRef({
+            fs: fsAdapter,
+            dir: this.getRootDir(),
+            ref: remoteRef,
+          });
+        } catch {
+          // Remote ref doesn't exist yet
+          return false;
+        }
       }
 
       if (localHead === remoteHead) {
@@ -1427,9 +1439,14 @@ class RealGitService {
 
       for (const file of counterFiles) {
         try {
-          const content = await fileSystemService.readFile(file);
-          if (content) {
-            await git.add({ fs: fsAdapter, dir: this.getRootDir(), filepath: file, cache });
+          const exists = await fileSystemService.readFileBinary(file).then((b) => b !== null);
+          if (exists) {
+            if (isElectronEnv()) {
+              const res = await window.electronAPI!.git.add(this.getRootDir(), file);
+              if (res.error) throw new Error(res.error);
+            } else {
+              await git.add({ fs: fsAdapter, dir: this.getRootDir(), filepath: file, cache });
+            }
             hasChanges = true;
           }
         } catch {
@@ -1442,13 +1459,21 @@ class RealGitService {
       }
 
       // Commit counter update
-      await git.commit({
-        fs: fsAdapter,
-        dir: this.getRootDir(),
-        message: 'Sync: Update artifact counters',
-        author: { name: 'Tracyfy Sync', email: 'sync@tracyfy.local' },
-        cache,
-      });
+      const author = { name: 'Tracyfy Sync', email: 'sync@tracyfy.local' };
+      const message = 'Sync: Update artifact counters';
+
+      if (isElectronEnv()) {
+        const res = await window.electronAPI!.git.commit(this.getRootDir(), message, author);
+        if (res.error) throw new Error(res.error);
+      } else {
+        await git.commit({
+          fs: fsAdapter,
+          dir: this.getRootDir(),
+          message,
+          author,
+          cache,
+        });
+      }
 
       // Push to remote
       await this.push(remote, branch);
