@@ -62,28 +62,26 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
     if (isOpen) {
       if (artifact) {
         // Edit mode: populate from artifact
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const a = artifact as any;
-        setTitle(a.title || '');
-        setDescription(a.description || '');
-        setText(a.text || '');
-        setPriority(a.priority || 'medium');
-        setStatus(a.status || 'draft');
-        setAuthor(a.author || '');
-        setLinkedArtifacts(a.linkedArtifacts || []);
-        setCustomAttributes(a.customAttributes || []);
+        const a = artifact as Record<string, unknown>;
+        setTitle((a.title as string) || '');
+        setDescription((a.description as string) || '');
+        setText((a.text as string) || '');
+        setPriority((a.priority as string) || 'medium');
+        setStatus((a.status as string) || 'draft');
+        setAuthor((a.author as string) || '');
+        setLinkedArtifacts((a.linkedArtifacts as ArtifactLink[]) || []);
+        setCustomAttributes((a.customAttributes as CustomAttributeValue[]) || []);
       } else {
         // Create mode: reset to defaults or initial state
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const s = initialState as any;
-        setTitle(s.title || '');
-        setDescription(s.description || '');
-        setText(s.text || '');
-        setPriority(s.priority || 'medium');
-        setStatus(s.status || 'draft');
-        setAuthor(s.author || currentUser?.name || '');
-        setLinkedArtifacts(s.linkedArtifacts || []);
-        setCustomAttributes(s.customAttributes || []);
+        const s = initialState as Record<string, unknown>;
+        setTitle((s.title as string) || '');
+        setDescription((s.description as string) || '');
+        setText((s.text as string) || '');
+        setPriority((s.priority as string) || 'medium');
+        setStatus((s.status as string) || 'draft');
+        setAuthor((s.author as string) || currentUser?.name || '');
+        setLinkedArtifacts((s.linkedArtifacts as ArtifactLink[]) || []);
+        setCustomAttributes((s.customAttributes as CustomAttributeValue[]) || []);
       }
     }
   }, [isOpen, artifact, initialState, currentUser?.name]);

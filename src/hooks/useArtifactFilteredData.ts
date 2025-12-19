@@ -6,11 +6,23 @@ interface Identifiable {
   isDeleted?: boolean;
 }
 
+export interface FilterOptions<T> {
+  searchQuery: string;
+  searchFields?: (keyof T)[];
+  filterFn?: (item: T) => boolean;
+  getValueFn?: (item: T, key: string) => string | number | undefined;
+}
+
 export function useArtifactFilteredData<T extends Identifiable>(
   items: T[],
-  searchQuery: string,
-  searchFields: (keyof T)[] = ['id' as keyof T]
+  optionsOrQuery: string | FilterOptions<T>,
+  searchFieldsLegacy: (keyof T)[] = ['id' as keyof T]
 ) {
+  const isOptions = typeof optionsOrQuery !== 'string';
+  const searchQuery = isOptions ? optionsOrQuery.searchQuery : optionsOrQuery;
+  const filterFn = isOptions ? optionsOrQuery.filterFn : undefined;
+  const getValueFn = isOptions ? optionsOrQuery.getValueFn : undefined;
+
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'id', direction: 'asc' });
 
   const handleSortChange = useCallback((key: string) => {
@@ -18,12 +30,21 @@ export function useArtifactFilteredData<T extends Identifiable>(
   }, []);
 
   const filteredData = useMemo(() => {
+    const fields = isOptions
+      ? optionsOrQuery.searchFields || (['id'] as (keyof T)[])
+      : searchFieldsLegacy;
+
     return items.filter((item) => {
+      // Basic deleted filter
       if (item.isDeleted) return false;
+
+      // Custom filter
+      if (filterFn && !filterFn(item)) return false;
+
       if (!searchQuery) return true;
 
       const query = searchQuery.toLowerCase();
-      return searchFields.some((field) => {
+      return fields.some((field) => {
         const value = item[field];
         if (typeof value === 'string') {
           return value.toLowerCase().includes(query);
@@ -31,16 +52,17 @@ export function useArtifactFilteredData<T extends Identifiable>(
         return false;
       });
     });
-  }, [items, searchQuery, searchFields]);
+  }, [items, searchQuery, optionsOrQuery, searchFieldsLegacy, filterFn, isOptions]);
 
   const sortedData = useMemo(() => {
-    return sortItems(filteredData, sortConfig);
-  }, [filteredData, sortConfig]);
+    return sortItems(filteredData, sortConfig, getValueFn);
+  }, [filteredData, sortConfig, getValueFn]);
 
   return {
     filteredData,
     sortedData,
     sortConfig,
+    setSortConfig,
     handleSortChange,
   };
 }

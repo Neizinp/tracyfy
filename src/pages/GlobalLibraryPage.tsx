@@ -35,33 +35,40 @@ export const GlobalLibraryPage: React.FC = () => {
     sortedData: sortedReqs,
     sortConfig: reqSort,
     handleSortChange: onReqSort,
-  } = useArtifactFilteredData(globalRequirements, searchQuery, [
-    'id',
-    'title',
-    'description',
-    'text',
-  ]);
+  } = useArtifactFilteredData(globalRequirements, {
+    searchQuery,
+    searchFields: ['id', 'title', 'description', 'text'],
+  });
 
   // Use Cases
   const {
     sortedData: sortedUCs,
     sortConfig: ucSort,
     handleSortChange: onUCSort,
-  } = useArtifactFilteredData(globalUseCases, searchQuery, ['id', 'title', 'description', 'actor']);
+  } = useArtifactFilteredData(globalUseCases, {
+    searchQuery,
+    searchFields: ['id', 'title', 'description', 'actor'],
+  });
 
   // Test Cases
   const {
     sortedData: sortedTCs,
     sortConfig: tcSort,
     handleSortChange: onTCSort,
-  } = useArtifactFilteredData(globalTestCases, searchQuery, ['id', 'title', 'description']);
+  } = useArtifactFilteredData(globalTestCases, {
+    searchQuery,
+    searchFields: ['id', 'title', 'description'],
+  });
 
   // Information
   const {
     sortedData: sortedInfo,
     sortConfig: infoSort,
     handleSortChange: onInfoSort,
-  } = useArtifactFilteredData(globalInformation, searchQuery, ['id', 'title', 'content']);
+  } = useArtifactFilteredData(globalInformation, {
+    searchQuery,
+    searchFields: ['id', 'title', 'text'],
+  });
 
   switch (type) {
     case 'requirements':

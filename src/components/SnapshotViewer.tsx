@@ -154,9 +154,11 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
                 whiteSpace: 'pre-wrap',
               }}
             >
-              {'text' in item
-                ? (item as any).text
-                : (item as any).description || (item as any).content || ''}
+              {'text' in item && item.text
+                ? item.text
+                : 'description' in item
+                  ? item.description || ''
+                  : ''}
             </div>
           </div>
         ))}

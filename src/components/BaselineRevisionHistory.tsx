@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { FileText, GitCommit, Plus, Minus, Edit, Calendar, User } from 'lucide-react';
-import type { ProjectBaseline, ArtifactRevision } from '../types';
+import type {
+  ProjectBaseline,
+  ArtifactRevision,
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+} from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { realGitService } from '../services/realGitService';
 import { fileSystemService } from '../services/fileSystemService';
@@ -81,7 +88,7 @@ export function BaselineRevisionHistory({
                     const folderPath = `${folder}/${artifactId}.md`;
                     const fileContent = await fileSystemService.readFile(folderPath);
                     if (fileContent) {
-                      let parsed: any = null;
+                      let parsed: Requirement | UseCase | TestCase | Information | null = null;
                       if (currentInfo.type === 'requirement') {
                         parsed = markdownToRequirement(fileContent);
                       } else if (currentInfo.type === 'usecase') {
@@ -91,7 +98,8 @@ export function BaselineRevisionHistory({
                       } else if (currentInfo.type === 'information') {
                         parsed = markdownToInformation(fileContent);
                       }
-                      if (parsed && parsed.revision) revision = parsed.revision;
+                      if (parsed && 'revision' in parsed && parsed.revision)
+                        revision = parsed.revision;
                     }
                   } catch {
                     // ignore

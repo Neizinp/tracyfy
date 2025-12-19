@@ -7,11 +7,10 @@ export const TestCasesPage: React.FC = () => {
   const { testCases, handleEditTestCase } = useTestCases();
   const { searchQuery, testCaseColumnVisibility } = useUI();
 
-  const { sortedData, sortConfig, handleSortChange } = useArtifactFilteredData(
-    testCases,
+  const { sortedData, sortConfig, handleSortChange } = useArtifactFilteredData(testCases, {
     searchQuery,
-    ['id', 'title', 'description']
-  );
+    searchFields: ['id', 'title', 'description'],
+  });
 
   return (
     <TestCaseList

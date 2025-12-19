@@ -1,30 +1,17 @@
-/**
- * LinksView Component
- *
- * Displays all Link entities in a table format with filtering, navigation, and editing.
- */
-
-import React, { useState, useEffect } from 'react';
-import {
-  Link as LinkIcon,
-  ArrowRight,
-  RefreshCw,
-  Globe,
-  Folder,
-  ChevronUp,
-  ChevronDown,
-  Plus,
-} from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link as LinkIcon, ArrowRight, RefreshCw, Globe, Folder, Plus } from 'lucide-react';
 import { diskLinkService } from '../services/diskLinkService';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import type { Link, Project } from '../types';
 import type { LinkType } from '../utils/linkTypes';
 import { EditLinkModal } from './EditLinkModal';
+import { BaseArtifactTable, type ColumnDef } from './BaseArtifactTable';
+import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
 
 interface LinksViewProps {
   onNavigateToArtifact?: (id: string, type: string) => void;
   projects?: Project[];
-  onAdd?: () => void; // Callback to open Add Link modal
+  onAdd?: () => void;
 }
 
 export const LinksView: React.FC<LinksViewProps> = ({
@@ -38,17 +25,12 @@ export const LinksView: React.FC<LinksViewProps> = ({
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [scopeFilter, setScopeFilter] = useState<'all' | 'global' | 'project'>('all');
 
-  // Sort state
-  type SortColumn = 'id' | 'source' | 'type' | 'target' | 'scope';
-  const [sortColumn, setSortColumn] = useState<SortColumn>('id');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-
   // Edit modal state
   const [editingLink, setEditingLink] = useState<Link | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Load all links
-  const loadLinks = async () => {
+  const loadLinks = useCallback(async () => {
     setLoading(true);
     try {
       const allLinks = await diskLinkService.getAllLinks();
@@ -58,11 +40,11 @@ export const LinksView: React.FC<LinksViewProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadLinks();
-  }, []);
+  }, [loadLinks]);
 
   // Delete a link (called from modal)
   const handleDeleteLink = async (linkId: string) => {
@@ -95,25 +77,25 @@ export const LinksView: React.FC<LinksViewProps> = ({
     }
   };
 
-  // Get artifact type from ID prefix
+  // Helpers
   const getArtifactType = (id: string): string => {
     if (id.startsWith('REQ-')) return 'requirement';
     if (id.startsWith('UC-')) return 'usecase';
     if (id.startsWith('TC-')) return 'testcase';
     if (id.startsWith('INFO-')) return 'information';
+    if (id.startsWith('RISK-')) return 'risk';
     return 'unknown';
   };
 
-  // Get color for artifact type
   const getTypeColor = (id: string): string => {
     if (id.startsWith('REQ-')) return 'var(--color-info)';
     if (id.startsWith('UC-')) return 'var(--color-accent)';
     if (id.startsWith('TC-')) return 'var(--color-success)';
     if (id.startsWith('INFO-')) return 'var(--color-warning)';
+    if (id.startsWith('RISK-')) return 'var(--color-status-error)';
     return 'var(--color-text-muted)';
   };
 
-  // Get project names for a link
   const getProjectNames = (projectIds: string[]): string => {
     if (projectIds.length === 0) return 'Global';
     return projectIds
@@ -124,84 +106,154 @@ export const LinksView: React.FC<LinksViewProps> = ({
       .join(', ');
   };
 
-  // Get unique link types for filter
-  const uniqueTypes = Array.from(new Set(links.map((l) => l.type)));
+  // Unique link types for filter
+  const uniqueTypes = useMemo(() => Array.from(new Set(links.map((l) => l.type))), [links]);
 
-  // Filter links
-  const filteredLinks = links.filter((link) => {
-    const matchesSearch =
-      filter === '' ||
-      link.id.toLowerCase().includes(filter.toLowerCase()) ||
-      link.sourceId.toLowerCase().includes(filter.toLowerCase()) ||
-      link.targetId.toLowerCase().includes(filter.toLowerCase()) ||
-      link.type.toLowerCase().includes(filter.toLowerCase());
-
-    const matchesType = typeFilter === 'all' || link.type === typeFilter;
-
-    const matchesScope =
-      scopeFilter === 'all' ||
-      (scopeFilter === 'global' && link.projectIds.length === 0) ||
-      (scopeFilter === 'project' && link.projectIds.length > 0);
-
-    return matchesSearch && matchesType && matchesScope;
+  // Sorting and Filtering logic
+  const {
+    sortedData: processedLinks,
+    sortConfig,
+    handleSortChange,
+  } = useArtifactFilteredData(links, {
+    searchQuery: filter,
+    searchFields: ['id', 'sourceId', 'targetId', 'type'],
+    filterFn: (link: Link) => {
+      const matchesType = typeFilter === 'all' || link.type === typeFilter;
+      const matchesScope =
+        scopeFilter === 'all' ||
+        (scopeFilter === 'global' && link.projectIds.length === 0) ||
+        (scopeFilter === 'project' && link.projectIds.length > 0);
+      return matchesType && matchesScope;
+    },
+    getValueFn: (link: Link, key: string) => {
+      switch (key) {
+        case 'id':
+          return parseInt(link.id.replace(/\D/g, ''), 10) || 0;
+        case 'type':
+          return (LINK_TYPE_LABELS[link.type as LinkType] || link.type).toLowerCase();
+        case 'projectIds':
+          return link.projectIds.length === 0 ? 0 : 1;
+        default:
+          return (link as Record<string, any>)[key];
+      }
+    },
   });
 
-  // Toggle sort column
-  const handleSort = (column: SortColumn) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortDirection('asc');
-    }
-  };
-
-  // Sort links by selected column
-  const sortedLinks = [...filteredLinks].sort((a, b) => {
-    let valA: string | number;
-    let valB: string | number;
-
-    switch (sortColumn) {
-      case 'id':
-        valA = parseInt(a.id.replace(/\D/g, ''), 10) || 0;
-        valB = parseInt(b.id.replace(/\D/g, ''), 10) || 0;
-        break;
-      case 'source':
-        valA = a.sourceId.toLowerCase();
-        valB = b.sourceId.toLowerCase();
-        break;
-      case 'target':
-        valA = a.targetId.toLowerCase();
-        valB = b.targetId.toLowerCase();
-        break;
-      case 'type':
-        valA = a.type.toLowerCase();
-        valB = b.type.toLowerCase();
-        break;
-      case 'scope':
-        valA = a.projectIds.length === 0 ? 'global' : 'project';
-        valB = b.projectIds.length === 0 ? 'global' : 'project';
-        break;
-      default:
-        return 0;
-    }
-
-    if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
-    if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
+  const columns: ColumnDef<Link>[] = [
+    {
+      key: 'id',
+      label: 'ID',
+      width: '100px',
+      sortable: true,
+      render: (link) => <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{link.id}</span>,
+    },
+    {
+      key: 'sourceId',
+      label: 'Source',
+      width: '150px',
+      sortable: true,
+      render: (link) => (
+        <span
+          onClick={(e) => {
+            e.stopPropagation();
+            onNavigateToArtifact?.(link.sourceId, getArtifactType(link.sourceId));
+          }}
+          style={{
+            color: getTypeColor(link.sourceId),
+            fontWeight: 500,
+            cursor: onNavigateToArtifact ? 'pointer' : 'default',
+          }}
+        >
+          {link.sourceId}
+        </span>
+      ),
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      width: '160px',
+      sortable: true,
+      align: 'center',
+      render: (link) => (
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            backgroundColor: 'var(--color-bg-secondary)',
+            fontSize: 'var(--font-size-xs)',
+            fontFamily: 'monospace',
+          }}
+        >
+          {LINK_TYPE_LABELS[link.type] || link.type}
+          <ArrowRight size={12} />
+        </span>
+      ),
+    },
+    {
+      key: 'targetId',
+      label: 'Target',
+      width: '150px',
+      sortable: true,
+      render: (link) => (
+        <span
+          onClick={(e) => {
+            e.stopPropagation();
+            onNavigateToArtifact?.(link.targetId, getArtifactType(link.targetId));
+          }}
+          style={{
+            color: getTypeColor(link.targetId),
+            fontWeight: 500,
+            cursor: onNavigateToArtifact ? 'pointer' : 'default',
+          }}
+        >
+          {link.targetId}
+        </span>
+      ),
+    },
+    {
+      key: 'projectIds',
+      label: 'Scope',
+      sortable: true,
+      render: (link) => (
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '2px 8px',
+            borderRadius: '10px',
+            fontSize: 'var(--font-size-xs)',
+            backgroundColor:
+              link.projectIds.length === 0
+                ? 'rgba(59, 130, 246, 0.2)'
+                : 'var(--color-bg-secondary)',
+            color:
+              link.projectIds.length === 0 ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+          }}
+        >
+          {link.projectIds.length === 0 ? <Globe size={10} /> : <Folder size={10} />}
+          {getProjectNames(link.projectIds)}
+        </span>
+      ),
+    },
+  ];
 
   return (
-    <div style={{ padding: 'var(--spacing-lg)', height: '100%', overflow: 'auto' }}>
+    <div
+      style={{
+        padding: 'var(--spacing-lg)',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--spacing-md)',
+        overflow: 'hidden',
+      }}
+    >
       {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 'var(--spacing-lg)',
-        }}
-      >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2
           style={{
             display: 'flex',
@@ -209,10 +261,11 @@ export const LinksView: React.FC<LinksViewProps> = ({
             gap: 'var(--spacing-sm)',
             fontWeight: 600,
             fontSize: 'var(--font-size-xl)',
+            margin: 0,
           }}
         >
           <LinkIcon size={24} style={{ color: 'var(--color-accent)' }} />
-          Links ({sortedLinks.length})
+          Links ({processedLinks.length})
         </h2>
         <div style={{ display: 'flex', gap: '8px' }}>
           {onAdd && (
@@ -229,7 +282,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
                 borderRadius: '6px',
                 cursor: 'pointer',
                 fontSize: 'var(--font-size-sm)',
-                fontWeight: 500,
+                fontWeight: 600,
               }}
             >
               <Plus size={16} />
@@ -241,7 +294,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
+              gap: '6px',
               padding: '6px 12px',
               borderRadius: '6px',
               border: '1px solid var(--color-border)',
@@ -251,21 +304,14 @@ export const LinksView: React.FC<LinksViewProps> = ({
               fontSize: 'var(--font-size-sm)',
             }}
           >
-            <RefreshCw size={14} />
+            <RefreshCw size={14} className={loading ? 'spin' : ''} />
             Refresh
           </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 'var(--spacing-md)',
-          marginBottom: 'var(--spacing-lg)',
-          flexWrap: 'wrap',
-        }}
-      >
+      <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap' }}>
         <input
           type="text"
           placeholder="Search links..."
@@ -319,269 +365,31 @@ export const LinksView: React.FC<LinksViewProps> = ({
         </select>
       </div>
 
-      {/* Links Table */}
-      {loading ? (
-        <div
-          style={{
-            padding: 'var(--spacing-xl)',
-            textAlign: 'center',
-            color: 'var(--color-text-muted)',
-          }}
-        >
-          Loading links...
-        </div>
-      ) : sortedLinks.length === 0 ? (
-        <div
-          style={{
-            padding: 'var(--spacing-xl)',
-            textAlign: 'center',
-            color: 'var(--color-text-muted)',
-            backgroundColor: 'var(--color-bg-card)',
-            borderRadius: '8px',
-            border: '1px solid var(--color-border)',
-          }}
-        >
-          <LinkIcon size={48} style={{ opacity: 0.3, marginBottom: '12px' }} />
-          <p style={{ margin: 0 }}>No links found.</p>
-          <p style={{ margin: '8px 0 0 0', fontSize: 'var(--font-size-sm)' }}>
-            Create links from artifact Relationships tabs.
-          </p>
-        </div>
-      ) : (
-        <div
-          style={{
-            backgroundColor: 'var(--color-bg-card)',
-            borderRadius: '8px',
-            border: '1px solid var(--color-border)',
-            overflow: 'hidden',
-          }}
-        >
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr
-                style={{
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  borderBottom: '1px solid var(--color-border)',
-                }}
-              >
-                <th
-                  onClick={() => handleSort('id')}
-                  style={{
-                    padding: '12px',
-                    textAlign: 'left',
-                    fontWeight: 600,
-                    fontSize: 'var(--font-size-sm)',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    ID
-                    {sortColumn === 'id' &&
-                      (sortDirection === 'asc' ? (
-                        <ChevronUp size={14} />
-                      ) : (
-                        <ChevronDown size={14} />
-                      ))}
-                  </span>
-                </th>
-                <th
-                  onClick={() => handleSort('source')}
-                  style={{
-                    padding: '12px',
-                    textAlign: 'left',
-                    fontWeight: 600,
-                    fontSize: 'var(--font-size-sm)',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    Source
-                    {sortColumn === 'source' &&
-                      (sortDirection === 'asc' ? (
-                        <ChevronUp size={14} />
-                      ) : (
-                        <ChevronDown size={14} />
-                      ))}
-                  </span>
-                </th>
-                <th
-                  onClick={() => handleSort('type')}
-                  style={{
-                    padding: '12px',
-                    textAlign: 'center',
-                    fontWeight: 600,
-                    fontSize: 'var(--font-size-sm)',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                  }}
-                >
-                  <span
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '4px',
-                    }}
-                  >
-                    Type
-                    {sortColumn === 'type' &&
-                      (sortDirection === 'asc' ? (
-                        <ChevronUp size={14} />
-                      ) : (
-                        <ChevronDown size={14} />
-                      ))}
-                  </span>
-                </th>
-                <th
-                  onClick={() => handleSort('target')}
-                  style={{
-                    padding: '12px',
-                    textAlign: 'left',
-                    fontWeight: 600,
-                    fontSize: 'var(--font-size-sm)',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    Target
-                    {sortColumn === 'target' &&
-                      (sortDirection === 'asc' ? (
-                        <ChevronUp size={14} />
-                      ) : (
-                        <ChevronDown size={14} />
-                      ))}
-                  </span>
-                </th>
-                <th
-                  onClick={() => handleSort('scope')}
-                  style={{
-                    padding: '12px',
-                    textAlign: 'left',
-                    fontWeight: 600,
-                    fontSize: 'var(--font-size-sm)',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    Scope
-                    {sortColumn === 'scope' &&
-                      (sortDirection === 'asc' ? (
-                        <ChevronUp size={14} />
-                      ) : (
-                        <ChevronDown size={14} />
-                      ))}
-                  </span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedLinks.map((link) => (
-                <tr
-                  key={link.id}
-                  onClick={() => handleEditLink(link)}
-                  style={{
-                    borderBottom: '1px solid var(--color-border)',
-                    transition: 'background-color 0.15s',
-                    cursor: 'pointer',
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)')
-                  }
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                >
-                  <td
-                    style={{
-                      padding: '12px',
-                      fontFamily: 'monospace',
-                      fontSize: 'var(--font-size-sm)',
-                    }}
-                  >
-                    {link.id}
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onNavigateToArtifact?.(link.sourceId, getArtifactType(link.sourceId));
-                      }}
-                      style={{
-                        color: getTypeColor(link.sourceId),
-                        fontWeight: 500,
-                        cursor: onNavigateToArtifact ? 'pointer' : 'default',
-                        fontSize: 'var(--font-size-sm)',
-                      }}
-                    >
-                      {link.sourceId}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px', textAlign: 'center' }}>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        backgroundColor: 'var(--color-bg-secondary)',
-                        fontSize: 'var(--font-size-xs)',
-                        fontFamily: 'monospace',
-                      }}
-                    >
-                      {LINK_TYPE_LABELS[link.type] || link.type}
-                      <ArrowRight size={12} />
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onNavigateToArtifact?.(link.targetId, getArtifactType(link.targetId));
-                      }}
-                      style={{
-                        color: getTypeColor(link.targetId),
-                        fontWeight: 500,
-                        cursor: onNavigateToArtifact ? 'pointer' : 'default',
-                        fontSize: 'var(--font-size-sm)',
-                      }}
-                    >
-                      {link.targetId}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '2px 8px',
-                        borderRadius: '10px',
-                        fontSize: 'var(--font-size-xs)',
-                        backgroundColor:
-                          link.projectIds.length === 0
-                            ? 'rgba(59, 130, 246, 0.2)'
-                            : 'var(--color-bg-secondary)',
-                        color:
-                          link.projectIds.length === 0
-                            ? 'var(--color-accent)'
-                            : 'var(--color-text-secondary)',
-                      }}
-                    >
-                      {link.projectIds.length === 0 ? <Globe size={10} /> : <Folder size={10} />}
-                      {getProjectNames(link.projectIds)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* Content */}
+      <div style={{ flex: 1, minHeight: 0 }}>
+        {loading && links.length === 0 ? (
+          <div
+            style={{
+              padding: 'var(--spacing-xl)',
+              textAlign: 'center',
+              color: 'var(--color-text-muted)',
+            }}
+          >
+            Loading links...
+          </div>
+        ) : (
+          <BaseArtifactTable
+            data={processedLinks}
+            columns={columns}
+            sortConfig={sortConfig}
+            onSortChange={handleSortChange}
+            onRowClick={handleEditLink}
+            emptyMessage="No links found. Create links from artifact Relationships tabs."
+          />
+        )}
+      </div>
 
-      {/* Edit Link Modal */}
+      {/* Modals */}
       <EditLinkModal
         isOpen={isEditModalOpen}
         link={editingLink}

@@ -7,11 +7,10 @@ export const InformationPage: React.FC = () => {
   const { information, handleEditInformation } = useInformation();
   const { searchQuery, informationColumnVisibility } = useUI();
 
-  const { sortedData, sortConfig, handleSortChange } = useArtifactFilteredData(
-    information,
+  const { sortedData, sortConfig, handleSortChange } = useArtifactFilteredData(information, {
     searchQuery,
-    ['id', 'title', 'text']
-  );
+    searchFields: ['id', 'title', 'text'],
+  });
 
   return (
     <InformationList

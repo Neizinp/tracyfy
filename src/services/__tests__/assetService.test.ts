@@ -9,6 +9,7 @@ vi.mock('../fileSystemService', () => ({
     readFileBinary: vi.fn(),
     listFiles: vi.fn().mockResolvedValue([]),
     deleteFile: vi.fn().mockResolvedValue(undefined),
+    getOrCreateDirectory: vi.fn().mockResolvedValue({}),
   },
 }));
 

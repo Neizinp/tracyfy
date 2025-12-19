@@ -1,16 +1,13 @@
-/**
- * WorkflowModal Component
- *
- * Modal for creating and editing workflows.
- * Uses useWorkflowForm hook for form state management.
- */
-
 import React from 'react';
-import { X, Plus, Trash2, Search, FileText, CheckCircle2, User } from 'lucide-react';
-import type { Workflow } from '../types';
+import { Plus, Trash2, Search, FileText, User as UserIcon } from 'lucide-react';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useWorkflowForm } from '../hooks/useWorkflowForm';
-import { MarkdownEditor } from './MarkdownEditor';
+import { BaseArtifactModal } from './BaseArtifactModal';
+import { ArtifactOverviewFields } from './forms/ArtifactOverviewFields';
+import { ArtifactDetailsSections } from './forms/ArtifactDetailsSections';
+import { FormField } from './forms/FormField';
+import { useUser } from '../app/providers';
+import type { Workflow } from '../types';
 
 interface WorkflowModalProps {
   isOpen: boolean;
@@ -25,6 +22,7 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { currentUser, users } = useUser();
   const {
     title,
     setTitle,
@@ -49,388 +47,283 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
 
   if (!isOpen) return null;
 
+  const getUserName = (userId: string) => {
+    return users.find((u) => u.id === userId)?.name || userId;
+  };
+
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
+    <BaseArtifactModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={workflow ? 'Edit Workflow' : 'New Workflow'}
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSubmit();
       }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      submitLabel={workflow ? 'Update Workflow' : 'Create Workflow'}
+      isSubmitting={isSubmitting}
+      isSubmitDisabled={!isValid}
+      width="650px"
     >
-      <div
-        style={{
-          backgroundColor: 'var(--color-bg-card)',
-          borderRadius: '12px',
-          width: '600px',
-          maxHeight: '90vh',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-        }}
-      >
-        {/* Header */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: 'var(--spacing-lg)',
-            borderBottom: '1px solid var(--color-border)',
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: 'var(--font-size-xl)', fontWeight: 600 }}>
-            {workflow ? 'Edit Workflow' : 'New Workflow'}
-          </h2>
-          <button
-            onClick={onClose}
+      <ArtifactOverviewFields
+        title={title}
+        setTitle={setTitle}
+        author={workflow ? getUserName(workflow.createdBy) : currentUser?.name}
+        dateCreated={workflow?.dateCreated}
+        isEditMode={!!workflow}
+        currentUser={currentUser?.name}
+        hidePriority
+        hideStatus
+        titlePlaceholder="e.g., Approve Authentication Requirements"
+      />
+
+      {/* Assign To Section */}
+      <FormField label="Assign To" icon={<UserIcon size={14} />} required>
+        {otherUsers.length === 0 ? (
+          <div
             style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '4px',
-              color: 'var(--color-text-muted)',
-              borderRadius: '4px',
+              padding: '12px',
+              backgroundColor: 'rgba(234, 179, 8, 0.1)',
+              borderRadius: '6px',
+              color: 'rgb(234, 179, 8)',
+              fontSize: 'var(--font-size-sm)',
             }}
           >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div style={{ padding: 'var(--spacing-lg)', overflow: 'auto', flex: 1 }}>
-          {/* Title */}
-          <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: 'var(--spacing-xs)',
-                fontSize: 'var(--font-size-sm)',
-                fontWeight: 500,
-              }}
-            >
-              Title *
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Approve Authentication Requirements"
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-bg-app)',
-                color: 'var(--color-text-primary)',
-                fontSize: 'var(--font-size-sm)',
-              }}
-            />
+            No other users available. Create another user in User Settings to assign workflows.
           </div>
+        ) : (
+          <select
+            value={assignedTo}
+            onChange={(e) => setAssignedTo(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid var(--color-border)',
+              backgroundColor: 'var(--color-bg-app)',
+              color: 'var(--color-text-primary)',
+              fontSize: 'var(--font-size-sm)',
+              outline: 'none',
+            }}
+          >
+            <option value="">Select a user...</option>
+            {otherUsers.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </FormField>
 
-          {/* Assign To */}
-          <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-            <label
+      {/* Artifacts Selection Section */}
+      <FormField
+        label="Artifacts for Approval"
+        icon={<FileText size={14} />}
+        required
+        description="Select artifacts that need to be reviewed and approved in this workflow."
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+          {/* Selected Artifacts Tags */}
+          {selectedArtifactIds.length > 0 && (
+            <div
               style={{
-                display: 'block',
-                marginBottom: 'var(--spacing-xs)',
-                fontSize: 'var(--font-size-sm)',
-                fontWeight: 500,
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '8px',
+                marginBottom: '4px',
               }}
             >
-              <User size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-              Assign To *
-            </label>
-            {otherUsers.length === 0 ? (
-              <div
+              {selectedArtifactIds.map((id) => {
+                const info = getArtifactInfo(id);
+                return (
+                  <div
+                    key={id}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 8px',
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      borderRadius: '4px',
+                      fontSize: 'var(--font-size-sm)',
+                      border: '1px solid var(--color-border)',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: 'monospace',
+                        color: 'var(--color-accent)',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {id}
+                    </span>
+                    {info && (
+                      <span
+                        style={{
+                          color: 'var(--color-text-muted)',
+                          maxWidth: '150px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {info.title}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveArtifact(id)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '2px',
+                        color: 'var(--color-text-muted)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Search Box */}
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative' }}>
+              <Search
+                size={14}
                 style={{
-                  padding: '12px',
-                  backgroundColor: 'rgba(234, 179, 8, 0.1)',
-                  borderRadius: '6px',
-                  color: 'rgb(234, 179, 8)',
-                  fontSize: 'var(--font-size-sm)',
+                  position: 'absolute',
+                  left: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--color-text-muted)',
                 }}
-              >
-                No other users available. Create another user in User Settings to assign workflows.
-              </div>
-            ) : (
-              <select
-                value={assignedTo}
-                onChange={(e) => setAssignedTo(e.target.value)}
+              />
+              <input
+                type="text"
+                value={artifactSearch}
+                onChange={(e) => setArtifactSearch(e.target.value)}
+                placeholder="Search artifacts by ID or title..."
                 style={{
                   width: '100%',
-                  padding: '8px 12px',
+                  padding: '8px 12px 8px 32px',
                   borderRadius: '6px',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-app)',
                   color: 'var(--color-text-primary)',
                   fontSize: 'var(--font-size-sm)',
+                  outline: 'none',
                 }}
-              >
-                <option value="">Select a user...</option>
-                {otherUsers.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
+              />
+            </div>
 
-          {/* Artifacts */}
-          <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: 'var(--spacing-xs)',
-                fontSize: 'var(--font-size-sm)',
-                fontWeight: 500,
-              }}
-            >
-              <FileText size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-              Artifacts for Approval *
-            </label>
-
-            {/* Selected Artifacts */}
-            {selectedArtifactIds.length > 0 && (
+            {/* Artifact Dropdown */}
+            {artifactSearch && (
               <div
                 style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '8px',
-                  marginBottom: 'var(--spacing-sm)',
+                  position: 'absolute',
+                  top: 'calc(100% + 4px)',
+                  left: 0,
+                  right: 0,
+                  maxHeight: '200px',
+                  overflow: 'auto',
+                  backgroundColor: 'var(--color-bg-card)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '6px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  zIndex: 10,
                 }}
               >
-                {selectedArtifactIds.map((id) => {
-                  const info = getArtifactInfo(id);
-                  return (
+                {availableArtifacts.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '12px',
+                      textAlign: 'center',
+                      color: 'var(--color-text-muted)',
+                      fontSize: 'var(--font-size-sm)',
+                    }}
+                  >
+                    No matching artifacts found
+                  </div>
+                ) : (
+                  availableArtifacts.slice(0, 10).map((artifact) => (
                     <div
-                      key={id}
+                      key={artifact.id}
+                      onClick={() => handleAddArtifact(artifact.id)}
                       style={{
-                        display: 'inline-flex',
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        padding: '4px 8px',
-                        backgroundColor: 'var(--color-bg-secondary)',
-                        borderRadius: '4px',
-                        fontSize: 'var(--font-size-sm)',
+                        gap: '8px',
+                        borderBottom: '1px solid var(--color-border)',
+                        transition: 'background-color 0.2s',
                       }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)')
+                      }
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
-                      <span style={{ fontFamily: 'monospace', color: 'var(--color-accent)' }}>
-                        {id}
-                      </span>
-                      {info && (
-                        <span
-                          style={{
-                            color: 'var(--color-text-muted)',
-                            maxWidth: '150px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {info.title}
-                        </span>
-                      )}
-                      <button
-                        onClick={() => handleRemoveArtifact(id)}
+                      <Plus size={14} style={{ color: 'var(--color-accent)' }} />
+                      <span
                         style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          padding: '2px',
-                          color: 'var(--color-text-muted)',
+                          fontFamily: 'monospace',
+                          fontSize: 'var(--font-size-xs)',
+                          fontWeight: 600,
                         }}
                       >
-                        <Trash2 size={12} />
-                      </button>
+                        {artifact.id}
+                      </span>
+                      <span
+                        style={{
+                          flex: 1,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          fontSize: 'var(--font-size-sm)',
+                        }}
+                      >
+                        {artifact.title}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 'var(--font-size-xs)',
+                          color: 'var(--color-text-muted)',
+                          backgroundColor: 'var(--color-bg-secondary)',
+                          padding: '2px 4px',
+                          borderRadius: '3px',
+                        }}
+                      >
+                        {artifact.type}
+                      </span>
                     </div>
-                  );
-                })}
+                  ))
+                )}
               </div>
             )}
-
-            {/* Search and Add Artifacts */}
-            <div style={{ position: 'relative' }}>
-              <div style={{ position: 'relative' }}>
-                <Search
-                  size={14}
-                  style={{
-                    position: 'absolute',
-                    left: '10px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: 'var(--color-text-muted)',
-                  }}
-                />
-                <input
-                  type="text"
-                  value={artifactSearch}
-                  onChange={(e) => setArtifactSearch(e.target.value)}
-                  placeholder="Search artifacts to add..."
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px 8px 32px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                />
-              </div>
-
-              {/* Artifact dropdown */}
-              {artifactSearch && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    maxHeight: '200px',
-                    overflow: 'auto',
-                    backgroundColor: 'var(--color-bg-card)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '6px',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    zIndex: 10,
-                  }}
-                >
-                  {availableArtifacts.length === 0 ? (
-                    <div
-                      style={{
-                        padding: '12px',
-                        textAlign: 'center',
-                        color: 'var(--color-text-muted)',
-                        fontSize: 'var(--font-size-sm)',
-                      }}
-                    >
-                      No matching artifacts
-                    </div>
-                  ) : (
-                    availableArtifacts.slice(0, 10).map((artifact) => (
-                      <div
-                        key={artifact.id}
-                        onClick={() => handleAddArtifact(artifact.id)}
-                        style={{
-                          padding: '8px 12px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          borderBottom: '1px solid var(--color-border)',
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)')
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor = 'transparent')
-                        }
-                      >
-                        <Plus size={14} style={{ color: 'var(--color-accent)' }} />
-                        <span style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-xs)' }}>
-                          {artifact.id}
-                        </span>
-                        <span
-                          style={{
-                            flex: 1,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            fontSize: 'var(--font-size-sm)',
-                          }}
-                        >
-                          {artifact.title}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 'var(--font-size-xs)',
-                            color: 'var(--color-text-muted)',
-                          }}
-                        >
-                          {artifact.type}
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Description */}
-          <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: 'var(--spacing-xs)',
-                fontSize: 'var(--font-size-sm)',
-                fontWeight: 500,
-              }}
-            >
-              Description (optional)
-            </label>
-            <MarkdownEditor
-              value={description}
-              onChange={setDescription}
-              placeholder="Add any notes or context for the approver..."
-              height={100}
-            />
           </div>
         </div>
+      </FormField>
 
-        {/* Footer */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: 'var(--spacing-sm)',
-            padding: 'var(--spacing-lg)',
-            borderTop: '1px solid var(--color-border)',
-          }}
-        >
-          <button
-            onClick={onClose}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '6px',
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'transparent',
-              color: 'var(--color-text-primary)',
-              cursor: 'pointer',
-              fontSize: 'var(--font-size-sm)',
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!isValid || isSubmitting}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '6px',
-              border: 'none',
-              backgroundColor: isValid ? 'var(--color-accent)' : 'var(--color-bg-secondary)',
-              color: isValid ? 'white' : 'var(--color-text-muted)',
-              cursor: isValid ? 'pointer' : 'not-allowed',
-              fontSize: 'var(--font-size-sm)',
-              fontWeight: 500,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <CheckCircle2 size={16} />
-            {isSubmitting ? 'Saving...' : workflow ? 'Update Workflow' : 'Create Workflow'}
-          </button>
-        </div>
-      </div>
-    </div>
+      <ArtifactDetailsSections
+        fields={[
+          {
+            label: 'Description',
+            value: description,
+            onChange: setDescription,
+            placeholder: 'Add any notes or context for the approver...',
+            height: 120,
+          },
+        ]}
+      />
+    </BaseArtifactModal>
   );
 };

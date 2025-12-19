@@ -8,13 +8,10 @@ export const RisksPage: React.FC = () => {
   const { risks } = useFileSystem();
   const { searchQuery, setIsRiskModalOpen, riskColumnVisibility } = useUI();
 
-  const { sortedData, sortConfig, handleSortChange } = useArtifactFilteredData(risks, searchQuery, [
-    'id',
-    'title',
-    'description',
-    'category',
-    'status',
-  ]);
+  const { sortedData, sortConfig, handleSortChange } = useArtifactFilteredData(risks, {
+    searchQuery,
+    searchFields: ['id', 'title', 'description', 'category'],
+  });
 
   const handleEditRisk = () => {
     // UI currently manages editing via a separate global state if needed,

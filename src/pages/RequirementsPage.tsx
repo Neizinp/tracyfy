@@ -7,11 +7,10 @@ export const RequirementsPage: React.FC = () => {
   const { requirements, handleEdit } = useRequirements();
   const { searchQuery, columnVisibility } = useUI();
 
-  const { sortedData, sortConfig, handleSortChange } = useArtifactFilteredData(
-    requirements,
+  const { sortedData, sortConfig, handleSortChange } = useArtifactFilteredData(requirements, {
     searchQuery,
-    ['id', 'title', 'description', 'text']
-  );
+    searchFields: ['id', 'title', 'description', 'text'],
+  });
 
   return (
     <RequirementList

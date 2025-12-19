@@ -11,13 +11,16 @@ interface BaseArtifactModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: ReactNode;
+  icon?: ReactNode;
   tabs?: ModalTab[];
   activeTab?: string;
   onTabChange?: (tabId: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   submitLabel: string;
   isSubmitting?: boolean;
+  isSubmitDisabled?: boolean;
   footerActions?: ReactNode;
+  footerLeft?: ReactNode;
   children: ReactNode;
   width?: string;
   maxHeight?: string;
@@ -28,13 +31,16 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
   isOpen,
   onClose,
   title,
+  icon,
   tabs = [],
   activeTab,
   onTabChange,
   onSubmit,
   submitLabel,
   isSubmitting = false,
+  isSubmitDisabled = false,
   footerActions,
+  footerLeft,
   children,
   width = '800px',
   maxHeight = '85vh',
@@ -86,28 +92,37 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
               'linear-gradient(to bottom, var(--color-bg-card), var(--color-bg-secondary))',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
             {onBack && (
               <button
-                type="button"
                 onClick={onBack}
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: 'var(--color-text-muted)',
+                  color: 'var(--color-text-secondary)',
                   cursor: 'pointer',
                   padding: '4px',
-                  borderRadius: '4px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  marginLeft: '-8px',
                 }}
               >
                 <ArrowLeft size={20} />
               </button>
             )}
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>{title}</h2>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 'var(--font-size-lg)',
+                fontWeight: 600,
+                color: 'var(--color-text-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              {icon}
+              {title}
+            </h2>
           </div>
           <button
             onClick={onClose}
@@ -190,13 +205,13 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
             borderTop: '1px solid var(--color-border)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'flex-end',
             gap: 'var(--spacing-md)',
             backgroundColor: 'var(--color-bg-secondary)',
           }}
         >
-          {footerActions}
+          {footerLeft}
           <div style={{ flex: 1 }} />
+          {footerActions}
           <button
             type="button"
             onClick={onClose}
@@ -215,7 +230,7 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
           <button
             type="submit"
             form="base-artifact-modal-form"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isSubmitDisabled}
             className="btn-primary"
             style={{
               padding: '8px 24px',
@@ -223,9 +238,9 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
               border: 'none',
               backgroundColor: 'var(--color-accent)',
               color: 'white',
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              cursor: isSubmitting || isSubmitDisabled ? 'not-allowed' : 'pointer',
               fontWeight: 600,
-              opacity: isSubmitting ? 0.7 : 1,
+              opacity: isSubmitting || isSubmitDisabled ? 0.7 : 1,
             }}
           >
             {isSubmitting ? 'Processing...' : submitLabel}

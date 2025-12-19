@@ -1,18 +1,12 @@
-/**
- * WorkflowsPage
- *
- * Displays workflows in two sections:
- * - Waiting for Me: workflows assigned to the current user that are pending
- * - Created by Me: workflows created by the current user
- */
-
 import React, { useEffect, useState, useCallback } from 'react';
-import { GitBranch, Clock, CheckCircle2, XCircle, User, FileText } from 'lucide-react';
+import { GitBranch, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { diskWorkflowService } from '../services/diskWorkflowService';
 import { useUser } from '../app/providers';
 import type { Workflow } from '../types';
 import { WorkflowDetailPanel } from '../components/WorkflowDetailPanel';
 import { useToast } from '../app/providers/ToastProvider';
+import { BaseArtifactTable, type ColumnDef } from '../components/BaseArtifactTable';
+import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
 
 const NOTIFIED_APPROVALS_KEY = 'workflow_notified_approvals';
 
@@ -43,52 +37,42 @@ export const WorkflowsPage: React.FC = () => {
   useEffect(() => {
     if (!currentUser || workflows.length === 0) return;
 
-    // Get list of already notified approval IDs
     const notifiedIds = new Set<string>(
       JSON.parse(localStorage.getItem(NOTIFIED_APPROVALS_KEY) || '[]')
     );
 
-    // Find workflows created by current user that are now approved but not yet notified
     const newlyApproved = workflows.filter(
       (wf) => wf.createdBy === currentUser.id && wf.status === 'approved' && !notifiedIds.has(wf.id)
     );
 
-    // Show toast for each newly approved workflow
     newlyApproved.forEach((wf) => {
       const approverName = users.find((u) => u.id === wf.approvedBy)?.name || 'Someone';
-      showToast(`🎉 Your workflow "${wf.title}" was approved by ${approverName}!`, 'success');
+      showToast(`🎉 Your workflow "${wf.title}" was approved by ${approverName} !`, 'success');
       notifiedIds.add(wf.id);
     });
 
-    // Save updated notified IDs
     if (newlyApproved.length > 0) {
       localStorage.setItem(NOTIFIED_APPROVALS_KEY, JSON.stringify([...notifiedIds]));
     }
   }, [currentUser, workflows, users, showToast]);
 
-  // Workflows assigned to current user (pending)
-  const waitingForMe = workflows.filter(
-    (wf) => wf.assignedTo === currentUser?.id && wf.status === 'pending'
+  // Shared helpers for columns
+  const getUserName = useCallback(
+    (userId: string): string => {
+      const user = users.find((u) => u.id === userId);
+      return user?.name || userId;
+    },
+    [users]
   );
 
-  // Workflows created by current user
-  const createdByMe = workflows.filter((wf) => wf.createdBy === currentUser?.id);
-
-  // Get user name by ID
-  const getUserName = (userId: string): string => {
-    const user = users.find((u) => u.id === userId);
-    return user?.name || userId;
-  };
-
-  // Status badge color
   const getStatusColor = (status: Workflow['status']): string => {
     switch (status) {
       case 'pending':
-        return 'rgba(234, 179, 8, 0.2)'; // yellow
+        return 'rgba(234, 179, 8, 0.2)';
       case 'approved':
-        return 'rgba(34, 197, 94, 0.2)'; // green
+        return 'rgba(34, 197, 94, 0.2)';
       case 'rejected':
-        return 'rgba(239, 68, 68, 0.2)'; // red
+        return 'rgba(239, 68, 68, 0.2)';
       default:
         return 'var(--color-bg-secondary)';
     }
@@ -110,19 +94,136 @@ export const WorkflowsPage: React.FC = () => {
   const getStatusIcon = (status: Workflow['status']) => {
     switch (status) {
       case 'pending':
-        return <Clock size={14} />;
+        return <Clock size={12} />;
       case 'approved':
-        return <CheckCircle2 size={14} />;
+        return <CheckCircle2 size={12} />;
       case 'rejected':
-        return <XCircle size={14} />;
+        return <XCircle size={12} />;
       default:
         return null;
     }
   };
 
-  const handleWorkflowClick = (workflow: Workflow) => {
-    setSelectedWorkflow(workflow);
-  };
+  const renderStatus = (wf: Workflow) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <span
+        style={{
+          fontFamily: 'monospace',
+          fontSize: 'var(--font-size-xs)',
+          color: 'var(--color-text-muted)',
+        }}
+      >
+        {wf.id}
+      </span>
+      <div
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          padding: '2px 8px',
+          borderRadius: '4px',
+          backgroundColor: getStatusColor(wf.status),
+          color: getStatusTextColor(wf.status),
+          fontSize: 'var(--font-size-xs)',
+          fontWeight: 500,
+          width: 'fit-content',
+        }}
+      >
+        {getStatusIcon(wf.status)}
+        {wf.status}
+      </div>
+    </div>
+  );
+
+  const {
+    sortedData: waitingForMe,
+    sortConfig: waitingSort,
+    handleSortChange: onWaitingSortChange,
+  } = useArtifactFilteredData(workflows, {
+    searchQuery: '',
+    filterFn: (wf: Workflow) => wf.assignedTo === currentUser?.id && wf.status === 'pending',
+    getValueFn: (wf: Workflow, key: string) => {
+      if (key === 'createdBy') return getUserName(wf.createdBy);
+      if (key === 'artifactIds') return wf.artifactIds.length;
+      return (wf as Record<string, any>)[key];
+    },
+  });
+
+  const {
+    sortedData: createdByMe,
+    sortConfig: createdSort,
+    handleSortChange: onCreatedSortChange,
+  } = useArtifactFilteredData(workflows, {
+    searchQuery: '',
+    filterFn: (wf: Workflow) => wf.createdBy === currentUser?.id,
+    getValueFn: (wf: Workflow, key: string) => {
+      if (key === 'assignedTo') return getUserName(wf.assignedTo);
+      if (key === 'approvedBy') return wf.approvedBy ? getUserName(wf.approvedBy) : '';
+      if (key === 'artifactIds') return wf.artifactIds.length;
+      return (wf as Record<string, any>)[key];
+    },
+  });
+
+  // Column definitions
+  const waitingColumns: ColumnDef<Workflow>[] = [
+    { key: 'id', label: 'ID / Status', width: '150px', render: renderStatus, sortable: true },
+    {
+      key: 'title',
+      label: 'Title',
+      render: (wf) => <div style={{ fontWeight: 500 }}>{wf.title}</div>,
+      sortable: true,
+    },
+    { key: 'createdBy', label: 'From', render: (wf) => getUserName(wf.createdBy), sortable: true },
+    {
+      key: 'artifactIds',
+      label: 'Artifacts',
+      render: (wf) => `${wf.artifactIds.length} items`,
+      sortable: true,
+    },
+    {
+      key: 'dateCreated',
+      label: 'Date Created',
+      render: (wf) => new Date(wf.dateCreated).toLocaleDateString(),
+      sortable: true,
+    },
+  ];
+
+  const createdColumns: ColumnDef<Workflow>[] = [
+    { key: 'id', label: 'ID / Status', width: '150px', render: renderStatus, sortable: true },
+    {
+      key: 'title',
+      label: 'Title',
+      render: (wf) => <div style={{ fontWeight: 500 }}>{wf.title}</div>,
+      sortable: true,
+    },
+    {
+      key: 'assignedTo',
+      label: 'Assigned To',
+      render: (wf) => getUserName(wf.assignedTo),
+      sortable: true,
+    },
+    {
+      key: 'artifactIds',
+      label: 'Artifacts',
+      render: (wf) => `${wf.artifactIds.length} items`,
+      sortable: true,
+    },
+    {
+      key: 'approvedBy',
+      label: 'Approval info',
+      render: (wf) =>
+        wf.status === 'approved' && wf.approvedBy ? (
+          <span
+            style={{ color: 'rgb(34, 197, 94)', display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            <CheckCircle2 size={12} /> Approved by {getUserName(wf.approvedBy)}
+          </span>
+        ) : (
+          '-'
+        ),
+      sortable: true,
+    },
+  ];
 
   if (!currentUser) {
     return (
@@ -139,7 +240,16 @@ export const WorkflowsPage: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: 'var(--spacing-lg)', height: '100%', overflow: 'auto' }}>
+    <div
+      style={{
+        padding: 'var(--spacing-lg)',
+        height: '100%',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--spacing-lg)',
+      }}
+    >
       {loading ? (
         <div
           style={{
@@ -153,7 +263,7 @@ export const WorkflowsPage: React.FC = () => {
       ) : (
         <>
           {/* Waiting for Me Section */}
-          <section style={{ marginBottom: 'var(--spacing-xl)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
             <h3
               style={{
                 display: 'flex',
@@ -162,7 +272,6 @@ export const WorkflowsPage: React.FC = () => {
                 marginBottom: 'var(--spacing-md)',
                 fontSize: 'var(--font-size-lg)',
                 fontWeight: 600,
-                color: 'var(--color-text-primary)',
               }}
             >
               <Clock size={18} style={{ color: 'rgb(234, 179, 8)' }} />
@@ -182,111 +291,20 @@ export const WorkflowsPage: React.FC = () => {
                 </span>
               )}
             </h3>
-            {waitingForMe.length === 0 ? (
-              <div
-                style={{
-                  padding: 'var(--spacing-lg)',
-                  textAlign: 'center',
-                  color: 'var(--color-text-muted)',
-                  backgroundColor: 'var(--color-bg-card)',
-                  borderRadius: '8px',
-                  border: '1px solid var(--color-border)',
-                }}
-              >
-                No workflows waiting for your approval.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
-                {waitingForMe.map((wf) => (
-                  <div
-                    key={wf.id}
-                    onClick={() => handleWorkflowClick(wf)}
-                    style={{
-                      padding: 'var(--spacing-md)',
-                      backgroundColor: 'var(--color-bg-card)',
-                      borderRadius: '8px',
-                      border: '1px solid var(--color-border)',
-                      cursor: 'pointer',
-                      transition: 'border-color 0.15s',
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.borderColor = 'var(--color-accent)')
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.borderColor = 'var(--color-border)')
-                    }
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                      }}
-                    >
-                      <div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--spacing-sm)',
-                            marginBottom: '4px',
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontFamily: 'monospace',
-                              fontSize: 'var(--font-size-sm)',
-                              color: 'var(--color-text-muted)',
-                            }}
-                          >
-                            {wf.id}
-                          </span>
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              backgroundColor: getStatusColor(wf.status),
-                              color: getStatusTextColor(wf.status),
-                              fontSize: 'var(--font-size-xs)',
-                              fontWeight: 500,
-                            }}
-                          >
-                            {getStatusIcon(wf.status)}
-                            {wf.status}
-                          </span>
-                        </div>
-                        <div style={{ fontWeight: 500, marginBottom: '4px' }}>{wf.title}</div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--spacing-md)',
-                            fontSize: 'var(--font-size-sm)',
-                            color: 'var(--color-text-muted)',
-                          }}
-                        >
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <User size={12} />
-                            From: {getUserName(wf.createdBy)}
-                          </span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <FileText size={12} />
-                            {wf.artifactIds.length} artifact{wf.artifactIds.length !== 1 ? 's' : ''}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <BaseArtifactTable
+                data={waitingForMe}
+                columns={waitingColumns}
+                sortConfig={waitingSort}
+                onSortChange={onWaitingSortChange}
+                onRowClick={setSelectedWorkflow}
+                emptyMessage="No workflows waiting for your approval."
+              />
+            </div>
+          </div>
 
           {/* Created by Me Section */}
-          <section>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
             <h3
               style={{
                 display: 'flex',
@@ -295,130 +313,25 @@ export const WorkflowsPage: React.FC = () => {
                 marginBottom: 'var(--spacing-md)',
                 fontSize: 'var(--font-size-lg)',
                 fontWeight: 600,
-                color: 'var(--color-text-primary)',
               }}
             >
               <GitBranch size={18} style={{ color: 'var(--color-accent)' }} />
               Created by Me
             </h3>
-            {createdByMe.length === 0 ? (
-              <div
-                style={{
-                  padding: 'var(--spacing-lg)',
-                  textAlign: 'center',
-                  color: 'var(--color-text-muted)',
-                  backgroundColor: 'var(--color-bg-card)',
-                  borderRadius: '8px',
-                  border: '1px solid var(--color-border)',
-                }}
-              >
-                You haven't created any workflows yet.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
-                {createdByMe.map((wf) => (
-                  <div
-                    key={wf.id}
-                    onClick={() => handleWorkflowClick(wf)}
-                    style={{
-                      padding: 'var(--spacing-md)',
-                      backgroundColor: 'var(--color-bg-card)',
-                      borderRadius: '8px',
-                      border: '1px solid var(--color-border)',
-                      cursor: 'pointer',
-                      transition: 'border-color 0.15s',
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.borderColor = 'var(--color-accent)')
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.borderColor = 'var(--color-border)')
-                    }
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                      }}
-                    >
-                      <div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--spacing-sm)',
-                            marginBottom: '4px',
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontFamily: 'monospace',
-                              fontSize: 'var(--font-size-sm)',
-                              color: 'var(--color-text-muted)',
-                            }}
-                          >
-                            {wf.id}
-                          </span>
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              backgroundColor: getStatusColor(wf.status),
-                              color: getStatusTextColor(wf.status),
-                              fontSize: 'var(--font-size-xs)',
-                              fontWeight: 500,
-                            }}
-                          >
-                            {getStatusIcon(wf.status)}
-                            {wf.status}
-                          </span>
-                        </div>
-                        <div style={{ fontWeight: 500, marginBottom: '4px' }}>{wf.title}</div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--spacing-md)',
-                            fontSize: 'var(--font-size-sm)',
-                            color: 'var(--color-text-muted)',
-                          }}
-                        >
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <User size={12} />
-                            Assigned to: {getUserName(wf.assignedTo)}
-                          </span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <FileText size={12} />
-                            {wf.artifactIds.length} artifact{wf.artifactIds.length !== 1 ? 's' : ''}
-                          </span>
-                          {wf.status === 'approved' && wf.approvedBy && (
-                            <span
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                color: 'rgb(34, 197, 94)',
-                              }}
-                            >
-                              <CheckCircle2 size={12} />
-                              Approved by {getUserName(wf.approvedBy)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <BaseArtifactTable
+                data={createdByMe}
+                columns={createdColumns}
+                sortConfig={createdSort}
+                onSortChange={onCreatedSortChange}
+                onRowClick={setSelectedWorkflow}
+                emptyMessage="You haven't created any workflows yet."
+              />
+            </div>
+          </div>
         </>
       )}
-      {/* Workflow Detail Panel */}
+
       {selectedWorkflow && (
         <WorkflowDetailPanel
           workflow={selectedWorkflow}
