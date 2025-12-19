@@ -1,8 +1,10 @@
 import { AppRoutes } from '../routes/AppRoutes';
 import { DirectorySelector, UserOnboardingModal } from '../components';
 import { useFileSystem, useUser } from './providers';
+import { useArtifactDeepLink } from '../hooks/useArtifactDeepLink';
 
 export function AppContent() {
+  useArtifactDeepLink();
   const fileSystem = useFileSystem();
   const { users, isLoading: isUserLoading, createUser, switchUser } = useUser();
 
