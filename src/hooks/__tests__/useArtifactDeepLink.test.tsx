@@ -3,6 +3,7 @@ import { useArtifactDeepLink } from '../useArtifactDeepLink';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useSearchParams } from 'react-router-dom';
 import { useUI, useGlobalState } from '../../app/providers';
+import type { UIContextValue, GlobalStateContextValue } from '../../app/providers';
 
 vi.mock('react-router-dom', () => ({
   useSearchParams: vi.fn(),
@@ -27,14 +28,14 @@ describe('useArtifactDeepLink', () => {
       openModal: mockOpenModal,
       activeModal: { type: null },
       selectedArtifact: null,
-    } as any);
+    } as unknown as UIContextValue);
     mockedUseGlobalState.mockReturnValue({
-      globalRequirements: [{ id: 'REQ-001', title: 'Test Req' }] as any[],
+      globalRequirements: [{ id: 'REQ-001', title: 'Test Req' }],
       globalUseCases: [],
       globalTestCases: [],
       globalInformation: [],
       globalRisks: [],
-    } as any);
+    } as unknown as GlobalStateContextValue);
   });
 
   it('should open modal when id is present in search params', () => {
@@ -74,7 +75,7 @@ describe('useArtifactDeepLink', () => {
       openModal: mockOpenModal,
       activeModal: { type: 'requirement' },
       selectedArtifact: { id: 'REQ-002', type: 'requirement' },
-    } as any);
+    } as unknown as UIContextValue);
 
     renderHook(() => useArtifactDeepLink());
 
@@ -92,7 +93,7 @@ describe('useArtifactDeepLink', () => {
       openModal: mockOpenModal,
       activeModal: { type: null },
       selectedArtifact: null,
-    } as any);
+    } as unknown as UIContextValue);
 
     renderHook(() => useArtifactDeepLink());
 

@@ -4,7 +4,7 @@ import { useFileSystem } from './FileSystemProvider';
 import { useProject } from './ProjectProvider';
 import type { Requirement, UseCase, TestCase, Information, Risk } from '../../types';
 
-interface GlobalStateContextValue {
+export interface GlobalStateContextValue {
   // Global artifacts (all artifacts regardless of project)
   globalRequirements: Requirement[];
   globalUseCases: UseCase[];

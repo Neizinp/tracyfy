@@ -1,6 +1,8 @@
 export { ProjectProvider, useProject } from './ProjectProvider';
 export { UIProvider, useUI } from './UIProvider';
+export type { UIContextValue } from './UIProvider';
 export { GlobalStateProvider, useGlobalState } from './GlobalStateProvider';
+export type { GlobalStateContextValue } from './GlobalStateProvider';
 export {
   RequirementsProvider,
   useRequirements,

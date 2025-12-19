@@ -16,7 +16,7 @@ import type {
   ModalType,
 } from '../../types';
 
-interface UIContextValue {
+export interface UIContextValue {
   // New States
   activeModal: ActiveModal;
   setActiveModal: (modal: ActiveModal) => void;
