@@ -62,7 +62,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
 
       // Save token if provided
       if (token.trim()) {
-        realGitService.setAuthToken(token.trim());
+        await realGitService.setAuthToken(token.trim());
       }
 
       setSuccess('Remote added successfully!');
@@ -86,7 +86,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
 
     try {
       // Save token first
-      realGitService.setAuthToken(token.trim());
+      await realGitService.setAuthToken(token.trim());
 
       // Try to fetch
       await realGitService.fetch('origin');
@@ -101,7 +101,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
   const handleRemoveRemote = async (name: string) => {
     try {
       await realGitService.removeRemote(name);
-      realGitService.clearAuthToken();
+      await realGitService.clearAuthToken();
       await loadRemotes();
       setRemoteUrl('');
       setToken('');
@@ -171,6 +171,32 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
           >
             <X size={20} />
           </button>
+        </div>
+
+        {/* Support Alert */}
+        <div
+          style={{
+            padding: '12px',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            borderRadius: '8px',
+            color: '#60a5fa',
+            marginBottom: 'var(--spacing-md)',
+            fontSize: 'var(--font-size-sm)',
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'flex-start',
+          }}
+        >
+          <AlertCircle size={18} style={{ marginTop: '2px', flexShrink: 0 }} />
+          <div>
+            <strong>Remote Sync Recommendation</strong>
+            <p style={{ margin: '4px 0 0 0', opacity: 0.9 }}>
+              Native Git operations (Push/Pull) are best supported in the desktop app. If you are
+              using the browser, we recommend switching to the Electron version for reliable
+              synchronization.
+            </p>
+          </div>
         </div>
 
         {/* Existing remotes */}
@@ -292,7 +318,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
               marginTop: '4px',
             }}
           >
-            Token is stored locally in your browser. Never shared.
+            Token is stored securely using OS-level encryption in the desktop app.
           </div>
         </div>
 

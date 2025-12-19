@@ -44,6 +44,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('git:pull', dir, remote, branch, token, author),
   },
 
+  // Secure storage
+  secure: {
+    setToken: (token) => ipcRenderer.invoke('secure:setToken', token),
+    getToken: () => ipcRenderer.invoke('secure:getToken'),
+    removeToken: () => ipcRenderer.invoke('secure:removeToken'),
+  },
+
   // Platform info
   platform: process.platform,
   isElectron: true,

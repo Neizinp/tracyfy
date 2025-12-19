@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, safeStorage } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promises as fs } from 'node:fs';
@@ -370,6 +370,47 @@ ipcMain.handle('git:pull', async (_event, dir, remote, branch, token, author) =>
     if (error.code === 'MergeConflictError' || error.code === 'CheckoutConflictError') {
       return { ok: false, conflicts: error.data?.filepaths || [] };
     }
+    return { error: error.message };
+  }
+});
+
+// ========== SECURE STORAGE OPERATIONS ==========
+
+ipcMain.handle('secure:setToken', async (_event, token) => {
+  try {
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error('Encryption is not available on this system');
+    }
+    const encrypted = safeStorage.encryptString(token);
+    const tokenPath = path.join(app.getPath('userData'), 'git-token.bin');
+    await fs.writeFile(tokenPath, encrypted);
+    return { ok: true };
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('secure:getToken', async () => {
+  try {
+    const tokenPath = path.join(app.getPath('userData'), 'git-token.bin');
+    const encrypted = await fs.readFile(tokenPath);
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error('Encryption is not available');
+    }
+    return { token: safeStorage.decryptString(encrypted) };
+  } catch (error) {
+    if (error.code === 'ENOENT') return { token: null };
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('secure:removeToken', async () => {
+  try {
+    const tokenPath = path.join(app.getPath('userData'), 'git-token.bin');
+    await fs.unlink(tokenPath);
+    return { ok: true };
+  } catch (error) {
+    if (error.code === 'ENOENT') return { ok: true };
     return { error: error.message };
   }
 });

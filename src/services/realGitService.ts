@@ -79,6 +79,11 @@ declare global {
           author?: { name: string; email: string }
         ) => Promise<{ ok?: boolean; conflicts?: string[]; error?: string }>;
       };
+      secure: {
+        setToken: (token: string) => Promise<{ ok?: boolean; error?: string }>;
+        getToken: () => Promise<{ token?: string | null; error?: string }>;
+        removeToken: () => Promise<{ ok?: boolean; error?: string }>;
+      };
     };
   }
 }
@@ -148,6 +153,9 @@ class RealGitService {
   private readonly CACHE_FILE = '.tracyfy/commit-cache.json';
   // Flag to track if cache has been loaded from disk
   private cacheLoadedFromDisk = false;
+  // Memory cache for PAT token
+  private authToken: string | null = null;
+  private tokenLoaded = false;
 
   /**
    * Get the root directory path (Electron uses absolute path, browser uses '.')
@@ -260,6 +268,7 @@ class RealGitService {
         }
 
         this.initialized = true;
+        await this.ensureTokenLoaded(); // Added this line
         console.log('[realGitService.init] Success! initialized =', this.initialized);
         return true;
       }
@@ -301,6 +310,7 @@ class RealGitService {
       }
     }
 
+    await this.ensureTokenLoaded();
     return true;
   }
 
@@ -1061,32 +1071,85 @@ class RealGitService {
   }
 
   /**
-   * Get stored authentication token from localStorage
+   * Ensure authentication token is loaded from disk/localStorage
    */
-  getAuthToken(): string | null {
+  private async ensureTokenLoaded(): Promise<void> {
+    if (this.tokenLoaded) return;
+
     try {
-      return localStorage.getItem('git-remote-token');
-    } catch {
-      return null;
+      if (isElectronEnv()) {
+        const result = await window.electronAPI!.secure.getToken();
+        if (result.token) {
+          this.authToken = result.token;
+          this.tokenLoaded = true;
+          return;
+        }
+
+        // Migration from localStorage if exists
+        const oldToken = localStorage.getItem('git-remote-token');
+        if (oldToken) {
+          debug.log('[ensureTokenLoaded] Migrating token to secure storage');
+          await this.setAuthToken(oldToken);
+          localStorage.removeItem('git-remote-token');
+          return;
+        }
+      } else {
+        this.authToken = localStorage.getItem('git-remote-token');
+      }
+    } catch (err) {
+      console.warn('[ensureTokenLoaded] Failed:', err);
     }
+    this.tokenLoaded = true;
   }
 
   /**
-   * Set authentication token in localStorage
+   * Get stored authentication token
+   * Note: ensureTokenLoaded() must be called once before this (is called in init)
    */
-  setAuthToken(token: string): void {
+  getAuthToken(): string | null {
+    if (!this.tokenLoaded) {
+      // Fallback for immediate access, though unreliable in Electron if not yet initialized
+      return this.authToken || localStorage.getItem('git-remote-token');
+    }
+    return this.authToken;
+  }
+
+  /**
+   * Set authentication token
+   */
+  async setAuthToken(token: string): Promise<void> {
+    this.authToken = token;
+    this.tokenLoaded = true;
+
     try {
-      localStorage.setItem('git-remote-token', token);
-    } catch {
-      console.warn('[setAuthToken] Failed to store token');
+      if (isElectronEnv()) {
+        const result = await window.electronAPI!.secure.setToken(token);
+        if (result.error) throw new Error(result.error);
+      } else {
+        localStorage.setItem('git-remote-token', token);
+      }
+    } catch (err) {
+      console.warn('[setAuthToken] Failed:', err);
+      // Fallback to localStorage even in Electron if secure storage fails
+      try {
+        localStorage.setItem('git-remote-token', token);
+      } catch {
+        // Ignore
+      }
     }
   }
 
   /**
    * Clear authentication token
    */
-  clearAuthToken(): void {
+  async clearAuthToken(): Promise<void> {
+    this.authToken = null;
+    this.tokenLoaded = true;
+
     try {
+      if (isElectronEnv()) {
+        await window.electronAPI!.secure.removeToken();
+      }
       localStorage.removeItem('git-remote-token');
     } catch {
       // Ignore
