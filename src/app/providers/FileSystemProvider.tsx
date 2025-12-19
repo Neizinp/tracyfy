@@ -3,6 +3,14 @@ import { debug } from '../../utils/debug';
 import { fileSystemService } from '../../services/fileSystemService';
 import { realGitService, type FileStatus, type CommitInfo } from '../../services/realGitService';
 import { diskProjectService } from '../../services/diskProjectService';
+import {
+  requirementService,
+  useCaseService,
+  testCaseService,
+  informationService,
+  riskService,
+  projectService,
+} from '../../services/artifactServices';
 import { useBackgroundTasks } from './BackgroundTasksProvider';
 import type {
   Requirement,
@@ -280,7 +288,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (requirement: Requirement) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskProjectService.saveRequirement(requirement);
+        await requirementService.save(requirement);
       }
       setRequirements((prev) => {
         const idx = prev.findIndex((r) => r.id === requirement.id);
@@ -300,7 +308,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (id: string) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskProjectService.deleteRequirement(id);
+        await requirementService.delete(id);
       }
       setRequirements((prev) => prev.filter((r) => r.id !== id));
       if (!isE2EMode()) await refreshStatus();
@@ -313,7 +321,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (useCase: UseCase) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskProjectService.saveUseCase(useCase);
+        await useCaseService.save(useCase);
       }
       setUseCases((prev) => {
         const idx = prev.findIndex((u) => u.id === useCase.id);
@@ -333,7 +341,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (id: string) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskProjectService.deleteUseCase(id);
+        await useCaseService.delete(id);
       }
       setUseCases((prev) => prev.filter((u) => u.id !== id));
       if (!isE2EMode()) await refreshStatus();
@@ -346,7 +354,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (testCase: TestCase) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskProjectService.saveTestCase(testCase);
+        await testCaseService.save(testCase);
       }
       setTestCases((prev) => {
         const idx = prev.findIndex((t) => t.id === testCase.id);
@@ -366,7 +374,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (id: string) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskProjectService.deleteTestCase(id);
+        await testCaseService.delete(id);
       }
       setTestCases((prev) => prev.filter((t) => t.id !== id));
       if (!isE2EMode()) await refreshStatus();
@@ -379,7 +387,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (info: Information) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskProjectService.saveInformation(info);
+        await informationService.save(info);
       }
       setInformation((prev) => {
         const idx = prev.findIndex((i) => i.id === info.id);
@@ -399,7 +407,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (id: string) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskProjectService.deleteInformation(id);
+        await informationService.delete(id);
       }
       setInformation((prev) => prev.filter((i) => i.id !== id));
       if (!isE2EMode()) await refreshStatus();
@@ -412,7 +420,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (risk: Risk) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskProjectService.saveRisk(risk);
+        await riskService.save(risk);
       }
       setRisks((prev) => {
         const idx = prev.findIndex((r) => r.id === risk.id);
@@ -432,7 +440,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (id: string) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskProjectService.deleteRisk(id);
+        await riskService.delete(id);
       }
       setRisks((prev) => prev.filter((r) => r.id !== id));
       if (!isE2EMode()) await refreshStatus();
@@ -445,7 +453,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (project: Project) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskProjectService.updateProject(project);
+        await projectService.save(project);
       }
       setProjects((prev) => {
         const idx = prev.findIndex((p) => p.id === project.id);

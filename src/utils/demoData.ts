@@ -661,7 +661,7 @@ Expected Results: PDF is readable, professional, and contains all requested sect
   information: [
     {
       title: 'The Atomic Philosophy',
-      content: `## Why Atomic?
+      text: `## Why Atomic?
 Most Requirement Management Tools (RMTs) use a single monolithic database. This creates:
 1. **Merge Conflicts**: Two people can't easily edit different requirements.
 2. **Audit Complexity**: It's hard to see who changed what and why in a database log.
@@ -674,7 +674,7 @@ Most Requirement Management Tools (RMTs) use a single monolithic database. This 
     },
     {
       title: 'Technical Architecture',
-      content: `## Stack Overview
+      text: `## Stack Overview
 - **Vite/React**: For a lightning-fast UI.
 - **Tailwind CSS**: For premium, accessible styling.
 - **Isomorphic-Git**: A pure JS implementation of Git for the browser.

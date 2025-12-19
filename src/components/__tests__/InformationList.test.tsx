@@ -43,7 +43,7 @@ const defaultColumns: InformationColumnVisibility = {
   idTitle: true,
   revision: true,
   type: true,
-  content: true,
+  text: true,
   created: true,
 };
 
@@ -52,7 +52,7 @@ describe('InformationList', () => {
     {
       id: 'INFO-001',
       title: 'System Architecture',
-      content: 'High level diagram...',
+      text: 'High level diagram...',
       type: 'other',
       revision: '01',
       lastModified: Date.now(),

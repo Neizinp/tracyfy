@@ -46,8 +46,8 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     setActiveTab,
     title,
     setTitle,
-    content,
-    setContent,
+    text,
+    setText,
     type,
     setType,
     customAttributes,
@@ -141,7 +141,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
           </div>
 
           <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-            <MarkdownEditor label="Content" value={content} onChange={setContent} height={250} />
+            <MarkdownEditor label="Content" value={text} onChange={setText} height={250} />
           </div>
         </>
       )}

@@ -80,7 +80,7 @@ export function useUIState() {
     idTitle: true,
     revision: true,
     type: true,
-    content: true,
+    text: true,
     created: true,
   });
 

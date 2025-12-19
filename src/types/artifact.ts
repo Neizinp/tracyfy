@@ -63,7 +63,7 @@ export interface TestCase {
 export interface Information {
   id: string;
   title: string;
-  content: string;
+  text: string;
   type: 'note' | 'meeting' | 'decision' | 'other';
   linkedArtifacts?: ArtifactLink[]; // Links to other artifacts
   dateCreated: number;

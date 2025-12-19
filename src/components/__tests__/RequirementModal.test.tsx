@@ -46,6 +46,11 @@ vi.mock('../../app/providers', async () => {
     useUser: () => ({
       currentUser: { id: 'USER-001', name: 'Test User' },
       users: [{ id: 'USER-001', name: 'Test User' }],
+      isLoading: false,
+      createUser: vi.fn(),
+      updateUser: vi.fn(),
+      deleteUser: vi.fn(),
+      switchUser: vi.fn(),
     }),
   };
 });

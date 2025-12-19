@@ -7,8 +7,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Risk } from '../types';
-import type { CustomAttributeValue } from '../types/customAttributes';
-import { useBaseArtifactForm } from './useBaseArtifactForm';
+import { useArtifactForm } from './useArtifactForm';
 
 interface UseRiskFormOptions {
   isOpen: boolean;
@@ -22,105 +21,68 @@ interface UseRiskFormOptions {
 type Tab = 'overview' | 'mitigation' | 'relationships' | 'customFields' | 'history';
 
 export function useRiskForm({ isOpen, risk, onClose, onSubmit }: UseRiskFormOptions) {
-  const { isEditMode, activeTab, setActiveTab } = useBaseArtifactForm<Risk, Tab>({
-    isOpen,
-    artifact: risk,
-    defaultTab: 'overview',
-    onClose,
-  });
-
-  // Form state
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  // Specialized fields for Risks
   const [category, setCategory] = useState<Risk['category']>('other');
-  const [probability, setProbability] = useState<Risk['probability']>('medium');
   const [impact, setImpact] = useState<Risk['impact']>('medium');
-  const [status, setStatus] = useState<Risk['status']>('identified');
   const [owner, setOwner] = useState('');
   const [mitigation, setMitigation] = useState('');
   const [contingency, setContingency] = useState('');
-  const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
 
-  // Reset form when modal opens or risk changes
+  const {
+    isEditMode,
+    activeTab,
+    setActiveTab,
+    title,
+    setTitle,
+    description,
+    setDescription,
+    priority: probability, // Map priority to probability
+    setPriority: setProbability,
+    status,
+    setStatus,
+    customAttributes,
+    setCustomAttributes,
+    handleSubmit: baseHandleSubmit,
+  } = useArtifactForm<Risk, Tab>({
+    isOpen,
+    artifact: risk,
+    onClose,
+    onCreate: (data) => onSubmit(data),
+    onUpdate: (id, updates) => onSubmit({ id, updates }),
+    onDelete: () => {}, // Not supported here currently
+    defaultTab: 'overview',
+  });
+
+  // Sync specialized fields
   useEffect(() => {
     if (isOpen) {
       if (risk) {
-        setTitle(risk.title);
-        setDescription(risk.description);
         setCategory(risk.category);
-        setProbability(risk.probability);
         setImpact(risk.impact);
-        setStatus(risk.status);
         setOwner(risk.owner || '');
         setMitigation(risk.mitigation);
         setContingency(risk.contingency);
-        setCustomAttributes(risk.customAttributes || []);
       } else {
-        setTitle('');
-        setDescription('');
         setCategory('other');
-        setProbability('medium');
         setImpact('medium');
-        setStatus('identified');
         setOwner('');
         setMitigation('');
         setContingency('');
-        setCustomAttributes([]);
       }
     }
-  }, [risk, isOpen]);
+  }, [isOpen, risk]);
 
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
-      if (e) e.preventDefault();
-      if (risk) {
-        onSubmit({
-          id: risk.id,
-          updates: {
-            title,
-            description,
-            category,
-            probability,
-            impact,
-            status,
-            owner: owner || undefined,
-            mitigation,
-            contingency,
-            customAttributes,
-          },
-        });
-      } else {
-        onSubmit({
-          title,
-          description,
-          category,
-          probability,
-          impact,
-          status,
-          owner: owner || undefined,
-          mitigation,
-          contingency,
-          customAttributes,
-          revision: '01',
-        });
-      }
-      onClose();
+      baseHandleSubmit(e, {
+        category,
+        impact,
+        owner: owner || undefined,
+        mitigation,
+        contingency,
+      } as Partial<Risk>);
     },
-    [
-      risk,
-      title,
-      description,
-      category,
-      probability,
-      impact,
-      status,
-      owner,
-      mitigation,
-      contingency,
-      customAttributes,
-      onSubmit,
-      onClose,
-    ]
+    [baseHandleSubmit, category, impact, owner, mitigation, contingency]
   );
 
   // Calculate risk score for visual indicator

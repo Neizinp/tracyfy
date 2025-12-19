@@ -10,7 +10,7 @@ export const InformationPage: React.FC = () => {
   const { sortedData, sortConfig, handleSortChange } = useArtifactFilteredData(
     information,
     searchQuery,
-    ['id', 'title', 'content']
+    ['id', 'title', 'text']
   );
 
   return (

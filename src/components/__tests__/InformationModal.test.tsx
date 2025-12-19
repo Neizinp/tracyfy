@@ -21,6 +21,22 @@ vi.mock('../../hooks/useCustomAttributes', () => ({
   }),
 }));
 
+vi.mock('../../app/providers', async () => {
+  const actual = await vi.importActual('../../app/providers');
+  return {
+    ...(actual as object),
+    useUser: () => ({
+      currentUser: { id: 'USER-001', name: 'Test User' },
+      users: [{ id: 'USER-001', name: 'Test User' }],
+      isLoading: false,
+      createUser: vi.fn(),
+      updateUser: vi.fn(),
+      deleteUser: vi.fn(),
+      switchUser: vi.fn(),
+    }),
+  };
+});
+
 const renderWithProvider = (ui: React.ReactElement) => {
   return render(<UIProvider>{ui}</UIProvider>);
 };
@@ -29,7 +45,7 @@ describe('InformationModal', () => {
   const mockInformation: Information = {
     id: 'INFO-001',
     title: 'Project Meeting Notes',
-    content: 'Discussion about requirements',
+    text: 'Discussion about requirements',
     type: 'meeting',
     lastModified: Date.now(),
     dateCreated: Date.now(),

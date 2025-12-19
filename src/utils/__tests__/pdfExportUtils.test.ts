@@ -57,7 +57,7 @@ const mockTestCase: TestCase = {
 const mockInfo: Information = {
   id: 'i1',
   title: 'My Info',
-  content: 'Info Content',
+  text: 'Info Content',
   type: 'note',
   lastModified: 0,
   revision: '01',
@@ -190,7 +190,7 @@ describe('pdfExportUtils', () => {
   };
 
   it('should include revision history from git in PDF export', async () => {
-    (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+    (window as unknown as Record<string, unknown>).showSaveFilePicker = vi.fn().mockResolvedValue({
       createWritable: vi.fn().mockResolvedValue({
         write: vi.fn(),
         close: vi.fn(),
@@ -209,14 +209,20 @@ describe('pdfExportUtils', () => {
     );
 
     // Check that commit messages and authors are present in the autoTable body
-    const autoTableCalls = (autoTable as any).mock.calls;
+    const autoTableCalls = vi.mocked(autoTable).mock.calls;
     const foundInitialCommit = autoTableCalls.some(
-      ([_doc, options]: [any, any]) =>
-        options.body && options.body.some((row: any[]) => row.includes('Initial commit'))
+      ([_doc, options]) =>
+        options &&
+        (options as { body?: unknown[] }).body?.some(
+          (row) => Array.isArray(row) && row.includes('Initial commit')
+        )
     );
     const foundUpdateRequirement = autoTableCalls.some(
-      ([_doc, options]: [any, any]) =>
-        options.body && options.body.some((row: any[]) => row.includes('Update requirement'))
+      ([_doc, options]) =>
+        options &&
+        (options as { body?: unknown[] }).body?.some(
+          (row) => Array.isArray(row) && row.includes('Update requirement')
+        )
     );
     // Verify commits are found
     expect(foundInitialCommit || foundUpdateRequirement).toBeDefined();
@@ -235,7 +241,7 @@ describe('pdfExportUtils', () => {
   it('should generate Cover Page with correct details', async () => {
     // Mock showSaveFilePicker to avoid error
 
-    (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+    (window as unknown as Record<string, unknown>).showSaveFilePicker = vi.fn().mockResolvedValue({
       createWritable: vi.fn().mockResolvedValue({
         write: vi.fn(),
         close: vi.fn(),
@@ -288,7 +294,7 @@ describe('pdfExportUtils', () => {
   });
 
   it('should generate granular Table of Contents', async () => {
-    (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+    (window as unknown as Record<string, unknown>).showSaveFilePicker = vi.fn().mockResolvedValue({
       createWritable: vi.fn().mockResolvedValue({
         write: vi.fn(),
         close: vi.fn(),
@@ -321,7 +327,7 @@ describe('pdfExportUtils', () => {
   });
 
   it('should include all artifact sections with correct content', async () => {
-    (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+    (window as unknown as Record<string, unknown>).showSaveFilePicker = vi.fn().mockResolvedValue({
       createWritable: vi.fn().mockResolvedValue({
         write: vi.fn(),
         close: vi.fn(),
@@ -384,7 +390,7 @@ describe('pdfExportUtils', () => {
   });
 
   it('should fallback to doc.save if showSaveFilePicker is not available', async () => {
-    delete (window as any).showSaveFilePicker;
+    delete (window as unknown as Record<string, unknown>).showSaveFilePicker;
 
     await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
     expect(mockSave).toHaveBeenCalledWith('Test_Project - Current_State.pdf');
@@ -528,7 +534,7 @@ describe('pdfExportUtils', () => {
   });
 
   it('should export all use case attributes', async () => {
-    (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+    (window as unknown as Record<string, unknown>).showSaveFilePicker = vi.fn().mockResolvedValue({
       createWritable: vi.fn().mockResolvedValue({
         write: vi.fn(),
         close: vi.fn(),
@@ -587,7 +593,7 @@ describe('pdfExportUtils', () => {
   });
 
   it('should export all test case attributes', async () => {
-    (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+    (window as unknown as Record<string, unknown>).showSaveFilePicker = vi.fn().mockResolvedValue({
       createWritable: vi.fn().mockResolvedValue({
         write: vi.fn(),
         close: vi.fn(),
@@ -622,7 +628,7 @@ describe('pdfExportUtils', () => {
   });
 
   it('should export all information attributes', async () => {
-    (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+    (window as unknown as Record<string, unknown>).showSaveFilePicker = vi.fn().mockResolvedValue({
       createWritable: vi.fn().mockResolvedValue({
         write: vi.fn(),
         close: vi.fn(),
@@ -667,7 +673,7 @@ describe('pdfExportUtils', () => {
 
   describe('PDF Filename Generation', () => {
     it('should use "Project Name - Current State.pdf" format when no baseline selected', async () => {
-      delete (window as any).showSaveFilePicker;
+      delete (window as unknown as Record<string, unknown>).showSaveFilePicker;
 
       await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
 
@@ -675,7 +681,7 @@ describe('pdfExportUtils', () => {
     });
 
     it('should use "Project Name - Baseline Name.pdf" format when baseline selected', async () => {
-      delete (window as any).showSaveFilePicker;
+      delete (window as unknown as Record<string, unknown>).showSaveFilePicker;
 
       const testBaseline = {
         id: 'b1',
@@ -719,12 +725,14 @@ describe('pdfExportUtils', () => {
     };
 
     it('should show no revision history when exporting first baseline', async () => {
-      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
-        createWritable: vi.fn().mockResolvedValue({
-          write: vi.fn(),
-          close: vi.fn(),
-        }),
-      });
+      (window as unknown as Record<string, unknown>).showSaveFilePicker = vi
+        .fn()
+        .mockResolvedValue({
+          createWritable: vi.fn().mockResolvedValue({
+            write: vi.fn(),
+            close: vi.fn(),
+          }),
+        });
 
       // Export with only one baseline (the first one)
       await exportProjectToPDF(
@@ -739,10 +747,12 @@ describe('pdfExportUtils', () => {
       );
 
       // Check that no artifact commits are in the revision history table
-      const autoTableCalls = (autoTable as any).mock.calls;
+      const autoTableCalls = vi.mocked(autoTable).mock.calls;
       const revisionHistoryCalls = autoTableCalls.filter(
-        ([_doc, options]: [any, any]) =>
-          options.head && options.head[0] && options.head[0].includes('Changes')
+        ([_doc, options]) =>
+          options &&
+          Array.isArray((options as { head?: string[][] }).head) &&
+          (options as { head?: string[][] }).head?.[0]?.includes('Changes')
       );
 
       // Should not have any revision history table, or if present, body should be empty
@@ -753,12 +763,14 @@ describe('pdfExportUtils', () => {
     });
 
     it('should show commits between baselines when exporting a later baseline', async () => {
-      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
-        createWritable: vi.fn().mockResolvedValue({
-          write: vi.fn(),
-          close: vi.fn(),
-        }),
-      });
+      (window as unknown as Record<string, unknown>).showSaveFilePicker = vi
+        .fn()
+        .mockResolvedValue({
+          createWritable: vi.fn().mockResolvedValue({
+            write: vi.fn(),
+            close: vi.fn(),
+          }),
+        });
 
       // Export second baseline with first baseline as previous
       await exportProjectToPDF(
@@ -774,19 +786,25 @@ describe('pdfExportUtils', () => {
 
       // Commits at 1700000000000 and 1700001000000 should be included
       // (they are after baselineOld.timestamp and before baselineNew.timestamp)
-      const autoTableCalls = (autoTable as any).mock.calls;
+      const autoTableCalls = vi.mocked(autoTable).mock.calls;
       const revisionHistoryCalls = autoTableCalls.filter(
-        ([_doc, options]: [any, any]) =>
-          options.head && options.head[0] && options.head[0].includes('Changes')
+        ([_doc, options]) =>
+          options &&
+          Array.isArray((options as { head?: string[][] }).head) &&
+          (options as { head?: string[][] }).head?.[0]?.includes('Changes')
       );
 
       if (revisionHistoryCalls.length > 0) {
-        const body = revisionHistoryCalls[0][1].body || [];
-        const hasInitialCommit = body.some((row: string[]) =>
-          row.some((cell) => cell.includes('Initial commit'))
+        const body = (revisionHistoryCalls[0][1] as { body?: unknown[] }).body || [];
+        const hasInitialCommit = body.some(
+          (row) =>
+            Array.isArray(row) &&
+            row.some((cell) => typeof cell === 'string' && cell.includes('Initial commit'))
         );
-        const hasUpdateCommit = body.some((row: string[]) =>
-          row.some((cell) => cell.includes('Update requirement'))
+        const hasUpdateCommit = body.some(
+          (row) =>
+            Array.isArray(row) &&
+            row.some((cell) => typeof cell === 'string' && cell.includes('Update requirement'))
         );
 
         // Both commits should be between the two baselines
@@ -795,12 +813,14 @@ describe('pdfExportUtils', () => {
     });
 
     it('should show commits since last baseline when exporting current state', async () => {
-      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
-        createWritable: vi.fn().mockResolvedValue({
-          write: vi.fn(),
-          close: vi.fn(),
-        }),
-      });
+      (window as unknown as Record<string, unknown>).showSaveFilePicker = vi
+        .fn()
+        .mockResolvedValue({
+          createWritable: vi.fn().mockResolvedValue({
+            write: vi.fn(),
+            close: vi.fn(),
+          }),
+        });
 
       // Baseline is before both commits, so current state should show both
       const oldBaseline = {
@@ -825,10 +845,12 @@ describe('pdfExportUtils', () => {
       );
 
       // Check that commits are included
-      const autoTableCalls = (autoTable as any).mock.calls;
+      const autoTableCalls = vi.mocked(autoTable).mock.calls;
       const revisionHistoryCalls = autoTableCalls.filter(
-        ([_doc, options]: [any, any]) =>
-          options.head && options.head[0] && options.head[0].includes('Changes')
+        ([_doc, options]) =>
+          options &&
+          Array.isArray((options as { head?: string[][] }).head) &&
+          (options as { head?: string[][] }).head?.[0]?.includes('Changes')
       );
 
       if (revisionHistoryCalls.length > 0) {
@@ -840,24 +862,28 @@ describe('pdfExportUtils', () => {
 
   describe('Revision History Table Format', () => {
     it('should have separate columns for ID and Name in revision history', async () => {
-      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
-        createWritable: vi.fn().mockResolvedValue({
-          write: vi.fn(),
-          close: vi.fn(),
-        }),
-      });
+      (window as unknown as Record<string, unknown>).showSaveFilePicker = vi
+        .fn()
+        .mockResolvedValue({
+          createWritable: vi.fn().mockResolvedValue({
+            write: vi.fn(),
+            close: vi.fn(),
+          }),
+        });
 
       await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
 
       // Check that the table header has 5 columns: Date, ID, Name, Message, Author
-      const autoTableCalls = (autoTable as any).mock.calls;
+      const autoTableCalls = vi.mocked(autoTable).mock.calls;
       const revisionHistoryCalls = autoTableCalls.filter(
-        ([_doc, options]: [any, any]) =>
-          options.head && options.head[0] && options.head[0].includes('ID')
+        ([_doc, options]) =>
+          options &&
+          Array.isArray((options as { head?: string[][] }).head) &&
+          (options as { head?: string[][] }).head?.[0]?.includes('ID')
       );
 
       if (revisionHistoryCalls.length > 0) {
-        const header = revisionHistoryCalls[0][1].head[0];
+        const header = (revisionHistoryCalls[0][1] as { head?: string[][] }).head?.[0] || [];
         expect(header).toContain('Date');
         expect(header).toContain('ID');
         expect(header).toContain('Name');
@@ -868,42 +894,49 @@ describe('pdfExportUtils', () => {
     });
 
     it('should show multiple commits for the same artifact as a bulleted list', async () => {
-      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
-        createWritable: vi.fn().mockResolvedValue({
-          write: vi.fn(),
-          close: vi.fn(),
-        }),
-      });
+      (window as unknown as Record<string, unknown>).showSaveFilePicker = vi
+        .fn()
+        .mockResolvedValue({
+          createWritable: vi.fn().mockResolvedValue({
+            write: vi.fn(),
+            close: vi.fn(),
+          }),
+        });
 
       // The mock returns 2 commits for r1.md (Initial commit and Update requirement)
       await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
 
       // Check that commits appear as a bulleted list in the revision history table body
-      const autoTableCalls = (autoTable as any).mock.calls;
+      const autoTableCalls = vi.mocked(autoTable).mock.calls;
       const revisionHistoryCalls = autoTableCalls.filter(
-        ([_doc, options]: [any, any]) =>
-          options.head && options.head[0] && options.head[0].includes('Changes')
+        ([_doc, options]) =>
+          options &&
+          Array.isArray((options as { head?: string[][] }).head) &&
+          (options as { head?: string[][] }).head?.[0]?.includes('Changes')
       );
 
       if (revisionHistoryCalls.length > 0) {
-        const body = revisionHistoryCalls[0][1].body || [];
+        const body = (revisionHistoryCalls[0][1] as { body?: unknown[] }).body || [];
         // Should have 1 row with bulleted list
         expect(body.length).toBe(1);
 
         // The changes column should contain both commit messages as bullets
-        const changesCell = body[0][3]; // Changes is at index 3
+        const firstRow = body[0];
+        const changesCell = Array.isArray(firstRow) ? firstRow[3] : ''; // Changes is at index 3
         expect(changesCell).toContain('• Update requirement');
         expect(changesCell).toContain('• Initial commit');
       }
     });
 
     it('should NOT show revision history when exporting with NO baselines (current state, no previous baseline)', async () => {
-      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
-        createWritable: vi.fn().mockResolvedValue({
-          write: vi.fn(),
-          close: vi.fn(),
-        }),
-      });
+      (window as unknown as Record<string, unknown>).showSaveFilePicker = vi
+        .fn()
+        .mockResolvedValue({
+          createWritable: vi.fn().mockResolvedValue({
+            write: vi.fn(),
+            close: vi.fn(),
+          }),
+        });
 
       // Export current state with EMPTY baselines array - no previous baseline to compare against
       await exportProjectToPDF(
@@ -926,10 +959,12 @@ describe('pdfExportUtils', () => {
       expect(hasRevisionHistoryHeading).toBe(false);
 
       // No revision history table should be created
-      const autoTableCalls = (autoTable as any).mock.calls;
+      const autoTableCalls = vi.mocked(autoTable).mock.calls;
       const revisionHistoryCalls = autoTableCalls.filter(
-        ([_doc, options]: [any, any]) =>
-          options.head && options.head[0] && options.head[0].includes('Changes')
+        ([_doc, options]) =>
+          options &&
+          Array.isArray((options as { head?: string[][] }).head) &&
+          (options as { head?: string[][] }).head?.[0]?.includes('Changes')
       );
       expect(revisionHistoryCalls.length).toBe(0);
     });
@@ -937,12 +972,14 @@ describe('pdfExportUtils', () => {
 
   describe('Links Section', () => {
     it('should include links section when project has links', async () => {
-      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
-        createWritable: vi.fn().mockResolvedValue({
-          write: vi.fn(),
-          close: vi.fn(),
-        }),
-      });
+      (window as unknown as Record<string, unknown>).showSaveFilePicker = vi
+        .fn()
+        .mockResolvedValue({
+          createWritable: vi.fn().mockResolvedValue({
+            write: vi.fn(),
+            close: vi.fn(),
+          }),
+        });
 
       // Mock diskLinkService to return links
       vi.mocked(diskLinkService.getLinksForProject).mockResolvedValue([
@@ -967,21 +1004,25 @@ describe('pdfExportUtils', () => {
       expect(hasLinksHeading).toBe(true);
 
       // Verify autoTable was called for links (Links table has specific headers)
-      const autoTableCalls = (autoTable as any).mock.calls;
+      const autoTableCalls = vi.mocked(autoTable).mock.calls;
       const linksTableCall = autoTableCalls.find(
-        ([_doc, options]: [any, any]) =>
-          options.head && options.head[0] && options.head[0].includes('Link ID')
+        ([_doc, options]) =>
+          options &&
+          Array.isArray((options as { head?: string[][] }).head) &&
+          (options as { head?: string[][] }).head?.[0]?.includes('Link ID')
       );
       expect(linksTableCall).toBeDefined();
     });
 
     it('should not include links section when project has no links', async () => {
-      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
-        createWritable: vi.fn().mockResolvedValue({
-          write: vi.fn(),
-          close: vi.fn(),
-        }),
-      });
+      (window as unknown as Record<string, unknown>).showSaveFilePicker = vi
+        .fn()
+        .mockResolvedValue({
+          createWritable: vi.fn().mockResolvedValue({
+            write: vi.fn(),
+            close: vi.fn(),
+          }),
+        });
 
       // Mock diskLinkService to return empty array
       vi.mocked(diskLinkService.getLinksForProject).mockResolvedValue([]);
@@ -1025,12 +1066,14 @@ describe('pdfExportUtils', () => {
     };
 
     it('should include risks section when project has risks', async () => {
-      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
-        createWritable: vi.fn().mockResolvedValue({
-          write: vi.fn(),
-          close: vi.fn(),
-        }),
-      });
+      (window as unknown as Record<string, unknown>).showSaveFilePicker = vi
+        .fn()
+        .mockResolvedValue({
+          createWritable: vi.fn().mockResolvedValue({
+            write: vi.fn(),
+            close: vi.fn(),
+          }),
+        });
 
       await exportProjectToPDF(projectWithRisks, globalStateWithRisks, [], [], [], [], [], null);
 
@@ -1049,12 +1092,14 @@ describe('pdfExportUtils', () => {
     });
 
     it('should not include risks section when project has no risks', async () => {
-      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
-        createWritable: vi.fn().mockResolvedValue({
-          write: vi.fn(),
-          close: vi.fn(),
-        }),
-      });
+      (window as unknown as Record<string, unknown>).showSaveFilePicker = vi
+        .fn()
+        .mockResolvedValue({
+          createWritable: vi.fn().mockResolvedValue({
+            write: vi.fn(),
+            close: vi.fn(),
+          }),
+        });
 
       await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
 
@@ -1067,12 +1112,14 @@ describe('pdfExportUtils', () => {
     });
 
     it('should render risk attributes correctly', async () => {
-      (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
-        createWritable: vi.fn().mockResolvedValue({
-          write: vi.fn(),
-          close: vi.fn(),
-        }),
-      });
+      (window as unknown as Record<string, unknown>).showSaveFilePicker = vi
+        .fn()
+        .mockResolvedValue({
+          createWritable: vi.fn().mockResolvedValue({
+            write: vi.fn(),
+            close: vi.fn(),
+          }),
+        });
 
       await exportProjectToPDF(projectWithRisks, globalStateWithRisks, [], [], [], [], [], null);
 

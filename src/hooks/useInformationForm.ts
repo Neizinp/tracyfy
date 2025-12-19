@@ -7,8 +7,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Information } from '../types';
-import type { CustomAttributeValue } from '../types/customAttributes';
-import { useBaseArtifactForm } from './useBaseArtifactForm';
+import { useArtifactForm } from './useArtifactForm';
 
 interface UseInformationFormOptions {
   isOpen: boolean;
@@ -29,50 +28,52 @@ export function useInformationForm({
   onClose,
   onSubmit,
 }: UseInformationFormOptions) {
-  const { isEditMode, activeTab, setActiveTab } = useBaseArtifactForm<Information, Tab>({
+  // Specialized fields for Information entries
+  const [type, setType] = useState<Information['type']>('note');
+
+  const {
+    isEditMode,
+    activeTab,
+    setActiveTab,
+    title,
+    setTitle,
+    text,
+    setText,
+    customAttributes,
+    setCustomAttributes,
+    handleSubmit: baseHandleSubmit,
+    handleDelete,
+    confirmDelete,
+    cancelDelete,
+    showDeleteConfirm,
+  } = useArtifactForm<Information, Tab>({
     isOpen,
     artifact: information,
-    defaultTab: 'overview',
     onClose,
+    onCreate: (data) => onSubmit(data),
+    onUpdate: (id, updates) => onSubmit({ id, updates }),
+    onDelete: () => {}, // Not supported here currently
+    defaultTab: 'overview',
   });
 
-  // Form state
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [type, setType] = useState<Information['type']>('note');
-  const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
-
-  // Reset form when modal opens or information changes
+  // Sync specialized fields
   useEffect(() => {
     if (isOpen) {
       if (information) {
-        setTitle(information.title);
-        setContent(information.content);
         setType(information.type);
-        setCustomAttributes(information.customAttributes || []);
       } else {
-        setTitle('');
-        setContent('');
         setType('note');
-        setCustomAttributes([]);
       }
     }
-  }, [information, isOpen]);
+  }, [isOpen, information]);
 
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
-      if (e) e.preventDefault();
-      if (information) {
-        onSubmit({
-          id: information.id,
-          updates: { title, content, type, customAttributes },
-        });
-      } else {
-        onSubmit({ title, content, type, customAttributes, revision: '01' });
-      }
-      onClose();
+      baseHandleSubmit(e, {
+        type,
+      } as Partial<Information>);
     },
-    [information, title, content, type, customAttributes, onSubmit, onClose]
+    [baseHandleSubmit, type]
   );
 
   return {
@@ -86,8 +87,8 @@ export function useInformationForm({
     // Form fields
     title,
     setTitle,
-    content,
-    setContent,
+    text,
+    setText,
     type,
     setType,
     customAttributes,
@@ -95,5 +96,9 @@ export function useInformationForm({
 
     // Actions
     handleSubmit,
+    handleDelete,
+    confirmDelete,
+    cancelDelete,
+    showDeleteConfirm,
   };
 }

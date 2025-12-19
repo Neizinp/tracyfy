@@ -31,7 +31,7 @@ import { fileSystemService } from './fileSystemService';
 import { debug } from '../utils/debug';
 import { idService } from './idService';
 import { ARTIFACT_CONFIG } from '../constants/artifactConfig';
-import type { Project, Requirement, UseCase, TestCase, Information, User, Risk } from '../types';
+import type { Project, Requirement, UseCase, TestCase, Information, Risk } from '../types';
 import {
   ALL_ARTIFACT_SERVICES,
   requirementService,
@@ -40,7 +40,6 @@ import {
   informationService,
   riskService,
   projectService,
-  userService,
 } from './artifactServices';
 
 const CURRENT_PROJECT_FILE = 'current-project.md';
@@ -274,140 +273,6 @@ class DiskProjectService {
     return projectService.loadAll();
   }
 
-  // ============ GLOBAL ARTIFACT OPERATIONS ============
-
-  /**
-   * Save a requirement to disk (global)
-   */
-  async saveRequirement(requirement: Requirement): Promise<void> {
-    await requirementService.save(requirement);
-  }
-
-  /**
-   * Load all requirements (global)
-   */
-  async loadAllRequirements(): Promise<Requirement[]> {
-    return requirementService.loadAll();
-  }
-
-  /**
-   * Delete a requirement from disk
-   */
-  async deleteRequirement(requirementId: string): Promise<void> {
-    await requirementService.delete(requirementId);
-  }
-
-  /**
-   * Save a use case to disk (global)
-   */
-  async saveUseCase(useCase: UseCase): Promise<void> {
-    await useCaseService.save(useCase);
-  }
-
-  /**
-   * Load all use cases (global)
-   */
-  async loadAllUseCases(): Promise<UseCase[]> {
-    return useCaseService.loadAll();
-  }
-
-  /**
-   * Delete a use case from disk
-   */
-  async deleteUseCase(useCaseId: string): Promise<void> {
-    await useCaseService.delete(useCaseId);
-  }
-
-  /**
-   * Save a test case to disk (global)
-   */
-  async saveTestCase(testCase: TestCase): Promise<void> {
-    await testCaseService.save(testCase);
-  }
-
-  /**
-   * Load all test cases (global)
-   */
-  async loadAllTestCases(): Promise<TestCase[]> {
-    return testCaseService.loadAll();
-  }
-
-  /**
-   * Delete a test case from disk
-   */
-  async deleteTestCase(testCaseId: string): Promise<void> {
-    await testCaseService.delete(testCaseId);
-  }
-
-  /**
-   * Save information to disk (global)
-   */
-  async saveInformation(info: Information): Promise<void> {
-    await informationService.save(info);
-  }
-
-  /**
-   * Load all information (global)
-   */
-  async loadAllInformation(): Promise<Information[]> {
-    return informationService.loadAll();
-  }
-
-  /**
-   * Delete information from disk
-   */
-  async deleteInformation(infoId: string): Promise<void> {
-    await informationService.delete(infoId);
-  }
-
-  // ============ RISK OPERATIONS ============
-
-  /**
-   * Save a risk to disk (global)
-   */
-  async saveRisk(risk: Risk): Promise<void> {
-    await riskService.save(risk);
-  }
-
-  /**
-   * Load all risks (global)
-   */
-  async loadAllRisks(): Promise<Risk[]> {
-    return riskService.loadAll();
-  }
-
-  /**
-   * Delete a risk from disk
-   */
-  async deleteRisk(riskId: string): Promise<void> {
-    await riskService.delete(riskId);
-  }
-
-  // ============ USER OPERATIONS ============
-
-  /**
-   * Save a user to disk
-   */
-  async saveUser(user: User): Promise<void> {
-    await userService.save(user);
-  }
-
-  /**
-   * Load all users
-   */
-  async loadAllUsers(): Promise<User[]> {
-    return userService.loadAll();
-  }
-
-  /**
-   * Delete a user from disk
-   */
-  async deleteUser(userId: string): Promise<void> {
-    await userService.delete(userId);
-  }
-
-  // ============ BULK OPERATIONS ============
-
   /**
    * Load everything from disk
    */
@@ -423,11 +288,11 @@ class DiskProjectService {
     const [projects, requirements, useCases, testCases, information, risks, currentProjectId] =
       await Promise.all([
         this.loadAllProjects(),
-        this.loadAllRequirements(),
-        this.loadAllUseCases(),
-        this.loadAllTestCases(),
-        this.loadAllInformation(),
-        this.loadAllRisks(),
+        requirementService.loadAll(),
+        useCaseService.loadAll(),
+        testCaseService.loadAll(),
+        informationService.loadAll(),
+        riskService.loadAll(),
         this.getCurrentProjectId(),
       ]);
 

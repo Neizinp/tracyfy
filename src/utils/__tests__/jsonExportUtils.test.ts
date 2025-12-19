@@ -31,7 +31,7 @@ describe('jsonExportUtils', () => {
     vi.clearAllMocks();
 
     // Setup mocks
-    (window as any).showSaveFilePicker = mockShowSaveFilePicker;
+    (window as unknown as Record<string, unknown>).showSaveFilePicker = mockShowSaveFilePicker;
     mockShowSaveFilePicker.mockResolvedValue({
       createWritable: mockCreateWritable,
     });
@@ -40,8 +40,10 @@ describe('jsonExportUtils', () => {
       close: mockClose,
     });
 
-    (globalThis as any).URL.createObjectURL = mockCreateObjectURL;
-    (globalThis as any).URL.revokeObjectURL = mockRevokeObjectURL;
+    (globalThis as unknown as Record<string, unknown>).URL = {
+      createObjectURL: mockCreateObjectURL,
+      revokeObjectURL: mockRevokeObjectURL,
+    };
 
     document.createElement = mockCreateElement;
     document.body.appendChild = mockAppendChild;
@@ -118,7 +120,7 @@ describe('jsonExportUtils', () => {
   const mockInfo: Information = {
     id: 'i1',
     title: 'My Info',
-    content: 'Info Content',
+    text: 'Info Content',
     type: 'note',
     lastModified: 0,
     revision: '01',
@@ -179,7 +181,7 @@ describe('jsonExportUtils', () => {
   });
 
   it('should fallback to download if showSaveFilePicker is not available', async () => {
-    delete (window as any).showSaveFilePicker;
+    delete (window as unknown as Record<string, unknown>).showSaveFilePicker;
 
     await exportProjectToJSON(mockProject, globalState, ['r1'], [], [], []);
 

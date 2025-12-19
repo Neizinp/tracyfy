@@ -11,15 +11,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { UserProvider, useUser } from '../UserProvider';
 import { diskProjectService } from '../../../services/diskProjectService';
+import { userService } from '../../../services/artifactServices';
+import { idService } from '../../../services/idService';
 
 // Mock dependencies
 vi.mock('../../../services/diskProjectService', () => ({
   diskProjectService: {
-    loadAllUsers: vi.fn(),
     getCurrentUserId: vi.fn(),
-    saveUser: vi.fn(),
-    deleteUser: vi.fn(),
     setCurrentUserId: vi.fn(),
+  },
+}));
+
+vi.mock('../../../services/artifactServices', () => ({
+  userService: {
+    loadAll: vi.fn(),
+    save: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
+
+vi.mock('../../../services/idService', () => ({
+  idService: {
     getNextId: vi.fn(),
   },
 }));
@@ -44,7 +56,7 @@ const TestConsumer: React.FC = () => {
 describe('UserProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(diskProjectService.loadAllUsers).mockResolvedValue([]);
+    vi.mocked(userService.loadAll).mockResolvedValue([]);
     vi.mocked(diskProjectService.getCurrentUserId).mockResolvedValue('');
   });
 
@@ -71,7 +83,7 @@ describe('UserProvider', () => {
           lastModified: 1700000000000,
         },
       ];
-      vi.mocked(diskProjectService.loadAllUsers).mockResolvedValue(mockUsers);
+      vi.mocked(userService.loadAll).mockResolvedValue(mockUsers);
       vi.mocked(diskProjectService.getCurrentUserId).mockResolvedValue('USER-001');
 
       render(
@@ -89,8 +101,13 @@ describe('UserProvider', () => {
 
   describe('createUser', () => {
     it('should create a new user and add to state', async () => {
-      vi.mocked(diskProjectService.getNextId).mockResolvedValue('USER-001');
-      vi.mocked(diskProjectService.saveUser).mockResolvedValue(undefined);
+      vi.mocked(idService.getNextId).mockResolvedValue('USER-001');
+      vi.mocked(userService.save).mockResolvedValue({
+        id: 'USER-001',
+        name: 'New User',
+        dateCreated: 0,
+        lastModified: 0,
+      });
 
       const CreateUserTest: React.FC = () => {
         const { createUser, users } = useUser();
@@ -120,7 +137,7 @@ describe('UserProvider', () => {
         expect(screen.getByTestId('users').textContent).toBe('New User');
       });
 
-      expect(diskProjectService.saveUser).toHaveBeenCalled();
+      expect(userService.save).toHaveBeenCalled();
     });
   });
 
@@ -140,7 +157,7 @@ describe('UserProvider', () => {
           lastModified: 1700000000000,
         },
       ];
-      vi.mocked(diskProjectService.loadAllUsers).mockResolvedValue(mockUsers);
+      vi.mocked(userService.loadAll).mockResolvedValue(mockUsers);
       vi.mocked(diskProjectService.getCurrentUserId).mockResolvedValue('USER-001');
 
       const SwitchUserTest: React.FC = () => {
@@ -191,7 +208,7 @@ describe('UserProvider', () => {
           lastModified: 1700000000000,
         },
       ];
-      vi.mocked(diskProjectService.loadAllUsers).mockResolvedValue(mockUsers);
+      vi.mocked(userService.loadAll).mockResolvedValue(mockUsers);
       vi.mocked(diskProjectService.getCurrentUserId).mockResolvedValue('USER-002');
 
       const DeleteUserTest: React.FC = () => {
@@ -222,7 +239,7 @@ describe('UserProvider', () => {
         expect(screen.getByTestId('count').textContent).toBe('1');
       });
 
-      expect(diskProjectService.deleteUser).toHaveBeenCalledWith('USER-001');
+      expect(userService.delete).toHaveBeenCalledWith('USER-001');
     });
   });
 });

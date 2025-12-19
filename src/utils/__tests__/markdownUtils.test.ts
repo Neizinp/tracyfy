@@ -501,7 +501,7 @@ describe('Information Markdown Conversion', () => {
       const info: Information = {
         id: 'INF-001',
         title: 'Meeting Notes',
-        content: 'Discussion about requirements',
+        text: 'Discussion about requirements',
         type: 'meeting',
         dateCreated: 1700000000000,
         lastModified: 1700000000000,
@@ -538,14 +538,14 @@ Discussion about requirements
       expect(info.id).toBe('INF-001');
       expect(info.title).toBe('Meeting Notes');
       expect(info.type).toBe('meeting');
-      expect(info.content).toBe('Discussion about requirements');
+      expect(info.text).toBe('Discussion about requirements');
     });
 
     it('should round-trip without data loss', () => {
       const original: Information = {
         id: 'INF-001',
         title: 'Info',
-        content: 'Content here',
+        text: 'Content here',
         type: 'note',
         dateCreated: 1700000000000,
         lastModified: 1700000000000,
@@ -557,7 +557,7 @@ Discussion about requirements
 
       expect(parsed.id).toBe(original.id);
       expect(parsed.title).toBe(original.title);
-      expect(parsed.content).toBe(original.content);
+      expect(parsed.text).toBe(original.text);
       expect(parsed.type).toBe(original.type);
     });
   });

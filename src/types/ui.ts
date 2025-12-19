@@ -42,7 +42,7 @@ export interface TestCaseColumnVisibility {
 export interface InformationColumnVisibility {
   idTitle: boolean; // Always true
   type: boolean;
-  content: boolean;
+  text: boolean;
   created: boolean;
   revision: boolean;
 }

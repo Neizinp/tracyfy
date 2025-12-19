@@ -21,6 +21,22 @@ vi.mock('../../hooks/useCustomAttributes', () => ({
   }),
 }));
 
+vi.mock('../../app/providers', async () => {
+  const actual = await vi.importActual('../../app/providers');
+  return {
+    ...(actual as object),
+    useUser: () => ({
+      currentUser: { id: 'USER-001', name: 'Test User' },
+      users: [{ id: 'USER-001', name: 'Test User' }],
+      isLoading: false,
+      createUser: vi.fn(),
+      updateUser: vi.fn(),
+      deleteUser: vi.fn(),
+      switchUser: vi.fn(),
+    }),
+  };
+});
+
 const renderWithProvider = (ui: React.ReactElement) => {
   return render(<UIProvider>{ui}</UIProvider>);
 };

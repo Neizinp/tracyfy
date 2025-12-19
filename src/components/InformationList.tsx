@@ -48,10 +48,10 @@ export const InformationList: React.FC<InformationListProps> = ({
         ),
       },
       {
-        key: 'content',
+        key: 'text',
         label: 'Content',
         minWidth: '400px',
-        visible: visibleColumns.content, // Information uses .content
+        visible: visibleColumns.text,
         render: (info: Information) => (
           <div
             style={{
@@ -60,7 +60,7 @@ export const InformationList: React.FC<InformationListProps> = ({
               whiteSpace: 'pre-wrap',
             }}
           >
-            {info.content}
+            {info.text}
           </div>
         ),
       },

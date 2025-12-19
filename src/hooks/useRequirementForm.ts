@@ -6,10 +6,9 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import type { Requirement, ArtifactLink } from '../types';
-import type { CustomAttributeValue } from '../types/customAttributes';
-import { useUser, useUI, useGlobalState } from '../app/providers';
-import { useBaseArtifactForm } from './useBaseArtifactForm';
+import type { Requirement } from '../types';
+import { useUI, useGlobalState } from '../app/providers';
+import { useArtifactForm } from './useArtifactForm';
 
 interface UseRequirementFormOptions {
   isOpen: boolean;
@@ -30,7 +29,6 @@ export function useRequirementForm({
   onUpdate,
   onDelete,
 }: UseRequirementFormOptions) {
-  const { currentUser } = useUser();
   const {
     setEditingRequirement,
     setIsEditRequirementModalOpen,
@@ -43,123 +41,71 @@ export function useRequirementForm({
   } = useUI();
   const { requirements, useCases, information } = useGlobalState();
 
+  // Specialized fields for Requirements
+  const [rationale, setRationale] = useState('');
+  const [verificationMethod, setVerificationMethod] = useState('');
+  const [comments, setComments] = useState('');
+
   const {
     isEditMode,
+    currentUser,
     activeTab,
     setActiveTab,
-    showDeleteConfirm,
+    title,
+    setTitle,
+    description,
+    setDescription,
+    text,
+    setText,
+    priority,
+    setPriority,
+    status,
+    setStatus,
+    linkedArtifacts,
+    setLinkedArtifacts,
+    customAttributes,
+    setCustomAttributes,
+    handleSubmit: baseHandleSubmit,
+    handleRemoveLink,
     handleDelete,
     confirmDelete,
     cancelDelete,
-  } = useBaseArtifactForm<Requirement, Tab>({
+    showDeleteConfirm,
+  } = useArtifactForm<Requirement, Tab>({
     isOpen,
     artifact: requirement,
-    defaultTab: 'overview',
     onClose,
+    onCreate,
+    onUpdate,
     onDelete,
+    defaultTab: 'overview',
   });
 
-  // Form state fields
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [text, setText] = useState('');
-  const [rationale, setRationale] = useState('');
-  const [priority, setPriority] = useState<Requirement['priority']>('medium');
-  const [status, setStatus] = useState<Requirement['status']>('draft');
-  const [verificationMethod, setVerificationMethod] = useState('');
-  const [comments, setComments] = useState('');
-  const [linkedArtifacts, setLinkedArtifacts] = useState<ArtifactLink[]>([]);
-  const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
-
-  // Reset form when modal opens or requirement changes
+  // Sync specialized fields
   useEffect(() => {
     if (isOpen) {
       if (requirement) {
-        // Edit mode: populate from requirement
-        setTitle(requirement.title);
-        setDescription(requirement.description);
-        setText(requirement.text);
-        setRationale(requirement.rationale);
-        setPriority(requirement.priority);
-        setStatus(requirement.status);
+        setRationale(requirement.rationale || '');
         setVerificationMethod(requirement.verificationMethod || '');
         setComments(requirement.comments || '');
-        setLinkedArtifacts(requirement.linkedArtifacts || []);
-        setCustomAttributes(requirement.customAttributes || []);
       } else {
-        // Create mode: reset to defaults
-        setTitle('');
-        setDescription('');
-        setText('');
         setRationale('');
-        setPriority('medium');
-        setStatus('draft');
         setVerificationMethod('');
         setComments('');
-        setLinkedArtifacts([]);
-        setCustomAttributes([]);
       }
     }
   }, [isOpen, requirement]);
 
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
-      if (e) e.preventDefault();
-
-      if (isEditMode && requirement) {
-        onUpdate(requirement.id, {
-          title,
-          description,
-          text,
-          rationale,
-          priority,
-          status,
-          linkedArtifacts,
-          verificationMethod,
-          comments,
-          customAttributes,
-        });
-      } else {
-        onCreate({
-          title,
-          description,
-          text,
-          rationale,
-          priority,
-          author: currentUser?.name || undefined,
-          verificationMethod: verificationMethod || undefined,
-          comments: comments || undefined,
-          customAttributes,
-          dateCreated: Date.now(),
-          status: 'draft',
-          revision: '01',
-        });
-      }
-      onClose();
+      baseHandleSubmit(e, {
+        rationale,
+        verificationMethod,
+        comments,
+      } as Partial<Requirement>);
     },
-    [
-      isEditMode,
-      requirement,
-      title,
-      description,
-      text,
-      rationale,
-      priority,
-      status,
-      linkedArtifacts,
-      verificationMethod,
-      comments,
-      customAttributes,
-      currentUser,
-      onCreate,
-      onUpdate,
-      onClose,
-    ]
+    [baseHandleSubmit, rationale, verificationMethod, comments]
   );
-
-  const handleRemoveLink = useCallback((targetId: string) => {
-    setLinkedArtifacts((prev) => prev.filter((link) => link.targetId !== targetId));
-  }, []);
 
   // Navigate to a linked artifact by opening its edit modal
   const handleNavigateToArtifact = useCallback(

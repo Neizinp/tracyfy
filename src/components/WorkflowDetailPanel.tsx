@@ -11,7 +11,7 @@ import type { Workflow } from '../types';
 import { useUser } from '../app/providers';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { diskWorkflowService } from '../services/diskWorkflowService';
-import { diskProjectService } from '../services/diskProjectService';
+import { requirementService, useCaseService, testCaseService } from '../services/artifactServices';
 import { useToast } from '../app/providers/ToastProvider';
 import type { Requirement, UseCase, TestCase } from '../types';
 
@@ -80,7 +80,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
         approvalDate: Date.now(),
         lastModified: Date.now(),
       };
-      await diskProjectService.saveRequirement(updatedReq);
+      await requirementService.save(updatedReq);
       return;
     }
 
@@ -92,7 +92,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
         status: 'approved',
         lastModified: Date.now(),
       };
-      await diskProjectService.saveUseCase(updatedUC);
+      await useCaseService.save(updatedUC);
       return;
     }
 
@@ -101,15 +101,12 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
     if (tc) {
       const updatedTC: TestCase = {
         ...tc,
-        status: 'approved' as TestCase['status'], // TypeScript may complain, but save will work
+        status: 'approved' as TestCase['status'],
         lastModified: Date.now(),
       };
-      await diskProjectService.saveTestCase(updatedTC);
+      await testCaseService.save(updatedTC);
       return;
     }
-
-    // For other artifact types (information, risks), we'll skip for now
-    // as they may have different status types
   };
 
   const handleApprove = async () => {

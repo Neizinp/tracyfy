@@ -7,8 +7,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { UseCase } from '../types';
-import type { CustomAttributeValue } from '../types/customAttributes';
-import { useBaseArtifactForm } from './useBaseArtifactForm';
+import { useArtifactForm } from './useArtifactForm';
 
 interface UseUseCaseFormOptions {
   isOpen: boolean;
@@ -22,106 +21,70 @@ interface UseUseCaseFormOptions {
 type Tab = 'overview' | 'flows' | 'conditions' | 'relationships' | 'customFields' | 'history';
 
 export function useUseCaseForm({ isOpen, useCase, onClose, onSubmit }: UseUseCaseFormOptions) {
-  const { isEditMode, activeTab, setActiveTab } = useBaseArtifactForm<UseCase, Tab>({
-    isOpen,
-    artifact: useCase,
-    defaultTab: 'overview',
-    onClose,
-  });
-
-  // Form state
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  // Specialized fields for Use Cases
   const [actor, setActor] = useState('');
   const [preconditions, setPreconditions] = useState('');
   const [postconditions, setPostconditions] = useState('');
-  const [mainFlow, setMainFlow] = useState('');
   const [alternativeFlows, setAlternativeFlows] = useState('');
-  const [priority, setPriority] = useState<UseCase['priority']>('medium');
-  const [status, setStatus] = useState<UseCase['status']>('draft');
-  const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
 
-  // Reset form when modal opens or useCase changes
+  const {
+    isEditMode,
+    activeTab,
+    setActiveTab,
+    title,
+    setTitle,
+    description,
+    setDescription,
+    text: mainFlow,
+    setText: setMainFlow,
+    priority,
+    setPriority,
+    status,
+    setStatus,
+    customAttributes,
+    setCustomAttributes,
+    handleSubmit: baseHandleSubmit,
+    handleDelete,
+    confirmDelete,
+    cancelDelete,
+    showDeleteConfirm,
+  } = useArtifactForm<UseCase, Tab>({
+    isOpen,
+    artifact: useCase as UseCase | null,
+    onClose,
+    onCreate: (data) => onSubmit(data),
+    onUpdate: (id, updates) => onSubmit({ id, updates }),
+    onDelete: () => {}, // UseCaseModal doesn't seem to have onDelete passed?
+    defaultTab: 'overview',
+  });
+
+  // Sync specialized fields
   useEffect(() => {
     if (isOpen) {
       if (useCase) {
-        setTitle(useCase.title);
-        setDescription(useCase.description);
-        setActor(useCase.actor);
-        setPreconditions(useCase.preconditions);
-        setPostconditions(useCase.postconditions);
-        setMainFlow(useCase.mainFlow);
+        setActor(useCase.actor || '');
+        setPreconditions(useCase.preconditions || '');
+        setPostconditions(useCase.postconditions || '');
         setAlternativeFlows(useCase.alternativeFlows || '');
-        setPriority(useCase.priority);
-        setStatus(useCase.status);
-        setCustomAttributes(useCase.customAttributes || []);
       } else {
-        setTitle('');
-        setDescription('');
         setActor('');
         setPreconditions('');
         setPostconditions('');
-        setMainFlow('');
         setAlternativeFlows('');
-        setPriority('medium');
-        setStatus('draft');
-        setCustomAttributes([]);
       }
     }
-  }, [useCase, isOpen]);
+  }, [isOpen, useCase]);
 
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
-      if (e) e.preventDefault();
-
-      if (useCase) {
-        onSubmit({
-          id: useCase.id,
-          updates: {
-            title,
-            description,
-            actor,
-            preconditions,
-            postconditions,
-            mainFlow,
-            alternativeFlows,
-            priority,
-            status,
-            customAttributes,
-          },
-        });
-      } else {
-        onSubmit({
-          title,
-          description,
-          actor,
-          preconditions,
-          postconditions,
-          mainFlow,
-          alternativeFlows,
-          priority,
-          status,
-          customAttributes,
-          revision: '01',
-        });
-      }
-      onClose();
+      baseHandleSubmit(e, {
+        actor,
+        preconditions,
+        postconditions,
+        alternativeFlows,
+      } as Partial<UseCase>);
     },
-    [
-      useCase,
-      title,
-      description,
-      actor,
-      preconditions,
-      postconditions,
-      mainFlow,
-      alternativeFlows,
-      priority,
-      status,
-      customAttributes,
-      onSubmit,
-      onClose,
-    ]
+    [baseHandleSubmit, actor, preconditions, postconditions, alternativeFlows]
   );
 
   return {
@@ -156,5 +119,9 @@ export function useUseCaseForm({ isOpen, useCase, onClose, onSubmit }: UseUseCas
 
     // Actions
     handleSubmit,
+    handleDelete,
+    confirmDelete,
+    cancelDelete,
+    showDeleteConfirm,
   };
 }

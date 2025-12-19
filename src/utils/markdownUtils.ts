@@ -1,5 +1,19 @@
-import type { Requirement, UseCase, TestCase, Information, User, Project, Risk, ArtifactLink } from '../types';
-import type { CustomAttributeDefinition, CustomAttributeValue, AttributeType, ApplicableArtifactType } from '../types/customAttributes';
+import type {
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+  User,
+  Project,
+  Risk,
+  ArtifactLink,
+} from '../types';
+import type {
+  CustomAttributeDefinition,
+  CustomAttributeValue,
+  AttributeType,
+  ApplicableArtifactType,
+} from '../types/customAttributes';
 import {
   filterValidCustomAttributes,
   objectToYaml,
@@ -233,7 +247,7 @@ export function informationToMarkdown(information: Information): string {
 
   const body = `# ${information.title}
 
-${information.content}
+${information.text}
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -252,7 +266,7 @@ export function markdownToInformation(markdown: string): Information {
   return {
     id: (frontmatter.id as string) || '',
     title: (frontmatter.title as string) || '',
-    content: contentLines.join('\n').trim(),
+    text: contentLines.join('\n').trim(),
     type: (frontmatter.type as Information['type']) || 'note',
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
     lastModified: (frontmatter.lastModified as number) || Date.now(),
@@ -336,7 +350,8 @@ export function markdownToProject(markdown: string): Project | null {
   // Extract description from body (skip title line)
   const lines = body.split('\n');
   const descriptionLines = lines.filter((line) => !line.startsWith('# '));
-  const description = descriptionLines.join('\n').trim() || (frontmatter.description as string) || '';
+  const description =
+    descriptionLines.join('\n').trim() || (frontmatter.description as string) || '';
 
   return {
     id: frontmatter.id as string,

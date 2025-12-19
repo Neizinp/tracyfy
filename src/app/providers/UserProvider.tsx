@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import type { ReactNode } from 'react';
 import type { User } from '../../types';
 import { diskProjectService } from '../../services/diskProjectService';
+import { userService } from '../../services/artifactServices';
+import { idService } from '../../services/idService';
 import { useFileSystem } from './FileSystemProvider';
 
 interface UserContextValue {
@@ -38,7 +40,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const loadUsers = async () => {
       setIsLoading(true);
       try {
-        const loadedUsers = await diskProjectService.loadAllUsers();
+        const loadedUsers = await userService.loadAll();
         const storedCurrentUserId = await diskProjectService.getCurrentUserId();
         setUsers(loadedUsers);
         setCurrentUserId(storedCurrentUserId);
@@ -54,7 +56,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const createUser = useCallback(
     async (name: string): Promise<User> => {
-      const id = await diskProjectService.getNextId('users');
+      const id = await idService.getNextId('users');
       const now = Date.now();
       const newUser: User = {
         id,
@@ -63,7 +65,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         lastModified: now,
       };
 
-      await diskProjectService.saveUser(newUser);
+      await userService.save(newUser);
       setUsers((prev) => [...prev, newUser]);
 
       // If no current user, set this as current
@@ -79,13 +81,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const updateUser = useCallback(async (user: User): Promise<void> => {
     const updatedUser = { ...user, lastModified: Date.now() };
-    await diskProjectService.saveUser(updatedUser);
+    await userService.save(updatedUser);
     setUsers((prev) => prev.map((u) => (u.id === user.id ? updatedUser : u)));
   }, []);
 
   const deleteUser = useCallback(
     async (userId: string): Promise<void> => {
-      await diskProjectService.deleteUser(userId);
+      await userService.delete(userId);
       setUsers((prev) => prev.filter((u) => u.id !== userId));
 
       // If deleted user was current, switch to another user

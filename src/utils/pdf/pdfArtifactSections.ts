@@ -741,7 +741,7 @@ export async function addInformationSection(
     currentY += 3;
 
     // Content
-    if (info.content) {
+    if (info.text) {
       if (currentY > 260) {
         doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
         doc.addPage();
@@ -751,14 +751,14 @@ export async function addInformationSection(
       }
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
-      const contentLines = doc.splitTextToSize(info.content, contentWidth);
+      const contentLines = doc.splitTextToSize(info.text, contentWidth);
       doc.text(contentLines, contentLeft, currentY);
       currentY += contentLines.length * 4 + 3;
 
       const pageRef = { page };
       currentY = await addImagesFromMarkdown(
         doc,
-        info.content,
+        info.text,
         currentY,
         contentLeft,
         contentWidth,

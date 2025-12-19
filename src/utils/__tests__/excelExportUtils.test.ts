@@ -122,7 +122,7 @@ describe('excelExportUtils', () => {
   const mockInfo: Information = {
     id: 'i1',
     title: 'My Info',
-    content: 'Info Content',
+    text: 'Info Content',
     type: 'note',
     lastModified: 0,
     revision: '01',

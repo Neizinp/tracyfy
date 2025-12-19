@@ -8,6 +8,15 @@ import { diskProjectService } from './diskProjectService';
 import { diskLinkService } from './diskLinkService';
 import { diskCustomAttributeService } from './diskCustomAttributeService';
 import {
+  requirementService,
+  useCaseService,
+  testCaseService,
+  informationService,
+  riskService,
+  userService,
+} from './artifactServices';
+import { idService } from './idService';
+import {
   DEMO_PROJECT,
   DEMO_ARTIFACTS,
   DEMO_CUSTOM_ATTRIBUTES,
@@ -43,17 +52,17 @@ export async function createDemoProject(): Promise<Project> {
   const projectName = DEMO_PROJECT.name;
 
   // 0. Ensure a demo user exists and is selected
-  const existingUsers = await diskProjectService.loadAllUsers();
+  const existingUsers = await userService.loadAll();
   let demoUser = existingUsers.find((u) => u.name === 'Demo User');
   if (!demoUser) {
-    const userId = await diskProjectService.getNextId('users');
+    const userId = await idService.getNextId('users');
     demoUser = {
       id: userId,
       name: 'Demo User',
       dateCreated: now,
       lastModified: now,
     };
-    await diskProjectService.saveUser(demoUser);
+    await userService.save(demoUser);
   }
   // Set as current user so editing works
   await diskProjectService.setCurrentUserId(demoUser.id);
@@ -86,11 +95,11 @@ export async function createDemoProject(): Promise<Project> {
 
   // 2. Batch allocate all IDs at once (single disk write per type)
   const [reqIds, ucIds, tcIds, infoIds, riskIds] = await Promise.all([
-    diskProjectService.getNextIds('requirements', DEMO_ARTIFACTS.requirements.length),
-    diskProjectService.getNextIds('useCases', DEMO_ARTIFACTS.useCases.length),
-    diskProjectService.getNextIds('testCases', DEMO_ARTIFACTS.testCases.length),
-    diskProjectService.getNextIds('information', DEMO_ARTIFACTS.information.length),
-    diskProjectService.getNextIds('risks', DEMO_ARTIFACTS.risks.length),
+    idService.getNextIds('requirements', DEMO_ARTIFACTS.requirements.length),
+    idService.getNextIds('useCases', DEMO_ARTIFACTS.useCases.length),
+    idService.getNextIds('testCases', DEMO_ARTIFACTS.testCases.length),
+    idService.getNextIds('information', DEMO_ARTIFACTS.information.length),
+    idService.getNextIds('risks', DEMO_ARTIFACTS.risks.length),
   ]);
 
   createdIds.requirements = reqIds;
@@ -135,11 +144,11 @@ export async function createDemoProject(): Promise<Project> {
 
   // 4. Save all artifacts in parallel
   await Promise.all([
-    ...requirements.map((r) => diskProjectService.saveRequirement(r)),
-    ...useCases.map((u) => diskProjectService.saveUseCase(u)),
-    ...testCases.map((t) => diskProjectService.saveTestCase(t)),
-    ...informationItems.map((i) => diskProjectService.saveInformation(i)),
-    ...risks.map((r) => diskProjectService.saveRisk(r)),
+    ...requirements.map((r) => requirementService.save(r)),
+    ...useCases.map((u) => useCaseService.save(u)),
+    ...testCases.map((t) => testCaseService.save(t)),
+    ...informationItems.map((i) => informationService.save(i)),
+    ...risks.map((r) => riskService.save(r)),
   ]);
 
   // 5. Update project with artifact IDs
