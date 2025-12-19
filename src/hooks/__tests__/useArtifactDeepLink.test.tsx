@@ -13,28 +13,32 @@ vi.mock('../../app/providers', () => ({
   useGlobalState: vi.fn(),
 }));
 
+const mockedUseUI = vi.mocked(useUI);
+const mockedUseGlobalState = vi.mocked(useGlobalState);
+const mockedUseSearchParams = vi.mocked(useSearchParams);
+
 describe('useArtifactDeepLink', () => {
   const mockOpenModal = vi.fn();
   const mockSetSearchParams = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useUI as any).mockReturnValue({
+    mockedUseUI.mockReturnValue({
       openModal: mockOpenModal,
       activeModal: { type: null },
       selectedArtifact: null,
-    });
-    (useGlobalState as any).mockReturnValue({
-      globalRequirements: [{ id: 'REQ-001', title: 'Test Req' }],
+    } as any);
+    mockedUseGlobalState.mockReturnValue({
+      globalRequirements: [{ id: 'REQ-001', title: 'Test Req' }] as any[],
       globalUseCases: [],
       globalTestCases: [],
       globalInformation: [],
       globalRisks: [],
-    });
+    } as any);
   });
 
   it('should open modal when id is present in search params', () => {
-    (useSearchParams as any).mockReturnValue([
+    mockedUseSearchParams.mockReturnValue([
       new URLSearchParams('?id=REQ-001'),
       mockSetSearchParams,
     ]);
@@ -52,7 +56,7 @@ describe('useArtifactDeepLink', () => {
   });
 
   it('should not open modal if id is already processed', () => {
-    (useSearchParams as any).mockReturnValue([
+    mockedUseSearchParams.mockReturnValue([
       new URLSearchParams('?id=REQ-001'),
       mockSetSearchParams,
     ]);
@@ -65,12 +69,12 @@ describe('useArtifactDeepLink', () => {
   });
 
   it('should update search params when a modal is opened manually', () => {
-    (useSearchParams as any).mockReturnValue([new URLSearchParams(''), mockSetSearchParams]);
-    (useUI as any).mockReturnValue({
+    mockedUseSearchParams.mockReturnValue([new URLSearchParams(''), mockSetSearchParams]);
+    mockedUseUI.mockReturnValue({
       openModal: mockOpenModal,
       activeModal: { type: 'requirement' },
       selectedArtifact: { id: 'REQ-002', type: 'requirement' },
-    });
+    } as any);
 
     renderHook(() => useArtifactDeepLink());
 
@@ -80,15 +84,15 @@ describe('useArtifactDeepLink', () => {
   });
 
   it('should remove search params when modal is closed', () => {
-    (useSearchParams as any).mockReturnValue([
+    mockedUseSearchParams.mockReturnValue([
       new URLSearchParams('?id=REQ-001'),
       mockSetSearchParams,
     ]);
-    (useUI as any).mockReturnValue({
+    mockedUseUI.mockReturnValue({
       openModal: mockOpenModal,
       activeModal: { type: null },
       selectedArtifact: null,
-    });
+    } as any);
 
     renderHook(() => useArtifactDeepLink());
 
