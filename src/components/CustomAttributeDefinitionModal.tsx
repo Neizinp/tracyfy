@@ -1,16 +1,23 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * CustomAttributeDefinitionModal Component
+ *
+ * Modal for creating and editing custom attribute definitions.
+ * Uses useCustomAttributeForm hook for form state management.
+ */
+
+import React from 'react';
 import { X, Plus } from 'lucide-react';
 import type {
   CustomAttributeDefinition,
   AttributeType,
   ApplicableArtifactType,
 } from '../types/customAttributes';
-import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useCustomAttributeForm } from '../hooks/useCustomAttributeForm';
 
 interface CustomAttributeDefinitionModalProps {
   isOpen: boolean;
-  definition: CustomAttributeDefinition | null; // null = create mode
+  definition: CustomAttributeDefinition | null;
   onClose: () => void;
   onSubmit: (data: Omit<CustomAttributeDefinition, 'id' | 'dateCreated' | 'lastModified'>) => void;
 }
@@ -38,126 +45,31 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
   onClose,
   onSubmit,
 }) => {
-  const isEditMode = definition !== null;
+  const {
+    isEditMode,
+    name,
+    setName,
+    type,
+    setType,
+    description,
+    setDescription,
+    required,
+    setRequired,
+    defaultValue,
+    setDefaultValue,
+    options,
+    newOption,
+    setNewOption,
+    appliesTo,
+    error,
+    isSubmitting,
+    handleAddOption,
+    handleRemoveOption,
+    toggleArtifactType,
+    handleSubmit,
+  } = useCustomAttributeForm({ isOpen, definition, onSubmit });
 
-  const [name, setName] = useState('');
-  const [type, setType] = useState<AttributeType>('text');
-  const [description, setDescription] = useState('');
-  const [required, setRequired] = useState(false);
-  const [defaultValue, setDefaultValue] = useState<string | number | boolean>('');
-  const [options, setOptions] = useState<string[]>([]);
-  const [newOption, setNewOption] = useState('');
-  const [appliesTo, setAppliesTo] = useState<ApplicableArtifactType[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Close modal on Escape key
   useKeyboardShortcuts({ onClose });
-
-  // Reset form when modal opens/closes or definition changes
-  useEffect(() => {
-    if (isOpen) {
-      if (definition) {
-        setName(definition.name);
-        setType(definition.type);
-        setDescription(definition.description || '');
-        setRequired(definition.required || false);
-        setDefaultValue(definition.defaultValue ?? '');
-        setOptions(definition.options || []);
-        setAppliesTo(definition.appliesTo);
-      } else {
-        // Create mode: reset to defaults
-        setName('');
-        setType('text');
-        setDescription('');
-        setRequired(false);
-        setDefaultValue('');
-        setOptions([]);
-        setAppliesTo(['requirement']); // Default to requirements
-      }
-      setNewOption('');
-      setError(null);
-      setIsSubmitting(false);
-    }
-  }, [isOpen, definition]);
-
-  const handleAddOption = () => {
-    if (newOption.trim() && !options.includes(newOption.trim())) {
-      setOptions([...options, newOption.trim()]);
-      setNewOption('');
-    }
-  };
-
-  const handleRemoveOption = (index: number) => {
-    setOptions(options.filter((_, i) => i !== index));
-  };
-
-  const toggleArtifactType = (artifactType: ApplicableArtifactType) => {
-    if (appliesTo.includes(artifactType)) {
-      setAppliesTo(appliesTo.filter((t) => t !== artifactType));
-    } else {
-      setAppliesTo([...appliesTo, artifactType]);
-    }
-  };
-
-  const validateForm = async (): Promise<string | null> => {
-    if (!name.trim()) {
-      return 'Name is required';
-    }
-
-    if (appliesTo.length === 0) {
-      return 'Please select at least one artifact type';
-    }
-
-    if (type === 'dropdown' && options.length < 2) {
-      return 'Dropdown type requires at least 2 options';
-    }
-
-    // Check for duplicate names
-    const exists = await diskCustomAttributeService.nameExists(name.trim(), definition?.id);
-    if (exists) {
-      return 'An attribute with this name already exists';
-    }
-
-    return null;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
-
-    const validationError = await validateForm();
-    if (validationError) {
-      setError(validationError);
-      setIsSubmitting(false);
-      return;
-    }
-
-    let processedDefaultValue: string | number | boolean | undefined;
-    if (defaultValue !== '' && defaultValue !== undefined) {
-      if (type === 'number') {
-        processedDefaultValue = Number(defaultValue);
-      } else if (type === 'checkbox') {
-        processedDefaultValue = Boolean(defaultValue);
-      } else {
-        processedDefaultValue = String(defaultValue);
-      }
-    }
-
-    onSubmit({
-      name: name.trim(),
-      type,
-      description: description.trim() || undefined,
-      required,
-      defaultValue: processedDefaultValue,
-      options: type === 'dropdown' ? options : undefined,
-      appliesTo,
-      isDeleted: false,
-    });
-
-    setIsSubmitting(false);
-  };
 
   if (!isOpen) return null;
 
@@ -200,7 +112,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
           }}
         >
           <h3 style={{ fontWeight: 600 }}>
-            {isEditMode ? `Edit Attribute - ${definition.id}` : 'New Custom Attribute'}
+            {isEditMode ? `Edit Attribute - ${definition?.id}` : 'New Custom Attribute'}
           </h3>
           <button
             onClick={onClose}

@@ -1,17 +1,15 @@
 /**
- * WorkflowModal
+ * WorkflowModal Component
  *
  * Modal for creating and editing workflows.
- * Allows selecting artifacts for approval and assigning to a user.
+ * Uses useWorkflowForm hook for form state management.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { X, Plus, Trash2, Search, FileText, CheckCircle2, User } from 'lucide-react';
 import type { Workflow } from '../types';
-import { useUser } from '../app/providers';
-import { useFileSystem } from '../app/providers/FileSystemProvider';
-import { diskWorkflowService } from '../services/diskWorkflowService';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useWorkflowForm } from '../hooks/useWorkflowForm';
 import { MarkdownEditor } from './MarkdownEditor';
 
 interface WorkflowModalProps {
@@ -27,134 +25,29 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { currentUser, users } = useUser();
-  const { requirements, useCases, testCases, information, risks } = useFileSystem();
+  const {
+    title,
+    setTitle,
+    description,
+    setDescription,
+    assignedTo,
+    setAssignedTo,
+    selectedArtifactIds,
+    artifactSearch,
+    setArtifactSearch,
+    isSubmitting,
+    isValid,
+    availableArtifacts,
+    otherUsers,
+    handleAddArtifact,
+    handleRemoveArtifact,
+    getArtifactInfo,
+    handleSubmit,
+  } = useWorkflowForm({ isOpen, workflow, onClose, onSuccess });
 
-  // Form state
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [assignedTo, setAssignedTo] = useState('');
-  const [selectedArtifactIds, setSelectedArtifactIds] = useState<string[]>([]);
-  const [artifactSearch, setArtifactSearch] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Use keyboard shortcut to close on Escape
   useKeyboardShortcuts({ onClose });
 
-  // Reset form when modal opens/closes or workflow changes
-  useEffect(() => {
-    if (isOpen) {
-      if (workflow) {
-        setTitle(workflow.title);
-        setDescription(workflow.description);
-        setAssignedTo(workflow.assignedTo);
-        setSelectedArtifactIds(workflow.artifactIds);
-      } else {
-        setTitle('');
-        setDescription('');
-        setAssignedTo('');
-        setSelectedArtifactIds([]);
-      }
-      setArtifactSearch('');
-    }
-  }, [isOpen, workflow]);
-
-  // Get all artifacts for selection
-  const allArtifacts = [
-    ...requirements
-      .filter((r) => !r.isDeleted)
-      .map((r) => ({ id: r.id, title: r.title, type: 'Requirement', status: r.status })),
-    ...useCases
-      .filter((u) => !u.isDeleted)
-      .map((u) => ({ id: u.id, title: u.title, type: 'Use Case', status: u.status })),
-    ...testCases
-      .filter((t) => !t.isDeleted)
-      .map((t) => ({ id: t.id, title: t.title, type: 'Test Case', status: t.status })),
-    ...information
-      .filter((i) => !i.isDeleted)
-      .map((i) => ({ id: i.id, title: i.title, type: 'Information', status: 'draft' })),
-    ...risks
-      .filter((r) => !r.isDeleted)
-      .map((r) => ({ id: r.id, title: r.title, type: 'Risk', status: r.status })),
-  ];
-
-  // Filter artifacts by search
-  const filteredArtifacts = allArtifacts.filter((artifact) => {
-    if (!artifactSearch) return true;
-    const search = artifactSearch.toLowerCase();
-    return (
-      artifact.id.toLowerCase().includes(search) ||
-      artifact.title.toLowerCase().includes(search) ||
-      artifact.type.toLowerCase().includes(search)
-    );
-  });
-
-  // Available artifacts (not already selected)
-  const availableArtifacts = filteredArtifacts.filter((a) => !selectedArtifactIds.includes(a.id));
-
-  // Other users (excluding current user for assignment)
-  const otherUsers = users.filter((u) => u.id !== currentUser?.id);
-
-  const handleAddArtifact = (id: string) => {
-    setSelectedArtifactIds((prev) => [...prev, id]);
-    setArtifactSearch('');
-  };
-
-  const handleRemoveArtifact = (id: string) => {
-    setSelectedArtifactIds((prev) => prev.filter((a) => a !== id));
-  };
-
-  const handleSubmit = useCallback(async () => {
-    if (!currentUser) return;
-    if (!title.trim()) return;
-    if (!assignedTo) return;
-    if (selectedArtifactIds.length === 0) return;
-
-    setIsSubmitting(true);
-    try {
-      if (workflow) {
-        // Update existing workflow
-        await diskWorkflowService.updateWorkflow(workflow.id, {
-          title: title.trim(),
-          description,
-          assignedTo,
-          artifactIds: selectedArtifactIds,
-        });
-      } else {
-        // Create new workflow
-        await diskWorkflowService.createWorkflow(
-          title.trim(),
-          description,
-          currentUser.id,
-          assignedTo,
-          selectedArtifactIds
-        );
-      }
-      onSuccess?.();
-      onClose();
-    } catch (error) {
-      console.error('Failed to save workflow:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [
-    currentUser,
-    title,
-    description,
-    assignedTo,
-    selectedArtifactIds,
-    workflow,
-    onSuccess,
-    onClose,
-  ]);
-
-  const getArtifactInfo = (id: string) => {
-    return allArtifacts.find((a) => a.id === id);
-  };
-
   if (!isOpen) return null;
-
-  const isValid = title.trim() && assignedTo && selectedArtifactIds.length > 0;
 
   return (
     <div
