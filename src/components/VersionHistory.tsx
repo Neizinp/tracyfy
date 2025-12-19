@@ -1,9 +1,21 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { debug } from '../utils/debug';
+/**
+ * VersionHistory Component
+ *
+ * Displays project baselines and commit history.
+ * Uses useVersionHistory hook for state and logic.
+ */
+
+import React from 'react';
 import { X, Clock, Save, Tag, GitCommit } from 'lucide-react';
-import type { ProjectBaseline, CommitInfo } from '../types';
+import type { ProjectBaseline } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
-import { realGitService } from '../services/realGitService';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { SnapshotViewer } from './SnapshotViewer';
+import {
+  useVersionHistory,
+  ARTIFACT_TYPE_CONFIG,
+  getArtifactTypeFromPath,
+} from '../hooks/useVersionHistory';
 
 interface VersionHistoryProps {
   isOpen: boolean;
@@ -14,9 +26,6 @@ interface VersionHistoryProps {
   onSelectArtifact?: (artifactId: string, artifactType: string) => void;
 }
 
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import { SnapshotViewer } from './SnapshotViewer';
-
 export const VersionHistory: React.FC<VersionHistoryProps> = ({
   isOpen,
   baselines,
@@ -25,223 +34,38 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   onCreateBaseline,
   onSelectArtifact,
 }) => {
-  const [isCreatingBaseline, setIsCreatingBaseline] = useState(false);
-  const [activeTab, setActiveTab] = useState<'baselines' | 'commits' | 'global'>('baselines');
-  const [commits, setCommits] = useState<CommitInfo[]>([]);
-  const [globalCommits, setGlobalCommits] = useState<CommitInfo[]>([]);
-  const [baselineCommitHashes, setBaselineCommitHashes] = useState<Map<string, string[]>>(
-    new Map()
-  );
-  const [isLoadingCommits, setIsLoadingCommits] = useState(false);
-  const [isLoadingGlobalCommits, setIsLoadingGlobalCommits] = useState(false);
-  const [commitFiles, setCommitFiles] = useState<Map<string, string[]>>(new Map());
-
-  // Project-specific baseline helpers
-  const projectPrefix = projectName ? `[${projectName}] ` : '';
-  const isProjectBaseline = (tagName: string) => projectName && tagName.startsWith(projectPrefix);
-  const getVersionFromTag = (tagName: string) =>
-    tagName.startsWith(projectPrefix) ? tagName.slice(projectPrefix.length) : tagName;
-
-  // Filter baselines for current project
-  const projectBaselines = baselines.filter((b) => isProjectBaseline(b.name));
-
-  // Default name generation (count only project-specific baselines)
-  const nextBaselineNumber = `${projectBaselines.length + 1}.0`;
-
-  const [baselineName, setBaselineName] = useState(nextBaselineNumber);
-  const [baselineMessage, setBaselineMessage] = useState('');
-
-  const [viewingSnapshot, setViewingSnapshot] = useState<{
-    commitHash: string;
-    name: string;
-    timestamp: number;
-  } | null>(null);
-
-  const [tagToCommitHash, setTagToCommitHash] = useState<Map<string, string>>(new Map());
-
-  // Artifact type filter state for All Commits tab
-  const [selectedTypes, setSelectedTypes] = useState<Set<string>>(
-    new Set([
-      'requirements',
-      'usecases',
-      'testcases',
-      'information',
-      'risks',
-      'projects',
-      'links',
-      'workflows',
-      'users',
-      'counters',
-      'other', // Catch-all for assets, custom-attributes, saved-filters, etc.
-    ])
-  );
-
-  // Configuration for artifact type filters
-  const ARTIFACT_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
-    requirements: { label: 'REQ', color: 'var(--color-info)' },
-    usecases: { label: 'UC', color: 'var(--color-accent)' },
-    testcases: { label: 'TC', color: 'var(--color-success)' },
-    information: { label: 'INFO', color: 'var(--color-warning)' },
-    risks: { label: 'RISK', color: 'var(--color-error)' },
-    projects: { label: 'PROJ', color: 'var(--color-text-muted)' },
-    links: { label: 'LINK', color: 'var(--color-text-secondary)' },
-    workflows: { label: 'WF', color: 'var(--color-info-light)' },
-    users: { label: 'USER', color: 'var(--color-accent)' },
-    counters: { label: 'CTR', color: 'var(--color-text-muted)' },
-    other: { label: 'OTHER', color: 'var(--color-text-muted)' },
-  };
-
-  // Folders that map to known artifact types
-  const FOLDER_TO_TYPE: Record<string, string> = {
-    requirements: 'requirements',
-    usecases: 'usecases',
-    testcases: 'testcases',
-    information: 'information',
-    risks: 'risks',
-    projects: 'projects',
-    links: 'links',
-    workflows: 'workflows',
-    users: 'users',
-    counters: 'counters',
-  };
-
-  // Get artifact type from file path (returns 'other' for unrecognized folders)
-  const getArtifactTypeFromPath = (filePath: string): string => {
-    const folderName = filePath.split('/')[0];
-    return FOLDER_TO_TYPE[folderName] || 'other';
-  };
-
-  // Toggle artifact type filter
-  const handleToggleType = (type: string) => {
-    setSelectedTypes((prev) => {
-      const next = new Set(prev);
-      if (next.has(type)) {
-        next.delete(type);
-      } else {
-        next.add(type);
-      }
-      return next;
-    });
-  };
-
-  // Filter global commits based on selected types
-  const filteredGlobalCommits = globalCommits.filter((commit) => {
-    const files = commitFiles.get(commit.hash) || [];
-    if (files.length === 0) return true; // Show commits while loading files
-
-    // A commit is shown if ANY of its files match a selected type
-    return files.some((file) => {
-      const artifactType = getArtifactTypeFromPath(file);
-      return selectedTypes.has(artifactType);
-    });
+  // Use the extracted hook for all state and logic
+  const {
+    activeTab,
+    setActiveTab,
+    isCreatingBaseline,
+    setIsCreatingBaseline,
+    baselineName,
+    setBaselineName,
+    baselineMessage,
+    setBaselineMessage,
+    handleStartCreating,
+    handleCreateBaselineSubmit,
+    projectBaselines,
+    getVersionFromTag,
+    commits,
+    globalCommits,
+    filteredGlobalCommits,
+    isLoadingCommits,
+    isLoadingGlobalCommits,
+    commitFiles,
+    baselineCommitHashes,
+    tagToCommitHash,
+    selectedTypes,
+    handleToggleType,
+    viewingSnapshot,
+    setViewingSnapshot,
+  } = useVersionHistory({
+    isOpen,
+    baselines,
+    projectName,
+    onCreateBaseline,
   });
-
-  const loadTags = useCallback(async () => {
-    try {
-      const tags = await realGitService.getTagsWithDetails();
-      debug.log('[VersionHistory] Tags loaded:', tags);
-
-      // Map commit hash to array of tag names for the commits view
-      const hashToTags = new Map<string, string[]>();
-      // Map tag name to commit hash for baseline view lookup
-      const tagToHash = new Map<string, string>();
-
-      tags.forEach((tag) => {
-        // hash -> tags
-        const existing = hashToTags.get(tag.commit) || [];
-        existing.push(tag.name);
-        hashToTags.set(tag.commit, existing);
-
-        // tag -> hash
-        tagToHash.set(tag.name, tag.commit);
-      });
-
-      setBaselineCommitHashes(hashToTags);
-      setTagToCommitHash(tagToHash);
-    } catch (error) {
-      console.error('Failed to load tags:', error);
-    }
-  }, []);
-
-  const loadCommits = useCallback(async () => {
-    if (!projectName) return;
-
-    setIsLoadingCommits(true);
-    try {
-      const projectFilePath = `projects/${projectName}.md`;
-      const history = await realGitService.getHistory(projectFilePath);
-      setCommits(history);
-    } catch (error) {
-      console.error('Failed to load commits:', error);
-    } finally {
-      setIsLoadingCommits(false);
-    }
-  }, [projectName]);
-
-  // Load tags on open (needed for baseline view buttons)
-  useEffect(() => {
-    if (isOpen) {
-      loadTags();
-    }
-  }, [isOpen, loadTags]);
-
-  // Load commits only when tab is active
-  useEffect(() => {
-    if (isOpen && activeTab === 'commits') {
-      loadCommits();
-    }
-  }, [isOpen, activeTab, loadCommits]);
-
-  // Load global commits when global tab is active
-  const loadGlobalCommits = useCallback(async () => {
-    setIsLoadingGlobalCommits(true);
-    try {
-      const history = await realGitService.getHistory(); // No filepath = all commits
-      setGlobalCommits(history);
-
-      // Load files for each commit in parallel
-      const filesMap = new Map<string, string[]>();
-      await Promise.all(
-        history.map(async (commit) => {
-          const files = await realGitService.getCommitFiles(commit.hash);
-          filesMap.set(commit.hash, files);
-        })
-      );
-      setCommitFiles(filesMap);
-    } catch (error) {
-      console.error('Failed to load global commits:', error);
-    } finally {
-      setIsLoadingGlobalCommits(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isOpen && activeTab === 'global') {
-      loadGlobalCommits();
-    }
-  }, [isOpen, activeTab, loadGlobalCommits]);
-
-  // Update default name when modal opens for creating
-  const handleStartCreating = () => {
-    setBaselineName(`${projectBaselines.length + 1}.0`);
-    setBaselineMessage('');
-    setIsCreatingBaseline(true);
-  };
-
-  const handleCreateBaselineSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (baselineName.trim() && projectName) {
-      // Prepend project name to create project-specific baseline
-      const fullTagName = `${projectPrefix}${baselineName.trim()}`;
-      onCreateBaseline(
-        fullTagName,
-        baselineMessage.trim() || `Baseline ${baselineName.trim()} for ${projectName}`
-      );
-      setBaselineName('');
-      setBaselineMessage('');
-      setIsCreatingBaseline(false);
-    }
-  };
 
   useKeyboardShortcuts({
     onSave: isCreatingBaseline ? handleCreateBaselineSubmit : undefined,
@@ -263,7 +87,6 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
-        // no blur
       }}
     >
       <div
@@ -555,11 +378,8 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                       </div>
                       <button
                         onClick={() => {
-                          // Look up commit hash using baseline.name (the full tag name)
                           const commitFromTag = tagToCommitHash.get(baseline.name);
-                          // Fallback to artifact commit if tag not found (legacy or untagged?)
                           const fallbackCommit = Object.keys(baseline.artifactCommits)[0] || '';
-
                           setViewingSnapshot({
                             commitHash: commitFromTag || fallbackCommit,
                             name: getVersionFromTag(baseline.name),
@@ -902,7 +722,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                                   }
                                   const fileName =
                                     filePath.split('/').pop()?.replace('.md', '') || '';
-                                  const artifactType = filePath.split('/')[0]; // e.g., "requirements", "usecases"
+                                  const artifactType = getArtifactTypeFromPath(filePath);
                                   return (
                                     <button
                                       onClick={(e) => {
