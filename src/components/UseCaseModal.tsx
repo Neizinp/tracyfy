@@ -20,6 +20,7 @@ interface UseCaseModalProps {
   onSubmit: (
     useCase: Omit<UseCase, 'id' | 'lastModified'> | { id: string; updates: Partial<UseCase> }
   ) => void;
+  onBack?: () => void;
 }
 
 type Tab = 'overview' | 'flows' | 'conditions' | 'relationships' | 'customFields' | 'history';
@@ -29,6 +30,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
   useCase,
   onClose,
   onSubmit,
+  onBack,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
 
@@ -112,6 +114,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     <BaseArtifactModal
       isOpen={isOpen}
       onClose={onClose}
+      onBack={onBack}
       title={isEditMode ? `Edit Use Case - ${useCase?.id}` : 'New Use Case'}
       tabs={tabs}
       activeTab={activeTab}
@@ -128,10 +131,10 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
               title={title}
               setTitle={setTitle}
               priority={priority}
-              setPriority={(val) => setPriority(val as any)}
+              setPriority={setPriority}
               priorityOptions={priorityOptions}
               status={status}
-              setStatus={(val) => setStatus(val as any)}
+              setStatus={setStatus}
               statusOptions={statusOptions}
               isEditMode={isEditMode}
             />

@@ -21,6 +21,7 @@ interface TestCaseModalProps {
   onCreate: (testCase: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated'>) => void;
   onUpdate: (id: string, updates: Partial<TestCase>) => void;
   onDelete: (id: string) => void;
+  onBack?: () => void;
 }
 
 export const TestCaseModal: React.FC<TestCaseModalProps> = ({
@@ -30,6 +31,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
   onCreate,
   onUpdate,
   onDelete,
+  onBack,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
 
@@ -114,6 +116,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
     <BaseArtifactModal
       isOpen={isOpen}
       onClose={onClose}
+      onBack={onBack}
       title={isEditMode ? `Edit Test Case - ${testCase?.id}` : 'New Test Case'}
       tabs={allTabs}
       activeTab={activeTab}
@@ -152,10 +155,10 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
               title={title}
               setTitle={setTitle}
               priority={priority}
-              setPriority={(val) => setPriority(val as any)}
+              setPriority={setPriority}
               priorityOptions={priorityOptions}
               status={status}
-              setStatus={(val) => setStatus(val as any)}
+              setStatus={setStatus}
               statusOptions={statusOptions}
               isEditMode={isEditMode}
               author={isEditMode ? testCase?.author : currentUser?.name}

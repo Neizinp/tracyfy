@@ -20,6 +20,7 @@
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
     "test:git": "node test-handlers.mjs",
+    "audit:arch": "node scripts/audit-architecture.cjs",
     "test:missing-head": "node test-missing-head.mjs",
     "test:pending": "node test-pending-changes.mjs",
     "electron:dev": "concurrently -k \"npm:dev:electron\" \"npm:electron:launch\"",

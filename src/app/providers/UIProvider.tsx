@@ -24,6 +24,10 @@ export interface UIContextValue {
   setSelectedArtifact: (artifact: SelectedArtifact | null) => void;
   openModal: (type: ModalType, isEdit?: boolean, artifact?: SelectedArtifact) => void;
   closeModal: () => void;
+  navigationStack: SelectedArtifact[];
+  pushNavigationStack: (artifact: SelectedArtifact) => void;
+  popNavigationStack: () => void;
+  clearNavigationStack: () => void;
 
   // Modal states (Legacy compatibility)
   isNewRequirementModalOpen: boolean;

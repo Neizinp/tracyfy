@@ -5,7 +5,7 @@
  * Filters are committed to git like other artifacts.
  */
 
-import { fileSystemService } from './fileSystemService';
+import { BaseDiskService } from './baseDiskService';
 import type { SavedFilter, FilterState } from '../types/filters';
 
 const SAVED_FILTERS_DIR = 'saved-filters';
@@ -74,12 +74,12 @@ function markdownToSavedFilter(content: string): SavedFilter | null {
   };
 }
 
-class DiskFilterService {
+class DiskFilterService extends BaseDiskService {
   /**
    * Initialize saved-filters directory
    */
   async initialize(): Promise<void> {
-    await fileSystemService.getOrCreateDirectory(SAVED_FILTERS_DIR);
+    await this.ensureDirectory(SAVED_FILTERS_DIR);
   }
 
   /**
@@ -88,7 +88,7 @@ class DiskFilterService {
   private async getNextId(): Promise<string> {
     let counter = 0;
     try {
-      const content = await fileSystemService.readFile(FILTER_COUNTER_FILE);
+      const content = await this.readTextFile(FILTER_COUNTER_FILE);
       if (content) {
         counter = parseInt(content.trim(), 10) || 0;
       }
@@ -96,7 +96,7 @@ class DiskFilterService {
       // File doesn't exist
     }
     counter++;
-    await fileSystemService.writeFile(FILTER_COUNTER_FILE, String(counter));
+    await this.writeTextFile(FILTER_COUNTER_FILE, String(counter));
     return `FILTER-${String(counter).padStart(3, '0')}`;
   }
 
@@ -107,12 +107,12 @@ class DiskFilterService {
     const filters: SavedFilter[] = [];
 
     try {
-      const files = await fileSystemService.listFiles(SAVED_FILTERS_DIR);
+      const files = await this.listFiles(SAVED_FILTERS_DIR);
 
       for (const file of files) {
         if (!file.endsWith('.md')) continue;
 
-        const content = await fileSystemService.readFile(`${SAVED_FILTERS_DIR}/${file}`);
+        const content = await this.readTextFile(`${SAVED_FILTERS_DIR}/${file}`);
         if (content) {
           const filter = markdownToSavedFilter(content);
           if (filter) {
@@ -132,7 +132,7 @@ class DiskFilterService {
    */
   async getFilterById(id: string): Promise<SavedFilter | null> {
     try {
-      const content = await fileSystemService.readFile(`${SAVED_FILTERS_DIR}/${id}.md`);
+      const content = await this.readTextFile(`${SAVED_FILTERS_DIR}/${id}.md`);
       if (content) {
         return markdownToSavedFilter(content);
       }
@@ -165,7 +165,7 @@ class DiskFilterService {
     };
 
     const content = savedFilterToMarkdown(savedFilter);
-    await fileSystemService.writeFile(`${SAVED_FILTERS_DIR}/${id}.md`, content);
+    await this.writeTextFile(`${SAVED_FILTERS_DIR}/${id}.md`, content, `Create filter ${id}`);
 
     return savedFilter;
   }
@@ -187,7 +187,7 @@ class DiskFilterService {
     };
 
     const content = savedFilterToMarkdown(updated);
-    await fileSystemService.writeFile(`${SAVED_FILTERS_DIR}/${id}.md`, content);
+    await this.writeTextFile(`${SAVED_FILTERS_DIR}/${id}.md`, content, `Update filter ${id}`);
 
     return updated;
   }
@@ -197,7 +197,7 @@ class DiskFilterService {
    */
   async deleteFilter(id: string): Promise<void> {
     try {
-      await fileSystemService.deleteFile(`${SAVED_FILTERS_DIR}/${id}.md`);
+      await this.deleteFile(`${SAVED_FILTERS_DIR}/${id}.md`);
     } catch (error) {
       console.error(`Failed to delete filter ${id}:`, error);
     }

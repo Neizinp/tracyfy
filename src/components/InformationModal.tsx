@@ -22,6 +22,7 @@ interface InformationModalProps {
       | Omit<Information, 'id' | 'lastModified' | 'dateCreated'>
       | { id: string; updates: Partial<Information> }
   ) => void;
+  onBack?: () => void;
 }
 
 type Tab = 'overview' | 'relationships' | 'customFields' | 'history';
@@ -31,6 +32,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
   information,
   onClose,
   onSubmit,
+  onBack,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
 
@@ -92,6 +94,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     <BaseArtifactModal
       isOpen={isOpen}
       onClose={onClose}
+      onBack={onBack}
       title={isEditMode ? `Edit Information - ${information?.id}` : 'New Information'}
       tabs={tabs}
       activeTab={activeTab}

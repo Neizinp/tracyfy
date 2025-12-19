@@ -14,6 +14,7 @@ export function useUIState() {
   // Unified Modal and Selection State
   const [activeModal, setActiveModal] = useState<ActiveModal>({ type: null });
   const [selectedArtifact, setSelectedArtifact] = useState<SelectedArtifact | null>(null);
+  const [navigationStack, setNavigationStack] = useState<SelectedArtifact[]>([]);
 
   // Legacy compatibility states (to be removed once all components are migrated)
   const [linkSourceId, setLinkSourceId] = useState<string | null>(null);
@@ -109,6 +110,27 @@ export function useUIState() {
   const closeModal = useCallback(() => {
     setActiveModal({ type: null });
     setSelectedArtifact(null);
+  }, []);
+
+  const clearNavigationStack = useCallback(() => {
+    setNavigationStack([]);
+  }, []);
+
+  const pushNavigationStack = useCallback((artifact: SelectedArtifact) => {
+    setNavigationStack((prev) => [...prev, artifact]);
+  }, []);
+
+  const popNavigationStack = useCallback(() => {
+    setNavigationStack((prev) => {
+      if (prev.length === 0) return prev;
+      const newStack = [...prev];
+      const previousArtifact = newStack.pop();
+      if (previousArtifact) {
+        setActiveModal({ type: previousArtifact.type as ModalType, isEdit: true });
+        setSelectedArtifact(previousArtifact);
+      }
+      return newStack;
+    });
   }, []);
 
   // Computed Legacy Flags for Compatibility
@@ -257,6 +279,10 @@ export function useUIState() {
     setTestCaseColumnVisibility,
     informationColumnVisibility,
     setInformationColumnVisibility,
+    navigationStack,
+    pushNavigationStack,
+    popNavigationStack,
+    clearNavigationStack,
     riskColumnVisibility,
     setRiskColumnVisibility,
 

@@ -8,16 +8,21 @@ import { useUI, useGlobalState } from '../app/providers';
  * @param onClose Optional callback to close the current modal (if not using ui.closeModal)
  */
 export function useArtifactNavigation(onClose?: () => void) {
-  const { openModal, closeModal } = useUI();
+  const { openModal, setActiveModal, selectedArtifact, pushNavigationStack } = useUI();
   const { requirements, useCases, information, risks } = useGlobalState();
 
   return useCallback(
     (id: string, type: string) => {
-      // Close the current modal
+      // Push current artifact to stack if it exists
+      if (selectedArtifact) {
+        pushNavigationStack(selectedArtifact);
+      }
+
+      // Close the current modal (just clear type, keep stack)
       if (onClose) {
         onClose();
       } else {
-        closeModal();
+        setActiveModal({ type: null });
       }
 
       // Navigate based on type
@@ -74,6 +79,16 @@ export function useArtifactNavigation(onClose?: () => void) {
         }
       }
     },
-    [onClose, closeModal, openModal, requirements, useCases, information, risks]
+    [
+      onClose,
+      setActiveModal,
+      openModal,
+      selectedArtifact,
+      pushNavigationStack,
+      requirements,
+      useCases,
+      information,
+      risks,
+    ]
   );
 }

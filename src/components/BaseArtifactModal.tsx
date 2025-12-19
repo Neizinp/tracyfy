@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { X, ArrowLeft } from 'lucide-react';
 
 export interface ModalTab {
   id: string;
@@ -21,6 +21,7 @@ interface BaseArtifactModalProps {
   children: ReactNode;
   width?: string;
   maxHeight?: string;
+  onBack?: () => void;
 }
 
 export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
@@ -37,6 +38,7 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
   children,
   width = '800px',
   maxHeight = '85vh',
+  onBack,
 }) => {
   if (!isOpen) return null;
 
@@ -84,7 +86,29 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
               'linear-gradient(to bottom, var(--color-bg-card), var(--color-bg-secondary))',
           }}
         >
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>{title}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginLeft: '-8px',
+                }}
+              >
+                <ArrowLeft size={20} />
+              </button>
+            )}
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>{title}</h2>
+          </div>
           <button
             onClick={onClose}
             className="btn-icon"

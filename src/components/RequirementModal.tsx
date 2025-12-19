@@ -19,6 +19,7 @@ interface RequirementModalProps {
   onCreate: (req: Omit<Requirement, 'id' | 'children' | 'lastModified'>) => void;
   onUpdate: (id: string, updates: Partial<Requirement>) => void;
   onDelete: (id: string) => void;
+  onBack?: () => void;
 }
 
 type Tab = 'overview' | 'details' | 'relationships' | 'comments' | 'customFields' | 'history';
@@ -30,6 +31,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
   onCreate,
   onUpdate,
   onDelete,
+  onBack,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
 
@@ -143,6 +145,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
     <BaseArtifactModal
       isOpen={isOpen}
       onClose={onClose}
+      onBack={onBack}
       title={modalTitle}
       tabs={allTabs}
       activeTab={activeTab}
@@ -176,10 +179,10 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
             title={title}
             setTitle={setTitle}
             priority={priority}
-            setPriority={(val) => setPriority(val as any)}
+            setPriority={setPriority}
             priorityOptions={priorityOptions}
             status={status}
-            setStatus={(val) => setStatus(val as any)}
+            setStatus={setStatus}
             statusOptions={statusOptions}
             author={requirement?.author}
             dateCreated={requirement?.dateCreated}

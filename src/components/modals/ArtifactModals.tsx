@@ -19,6 +19,19 @@ export const ArtifactModals: React.FC = () => {
     useTestCases();
   const { handleAddInformation, handleUpdateInformation } = useInformation();
   const { risks, saveRisk, getNextId } = useFileSystem();
+  const {
+    closeModal,
+    clearNavigationStack,
+    navigationStack,
+    popNavigationStack,
+    editingRequirement,
+    editingUseCase,
+  } = ui;
+
+  const handleFullClose = () => {
+    closeModal();
+    clearNavigationStack();
+  };
 
   // Combined handler for InformationModal - handles both add and update
   const handleInformationSubmit = (
@@ -65,40 +78,44 @@ export const ArtifactModals: React.FC = () => {
       : null;
 
   const selectedRequirement =
-    ui.activeModal.type === 'requirement' && ui.activeModal.isEdit ? ui.editingRequirement : null;
+    ui.activeModal.type === 'requirement' && ui.activeModal.isEdit ? editingRequirement : null;
 
   return (
     <>
       <RequirementModal
         isOpen={ui.activeModal.type === 'requirement'}
         requirement={selectedRequirement}
-        onClose={ui.closeModal}
+        onClose={handleFullClose}
         onCreate={handleAddRequirement}
         onUpdate={handleUpdateRequirement}
         onDelete={handleDeleteRequirement}
+        onBack={navigationStack.length > 0 ? popNavigationStack : undefined}
       />
 
       <UseCaseModal
         isOpen={ui.activeModal.type === 'usecase'}
-        useCase={ui.editingUseCase}
-        onClose={ui.closeModal}
+        useCase={editingUseCase}
+        onClose={handleFullClose}
         onSubmit={handleAddUseCase}
+        onBack={navigationStack.length > 0 ? popNavigationStack : undefined}
       />
 
       <TestCaseModal
         isOpen={ui.activeModal.type === 'testcase'}
         testCase={selectedTestCase}
-        onClose={ui.closeModal}
+        onClose={handleFullClose}
         onCreate={handleAddTestCase}
         onUpdate={handleUpdateTestCase}
         onDelete={handleDeleteTestCase}
+        onBack={navigationStack.length > 0 ? popNavigationStack : undefined}
       />
 
       <InformationModal
         isOpen={ui.activeModal.type === 'information'}
         information={ui.selectedInformation}
-        onClose={ui.closeModal}
+        onClose={handleFullClose}
         onSubmit={handleInformationSubmit}
+        onBack={navigationStack.length > 0 ? popNavigationStack : undefined}
       />
 
       <RiskModal
@@ -108,8 +125,9 @@ export const ArtifactModals: React.FC = () => {
             ? (ui.selectedArtifact.data as unknown as Risk)
             : null
         }
-        onClose={ui.closeModal}
+        onClose={handleFullClose}
         onSubmit={handleRiskSubmit}
+        onBack={navigationStack.length > 0 ? popNavigationStack : undefined}
       />
     </>
   );

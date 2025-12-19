@@ -20,11 +20,18 @@ interface RiskModalProps {
   onSubmit: (
     data: Omit<Risk, 'id' | 'lastModified' | 'dateCreated'> | { id: string; updates: Partial<Risk> }
   ) => void;
+  onBack?: () => void;
 }
 
 type Tab = 'overview' | 'mitigation' | 'relationships' | 'customFields' | 'history';
 
-export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onSubmit }) => {
+export const RiskModal: React.FC<RiskModalProps> = ({
+  isOpen,
+  risk,
+  onClose,
+  onSubmit,
+  onBack,
+}) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
 
   // Use the extracted hook for form state and handlers
@@ -133,6 +140,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
     <BaseArtifactModal
       isOpen={isOpen}
       onClose={onClose}
+      onBack={onBack}
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
           <span>{isEditMode ? `Edit Risk - ${risk?.id}` : 'New Risk'}</span>
@@ -188,11 +196,11 @@ export const RiskModal: React.FC<RiskModalProps> = ({ isOpen, risk, onClose, onS
               title={title}
               setTitle={setTitle}
               priority={probability}
-              setPriority={(val) => setProbability(val as any)}
+              setPriority={setProbability}
               priorityLabel="Probability"
               priorityOptions={probabilityOptions}
               status={status}
-              setStatus={(val) => setStatus(val as any)}
+              setStatus={setStatus}
               statusOptions={statusOptions}
               isEditMode={isEditMode}
               dateCreated={risk?.dateCreated}
