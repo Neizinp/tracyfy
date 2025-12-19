@@ -4,8 +4,7 @@
  * Provides generic CRUD operations for all artifact types.
  */
 
-import { fileSystemService } from './fileSystemService';
-import { realGitService } from './realGitService';
+import { BaseDiskService } from './baseDiskService';
 import { ARTIFACT_CONFIG } from '../constants/artifactConfig';
 import { debug } from '../utils/debug';
 
@@ -14,11 +13,12 @@ export interface ArtifactSerializer<T> {
   deserialize: (content: string) => T | null;
 }
 
-export class BaseArtifactService<T extends { id: string }> {
+export class BaseArtifactService<T extends { id: string }> extends BaseDiskService {
   private typeKey: string;
   private serializer: ArtifactSerializer<T>;
 
   constructor(typeKey: string, serializer: ArtifactSerializer<T>) {
+    super();
     this.typeKey = typeKey;
     this.serializer = serializer;
   }
@@ -49,8 +49,7 @@ export class BaseArtifactService<T extends { id: string }> {
    * Initialize the service (ensure directory exists)
    */
   async initialize(): Promise<void> {
-    const folder = this.config.folder;
-    await fileSystemService.getOrCreateDirectory(folder);
+    await this.ensureDirectory(this.config.folder);
   }
 
   /**
@@ -59,13 +58,7 @@ export class BaseArtifactService<T extends { id: string }> {
   async save(item: T, commitMessage?: string): Promise<T> {
     const path = this.getFilePath(item.id);
     const content = this.serializer.serialize(item);
-
-    await fileSystemService.writeFile(path, content);
-
-    if (commitMessage) {
-      await realGitService.commitFile(path, commitMessage);
-    }
-
+    await this.writeTextFile(path, content, commitMessage);
     debug.log(`[BaseArtifactService] Saved ${this.typeKey}: ${item.id}`);
     return item;
   }
@@ -75,12 +68,7 @@ export class BaseArtifactService<T extends { id: string }> {
    */
   async delete(id: string, commitMessage?: string): Promise<void> {
     const path = this.getFilePath(id);
-    await fileSystemService.deleteFile(path);
-
-    if (commitMessage) {
-      await realGitService.commitFile(path, commitMessage);
-    }
-
+    await this.deleteFile(path, commitMessage);
     debug.log(`[BaseArtifactService] Deleted ${this.typeKey}: ${id}`);
   }
 
@@ -111,11 +99,11 @@ export class BaseArtifactService<T extends { id: string }> {
     const extension = '.md';
 
     try {
-      const files = await fileSystemService.listFiles(folder);
+      const files = await this.listFiles(folder);
       for (const file of files) {
         if (!file.endsWith(extension)) continue;
 
-        const content = await fileSystemService.readFile(`${folder}/${file}`);
+        const content = await this.readTextFile(`${folder}/${file}`);
         if (content) {
           const item = this.serializer.deserialize(content);
           if (item) {
@@ -124,12 +112,8 @@ export class BaseArtifactService<T extends { id: string }> {
           }
         }
       }
-    } catch (err) {
-      // Directory might not exist yet
-      debug.log(
-        `[BaseArtifactService] Could not load ${this.typeKey} from ${folder}:`,
-        err instanceof Error ? err.message : String(err)
-      );
+    } catch {
+      debug.log(`[BaseArtifactService] Could not load ${this.typeKey} from ${folder}`);
     }
 
     return items;
@@ -140,16 +124,9 @@ export class BaseArtifactService<T extends { id: string }> {
    */
   async load(id: string): Promise<T | null> {
     const path = this.getFilePath(id);
-    try {
-      const content = await fileSystemService.readFile(path);
-      if (content) {
-        return this.serializer.deserialize(content);
-      }
-    } catch (err) {
-      debug.log(
-        `[BaseArtifactService] Could not load ${this.typeKey}: ${id}`,
-        err instanceof Error ? err.message : String(err)
-      );
+    const content = await this.readTextFile(path);
+    if (content) {
+      return this.serializer.deserialize(content);
     }
     return null;
   }

@@ -27,7 +27,7 @@
  * current-user.md      # current user ID
  */
 
-import { fileSystemService } from './fileSystemService';
+import { BaseDiskService } from './baseDiskService';
 import { debug } from '../utils/debug';
 import { idService } from './idService';
 import { ARTIFACT_CONFIG } from '../constants/artifactConfig';
@@ -45,16 +45,16 @@ import {
 const CURRENT_PROJECT_FILE = 'current-project.md';
 const CURRENT_USER_FILE = 'current-user.md';
 
-class DiskProjectService {
+class DiskProjectService extends BaseDiskService {
   /**
    * Initialize directory structure
    */
   async initialize(): Promise<void> {
     // Services handle directory creation on save, but we can ensure they exist
     for (const config of Object.values(ARTIFACT_CONFIG)) {
-      await fileSystemService.getOrCreateDirectory(config.folder);
+      await this.ensureDirectory(config.folder);
     }
-    await fileSystemService.getOrCreateDirectory('counters');
+    await this.ensureDirectory('counters');
   }
 
   // ============ COUNTER OPERATIONS (Delegated to IdService) ============
@@ -63,44 +63,28 @@ class DiskProjectService {
    * Get current project ID
    */
   async getCurrentProjectId(): Promise<string> {
-    try {
-      const content = await fileSystemService.readFile(CURRENT_PROJECT_FILE);
-      if (content) {
-        return content.trim();
-      }
-    } catch {
-      // File doesn't exist
-    }
-    return '';
+    return this.readTextFile(CURRENT_PROJECT_FILE);
   }
 
   /**
    * Set current project ID
    */
   async setCurrentProjectId(projectId: string): Promise<void> {
-    await fileSystemService.writeFile(CURRENT_PROJECT_FILE, projectId);
+    await this.writeTextFile(CURRENT_PROJECT_FILE, projectId);
   }
 
   /**
    * Get current user ID
    */
   async getCurrentUserId(): Promise<string> {
-    try {
-      const content = await fileSystemService.readFile(CURRENT_USER_FILE);
-      if (content) {
-        return content.trim();
-      }
-    } catch {
-      // File doesn't exist
-    }
-    return '';
+    return this.readTextFile(CURRENT_USER_FILE);
   }
 
   /**
    * Set current user ID
    */
   async setCurrentUserId(userId: string): Promise<void> {
-    await fileSystemService.writeFile(CURRENT_USER_FILE, userId);
+    await this.writeTextFile(CURRENT_USER_FILE, userId);
   }
 
   /**
@@ -345,14 +329,14 @@ class DiskProjectService {
    */
   async migrateLegacyProjectFiles(): Promise<void> {
     try {
-      const files = await fileSystemService.listFiles('projects');
+      const files = await this.listFiles('projects');
       for (const file of files) {
         if (!file.endsWith('.md')) continue;
 
         // If the filename starts with 'proj-', it's already using ID
         if (file.startsWith('proj-')) continue;
 
-        const content = await fileSystemService.readFile(`projects/${file}`);
+        const content = await this.readTextFile(`projects/${file}`);
         if (content) {
           const project = projectService.deserialize(content);
           if (project && project.id) {
@@ -360,8 +344,8 @@ class DiskProjectService {
             const oldPath = `projects/${file}`;
 
             if (newPath !== oldPath) {
-              await fileSystemService.writeFile(newPath, content);
-              await fileSystemService.deleteFile(oldPath);
+              await this.writeTextFile(newPath, content);
+              await this.deleteFile(oldPath);
               debug.log(`[Migration] Migrated project ${file} to ${project.id}.md`);
             }
           }

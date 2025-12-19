@@ -11,6 +11,8 @@ vi.mock('../fileSystemService', () => ({
     writeFile: vi.fn(),
     deleteFile: vi.fn(),
     listFiles: vi.fn(),
+    getOrCreateDirectory: vi.fn(),
+    directoryExists: vi.fn(),
   },
 }));
 

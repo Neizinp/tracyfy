@@ -5,12 +5,12 @@
  * Uses ARTIFACT_CONFIG for prefix and category metadata.
  */
 
-import { fileSystemService } from './fileSystemService';
+import { BaseDiskService } from './baseDiskService';
 import { realGitService } from './realGitService';
 import { ARTIFACT_CONFIG } from '../constants/artifactConfig';
 import { debug } from '../utils/debug';
 
-export class IdService {
+export class IdService extends BaseDiskService {
   /**
    * Get counter value from file
    */
@@ -21,15 +21,8 @@ export class IdService {
     }
 
     const filename = `counters/${config.folder}.md`;
-    try {
-      const content = await fileSystemService.readFile(filename);
-      if (content) {
-        return parseInt(content.trim(), 10) || 0;
-      }
-    } catch {
-      // File doesn't exist
-    }
-    return 0;
+    const content = await this.readTextFile(filename, '0');
+    return parseInt(content, 10) || 0;
   }
 
   /**
@@ -42,14 +35,9 @@ export class IdService {
     }
 
     const filename = `counters/${config.folder}.md`;
-    await fileSystemService.writeFile(filename, String(value));
+    const commitMessage = skipCommit ? undefined : `Update ${type} counter`;
 
-    // Auto-commit the counter update (unless skipped)
-    if (!skipCommit) {
-      realGitService.commitFile(filename, `Update ${type} counter`).catch((err) => {
-        debug.log(`[IdService] Failed to commit counter for ${type}:`, err);
-      });
-    }
+    await this.writeTextFile(filename, String(value), commitMessage);
   }
 
   /**
