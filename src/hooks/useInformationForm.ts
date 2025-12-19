@@ -1,12 +1,6 @@
-/**
- * useInformationForm Hook
- *
- * Manages form state and handlers for creating/editing information artifacts.
- * Extracted from InformationModal for better separation of concerns.
- */
-
 import { useState, useEffect, useCallback } from 'react';
 import type { Information } from '../types';
+import { useUI, useGlobalState } from '../app/providers';
 import { useArtifactForm } from './useArtifactForm';
 
 interface UseInformationFormOptions {
@@ -28,6 +22,18 @@ export function useInformationForm({
   onClose,
   onSubmit,
 }: UseInformationFormOptions) {
+  const {
+    setEditingRequirement,
+    setIsEditRequirementModalOpen,
+    setEditingUseCase,
+    setIsUseCaseModalOpen,
+    setSelectedTestCaseId,
+    setIsEditTestCaseModalOpen,
+    setSelectedInformation,
+    setIsInformationModalOpen,
+  } = useUI();
+  const { requirements, useCases, information: informationList } = useGlobalState();
+
   // Specialized fields for Information entries
   const [type, setType] = useState<Information['type']>('note');
 
@@ -46,13 +52,14 @@ export function useInformationForm({
     confirmDelete,
     cancelDelete,
     showDeleteConfirm,
+    handleRemoveLink,
   } = useArtifactForm<Information, Tab>({
     isOpen,
     artifact: information,
     onClose,
-    onCreate: (data) => onSubmit(data),
+    onCreate: (data) => onSubmit(data as any),
     onUpdate: (id, updates) => onSubmit({ id, updates }),
-    onDelete: () => {}, // Not supported here currently
+    onDelete: () => {},
     defaultTab: 'overview',
   });
 
@@ -74,6 +81,59 @@ export function useInformationForm({
       } as Partial<Information>);
     },
     [baseHandleSubmit, type]
+  );
+
+  // Navigate to a linked artifact
+  const handleNavigateToArtifact = useCallback(
+    (sourceId: string, sourceType: string) => {
+      onClose();
+
+      switch (sourceType) {
+        case 'requirement': {
+          const req = requirements.find((r) => r.id === sourceId);
+          if (req) {
+            setEditingRequirement(req);
+            setIsEditRequirementModalOpen(true);
+          }
+          break;
+        }
+        case 'useCase': {
+          const uc = useCases.find((u) => u.id === sourceId);
+          if (uc) {
+            setEditingUseCase(uc);
+            setIsUseCaseModalOpen(true);
+          }
+          break;
+        }
+        case 'testCase': {
+          setSelectedTestCaseId(sourceId);
+          setIsEditTestCaseModalOpen(true);
+          break;
+        }
+        case 'information': {
+          const info = informationList.find((i) => i.id === sourceId);
+          if (info) {
+            setSelectedInformation(info);
+            setIsInformationModalOpen(true);
+          }
+          break;
+        }
+      }
+    },
+    [
+      onClose,
+      requirements,
+      useCases,
+      informationList,
+      setEditingRequirement,
+      setIsEditRequirementModalOpen,
+      setEditingUseCase,
+      setIsUseCaseModalOpen,
+      setSelectedTestCaseId,
+      setIsEditTestCaseModalOpen,
+      setSelectedInformation,
+      setIsInformationModalOpen,
+    ]
   );
 
   return {
@@ -100,5 +160,7 @@ export function useInformationForm({
     confirmDelete,
     cancelDelete,
     showDeleteConfirm,
+    handleRemoveLink,
+    handleNavigateToArtifact,
   };
 }

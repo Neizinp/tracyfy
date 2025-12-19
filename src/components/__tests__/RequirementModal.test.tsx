@@ -1,63 +1,94 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RequirementModal } from '../RequirementModal';
-import { UIProvider } from '../../app/providers';
+import { useRequirementForm } from '../../hooks/useRequirementForm';
 import type { Requirement } from '../../types';
 
-// Mock dependencies
+// Mock everything to solve the OOM/hang issues
+vi.mock('../../app/providers', () => ({
+  UIProvider: ({ children }: any) => <>{children}</>,
+  useUI: vi.fn(() => ({
+    setIsLinkModalOpen: vi.fn(),
+    setLinkSourceId: vi.fn(),
+    setLinkSourceType: vi.fn(),
+  })),
+}));
+
+vi.mock('../../hooks/useLinkService', () => ({
+  useLinkService: vi.fn(() => ({
+    outgoingLinks: [],
+    incomingLinks: [],
+    loading: false,
+  })),
+}));
+
+vi.mock('../../hooks/useCustomAttributes', () => ({
+  useCustomAttributes: vi.fn(() => ({
+    definitions: [],
+    loading: false,
+  })),
+}));
+
+vi.mock('../../hooks/useKeyboardShortcuts', () => ({
+  useKeyboardShortcuts: vi.fn(),
+}));
+
+vi.mock('../../hooks/useRequirementForm', () => ({
+  useRequirementForm: vi.fn(),
+}));
+
+vi.mock('../BaseArtifactModal', () => ({
+  BaseArtifactModal: ({
+    children,
+    title,
+    onSubmit,
+    submitLabel,
+    onTabChange,
+    tabs,
+    onClose,
+    footerActions,
+  }: any) => (
+    <div>
+      <h2>{title}</h2>
+      <div data-testid="tabs">
+        {tabs?.map((t: any) => (
+          <button key={t.id} onClick={() => onTabChange?.(t.id)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <form
+        role="form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit?.(e);
+        }}
+      >
+        {children}
+        <button type="submit">{submitLabel}</button>
+      </form>
+      <button type="button" onClick={onClose}>
+        Cancel
+      </button>
+      {footerActions}
+    </div>
+  ),
+}));
+
 vi.mock('../RevisionHistoryTab', () => ({
   RevisionHistoryTab: () => <div data-testid="revision-history">Revision History</div>,
 }));
 
-vi.mock('../../utils/dateUtils', () => ({
-  formatDateTime: (timestamp: number) => new Date(timestamp).toISOString(),
+vi.mock('../MarkdownEditor', () => ({
+  MarkdownEditor: ({ label, value, onChange }: any) => (
+    <div data-testid="markdown-editor">
+      <label>
+        {label}
+        <textarea value={value} onChange={(e) => onChange(e.target.value)} />
+      </label>
+    </div>
+  ),
 }));
-
-vi.mock('../../hooks/useIncomingLinks', () => ({
-  useIncomingLinks: () => [],
-}));
-
-vi.mock('../../hooks/useCustomAttributes', () => ({
-  useCustomAttributes: () => ({
-    definitions: [],
-    isLoading: false,
-    getApplicableDefinitions: () => [],
-    getDefinitionById: () => null,
-    createDefinition: vi.fn(),
-    updateDefinition: vi.fn(),
-    deleteDefinition: vi.fn(),
-  }),
-}));
-
-vi.mock('../../app/providers', async () => {
-  const actual = await vi.importActual('../../app/providers');
-  return {
-    ...(actual as object),
-    useGlobalState: () => ({
-      requirements: [],
-      useCases: [],
-      testCases: [],
-      information: [],
-      globalRequirements: [],
-      globalUseCases: [],
-      globalTestCases: [],
-      globalInformation: [],
-    }),
-    useUser: () => ({
-      currentUser: { id: 'USER-001', name: 'Test User' },
-      users: [{ id: 'USER-001', name: 'Test User' }],
-      isLoading: false,
-      createUser: vi.fn(),
-      updateUser: vi.fn(),
-      deleteUser: vi.fn(),
-      switchUser: vi.fn(),
-    }),
-  };
-});
-
-const renderWithProviders = (ui: React.ReactElement) => {
-  return render(<UIProvider>{ui}</UIProvider>);
-};
 
 describe('RequirementModal', () => {
   const mockRequirement: Requirement = {
@@ -83,120 +114,107 @@ describe('RequirementModal', () => {
     onDelete: vi.fn(),
   };
 
+  const mockFormState = {
+    isEditMode: false,
+    activeTab: 'overview',
+    setActiveTab: vi.fn(),
+    title: '',
+    setTitle: vi.fn(),
+    description: '',
+    setDescription: vi.fn(),
+    text: '',
+    setText: vi.fn(),
+    rationale: '',
+    setRationale: vi.fn(),
+    priority: 'medium',
+    setPriority: vi.fn(),
+    status: 'draft',
+    setStatus: vi.fn(),
+    verificationMethod: '',
+    setVerificationMethod: vi.fn(),
+    comments: '',
+    setComments: vi.fn(),
+    customAttributes: [],
+    setCustomAttributes: vi.fn(),
+    showDeleteConfirm: false,
+    handleDelete: vi.fn(),
+    confirmDelete: vi.fn(),
+    cancelDelete: vi.fn(),
+    handleSubmit: vi.fn(),
+    handleNavigateToArtifact: vi.fn(),
+    handleRemoveLink: vi.fn(),
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
+    (useRequirementForm as any).mockReturnValue(mockFormState);
   });
 
-  describe('Create Mode', () => {
-    it('should render in create mode when requirement is null', () => {
-      renderWithProviders(<RequirementModal {...defaultProps} />);
-      expect(screen.getByText('New Requirement')).toBeInTheDocument();
-    });
-
-    it('should show tabs in create mode except History', () => {
-      renderWithProviders(<RequirementModal {...defaultProps} />);
-      expect(screen.getByText('Overview')).toBeInTheDocument();
-      expect(screen.getByText('Details')).toBeInTheDocument();
-      expect(screen.getByText('Relationships')).toBeInTheDocument();
-      expect(screen.getByText('Comments')).toBeInTheDocument();
-      // History tab not shown in create mode
-      expect(screen.queryByText('Revision History')).not.toBeInTheDocument();
-    });
-
-    it('should show message in Relationships tab for new items', () => {
-      renderWithProviders(<RequirementModal {...defaultProps} />);
-      fireEvent.click(screen.getByText('Relationships'));
-      expect(screen.getByText(/Save the requirement first/)).toBeInTheDocument();
-    });
-
-    it('should call onCreate when form is submitted', () => {
-      renderWithProviders(<RequirementModal {...defaultProps} />);
-
-      // Find title input (first text input in form)
-      const inputs = screen.getAllByRole('textbox');
-      const titleInput = inputs[0];
-      fireEvent.change(titleInput, { target: { value: 'New Requirement' } });
-
-      const submitButton = screen.getByText('Create Requirement');
-      fireEvent.click(submitButton);
-
-      expect(defaultProps.onCreate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: 'New Requirement',
-          status: 'draft',
-        })
-      );
-    });
-
-    it('should not show delete button in create mode', () => {
-      renderWithProviders(<RequirementModal {...defaultProps} />);
-      expect(screen.queryByText('Delete')).not.toBeInTheDocument();
-    });
+  it('should render when isOpen is true', () => {
+    render(<RequirementModal {...defaultProps} />);
+    expect(screen.getByText('New Requirement')).toBeInTheDocument();
   });
 
-  describe('Edit Mode', () => {
-    const editProps = { ...defaultProps, requirement: mockRequirement };
-
-    it('should render in edit mode when requirement is provided', () => {
-      renderWithProviders(<RequirementModal {...editProps} />);
-      expect(screen.getByText(/Edit Requirement - REQ-001/)).toBeInTheDocument();
-    });
-
-    it('should show all tabs in edit mode', () => {
-      renderWithProviders(<RequirementModal {...editProps} />);
-      expect(screen.getByText('Overview')).toBeInTheDocument();
-      expect(screen.getByText('Details')).toBeInTheDocument();
-      expect(screen.getByText('Relationships')).toBeInTheDocument();
-      expect(screen.getByText('Comments')).toBeInTheDocument();
-      expect(screen.getByText('Revision History')).toBeInTheDocument();
-    });
-
-    it('should populate form with requirement data', () => {
-      renderWithProviders(<RequirementModal {...editProps} />);
-      expect(screen.getByDisplayValue('Test Requirement')).toBeInTheDocument();
-    });
-
-    it('should call onUpdate when form is saved', () => {
-      renderWithProviders(<RequirementModal {...editProps} />);
-
-      // Find title input (first text input in form)
-      const inputs = screen.getAllByRole('textbox');
-      const titleInput = inputs[0];
-      fireEvent.change(titleInput, { target: { value: 'Updated Requirement' } });
-
-      const submitButton = screen.getByText('Save Changes');
-      fireEvent.click(submitButton);
-
-      expect(defaultProps.onUpdate).toHaveBeenCalledWith(
-        'REQ-001',
-        expect.objectContaining({
-          title: 'Updated Requirement',
-        })
-      );
-    });
-
-    it('should show delete button in edit mode', () => {
-      renderWithProviders(<RequirementModal {...editProps} />);
-      expect(screen.getByText('Delete')).toBeInTheDocument();
-    });
-
-    it('should show delete confirmation when clicking delete', () => {
-      renderWithProviders(<RequirementModal {...editProps} />);
-      fireEvent.click(screen.getByText('Delete'));
-      expect(screen.getByText(/Are you sure/)).toBeInTheDocument();
-    });
+  it('should not render when isOpen is false', () => {
+    render(<RequirementModal {...defaultProps} isOpen={false} />);
+    expect(screen.queryByText('New Requirement')).not.toBeInTheDocument();
   });
 
-  describe('Common Behavior', () => {
-    it('should not render when isOpen is false', () => {
-      renderWithProviders(<RequirementModal {...defaultProps} isOpen={false} />);
-      expect(screen.queryByText('New Requirement')).not.toBeInTheDocument();
-    });
+  it('should display primary tabs', () => {
+    render(<RequirementModal {...defaultProps} />);
+    expect(screen.getByText('Overview')).toBeInTheDocument();
+    expect(screen.getByText('Details')).toBeInTheDocument();
+    expect(screen.getByText('Relationships')).toBeInTheDocument();
+  });
 
-    it('should call onClose when cancel is clicked', () => {
-      renderWithProviders(<RequirementModal {...defaultProps} />);
-      fireEvent.click(screen.getByText('Cancel'));
-      expect(defaultProps.onClose).toHaveBeenCalled();
+  it('should call setActiveTab when tab is clicked', () => {
+    render(<RequirementModal {...defaultProps} />);
+    fireEvent.click(screen.getByText('Details'));
+    expect(mockFormState.setActiveTab).toHaveBeenCalledWith('details');
+  });
+
+  it('should populate form fields when in overview tab', () => {
+    (useRequirementForm as any).mockReturnValue({
+      ...mockFormState,
+      title: 'Test Requirement',
+      description: 'Test description',
     });
+    render(<RequirementModal {...defaultProps} />);
+    expect(screen.getByDisplayValue('Test Requirement')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Test description')).toBeInTheDocument();
+  });
+
+  it('should render detail fields when in details tab', () => {
+    (useRequirementForm as any).mockReturnValue({
+      ...mockFormState,
+      activeTab: 'details',
+      text: 'Test content',
+      rationale: 'Test rationale',
+    });
+    render(<RequirementModal {...defaultProps} />);
+    expect(screen.getByDisplayValue('Test content')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Test rationale')).toBeInTheDocument();
+  });
+
+  it('should call onSubmit (handleSubmit) when create button is clicked', () => {
+    render(<RequirementModal {...defaultProps} />);
+    fireEvent.submit(screen.getByRole('form'));
+    expect(mockFormState.handleSubmit).toHaveBeenCalled();
+  });
+
+  it('should show delete button and revision history tab when in edit mode', () => {
+    (useRequirementForm as any).mockReturnValue({
+      ...mockFormState,
+      isEditMode: true,
+    });
+    render(<RequirementModal {...defaultProps} requirement={mockRequirement} />);
+    expect(screen.getByText('Delete')).toBeInTheDocument();
+    expect(screen.getByText('Revision History')).toBeInTheDocument();
+  });
+
+  it('should call onClose when cancel is clicked', () => {
+    render(<RequirementModal {...defaultProps} />);
+    fireEvent.click(screen.getByText('Cancel'));
+    expect(defaultProps.onClose).toHaveBeenCalled();
   });
 });

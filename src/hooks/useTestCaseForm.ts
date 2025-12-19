@@ -1,12 +1,6 @@
-/**
- * useTestCaseForm Hook
- *
- * Manages form state and handlers for creating/editing test cases.
- * Extracted from TestCaseModal for better separation of concerns.
- */
-
 import { useCallback } from 'react';
 import type { TestCase } from '../types';
+import { useUI, useGlobalState } from '../app/providers';
 import { useArtifactForm } from './useArtifactForm';
 
 interface UseTestCaseFormOptions {
@@ -29,6 +23,18 @@ export function useTestCaseForm({
   onDelete,
 }: UseTestCaseFormOptions) {
   const {
+    setEditingRequirement,
+    setIsEditRequirementModalOpen,
+    setEditingUseCase,
+    setIsUseCaseModalOpen,
+    setSelectedTestCaseId,
+    setIsEditTestCaseModalOpen,
+    setSelectedInformation,
+    setIsInformationModalOpen,
+  } = useUI();
+  const { requirements, useCases, information } = useGlobalState();
+
+  const {
     isEditMode,
     currentUser,
     activeTab,
@@ -48,11 +54,12 @@ export function useTestCaseForm({
     confirmDelete,
     cancelDelete,
     showDeleteConfirm,
+    handleRemoveLink,
   } = useArtifactForm<TestCase, Tab>({
     isOpen,
     artifact: testCase,
     onClose,
-    onCreate,
+    onCreate: (data) => onCreate(data as any),
     onUpdate,
     onDelete,
     defaultTab: 'overview',
@@ -73,6 +80,59 @@ export function useTestCaseForm({
       baseHandleSubmit(e, updates);
     },
     [baseHandleSubmit, status, testCase]
+  );
+
+  // Navigate to a linked artifact
+  const handleNavigateToArtifact = useCallback(
+    (sourceId: string, sourceType: string) => {
+      onClose();
+
+      switch (sourceType) {
+        case 'requirement': {
+          const req = requirements.find((r) => r.id === sourceId);
+          if (req) {
+            setEditingRequirement(req);
+            setIsEditRequirementModalOpen(true);
+          }
+          break;
+        }
+        case 'useCase': {
+          const uc = useCases.find((u) => u.id === sourceId);
+          if (uc) {
+            setEditingUseCase(uc);
+            setIsUseCaseModalOpen(true);
+          }
+          break;
+        }
+        case 'testCase': {
+          setSelectedTestCaseId(sourceId);
+          setIsEditTestCaseModalOpen(true);
+          break;
+        }
+        case 'information': {
+          const info = information.find((i) => i.id === sourceId);
+          if (info) {
+            setSelectedInformation(info);
+            setIsInformationModalOpen(true);
+          }
+          break;
+        }
+      }
+    },
+    [
+      onClose,
+      requirements,
+      useCases,
+      information,
+      setEditingRequirement,
+      setIsEditRequirementModalOpen,
+      setEditingUseCase,
+      setIsUseCaseModalOpen,
+      setSelectedTestCaseId,
+      setIsEditTestCaseModalOpen,
+      setSelectedInformation,
+      setIsInformationModalOpen,
+    ]
   );
 
   return {
@@ -102,5 +162,7 @@ export function useTestCaseForm({
     confirmDelete,
     cancelDelete,
     showDeleteConfirm,
+    handleRemoveLink,
+    handleNavigateToArtifact,
   };
 }

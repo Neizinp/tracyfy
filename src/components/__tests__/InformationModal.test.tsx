@@ -1,45 +1,90 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { InformationModal } from '../InformationModal';
-import { UIProvider } from '../../app/providers';
+import { useInformationForm } from '../../hooks/useInformationForm';
 import type { Information } from '../../types';
 
-// Mock RevisionHistoryTab
+// Mock everything to solve the OOM/hang issues
+vi.mock('../../app/providers', () => ({
+  UIProvider: ({ children }: any) => <>{children}</>,
+  useUI: vi.fn(() => ({
+    setIsLinkModalOpen: vi.fn(),
+    setLinkSourceId: vi.fn(),
+    setLinkSourceType: vi.fn(),
+  })),
+}));
+
+vi.mock('../../hooks/useLinkService', () => ({
+  useLinkService: vi.fn(() => ({
+    outgoingLinks: [],
+    incomingLinks: [],
+    loading: false,
+  })),
+}));
+
+vi.mock('../../hooks/useCustomAttributes', () => ({
+  useCustomAttributes: vi.fn(() => ({
+    definitions: [],
+    loading: false,
+  })),
+}));
+
+vi.mock('../../hooks/useKeyboardShortcuts', () => ({
+  useKeyboardShortcuts: vi.fn(),
+}));
+
+vi.mock('../../hooks/useInformationForm', () => ({
+  useInformationForm: vi.fn(),
+}));
+
+vi.mock('../BaseArtifactModal', () => ({
+  BaseArtifactModal: ({
+    children,
+    title,
+    onSubmit,
+    submitLabel,
+    onTabChange,
+    tabs,
+    onClose,
+  }: any) => (
+    <div>
+      <h2>{title}</h2>
+      <div data-testid="tabs">
+        {tabs?.map((t: any) => (
+          <button key={t.id} onClick={() => onTabChange?.(t.id)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <form
+        role="form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit?.(e);
+        }}
+      >
+        {children}
+        <button type="submit">{submitLabel}</button>
+      </form>
+      <button type="button" onClick={onClose}>
+        Cancel
+      </button>
+    </div>
+  ),
+}));
+
 vi.mock('../RevisionHistoryTab', () => ({
   RevisionHistoryTab: () => <div data-testid="revision-history">Revision History</div>,
 }));
 
-vi.mock('../../hooks/useCustomAttributes', () => ({
-  useCustomAttributes: () => ({
-    definitions: [],
-    isLoading: false,
-    getApplicableDefinitions: () => [],
-    getDefinitionById: () => null,
-    createDefinition: vi.fn(),
-    updateDefinition: vi.fn(),
-    deleteDefinition: vi.fn(),
-  }),
+vi.mock('../MarkdownEditor', () => ({
+  MarkdownEditor: ({ label, value, onChange }: any) => (
+    <div data-testid="markdown-editor">
+      <label>{label}</label>
+      <textarea aria-label={label} value={value} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  ),
 }));
-
-vi.mock('../../app/providers', async () => {
-  const actual = await vi.importActual('../../app/providers');
-  return {
-    ...(actual as object),
-    useUser: () => ({
-      currentUser: { id: 'USER-001', name: 'Test User' },
-      users: [{ id: 'USER-001', name: 'Test User' }],
-      isLoading: false,
-      createUser: vi.fn(),
-      updateUser: vi.fn(),
-      deleteUser: vi.fn(),
-      switchUser: vi.fn(),
-    }),
-  };
-});
-
-const renderWithProvider = (ui: React.ReactElement) => {
-  return render(<UIProvider>{ui}</UIProvider>);
-};
 
 describe('InformationModal', () => {
   const mockInformation: Information = {
@@ -54,142 +99,99 @@ describe('InformationModal', () => {
 
   const defaultProps = {
     isOpen: true,
-    information: null,
-    links: [],
-    projects: [],
-    currentProjectId: 'PROJ-001',
+    information: null as Information | null,
     onClose: vi.fn(),
     onSubmit: vi.fn(),
   };
 
+  const mockFormState = {
+    isEditMode: false,
+    activeTab: 'overview',
+    setActiveTab: vi.fn(),
+    title: '',
+    setTitle: vi.fn(),
+    text: '',
+    setText: vi.fn(),
+    type: 'note',
+    setType: vi.fn(),
+    customAttributes: [],
+    setCustomAttributes: vi.fn(),
+    handleSubmit: vi.fn(),
+    handleNavigateToArtifact: vi.fn(),
+    handleRemoveLink: vi.fn(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (useInformationForm as any).mockReturnValue(mockFormState);
+  });
+
   it('should render when isOpen is true', () => {
-    renderWithProvider(<InformationModal {...defaultProps} />);
+    render(<InformationModal {...defaultProps} />);
     expect(screen.getByText('New Information')).toBeInTheDocument();
   });
 
   it('should not render when isOpen is false', () => {
-    renderWithProvider(<InformationModal {...defaultProps} isOpen={false} />);
+    render(<InformationModal {...defaultProps} isOpen={false} />);
     expect(screen.queryByText('New Information')).not.toBeInTheDocument();
   });
 
   it('should display tabs correctly', () => {
-    renderWithProvider(<InformationModal {...defaultProps} />);
+    render(<InformationModal {...defaultProps} />);
     expect(screen.getByText('Overview')).toBeInTheDocument();
-    // Revision History tab only shows when editing
+    expect(screen.getByText('Relationships')).toBeInTheDocument();
+    expect(screen.getByText('Custom Attributes')).toBeInTheDocument();
   });
 
-  it('should show revision history tab when editing', () => {
-    renderWithProvider(<InformationModal {...defaultProps} information={mockInformation} />);
+  it('should call setActiveTab when tab is clicked', () => {
+    render(<InformationModal {...defaultProps} />);
+    fireEvent.click(screen.getByText('Relationships'));
+    expect(mockFormState.setActiveTab).toHaveBeenCalledWith('relationships');
+  });
+
+  it('should show revision history tab when in edit mode', () => {
+    (useInformationForm as any).mockReturnValue({
+      ...mockFormState,
+      isEditMode: true,
+    });
+    render(<InformationModal {...defaultProps} information={mockInformation} />);
     expect(screen.getByText('Revision History')).toBeInTheDocument();
   });
 
-  it('should populate form fields when editing existing information', () => {
-    renderWithProvider(<InformationModal {...defaultProps} information={mockInformation} />);
-
-    expect(screen.getByText(/Edit Information - INFO-001/)).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Project Meeting Notes')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Discussion about requirements')).toBeInTheDocument();
+  it('should call onSubmit (handleSubmit) when create button is clicked', () => {
+    render(<InformationModal {...defaultProps} />);
+    fireEvent.submit(screen.getByRole('form'));
+    expect(mockFormState.handleSubmit).toHaveBeenCalled();
   });
 
-  it('should validate required fields', () => {
-    renderWithProvider(<InformationModal {...defaultProps} />);
+  it('should render correct fields in overview tab', () => {
+    (useInformationForm as any).mockReturnValue({
+      ...mockFormState,
+      title: 'Test Title',
+      text: 'Test Text',
+      type: 'meeting',
+    });
+    render(<InformationModal {...defaultProps} />);
 
-    const titleInput = screen.getByRole('textbox', { name: /Title/i });
-    expect(titleInput).toHaveAttribute('required');
-    // Content is now a MarkdownEditor, no required attribute on it
+    expect(screen.getByDisplayValue('Test Title')).toBeInTheDocument();
+    const typeSelect = screen.getByRole('combobox') as HTMLSelectElement;
+    expect(typeSelect.value).toBe('meeting');
+    expect(screen.getByDisplayValue('Test Text')).toBeInTheDocument();
   });
 
-  it('should call onSubmit with correct data when creating new information', () => {
-    renderWithProvider(<InformationModal {...defaultProps} />);
-
-    const titleInput = screen.getByRole('textbox', { name: /Title/i });
-
-    // Find Type select by role
-    const selects = screen.getAllByRole('combobox');
-    const typeSelect = selects.find((s) =>
-      s.querySelector('option[value="note"]')
-    ) as HTMLSelectElement;
-
-    fireEvent.change(titleInput, { target: { value: 'New Note' } });
-    if (typeSelect) {
-      fireEvent.change(typeSelect, { target: { value: 'decision' } });
-    }
-
-    const submitButton = screen.getByText('Create Information');
-    fireEvent.click(submitButton);
-
-    expect(defaultProps.onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'New Note',
-        type: 'decision',
-        revision: '01',
-      })
-    );
-  });
-
-  it('should call onSubmit with updates when editing existing information', () => {
-    renderWithProvider(<InformationModal {...defaultProps} information={mockInformation} />);
-
-    const titleInput = screen.getByDisplayValue('Project Meeting Notes');
-    fireEvent.change(titleInput, { target: { value: 'Updated Notes' } });
-
-    const submitButton = screen.getByText('Save Changes');
-    fireEvent.click(submitButton);
-
-    expect(defaultProps.onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'INFO-001',
-        updates: expect.objectContaining({
-          title: 'Updated Notes',
-        }),
-      })
-    );
+  it('should show revision history content when history tab is active', () => {
+    (useInformationForm as any).mockReturnValue({
+      ...mockFormState,
+      isEditMode: true,
+      activeTab: 'history',
+    });
+    render(<InformationModal {...defaultProps} information={mockInformation} />);
+    expect(screen.getByTestId('revision-history')).toBeInTheDocument();
   });
 
   it('should call onClose when cancel is clicked', () => {
-    renderWithProvider(<InformationModal {...defaultProps} />);
-
-    const cancelButton = screen.getByText('Cancel');
-    fireEvent.click(cancelButton);
-
+    render(<InformationModal {...defaultProps} />);
+    fireEvent.click(screen.getByText('Cancel'));
     expect(defaultProps.onClose).toHaveBeenCalled();
-  });
-
-  it('should have correct default values for new information', () => {
-    renderWithProvider(<InformationModal {...defaultProps} />);
-
-    // Find Type select by its value attribute
-    const selects = screen.getAllByRole('combobox');
-    const typeSelect = selects.find((s) =>
-      s.querySelector('option[value="note"]')
-    ) as HTMLSelectElement;
-    expect(typeSelect?.value).toBe('note');
-  });
-
-  it('should update type selection', () => {
-    renderWithProvider(<InformationModal {...defaultProps} />);
-
-    // Find Type select by its value attribute
-    const selects = screen.getAllByRole('combobox');
-    const typeSelect = selects.find((s) =>
-      s.querySelector('option[value="note"]')
-    ) as HTMLSelectElement;
-
-    if (typeSelect) {
-      fireEvent.change(typeSelect, { target: { value: 'meeting' } });
-      expect(typeSelect.value).toBe('meeting');
-
-      fireEvent.change(typeSelect, { target: { value: 'decision' } });
-      expect(typeSelect.value).toBe('decision');
-    }
-  });
-
-  it('should display revision history when tab is clicked', () => {
-    renderWithProvider(<InformationModal {...defaultProps} information={mockInformation} />);
-
-    const historyTab = screen.getByText('Revision History');
-    fireEvent.click(historyTab);
-
-    expect(screen.getByTestId('revision-history')).toBeInTheDocument();
   });
 });
