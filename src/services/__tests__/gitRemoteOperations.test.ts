@@ -75,7 +75,7 @@ describe('RealGitService - Remote Operations', () => {
       vi.mocked(git.addRemote).mockResolvedValue(undefined);
 
       // Force initialized state
-      (realGitService as any).initialized = true;
+      realGitService.initialized = true;
 
       await realGitService.addRemote('origin', 'https://github.com/test/repo.git');
 
@@ -92,7 +92,7 @@ describe('RealGitService - Remote Operations', () => {
     it('should call git.deleteRemote with correct params', async () => {
       vi.mocked(git.deleteRemote).mockResolvedValue(undefined);
 
-      (realGitService as any).initialized = true;
+      realGitService.initialized = true;
 
       await realGitService.removeRemote('origin');
 
@@ -111,7 +111,7 @@ describe('RealGitService - Remote Operations', () => {
         { remote: 'upstream', url: 'https://github.com/other/repo.git' },
       ]);
 
-      (realGitService as any).initialized = true;
+      realGitService.initialized = true;
 
       const remotes = await realGitService.getRemotes();
 
@@ -122,7 +122,7 @@ describe('RealGitService - Remote Operations', () => {
     });
 
     it('should return empty array when not initialized', async () => {
-      (realGitService as any).initialized = false;
+      realGitService.initialized = false;
 
       const remotes = await realGitService.getRemotes();
 
@@ -136,7 +136,7 @@ describe('RealGitService - Remote Operations', () => {
         { remote: 'origin', url: 'https://github.com/test/repo.git' },
       ]);
 
-      (realGitService as any).initialized = true;
+      realGitService.initialized = true;
 
       const has = await realGitService.hasRemote('origin');
 
@@ -148,7 +148,7 @@ describe('RealGitService - Remote Operations', () => {
         { remote: 'upstream', url: 'https://github.com/other/repo.git' },
       ]);
 
-      (realGitService as any).initialized = true;
+      realGitService.initialized = true;
 
       const has = await realGitService.hasRemote('origin');
 
@@ -160,22 +160,22 @@ describe('RealGitService - Remote Operations', () => {
     it('should store token in localStorage', () => {
       realGitService.setAuthToken('ghp_testtoken123');
 
-      expect(localStorage.setItem).toHaveBeenCalledWith('git-remote-token', 'ghp_testtoken123');
+      expect(localStorage.setItem).toHaveBeenCalledWith('git_pat_token', 'ghp_testtoken123');
     });
 
     it('should clear token from localStorage', () => {
       realGitService.clearAuthToken();
 
-      expect(localStorage.removeItem).toHaveBeenCalledWith('git-remote-token');
+      expect(localStorage.removeItem).toHaveBeenCalledWith('git_pat_token');
     });
   });
 
   describe('isInitialized', () => {
     it('should return initialized state', () => {
-      (realGitService as any).initialized = true;
+      realGitService.initialized = true;
       expect(realGitService.isInitialized()).toBe(true);
 
-      (realGitService as any).initialized = false;
+      realGitService.initialized = false;
       expect(realGitService.isInitialized()).toBe(false);
     });
   });

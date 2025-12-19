@@ -47,7 +47,7 @@ const PDF_SECTION_FUNCTIONS: Record<string, string> = {
 
 describe('Export Completeness', () => {
   const excelExportPath = resolve(__dirname, '../excelExportUtils.ts');
-  const pdfExportPath = resolve(__dirname, '../pdfExportUtils.ts');
+  const pdfExportPath = resolve(__dirname, '../pdf/pdfMainExport.ts');
   const jsonExportPath = resolve(__dirname, '../jsonExportUtils.ts');
 
   describe('Excel Export includes all artifact types', () => {

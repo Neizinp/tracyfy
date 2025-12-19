@@ -8,7 +8,7 @@ import { debug } from '../../utils/debug';
 import git from 'isomorphic-git';
 import { fileSystemService } from '../fileSystemService';
 import { fsAdapter } from '../fsAdapter';
-import { isElectronEnv, parseStatusMatrix, type FileStatus } from './types';
+import { isElectronEnv, parseStatusMatrix, type FileStatus, type ArtifactFolder } from './types';
 import type { Requirement, UseCase, TestCase, Information } from '../../types';
 import {
   requirementToMarkdown,
@@ -170,7 +170,7 @@ class GitCoreService {
    * Save an artifact to disk (no commit)
    */
   async saveArtifact(
-    type: 'requirements' | 'usecases' | 'testcases' | 'information',
+    type: ArtifactFolder,
     id: string,
     artifact: Requirement | UseCase | TestCase | Information
   ): Promise<void> {
@@ -202,10 +202,7 @@ class GitCoreService {
   /**
    * Delete an artifact from disk (no commit)
    */
-  async deleteArtifact(
-    type: 'requirements' | 'usecases' | 'testcases' | 'information',
-    id: string
-  ): Promise<void> {
+  async deleteArtifact(type: ArtifactFolder, id: string): Promise<void> {
     if (!this.initialized) {
       throw new Error('Git service not initialized');
     }

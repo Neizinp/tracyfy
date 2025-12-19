@@ -41,7 +41,5 @@ export { addLinksSection, addRisksSection } from './pdfLinksRisksSection';
 // Revision History
 export { addRevisionHistory } from './pdfRevisionHistory';
 
-// Re-export main function from original file for backward compatibility
-// This allows gradual migration - consumers can continue importing from pdfExportUtils
-// or switch to importing from utils/pdf
-export { exportProjectToPDF } from '../pdfExportUtils';
+// Main export function
+export { exportProjectToPDF } from './pdfMainExport';

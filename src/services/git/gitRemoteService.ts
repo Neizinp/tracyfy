@@ -122,15 +122,16 @@ class GitRemoteService {
         }
 
         // Migration from localStorage if exists
-        const oldToken = localStorage.getItem('git-remote-token');
+        const oldToken =
+          typeof localStorage !== 'undefined' ? localStorage.getItem('git_pat_token') : null;
         if (oldToken) {
           debug.log('[ensureTokenLoaded] Migrating token to secure storage');
           await this.setAuthToken(oldToken);
-          localStorage.removeItem('git-remote-token');
+          localStorage.removeItem('git_pat_token');
           return;
         }
-      } else {
-        this.authToken = localStorage.getItem('git-remote-token');
+      } else if (typeof localStorage !== 'undefined') {
+        this.authToken = localStorage.getItem('git_pat_token');
       }
     } catch (err) {
       console.warn('[ensureTokenLoaded] Failed:', err);
@@ -145,7 +146,10 @@ class GitRemoteService {
   getAuthToken(): string | null {
     if (!this.tokenLoaded) {
       // Fallback for immediate access, though unreliable in Electron if not yet initialized
-      return this.authToken || localStorage.getItem('git-remote-token');
+      return (
+        this.authToken ||
+        (typeof localStorage !== 'undefined' ? localStorage.getItem('git_pat_token') : null)
+      );
     }
     return this.authToken;
   }
@@ -162,13 +166,13 @@ class GitRemoteService {
         const result = await window.electronAPI!.secure.setToken(token);
         if (result.error) throw new Error(result.error);
       } else {
-        localStorage.setItem('git-remote-token', token);
+        localStorage.setItem('git_pat_token', token);
       }
     } catch (err) {
       console.warn('[setAuthToken] Failed:', err);
       // Fallback to localStorage even in Electron if secure storage fails
       try {
-        localStorage.setItem('git-remote-token', token);
+        localStorage.setItem('git_pat_token', token);
       } catch {
         // Ignore
       }
@@ -186,7 +190,7 @@ class GitRemoteService {
       if (isElectronEnv()) {
         await window.electronAPI!.secure.removeToken();
       }
-      localStorage.removeItem('git-remote-token');
+      localStorage.removeItem('git_pat_token');
     } catch {
       // Ignore
     }
