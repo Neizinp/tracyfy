@@ -145,7 +145,7 @@ export const WorkflowsPage: React.FC = () => {
     getValueFn: (wf: Workflow, key: string) => {
       if (key === 'createdBy') return getUserName(wf.createdBy);
       if (key === 'artifactIds') return wf.artifactIds.length;
-      return (wf as Record<string, any>)[key];
+      return (wf as unknown as Record<string, string | number | undefined>)[key];
     },
   });
 
@@ -160,7 +160,7 @@ export const WorkflowsPage: React.FC = () => {
       if (key === 'assignedTo') return getUserName(wf.assignedTo);
       if (key === 'approvedBy') return wf.approvedBy ? getUserName(wf.approvedBy) : '';
       if (key === 'artifactIds') return wf.artifactIds.length;
-      return (wf as Record<string, any>)[key];
+      return (wf as unknown as Record<string, string | number | undefined>)[key];
     },
   });
 

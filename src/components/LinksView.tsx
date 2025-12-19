@@ -134,7 +134,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
         case 'projectIds':
           return link.projectIds.length === 0 ? 0 : 1;
         default:
-          return (link as Record<string, any>)[key];
+          return (link as unknown as Record<string, string | number | undefined>)[key];
       }
     },
   });
