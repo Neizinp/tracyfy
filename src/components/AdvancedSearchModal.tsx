@@ -2,16 +2,18 @@
  * Advanced Search Modal - Query Builder Style
  *
  * Vault-style search with Property → Condition → Value criteria rows.
- * Users can dynamically add multiple search criteria.
+ * Uses useAdvancedSearch hook for search logic.
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { X, Search, Save, Trash2, Plus, ChevronDown, ChevronUp, Filter } from 'lucide-react';
-import { useFileSystem } from '../app/providers';
-import { useCustomAttributes } from '../hooks/useCustomAttributes';
-import { diskFilterService } from '../services/diskFilterService';
-import type { SavedFilter, FilterState } from '../types/filters';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import {
+  useAdvancedSearch,
+  PROPERTY_OPTIONS,
+  CONDITIONS,
+  type SearchResult,
+} from '../hooks/useAdvancedSearch';
 
 interface AdvancedSearchModalProps {
   isOpen: boolean;
@@ -20,120 +22,6 @@ interface AdvancedSearchModalProps {
 }
 
 type ArtifactType = 'requirement' | 'useCase' | 'testCase' | 'information' | 'risk';
-
-interface SearchCriterion {
-  id: string;
-  property: string;
-  condition: string;
-  value: string;
-}
-
-// Type for saved filter state with criteria
-interface CriteriaFilterState {
-  criteria: SearchCriterion[];
-}
-
-interface SearchResult {
-  id: string;
-  title: string;
-  type: ArtifactType;
-  status: string;
-  priority: string;
-  description: string;
-  dateCreated?: number;
-  [key: string]: unknown;
-}
-
-// All searchable properties with metadata
-const PROPERTY_OPTIONS = [
-  { value: 'any', label: 'Any Field', type: 'text' },
-  // Common
-  { value: 'id', label: 'ID', type: 'text' },
-  { value: 'title', label: 'Title', type: 'text' },
-  { value: 'description', label: 'Description', type: 'text' },
-  {
-    value: 'status',
-    label: 'Status',
-    type: 'select',
-    options: [
-      'draft',
-      'active',
-      'approved',
-      'deprecated',
-      'passed',
-      'failed',
-      'blocked',
-      'pending',
-    ],
-  },
-  {
-    value: 'priority',
-    label: 'Priority',
-    type: 'select',
-    options: ['critical', 'high', 'medium', 'low'],
-  },
-  { value: 'revision', label: 'Revision', type: 'text' },
-  { value: 'dateCreated', label: 'Created Date', type: 'date' },
-  { value: 'lastModified', label: 'Modified Date', type: 'date' },
-  // Requirement-specific
-  { value: 'text', label: 'Requirement Text', type: 'text' },
-  { value: 'rationale', label: 'Rationale', type: 'text' },
-  { value: 'author', label: 'Author', type: 'text' },
-  { value: 'verificationMethod', label: 'Verification Method', type: 'text' },
-  { value: 'comments', label: 'Comments', type: 'text' },
-  // Use Case-specific
-  { value: 'actor', label: 'Actor', type: 'text' },
-  { value: 'preconditions', label: 'Preconditions', type: 'text' },
-  { value: 'postconditions', label: 'Postconditions', type: 'text' },
-  { value: 'mainFlow', label: 'Main Flow', type: 'text' },
-  // Test Case-specific
-  { value: 'steps', label: 'Test Steps', type: 'text' },
-  { value: 'expectedResult', label: 'Expected Result', type: 'text' },
-  // Risk-specific
-  { value: 'category', label: 'Risk Category', type: 'text' },
-  {
-    value: 'probability',
-    label: 'Probability',
-    type: 'select',
-    options: ['very-low', 'low', 'medium', 'high', 'very-high'],
-  },
-  {
-    value: 'impact',
-    label: 'Impact',
-    type: 'select',
-    options: ['negligible', 'minor', 'moderate', 'major', 'severe'],
-  },
-  { value: 'mitigation', label: 'Mitigation', type: 'text' },
-  { value: 'owner', label: 'Owner', type: 'text' },
-  // Artifact type filter
-  {
-    value: '_type',
-    label: 'Artifact Type',
-    type: 'select',
-    options: ['requirement', 'useCase', 'testCase', 'information', 'risk'],
-  },
-];
-
-const CONDITIONS = {
-  text: [
-    { value: 'contains', label: 'Contains' },
-    { value: 'equals', label: 'Equals' },
-    { value: 'startsWith', label: 'Starts with' },
-    { value: 'endsWith', label: 'Ends with' },
-    { value: 'notContains', label: 'Does not contain' },
-    { value: 'isEmpty', label: 'Is empty' },
-    { value: 'isNotEmpty', label: 'Is not empty' },
-  ],
-  select: [
-    { value: 'equals', label: 'Is' },
-    { value: 'notEquals', label: 'Is not' },
-  ],
-  date: [
-    { value: 'on', label: 'On' },
-    { value: 'before', label: 'Before' },
-    { value: 'after', label: 'After' },
-  ],
-};
 
 const TYPE_CONFIG: Record<ArtifactType, { label: string; color: string; bgColor: string }> = {
   requirement: { label: 'REQ', color: '#3b82f6', bgColor: 'rgba(59, 130, 246, 0.15)' },
@@ -159,244 +47,36 @@ const inputStyle: React.CSSProperties = {
   minWidth: '120px',
 };
 
-let criterionIdCounter = 0;
-
 export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
   isOpen,
   onClose,
   onNavigateToArtifact,
 }) => {
-  const { requirements, useCases, testCases, information, risks } = useFileSystem();
-  const { definitions: customAttrDefs } = useCustomAttributes();
-
-  // Query builder criteria
-  const [criteria, setCriteria] = useState<SearchCriterion[]>([
-    { id: String(++criterionIdCounter), property: 'any', condition: 'contains', value: '' },
-  ]);
-  const [showCriteria, setShowCriteria] = useState(true);
-
-  // Saved filters
-  const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
-  const [saveFilterName, setSaveFilterName] = useState('');
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  // Use the extracted hook for all search logic
+  const {
+    criteria,
+    showCriteria,
+    setShowCriteria,
+    savedFilters,
+    showSaveDialog,
+    setShowSaveDialog,
+    saveFilterName,
+    setSaveFilterName,
+    results,
+    activeCriteriaCount,
+    allPropertyOptions,
+    customAttrDefs,
+    addCriterion,
+    removeCriterion,
+    updateCriterion,
+    handleClearAll,
+    handleSaveFilter,
+    handleLoadFilter,
+    handleDeleteFilter,
+  } = useAdvancedSearch({ isOpen });
 
   // Close modal on Escape key
   useKeyboardShortcuts({ onClose });
-
-  // Build property options including custom attributes
-  const allPropertyOptions = useMemo(() => {
-    const customProps = customAttrDefs.map((def) => ({
-      value: `custom_${def.id}`,
-      label: `[Custom] ${def.name}`,
-      type: def.type === 'dropdown' ? 'select' : def.type === 'date' ? 'date' : 'text',
-      options: def.type === 'dropdown' ? def.options : undefined,
-    }));
-    return [...PROPERTY_OPTIONS, ...customProps];
-  }, [customAttrDefs]);
-
-  useEffect(() => {
-    if (isOpen) {
-      diskFilterService.getAllFilters().then(setSavedFilters);
-    }
-  }, [isOpen]);
-
-  // Add new criterion
-  const addCriterion = useCallback(() => {
-    setCriteria((prev) => [
-      ...prev,
-      { id: String(++criterionIdCounter), property: 'any', condition: 'contains', value: '' },
-    ]);
-  }, []);
-
-  // Remove criterion
-  const removeCriterion = useCallback((id: string) => {
-    setCriteria((prev) => (prev.length > 1 ? prev.filter((c) => c.id !== id) : prev));
-  }, []);
-
-  // Update criterion
-  const updateCriterion = useCallback(
-    (id: string, field: keyof SearchCriterion, value: string) => {
-      setCriteria((prev) =>
-        prev.map((c) => {
-          if (c.id !== id) return c;
-          const updated = { ...c, [field]: value };
-          // Reset condition when property type changes
-          if (field === 'property') {
-            const prop = allPropertyOptions.find((p) => p.value === value);
-            const type = prop?.type || 'text';
-            updated.condition =
-              CONDITIONS[type as keyof typeof CONDITIONS]?.[0]?.value || 'contains';
-            updated.value = '';
-          }
-          return updated;
-        })
-      );
-    },
-    [allPropertyOptions]
-  );
-
-  // Check if value matches criterion
-  const matchesCriterion = useCallback(
-    (fieldValue: unknown, criterion: SearchCriterion): boolean => {
-      const { condition, value } = criterion;
-
-      if (condition === 'isEmpty') return !fieldValue || String(fieldValue).trim() === '';
-      if (condition === 'isNotEmpty') return !!fieldValue && String(fieldValue).trim() !== '';
-
-      if (!value && condition !== 'isEmpty' && condition !== 'isNotEmpty') return true; // Empty value = no filter
-
-      const strValue = String(fieldValue || '').toLowerCase();
-      const searchValue = value.toLowerCase();
-
-      switch (condition) {
-        case 'contains':
-          return strValue.includes(searchValue);
-        case 'equals':
-          return strValue === searchValue;
-        case 'notEquals':
-          return strValue !== searchValue;
-        case 'startsWith':
-          return strValue.startsWith(searchValue);
-        case 'endsWith':
-          return strValue.endsWith(searchValue);
-        case 'notContains':
-          return !strValue.includes(searchValue);
-        case 'before':
-        case 'after':
-        case 'on': {
-          // Handle date comparisons - convert timestamps (numbers) to YYYY-MM-DD
-          if (!fieldValue) return false;
-          let fieldDate: string;
-          if (typeof fieldValue === 'number') {
-            // Unix timestamp in milliseconds
-            fieldDate = new Date(fieldValue).toISOString().split('T')[0];
-          } else {
-            // Already a date string - extract just the date part
-            fieldDate = String(fieldValue).split('T')[0];
-          }
-          const searchDate = value; // Already YYYY-MM-DD from date input
-          if (condition === 'before') return fieldDate < searchDate;
-          if (condition === 'after') return fieldDate > searchDate;
-          return fieldDate === searchDate; // 'on' / 'equals' for dates
-        }
-        default:
-          return strValue.includes(searchValue);
-      }
-    },
-    []
-  );
-
-  // Get field value from artifact
-  const getFieldValue = useCallback((artifact: SearchResult, property: string): unknown => {
-    if (property === 'any') {
-      return `${artifact.id} ${artifact.title} ${artifact.description || ''} ${artifact.text || ''} ${artifact.rationale || ''}`;
-    }
-    if (property === '_type') return artifact.type;
-    if (property.startsWith('custom_')) {
-      const attrId = property.replace('custom_', '');
-      const customAttrs = artifact.customAttributes as
-        | Array<{ attributeId: string; value: unknown }>
-        | undefined;
-      const attr = customAttrs?.find((a) => a.attributeId === attrId);
-      return attr?.value;
-    }
-    return artifact[property];
-  }, []);
-
-  // Apply all criteria and get results
-  const results: SearchResult[] = useMemo(() => {
-    const allArtifacts: SearchResult[] = [];
-
-    // Collect all artifacts
-    requirements
-      .filter((r) => !r.isDeleted)
-      .forEach((r) => {
-        allArtifacts.push({ ...r, type: 'requirement' as ArtifactType });
-      });
-    useCases
-      .filter((u) => !u.isDeleted)
-      .forEach((u) => {
-        allArtifacts.push({ ...u, type: 'useCase' as ArtifactType });
-      });
-    testCases
-      .filter((t) => !t.isDeleted)
-      .forEach((t) => {
-        allArtifacts.push({ ...t, type: 'testCase' as ArtifactType });
-      });
-    information
-      .filter((i) => !i.isDeleted)
-      .forEach((i) => {
-        allArtifacts.push({
-          ...i,
-          type: 'information' as ArtifactType,
-          status: 'active',
-          priority: 'medium',
-          description: i.content,
-        });
-      });
-    risks
-      .filter((r) => !r.isDeleted)
-      .forEach((r) => {
-        allArtifacts.push({ ...r, type: 'risk' as ArtifactType, priority: r.impact });
-      });
-
-    // Filter by all criteria (AND logic)
-    return allArtifacts.filter((artifact) => {
-      return criteria.every((criterion) => {
-        if (
-          !criterion.value &&
-          criterion.condition !== 'isEmpty' &&
-          criterion.condition !== 'isNotEmpty'
-        ) {
-          return true; // Empty criteria = no filter
-        }
-        const fieldValue = getFieldValue(artifact, criterion.property);
-        return matchesCriterion(fieldValue, criterion);
-      });
-    });
-  }, [
-    requirements,
-    useCases,
-    testCases,
-    information,
-    risks,
-    criteria,
-    getFieldValue,
-    matchesCriterion,
-  ]);
-
-  const handleClearAll = useCallback(() => {
-    setCriteria([
-      { id: String(++criterionIdCounter), property: 'any', condition: 'contains', value: '' },
-    ]);
-  }, []);
-
-  const handleSaveFilter = useCallback(async () => {
-    if (!saveFilterName.trim()) return;
-    // Save criteria as filter
-    const filterState = {
-      criteria: criteria.filter((c) => c.value || c.condition.includes('Empty')),
-    };
-    await diskFilterService.createFilter(
-      saveFilterName.trim(),
-      filterState as unknown as FilterState
-    );
-    setSavedFilters(await diskFilterService.getAllFilters());
-    setSaveFilterName('');
-    setShowSaveDialog(false);
-  }, [saveFilterName, criteria]);
-
-  const handleLoadFilter = useCallback((filter: SavedFilter) => {
-    const saved = filter.filters as unknown as CriteriaFilterState;
-    if (saved.criteria) {
-      setCriteria(saved.criteria);
-    }
-  }, []);
-
-  const handleDeleteFilter = useCallback(async (id: string) => {
-    await diskFilterService.deleteFilter(id);
-    setSavedFilters(await diskFilterService.getAllFilters());
-  }, []);
 
   const handleResultClick = useCallback(
     (result: SearchResult) => {
@@ -407,10 +87,6 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
   );
 
   if (!isOpen) return null;
-
-  const activeCriteriaCount = criteria.filter(
-    (c) => c.value || c.condition.includes('Empty')
-  ).length;
 
   return (
     <div
@@ -756,7 +432,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
               </div>
             ) : (
               results.slice(0, 100).map((result) => {
-                const typeConfig = TYPE_CONFIG[result.type];
+                const typeConfig = TYPE_CONFIG[result.type as ArtifactType];
                 return (
                   <div
                     key={`${result.type}-${result.id}`}
@@ -786,8 +462,8 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                           fontWeight: 700,
                           padding: '3px 8px',
                           borderRadius: '4px',
-                          backgroundColor: typeConfig.bgColor,
-                          color: typeConfig.color,
+                          backgroundColor: typeConfig?.bgColor || 'rgba(100,100,100,0.15)',
+                          color: typeConfig?.color || '#888',
                         }}
                       >
                         {result.id}
