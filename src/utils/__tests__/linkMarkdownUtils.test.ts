@@ -24,11 +24,11 @@ describe('linkMarkdownUtils', () => {
       const markdown = linkToMarkdown(link);
 
       expect(markdown).toContain('---');
-      expect(markdown).toContain('id: LINK-001');
-      expect(markdown).toContain('sourceId: REQ-001');
-      expect(markdown).toContain('targetId: UC-001');
-      expect(markdown).toContain('type: satisfies');
-      expect(markdown).toContain('projectIds: ');
+      expect(markdown).toContain('id: "LINK-001"');
+      expect(markdown).toContain('sourceId: "REQ-001"');
+      expect(markdown).toContain('targetId: "UC-001"');
+      expect(markdown).toContain('type: "satisfies"');
+      expect(markdown).toContain('projectIds: []');
       expect(markdown).toContain('dateCreated: 1700000000000');
       expect(markdown).toContain('lastModified: 1700000100000');
     });
@@ -46,7 +46,9 @@ describe('linkMarkdownUtils', () => {
 
       const markdown = linkToMarkdown(link);
 
-      expect(markdown).toContain('projectIds: PRJ-001, PRJ-002');
+      expect(markdown).toContain('projectIds:');
+      expect(markdown).toContain('  - "PRJ-001"');
+      expect(markdown).toContain('  - "PRJ-002"');
     });
 
     it('should include human-readable content in body', () => {
@@ -104,11 +106,11 @@ describe('linkMarkdownUtils', () => {
   describe('parseMarkdownLink', () => {
     it('should parse a valid markdown link file', () => {
       const content = `---
-id: LINK-001
-sourceId: REQ-001
-targetId: UC-001
-type: satisfies
-projectIds: 
+id: "LINK-001"
+sourceId: "REQ-001"
+targetId: "UC-001"
+type: "satisfies"
+projectIds: []
 dateCreated: 1700000000000
 lastModified: 1700000100000
 ---
@@ -132,10 +134,10 @@ Links **REQ-001** to **UC-001** (satisfies)
 
     it('should parse project-scoped links correctly', () => {
       const content = `---
-id: LINK-002
-sourceId: REQ-002
-targetId: TC-001
-type: verifies
+id: "LINK-002"
+sourceId: "REQ-002"
+targetId: "TC-001"
+type: "verifies"
 projectIds: PRJ-001, PRJ-002
 dateCreated: 1700000000000
 lastModified: 1700000000000
@@ -160,8 +162,8 @@ lastModified: 1700000000000
 
     it('should return null for missing required fields', () => {
       const content = `---
-id: LINK-001
-sourceId: REQ-001
+id: "LINK-001"
+sourceId: "REQ-001"
 ---
 
 # Incomplete
@@ -174,11 +176,11 @@ sourceId: REQ-001
 
     it('should handle missing dateCreated with default', () => {
       const content = `---
-id: LINK-001
-sourceId: REQ-001
-targetId: UC-001
-type: satisfies
-projectIds: 
+id: "LINK-001"
+sourceId: "REQ-001"
+targetId: "UC-001"
+type: "satisfies"
+projectIds: []
 ---
 
 # LINK-001
@@ -207,11 +209,11 @@ projectIds:
 
       types.forEach((type) => {
         const content = `---
-id: LINK-001
-sourceId: REQ-001
-targetId: UC-001
-type: ${type}
-projectIds: 
+id: "LINK-001"
+sourceId: "REQ-001"
+targetId: "UC-001"
+type: "${type}"
+projectIds: []
 dateCreated: 1700000000000
 lastModified: 1700000000000
 ---
@@ -225,10 +227,10 @@ lastModified: 1700000000000
 
     it('should trim whitespace from project IDs', () => {
       const content = `---
-id: LINK-001
-sourceId: REQ-001
-targetId: UC-001
-type: satisfies
+id: "LINK-001"
+sourceId: "REQ-001"
+targetId: "UC-001"
+type: "satisfies"
 projectIds:   PRJ-001  ,  PRJ-002  
 dateCreated: 1700000000000
 lastModified: 1700000000000

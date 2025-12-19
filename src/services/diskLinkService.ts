@@ -1,19 +1,10 @@
-/**
- * Disk Link Service
- *
- * CRUD operations for Link entities stored in the links/ folder.
- * Each link is a Markdown file with YAML frontmatter.
- */
-
-import { fileSystemService } from './fileSystemService';
-import { diskProjectService } from './diskProjectService';
+import { BaseArtifactService } from './baseArtifactService';
 import type { Link } from '../types';
 import type { LinkType } from '../utils/linkTypes';
 import { getInverseType } from '../utils/linkTypes';
 import { linkToMarkdown, parseMarkdownLink } from '../utils/linkMarkdownUtils';
-
-const LINKS_DIR = 'links';
-const LINK_COUNTER_FILE = 'counters/links.md';
+import { getTypeFromId } from '../constants/artifactConfig';
+import { idService } from './idService';
 
 /**
  * Incoming link representation (from target's perspective)
@@ -25,89 +16,26 @@ export interface IncomingLink {
   linkType: LinkType; // The inverse type
 }
 
-class DiskLinkService {
+class DiskLinkService extends BaseArtifactService<Link> {
+  constructor() {
+    super('links', {
+      serialize: linkToMarkdown,
+      deserialize: parseMarkdownLink,
+    });
+  }
+
   /**
-   * Initialize links directory
+   * Initialize the service (ensure directory exists)
    */
   async initialize(): Promise<void> {
-    await fileSystemService.getOrCreateDirectory(LINKS_DIR);
-  }
-
-  /**
-   * Get counter value from file
-   */
-  private async getCounter(): Promise<number> {
-    try {
-      const content = await fileSystemService.readFile(LINK_COUNTER_FILE);
-      if (content) {
-        return parseInt(content.trim(), 10) || 0;
-      }
-    } catch {
-      // File doesn't exist
-    }
-    return 0;
-  }
-
-  /**
-   * Set counter value
-   */
-  private async setCounter(value: number): Promise<void> {
-    await fileSystemService.writeFile(LINK_COUNTER_FILE, String(value));
-  }
-
-  /**
-   * Get next link ID
-   */
-  async getNextId(): Promise<string> {
-    const current = await this.getCounter();
-    const next = current + 1;
-    await this.setCounter(next);
-    return `LINK-${String(next).padStart(3, '0')}`;
-  }
-
-  /**
-   * Recalculate counter from existing link files
-   */
-  async recalculateCounter(): Promise<void> {
-    const links = await this.getAllLinks();
-    let maxNum = 0;
-
-    for (const link of links) {
-      const match = link.id.match(/LINK-(\d+)/);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        if (num > maxNum) maxNum = num;
-      }
-    }
-
-    await this.setCounter(maxNum);
+    await super.initialize();
   }
 
   /**
    * Get all links
    */
   async getAllLinks(): Promise<Link[]> {
-    const links: Link[] = [];
-
-    try {
-      const files = await fileSystemService.listFiles(LINKS_DIR);
-
-      for (const file of files) {
-        if (!file.endsWith('.md')) continue;
-
-        const content = await fileSystemService.readFile(`${LINKS_DIR}/${file}`);
-        if (content) {
-          const link = parseMarkdownLink(content);
-          if (link) {
-            links.push(link);
-          }
-        }
-      }
-    } catch {
-      // Directory might not exist
-    }
-
-    return links;
+    return this.loadAll();
   }
 
   /**
@@ -129,95 +57,9 @@ class DiskLinkService {
       .map((link) => ({
         linkId: link.id,
         sourceId: link.sourceId,
-        sourceType: this.getArtifactType(link.sourceId),
+        sourceType: getTypeFromId(link.sourceId),
         linkType: getInverseType(link.type),
       }));
-  }
-
-  /**
-   * Create a new link
-   * @param projectIds - Empty array = global (all projects), populated = project-specific
-   */
-  async createLink(
-    sourceId: string,
-    targetId: string,
-    type: LinkType,
-    projectIds: string[] = []
-  ): Promise<Link> {
-    // Ensure links folder exists
-    await this.initialize();
-
-    // Generate new ID
-    const id = await diskProjectService.getNextIdWithSync('links');
-    const now = Date.now();
-
-    const link: Link = {
-      id,
-      sourceId,
-      targetId,
-      type,
-      projectIds,
-      dateCreated: now,
-      lastModified: now,
-    };
-
-    // Write to file
-    const content = linkToMarkdown(link);
-    await fileSystemService.writeFile(`${LINKS_DIR}/${id}.md`, content);
-
-    return link;
-  }
-
-  /**
-   * Delete a link
-   */
-  async deleteLink(linkId: string): Promise<void> {
-    try {
-      await fileSystemService.deleteFile(`${LINKS_DIR}/${linkId}.md`);
-    } catch (error) {
-      console.error(`Failed to delete link ${linkId}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get a single link by ID
-   */
-  async getLinkById(linkId: string): Promise<Link | null> {
-    try {
-      const content = await fileSystemService.readFile(`${LINKS_DIR}/${linkId}.md`);
-      if (content) {
-        return parseMarkdownLink(content);
-      }
-    } catch {
-      // File doesn't exist
-    }
-    return null;
-  }
-
-  /**
-   * Update an existing link
-   */
-  async updateLink(
-    linkId: string,
-    updates: Partial<Pick<Link, 'type' | 'projectIds'>>
-  ): Promise<Link | null> {
-    const existingLink = await this.getLinkById(linkId);
-    if (!existingLink) {
-      console.error(`Link ${linkId} not found`);
-      return null;
-    }
-
-    const updatedLink: Link = {
-      ...existingLink,
-      ...updates,
-      lastModified: Date.now(),
-    };
-
-    const content = linkToMarkdown(updatedLink);
-    await fileSystemService.writeFile(`${LINKS_DIR}/${linkId}.md`, content);
-
-    return updatedLink;
   }
 
   /**
@@ -234,24 +76,13 @@ class DiskLinkService {
   }
 
   /**
-   * Derive artifact type from ID prefix
-   */
-  private getArtifactType(id: string): string {
-    if (id.startsWith('REQ-')) return 'requirement';
-    if (id.startsWith('UC-')) return 'usecase';
-    if (id.startsWith('TC-')) return 'testcase';
-    if (id.startsWith('INFO-')) return 'information';
-    return 'unknown';
-  }
-
-  /**
    * Get links visible to a specific project
    * Returns links that are global (empty projectIds) OR include the given project ID
    */
   async getLinksForProject(projectId: string): Promise<Link[]> {
     const allLinks = await this.getAllLinks();
     return allLinks.filter(
-      (link) => link.projectIds.length === 0 || link.projectIds.includes(projectId)
+      (link) => !link.projectIds || link.projectIds.length === 0 || link.projectIds.includes(projectId)
     );
   }
 
@@ -260,7 +91,7 @@ class DiskLinkService {
    */
   async getGlobalLinks(): Promise<Link[]> {
     const allLinks = await this.getAllLinks();
-    return allLinks.filter((link) => link.projectIds.length === 0);
+    return allLinks.filter((link) => !link.projectIds || link.projectIds.length === 0);
   }
 
   /**
@@ -281,10 +112,62 @@ class DiskLinkService {
       .map((link) => ({
         linkId: link.id,
         sourceId: link.sourceId,
-        sourceType: this.getArtifactType(link.sourceId),
+        sourceType: getTypeFromId(link.sourceId),
         linkType: getInverseType(link.type),
       }));
+  }
+
+  /**
+   * Create a new link
+   */
+  async createLink(
+    sourceId: string,
+    targetId: string,
+    type: LinkType,
+    projectIds: string[] = []
+  ): Promise<Link> {
+    const nextId = await idService.getNextIdWithSync('LINK');
+    const link: Link = {
+      id: nextId,
+      sourceId,
+      targetId,
+      type,
+      projectIds,
+      dateCreated: Date.now(),
+      lastModified: Date.now(),
+    };
+    return this.save(link);
+  }
+
+  /**
+   * Delete a link
+   */
+  async deleteLink(id: string): Promise<void> {
+    await this.delete(id);
+  }
+
+  /**
+   * Get link by ID
+   */
+  async getLinkById(id: string): Promise<Link | null> {
+    return this.load(id);
+  }
+
+  /**
+   * Update a link
+   */
+  async updateLink(id: string, updates: Partial<Link>): Promise<Link | null> {
+    const link = await this.load(id);
+    if (!link) return null;
+
+    const updatedLink = {
+      ...link,
+      ...updates,
+      lastModified: Date.now(),
+    };
+    return this.save(updatedLink);
   }
 }
 
 export const diskLinkService = new DiskLinkService();
+export const linkService = diskLinkService;

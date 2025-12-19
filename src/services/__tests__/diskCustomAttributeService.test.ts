@@ -7,6 +7,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { diskCustomAttributeService } from '../diskCustomAttributeService';
 import { fileSystemService } from '../fileSystemService';
+import { idService } from '../idService';
+
+// Mock the idService
+vi.mock('../idService', () => ({
+  idService: {
+    getNextIdWithSync: vi.fn(),
+  },
+}));
 
 // Mock the fileSystemService
 vi.mock('../fileSystemService', () => ({
@@ -144,7 +152,7 @@ Is this a safety-critical item?
 
   describe('createDefinition', () => {
     it('should create a new definition file with generated ID', async () => {
-      vi.mocked(fileSystemService.readFile).mockResolvedValue(null); // Counter doesn't exist
+      vi.mocked(idService.getNextIdWithSync).mockResolvedValue('ATTR-001');
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
       vi.mocked(fileSystemService.listFiles).mockResolvedValue([]);
       vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
@@ -157,6 +165,7 @@ Is this a safety-critical item?
         description: 'A test attribute',
         appliesTo: ['requirement'],
         required: false,
+        options: [],
       });
 
       expect(definition.id).toBe('ATTR-001');
@@ -168,34 +177,8 @@ Is this a safety-critical item?
       );
     });
 
-    it('should increment counter for subsequent definitions', async () => {
-      vi.mocked(fileSystemService.readFile).mockImplementation(async (path) => {
-        if (path === 'counters/custom-attributes.md') return '5';
-        return null;
-      });
-      vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue([]);
-      vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
-        undefined as unknown as FileSystemDirectoryHandle
-      );
-
-      const definition = await diskCustomAttributeService.createDefinition({
-        name: 'New Attribute',
-        type: 'number',
-        description: '',
-        appliesTo: ['testCase'],
-        required: false,
-      });
-
-      expect(definition.id).toBe('ATTR-006');
-      expect(fileSystemService.writeFile).toHaveBeenCalledWith(
-        'counters/custom-attributes.md',
-        '6'
-      );
-    });
-
     it('should set dateCreated and lastModified', async () => {
-      vi.mocked(fileSystemService.readFile).mockResolvedValue(null);
+      vi.mocked(idService.getNextIdWithSync).mockResolvedValue('ATTR-001');
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
       vi.mocked(fileSystemService.listFiles).mockResolvedValue([]);
       vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
@@ -209,6 +192,7 @@ Is this a safety-critical item?
         description: '',
         appliesTo: ['requirement'],
         required: false,
+        options: [],
       });
       const after = Date.now();
 
@@ -291,7 +275,7 @@ Is this a safety-critical item?
     it('should delete the definition file', async () => {
       vi.mocked(fileSystemService.deleteFile).mockResolvedValue(undefined);
 
-      await diskCustomAttributeService.permanentDeleteDefinition('ATTR-001');
+      await diskCustomAttributeService.deleteDefinition('ATTR-001', true);
 
       expect(fileSystemService.deleteFile).toHaveBeenCalledWith('custom-attributes/ATTR-001.md');
     });
@@ -300,7 +284,7 @@ Is this a safety-critical item?
       vi.mocked(fileSystemService.deleteFile).mockRejectedValue(new Error('Delete failed'));
 
       await expect(
-        diskCustomAttributeService.permanentDeleteDefinition('ATTR-999')
+        diskCustomAttributeService.deleteDefinition('ATTR-999', true)
       ).rejects.toThrow('Delete failed');
     });
   });

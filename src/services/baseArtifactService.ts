@@ -46,9 +46,17 @@ export class BaseArtifactService<T extends { id: string }> {
   }
 
   /**
+   * Initialize the service (ensure directory exists)
+   */
+  async initialize(): Promise<void> {
+    const folder = this.config.folder;
+    await fileSystemService.getOrCreateDirectory(folder);
+  }
+
+  /**
    * Save an artifact to disk and optionally commit to git
    */
-  async save(item: T, commitMessage?: string): Promise<void> {
+  async save(item: T, commitMessage?: string): Promise<T> {
     const path = this.getFilePath(item.id);
     const content = this.serializer.serialize(item);
 
@@ -59,6 +67,7 @@ export class BaseArtifactService<T extends { id: string }> {
     }
 
     debug.log(`[BaseArtifactService] Saved ${this.typeKey}: ${item.id}`);
+    return item;
   }
 
   /**
@@ -76,9 +85,27 @@ export class BaseArtifactService<T extends { id: string }> {
   }
 
   /**
+   * Soft delete an artifact by setting isDeleted flag
+   */
+  async softDelete(id: string, commitMessage?: string): Promise<void> {
+    const item = await this.load(id);
+    if (!item) return;
+
+    const updated = {
+      ...item,
+      isDeleted: true,
+      deletedAt: Date.now(),
+      lastModified: Date.now(),
+    };
+
+    await this.save(updated as unknown as T, commitMessage);
+    debug.log(`[BaseArtifactService] Soft deleted ${this.typeKey}: ${id}`);
+  }
+
+  /**
    * Load all artifacts of this type from disk
    */
-  async loadAll(): Promise<T[]> {
+  async loadAll(includeDeleted: boolean = false): Promise<T[]> {
     const items: T[] = [];
     const folder = this.config.folder;
     const extension = '.md';
@@ -92,6 +119,7 @@ export class BaseArtifactService<T extends { id: string }> {
         if (content) {
           const item = this.serializer.deserialize(content);
           if (item) {
+            if (!includeDeleted && (item as { isDeleted?: boolean }).isDeleted) continue;
             items.push(item);
           }
         }

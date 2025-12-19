@@ -7,6 +7,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { diskLinkService } from '../diskLinkService';
 import { fileSystemService } from '../fileSystemService';
+import { idService } from '../idService';
+
+// Mock the idService
+vi.mock('../idService', () => ({
+  idService: {
+    getNextIdWithSync: vi.fn(),
+  },
+}));
 
 // Mock the fileSystemService
 vi.mock('../fileSystemService', () => ({
@@ -159,7 +167,7 @@ lastModified: 1700000000000
 
   describe('createLink', () => {
     it('should create a new link file with generated ID', async () => {
-      vi.mocked(fileSystemService.readFile).mockResolvedValue(null); // Counter doesn't exist
+      vi.mocked(idService.getNextIdWithSync).mockResolvedValue('LINK-001');
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
       vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
         undefined as unknown as FileSystemDirectoryHandle
@@ -178,36 +186,8 @@ lastModified: 1700000000000
       );
     });
 
-    it('should increment counter for subsequent links', async () => {
-      vi.mocked(fileSystemService.readFile).mockResolvedValue('5'); // Counter at 5
-      vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
-      vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
-        undefined as unknown as FileSystemDirectoryHandle
-      );
-
-      const link = await diskLinkService.createLink('REQ-001', 'TC-001', 'verifies');
-
-      expect(link.id).toBe('LINK-006');
-      expect(fileSystemService.writeFile).toHaveBeenCalledWith('counters/links.md', '6');
-    });
-
-    it('should create project-scoped links', async () => {
-      vi.mocked(fileSystemService.readFile).mockResolvedValue(null);
-      vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
-      vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
-        undefined as unknown as FileSystemDirectoryHandle
-      );
-
-      const link = await diskLinkService.createLink('REQ-001', 'UC-001', 'satisfies', [
-        'PRJ-001',
-        'PRJ-002',
-      ]);
-
-      expect(link.projectIds).toEqual(['PRJ-001', 'PRJ-002']);
-    });
-
     it('should set dateCreated and lastModified', async () => {
-      vi.mocked(fileSystemService.readFile).mockResolvedValue(null);
+      vi.mocked(idService.getNextIdWithSync).mockResolvedValue('LINK-001');
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
       vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
         undefined as unknown as FileSystemDirectoryHandle
@@ -270,7 +250,7 @@ lastModified: 1700000000000
       expect(updated!.type).toBe('depends_on');
       expect(fileSystemService.writeFile).toHaveBeenCalledWith(
         'links/LINK-001.md',
-        expect.stringContaining('type: depends_on')
+        expect.stringContaining('type: "depends_on"')
       );
     });
 
@@ -373,26 +353,4 @@ lastModified: 1700000000000
     });
   });
 
-  describe('recalculateCounter', () => {
-    it('should set counter to highest existing link number', async () => {
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue([
-        'LINK-001.md',
-        'LINK-005.md',
-        'LINK-003.md',
-      ]);
-      vi.mocked(fileSystemService.readFile).mockImplementation(async (path) => {
-        if (path.endsWith('LINK-001.md')) return sampleLinkMarkdown.replace('LINK-001', 'LINK-001');
-        if (path.endsWith('LINK-005.md'))
-          return sampleLinkMarkdown.replace(/LINK-001/g, 'LINK-005');
-        if (path.endsWith('LINK-003.md'))
-          return sampleLinkMarkdown.replace(/LINK-001/g, 'LINK-003');
-        return null;
-      });
-      vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
-
-      await diskLinkService.recalculateCounter();
-
-      expect(fileSystemService.writeFile).toHaveBeenCalledWith('counters/links.md', '5');
-    });
-  });
 });

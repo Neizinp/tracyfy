@@ -5,146 +5,95 @@
  */
 
 import type { Workflow } from '../types';
+import { objectToYaml, parseYamlFrontmatter, ensureArray } from './markdownBase';
 
 /**
  * Convert a Workflow object to Markdown with YAML frontmatter
  */
 export function workflowToMarkdown(workflow: Workflow): string {
-  const lines: string[] = [
-    '---',
-    `id: ${workflow.id}`,
-    `title: ${workflow.title}`,
-    `createdBy: ${workflow.createdBy}`,
-    `assignedTo: ${workflow.assignedTo}`,
-    `status: ${workflow.status}`,
-    `artifactIds: ${workflow.artifactIds.join(', ')}`,
-    `dateCreated: ${workflow.dateCreated}`,
-    `lastModified: ${workflow.lastModified}`,
-    `revision: ${workflow.revision}`,
-  ];
+  const frontmatter = {
+    id: workflow.id,
+    title: workflow.title,
+    createdBy: workflow.createdBy,
+    assignedTo: workflow.assignedTo,
+    status: workflow.status,
+    artifactIds: workflow.artifactIds || [],
+    dateCreated: workflow.dateCreated,
+    lastModified: workflow.lastModified,
+    revision: workflow.revision,
+    approvedBy: workflow.approvedBy || null,
+    approvalDate: workflow.approvalDate || null,
+    approverComment: workflow.approverComment || null,
+    isDeleted: workflow.isDeleted || false,
+    deletedAt: workflow.deletedAt || null,
+  };
 
-  // Optional fields
-  if (workflow.approvedBy) {
-    lines.push(`approvedBy: ${workflow.approvedBy}`);
-  }
-  if (workflow.approvalDate) {
-    lines.push(`approvalDate: ${workflow.approvalDate}`);
-  }
-  if (workflow.approverComment) {
-    // Escape newlines in comment
-    lines.push(`approverComment: ${workflow.approverComment.replace(/\n/g, '\\n')}`);
-  }
-  if (workflow.isDeleted) {
-    lines.push(`isDeleted: ${workflow.isDeleted}`);
-  }
-  if (workflow.deletedAt) {
-    lines.push(`deletedAt: ${workflow.deletedAt}`);
-  }
+  const yaml = objectToYaml(frontmatter);
 
-  lines.push('---');
-  lines.push('');
-  lines.push(`# ${workflow.title}`);
-  lines.push('');
+  const artifactsList =
+    workflow.artifactIds.length > 0
+      ? workflow.artifactIds.map((id) => `- ${id}`).join('\n')
+      : '_No artifacts linked_';
 
-  // Description content (markdown body)
-  if (workflow.description) {
-    lines.push(workflow.description);
-    lines.push('');
-  }
-
-  // List linked artifacts
-  lines.push('## Artifacts for Approval');
-  lines.push('');
-  if (workflow.artifactIds.length > 0) {
-    workflow.artifactIds.forEach((id) => {
-      lines.push(`- ${id}`);
-    });
-  } else {
-    lines.push('_No artifacts linked_');
-  }
-  lines.push('');
-
-  // Status section
-  lines.push('## Status');
-  lines.push('');
+  let statusText = '_Pending approval_';
   if (workflow.status === 'approved') {
-    lines.push(
-      `**Approved** by ${workflow.approvedBy} on ${new Date(workflow.approvalDate!).toISOString()}`
-    );
-    if (workflow.approverComment) {
-      lines.push('');
-      lines.push('**Comment:**');
-      lines.push(workflow.approverComment);
-    }
+    statusText = `**Approved** by ${workflow.approvedBy} on ${new Date(
+      workflow.approvalDate!
+    ).toISOString()}${workflow.approverComment ? `\n\n**Comment:**\n${workflow.approverComment}` : ''
+      }`;
   } else if (workflow.status === 'rejected') {
-    lines.push(`**Rejected** by ${workflow.approvedBy}`);
-    if (workflow.approverComment) {
-      lines.push('');
-      lines.push('**Reason:**');
-      lines.push(workflow.approverComment);
-    }
-  } else {
-    lines.push('_Pending approval_');
+    statusText = `**Rejected** by ${workflow.approvedBy}${workflow.approverComment ? `\n\n**Reason:**\n${workflow.approverComment}` : ''
+      }`;
   }
 
-  return lines.join('\n') + '\n';
+  const body = `# ${workflow.title}
+
+${workflow.description || ''}
+
+## Artifacts for Approval
+${artifactsList}
+
+## Status
+${statusText}
+`.trim();
+
+  return `${yaml}\n\n${body}`;
 }
 
 /**
  * Parse a Markdown file to extract Workflow data
  */
 export function parseMarkdownWorkflow(content: string): Workflow | null {
-  // Extract YAML frontmatter
-  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-  if (!frontmatterMatch) {
+  const { frontmatter, body } = parseYamlFrontmatter(content);
+
+  if (
+    !frontmatter.id ||
+    !frontmatter.title ||
+    !frontmatter.createdBy ||
+    !frontmatter.assignedTo ||
+    !frontmatter.status
+  ) {
     return null;
   }
 
-  const frontmatter = frontmatterMatch[1];
-  const data: Record<string, string> = {};
-
-  // Parse YAML lines
-  frontmatter.split('\n').forEach((line) => {
-    const colonIndex = line.indexOf(':');
-    if (colonIndex > 0) {
-      const key = line.slice(0, colonIndex).trim();
-      const value = line.slice(colonIndex + 1).trim();
-      data[key] = value;
-    }
-  });
-
-  // Validate required fields
-  if (!data.id || !data.title || !data.createdBy || !data.assignedTo || !data.status) {
-    return null;
-  }
-
-  // Extract markdown body (description) - everything between frontmatter end and "## Artifacts" section
-  const bodyMatch = content.match(/---\n\n# [^\n]+\n\n([\s\S]*?)(?=\n## Artifacts|\n## Status|$)/);
-  const description = bodyMatch ? bodyMatch[1].trim() : '';
-
-  // Parse artifactIds: comma-separated string -> array
-  const artifactIds = data.artifactIds
-    ? data.artifactIds
-        .split(',')
-        .map((id) => id.trim())
-        .filter((id) => id.length > 0)
-    : [];
+  // Description is everything before the first H2 section
+  const description = body.split('\n## ')[0].replace(/^# [^\n]+\n+/, '').trim();
 
   return {
-    id: data.id,
-    title: data.title,
+    id: (frontmatter.id as string) || '',
+    title: (frontmatter.title as string) || '',
     description,
-    createdBy: data.createdBy,
-    assignedTo: data.assignedTo,
-    status: data.status as 'pending' | 'approved' | 'rejected',
-    artifactIds,
-    approvedBy: data.approvedBy || undefined,
-    approvalDate: data.approvalDate ? parseInt(data.approvalDate, 10) : undefined,
-    approverComment: data.approverComment ? data.approverComment.replace(/\\n/g, '\n') : undefined,
-    dateCreated: parseInt(data.dateCreated, 10) || Date.now(),
-    lastModified: parseInt(data.lastModified, 10) || Date.now(),
-    isDeleted: data.isDeleted === 'true',
-    deletedAt: data.deletedAt ? parseInt(data.deletedAt, 10) : undefined,
-    revision: data.revision || '1',
+    createdBy: (frontmatter.createdBy as string) || '',
+    assignedTo: (frontmatter.assignedTo as string) || '',
+    status: frontmatter.status as 'pending' | 'approved' | 'rejected',
+    artifactIds: ensureArray<string>(frontmatter.artifactIds),
+    approvedBy: (frontmatter.approvedBy as string) || undefined,
+    approvalDate: (frontmatter.approvalDate as number) || undefined,
+    approverComment: (frontmatter.approverComment as string) || undefined,
+    dateCreated: (frontmatter.dateCreated as number) || Date.now(),
+    lastModified: (frontmatter.lastModified as number) || Date.now(),
+    isDeleted: (frontmatter.isDeleted as boolean) || false,
+    deletedAt: (frontmatter.deletedAt as number) || undefined,
+    revision: (frontmatter.revision as string) || '1',
   };
 }

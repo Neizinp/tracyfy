@@ -79,6 +79,10 @@ const userSerializer: ArtifactSerializer<User> = {
 export const userService = new BaseArtifactService<User>('users', userSerializer);
 
 // Registry of all artifact services for generic iteration
+import { diskLinkService } from './diskLinkService';
+import { diskWorkflowService } from './diskWorkflowService';
+import { diskCustomAttributeService } from './diskCustomAttributeService';
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ALL_ARTIFACT_SERVICES: Record<string, BaseArtifactService<any>> = {
   requirements: requirementService,
@@ -88,4 +92,7 @@ export const ALL_ARTIFACT_SERVICES: Record<string, BaseArtifactService<any>> = {
   risks: riskService,
   users: userService,
   projects: projectService,
+  links: diskLinkService,
+  workflows: diskWorkflowService,
+  customAttributes: diskCustomAttributeService,
 };

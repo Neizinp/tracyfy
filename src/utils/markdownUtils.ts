@@ -1,212 +1,12 @@
-import type { Requirement, UseCase, TestCase, Information, User, Project, Risk } from '../types';
-import type { CustomAttributeDefinition, CustomAttributeValue } from '../types/customAttributes';
-
-/**
- * Filter out corrupted custom attribute values (strings like "[object Object]")
- * that may have been saved due to previous serialization bugs
- */
-function filterValidCustomAttributes(
-  attrs: CustomAttributeValue[] | undefined
-): CustomAttributeValue[] {
-  return (attrs || []).filter(
-    (attr): attr is CustomAttributeValue =>
-      typeof attr === 'object' && attr !== null && 'attributeId' in attr
-  );
-}
-
-/**
- * Convert a JavaScript object to YAML frontmatter string
- */
-function objectToYaml(obj: Record<string, any>): string {
-  const lines: string[] = ['---'];
-
-  for (const [key, value] of Object.entries(obj)) {
-    if (value === undefined || value === null) continue;
-
-    if (typeof value === 'string') {
-      // Escape quotes and handle multiline strings
-      if (value.includes('\n')) {
-        lines.push(`${key}: |`);
-        value.split('\n').forEach((line) => lines.push(`  ${line}`));
-      } else {
-        const escaped = value.replace(/"/g, '\\"');
-        lines.push(`${key}: "${escaped}"`);
-      }
-    } else if (Array.isArray(value)) {
-      if (value.length === 0) {
-        lines.push(`${key}: []`);
-      } else {
-        lines.push(`${key}:`);
-        value.forEach((item) => {
-          if (typeof item === 'string') {
-            lines.push(`  - "${item}"`);
-          } else if (typeof item === 'object' && item !== null) {
-            // Serialize objects as JSON for proper storage
-            lines.push(`  - ${JSON.stringify(item)}`);
-          } else {
-            lines.push(`  - ${item}`);
-          }
-        });
-      }
-    } else if (typeof value === 'boolean') {
-      lines.push(`${key}: ${value}`);
-    } else if (typeof value === 'number') {
-      lines.push(`${key}: ${value}`);
-    } else if (typeof value === 'object') {
-      // Nested object - simple representation
-      lines.push(`${key}: ${JSON.stringify(value)}`);
-    }
-  }
-
-  lines.push('---');
-  return lines.join('\n');
-}
-
-/**
- * Parse YAML frontmatter from markdown content
- */
-function parseYamlFrontmatter(content: string): { frontmatter: Record<string, any>; body: string } {
-  const lines = content.split('\n');
-
-  if (lines[0] !== '---') {
-    return { frontmatter: {}, body: content };
-  }
-
-  let endIndex = -1;
-  for (let i = 1; i < lines.length; i++) {
-    if (lines[i] === '---') {
-      endIndex = i;
-      break;
-    }
-  }
-
-  if (endIndex === -1) {
-    return { frontmatter: {}, body: content };
-  }
-
-  const frontmatterLines = lines.slice(1, endIndex);
-  const bodyLines = lines.slice(endIndex + 1);
-
-  const frontmatter: Record<string, any> = {};
-  let currentKey: string | null = null;
-  let currentMultiline: string[] = [];
-  let isMultiline = false;
-  let isArrayList = false;
-  let currentArray: any[] = [];
-
-  for (const line of frontmatterLines) {
-    if (line.trim() === '') continue;
-
-    // Handle YAML array list items (  - "value" or   - value or   - {json})
-    if (isArrayList) {
-      if (line.startsWith('  - ')) {
-        const itemValue = line.substring(4).trim();
-        // Parse the array item value
-        if (itemValue.startsWith('"') && itemValue.endsWith('"')) {
-          currentArray.push(itemValue.slice(1, -1).replace(/\\"/g, '"'));
-        } else if (itemValue.startsWith('{') && itemValue.endsWith('}')) {
-          // Parse JSON object
-          try {
-            currentArray.push(JSON.parse(itemValue));
-          } catch {
-            currentArray.push(itemValue);
-          }
-        } else if (itemValue === 'true' || itemValue === 'false') {
-          currentArray.push(itemValue === 'true');
-        } else if (!isNaN(Number(itemValue)) && itemValue !== '') {
-          currentArray.push(Number(itemValue));
-        } else {
-          currentArray.push(itemValue);
-        }
-        continue;
-      } else {
-        // End of array list
-        if (currentKey) {
-          frontmatter[currentKey] = currentArray;
-        }
-        currentKey = null;
-        currentArray = [];
-        isArrayList = false;
-      }
-    }
-
-    if (isMultiline) {
-      if (line.startsWith('  ')) {
-        currentMultiline.push(line.substring(2));
-        continue;
-      } else {
-        // End of multiline
-        if (currentKey) {
-          frontmatter[currentKey] = currentMultiline.join('\n');
-        }
-        currentKey = null;
-        currentMultiline = [];
-        isMultiline = false;
-      }
-    }
-
-    if (!isMultiline && !isArrayList) {
-      const colonIndex = line.indexOf(':');
-      if (colonIndex === -1) continue;
-
-      const key = line.substring(0, colonIndex).trim();
-      const value = line.substring(colonIndex + 1).trim();
-
-      if (value === '|') {
-        // Start of multiline string
-        currentKey = key;
-        isMultiline = true;
-        currentMultiline = [];
-      } else if (value === '') {
-        // Could be start of YAML array list (key with no value)
-        currentKey = key;
-        isArrayList = true;
-        currentArray = [];
-      } else if (value === '[]') {
-        frontmatter[key] = [];
-      } else if (value.startsWith('[') && value.endsWith(']')) {
-        // Array in JSON format
-        try {
-          frontmatter[key] = JSON.parse(value);
-        } catch {
-          frontmatter[key] = value;
-        }
-      } else if (value === 'true' || value === 'false') {
-        frontmatter[key] = value === 'true';
-      } else if (!isNaN(Number(value)) && value !== '') {
-        frontmatter[key] = Number(value);
-      } else if (
-        (value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))
-      ) {
-        // Remove both double and single quotes around the value
-        frontmatter[key] = value.slice(1, -1).replace(/\\"/g, '"').replace(/\\'/g, "'");
-      } else if (value.startsWith('{') && value.endsWith('}')) {
-        // Object in JSON format
-        try {
-          frontmatter[key] = JSON.parse(value);
-        } catch {
-          frontmatter[key] = value;
-        }
-      } else {
-        frontmatter[key] = value;
-      }
-    }
-  }
-
-  // Handle final multiline/array if still open
-  if (isMultiline && currentKey) {
-    frontmatter[currentKey] = currentMultiline.join('\n');
-  }
-  if (isArrayList && currentKey) {
-    frontmatter[currentKey] = currentArray;
-  }
-
-  return {
-    frontmatter,
-    body: bodyLines.join('\n').trim(),
-  };
-}
+import type { Requirement, UseCase, TestCase, Information, User, Project, Risk, ArtifactLink } from '../types';
+import type { CustomAttributeDefinition, CustomAttributeValue, AttributeType, ApplicableArtifactType } from '../types/customAttributes';
+import {
+  filterValidCustomAttributes,
+  objectToYaml,
+  parseYamlFrontmatter,
+  extractH2Sections,
+  ensureArray,
+} from './markdownBase';
 
 /**
  * Convert a Requirement to Markdown with YAML frontmatter
@@ -255,53 +55,29 @@ ${requirement.comments ? `## Comments\n${requirement.comments}` : ''}
  */
 export function markdownToRequirement(markdown: string): Requirement {
   const { frontmatter, body } = parseYamlFrontmatter(markdown);
-
-  // Extract content sections from body
-  const sections: Record<string, string> = {};
-  const lines = body.split('\n');
-  let currentSection = '';
-  let currentContent: string[] = [];
-
-  for (const line of lines) {
-    if (line.startsWith('## ')) {
-      if (currentSection && currentContent.length > 0) {
-        sections[currentSection] = currentContent.join('\n').trim();
-      }
-      currentSection = line.substring(3).trim();
-      currentContent = [];
-    } else if (line.startsWith('# ')) {
-      // Skip main title
-      continue;
-    } else {
-      currentContent.push(line);
-    }
-  }
-
-  if (currentSection && currentContent.length > 0) {
-    sections[currentSection] = currentContent.join('\n').trim();
-  }
+  const sections = extractH2Sections(body);
 
   return {
-    id: frontmatter.id || '',
-    title: frontmatter.title || '',
+    id: (frontmatter.id as string) || '',
+    title: (frontmatter.title as string) || '',
     description: sections['Description'] || '',
     text: sections['Requirement Text'] || '',
     rationale: sections['Rationale'] || '',
 
-    useCaseIds: frontmatter.useCaseIds || [],
-    linkedArtifacts: frontmatter.linkedArtifacts || [],
-    status: frontmatter.status || 'draft',
-    priority: frontmatter.priority || 'medium',
-    author: frontmatter.author || undefined,
-    verificationMethod: frontmatter.verificationMethod || undefined,
+    useCaseIds: ensureArray<string>(frontmatter.useCaseIds),
+    linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
+    status: (frontmatter.status as Requirement['status']) || 'draft',
+    priority: (frontmatter.priority as Requirement['priority']) || 'medium',
+    author: (frontmatter.author as string) || undefined,
+    verificationMethod: (frontmatter.verificationMethod as string) || undefined,
     comments: sections['Comments'] || undefined,
-    dateCreated: frontmatter.dateCreated || Date.now(),
-    approvalDate: frontmatter.approvalDate || undefined,
-    lastModified: frontmatter.lastModified || Date.now(),
-    isDeleted: frontmatter.isDeleted || false,
-    deletedAt: frontmatter.deletedAt || undefined,
-    revision: frontmatter.revision || '01',
-    customAttributes: frontmatter.customAttributes || [],
+    dateCreated: (frontmatter.dateCreated as number) || Date.now(),
+    approvalDate: (frontmatter.approvalDate as number) || undefined,
+    lastModified: (frontmatter.lastModified as number) || Date.now(),
+    isDeleted: (frontmatter.isDeleted as boolean) || false,
+    deletedAt: (frontmatter.deletedAt as number) || undefined,
+    revision: (frontmatter.revision as string) || '01',
+    customAttributes: ensureArray<CustomAttributeValue>(frontmatter.customAttributes),
   };
 }
 
@@ -353,47 +129,25 @@ ${useCase.postconditions}
  */
 export function markdownToUseCase(markdown: string): UseCase {
   const { frontmatter, body } = parseYamlFrontmatter(markdown);
-
-  const sections: Record<string, string> = {};
-  const lines = body.split('\n');
-  let currentSection = '';
-  let currentContent: string[] = [];
-
-  for (const line of lines) {
-    if (line.startsWith('## ')) {
-      if (currentSection && currentContent.length > 0) {
-        sections[currentSection] = currentContent.join('\n').trim();
-      }
-      currentSection = line.substring(3).trim();
-      currentContent = [];
-    } else if (line.startsWith('# ')) {
-      continue;
-    } else {
-      currentContent.push(line);
-    }
-  }
-
-  if (currentSection && currentContent.length > 0) {
-    sections[currentSection] = currentContent.join('\n').trim();
-  }
+  const sections = extractH2Sections(body);
 
   return {
-    id: frontmatter.id || '',
-    title: frontmatter.title || '',
+    id: (frontmatter.id as string) || '',
+    title: (frontmatter.title as string) || '',
     description: sections['Description'] || '',
-    actor: sections['Actor'] || frontmatter.actor || '',
+    actor: sections['Actor'] || (frontmatter.actor as string) || '',
     preconditions: sections['Preconditions'] || '',
     postconditions: sections['Postconditions'] || '',
     mainFlow: sections['Main Flow'] || '',
     alternativeFlows: sections['Alternative Flows'] || undefined,
-    priority: frontmatter.priority || 'medium',
-    status: frontmatter.status || 'draft',
-    lastModified: frontmatter.lastModified || Date.now(),
-    linkedArtifacts: frontmatter.linkedArtifacts || [],
-    isDeleted: frontmatter.isDeleted || false,
-    deletedAt: frontmatter.deletedAt || undefined,
-    revision: frontmatter.revision || '01',
-    customAttributes: frontmatter.customAttributes || [],
+    priority: (frontmatter.priority as UseCase['priority']) || 'medium',
+    status: (frontmatter.status as UseCase['status']) || 'draft',
+    lastModified: (frontmatter.lastModified as number) || Date.now(),
+    linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
+    isDeleted: (frontmatter.isDeleted as boolean) || false,
+    deletedAt: (frontmatter.deletedAt as number) || undefined,
+    revision: (frontmatter.revision as string) || '01',
+    customAttributes: ensureArray<CustomAttributeValue>(frontmatter.customAttributes),
   };
 }
 
@@ -437,46 +191,24 @@ ${testCase.requirementIds.map((id) => `- ${id}`).join('\n')}
  */
 export function markdownToTestCase(markdown: string): TestCase {
   const { frontmatter, body } = parseYamlFrontmatter(markdown);
-
-  const sections: Record<string, string> = {};
-  const lines = body.split('\n');
-  let currentSection = '';
-  let currentContent: string[] = [];
-
-  for (const line of lines) {
-    if (line.startsWith('## ')) {
-      if (currentSection && currentContent.length > 0) {
-        sections[currentSection] = currentContent.join('\n').trim();
-      }
-      currentSection = line.substring(3).trim();
-      currentContent = [];
-    } else if (line.startsWith('# ')) {
-      continue;
-    } else {
-      currentContent.push(line);
-    }
-  }
-
-  if (currentSection && currentContent.length > 0) {
-    sections[currentSection] = currentContent.join('\n').trim();
-  }
+  const sections = extractH2Sections(body);
 
   return {
-    id: frontmatter.id || '',
-    title: frontmatter.title || '',
+    id: (frontmatter.id as string) || '',
+    title: (frontmatter.title as string) || '',
     description: sections['Description'] || '',
-    requirementIds: frontmatter.requirementIds || [],
-    status: frontmatter.status || 'draft',
-    priority: frontmatter.priority || 'medium',
-    author: frontmatter.author || undefined,
-    lastRun: frontmatter.lastRun || undefined,
-    dateCreated: frontmatter.dateCreated || Date.now(),
-    lastModified: frontmatter.lastModified || Date.now(),
-    linkedArtifacts: frontmatter.linkedArtifacts || [],
-    isDeleted: frontmatter.isDeleted || false,
-    deletedAt: frontmatter.deletedAt || undefined,
-    revision: frontmatter.revision || '01',
-    customAttributes: frontmatter.customAttributes || [],
+    requirementIds: ensureArray<string>(frontmatter.requirementIds),
+    status: (frontmatter.status as TestCase['status']) || 'draft',
+    priority: (frontmatter.priority as TestCase['priority']) || 'medium',
+    author: (frontmatter.author as string) || undefined,
+    lastRun: (frontmatter.lastRun as number) || undefined,
+    dateCreated: (frontmatter.dateCreated as number) || Date.now(),
+    lastModified: (frontmatter.lastModified as number) || Date.now(),
+    linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
+    isDeleted: (frontmatter.isDeleted as boolean) || false,
+    deletedAt: (frontmatter.deletedAt as number) || undefined,
+    revision: (frontmatter.revision as string) || '01',
+    customAttributes: ensureArray<CustomAttributeValue>(frontmatter.customAttributes),
   };
 }
 
@@ -518,17 +250,17 @@ export function markdownToInformation(markdown: string): Information {
   const contentLines = lines.filter((line) => !line.startsWith('# '));
 
   return {
-    id: frontmatter.id || '',
-    title: frontmatter.title || '',
+    id: (frontmatter.id as string) || '',
+    title: (frontmatter.title as string) || '',
     content: contentLines.join('\n').trim(),
-    type: frontmatter.type || 'note',
-    dateCreated: frontmatter.dateCreated || Date.now(),
-    lastModified: frontmatter.lastModified || Date.now(),
-    linkedArtifacts: frontmatter.linkedArtifacts || [],
-    isDeleted: frontmatter.isDeleted || false,
-    deletedAt: frontmatter.deletedAt || undefined,
-    revision: frontmatter.revision || '01',
-    customAttributes: frontmatter.customAttributes || [],
+    type: (frontmatter.type as Information['type']) || 'note',
+    dateCreated: (frontmatter.dateCreated as number) || Date.now(),
+    lastModified: (frontmatter.lastModified as number) || Date.now(),
+    linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
+    isDeleted: (frontmatter.isDeleted as boolean) || false,
+    deletedAt: (frontmatter.deletedAt as number) || undefined,
+    revision: (frontmatter.revision as string) || '01',
+    customAttributes: ensureArray<CustomAttributeValue>(frontmatter.customAttributes),
   };
 }
 
@@ -557,10 +289,10 @@ export function markdownToUser(markdown: string): User {
   const { frontmatter } = parseYamlFrontmatter(markdown);
 
   return {
-    id: frontmatter.id || '',
-    name: frontmatter.name || '',
-    dateCreated: frontmatter.dateCreated || Date.now(),
-    lastModified: frontmatter.lastModified || Date.now(),
+    id: (frontmatter.id as string) || '',
+    name: (frontmatter.name as string) || '',
+    dateCreated: (frontmatter.dateCreated as number) || Date.now(),
+    lastModified: (frontmatter.lastModified as number) || Date.now(),
   };
 }
 
@@ -604,19 +336,19 @@ export function markdownToProject(markdown: string): Project | null {
   // Extract description from body (skip title line)
   const lines = body.split('\n');
   const descriptionLines = lines.filter((line) => !line.startsWith('# '));
-  const description = descriptionLines.join('\n').trim() || frontmatter.description || '';
+  const description = descriptionLines.join('\n').trim() || (frontmatter.description as string) || '';
 
   return {
-    id: frontmatter.id,
-    name: frontmatter.name || '',
+    id: frontmatter.id as string,
+    name: (frontmatter.name as string) || '',
     description: description,
-    requirementIds: frontmatter.requirementIds || [],
-    useCaseIds: frontmatter.useCaseIds || [],
-    testCaseIds: frontmatter.testCaseIds || [],
-    informationIds: frontmatter.informationIds || [],
-    riskIds: frontmatter.riskIds || [],
-    lastModified: frontmatter.lastModified || Date.now(),
-    isDeleted: frontmatter.isDeleted || false,
+    requirementIds: ensureArray<string>(frontmatter.requirementIds),
+    useCaseIds: ensureArray<string>(frontmatter.useCaseIds),
+    testCaseIds: ensureArray<string>(frontmatter.testCaseIds),
+    informationIds: ensureArray<string>(frontmatter.informationIds),
+    riskIds: ensureArray<string>(frontmatter.riskIds),
+    lastModified: (frontmatter.lastModified as number) || Date.now(),
+    isDeleted: (frontmatter.isDeleted as boolean) || false,
   };
 }
 
@@ -663,48 +395,26 @@ ${risk.contingency}
  */
 export function markdownToRisk(markdown: string): Risk {
   const { frontmatter, body } = parseYamlFrontmatter(markdown);
-
-  const sections: Record<string, string> = {};
-  const lines = body.split('\n');
-  let currentSection = '';
-  let currentContent: string[] = [];
-
-  for (const line of lines) {
-    if (line.startsWith('## ')) {
-      if (currentSection && currentContent.length > 0) {
-        sections[currentSection] = currentContent.join('\n').trim();
-      }
-      currentSection = line.substring(3).trim();
-      currentContent = [];
-    } else if (line.startsWith('# ')) {
-      continue;
-    } else {
-      currentContent.push(line);
-    }
-  }
-
-  if (currentSection && currentContent.length > 0) {
-    sections[currentSection] = currentContent.join('\n').trim();
-  }
+  const sections = extractH2Sections(body);
 
   return {
-    id: frontmatter.id || '',
-    title: frontmatter.title || '',
+    id: (frontmatter.id as string) || '',
+    title: (frontmatter.title as string) || '',
     description: sections['Description'] || '',
-    category: frontmatter.category || 'other',
-    probability: frontmatter.probability || 'medium',
-    impact: frontmatter.impact || 'medium',
+    category: (frontmatter.category as Risk['category']) || 'other',
+    probability: (frontmatter.probability as Risk['probability']) || 'medium',
+    impact: (frontmatter.impact as Risk['impact']) || 'medium',
     mitigation: sections['Mitigation Strategy'] || '',
     contingency: sections['Contingency Plan'] || '',
-    status: frontmatter.status || 'identified',
-    owner: frontmatter.owner || undefined,
-    dateCreated: frontmatter.dateCreated || Date.now(),
-    lastModified: frontmatter.lastModified || Date.now(),
-    linkedArtifacts: frontmatter.linkedArtifacts || [],
-    isDeleted: frontmatter.isDeleted || false,
-    deletedAt: frontmatter.deletedAt || undefined,
-    revision: frontmatter.revision || '01',
-    customAttributes: frontmatter.customAttributes || [],
+    status: (frontmatter.status as Risk['status']) || 'identified',
+    owner: (frontmatter.owner as string) || undefined,
+    dateCreated: (frontmatter.dateCreated as number) || Date.now(),
+    lastModified: (frontmatter.lastModified as number) || Date.now(),
+    linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
+    isDeleted: (frontmatter.isDeleted as boolean) || false,
+    deletedAt: (frontmatter.deletedAt as number) || undefined,
+    revision: (frontmatter.revision as string) || '01',
+    customAttributes: ensureArray<CustomAttributeValue>(frontmatter.customAttributes),
   };
 }
 
@@ -744,17 +454,17 @@ export function markdownToCustomAttributeDefinition(markdown: string): CustomAtt
   const { frontmatter } = parseYamlFrontmatter(markdown);
 
   return {
-    id: frontmatter.id || '',
-    name: frontmatter.name || '',
-    type: frontmatter.type || 'text',
-    description: frontmatter.description || undefined,
-    required: frontmatter.required || false,
-    defaultValue: frontmatter.defaultValue ?? undefined,
-    options: frontmatter.options || undefined,
-    appliesTo: frontmatter.appliesTo || [],
-    dateCreated: frontmatter.dateCreated || Date.now(),
-    lastModified: frontmatter.lastModified || Date.now(),
-    isDeleted: frontmatter.isDeleted || false,
-    deletedAt: frontmatter.deletedAt || undefined,
+    id: (frontmatter.id as string) || '',
+    name: (frontmatter.name as string) || '',
+    type: (frontmatter.type as AttributeType) || 'text',
+    description: (frontmatter.description as string) || undefined,
+    required: (frontmatter.required as boolean) || false,
+    defaultValue: frontmatter.defaultValue as string | number | boolean | undefined,
+    options: ensureArray<string>(frontmatter.options),
+    appliesTo: ensureArray<ApplicableArtifactType>(frontmatter.appliesTo),
+    dateCreated: (frontmatter.dateCreated as number) || Date.now(),
+    lastModified: (frontmatter.lastModified as number) || Date.now(),
+    isDeleted: (frontmatter.isDeleted as boolean) || false,
+    deletedAt: (frontmatter.deletedAt as number) || undefined,
   };
 }

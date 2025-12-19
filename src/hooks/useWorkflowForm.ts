@@ -124,13 +124,14 @@ export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWor
           artifactIds: selectedArtifactIds,
         });
       } else {
-        await diskWorkflowService.createWorkflow(
-          title.trim(),
+        await diskWorkflowService.createWorkflow({
+          title: title.trim(),
           description,
-          currentUser.id,
+          revision: '01',
+          createdBy: currentUser.id,
           assignedTo,
-          selectedArtifactIds
-        );
+          artifactIds: selectedArtifactIds,
+        });
       }
       onSuccess?.();
       onClose();

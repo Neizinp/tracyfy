@@ -76,3 +76,20 @@ export const FOLDER_TO_TYPE: Record<string, string> = Object.values(ARTIFACT_CON
   },
   {} as Record<string, string>
 );
+
+// Map of ID prefixes to internal types
+export const PREFIX_TO_TYPE: Record<string, string> = Object.entries(ARTIFACT_CONFIG).reduce(
+  (acc, [key, config]) => {
+    acc[config.idPrefix] = key;
+    return acc;
+  },
+  {} as Record<string, string>
+);
+
+/**
+ * Identify artifact type from its ID (e.g., REQ-001 -> requirements)
+ */
+export function getTypeFromId(id: string): string {
+  const prefix = id.split('-')[0];
+  return PREFIX_TO_TYPE[prefix] || 'unknown';
+}
