@@ -9,6 +9,17 @@ vi.mock('../../PendingChangesPanel', () => ({
   PendingChangesPanel: () => <div data-testid="pending-changes">Pending Changes Mock</div>,
 }));
 
+// Mock useFileSystem hook
+vi.mock('../../../app/providers', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../app/providers')>();
+  return {
+    ...actual,
+    useFileSystem: vi.fn(() => ({
+      isReady: true,
+    })),
+  };
+});
+
 // Wrap component with router for NavLink
 const renderWithRouter = (component: React.ReactElement) => {
   return render(<BrowserRouter>{component}</BrowserRouter>);

@@ -26,6 +26,7 @@ import { RepositoryButton } from './RepositoryButton';
 import { sectionHeaderStyle } from './layoutStyles';
 import { realGitService } from '../../services/realGitService';
 import { RemoteSettingsModal } from '../RemoteSettingsModal';
+import { useFileSystem } from '../../app/providers';
 
 const SIDEBAR_WIDTH_KEY = 'sidebar-width';
 const COLLAPSED_SECTIONS_KEY = 'sidebar-collapsed-sections';
@@ -111,10 +112,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isRemoteSettingsOpen, setIsRemoteSettingsOpen] = useState(false);
 
-  // Check for remote on mount
+  // Check for remote on mount or when filesystem is ready
+  const { isReady } = useFileSystem();
   useEffect(() => {
-    realGitService.hasRemote().then(setHasRemote);
-  }, []);
+    if (isReady) {
+      realGitService.hasRemote().then(setHasRemote);
+    }
+  }, [isReady]);
 
   const handlePush = async () => {
     setIsPushing(true);
