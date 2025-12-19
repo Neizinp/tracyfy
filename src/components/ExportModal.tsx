@@ -1,24 +1,7 @@
 import React, { useState } from 'react';
-import { FileText, FileSpreadsheet, Download } from 'lucide-react';
-import type { ProjectBaseline } from '../types';
+import { FileText, FileSpreadsheet, Download, X } from 'lucide-react';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-
-export interface ExportOptions {
-  format: 'pdf' | 'excel' | 'json';
-  baseline: ProjectBaseline | null;
-  // Artifact types
-  includeRequirements: boolean;
-  includeUseCases: boolean;
-  includeTestCases: boolean;
-  includeInformation: boolean;
-  includeRisks: boolean;
-  includeLinks: boolean;
-  // PDF-specific sections
-  includeTitlePage: boolean;
-  includeRevisionHistory: boolean;
-  includeTraceability: boolean;
-  includeVerificationMatrix: boolean;
-}
+import type { ExportOptions, ProjectBaseline } from '../types';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -93,27 +76,30 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const formatButtonStyle = (selected: boolean) => ({
     flex: 1,
     padding: '12px',
-    borderRadius: '6px',
-    border: selected ? '2px solid var(--color-accent)' : '1px solid var(--color-border)',
+    borderRadius: '12px',
+    border: '2px solid transparent',
     backgroundColor: selected ? 'rgba(var(--color-accent-rgb), 0.1)' : 'var(--color-bg-card)',
+    borderColor: selected ? 'var(--color-accent)' : 'transparent',
     color: selected ? 'var(--color-accent)' : 'var(--color-text-secondary)',
     cursor: 'pointer',
     display: 'flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
-    gap: '8px',
-    fontWeight: selected ? 600 : 400,
+    gap: '12px',
+    fontWeight: selected ? 600 : 500,
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   });
 
   const checkboxStyle = {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    padding: '8px 12px',
-    borderRadius: '6px',
+    gap: '12px',
+    padding: '12px 16px',
+    borderRadius: '12px',
     backgroundColor: 'var(--color-bg-card)',
     border: '1px solid var(--color-border)',
     cursor: 'pointer',
+    transition: 'all 0.2s ease',
   };
 
   return (
@@ -124,7 +110,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'var(--color-bg-overlay, rgba(0, 0, 0, 0.5))',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -135,132 +122,154 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       <div
         style={{
           backgroundColor: 'var(--color-bg-secondary)',
-          borderRadius: '8px',
+          borderRadius: '24px',
           border: '1px solid var(--color-border)',
-          width: '550px',
+          width: '560px',
           maxWidth: '90%',
-          maxHeight: '85vh',
+          maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          overflow: 'hidden',
         }}
       >
         {/* Header */}
         <div
           style={{
-            padding: 'var(--spacing-md)',
+            padding: '24px',
             borderBottom: '1px solid var(--color-border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            background:
+              'linear-gradient(to right, var(--color-bg-tertiary), var(--color-bg-secondary))',
           }}
         >
-          <h3 style={{ fontWeight: 600 }}>Export Project</h3>
+          <div>
+            <h3
+              style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-text-primary)' }}
+            >
+              Export Project
+            </h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+              Choose your preferred format and options
+            </p>
+          </div>
           <button
             onClick={onClose}
             style={{
-              background: 'none',
+              background: 'rgba(var(--color-text-muted-rgb), 0.1)',
               border: 'none',
+              borderRadius: '50%',
               color: 'var(--color-text-muted)',
               cursor: 'pointer',
-              padding: '4px',
-              fontSize: '20px',
+              padding: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
             }}
           >
-            ×
+            <X size={20} />
           </button>
         </div>
 
         {/* Content */}
-        <div style={{ padding: 'var(--spacing-lg)', overflowY: 'auto', flex: 1 }}>
+        <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
           {/* Format Selection */}
-          <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-            <label
+          <section style={{ marginBottom: '32px' }}>
+            <h4
               style={{
-                display: 'block',
-                fontSize: 'var(--font-size-sm)',
-                fontWeight: 500,
-                marginBottom: '8px',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                color: 'var(--color-text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: '16px',
               }}
             >
-              Export Format
-            </label>
-            <div style={{ display: 'flex', gap: '12px' }}>
+              Format
+            </h4>
+            <div style={{ display: 'flex', gap: '16px' }}>
               <button onClick={() => setFormat('pdf')} style={formatButtonStyle(format === 'pdf')}>
                 <FileText size={24} />
-                PDF
+                <span>PDF Document</span>
               </button>
               <button
                 onClick={() => setFormat('excel')}
                 style={formatButtonStyle(format === 'excel')}
               >
                 <FileSpreadsheet size={24} />
-                Excel
+                <span>Excel Sheet</span>
               </button>
               <button
                 onClick={() => setFormat('json')}
                 style={formatButtonStyle(format === 'json')}
               >
                 <Download size={24} />
-                JSON
+                <span>JSON Data</span>
               </button>
             </div>
-          </div>
+          </section>
 
           {/* Baseline Selection */}
-          <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-            <label
-              htmlFor="baseline-select"
+          <section style={{ marginBottom: '32px' }}>
+            <h4
               style={{
-                display: 'block',
-                fontSize: 'var(--font-size-sm)',
-                fontWeight: 500,
-                marginBottom: '8px',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                color: 'var(--color-text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: '16px',
               }}
             >
-              Baseline
-            </label>
+              Project State
+            </h4>
             <select
               id="baseline-select"
               value={selectedBaselineId}
               onChange={(e) => setSelectedBaselineId(e.target.value)}
               style={{
                 width: '100%',
-                padding: '10px 12px',
-                borderRadius: '6px',
+                padding: '12px 16px',
+                borderRadius: '12px',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'var(--color-bg-card)',
                 color: 'var(--color-text-primary)',
-                fontSize: 'var(--font-size-sm)',
+                fontSize: '0.925rem',
+                outline: 'none',
               }}
             >
-              <option value="current">Current State</option>
+              <option value="current">Current Working Copy (Latest)</option>
               {baselines.map((b) => (
                 <option key={b.id} value={b.id}>
-                  {b.name} ({b.version})
+                  {b.name} (v{b.version}) - {new Date(b.timestamp).toLocaleDateString()}
                 </option>
               ))}
             </select>
-          </div>
+          </section>
 
           {/* Artifact Selection (not for JSON) */}
           {format !== 'json' && (
-            <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-              <label
+            <section style={{ marginBottom: '32px' }}>
+              <h4
                 style={{
-                  display: 'block',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 500,
-                  marginBottom: '8px',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  color: 'var(--color-text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: '16px',
                 }}
               >
-                Include Artifacts
-              </label>
+                Included Content
+              </h4>
               <div
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: '8px',
+                  gap: '12px',
                 }}
               >
                 <label style={checkboxStyle}>
@@ -269,7 +278,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     checked={includeRequirements}
                     onChange={(e) => setIncludeRequirements(e.target.checked)}
                   />
-                  Requirements {artifactCounts && `(${artifactCounts.requirements})`}
+                  <span>
+                    Requirements{' '}
+                    {artifactCounts && (
+                      <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
+                        [{artifactCounts.requirements}]
+                      </span>
+                    )}
+                  </span>
                 </label>
                 <label style={checkboxStyle}>
                   <input
@@ -277,7 +293,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     checked={includeUseCases}
                     onChange={(e) => setIncludeUseCases(e.target.checked)}
                   />
-                  Use Cases {artifactCounts && `(${artifactCounts.useCases})`}
+                  <span>
+                    Use Cases{' '}
+                    {artifactCounts && (
+                      <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
+                        [{artifactCounts.useCases}]
+                      </span>
+                    )}
+                  </span>
                 </label>
                 <label style={checkboxStyle}>
                   <input
@@ -285,7 +308,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     checked={includeTestCases}
                     onChange={(e) => setIncludeTestCases(e.target.checked)}
                   />
-                  Test Cases {artifactCounts && `(${artifactCounts.testCases})`}
+                  <span>
+                    Test Cases{' '}
+                    {artifactCounts && (
+                      <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
+                        [{artifactCounts.testCases}]
+                      </span>
+                    )}
+                  </span>
                 </label>
                 <label style={checkboxStyle}>
                   <input
@@ -293,7 +323,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     checked={includeInformation}
                     onChange={(e) => setIncludeInformation(e.target.checked)}
                   />
-                  Information {artifactCounts && `(${artifactCounts.information})`}
+                  <span>
+                    Doc Assets{' '}
+                    {artifactCounts && (
+                      <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
+                        [{artifactCounts.information}]
+                      </span>
+                    )}
+                  </span>
                 </label>
                 <label style={checkboxStyle}>
                   <input
@@ -301,7 +338,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     checked={includeRisks}
                     onChange={(e) => setIncludeRisks(e.target.checked)}
                   />
-                  Risks {artifactCounts && `(${artifactCounts.risks})`}
+                  <span>
+                    Risks{' '}
+                    {artifactCounts && (
+                      <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
+                        [{artifactCounts.risks}]
+                      </span>
+                    )}
+                  </span>
                 </label>
                 <label style={checkboxStyle}>
                   <input
@@ -309,26 +353,35 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     checked={includeLinks}
                     onChange={(e) => setIncludeLinks(e.target.checked)}
                   />
-                  Links {artifactCounts && `(${artifactCounts.links})`}
+                  <span>
+                    Trace Links{' '}
+                    {artifactCounts && (
+                      <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
+                        [{artifactCounts.links}]
+                      </span>
+                    )}
+                  </span>
                 </label>
               </div>
-            </div>
+            </section>
           )}
 
           {/* PDF & Excel Sections */}
           {(format === 'pdf' || format === 'excel') && (
-            <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-              <label
+            <section style={{ marginBottom: '8px' }}>
+              <h4
                 style={{
-                  display: 'block',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 500,
-                  marginBottom: '8px',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  color: 'var(--color-text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: '16px',
                 }}
               >
-                {format === 'pdf' ? 'PDF Sections' : 'Excel Sheets'}
-              </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {format === 'pdf' ? 'Layout Sections' : 'Excel Worksheets'}
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {format === 'pdf' && (
                   <label style={checkboxStyle}>
                     <input
@@ -336,7 +389,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                       checked={includeTitlePage}
                       onChange={(e) => setIncludeTitlePage(e.target.checked)}
                     />
-                    Title Page
+                    <span>Title Page & Metadata</span>
                   </label>
                 )}
                 <label style={checkboxStyle}>
@@ -345,7 +398,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     checked={includeRevisionHistory}
                     onChange={(e) => setIncludeRevisionHistory(e.target.checked)}
                   />
-                  Revision History
+                  <span>Complete Revision Log</span>
                 </label>
                 <label style={checkboxStyle}>
                   <input
@@ -353,7 +406,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     checked={includeTraceability}
                     onChange={(e) => setIncludeTraceability(e.target.checked)}
                   />
-                  {format === 'pdf' ? 'Traceability (Linked Artifacts)' : 'Traceability Matrix'}
+                  <span>
+                    {format === 'pdf' ? 'Traceability Annex' : 'Traceability Matrix Sheet'}
+                  </span>
                 </label>
                 {format === 'excel' && (
                   <label style={checkboxStyle}>
@@ -362,34 +417,36 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                       checked={includeVerificationMatrix}
                       onChange={(e) => setIncludeVerificationMatrix(e.target.checked)}
                     />
-                    Verification Matrix (Worksheet)
+                    <span>Verification Matrix Workspace</span>
                   </label>
                 )}
               </div>
-            </div>
+            </section>
           )}
         </div>
 
         {/* Footer */}
         <div
           style={{
-            padding: 'var(--spacing-md)',
+            padding: '24px',
             borderTop: '1px solid var(--color-border)',
             display: 'flex',
             justifyContent: 'flex-end',
-            gap: '12px',
+            gap: '16px',
+            backgroundColor: 'var(--color-bg-tertiary)',
           }}
         >
           <button
             onClick={onClose}
             style={{
-              padding: '10px 20px',
-              borderRadius: '6px',
+              padding: '12px 24px',
+              borderRadius: '12px',
               border: '1px solid var(--color-border)',
               backgroundColor: 'transparent',
               color: 'var(--color-text-secondary)',
               cursor: 'pointer',
-              fontWeight: 500,
+              fontWeight: 600,
+              transition: 'all 0.2s ease',
             }}
           >
             Cancel
@@ -397,16 +454,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           <button
             onClick={handleExport}
             style={{
-              padding: '10px 20px',
-              borderRadius: '6px',
+              padding: '12px 32px',
+              borderRadius: '12px',
               border: 'none',
               backgroundColor: 'var(--color-accent)',
               color: 'white',
               cursor: 'pointer',
-              fontWeight: 600,
+              fontWeight: 700,
+              boxShadow: '0 4px 6px -1px rgba(var(--color-accent-rgb), 0.4)',
+              transition: 'all 0.2s ease',
             }}
           >
-            Export
+            Generate Export
           </button>
         </div>
       </div>

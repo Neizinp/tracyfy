@@ -23,7 +23,7 @@ import type {
   InformationColumnVisibility,
   RiskColumnVisibility,
 } from '../types';
-import type { ExportOptions } from '../components/ExportModal';
+import type { ExportOptions } from '../types';
 
 // Column configurations for each artifact type
 const useCaseColumns: {

@@ -89,7 +89,7 @@ function sortByIdNumber<T extends { id: string }>(artifacts: T[]): T[] {
   });
 }
 
-import type { ExportOptions } from '../components/ExportModal';
+import type { ExportOptions } from '../types';
 
 export async function exportProjectToExcel(
   project: Project,

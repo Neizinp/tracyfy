@@ -6,3 +6,5 @@ export * from './project';
 export * from './user';
 export * from './link';
 export * from './state';
+
+export type { LinkType } from '../utils/linkTypes';

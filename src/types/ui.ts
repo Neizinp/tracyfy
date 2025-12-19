@@ -1,3 +1,5 @@
+import type { ProjectBaseline } from './git';
+
 export interface ColumnVisibility {
   idTitle: boolean; // Always true, not user-configurable
   description: boolean;
@@ -103,4 +105,21 @@ export interface SelectedArtifact {
   id: string;
   type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk' | 'project' | 'user';
   data?: Record<string, unknown>;
+}
+
+export interface ExportOptions {
+  format: 'pdf' | 'excel' | 'json';
+  baseline: ProjectBaseline | null;
+  // Artifact types
+  includeRequirements: boolean;
+  includeUseCases: boolean;
+  includeTestCases: boolean;
+  includeInformation: boolean;
+  includeRisks: boolean;
+  includeLinks: boolean;
+  // PDF-specific sections
+  includeTitlePage: boolean;
+  includeRevisionHistory: boolean;
+  includeTraceability: boolean;
+  includeVerificationMatrix: boolean;
 }
