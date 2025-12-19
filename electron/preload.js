@@ -23,8 +23,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     add: (dir, filepath) => ipcRenderer.invoke('git:add', dir, filepath),
     remove: (dir, filepath) => ipcRenderer.invoke('git:remove', dir, filepath),
     commit: (dir, message, author) => ipcRenderer.invoke('git:commit', dir, message, author),
-    log: (dir, depth, filepath) => ipcRenderer.invoke('git:log', dir, depth, filepath),
-    listFiles: (dir) => ipcRenderer.invoke('git:listFiles', dir),
+    log: (dir, depth, filepath, ref) => ipcRenderer.invoke('git:log', dir, depth, filepath, ref),
+    listFiles: (dir, ref) => ipcRenderer.invoke('git:listFiles', dir, ref),
+    readBlob: (dir, oid, filepath) => ipcRenderer.invoke('git:readBlob', dir, oid, filepath),
     resolveRef: (dir, ref) => ipcRenderer.invoke('git:resolveRef', dir, ref),
     init: (dir) => ipcRenderer.invoke('git:init', dir),
     annotatedTag: (dir, ref, message, tagger) =>

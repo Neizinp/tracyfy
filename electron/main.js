@@ -94,28 +94,39 @@ ipcMain.handle('git:commit', async (_event, dir, message, author) => {
   }
 });
 
-ipcMain.handle('git:log', async (_event, dir, depth, filepath) => {
+ipcMain.handle('git:log', async (_event, dir, depth, filepath, ref) => {
   try {
     const commits = await git.log({
       fs,
       dir,
       depth: depth || 100,
       filepath,
+      ref: ref || 'HEAD',
     });
     return commits.map((c) => ({
       oid: c.oid,
       message: c.commit.message,
       author: c.commit.author.name,
       timestamp: c.commit.author.timestamp * 1000,
+      parent: c.commit.parent,
     }));
   } catch (error) {
     return { error: error.message };
   }
 });
 
-ipcMain.handle('git:listFiles', async (_event, dir) => {
+ipcMain.handle('git:listFiles', async (_event, dir, ref) => {
   try {
-    return await git.listFiles({ fs, dir });
+    return await git.listFiles({ fs, dir, ref });
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('git:readBlob', async (_event, dir, oid, filepath) => {
+  try {
+    const { blob } = await git.readBlob({ fs, dir, oid, filepath });
+    return { blob: Array.from(blob) };
   } catch (error) {
     return { error: error.message };
   }
