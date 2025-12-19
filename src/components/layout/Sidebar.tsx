@@ -1,5 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { debug } from '../../utils/debug';
+/**
+ * Sidebar Component
+ *
+ * Contains app logo, projects list, pending changes panel, views navigation,
+ * and repository section. Uses useSidebar hook for state management.
+ */
+
+import React from 'react';
 import {
   LayoutGrid,
   Plus,
@@ -25,13 +31,9 @@ import { PendingChangesPanel } from '../PendingChangesPanel';
 import { NavLink } from './NavLink';
 import { RepositoryButton } from './RepositoryButton';
 import { sectionHeaderStyle } from './layoutStyles';
-import { realGitService } from '../../services/realGitService';
 import { RemoteSettingsModal } from '../RemoteSettingsModal';
-import { useFileSystem } from '../../app/providers';
+import { useSidebar } from './useSidebar';
 
-const SIDEBAR_WIDTH_KEY = 'sidebar-width';
-const COLLAPSED_SECTIONS_KEY = 'sidebar-collapsed-sections';
-const DEFAULT_WIDTH = 260;
 const MIN_WIDTH = 180;
 const MAX_WIDTH = 400;
 
@@ -47,14 +49,6 @@ export interface SidebarProps {
   ) => void;
 }
 
-/**
- * Sidebar component containing:
- * - App logo
- * - Projects list
- * - Pending Changes panel
- * - Views navigation
- * - Repository section
- */
 export const Sidebar: React.FC<SidebarProps> = ({
   projects,
   currentProjectId,
@@ -64,136 +58,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenProjectSettings,
   onOpenLibraryTab,
 }) => {
-  const [width, setWidth] = useState(() => {
-    try {
-      const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
-      return saved ? Math.min(Math.max(parseInt(saved, 10), MIN_WIDTH), MAX_WIDTH) : DEFAULT_WIDTH;
-    } catch {
-      return DEFAULT_WIDTH;
-    }
-  });
-  const [isResizing, setIsResizing] = useState(false);
-  const sidebarRef = useRef<HTMLElement>(null);
-
-  // Collapsed sections state with localStorage persistence
-  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
-    try {
-      const saved = localStorage.getItem(COLLAPSED_SECTIONS_KEY);
-      return saved ? new Set(JSON.parse(saved)) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
-
-  // Save collapsed sections to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(COLLAPSED_SECTIONS_KEY, JSON.stringify([...collapsedSections]));
-    } catch {
-      // Ignore in test environment
-    }
-  }, [collapsedSections]);
-
-  const toggleSection = (section: string) => {
-    setCollapsedSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(section)) {
-        next.delete(section);
-      } else {
-        next.add(section);
-      }
-      return next;
-    });
-  };
-
-  // Remote sync state
-  const [hasRemote, setHasRemote] = useState(false);
-  const [isPushing, setIsPushing] = useState(false);
-  const [isPulling, setIsPulling] = useState(false);
-  const [syncError, setSyncError] = useState<string | null>(null);
-  const [isRemoteSettingsOpen, setIsRemoteSettingsOpen] = useState(false);
-
-  // Check for remote on mount or when filesystem is ready
-  const { isReady, refreshStatus } = useFileSystem();
-  useEffect(() => {
-    if (isReady) {
-      realGitService.hasRemote().then(setHasRemote);
-    }
-  }, [isReady]);
-
-  const handlePush = async () => {
-    setIsPushing(true);
-    setSyncError(null);
-    try {
-      await realGitService.push();
-      debug.log('[Sidebar] Push successful');
-    } catch (err) {
-      setSyncError(err instanceof Error ? err.message : 'Push failed');
-    } finally {
-      setIsPushing(false);
-    }
-  };
-
-  const handlePull = async () => {
-    setIsPulling(true);
-    setSyncError(null);
-    try {
-      const result = await realGitService.pull();
-      if (!result.success && result.conflicts.length > 0) {
-        setSyncError(`Merge conflicts in: ${result.conflicts.join(', ')}`);
-      } else {
-        debug.log('[Sidebar] Pull successful');
-      }
-    } catch (err) {
-      setSyncError(err instanceof Error ? err.message : 'Pull failed');
-    } finally {
-      setIsPulling(false);
-    }
-  };
-
-  // Save width to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));
-    } catch {
-      // Ignore in test environment
-    }
-  }, [width]);
-
-  // Handle mouse move during resize
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isResizing) return;
-      const newWidth = Math.min(Math.max(e.clientX, MIN_WIDTH), MAX_WIDTH);
-      setWidth(newWidth);
-    },
-    [isResizing]
-  );
-
-  // Handle mouse up to stop resizing
-  const handleMouseUp = useCallback(() => {
-    setIsResizing(false);
-  }, []);
-
-  // Attach/detach mouse listeners
-  useEffect(() => {
-    if (isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-    } else {
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-  }, [isResizing, handleMouseMove, handleMouseUp]);
+  // Use the extracted hook for all sidebar state and handlers
+  const {
+    sidebarRef,
+    width,
+    isResizing,
+    startResizing,
+    collapsedSections,
+    toggleSection,
+    hasRemote,
+    isPushing,
+    isPulling,
+    syncError,
+    handlePush,
+    handlePull,
+    isRemoteSettingsOpen,
+    openRemoteSettings,
+    closeRemoteSettings,
+    refreshStatus,
+  } = useSidebar();
 
   return (
     <aside
@@ -433,7 +316,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             )}
             <button
-              onClick={() => setIsRemoteSettingsOpen(true)}
+              onClick={openRemoteSettings}
               style={{
                 background: 'none',
                 border: 'none',
@@ -469,7 +352,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   No remote configured.{' '}
                   <button
-                    onClick={() => setIsRemoteSettingsOpen(true)}
+                    onClick={openRemoteSettings}
                     style={{
                       background: 'none',
                       border: 'none',
@@ -561,13 +444,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* RemoteSettingsModal */}
-        <RemoteSettingsModal
-          isOpen={isRemoteSettingsOpen}
-          onClose={() => {
-            setIsRemoteSettingsOpen(false);
-            realGitService.hasRemote().then(setHasRemote);
-          }}
-        />
+        <RemoteSettingsModal isOpen={isRemoteSettingsOpen} onClose={closeRemoteSettings} />
 
         {/* Views Navigation */}
         <div style={{ marginBottom: 'var(--spacing-lg)' }}>
@@ -672,7 +549,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Resize handle */}
       <div
-        onMouseDown={() => setIsResizing(true)}
+        onMouseDown={startResizing}
         style={{
           position: 'absolute',
           right: 0,
