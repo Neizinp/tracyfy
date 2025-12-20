@@ -4,9 +4,11 @@ import { RevisionHistoryTab } from '../RevisionHistoryTab';
 
 // Mock the useFileSystem hook before importing component
 const mockGetArtifactHistory = vi.fn();
+const mockReadFileAtCommit = vi.fn().mockResolvedValue(null);
 vi.mock('../../app/providers/FileSystemProvider', () => ({
   useFileSystem: vi.fn(() => ({
     getArtifactHistory: mockGetArtifactHistory,
+    readFileAtCommit: mockReadFileAtCommit,
     isReady: true,
   })),
   FileSystemProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,

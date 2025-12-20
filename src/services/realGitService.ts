@@ -11,4 +11,4 @@ import { realGitService as composite } from './git';
 export const realGitService = composite;
 
 // Re-export types for backward compatibility
-export type { FileStatus, CommitInfo, SyncStatus } from './git';
+export type { FileStatus, CommitInfo, SyncStatus, PullResult } from './git';

@@ -62,6 +62,13 @@ class FileSystemService {
   private db: IDBDatabase | null = null;
   private rootPath: string | null = null; // For Electron: absolute path to root dir
 
+  private get isE2EMode(): boolean {
+    return (
+      typeof window !== 'undefined' &&
+      (window as unknown as { __E2E_TEST_MODE__?: boolean }).__E2E_TEST_MODE__ === true
+    );
+  }
+
   /**
    * Initialize the IndexedDB for storing directory handles
    */
@@ -274,6 +281,7 @@ class FileSystemService {
    */
   async getOrCreateDirectory(path: string): Promise<FileSystemDirectoryHandle> {
     // Electron path: use IPC to create directory
+    if (this.isE2EMode) return {} as FileSystemDirectoryHandle;
     if (isElectron()) {
       if (!this.rootPath) {
         throw new Error('No directory selected');
@@ -305,6 +313,7 @@ class FileSystemService {
    */
   async directoryExists(path: string): Promise<boolean> {
     // Electron path: use IPC
+    if (this.isE2EMode) return false;
     if (isElectron()) {
       if (!this.rootPath) {
         return false;
@@ -339,7 +348,7 @@ class FileSystemService {
    * Navigate to a directory WITHOUT creating it (returns null if not found)
    */
   async getDirectory(path: string): Promise<FileSystemDirectoryHandle | null> {
-    if (!this.directoryHandle) {
+    if (this.isE2EMode || !this.directoryHandle) {
       return null;
     }
 
@@ -363,6 +372,7 @@ class FileSystemService {
    */
   async readFile(path: string): Promise<string | null> {
     // Electron path: use IPC
+    if (this.isE2EMode) return null;
     if (isElectron()) {
       if (!this.rootPath) {
         throw new Error('No directory selected');
@@ -409,6 +419,7 @@ class FileSystemService {
     debug.log('[readFileBinary] Called for path:', path);
 
     // Electron path: use IPC
+    if (this.isE2EMode) return null;
     if (isElectron()) {
       if (!this.rootPath) {
         throw new Error('No directory selected');
@@ -464,6 +475,7 @@ class FileSystemService {
     debug.log(`[writeFile] Called for path: ${path}`);
 
     // Electron path: use IPC
+    if (this.isE2EMode) return;
     if (isElectron()) {
       if (!this.rootPath) {
         console.error('[writeFile] No directory selected');
@@ -540,6 +552,7 @@ class FileSystemService {
     debug.log(`[writeFileBinary] Called for path: ${path}`);
 
     // Electron path: use IPC
+    if (this.isE2EMode) return;
     if (isElectron()) {
       if (!this.rootPath) {
         console.error('[writeFileBinary] No directory selected');
@@ -627,6 +640,7 @@ class FileSystemService {
    */
   async deleteFile(path: string): Promise<void> {
     // Electron path: use IPC
+    if (this.isE2EMode) return;
     if (isElectron()) {
       if (!this.rootPath) {
         throw new Error('No directory selected');
@@ -665,6 +679,7 @@ class FileSystemService {
    */
   async listFiles(path: string): Promise<string[]> {
     // Electron path: use IPC
+    if (this.isE2EMode) return [];
     if (isElectron()) {
       if (!this.rootPath) {
         throw new Error('No directory selected');
@@ -703,6 +718,7 @@ class FileSystemService {
    */
   async listEntries(path: string): Promise<string[]> {
     // Electron path: use IPC
+    if (this.isE2EMode) return [];
     if (isElectron()) {
       if (!this.rootPath) {
         throw new Error('No directory selected');

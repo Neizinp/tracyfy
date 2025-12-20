@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { debug } from '../utils/debug';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
-import type { CommitInfo } from '../services/realGitService';
+import type { CommitInfo } from '../services/git/types';
 import { formatDateTime } from '../utils/dateUtils';
-import { realGitService } from '../services/realGitService';
 import {
   markdownToRequirement,
   markdownToUseCase,
@@ -24,7 +23,7 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
   const [history, setHistory] = useState<CommitInfo[]>([]);
   const [revisions, setRevisions] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const { getArtifactHistory, isReady } = useFileSystem();
+  const { getArtifactHistory, readFileAtCommit, isReady } = useFileSystem();
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -40,7 +39,7 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
             // Extra debug logging
 
             debug.log('[RevisionHistoryTab][DEBUG] filePath:', filePath, 'commit:', commit.hash);
-            const content = await realGitService.readFileAtCommit(filePath, commit.hash);
+            const content = await readFileAtCommit(filePath, commit.hash);
 
             debug.log(
               '[RevisionHistoryTab][DEBUG] Content for',
@@ -110,7 +109,7 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
     } else {
       setLoading(false);
     }
-  }, [artifactId, artifactType, getArtifactHistory, isReady]);
+  }, [artifactId, artifactType, getArtifactHistory, readFileAtCommit, isReady]);
 
   if (loading) {
     return (

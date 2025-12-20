@@ -3,6 +3,7 @@ import type {
   Requirement,
   UseCase,
   Information,
+  Risk,
   Project,
   ColumnVisibility,
   ActiveModal,
@@ -167,6 +168,8 @@ export function useUIState() {
     selectedArtifact?.type === 'information'
       ? (selectedArtifact.data as unknown as Information)
       : null;
+  const editingRisk =
+    selectedArtifact?.type === 'risk' ? (selectedArtifact.data as unknown as Risk) : null;
   const projectToEdit =
     selectedArtifact?.type === 'project' ? (selectedArtifact.data as unknown as Project) : null;
 
@@ -248,6 +251,13 @@ export function useUIState() {
       setSelectedArtifact(
         info
           ? { id: info.id, type: 'information', data: info as unknown as Record<string, unknown> }
+          : null
+      ),
+    editingRisk,
+    setEditingRisk: (risk: Risk | null) =>
+      setSelectedArtifact(
+        risk
+          ? { id: risk.id, type: 'risk', data: risk as unknown as Record<string, unknown> }
           : null
       ),
     projectToEdit,

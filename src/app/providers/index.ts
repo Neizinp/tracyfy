@@ -12,6 +12,8 @@ export {
   useTestCases,
   InformationProvider,
   useInformation,
+  RisksProvider,
+  useRisks,
 } from './ArtifactProviders';
 
 export { ImportExportProvider, useImportExport } from './ImportExportProvider';
@@ -20,3 +22,4 @@ export { UserProvider, useUser } from './UserProvider';
 export { BackgroundTasksProvider, useBackgroundTasks } from './BackgroundTasksProvider';
 export { ToastProvider, useToast } from './ToastProvider';
 export { CustomAttributeProvider, useCustomAttributeContext } from './CustomAttributeProvider';
+export { BaselinesProvider, useBaselines } from './BaselinesProvider';

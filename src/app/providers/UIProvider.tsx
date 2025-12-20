@@ -5,6 +5,7 @@ import type {
   Requirement,
   UseCase,
   Information,
+  Risk,
   Project,
   ColumnVisibility,
   UseCaseColumnVisibility,
@@ -80,6 +81,8 @@ export interface UIContextValue {
   setSelectedInformation: (info: Information | null) => void;
   editingRequirement: Requirement | null;
   setEditingRequirement: (req: Requirement | null) => void;
+  editingRisk: Risk | null;
+  setEditingRisk: (risk: Risk | null) => void;
   editingUseCase: UseCase | null;
   setEditingUseCase: (uc: UseCase | null) => void;
   projectToEdit: Project | null;

@@ -1,5 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+const mockGetArtifactHistory = vi.fn().mockResolvedValue([]);
+const mockReadFileAtCommit = vi.fn().mockResolvedValue(null);
+
+vi.mock('../../app/providers/FileSystemProvider', () => ({
+  useFileSystem: () => ({
+    getArtifactHistory: mockGetArtifactHistory,
+    readFileAtCommit: mockReadFileAtCommit,
+  }),
+}));
+
 import { BaselineRevisionHistory } from '../BaselineRevisionHistory';
 import type { ProjectBaseline } from '../../types';
 

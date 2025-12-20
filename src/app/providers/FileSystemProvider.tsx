@@ -1,7 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { debug } from '../../utils/debug';
 import { fileSystemService } from '../../services/fileSystemService';
-import { realGitService, type FileStatus, type CommitInfo } from '../../services/realGitService';
+import {
+  realGitService,
+  type FileStatus,
+  type CommitInfo,
+  type PullResult,
+} from '../../services/realGitService';
 import { diskProjectService } from '../../services/diskProjectService';
 import {
   requirementService,
@@ -66,9 +71,13 @@ interface FileSystemContextValue {
     type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks',
     id: string
   ) => Promise<CommitInfo[]>;
+  readFileAtCommit: (filepath: string, commitHash: string) => Promise<string | null>;
   baselines: ProjectBaseline[];
   createBaseline: (name: string, message: string) => Promise<void>;
   refreshBaselines: () => Promise<void>;
+  push: () => Promise<void>;
+  pull: () => Promise<PullResult>;
+  hasRemote: () => Promise<boolean>;
 }
 
 export const FileSystemContext = createContext<FileSystemContextValue | undefined>(undefined);
@@ -600,6 +609,23 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [isReady]
   );
 
+  const readFileAtCommit = useCallback(async (path: string, hash: string) => {
+    if (isE2EMode()) return null;
+    return await realGitService.readFileAtCommit(path, hash);
+  }, []);
+
+  const push = useCallback(async () => {
+    return await realGitService.push();
+  }, []);
+
+  const pull = useCallback(async () => {
+    return await realGitService.pull();
+  }, []);
+
+  const hasRemote = useCallback(async () => {
+    return await realGitService.hasRemote();
+  }, []);
+
   const createBaseline = useCallback(
     async (name: string, message: string) => {
       if (!isReady) throw new Error('Filesystem not ready');
@@ -650,9 +676,13 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         // Git operations
         commitFile,
         getArtifactHistory,
+        readFileAtCommit,
         baselines,
         createBaseline,
         refreshBaselines,
+        push,
+        pull,
+        hasRemote,
       }}
     >
       {children}

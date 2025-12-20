@@ -10,12 +10,19 @@ vi.mock('../../PendingChangesPanel', () => ({
 }));
 
 // Mock useFileSystem hook
+const mockPush = vi.fn();
+const mockPull = vi.fn();
+const mockHasRemote = vi.fn(() => Promise.resolve(false));
+
 vi.mock('../../../app/providers', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../app/providers')>();
   return {
     ...actual,
     useFileSystem: vi.fn(() => ({
       isReady: true,
+      push: mockPush,
+      pull: mockPull,
+      hasRemote: mockHasRemote,
     })),
   };
 });

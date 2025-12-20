@@ -6,7 +6,14 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useFileSystem } from '../app/providers';
+import {
+  useRequirements,
+  useUseCases,
+  useTestCases,
+  useInformation,
+  useRisks,
+} from '../app/providers';
+import type { Requirement, UseCase, TestCase, Information, Risk } from '../types';
 import { useCustomAttributes } from './useCustomAttributes';
 import { diskFilterService } from '../services/diskFilterService';
 import type { SavedFilter, FilterState } from '../types/filters';
@@ -134,7 +141,11 @@ interface UseAdvancedSearchOptions {
 }
 
 export function useAdvancedSearch({ isOpen }: UseAdvancedSearchOptions) {
-  const { requirements, useCases, testCases, information, risks } = useFileSystem();
+  const { requirements } = useRequirements();
+  const { useCases } = useUseCases();
+  const { testCases } = useTestCases();
+  const { information } = useInformation();
+  const { risks } = useRisks();
   const { definitions: customAttrDefs } = useCustomAttributes();
 
   // Query builder criteria
@@ -270,34 +281,34 @@ export function useAdvancedSearch({ isOpen }: UseAdvancedSearchOptions) {
     const allArtifacts: SearchResult[] = [];
 
     requirements
-      .filter((r) => !r.isDeleted)
-      .forEach((r) => {
+      .filter((r: Requirement) => !r.isDeleted)
+      .forEach((r: Requirement) => {
         allArtifacts.push({ ...r, type: 'requirement' as ArtifactType });
       });
     useCases
-      .filter((u) => !u.isDeleted)
-      .forEach((u) => {
+      .filter((u: UseCase) => !u.isDeleted)
+      .forEach((u: UseCase) => {
         allArtifacts.push({ ...u, type: 'useCase' as ArtifactType });
       });
     testCases
-      .filter((t) => !t.isDeleted)
-      .forEach((t) => {
+      .filter((t: TestCase) => !t.isDeleted)
+      .forEach((t: TestCase) => {
         allArtifacts.push({ ...t, type: 'testCase' as ArtifactType });
       });
     information
-      .filter((i) => !i.isDeleted)
-      .forEach((i) => {
+      .filter((i: Information) => !i.isDeleted)
+      .forEach((i: Information) => {
         allArtifacts.push({
           ...i,
           type: 'information' as ArtifactType,
           status: 'active',
           priority: 'medium',
-          description: i.content,
+          description: i.text,
         });
       });
     risks
-      .filter((r) => !r.isDeleted)
-      .forEach((r) => {
+      .filter((r: Risk) => !r.isDeleted)
+      .forEach((r: Risk) => {
         allArtifacts.push({ ...r, type: 'risk' as ArtifactType, priority: r.impact });
       });
 

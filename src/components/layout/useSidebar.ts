@@ -9,7 +9,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { debug } from '../../utils/debug';
-import { realGitService } from '../../services/realGitService';
 import { useFileSystem } from '../../app/providers';
 
 const SIDEBAR_WIDTH_KEY = 'sidebar-width';
@@ -50,12 +49,12 @@ export function useSidebar() {
   const [isRemoteSettingsOpen, setIsRemoteSettingsOpen] = useState(false);
 
   // Check for remote on mount or when filesystem is ready
-  const { isReady, refreshStatus } = useFileSystem();
+  const { isReady, refreshStatus, push, pull, hasRemote: checkHasRemote } = useFileSystem();
   useEffect(() => {
     if (isReady) {
-      realGitService.hasRemote().then(setHasRemote);
+      checkHasRemote().then(setHasRemote);
     }
-  }, [isReady]);
+  }, [isReady, checkHasRemote]);
 
   // Save collapsed sections to localStorage
   useEffect(() => {
@@ -91,20 +90,20 @@ export function useSidebar() {
     setIsPushing(true);
     setSyncError(null);
     try {
-      await realGitService.push();
+      await push();
       debug.log('[Sidebar] Push successful');
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : 'Push failed');
     } finally {
       setIsPushing(false);
     }
-  }, []);
+  }, [push]);
 
   const handlePull = useCallback(async () => {
     setIsPulling(true);
     setSyncError(null);
     try {
-      const result = await realGitService.pull();
+      const result = await pull();
       if (!result.success && result.conflicts.length > 0) {
         setSyncError(`Merge conflicts in: ${result.conflicts.join(', ')}`);
       } else {
@@ -115,7 +114,7 @@ export function useSidebar() {
     } finally {
       setIsPulling(false);
     }
-  }, []);
+  }, [pull]);
 
   // Handle mouse move during resize
   const handleMouseMove = useCallback(
@@ -162,8 +161,8 @@ export function useSidebar() {
   const closeRemoteSettings = useCallback(() => {
     setIsRemoteSettingsOpen(false);
     // Check remote status after settings close
-    realGitService.hasRemote().then(setHasRemote);
-  }, []);
+    checkHasRemote().then(setHasRemote);
+  }, [checkHasRemote]);
 
   const clearSyncError = useCallback(() => {
     setSyncError(null);

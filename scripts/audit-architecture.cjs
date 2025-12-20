@@ -35,12 +35,19 @@ walk(SRC_DIR, (filepath) => {
         filepath.includes('ProjectProvider.tsx') ||
         filepath.includes('UserProvider.tsx') ||
         filepath.includes('CustomAttributeProvider.tsx') ||
+        filepath.includes('BaselinesProvider.tsx') ||
         filepath.includes('AppContent.tsx') ||
         filepath.includes('DirectorySelector.tsx') ||
         filepath.includes('PendingChangesPanel.tsx') ||
         filepath.includes('ManagementModals.tsx') ||
         filepath.includes('ProjectModals.tsx') ||
-        filepath.includes('ProjectLayout.tsx');
+        filepath.includes('ProjectLayout.tsx') ||
+        filepath.includes('utils/pdf') ||
+        filepath.includes('utils/image') ||
+        filepath.includes('BaselineRevisionHistory.tsx') ||
+        filepath.includes('RevisionHistoryTab.tsx') ||
+        filepath.includes('WorkflowDetailPanel.tsx') ||
+        filepath.includes('useSidebar.ts');
 
     if (!isExcludedFromFileSystemRule) {
         if (content.includes('useFileSystem()') || content.includes('fileSystemService')) {

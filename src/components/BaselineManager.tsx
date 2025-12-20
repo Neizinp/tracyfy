@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Plus, ChevronRight, GitCommit, Tag } from 'lucide-react';
+import { Calendar, Plus, Minus, ChevronRight, GitCommit, Tag } from 'lucide-react';
 import type { ProjectBaseline, CommitInfo } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { realGitService } from '../services/realGitService';
@@ -9,12 +9,14 @@ interface BaselineManagerProps {
   baselines: ProjectBaseline[];
   onCreateBaseline: () => void;
   onViewBaseline: (baselineId: string) => void;
+  onDeleteBaseline?: (id: string) => void;
 }
 
 export function BaselineManager({
   baselines,
   onCreateBaseline,
   onViewBaseline,
+  onDeleteBaseline,
 }: BaselineManagerProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'baselines' | 'commits'>('baselines');
@@ -140,7 +142,22 @@ export function BaselineManager({
                         )}
                       </div>
                     </div>
-                    <ChevronRight size={20} className="text-gray-400" />
+                    <div className="ml-auto flex flex-col items-end gap-2">
+                      <ChevronRight size={20} className="text-gray-400" />
+                      {onDeleteBaseline && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('Are you sure you want to delete this baseline?')) {
+                              onDeleteBaseline(baseline.id);
+                            }
+                          }}
+                          className="p-1 text-gray-500 hover:text-red-400 transition"
+                        >
+                          <Minus size={14} />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 text-xs text-gray-400 mt-3">

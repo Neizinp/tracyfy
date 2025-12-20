@@ -1,10 +1,10 @@
 import React from 'react';
 import { debug } from '../utils/debug';
 import { BaselineManager } from '../components';
-import { useFileSystem, useUI } from '../app/providers';
+import { useBaselines, useUI } from '../app/providers';
 
 export const BaselinesPage: React.FC = () => {
-  const { baselines } = useFileSystem();
+  const { baselines, deleteBaseline } = useBaselines();
   const { setIsVersionHistoryOpen } = useUI();
 
   const handleCreateBaseline = () => {
@@ -21,6 +21,7 @@ export const BaselinesPage: React.FC = () => {
       baselines={baselines}
       onCreateBaseline={handleCreateBaseline}
       onViewBaseline={handleViewBaselineHistory}
+      onDeleteBaseline={deleteBaseline}
     />
   );
 };

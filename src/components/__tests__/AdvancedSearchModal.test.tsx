@@ -4,7 +4,7 @@ import { AdvancedSearchModal } from '../AdvancedSearchModal';
 
 // Mock the hooks
 vi.mock('../../app/providers', () => ({
-  useFileSystem: () => ({
+  useRequirements: () => ({
     requirements: [
       {
         id: 'REQ-001',
@@ -52,6 +52,8 @@ vi.mock('../../app/providers', () => ({
         isDeleted: true,
       },
     ],
+  }),
+  useUseCases: () => ({
     useCases: [
       {
         id: 'UC-001',
@@ -62,6 +64,8 @@ vi.mock('../../app/providers', () => ({
         isDeleted: false,
       },
     ],
+  }),
+  useTestCases: () => ({
     testCases: [
       {
         id: 'TC-001',
@@ -72,7 +76,9 @@ vi.mock('../../app/providers', () => ({
         isDeleted: false,
       },
     ],
-    information: [],
+  }),
+  useInformation: () => ({ information: [] }),
+  useRisks: () => ({
     risks: [
       {
         id: 'RSK-001',

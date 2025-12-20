@@ -40,10 +40,19 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const loadUsers = async () => {
       setIsLoading(true);
       try {
-        const loadedUsers = await userService.loadAll();
+        const isE2E = typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__;
+
+        let loadedUsers = await userService.loadAll();
+
+        if (isE2E && loadedUsers.length === 0) {
+          console.log('[UserProvider] E2E mode: creating default test user');
+          const testUser = await createUser('E2E Test User');
+          loadedUsers = [testUser];
+        }
+
         const storedCurrentUserId = await diskProjectService.getCurrentUserId();
         setUsers(loadedUsers);
-        setCurrentUserId(storedCurrentUserId);
+        setCurrentUserId(storedCurrentUserId || (isE2E ? loadedUsers[0].id : ''));
       } catch (error) {
         console.error('Failed to load users:', error);
       } finally {

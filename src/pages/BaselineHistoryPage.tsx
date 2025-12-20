@@ -2,11 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { debug } from '../utils/debug';
 import { useParams, Navigate } from 'react-router-dom';
 import { BaselineRevisionHistory } from '../components';
-import { useFileSystem, useProject } from '../app/providers';
+import { useBaselines, useProject } from '../app/providers';
 import type { ProjectBaseline } from '../types';
 
 export const BaselineHistoryPage: React.FC = () => {
-  const { baselines } = useFileSystem();
+  const { baselines } = useBaselines();
   const { currentProject } = useProject();
   const { baselineId } = useParams<{ baselineId: string }>();
   const [compareToCurrent, setCompareToCurrent] = useState(false);
@@ -95,7 +95,7 @@ export const BaselineHistoryPage: React.FC = () => {
                   (parseInt(selectedBaseline.version || '0') - 1).toString().padStart(2, '0')
               ) || null
         }
-        onViewArtifact={(artifactId, commitHash) => {
+        onViewArtifact={(artifactId: string, commitHash: string) => {
           debug.log('View artifact', artifactId, commitHash);
           alert(`View artifact ${artifactId} at ${commitHash} - Not implemented yet`);
         }}

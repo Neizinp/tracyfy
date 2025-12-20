@@ -8,12 +8,11 @@
 import React, { useState } from 'react';
 import { X, CheckCircle2, XCircle, Clock, User, FileText, MessageSquare } from 'lucide-react';
 import type { Workflow } from '../types';
-import { useUser } from '../app/providers';
+import { useUser, useRequirements, useUseCases, useTestCases } from '../app/providers';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { diskWorkflowService } from '../services/diskWorkflowService';
-import { requirementService, useCaseService, testCaseService } from '../services/artifactServices';
 import { useToast } from '../app/providers/ToastProvider';
-import type { Requirement, UseCase, TestCase } from '../types';
+import type { TestCase } from '../types';
 
 interface WorkflowDetailPanelProps {
   workflow: Workflow;
@@ -27,7 +26,10 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
   onUpdate,
 }) => {
   const { currentUser, users } = useUser();
-  const { requirements, useCases, testCases, reloadData } = useFileSystem();
+  const { requirements, handleUpdateRequirement } = useRequirements();
+  const { useCases, handleUpdateUseCase } = useUseCases();
+  const { testCases, handleUpdateTestCase } = useTestCases();
+  const { reloadData } = useFileSystem();
   const { showToast } = useToast();
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,37 +76,28 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
     // Check requirements
     const req = requirements.find((r) => r.id === artifactId);
     if (req) {
-      const updatedReq: Requirement = {
-        ...req,
+      await handleUpdateRequirement(artifactId, {
         status: 'approved',
         approvalDate: Date.now(),
-        lastModified: Date.now(),
-      };
-      await requirementService.save(updatedReq);
+      });
       return;
     }
 
     // Check use cases
     const uc = useCases.find((u) => u.id === artifactId);
     if (uc) {
-      const updatedUC: UseCase = {
-        ...uc,
+      await handleUpdateUseCase(artifactId, {
         status: 'approved',
-        lastModified: Date.now(),
-      };
-      await useCaseService.save(updatedUC);
+      });
       return;
     }
 
     // Check test cases
     const tc = testCases.find((t) => t.id === artifactId);
     if (tc) {
-      const updatedTC: TestCase = {
-        ...tc,
+      await handleUpdateTestCase(artifactId, {
         status: 'approved' as TestCase['status'],
-        lastModified: Date.now(),
-      };
-      await testCaseService.save(updatedTC);
+      });
       return;
     }
   };

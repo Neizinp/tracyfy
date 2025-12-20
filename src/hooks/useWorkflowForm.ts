@@ -6,9 +6,15 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Workflow } from '../types';
-import { useUser } from '../app/providers';
-import { useFileSystem } from '../app/providers/FileSystemProvider';
+import type { Workflow, Requirement, UseCase, TestCase, Information, Risk } from '../types';
+import {
+  useUser,
+  useRequirements,
+  useUseCases,
+  useTestCases,
+  useInformation,
+  useRisks,
+} from '../app/providers';
 import { diskWorkflowService } from '../services/diskWorkflowService';
 
 interface UseWorkflowFormOptions {
@@ -20,7 +26,11 @@ interface UseWorkflowFormOptions {
 
 export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWorkflowFormOptions) {
   const { currentUser, users } = useUser();
-  const { requirements, useCases, testCases, information, risks } = useFileSystem();
+  const { requirements } = useRequirements();
+  const { useCases } = useUseCases();
+  const { testCases } = useTestCases();
+  const { information } = useInformation();
+  const { risks } = useRisks();
 
   // Form state
   const [title, setTitle] = useState('');
@@ -52,20 +62,30 @@ export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWor
   const allArtifacts = useMemo(
     () => [
       ...requirements
-        .filter((r) => !r.isDeleted)
-        .map((r) => ({ id: r.id, title: r.title, type: 'Requirement', status: r.status })),
+        .filter((r: Requirement) => !r.isDeleted)
+        .map((r: Requirement) => ({
+          id: r.id,
+          title: r.title,
+          type: 'Requirement',
+          status: r.status,
+        })),
       ...useCases
-        .filter((u) => !u.isDeleted)
-        .map((u) => ({ id: u.id, title: u.title, type: 'Use Case', status: u.status })),
+        .filter((u: UseCase) => !u.isDeleted)
+        .map((u: UseCase) => ({ id: u.id, title: u.title, type: 'Use Case', status: u.status })),
       ...testCases
-        .filter((t) => !t.isDeleted)
-        .map((t) => ({ id: t.id, title: t.title, type: 'Test Case', status: t.status })),
+        .filter((t: TestCase) => !t.isDeleted)
+        .map((t: TestCase) => ({ id: t.id, title: t.title, type: 'Test Case', status: t.status })),
       ...information
-        .filter((i) => !i.isDeleted)
-        .map((i) => ({ id: i.id, title: i.title, type: 'Information', status: 'draft' })),
+        .filter((i: Information) => !i.isDeleted)
+        .map((i: Information) => ({
+          id: i.id,
+          title: i.title,
+          type: 'Information',
+          status: 'draft',
+        })),
       ...risks
-        .filter((r) => !r.isDeleted)
-        .map((r) => ({ id: r.id, title: r.title, type: 'Risk', status: r.status })),
+        .filter((r: Risk) => !r.isDeleted)
+        .map((r: Risk) => ({ id: r.id, title: r.title, type: 'Risk', status: r.status })),
     ],
     [requirements, useCases, testCases, information, risks]
   );
