@@ -20,6 +20,7 @@ interface RiskModalProps {
   onSubmit: (
     data: Omit<Risk, 'id' | 'lastModified' | 'dateCreated'> | { id: string; updates: Partial<Risk> }
   ) => void;
+  onDelete?: (id: string) => void;
   onBack?: () => void;
 }
 
@@ -30,6 +31,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({
   risk,
   onClose,
   onSubmit,
+  onDelete,
   onBack,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
@@ -167,12 +169,17 @@ export const RiskModal: React.FC<RiskModalProps> = ({
       onSubmit={handleSubmit}
       submitLabel={isEditMode ? 'Save Changes' : 'Create Risk'}
       formId="new-risk-form"
+      showDeleteConfirm={showDeleteConfirm}
+      onDeleteConfirm={confirmDelete}
+      onDeleteCancel={cancelDelete}
+      deleteConfirmTitle="Move to Trash"
+      deleteConfirmMessage="Are you sure you want to move this risk to the trash?"
       footerActions={
         isEditMode && (
           <button
             type="button"
             onClick={handleDelete}
-            className="btn-danger"
+            className="btn-outline-danger"
             style={{
               padding: '8px 16px',
               backgroundColor: 'transparent',
@@ -279,68 +286,6 @@ export const RiskModal: React.FC<RiskModalProps> = ({
               },
             ]}
           />
-
-          {isEditMode && showDeleteConfirm && (
-            <div
-              style={{
-                padding: 'var(--spacing-md)',
-                backgroundColor: 'var(--color-error-bg)',
-                border: '1px solid var(--color-error-light)',
-                borderRadius: '6px',
-                marginTop: 'var(--spacing-md)',
-              }}
-            >
-              <div
-                style={{
-                  color: 'var(--color-error)',
-                  fontWeight: 500,
-                  marginBottom: 'var(--spacing-xs)',
-                }}
-              >
-                ⚠️ Move to Trash
-              </div>
-              <div
-                style={{
-                  color: 'var(--color-error)',
-                  fontSize: 'var(--font-size-sm)',
-                  marginBottom: 'var(--spacing-md)',
-                }}
-              >
-                Are you sure you want to move this risk to the trash?
-              </div>
-              <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                <button
-                  type="button"
-                  onClick={confirmDelete}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    backgroundColor: 'var(--color-error)',
-                    color: 'white',
-                    cursor: 'pointer',
-                    fontWeight: 500,
-                  }}
-                >
-                  Move to Trash
-                </button>
-                <button
-                  type="button"
-                  onClick={cancelDelete}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-card)',
-                    color: 'var(--color-text-secondary)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       )}
 

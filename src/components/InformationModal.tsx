@@ -22,6 +22,7 @@ interface InformationModalProps {
       | Omit<Information, 'id' | 'lastModified' | 'dateCreated'>
       | { id: string; updates: Partial<Information> }
   ) => void;
+  onDelete: (id: string) => void;
   onBack?: () => void;
 }
 
@@ -32,6 +33,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
   information,
   onClose,
   onSubmit,
+  onDelete,
   onBack,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
@@ -52,7 +54,16 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     handleSubmit,
     handleNavigateToArtifact,
     handleRemoveLink,
-  } = useInformationForm({ isOpen, information, onClose, onSubmit });
+    handleDelete,
+    showDeleteConfirm,
+    confirmDelete,
+    cancelDelete,
+  } = useInformationForm({
+    isOpen,
+    information,
+    onClose,
+    onSubmit,
+  });
 
   const {
     outgoingLinks,
@@ -102,6 +113,36 @@ export const InformationModal: React.FC<InformationModalProps> = ({
       onSubmit={handleSubmit}
       submitLabel={isEditMode ? 'Save Changes' : 'Create Information'}
       formId="new-information-form"
+      showDeleteConfirm={showDeleteConfirm}
+      onDeleteConfirm={() => {
+        if (information) {
+          onDelete(information.id);
+          onClose();
+        }
+      }}
+      onDeleteCancel={cancelDelete}
+      deleteConfirmTitle="Move to Trash"
+      deleteConfirmMessage="Are you sure you want to move this information to the trash?"
+      footerActions={
+        isEditMode && (
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="btn-outline-danger"
+            style={{
+              padding: '8px 16px',
+              backgroundColor: 'transparent',
+              border: '1px solid var(--color-error)',
+              color: 'var(--color-error)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            Delete
+          </button>
+        )
+      }
     >
       {activeTab === 'overview' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>

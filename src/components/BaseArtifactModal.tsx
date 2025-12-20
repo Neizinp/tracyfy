@@ -26,6 +26,11 @@ interface BaseArtifactModalProps {
   maxHeight?: string;
   onBack?: () => void;
   formId?: string;
+  showDeleteConfirm?: boolean;
+  onDeleteConfirm?: () => void;
+  onDeleteCancel?: () => void;
+  deleteConfirmMessage?: string;
+  deleteConfirmTitle?: string;
 }
 
 export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
@@ -47,6 +52,11 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
   maxHeight = '85vh',
   onBack,
   formId = 'base-artifact-modal-form',
+  showDeleteConfirm,
+  onDeleteConfirm,
+  onDeleteCancel,
+  deleteConfirmMessage,
+  deleteConfirmTitle,
 }) => {
   if (!isOpen) return null;
 
@@ -199,6 +209,74 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
         >
           {children}
         </form>
+
+        {showDeleteConfirm && (
+          <div
+            style={{
+              padding: 'var(--spacing-md)',
+              margin: '0 var(--spacing-lg) var(--spacing-lg)',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid var(--color-status-error)',
+              borderRadius: '6px',
+            }}
+          >
+            <div
+              style={{
+                color: 'var(--color-status-error)',
+                fontWeight: 600,
+                marginBottom: 'var(--spacing-xs)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <span>⚠️</span> {deleteConfirmTitle || 'Move to Trash'}
+            </div>
+            <div
+              style={{
+                color: 'var(--color-text-primary)',
+                fontSize: 'var(--font-size-sm)',
+                marginBottom: 'var(--spacing-md)',
+              }}
+            >
+              {deleteConfirmMessage ||
+                'Are you sure you want to move this item to the trash? You can restore it later.'}
+            </div>
+            <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+              <button
+                type="button"
+                onClick={onDeleteConfirm}
+                className="btn-danger"
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: 'var(--color-status-error)',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+              >
+                Confirm Delete
+              </button>
+              <button
+                type="button"
+                onClick={onDeleteCancel}
+                className="btn-secondary"
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-bg-card)',
+                  color: 'var(--color-text-secondary)',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div

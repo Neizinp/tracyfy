@@ -6,16 +6,12 @@
  */
 
 import React from 'react';
-import { X, Clock, Save, Tag, GitCommit } from 'lucide-react';
+import { X, Clock, Tag, GitCommit } from 'lucide-react';
 import type { ProjectBaseline } from '../types';
-import { formatDateTime } from '../utils/dateUtils';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { SnapshotViewer } from './SnapshotViewer';
-import {
-  useVersionHistory,
-  ARTIFACT_TYPE_CONFIG,
-  getArtifactTypeFromPath,
-} from '../hooks/useVersionHistory';
+import { useVersionHistory } from '../hooks/useVersionHistory';
+import { CommitCard, CommitFilters, CreateBaselineForm, BaselineCard } from './versionHistory';
 
 interface VersionHistoryProps {
   isOpen: boolean;
@@ -74,6 +70,19 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
 
   if (!isOpen) return null;
 
+  const tabStyle = (isActive: boolean): React.CSSProperties => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 24px',
+    background: 'none',
+    border: 'none',
+    borderBottom: isActive ? '2px solid var(--color-info)' : '2px solid transparent',
+    color: isActive ? 'var(--color-info)' : 'var(--color-text-muted)',
+    cursor: 'pointer',
+    fontWeight: 500,
+  });
+
   return (
     <div
       style={{
@@ -102,6 +111,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         }}
       >
+        {/* Header */}
         <div
           style={{
             padding: 'var(--spacing-md)',
@@ -132,58 +142,16 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
         <div style={{ display: 'flex', borderBottom: '1px solid var(--color-border)' }}>
           <button
             onClick={() => setActiveTab('baselines')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 24px',
-              background: 'none',
-              border: 'none',
-              borderBottom:
-                activeTab === 'baselines' ? '2px solid var(--color-info)' : '2px solid transparent',
-              color: activeTab === 'baselines' ? 'var(--color-info)' : 'var(--color-text-muted)',
-              cursor: 'pointer',
-              fontWeight: 500,
-            }}
+            style={tabStyle(activeTab === 'baselines')}
           >
             <Tag size={16} />
             Baselines
           </button>
-          <button
-            onClick={() => setActiveTab('commits')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 24px',
-              background: 'none',
-              border: 'none',
-              borderBottom:
-                activeTab === 'commits' ? '2px solid var(--color-info)' : '2px solid transparent',
-              color: activeTab === 'commits' ? 'var(--color-info)' : 'var(--color-text-muted)',
-              cursor: 'pointer',
-              fontWeight: 500,
-            }}
-          >
+          <button onClick={() => setActiveTab('commits')} style={tabStyle(activeTab === 'commits')}>
             <GitCommit size={16} />
             {projectName ? `${projectName} Commits` : 'Project Commits'}
           </button>
-          <button
-            onClick={() => setActiveTab('global')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 24px',
-              background: 'none',
-              border: 'none',
-              borderBottom:
-                activeTab === 'global' ? '2px solid var(--color-info)' : '2px solid transparent',
-              color: activeTab === 'global' ? 'var(--color-info)' : 'var(--color-text-muted)',
-              cursor: 'pointer',
-              fontWeight: 500,
-            }}
-          >
+          <button onClick={() => setActiveTab('global')} style={tabStyle(activeTab === 'global')}>
             <GitCommit size={16} />
             All Commits
           </button>
@@ -201,111 +169,26 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
               gap: '16px',
             }}
           >
-            {!isCreatingBaseline ? (
-              <button
-                onClick={handleStartCreating}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  backgroundColor: 'var(--color-info)',
-                  color: 'white',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: 'var(--font-size-sm)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontWeight: 500,
-                }}
-              >
-                <Save size={14} />
-                Create Baseline
-              </button>
-            ) : (
-              <form
-                onSubmit={handleCreateBaselineSubmit}
-                style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
-              >
-                <input
-                  type="text"
-                  value={baselineName}
-                  onChange={(e) => setBaselineName(e.target.value)}
-                  placeholder="Name (e.g. 1.0)"
-                  autoFocus
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    fontSize: 'var(--font-size-sm)',
-                    width: '120px',
-                  }}
-                />
-                <input
-                  type="text"
-                  value={baselineMessage}
-                  onChange={(e) => setBaselineMessage(e.target.value)}
-                  placeholder="Description (optional)"
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-app)',
-                    color: 'var(--color-text-primary)',
-                    fontSize: 'var(--font-size-sm)',
-                    width: '200px',
-                  }}
-                />
-                <button
-                  type="submit"
-                  disabled={!baselineName.trim()}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                    backgroundColor: 'var(--color-info)',
-                    color: 'white',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-sm)',
-                    opacity: baselineName.trim() ? 1 : 0.5,
-                  }}
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsCreatingBaseline(false);
-                    setBaselineName('');
-                  }}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-card)',
-                    color: 'var(--color-text-primary)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Cancel
-                </button>
-              </form>
-            )}
+            <CreateBaselineForm
+              isCreating={isCreatingBaseline}
+              baselineName={baselineName}
+              baselineMessage={baselineMessage}
+              onStartCreating={handleStartCreating}
+              onNameChange={setBaselineName}
+              onMessageChange={setBaselineMessage}
+              onSubmit={handleCreateBaselineSubmit}
+              onCancel={() => {
+                setIsCreatingBaseline(false);
+                setBaselineName('');
+              }}
+            />
           </div>
         )}
 
-        <div
-          style={{
-            flex: 1,
-            overflow: 'auto',
-            padding: 'var(--spacing-md)',
-          }}
-        >
-          {activeTab === 'baselines' ? (
-            // Baselines List
-            projectBaselines.length === 0 ? (
+        {/* Content */}
+        <div style={{ flex: 1, overflow: 'auto', padding: 'var(--spacing-md)' }}>
+          {activeTab === 'baselines' &&
+            (projectBaselines.length === 0 ? (
               <div
                 style={{
                   textAlign: 'center',
@@ -319,93 +202,26 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {projectBaselines.map((baseline) => (
-                  <div
+                  <BaselineCard
                     key={baseline.id}
-                    style={{
-                      padding: 'var(--spacing-md)',
-                      borderRadius: '6px',
-                      border: '1px solid var(--color-border)',
-                      backgroundColor: 'var(--color-bg-secondary)',
-                      borderColor: 'var(--color-border)',
-                      transition: 'background-color 0.2s',
+                    baseline={baseline}
+                    versionLabel={getVersionFromTag(baseline.name)}
+                    onView={() => {
+                      const commitFromTag = tagToCommitHash.get(baseline.name);
+                      const fallbackCommit = Object.keys(baseline.artifactCommits)[0] || '';
+                      setViewingSnapshot({
+                        commitHash: commitFromTag || fallbackCommit,
+                        name: getVersionFromTag(baseline.name),
+                        timestamp: baseline.timestamp,
+                      });
                     }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        marginBottom: '8px',
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            fontSize: 'var(--font-size-sm)',
-                            color: 'var(--color-text-muted)',
-                            marginBottom: '4px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                          }}
-                        >
-                          {formatDateTime(baseline.timestamp)}
-                          <span
-                            style={{
-                              padding: '2px 8px',
-                              borderRadius: '12px',
-                              backgroundColor: 'var(--color-info)',
-                              color: 'white',
-                              fontSize: 'var(--font-size-xs)',
-                              fontWeight: 500,
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                          >
-                            <Tag size={10} />
-                            {getVersionFromTag(baseline.name)}
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            fontWeight: 500,
-                            color: 'var(--color-text-primary)',
-                          }}
-                        >
-                          {baseline.description || baseline.name}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => {
-                          const commitFromTag = tagToCommitHash.get(baseline.name);
-                          const fallbackCommit = Object.keys(baseline.artifactCommits)[0] || '';
-                          setViewingSnapshot({
-                            commitHash: commitFromTag || fallbackCommit,
-                            name: getVersionFromTag(baseline.name),
-                            timestamp: baseline.timestamp,
-                          });
-                        }}
-                        style={{
-                          padding: '4px 12px',
-                          borderRadius: '4px',
-                          border: '1px solid var(--color-border)',
-                          backgroundColor: 'var(--color-bg-tertiary)',
-                          color: 'var(--color-text-primary)',
-                          fontSize: 'var(--font-size-xs)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        View
-                      </button>
-                    </div>
-                  </div>
+                  />
                 ))}
               </div>
-            )
-          ) : activeTab === 'commits' ? (
-            // Project Commits List
-            isLoadingCommits ? (
+            ))}
+
+          {activeTab === 'commits' &&
+            (isLoadingCommits ? (
               <div
                 style={{
                   textAlign: 'center',
@@ -428,112 +244,17 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {commits.map((commit, index) => {
-                  const baselineTags = baselineCommitHashes.get(commit.hash);
-                  const isBaseline = baselineTags && baselineTags.length > 0;
-
-                  return (
-                    <div
-                      key={commit.hash}
-                      style={{
-                        padding: 'var(--spacing-md)',
-                        borderRadius: '6px',
-                        border: isBaseline
-                          ? '1px solid var(--color-info-bg)'
-                          : '1px solid var(--color-border)',
-                        backgroundColor: isBaseline
-                          ? 'var(--color-info-bg)'
-                          : 'var(--color-bg-secondary)',
-                        transition: 'background-color 0.2s',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                        <div style={{ marginTop: '2px' }}>
-                          {isBaseline ? (
-                            <Tag size={16} style={{ color: 'var(--color-info)' }} />
-                          ) : (
-                            <GitCommit size={16} style={{ color: 'var(--color-text-muted)' }} />
-                          )}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              flexWrap: 'wrap',
-                            }}
-                          >
-                            <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                              {commit.message.split('\n')[0]}
-                            </span>
-                            {isBaseline &&
-                              baselineTags.map((tagName) => (
-                                <span
-                                  key={tagName}
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                    padding: '2px 8px',
-                                    borderRadius: '12px',
-                                    backgroundColor: 'var(--color-info-bg)',
-                                    color: 'var(--color-info-light)',
-                                    fontSize: 'var(--font-size-xs)',
-                                    fontWeight: 500,
-                                  }}
-                                >
-                                  <Tag size={10} />
-                                  {tagName}
-                                </span>
-                              ))}
-                            {index === 0 && (
-                              <span
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  padding: '2px 8px',
-                                  borderRadius: '12px',
-                                  backgroundColor: 'var(--color-success-bg)',
-                                  color: 'var(--color-success-light)',
-                                  fontSize: 'var(--font-size-xs)',
-                                  fontWeight: 500,
-                                }}
-                              >
-                                HEAD
-                              </span>
-                            )}
-                          </div>
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              marginTop: '4px',
-                              fontSize: 'var(--font-size-sm)',
-                              color: 'var(--color-text-muted)',
-                            }}
-                          >
-                            <span
-                              style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-xs)' }}
-                            >
-                              {commit.hash.substring(0, 7)}
-                            </span>
-                            <span>•</span>
-                            <span>{commit.author}</span>
-                            <span>•</span>
-                            <span>{formatDateTime(commit.timestamp)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {commits.map((commit, index) => (
+                  <CommitCard
+                    key={commit.hash}
+                    commit={commit}
+                    isFirst={index === 0}
+                    baselineTags={baselineCommitHashes.get(commit.hash) || []}
+                  />
+                ))}
               </div>
-            )
-          ) : null}
+            ))}
 
-          {/* Global Commits List */}
           {activeTab === 'global' &&
             (isLoadingGlobalCommits ? (
               <div
@@ -558,43 +279,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {/* Filter Buttons */}
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: '6px',
-                    flexWrap: 'wrap',
-                    padding: '8px 0',
-                    borderBottom: '1px solid var(--color-border)',
-                    marginBottom: '4px',
-                  }}
-                >
-                  {Object.entries(ARTIFACT_TYPE_CONFIG).map(([type, config]) => {
-                    const isSelected = selectedTypes.has(type);
-                    return (
-                      <button
-                        key={type}
-                        onClick={() => handleToggleType(type)}
-                        style={{
-                          padding: '4px 10px',
-                          borderRadius: '14px',
-                          border: `1px solid ${isSelected ? config.color : 'var(--color-border)'}`,
-                          backgroundColor: isSelected ? config.color : 'transparent',
-                          color: isSelected ? 'white' : 'var(--color-text-muted)',
-                          fontSize: 'var(--font-size-xs)',
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                          opacity: isSelected ? 1 : 0.7,
-                        }}
-                      >
-                        {config.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Filtered Commits */}
+                <CommitFilters selectedTypes={selectedTypes} onToggleType={handleToggleType} />
                 {filteredGlobalCommits.length === 0 ? (
                   <div
                     style={{
@@ -607,159 +292,24 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {filteredGlobalCommits.map((commit, index) => {
-                      const baselineTags = baselineCommitHashes.get(commit.hash);
-                      const isBaseline = baselineTags && baselineTags.length > 0;
-
-                      return (
-                        <div
-                          key={commit.hash}
-                          style={{
-                            padding: 'var(--spacing-md)',
-                            borderRadius: '6px',
-                            border: isBaseline
-                              ? '1px solid var(--color-info-bg)'
-                              : '1px solid var(--color-border)',
-                            backgroundColor: isBaseline
-                              ? 'var(--color-info-bg)'
-                              : 'var(--color-bg-secondary)',
-                            transition: 'background-color 0.2s',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                            <div style={{ marginTop: '2px' }}>
-                              {isBaseline ? (
-                                <Tag size={16} style={{ color: 'var(--color-info)' }} />
-                              ) : (
-                                <GitCommit size={16} style={{ color: 'var(--color-text-muted)' }} />
-                              )}
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '8px',
-                                  flexWrap: 'wrap',
-                                }}
-                              >
-                                <span
-                                  style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}
-                                >
-                                  {commit.message.split('\n')[0]}
-                                </span>
-                                {isBaseline &&
-                                  baselineTags.map((tagName) => (
-                                    <span
-                                      key={tagName}
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '4px',
-                                        padding: '2px 8px',
-                                        borderRadius: '12px',
-                                        backgroundColor: 'var(--color-info-bg)',
-                                        color: 'var(--color-info-light)',
-                                        fontSize: 'var(--font-size-xs)',
-                                        fontWeight: 500,
-                                      }}
-                                    >
-                                      <Tag size={10} />
-                                      {tagName}
-                                    </span>
-                                  ))}
-                                {index === 0 && (
-                                  <span
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      padding: '2px 8px',
-                                      borderRadius: '12px',
-                                      backgroundColor: 'var(--color-success-bg)',
-                                      color: 'var(--color-success-light)',
-                                      fontSize: 'var(--font-size-xs)',
-                                      fontWeight: 500,
-                                    }}
-                                  >
-                                    HEAD
-                                  </span>
-                                )}
-                              </div>
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '8px',
-                                  marginTop: '4px',
-                                  fontSize: 'var(--font-size-sm)',
-                                  color: 'var(--color-text-muted)',
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    fontFamily: 'monospace',
-                                    fontSize: 'var(--font-size-xs)',
-                                  }}
-                                >
-                                  {commit.hash.substring(0, 7)}
-                                </span>
-                                <span>•</span>
-                                <span>{commit.author}</span>
-                                <span>•</span>
-                                <span>{formatDateTime(commit.timestamp)}</span>
-                                <span>•</span>
-                                {(() => {
-                                  const filePath = commitFiles.get(commit.hash)?.[0];
-                                  if (!commitFiles.has(commit.hash)) {
-                                    return (
-                                      <span style={{ color: 'var(--color-text-muted)' }}>...</span>
-                                    );
-                                  }
-                                  if (!filePath) {
-                                    return (
-                                      <span style={{ color: 'var(--color-text-muted)' }}>—</span>
-                                    );
-                                  }
-                                  const fileName =
-                                    filePath.split('/').pop()?.replace('.md', '') || '';
-                                  const artifactType = getArtifactTypeFromPath(filePath);
-                                  return (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (onSelectArtifact) {
-                                          onSelectArtifact(fileName, artifactType);
-                                          onClose();
-                                        }
-                                      }}
-                                      style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        padding: 0,
-                                        color: 'var(--color-accent)',
-                                        fontWeight: 500,
-                                        cursor: onSelectArtifact ? 'pointer' : 'default',
-                                        textDecoration: onSelectArtifact ? 'underline' : 'none',
-                                        font: 'inherit',
-                                      }}
-                                      disabled={!onSelectArtifact}
-                                    >
-                                      {fileName}
-                                    </button>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {filteredGlobalCommits.map((commit, index) => (
+                      <CommitCard
+                        key={commit.hash}
+                        commit={commit}
+                        isFirst={index === 0}
+                        baselineTags={baselineCommitHashes.get(commit.hash) || []}
+                        commitFiles={commitFiles.get(commit.hash)}
+                        onSelectArtifact={onSelectArtifact}
+                        onClose={onClose}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
             ))}
         </div>
 
+        {/* Footer */}
         <div
           style={{
             padding: 'var(--spacing-md)',

@@ -20,6 +20,7 @@ interface UseCaseModalProps {
   onSubmit: (
     useCase: Omit<UseCase, 'id' | 'lastModified'> | { id: string; updates: Partial<UseCase> }
   ) => void;
+  onDelete: (id: string) => void;
   onBack?: () => void;
 }
 
@@ -30,6 +31,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
   useCase,
   onClose,
   onSubmit,
+  onDelete,
   onBack,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
@@ -62,7 +64,16 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     handleSubmit,
     handleNavigateToArtifact,
     handleRemoveLink,
-  } = useUseCaseForm({ isOpen, useCase, onClose, onSubmit });
+    handleDelete,
+    showDeleteConfirm,
+    confirmDelete,
+    cancelDelete,
+  } = useUseCaseForm({
+    isOpen,
+    useCase,
+    onClose,
+    onSubmit,
+  });
 
   const {
     outgoingLinks,
@@ -122,6 +133,36 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
       onSubmit={handleSubmit}
       submitLabel={isEditMode ? 'Save Changes' : 'Create Use Case'}
       formId="new-usecase-form"
+      showDeleteConfirm={showDeleteConfirm}
+      onDeleteConfirm={() => {
+        if (useCase) {
+          onDelete(useCase.id);
+          onClose();
+        }
+      }}
+      onDeleteCancel={cancelDelete}
+      deleteConfirmTitle="Move to Trash"
+      deleteConfirmMessage="Are you sure you want to move this use case to the trash?"
+      footerActions={
+        isEditMode && (
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="btn-outline-danger"
+            style={{
+              padding: '8px 16px',
+              backgroundColor: 'transparent',
+              border: '1px solid var(--color-status-error)',
+              color: 'var(--color-status-error)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            Delete
+          </button>
+        )
+      }
     >
       {activeTab === 'overview' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>

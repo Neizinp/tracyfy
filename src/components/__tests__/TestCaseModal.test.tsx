@@ -51,9 +51,14 @@ vi.mock('../BaseArtifactModal', () => ({
     tabs,
     onClose,
     footerActions,
+    showDeleteConfirm,
+    deleteConfirmMessage,
   }: any) => (
     <div>
       <h2>{title}</h2>
+      {showDeleteConfirm && deleteConfirmMessage && (
+        <div data-testid="delete-confirm">{deleteConfirmMessage}</div>
+      )}
       <div data-testid="tabs">
         {tabs?.map((t: any) => (
           <button key={t.id} onClick={() => onTabChange?.(t.id)}>

@@ -6,7 +6,7 @@ import {
   useUseCases,
   useTestCases,
   useInformation,
-  useFileSystem,
+  useRisks,
 } from '../../app/providers';
 import type { Information, Risk, UseCase } from '../../types';
 
@@ -14,11 +14,12 @@ export const ArtifactModals: React.FC = () => {
   const ui = useUI();
   const { handleAddRequirement, handleUpdateRequirement, handleDeleteRequirement } =
     useRequirements();
-  const { handleAddUseCase, handleUpdateUseCase } = useUseCases();
+  const { handleAddUseCase, handleUpdateUseCase, handleDeleteUseCase } = useUseCases();
   const { testCases, handleAddTestCase, handleUpdateTestCase, handleDeleteTestCase } =
     useTestCases();
-  const { handleAddInformation, handleUpdateInformation } = useInformation();
-  const { risks, saveRisk, getNextId } = useFileSystem();
+  const { handleAddInformation, handleUpdateInformation, handleDeleteInformation } =
+    useInformation();
+  const { handleAddRisk, handleUpdateRisk, handleDeleteRisk } = useRisks();
   const {
     closeModal,
     clearNavigationStack,
@@ -62,24 +63,9 @@ export const ArtifactModals: React.FC = () => {
     data: Omit<Risk, 'id' | 'lastModified' | 'dateCreated'> | { id: string; updates: Partial<Risk> }
   ) => {
     if ('id' in data && 'updates' in data) {
-      const existing = risks.find((r: Risk) => r.id === data.id);
-      if (existing) {
-        await saveRisk({
-          ...existing,
-          ...data.updates,
-          lastModified: Date.now(),
-        });
-      }
+      await handleUpdateRisk(data.id, data.updates);
     } else {
-      const newId = await getNextId('risks');
-      const now = Date.now();
-      await saveRisk({
-        id: newId,
-        ...data,
-        linkedArtifacts: [],
-        dateCreated: now,
-        lastModified: now,
-      } as Risk);
+      await handleAddRisk(data as Omit<Risk, 'id' | 'lastModified' | 'dateCreated'>);
     }
   };
 
@@ -108,6 +94,7 @@ export const ArtifactModals: React.FC = () => {
         useCase={editingUseCase}
         onClose={handleFullClose}
         onSubmit={handleUseCaseSubmit}
+        onDelete={handleDeleteUseCase}
         onBack={navigationStack.length > 0 ? popNavigationStack : undefined}
       />
 
@@ -126,6 +113,7 @@ export const ArtifactModals: React.FC = () => {
         information={ui.selectedInformation}
         onClose={handleFullClose}
         onSubmit={handleInformationSubmit}
+        onDelete={handleDeleteInformation}
         onBack={navigationStack.length > 0 ? popNavigationStack : undefined}
       />
 
@@ -138,6 +126,7 @@ export const ArtifactModals: React.FC = () => {
         }
         onClose={handleFullClose}
         onSubmit={handleRiskSubmit}
+        onDelete={handleDeleteRisk}
         onBack={navigationStack.length > 0 ? popNavigationStack : undefined}
       />
     </>
