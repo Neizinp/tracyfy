@@ -38,7 +38,6 @@ import { DropdownMenuItem } from './DropdownMenuItem';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { useHeaderBar } from '../../hooks/useHeaderBar';
 import { ThemeToggle } from './ThemeToggle';
-import { GitSyncStatus } from './GitSyncStatus';
 
 // Type for E2E test mode window properties
 interface E2EWindow extends Window {
@@ -326,9 +325,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             </div>
           )}
         </div>
-
-        {/* Git Sync Status */}
-        <GitSyncStatus />
 
         {/* History Button */}
         {onViewHistory && (

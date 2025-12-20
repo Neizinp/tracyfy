@@ -10,6 +10,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { debug } from '../../utils/debug';
 import { useFileSystem } from '../../app/providers';
+import { realGitService } from '../../services/realGitService';
+import type { SyncStatus } from '../../types';
 
 const SIDEBAR_WIDTH_KEY = 'sidebar-width';
 const COLLAPSED_SECTIONS_KEY = 'sidebar-collapsed-sections';
@@ -47,14 +49,45 @@ export function useSidebar() {
   const [isPulling, setIsPulling] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isRemoteSettingsOpen, setIsRemoteSettingsOpen] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({
+    ahead: false,
+    behind: false,
+    diverged: false,
+  });
 
   // Check for remote on mount or when filesystem is ready
   const { isReady, refreshStatus, push, pull, hasRemote: checkHasRemote } = useFileSystem();
+
+  // Function to check sync status
+  const checkSyncStatus = useCallback(async () => {
+    if (!realGitService.isInitialized()) return;
+    try {
+      const status = await realGitService.getSyncStatus();
+      setSyncStatus(status);
+    } catch (err) {
+      debug.warn('[useSidebar] Failed to get sync status:', err);
+    }
+  }, []);
+
   useEffect(() => {
     if (isReady) {
-      checkHasRemote().then(setHasRemote);
+      checkHasRemote().then((remote) => {
+        setHasRemote(remote);
+        if (remote) {
+          checkSyncStatus();
+        }
+      });
     }
-  }, [isReady, checkHasRemote]);
+  }, [isReady, checkHasRemote, checkSyncStatus]);
+
+  // Listen for git-check events to refresh status
+  useEffect(() => {
+    const handleGitCheck = () => {
+      checkSyncStatus();
+    };
+    window.addEventListener('git-check', handleGitCheck);
+    return () => window.removeEventListener('git-check', handleGitCheck);
+  }, [checkSyncStatus]);
 
   // Save collapsed sections to localStorage
   useEffect(() => {
@@ -92,12 +125,13 @@ export function useSidebar() {
     try {
       await push();
       debug.log('[Sidebar] Push successful');
+      await checkSyncStatus(); // Refresh status after push
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : 'Push failed');
     } finally {
       setIsPushing(false);
     }
-  }, [push]);
+  }, [push, checkSyncStatus]);
 
   const handlePull = useCallback(async () => {
     setIsPulling(true);
@@ -108,13 +142,14 @@ export function useSidebar() {
         setSyncError(`Merge conflicts in: ${result.conflicts.join(', ')}`);
       } else {
         debug.log('[Sidebar] Pull successful');
+        await checkSyncStatus(); // Refresh status after pull
       }
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : 'Pull failed');
     } finally {
       setIsPulling(false);
     }
-  }, [pull]);
+  }, [pull, checkSyncStatus]);
 
   // Handle mouse move during resize
   const handleMouseMove = useCallback(
@@ -189,6 +224,8 @@ export function useSidebar() {
     clearSyncError,
     handlePush,
     handlePull,
+    syncStatus,
+    checkSyncStatus,
 
     // Remote settings modal
     isRemoteSettingsOpen,
