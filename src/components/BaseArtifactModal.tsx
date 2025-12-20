@@ -137,6 +137,7 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
             </h2>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="btn-icon"
             style={{
