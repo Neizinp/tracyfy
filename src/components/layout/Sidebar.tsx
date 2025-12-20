@@ -77,6 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     closeRemoteSettings,
     refreshStatus,
     syncStatus,
+    autoSync,
   } = useSidebar();
 
   return (
@@ -439,150 +440,176 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                   )}
 
-                  {/* Pending commits display */}
-                  {(syncStatus.behindCommits?.length ?? 0) > 0 && (
+                  {/* Pending commits display - only show when not auto-syncing */}
+                  {autoSync ? (
                     <div
                       style={{
-                        padding: '8px 12px',
-                        backgroundColor: 'var(--color-bg-secondary)',
+                        padding: '12px',
+                        backgroundColor: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
+                        border:
+                          '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)',
                         borderRadius: '6px',
                         fontSize: 'var(--font-size-xs)',
+                        color: 'var(--color-accent)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
                       }}
                     >
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          color: 'var(--color-text-muted)',
-                          marginBottom: '6px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        <Download size={12} />
-                        Incoming ({syncStatus.behindCommits?.length})
-                      </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '4px',
-                          maxHeight: '120px',
-                          overflowY: 'auto',
-                        }}
-                      >
-                        {syncStatus.behindCommits?.slice(0, 5).map((c) => (
+                      <RefreshCw size={14} />
+                      Auto-sync enabled
+                    </div>
+                  ) : (
+                    <>
+                      {(syncStatus.behindCommits?.length ?? 0) > 0 && (
+                        <div
+                          style={{
+                            padding: '8px 12px',
+                            backgroundColor: 'var(--color-bg-secondary)',
+                            borderRadius: '6px',
+                            fontSize: 'var(--font-size-xs)',
+                          }}
+                        >
                           <div
-                            key={c.hash}
                             style={{
-                              padding: '4px 6px',
-                              backgroundColor: 'var(--color-bg-app)',
-                              borderRadius: '4px',
-                              border: '1px solid var(--color-border)',
+                              fontWeight: 600,
+                              color: 'var(--color-text-muted)',
+                              marginBottom: '6px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
                             }}
                           >
-                            <div
-                              style={{
-                                fontWeight: 500,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {c.message}
-                            </div>
-                            <div style={{ color: 'var(--color-text-muted)', fontSize: '10px' }}>
-                              {c.author}
-                            </div>
+                            <Download size={12} />
+                            Incoming ({syncStatus.behindCommits?.length})
                           </div>
-                        ))}
-                        {(syncStatus.behindCommits?.length ?? 0) > 5 && (
-                          <div style={{ color: 'var(--color-text-muted)', textAlign: 'center' }}>
-                            +{(syncStatus.behindCommits?.length ?? 0) - 5} more
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {(syncStatus.aheadCommits?.length ?? 0) > 0 && (
-                    <div
-                      style={{
-                        padding: '8px 12px',
-                        backgroundColor: 'var(--color-bg-secondary)',
-                        borderRadius: '6px',
-                        fontSize: 'var(--font-size-xs)',
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          color: 'var(--color-text-muted)',
-                          marginBottom: '6px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        <Upload size={12} />
-                        Outgoing ({syncStatus.aheadCommits?.length})
-                      </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '4px',
-                          maxHeight: '120px',
-                          overflowY: 'auto',
-                        }}
-                      >
-                        {syncStatus.aheadCommits?.slice(0, 5).map((c) => (
                           <div
-                            key={c.hash}
                             style={{
-                              padding: '4px 6px',
-                              backgroundColor: 'var(--color-bg-app)',
-                              borderRadius: '4px',
-                              border: '1px solid var(--color-border)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '4px',
+                              maxHeight: '120px',
+                              overflowY: 'auto',
                             }}
                           >
-                            <div
-                              style={{
-                                fontWeight: 500,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {c.message}
-                            </div>
-                            <div style={{ color: 'var(--color-text-muted)', fontSize: '10px' }}>
-                              {c.author}
-                            </div>
+                            {syncStatus.behindCommits?.slice(0, 5).map((c) => (
+                              <div
+                                key={c.hash}
+                                style={{
+                                  padding: '4px 6px',
+                                  backgroundColor: 'var(--color-bg-app)',
+                                  borderRadius: '4px',
+                                  border: '1px solid var(--color-border)',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontWeight: 500,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {c.message}
+                                </div>
+                                <div style={{ color: 'var(--color-text-muted)', fontSize: '10px' }}>
+                                  {c.author}
+                                </div>
+                              </div>
+                            ))}
+                            {(syncStatus.behindCommits?.length ?? 0) > 5 && (
+                              <div
+                                style={{ color: 'var(--color-text-muted)', textAlign: 'center' }}
+                              >
+                                +{(syncStatus.behindCommits?.length ?? 0) - 5} more
+                              </div>
+                            )}
                           </div>
-                        ))}
-                        {(syncStatus.aheadCommits?.length ?? 0) > 5 && (
-                          <div style={{ color: 'var(--color-text-muted)', textAlign: 'center' }}>
-                            +{(syncStatus.aheadCommits?.length ?? 0) - 5} more
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                        </div>
+                      )}
 
-                  {!syncStatus.ahead && !syncStatus.behind && !syncError && (
-                    <div
-                      style={{
-                        padding: '8px 12px',
-                        backgroundColor: 'var(--color-bg-secondary)',
-                        borderRadius: '6px',
-                        fontSize: 'var(--font-size-xs)',
-                        color: 'var(--color-text-muted)',
-                        textAlign: 'center',
-                      }}
-                    >
-                      ✓ Synced with remote
-                    </div>
+                      {(syncStatus.aheadCommits?.length ?? 0) > 0 && (
+                        <div
+                          style={{
+                            padding: '8px 12px',
+                            backgroundColor: 'var(--color-bg-secondary)',
+                            borderRadius: '6px',
+                            fontSize: 'var(--font-size-xs)',
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontWeight: 600,
+                              color: 'var(--color-text-muted)',
+                              marginBottom: '6px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                          >
+                            <Upload size={12} />
+                            Outgoing ({syncStatus.aheadCommits?.length})
+                          </div>
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '4px',
+                              maxHeight: '120px',
+                              overflowY: 'auto',
+                            }}
+                          >
+                            {syncStatus.aheadCommits?.slice(0, 5).map((c) => (
+                              <div
+                                key={c.hash}
+                                style={{
+                                  padding: '4px 6px',
+                                  backgroundColor: 'var(--color-bg-app)',
+                                  borderRadius: '4px',
+                                  border: '1px solid var(--color-border)',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontWeight: 500,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {c.message}
+                                </div>
+                                <div style={{ color: 'var(--color-text-muted)', fontSize: '10px' }}>
+                                  {c.author}
+                                </div>
+                              </div>
+                            ))}
+                            {(syncStatus.aheadCommits?.length ?? 0) > 5 && (
+                              <div
+                                style={{ color: 'var(--color-text-muted)', textAlign: 'center' }}
+                              >
+                                +{(syncStatus.aheadCommits?.length ?? 0) - 5} more
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {!syncStatus.ahead && !syncStatus.behind && !syncError && (
+                        <div
+                          style={{
+                            padding: '8px 12px',
+                            backgroundColor: 'var(--color-bg-secondary)',
+                            borderRadius: '6px',
+                            fontSize: 'var(--font-size-xs)',
+                            color: 'var(--color-text-muted)',
+                            textAlign: 'center',
+                          }}
+                        >
+                          ✓ Synced with remote
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               )}

@@ -244,13 +244,6 @@ class GitSyncService {
       // Helper to get commit details by walking history until we find the merge base
       const getCommits = async (localOid: string, remoteOid: string) => {
         try {
-          console.log(
-            '[getSyncStatus] Finding commits between',
-            localOid.slice(0, 7),
-            'and',
-            remoteOid.slice(0, 7)
-          );
-
           // Get local history
           const localLog = await this.getHistoryFn(undefined, 100, 'HEAD');
 
@@ -261,8 +254,6 @@ class GitSyncService {
             aheadCommits.push(commit);
           }
 
-          console.log('[getSyncStatus] Found', aheadCommits.length, 'ahead commits');
-
           // For behind commits, get remote history and find commits until we reach localOid
           const remoteLog = await this.getHistoryFn(undefined, 100, remoteRef);
           const behindCommits: CommitInfo[] = [];
@@ -270,8 +261,6 @@ class GitSyncService {
             if (commit.hash === localOid) break;
             behindCommits.push(commit);
           }
-
-          console.log('[getSyncStatus] Found', behindCommits.length, 'behind commits');
 
           return { aheadCommits, behindCommits };
         } catch (e) {

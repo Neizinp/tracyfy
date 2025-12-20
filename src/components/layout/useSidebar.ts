@@ -15,6 +15,7 @@ import type { SyncStatus } from '../../types';
 
 const SIDEBAR_WIDTH_KEY = 'sidebar-width';
 const COLLAPSED_SECTIONS_KEY = 'sidebar-collapsed-sections';
+const AUTO_SYNC_KEY = 'tracyfy-auto-sync';
 const DEFAULT_WIDTH = 260;
 const MIN_WIDTH = 180;
 const MAX_WIDTH = 400;
@@ -43,6 +44,15 @@ export function useSidebar() {
     }
   });
 
+  // Auto sync state with localStorage persistence
+  const [autoSync, setAutoSync] = useState(() => {
+    try {
+      return localStorage.getItem(AUTO_SYNC_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   // Remote sync state
   const [hasRemote, setHasRemote] = useState(false);
   const [isPushing, setIsPushing] = useState(false);
@@ -60,28 +70,20 @@ export function useSidebar() {
 
   // Function to check sync status
   const checkSyncStatus = useCallback(async () => {
-    if (!realGitService.isInitialized()) {
-      console.log('[useSidebar] Git not initialized, skipping sync status check');
-      return;
-    }
+    if (!realGitService.isInitialized()) return;
     try {
-      console.log('[useSidebar] Checking sync status...');
       const status = await realGitService.getSyncStatus();
-      console.log('[useSidebar] Sync status result:', JSON.stringify(status, null, 2));
       setSyncStatus(status);
     } catch (err) {
-      console.error('[useSidebar] Failed to get sync status:', err);
+      debug.warn('[useSidebar] Failed to get sync status:', err);
     }
   }, []);
 
   useEffect(() => {
     if (isReady) {
-      console.log('[useSidebar] FileSystem ready, checking for remote...');
       checkHasRemote().then((remote) => {
-        console.log('[useSidebar] hasRemote:', remote);
         setHasRemote(remote);
         if (remote) {
-          console.log('[useSidebar] Remote found, checking sync status...');
           checkSyncStatus();
         }
       });
@@ -97,25 +99,48 @@ export function useSidebar() {
     return () => window.removeEventListener('git-check', handleGitCheck);
   }, [checkSyncStatus]);
 
-  // Listen for git-status-changed events (triggered after commits)
+  // Listen for auto-sync-changed events from settings modal
   useEffect(() => {
-    const handleStatusChanged = () => {
-      checkSyncStatus();
+    const handleAutoSyncChanged = (e: Event) => {
+      const customEvent = e as CustomEvent<{ enabled: boolean }>;
+      setAutoSync(customEvent.detail.enabled);
+    };
+    window.addEventListener('auto-sync-changed', handleAutoSyncChanged);
+    return () => window.removeEventListener('auto-sync-changed', handleAutoSyncChanged);
+  }, []);
+
+  // Listen for git-status-changed events (triggered after commits)
+  // When autoSync is enabled, auto-push after commits
+  useEffect(() => {
+    const handleStatusChanged = async () => {
+      if (autoSync && hasRemote) {
+        // Auto-push when autoSync is enabled
+        try {
+          debug.log('[useSidebar] Auto-sync: pushing after commit...');
+          await push();
+          debug.log('[useSidebar] Auto-sync: push successful');
+        } catch (err) {
+          debug.warn('[useSidebar] Auto-sync push failed:', err);
+        }
+      } else {
+        // Just refresh status if not auto-syncing
+        checkSyncStatus();
+      }
     };
     window.addEventListener('git-status-changed', handleStatusChanged);
     return () => window.removeEventListener('git-status-changed', handleStatusChanged);
-  }, [checkSyncStatus]);
+  }, [autoSync, hasRemote, push, checkSyncStatus]);
 
-  // Poll sync status every 30 seconds to detect new commits
+  // Poll sync status every 30 seconds to detect new commits (only when not auto-syncing)
   useEffect(() => {
-    if (!hasRemote) return;
+    if (!hasRemote || autoSync) return;
 
     const interval = setInterval(() => {
       checkSyncStatus();
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
-  }, [hasRemote, checkSyncStatus]);
+  }, [hasRemote, autoSync, checkSyncStatus]);
 
   // Save collapsed sections to localStorage
   useEffect(() => {
@@ -254,6 +279,7 @@ export function useSidebar() {
     handlePull,
     syncStatus,
     checkSyncStatus,
+    autoSync,
 
     // Remote settings modal
     isRemoteSettingsOpen,

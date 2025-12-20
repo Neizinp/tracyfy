@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Globe, Key, Check, AlertCircle, Loader2, Trash2 } from 'lucide-react';
+import { X, Globe, Key, Check, AlertCircle, Loader2, Trash2, RefreshCw } from 'lucide-react';
 import { realGitService } from '../services/realGitService';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
+const AUTO_SYNC_KEY = 'tracyfy-auto-sync';
 
 export interface RemoteSettingsModalProps {
   isOpen: boolean;
@@ -16,6 +18,13 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
+  const [autoSync, setAutoSync] = useState(() => {
+    try {
+      return localStorage.getItem(AUTO_SYNC_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   // Close modal on Escape key
   useKeyboardShortcuts({ onClose });
@@ -31,6 +40,18 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
       }
     }
   }, [isOpen]);
+
+  // Persist autoSync setting
+  const handleAutoSyncChange = (enabled: boolean) => {
+    setAutoSync(enabled);
+    try {
+      localStorage.setItem(AUTO_SYNC_KEY, String(enabled));
+      // Dispatch event so sidebar can react
+      window.dispatchEvent(new CustomEvent('auto-sync-changed', { detail: { enabled } }));
+    } catch {
+      // Ignore localStorage errors
+    }
+  };
 
   const loadRemotes = async () => {
     const remotes = await realGitService.getRemotes();
@@ -321,6 +342,79 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
             Token is stored securely using OS-level encryption in the desktop app.
           </div>
         </div>
+
+        {/* Auto Sync Toggle */}
+        {existingRemotes.length > 0 && (
+          <div
+            style={{
+              marginBottom: 'var(--spacing-md)',
+              padding: '12px',
+              backgroundColor: 'var(--color-bg-secondary)',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <RefreshCw size={14} />
+                Auto Sync
+              </div>
+              <div
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-muted)',
+                  marginTop: '2px',
+                }}
+              >
+                Automatically sync with remote after every commit
+              </div>
+            </div>
+            <label
+              style={{
+                position: 'relative',
+                display: 'inline-block',
+                width: '44px',
+                height: '24px',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={autoSync}
+                onChange={(e) => handleAutoSyncChange(e.target.checked)}
+                style={{
+                  opacity: 0,
+                  width: 0,
+                  height: 0,
+                }}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundColor: autoSync ? 'var(--color-accent)' : 'var(--color-border)',
+                  borderRadius: '24px',
+                  transition: 'background-color 0.2s',
+                }}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '2px',
+                  left: autoSync ? '22px' : '2px',
+                  width: '20px',
+                  height: '20px',
+                  backgroundColor: 'white',
+                  borderRadius: '50%',
+                  transition: 'left 0.2s',
+                }}
+              />
+            </label>
+          </div>
+        )}
 
         {/* Error/Success messages */}
         {error && (
