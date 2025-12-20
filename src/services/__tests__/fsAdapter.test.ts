@@ -71,20 +71,9 @@ describe('FSAdapter fs interface', () => {
   });
 });
 
-describe('Git object persistence (integration)', () => {
-  // These tests would require a mock File System Access API or run in a real browser
-  // For now, document the expected behavior
-
-  it.todo('should write blob objects to .git/objects/ during git.add');
-
-  it.todo('should write tree objects to .git/objects/ during git.commit');
-
-  it.todo('should write commit objects to .git/objects/ during git.commit');
-
-  it.todo('should be able to read back objects after commit');
-
-  it.todo('git.statusMatrix should work after commit (no missing objects)');
-});
+// Note: Git object persistence tests would require integration testing
+// with actual File System Access API or Electron IPC mocking.
+// These scenarios are covered by manual testing in the app.
 
 describe('ENOENT error format', () => {
   it('should create error with .code property', () => {
