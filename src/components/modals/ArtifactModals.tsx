@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { RequirementModal, UseCaseModal, TestCaseModal, InformationModal, RiskModal } from '../';
 import {
   useUI,
@@ -11,6 +12,9 @@ import {
 import type { Information, Risk, UseCase } from '../../types';
 
 export const ArtifactModals: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const ui = useUI();
   const { handleAddRequirement, handleUpdateRequirement, handleDeleteRequirement } =
     useRequirements();
@@ -30,14 +34,17 @@ export const ArtifactModals: React.FC = () => {
   } = ui;
 
   const handleFullClose = () => {
-    // Remove ?id= from URL BEFORE closing modal to prevent deep link from re-opening
-    const url = new URL(window.location.href);
-    if (url.searchParams.has('id')) {
-      url.searchParams.delete('id');
-      window.history.replaceState({}, '', url.toString());
-    }
+    // Dispatch event to block deep link from re-opening
+    window.dispatchEvent(new CustomEvent('modal-closing'));
+
+    // Close modal state
     closeModal();
     clearNavigationStack();
+
+    // Navigate to remove ?id= from URL
+    if (searchParams.has('id')) {
+      navigate(location.pathname, { replace: true });
+    }
   };
 
   // Combined handler for InformationModal - handles both add and update

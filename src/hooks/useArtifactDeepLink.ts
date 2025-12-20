@@ -18,8 +18,29 @@ export function useArtifactDeepLink() {
   // Track the last processed ID to avoid re-opening if it was manually closed
   const lastProcessedIdRef = useRef<string | null>(null);
 
+  // Track if user just manually closed the modal - block re-opening for a short time
+  const closedManuallyRef = useRef<boolean>(false);
+
+  // Listen for 'modal-closing' event dispatched by handleFullClose
+  useEffect(() => {
+    const handleModalClosing = () => {
+      closedManuallyRef.current = true;
+      // Reset after a short delay
+      setTimeout(() => {
+        closedManuallyRef.current = false;
+      }, 200);
+    };
+    window.addEventListener('modal-closing', handleModalClosing);
+    return () => window.removeEventListener('modal-closing', handleModalClosing);
+  }, []);
+
   useEffect(() => {
     const id = searchParams.get('id');
+
+    // Block if user just manually closed
+    if (closedManuallyRef.current) {
+      return;
+    }
 
     // Only proceed if we have an ID, no modal is currently open,
     // and we haven't just processed this exact ID.
