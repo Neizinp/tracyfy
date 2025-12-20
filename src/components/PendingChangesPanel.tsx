@@ -62,7 +62,9 @@ export function PendingChangesPanel() {
           | 'counter'
           | 'link'
           | 'custom-attribute'
-          | 'saved-filter';
+          | 'saved-filter'
+          | 'document'
+          | 'workflow';
         if (typeStr === 'requirements') type = 'requirement';
         else if (typeStr === 'usecases') type = 'usecase';
         else if (typeStr === 'testcases') type = 'testcase';
@@ -76,6 +78,7 @@ export function PendingChangesPanel() {
         else if (typeStr === 'links') return null;
         else if (typeStr === 'custom-attributes') return null;
         else if (typeStr === 'saved-filters') type = 'saved-filter';
+        else if (typeStr === 'documents') type = 'document';
         else return null;
 
         const status = fs.status === 'new' ? 'new' : 'modified';
@@ -116,13 +119,14 @@ export function PendingChangesPanel() {
         // Map artifact type to folder name for history lookup
         const folderMap: Record<
           string,
-          'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
+          'requirements' | 'usecases' | 'testcases' | 'information' | 'risks' | 'documents'
         > = {
           requirement: 'requirements',
           usecase: 'usecases',
           testcase: 'testcases',
           information: 'information',
           risk: 'risks',
+          document: 'documents',
         };
 
         // For projects, always use "Update Project" since project folder uses different structure
@@ -176,7 +180,7 @@ export function PendingChangesPanel() {
           continue;
         }
 
-        const artifactFolder = folderMap[change.type];
+        const artifactFolder = folderMap[change.type as keyof typeof folderMap];
         if (!artifactFolder) continue;
 
         try {
@@ -343,9 +347,11 @@ export function PendingChangesPanel() {
                         ? 'Links'
                         : change.type === 'custom-attribute'
                           ? 'Custom Attributes'
-                          : change.type === 'saved-filter'
-                            ? 'Saved Searches'
-                            : 'Information';
+                          : change.type === 'document'
+                            ? 'Documents'
+                            : change.type === 'saved-filter'
+                              ? 'Saved Searches'
+                              : 'Information';
     if (!groupedChanges[typeName]) {
       groupedChanges[typeName] = [];
     }

@@ -26,6 +26,7 @@ const SHAREABLE_DIRECTORIES = [
   'links',
   'custom-attributes',
   'saved-filters',
+  'documents',
 ] as const;
 
 // Directories that are intentionally NOT shared (local preferences)
@@ -47,7 +48,8 @@ type TrackedArtifactType =
   | 'counter'
   | 'link'
   | 'custom-attribute'
-  | 'saved-filter';
+  | 'saved-filter'
+  | 'document';
 
 // Mapping from directory name to artifact type
 const DIRECTORY_TO_TYPE_MAP: Record<string, TrackedArtifactType> = {
@@ -63,6 +65,7 @@ const DIRECTORY_TO_TYPE_MAP: Record<string, TrackedArtifactType> = {
   links: 'link',
   'custom-attributes': 'custom-attribute',
   'saved-filters': 'saved-filter',
+  documents: 'document',
 };
 
 describe('Git Tracking Safeguard', () => {
@@ -105,8 +108,8 @@ describe('Git Tracking Safeguard', () => {
   });
 
   // This test documents the expected count - update when adding new directories
-  it('should track exactly 12 directory types', () => {
-    expect(SHAREABLE_DIRECTORIES.length).toBe(12);
-    expect(Object.keys(DIRECTORY_TO_TYPE_MAP).length).toBe(12);
+  it('should track exactly 13 directory types', () => {
+    expect(SHAREABLE_DIRECTORIES.length).toBe(13);
+    expect(Object.keys(DIRECTORY_TO_TYPE_MAP).length).toBe(13);
   });
 });

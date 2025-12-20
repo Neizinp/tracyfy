@@ -13,7 +13,8 @@ export interface ArtifactChange {
     | 'link'
     | 'custom-attribute'
     | 'saved-filter'
-    | 'workflow';
+    | 'workflow'
+    | 'document';
   title: string;
   status: 'new' | 'modified'; // No 'deleted' - artifacts can only be removed from projects
   path: string;
@@ -55,7 +56,7 @@ export interface ProjectBaseline {
   artifactCommits: {
     [artifactId: string]: {
       commitHash: string;
-      type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
+      type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk' | 'document';
     };
   };
   // Track what was added/removed from project since last baseline
