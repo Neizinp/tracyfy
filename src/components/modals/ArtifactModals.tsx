@@ -30,6 +30,12 @@ export const ArtifactModals: React.FC = () => {
   } = ui;
 
   const handleFullClose = () => {
+    // Remove ?id= from URL BEFORE closing modal to prevent deep link from re-opening
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('id')) {
+      url.searchParams.delete('id');
+      window.history.replaceState({}, '', url.toString());
+    }
     closeModal();
     clearNavigationStack();
   };
