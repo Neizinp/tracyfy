@@ -89,6 +89,26 @@ export function useSidebar() {
     return () => window.removeEventListener('git-check', handleGitCheck);
   }, [checkSyncStatus]);
 
+  // Listen for git-status-changed events (triggered after commits)
+  useEffect(() => {
+    const handleStatusChanged = () => {
+      checkSyncStatus();
+    };
+    window.addEventListener('git-status-changed', handleStatusChanged);
+    return () => window.removeEventListener('git-status-changed', handleStatusChanged);
+  }, [checkSyncStatus]);
+
+  // Poll sync status every 30 seconds to detect new commits
+  useEffect(() => {
+    if (!hasRemote) return;
+
+    const interval = setInterval(() => {
+      checkSyncStatus();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [hasRemote, checkSyncStatus]);
+
   // Save collapsed sections to localStorage
   useEffect(() => {
     try {

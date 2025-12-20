@@ -403,6 +403,11 @@ class GitCoreService {
 
       // Proactively cache the file for this commit
       this.addToCacheFn(commitOid, [filepath]);
+
+      // Dispatch event to notify UI of status change
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('git-status-changed'));
+      }
     });
 
     // Wait for our commit to complete
