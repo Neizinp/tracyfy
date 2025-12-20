@@ -134,7 +134,7 @@ class GitRemoteService {
         this.authToken = localStorage.getItem('git_pat_token');
       }
     } catch (err) {
-      console.warn('[ensureTokenLoaded] Failed:', err);
+      debug.warn('[ensureTokenLoaded] Failed:', err);
     }
     this.tokenLoaded = true;
   }
@@ -169,7 +169,7 @@ class GitRemoteService {
         localStorage.setItem('git_pat_token', token);
       }
     } catch (err) {
-      console.warn('[setAuthToken] Failed:', err);
+      debug.warn('[setAuthToken] Failed:', err);
       // Fallback to localStorage even in Electron if secure storage fails
       try {
         localStorage.setItem('git_pat_token', token);
@@ -324,7 +324,7 @@ class GitRemoteService {
       const err = error as { code?: string; data?: { filepaths?: string[] } };
       if (err?.code === 'MergeConflictError' || err?.code === 'CheckoutConflictError') {
         const conflicts = err.data?.filepaths || [];
-        console.warn(`[pull] Merge conflicts in: ${conflicts.join(', ')}`);
+        debug.warn(`[pull] Merge conflicts in: ${conflicts.join(', ')}`);
         return { success: false, conflicts };
       }
       throw error;

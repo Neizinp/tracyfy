@@ -1,3 +1,4 @@
+import { debug } from '../utils/debug';
 /**
  * File System Access API adapter for isomorphic-git
  * Adapts the File System Access API to the fs interface expected by isomorphic-git
@@ -12,9 +13,9 @@ class FSAdapter {
 
   constructor() {
     // Log structure for isomorphic-git compatibility (checked by E2E tests)
-    console.log('[FSAdapter] Initialized');
-    console.log('[FSAdapter] Has promises property:', !!this.promises);
-    console.log('[FSAdapter] promises.enumerable: true');
+    debug.log('[FSAdapter] Initialized');
+    debug.log('[FSAdapter] Has promises property:', !!this.promises);
+    debug.log('[FSAdapter] promises.enumerable: true');
   }
 
   setRoot(handle: FileSystemDirectoryHandle) {

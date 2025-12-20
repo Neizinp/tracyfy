@@ -75,7 +75,7 @@ class CompositeGitService {
       }
       await fileSystemService.writeFile(this.CACHE_FILE, JSON.stringify(data, null, 2));
     } catch (err) {
-      console.warn('[GitService] Failed to save commit cache to disk:', err);
+      debug.warn('[GitService] Failed to save commit cache to disk:', err);
     }
   }
 

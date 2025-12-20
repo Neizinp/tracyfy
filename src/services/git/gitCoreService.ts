@@ -61,7 +61,7 @@ class GitCoreService {
    * Initialize git with the selected directory
    */
   async init(directoryHandle?: FileSystemDirectoryHandle): Promise<boolean> {
-    console.log('[gitCoreService.init] Starting, isElectron:', isElectronEnv());
+    debug.log('[gitCoreService.init] Starting, isElectron:', isElectronEnv());
 
     // Browser path: set FSA handle
     if (!isElectronEnv() && directoryHandle) {
@@ -71,7 +71,7 @@ class GitCoreService {
     // For Electron, verify we have a root path
     if (isElectronEnv()) {
       const rootPath = fileSystemService.getRootPath();
-      console.log('[gitCoreService.init] Electron rootPath:', rootPath);
+      debug.log('[gitCoreService.init] Electron rootPath:', rootPath);
       if (!rootPath) {
         console.error('[gitCoreService.init] No root path set in Electron mode!');
         return false;
@@ -80,7 +80,7 @@ class GitCoreService {
 
     // Check if .git exists
     const hasGit = await fileSystemService.checkGitExists();
-    console.log('[gitCoreService.init] hasGit:', hasGit);
+    debug.log('[gitCoreService.init] hasGit:', hasGit);
 
     // Check if HEAD exists (valid repo)
     let hasValidRepo = false;
@@ -92,11 +92,11 @@ class GitCoreService {
         hasValidRepo = false;
       }
     }
-    console.log('[gitCoreService.init] hasValidRepo:', hasValidRepo);
+    debug.log('[gitCoreService.init] hasValidRepo:', hasValidRepo);
 
     if (!hasGit || !hasValidRepo) {
       if (hasGit && !hasValidRepo) {
-        console.warn('[init] Incomplete git repository detected - will reinitialize');
+        debug.warn('[init] Incomplete git repository detected - will reinitialize');
 
         // Recreate HEAD pointing to main so git operations can proceed
         try {
@@ -112,7 +112,7 @@ class GitCoreService {
         debug.log('[init] Auto-initializing git repository...');
 
         const rootDir = getRootDir();
-        console.log('[gitCoreService.init] Calling git.init with rootDir:', rootDir);
+        debug.log('[gitCoreService.init] Calling git.init with rootDir:', rootDir);
         const result = await window.electronAPI!.git.init(rootDir);
         if (result.error) {
           console.error('[init] Git init failed:', result.error);
@@ -121,7 +121,7 @@ class GitCoreService {
 
         this.initialized = true;
         await this.ensureTokenLoadedFn();
-        console.log('[gitCoreService.init] Success! initialized =', this.initialized);
+        debug.log('[gitCoreService.init] Success! initialized =', this.initialized);
         return true;
       }
 

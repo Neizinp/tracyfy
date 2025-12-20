@@ -84,7 +84,7 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
                 revision = parsed.revision || '—';
               }
             } else {
-              console.warn(
+              debug.warn(
                 '[RevisionHistoryTab][DEBUG] No content for commit',
                 commit.hash,
                 'at path',

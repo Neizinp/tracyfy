@@ -1,3 +1,4 @@
+import { debug } from '../../utils/debug';
 /**
  * Git Baseline Service
  *
@@ -125,7 +126,7 @@ class GitBaselineService {
             }
           }
         } catch (e) {
-          console.warn(`Failed to read tag ${name}:`, e);
+          debug.warn(`Failed to read tag ${name}:`, e);
         }
       }
 

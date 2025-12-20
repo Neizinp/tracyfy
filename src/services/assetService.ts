@@ -111,7 +111,7 @@ class AssetService extends BaseDiskService {
     // Read the binary data
     const uint8Array = await this.readBinaryFile(normalizedPath);
     if (!uint8Array) {
-      console.warn(`[AssetService] Asset not found: ${relativePath}`);
+      debug.warn(`[AssetService] Asset not found: ${relativePath}`);
       return null;
     }
 

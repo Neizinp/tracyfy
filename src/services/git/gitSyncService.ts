@@ -161,7 +161,7 @@ class GitSyncService {
 
       return true;
     } catch (error) {
-      console.warn('[pullCounters] Failed:', error);
+      debug.warn('[pullCounters] Failed:', error);
       return false;
     }
   }
@@ -222,7 +222,7 @@ class GitSyncService {
       debug.log('[pushCounters] Pushed counter updates');
       return true;
     } catch (error) {
-      console.warn('[pushCounters] Failed:', error);
+      debug.warn('[pushCounters] Failed:', error);
       return false;
     }
   }

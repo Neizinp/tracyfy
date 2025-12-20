@@ -1,3 +1,4 @@
+import { debug } from '../utils/debug';
 import { useState, useRef, useCallback, useEffect, useContext } from 'react';
 import MDEditor from '@uiw/react-md-editor';
 import ReactMarkdown from 'react-markdown';
@@ -35,7 +36,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const handleFileUpload = useCallback(
     async (file: File) => {
       if (!file.type.startsWith('image/')) {
-        console.warn('Only image files are supported');
+        debug.warn('Only image files are supported');
         return;
       }
       setIsUploading(true);

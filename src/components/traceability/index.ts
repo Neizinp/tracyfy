@@ -4,3 +4,4 @@ export { GapItem } from './GapItem';
 export { LinkRow } from './LinkRow';
 export { ImpactAnalysisPanel } from './ImpactAnalysisPanel';
 export { useTraceabilityData } from './useTraceabilityData';
+export { MatrixView } from './MatrixView';

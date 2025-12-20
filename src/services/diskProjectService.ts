@@ -193,7 +193,7 @@ class DiskProjectService extends BaseDiskService {
       project.lastModified = Date.now();
       await this.updateProject(project);
     } else {
-      console.warn(`Could not find project ${projectId} to delete`);
+      debug.warn(`Could not find project ${projectId} to delete`);
     }
   }
 
@@ -207,7 +207,7 @@ class DiskProjectService extends BaseDiskService {
       project.lastModified = Date.now();
       await this.updateProject(project);
     } else {
-      console.warn(`Could not find project ${projectId} to restore`);
+      debug.warn(`Could not find project ${projectId} to restore`);
     }
   }
 

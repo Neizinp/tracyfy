@@ -161,7 +161,7 @@ class FileSystemService {
       try {
         localStorage.setItem(ELECTRON_DIR_KEY, result.path);
       } catch {
-        console.warn('[selectDirectory] Could not persist directory path');
+        debug.warn('[selectDirectory] Could not persist directory path');
       }
 
       // Check if .git exists
@@ -530,7 +530,7 @@ class FileSystemService {
     } catch (error) {
       // If path exists as directory instead of file, remove it and retry
       if (error instanceof DOMException && error.name === 'TypeMismatchError') {
-        console.warn(`[writeFile] ${fileName} exists as directory, removing it...`);
+        debug.warn(`[writeFile] ${fileName} exists as directory, removing it...`);
         try {
           await dir.removeEntry(fileName, { recursive: true });
           // Retry write
@@ -616,7 +616,7 @@ class FileSystemService {
     } catch (error) {
       // If path exists as directory instead of file, remove it and retry
       if (error instanceof DOMException && error.name === 'TypeMismatchError') {
-        console.warn(`[writeFileBinary] ${fileName} exists as directory, removing it...`);
+        debug.warn(`[writeFileBinary] ${fileName} exists as directory, removing it...`);
         try {
           await dir.removeEntry(fileName, { recursive: true });
           // Retry write
