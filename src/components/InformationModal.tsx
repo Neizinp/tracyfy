@@ -101,6 +101,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
       onTabChange={(id) => setActiveTab(id as Tab)}
       onSubmit={handleSubmit}
       submitLabel={isEditMode ? 'Save Changes' : 'Create Information'}
+      formId="new-information-form"
     >
       {activeTab === 'overview' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
@@ -114,6 +115,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
               dateCreated={information?.dateCreated}
               hidePriority
               hideStatus
+              titlePlaceholder="e.g., System Architecture"
             />
             <FormField label="Type">
               <select

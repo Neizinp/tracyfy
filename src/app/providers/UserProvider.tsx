@@ -31,30 +31,49 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const currentUser = users.find((u) => u.id === currentUserId) || null;
 
-  const createUser = useCallback(async (name: string): Promise<User> => {
-    const id = await idService.getNextId('users');
-    const now = Date.now();
-    const newUser: User = {
-      id,
-      name,
-      dateCreated: now,
-      lastModified: now,
-    };
+  const createUser = useCallback(
+    async (name: string): Promise<User> => {
+      const isE2E =
+        typeof window !== 'undefined' &&
+        (window as unknown as { __E2E_TEST_MODE__?: boolean }).__E2E_TEST_MODE__;
 
-    await userService.save(newUser);
-    setUsers((prev) => [...prev, newUser]);
-
-    // If no current user, set this as current
-    setCurrentUserId((prev) => {
-      if (!prev) {
-        diskProjectService.setCurrentUserId(id);
-        return id;
+      let id: string;
+      if (isE2E) {
+        // In E2E mode, generate ID without disk access
+        const counter = users.length + 1;
+        id = `USR-${String(counter).padStart(3, '0')}`;
+      } else {
+        id = await idService.getNextId('users');
       }
-      return prev;
-    });
 
-    return newUser;
-  }, []);
+      const now = Date.now();
+      const newUser: User = {
+        id,
+        name,
+        dateCreated: now,
+        lastModified: now,
+      };
+
+      if (!isE2E) {
+        await userService.save(newUser);
+      }
+      setUsers((prev) => [...prev, newUser]);
+
+      // If no current user, set this as current
+      setCurrentUserId((prev) => {
+        if (!prev) {
+          if (!isE2E) {
+            diskProjectService.setCurrentUserId(id);
+          }
+          return id;
+        }
+        return prev;
+      });
+
+      return newUser;
+    },
+    [users.length]
+  );
 
   const updateUser = useCallback(async (user: User): Promise<void> => {
     const updatedUser = { ...user, lastModified: Date.now() };

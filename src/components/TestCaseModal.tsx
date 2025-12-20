@@ -125,6 +125,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
       }
       onSubmit={handleSubmit}
       submitLabel={isEditMode ? 'Save Changes' : 'Create Test Case'}
+      formId="new-testcase-form"
       footerActions={
         isEditMode && (
           <button
@@ -163,6 +164,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
               isEditMode={isEditMode}
               author={isEditMode ? testCase?.author : currentUser?.name}
               dateCreated={testCase?.dateCreated}
+              titlePlaceholder="e.g., Load Testing"
             />
             {isEditMode && testCase?.lastRun && (
               <FormField label="Last Run">

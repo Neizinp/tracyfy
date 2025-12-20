@@ -16,8 +16,12 @@ export function AppContent() {
     }
   };
 
+  const isE2E =
+    typeof window !== 'undefined' &&
+    (window as unknown as { __E2E_TEST_MODE__?: boolean }).__E2E_TEST_MODE__;
+
   const showDirectorySelector = !fileSystem.isReady && !fileSystem.isLoading;
-  const showUserOnboarding = fileSystem.isReady && !isUserLoading && users.length === 0;
+  const showUserOnboarding = !isE2E && fileSystem.isReady && !isUserLoading && users.length === 0;
 
   return (
     <>

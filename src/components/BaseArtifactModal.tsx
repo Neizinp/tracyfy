@@ -25,6 +25,7 @@ interface BaseArtifactModalProps {
   width?: string;
   maxHeight?: string;
   onBack?: () => void;
+  formId?: string;
 }
 
 export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
@@ -45,6 +46,7 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
   width = '800px',
   maxHeight = '85vh',
   onBack,
+  formId = 'base-artifact-modal-form',
 }) => {
   if (!isOpen) return null;
 
@@ -184,7 +186,7 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
 
         {/* Form Body */}
         <form
-          id="base-artifact-modal-form"
+          id={formId}
           onSubmit={onSubmit}
           style={{
             flex: 1,
@@ -229,7 +231,7 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
           </button>
           <button
             type="submit"
-            form="base-artifact-modal-form"
+            form={formId}
             disabled={isSubmitting || isSubmitDisabled}
             className="btn-primary"
             style={{

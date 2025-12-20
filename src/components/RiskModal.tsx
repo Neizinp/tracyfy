@@ -166,6 +166,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({
       onTabChange={(id) => setActiveTab(id as Tab)}
       onSubmit={handleSubmit}
       submitLabel={isEditMode ? 'Save Changes' : 'Create Risk'}
+      formId="new-risk-form"
       footerActions={
         isEditMode && (
           <button

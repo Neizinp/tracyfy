@@ -67,8 +67,9 @@ export function useRequirementForm({
     isOpen,
     artifact: requirement,
     onClose,
-    onCreate: (data) =>
-      onCreate(data as unknown as Omit<Requirement, 'id' | 'children' | 'lastModified'>),
+    onCreate: async (data) => {
+      await onCreate(data as unknown as Omit<Requirement, 'id' | 'children' | 'lastModified'>);
+    },
     onUpdate,
     onDelete,
     defaultTab: 'overview',
@@ -90,8 +91,8 @@ export function useRequirementForm({
   }, [isOpen, requirement]);
 
   const handleSubmit = useCallback(
-    (e?: React.FormEvent) => {
-      baseHandleSubmit(e, {
+    async (e?: React.FormEvent) => {
+      await baseHandleSubmit(e, {
         rationale,
         verificationMethod,
         comments,

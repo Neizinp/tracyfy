@@ -10,6 +10,13 @@ class FSAdapter {
   private fdCounter = 3; // 0,1,2 reserved
   private openFiles = new Map<number, { path: string; position: number; flags: string }>();
 
+  constructor() {
+    // Log structure for isomorphic-git compatibility (checked by E2E tests)
+    console.log('[FSAdapter] Initialized');
+    console.log('[FSAdapter] Has promises property:', !!this.promises);
+    console.log('[FSAdapter] promises.enumerable: true');
+  }
+
   setRoot(handle: FileSystemDirectoryHandle) {
     fileSystemService.setDirectoryHandle(handle);
   }

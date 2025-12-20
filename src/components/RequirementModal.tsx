@@ -113,19 +113,21 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
   const detailFields = useMemo(
     () => [
       {
-        label: 'Requirement Text',
-        value: text,
-        onChange: setText,
-        placeholder: 'Enter detailed requirement text with Markdown...',
-      },
-      {
         label: 'Rationale',
         value: rationale,
         onChange: setRationale,
-        placeholder: 'Explain the rationale with Markdown...',
+        height: 150,
+        placeholder: 'Explain the reason for this requirement...',
+      },
+      {
+        label: 'Comments',
+        value: comments,
+        onChange: setComments,
+        height: 150,
+        placeholder: 'Internal notes or discussion...',
       },
     ],
-    [text, setText, rationale, setRationale]
+    [rationale, setRationale, comments, setComments]
   );
 
   if (!isOpen) return null;
@@ -152,6 +154,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
       onTabChange={(id) => setActiveTab(id as Tab)}
       onSubmit={handleSubmit}
       submitLabel={isEditMode ? 'Save Changes' : 'Create Requirement'}
+      formId="new-requirement-form"
       footerActions={
         isEditMode && (
           <button
@@ -188,14 +191,22 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
             dateCreated={requirement?.dateCreated}
             isEditMode={isEditMode}
             currentUser={currentUser?.name}
+            titlePlaceholder="e.g., System shall authenticate users"
           />
           <ArtifactDetailsSections
             fields={[
               {
+                label: 'Requirement Text',
+                value: text,
+                onChange: setText,
+                height: 200,
+                placeholder: 'Enter detailed requirement text with Markdown...',
+              },
+              {
                 label: 'Description',
                 value: description,
                 onChange: setDescription,
-                height: 200,
+                height: 150,
                 placeholder: 'Enter description with Markdown formatting...',
               },
             ]}

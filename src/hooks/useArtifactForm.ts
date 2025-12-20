@@ -12,7 +12,6 @@ export interface UseArtifactFormOptions<T extends { id: string }, TabType extend
   onUpdate: (id: string, updates: Partial<T>) => void;
   onDelete: (id: string) => void;
   defaultTab: TabType;
-  initialState?: Partial<T>;
 }
 
 /**
@@ -27,7 +26,6 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
   onUpdate,
   onDelete,
   defaultTab,
-  initialState = {} as Partial<T>,
 }: UseArtifactFormOptions<T, TabType>) {
   const { currentUser } = useUser();
 
@@ -72,22 +70,21 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
         setLinkedArtifacts((a.linkedArtifacts as ArtifactLink[]) || []);
         setCustomAttributes((a.customAttributes as CustomAttributeValue[]) || []);
       } else {
-        // Create mode: reset to defaults or initial state
-        const s = initialState as Record<string, unknown>;
-        setTitle((s.title as string) || '');
-        setDescription((s.description as string) || '');
-        setText((s.text as string) || '');
-        setPriority((s.priority as string) || 'medium');
-        setStatus((s.status as string) || 'draft');
-        setAuthor((s.author as string) || currentUser?.name || '');
-        setLinkedArtifacts((s.linkedArtifacts as ArtifactLink[]) || []);
-        setCustomAttributes((s.customAttributes as CustomAttributeValue[]) || []);
+        // Create mode: reset to defaults
+        setTitle('');
+        setDescription('');
+        setText('');
+        setPriority('medium');
+        setStatus('draft');
+        setAuthor(currentUser?.name || '');
+        setLinkedArtifacts([]);
+        setCustomAttributes([]);
       }
     }
-  }, [isOpen, artifact, initialState, currentUser?.name]);
+  }, [isOpen, artifact, currentUser?.name]);
 
   const handleSubmit = useCallback(
-    (e?: React.FormEvent, additionalData: Partial<T> = {}) => {
+    async (e?: React.FormEvent, additionalData: Partial<T> = {}) => {
       if (e) e.preventDefault();
 
       const commonData = {
@@ -104,9 +101,9 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
       } as Partial<T>;
 
       if (isEditMode && artifact) {
-        onUpdate(artifact.id, commonData as Partial<T>);
+        await onUpdate(artifact.id, commonData as Partial<T>);
       } else {
-        onCreate({
+        await onCreate({
           ...commonData,
           dateCreated: Date.now(),
           revision: '01',

@@ -188,11 +188,10 @@ describe('RequirementModal', () => {
     (useRequirementForm as any).mockReturnValue({
       ...mockFormState,
       activeTab: 'details',
-      text: 'Test content',
       rationale: 'Test rationale',
+      verificationMethod: 'Test verification',
     });
     render(<RequirementModal {...defaultProps} />);
-    expect(screen.getByDisplayValue('Test content')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Test rationale')).toBeInTheDocument();
   });
 

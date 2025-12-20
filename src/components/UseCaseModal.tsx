@@ -121,6 +121,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
       onTabChange={(id) => setActiveTab(id as Tab)}
       onSubmit={handleSubmit}
       submitLabel={isEditMode ? 'Save Changes' : 'Create Use Case'}
+      formId="new-usecase-form"
     >
       {activeTab === 'overview' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
@@ -137,6 +138,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
               setStatus={setStatus}
               statusOptions={statusOptions}
               isEditMode={isEditMode}
+              titlePlaceholder="e.g., User Login"
             />
             <FormField label="Actor" required>
               <input
@@ -164,6 +166,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                 value: description,
                 onChange: setDescription,
                 height: 150,
+                placeholder: 'Brief description of the use case',
               },
             ]}
           />
@@ -178,6 +181,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
               value: mainFlow,
               onChange: setMainFlow,
               height: 250,
+              placeholder: '1. User does X\n2. System does Y',
             },
             {
               label: 'Alternative Flows',
