@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-console.log('[BaselineRevisionHistory][DEBUG] File loaded');
 import { FileText, GitCommit, Plus, Minus, Edit, Calendar, User } from 'lucide-react';
 import type {
   ProjectBaseline,
@@ -8,14 +7,17 @@ import type {
   UseCase,
   TestCase,
   Information,
+  Risk,
+  CommitInfo,
 } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
-import { useFileSystem } from '../app/providers/FileSystemProvider';
+import { useFileSystem, useRisks } from '../app/providers';
 import {
   markdownToRequirement,
   markdownToUseCase,
   markdownToTestCase,
   markdownToInformation,
+  markdownToRisk,
 } from '../utils/markdownUtils';
 
 interface BaselineRevisionHistoryProps {
@@ -27,7 +29,7 @@ interface BaselineRevisionHistoryProps {
 
 interface ArtifactRevisionInfo {
   id: string;
-  type: 'requirement' | 'usecase' | 'testcase' | 'information';
+  type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
   commitHash: string;
   revisions: ArtifactRevision[];
   revision?: string;
@@ -36,18 +38,17 @@ interface ArtifactRevisionInfo {
 export function BaselineRevisionHistory({
   currentBaseline,
   previousBaseline,
-  projectName,
   onViewArtifact,
-}: BaselineRevisionHistoryProps) {
+}: Omit<BaselineRevisionHistoryProps, 'projectName'>) {
   const [modifiedArtifacts, setModifiedArtifacts] = useState<ArtifactRevisionInfo[]>([]);
   const [addedArtifacts, setAddedArtifacts] = useState<string[]>([]);
   const [removedArtifacts, setRemovedArtifacts] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const { getArtifactHistory, readFileAtCommit } = useFileSystem();
+  const { getRiskHistory } = useRisks();
 
   useEffect(() => {
     const loadRevisionHistory = async () => {
-      console.log('[BaselineRevisionHistory][DEBUG] Starting loadRevisionHistory');
       setLoading(true);
       try {
         // Determine added and removed artifacts
@@ -64,12 +65,11 @@ export function BaselineRevisionHistory({
           for (const [artifactId, info] of Object.entries(currentBaseline.artifactCommits)) {
             const currentInfo = info as {
               commitHash: string;
-              type: ProjectBaseline['artifactCommits'][string]['type'];
+              type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
             };
             const prevInfo = previousBaseline.artifactCommits[artifactId];
 
             if (prevInfo && prevInfo.commitHash !== currentInfo.commitHash) {
-              // Artifact was modified - get its revision history
               const providerType =
                 currentInfo.type === 'requirement'
                   ? 'requirements'
@@ -77,52 +77,67 @@ export function BaselineRevisionHistory({
                     ? 'usecases'
                     : currentInfo.type === 'testcase'
                       ? 'testcases'
-                      : 'information';
+                      : currentInfo.type === 'information'
+                        ? 'information'
+                        : null;
 
-              try {
-                const history = await getArtifactHistory(providerType, artifactId);
-
-                // Convert CommitInfo to ArtifactRevision format
-                const relevantRevisions: ArtifactRevision[] = history.map((commit) => ({
-                  commitHash: commit.hash,
-                  message: commit.message,
-                  author: commit.author,
-                  timestamp: commit.timestamp,
-                }));
-
-                // Fetch the revision string from the artifact file (if possible)
-                let revision = '01';
+              if (currentInfo.type === 'risk' || providerType) {
                 try {
-                  const folder = providerType;
-                  const folderPath = `${folder}/${artifactId}.md`;
-                  const fileContent = await readFileAtCommit(folderPath, currentInfo.commitHash);
+                  const history: CommitInfo[] =
+                    currentInfo.type === 'risk'
+                      ? await getRiskHistory(artifactId)
+                      : await getArtifactHistory(
+                          providerType as 'requirements' | 'usecases' | 'testcases' | 'information',
+                          artifactId
+                        );
 
-                  if (fileContent) {
-                    let parsed: Requirement | UseCase | TestCase | Information | null = null;
-                    if (currentInfo.type === 'requirement') {
-                      parsed = markdownToRequirement(fileContent);
-                    } else if (currentInfo.type === 'usecase') {
-                      parsed = markdownToUseCase(fileContent);
-                    } else if (currentInfo.type === 'testcase') {
-                      parsed = markdownToTestCase(fileContent);
-                    } else if (currentInfo.type === 'information') {
-                      parsed = markdownToInformation(fileContent);
+                  const relevantRevisions: ArtifactRevision[] = history.map(
+                    (commit: CommitInfo) => ({
+                      commitHash: commit.hash,
+                      message: commit.message,
+                      author: commit.author,
+                      timestamp: commit.timestamp,
+                    })
+                  );
+
+                  let revision = '01';
+                  try {
+                    const folder = currentInfo.type === 'risk' ? 'risks' : providerType;
+                    const folderPath = `${folder}/${artifactId}.md`;
+                    const fileContent = await readFileAtCommit(folderPath, currentInfo.commitHash);
+
+                    if (fileContent) {
+                      let parsed: Requirement | UseCase | TestCase | Information | Risk | null =
+                        null;
+                      if (currentInfo.type === 'requirement') {
+                        parsed = markdownToRequirement(fileContent);
+                      } else if (currentInfo.type === 'usecase') {
+                        parsed = markdownToUseCase(fileContent);
+                      } else if (currentInfo.type === 'testcase') {
+                        parsed = markdownToTestCase(fileContent);
+                      } else if (currentInfo.type === 'information') {
+                        parsed = markdownToInformation(fileContent);
+                      } else if (currentInfo.type === 'risk') {
+                        parsed = markdownToRisk(fileContent);
+                      }
+                      if (parsed && 'revision' in parsed && parsed.revision) {
+                        revision = parsed.revision;
+                      }
                     }
-                    if (parsed && 'revision' in parsed && parsed.revision)
-                      revision = parsed.revision;
+                  } catch {
+                    // ignore
                   }
-                } catch {
-                  // ignore
+
+                  modified.push({
+                    id: artifactId,
+                    type: currentInfo.type,
+                    commitHash: currentInfo.commitHash,
+                    revisions: relevantRevisions.slice(0, 5),
+                    revision,
+                  });
+                } catch (err) {
+                  console.error(`Failed to fetch history for ${artifactId}`, err);
                 }
-                modified.push({
-                  id: artifactId,
-                  type: currentInfo.type,
-                  commitHash: currentInfo.commitHash,
-                  revisions: relevantRevisions.slice(0, 5), // Show latest 5 commits
-                  revision,
-                });
-              } catch (err) {
-                console.error(`Failed to fetch history for ${artifactId}`, err);
               }
             }
           }
@@ -137,20 +152,25 @@ export function BaselineRevisionHistory({
     };
 
     loadRevisionHistory();
-  }, [currentBaseline, previousBaseline, projectName, getArtifactHistory, readFileAtCommit]);
+  }, [currentBaseline, previousBaseline, getArtifactHistory, getRiskHistory, readFileAtCommit]);
 
   const getTypeIcon = () => {
     return <FileText size={16} className="text-blue-400" />;
   };
 
   const getTypeLabel = (type: string) => {
-    return type === 'requirement'
-      ? 'Requirement'
-      : type === 'usecase'
-        ? 'Use Case'
-        : type === 'testcase'
-          ? 'Test Case'
-          : 'Information';
+    switch (type) {
+      case 'requirement':
+        return 'Requirement';
+      case 'usecase':
+        return 'Use Case';
+      case 'testcase':
+        return 'Test Case';
+      case 'risk':
+        return 'Risk';
+      default:
+        return 'Information';
+    }
   };
 
   if (loading) {
@@ -164,7 +184,6 @@ export function BaselineRevisionHistory({
   return (
     <div className="h-full overflow-y-auto bg-gray-900 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
         <div>
           <h2 className="text-2xl font-bold text-white mb-2">
             Baseline {currentBaseline.version}: {currentBaseline.name}
@@ -175,7 +194,6 @@ export function BaselineRevisionHistory({
           )}
         </div>
 
-        {/* Modified Artifacts */}
         {modifiedArtifacts.length > 0 && (
           <div>
             <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
@@ -202,7 +220,6 @@ export function BaselineRevisionHistory({
                     </div>
                   </div>
 
-                  {/* Revision History */}
                   <div className="space-y-2">
                     {artifact.revisions.map((revision) => (
                       <div
@@ -235,7 +252,6 @@ export function BaselineRevisionHistory({
           </div>
         )}
 
-        {/* Added to Project */}
         {addedArtifacts.length > 0 && (
           <div>
             <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
@@ -254,14 +270,10 @@ export function BaselineRevisionHistory({
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-gray-400 mt-3">
-                These artifacts were added to the project from the global library
-              </p>
             </div>
           </div>
         )}
 
-        {/* Removed from Project */}
         {removedArtifacts.length > 0 && (
           <div>
             <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
@@ -280,15 +292,10 @@ export function BaselineRevisionHistory({
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-gray-400 mt-3">
-                These artifacts were removed from the project (they still exist in the global
-                library)
-              </p>
             </div>
           </div>
         )}
 
-        {/* No Changes */}
         {modifiedArtifacts.length === 0 &&
           addedArtifacts.length === 0 &&
           removedArtifacts.length === 0 && (

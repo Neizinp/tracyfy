@@ -4,6 +4,7 @@ import { diskBaselineService } from '../../services/diskBaselineService';
 import { useProject } from './ProjectProvider';
 import { useFileSystem } from './FileSystemProvider';
 import { useToast } from './ToastProvider';
+import { useRisks } from './ArtifactProviders';
 import type { ProjectBaseline } from '../../types';
 
 interface BaselinesContextValue {
@@ -26,6 +27,7 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
   const { currentProject } = useProject();
   const { isReady, requirements, useCases, testCases, information, getArtifactHistory } =
     useFileSystem();
+  const { risks, getRiskHistory } = useRisks();
   const { showToast } = useToast();
   const hasLoadedInitial = useRef(false);
 
@@ -59,7 +61,7 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
         const artifactCommits: {
           [artifactId: string]: {
             commitHash: string;
-            type: 'requirement' | 'usecase' | 'testcase' | 'information';
+            type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
           };
         } = {};
 
@@ -75,14 +77,22 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
                 ? 'usecase'
                 : type === 'testcases'
                   ? 'testcase'
-                  : 'information';
+                  : type === 'risks'
+                    ? 'risk'
+                    : 'information';
 
           for (const item of items) {
-            const history = await getArtifactHistory(type as any, item.id);
+            const history =
+              type === 'risks'
+                ? await getRiskHistory(item.id)
+                : await getArtifactHistory(
+                    type as 'requirements' | 'usecases' | 'testcases' | 'information',
+                    item.id
+                  );
             if (history.length > 0) {
               artifactCommits[item.id] = {
                 commitHash: history[0].hash,
-                type: gitType as any,
+                type: gitType as 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk',
               };
             }
           }
@@ -93,6 +103,7 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
           captureCommits(useCases, 'usecases'),
           captureCommits(testCases, 'testcases'),
           captureCommits(information, 'information'),
+          captureCommits(risks, 'risks'),
         ]);
 
         const newBaseline: ProjectBaseline = {
@@ -115,7 +126,17 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
         return null;
       }
     },
-    [currentProject, requirements, useCases, testCases, information, getArtifactHistory, showToast]
+    [
+      currentProject,
+      requirements,
+      useCases,
+      testCases,
+      information,
+      risks,
+      getArtifactHistory,
+      getRiskHistory,
+      showToast,
+    ]
   );
 
   const deleteBaseline = useCallback(

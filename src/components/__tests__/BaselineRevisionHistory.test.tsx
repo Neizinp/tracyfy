@@ -1,12 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+
 const mockGetArtifactHistory = vi.fn().mockResolvedValue([]);
 const mockReadFileAtCommit = vi.fn().mockResolvedValue(null);
+const mockGetRiskHistory = vi.fn().mockResolvedValue([]);
 
-vi.mock('../../app/providers/FileSystemProvider', () => ({
+vi.mock('../../app/providers', () => ({
   useFileSystem: () => ({
     getArtifactHistory: mockGetArtifactHistory,
     readFileAtCommit: mockReadFileAtCommit,
+    isReady: true,
+  }),
+  useRisks: () => ({
+    getRiskHistory: mockGetRiskHistory,
+    risks: [],
   }),
 }));
 
@@ -73,7 +80,6 @@ describe('BaselineRevisionHistory', () => {
       <BaselineRevisionHistory
         currentBaseline={mockCurrentBaseline}
         previousBaseline={null}
-        projectName="Test Project"
         onViewArtifact={mockOnViewArtifact}
       />
     );
@@ -85,7 +91,6 @@ describe('BaselineRevisionHistory', () => {
       <BaselineRevisionHistory
         currentBaseline={mockCurrentBaseline}
         previousBaseline={null}
-        projectName="Test Project"
         onViewArtifact={mockOnViewArtifact}
       />
     );
@@ -100,7 +105,6 @@ describe('BaselineRevisionHistory', () => {
       <BaselineRevisionHistory
         currentBaseline={mockCurrentBaseline}
         previousBaseline={null}
-        projectName="Test Project"
         onViewArtifact={mockOnViewArtifact}
       />
     );
@@ -115,7 +119,6 @@ describe('BaselineRevisionHistory', () => {
       <BaselineRevisionHistory
         currentBaseline={mockCurrentBaseline}
         previousBaseline={mockPreviousBaseline}
-        projectName="Test Project"
         onViewArtifact={mockOnViewArtifact}
       />
     );
@@ -131,7 +134,6 @@ describe('BaselineRevisionHistory', () => {
       <BaselineRevisionHistory
         currentBaseline={mockCurrentBaseline}
         previousBaseline={mockPreviousBaseline}
-        projectName="Test Project"
         onViewArtifact={mockOnViewArtifact}
       />
     );
@@ -153,7 +155,6 @@ describe('BaselineRevisionHistory', () => {
       <BaselineRevisionHistory
         currentBaseline={baselineWithNoChanges}
         previousBaseline={null}
-        projectName="Test Project"
         onViewArtifact={mockOnViewArtifact}
       />
     );

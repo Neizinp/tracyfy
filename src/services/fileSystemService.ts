@@ -73,6 +73,9 @@ class FileSystemService {
    * Initialize the IndexedDB for storing directory handles
    */
   private async initDB(): Promise<IDBDatabase> {
+    if (this.isE2EMode) {
+      throw new Error('IndexedDB not supported in E2E mode');
+    }
     if (this.db) return this.db;
 
     return new Promise((resolve, reject) => {
@@ -97,6 +100,7 @@ class FileSystemService {
    * Store directory handle in IndexedDB
    */
   async storeHandle(handle: FileSystemDirectoryHandle): Promise<void> {
+    if (this.isE2EMode) return;
     const db = await this.initDB();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, 'readwrite');
@@ -112,6 +116,7 @@ class FileSystemService {
    * Retrieve stored directory handle from IndexedDB
    */
   async getStoredHandle(): Promise<FileSystemDirectoryHandle | null> {
+    if (this.isE2EMode) return null;
     const db = await this.initDB();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, 'readonly');

@@ -2,16 +2,20 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RevisionHistoryTab } from '../RevisionHistoryTab';
 
-// Mock the useFileSystem hook before importing component
+// Mock the unified providers
 const mockGetArtifactHistory = vi.fn();
 const mockReadFileAtCommit = vi.fn().mockResolvedValue(null);
-vi.mock('../../app/providers/FileSystemProvider', () => ({
-  useFileSystem: vi.fn(() => ({
+const mockGetRiskHistory = vi.fn();
+
+vi.mock('../../app/providers', () => ({
+  useFileSystem: () => ({
     getArtifactHistory: mockGetArtifactHistory,
     readFileAtCommit: mockReadFileAtCommit,
     isReady: true,
-  })),
-  FileSystemProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  }),
+  useRisks: () => ({
+    getRiskHistory: mockGetRiskHistory,
+  }),
 }));
 
 describe('RevisionHistoryTab', () => {
@@ -54,6 +58,5 @@ describe('RevisionHistoryTab', () => {
 
     expect(screen.getByText('John Doe')).toBeInTheDocument();
     expect(screen.getByText('Initial commit')).toBeInTheDocument();
-    // Note: Commit hash column was removed to simplify the UI
   });
 });

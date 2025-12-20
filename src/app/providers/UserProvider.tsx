@@ -31,38 +31,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const currentUser = users.find((u) => u.id === currentUserId) || null;
 
-  // Load users when FileSystem is ready
-  useEffect(() => {
-    if (!isReady) {
-      return;
-    }
-
-    const loadUsers = async () => {
-      setIsLoading(true);
-      try {
-        const isE2E = typeof window !== 'undefined' && (window as any).__E2E_TEST_MODE__;
-
-        let loadedUsers = await userService.loadAll();
-
-        if (isE2E && loadedUsers.length === 0) {
-          console.log('[UserProvider] E2E mode: creating default test user');
-          const testUser = await createUser('E2E Test User');
-          loadedUsers = [testUser];
-        }
-
-        const storedCurrentUserId = await diskProjectService.getCurrentUserId();
-        setUsers(loadedUsers);
-        setCurrentUserId(storedCurrentUserId || (isE2E ? loadedUsers[0].id : ''));
-      } catch (error) {
-        console.error('Failed to load users:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadUsers();
-  }, [isReady]);
-
   const createUser = useCallback(
     async (name: string): Promise<User> => {
       const id = await idService.getNextId('users');
@@ -118,6 +86,40 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await diskProjectService.setCurrentUserId(userId);
     setCurrentUserId(userId);
   }, []);
+
+  // Load users when FileSystem is ready
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
+    const loadUsers = async () => {
+      setIsLoading(true);
+      try {
+        const isE2E =
+          typeof window !== 'undefined' &&
+          (window as unknown as { __E2E_TEST_MODE__?: boolean }).__E2E_TEST_MODE__;
+
+        let loadedUsers = await userService.loadAll();
+
+        if (isE2E && loadedUsers.length === 0) {
+          console.log('[UserProvider] E2E mode: creating default test user');
+          const testUser = await createUser('E2E Test User');
+          loadedUsers = [testUser];
+        }
+
+        const storedCurrentUserId = await diskProjectService.getCurrentUserId();
+        setUsers(loadedUsers);
+        setCurrentUserId(storedCurrentUserId || (isE2E ? loadedUsers[0].id : ''));
+      } catch (error) {
+        console.error('Failed to load users:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUsers();
+  }, [isReady, createUser]);
 
   const value: UserContextValue = {
     users,

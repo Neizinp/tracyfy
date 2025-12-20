@@ -13,19 +13,10 @@ import {
   useCaseService,
   testCaseService,
   informationService,
-  riskService,
   projectService,
 } from '../../services/artifactServices';
 import { useBackgroundTasks } from './BackgroundTasksProvider';
-import type {
-  Requirement,
-  UseCase,
-  TestCase,
-  Information,
-  Risk,
-  ProjectBaseline,
-  Project,
-} from '../../types';
+import type { Requirement, UseCase, TestCase, Information, Project } from '../../types';
 
 interface FileSystemContextValue {
   isReady: boolean;
@@ -41,7 +32,6 @@ interface FileSystemContextValue {
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
-  risks: Risk[];
   // Git-related
   pendingChanges: FileStatus[];
   refreshStatus: () => Promise<void>;
@@ -50,31 +40,34 @@ interface FileSystemContextValue {
   saveUseCase: (useCase: UseCase) => Promise<void>;
   saveTestCase: (testCase: TestCase) => Promise<void>;
   saveInformation: (info: Information) => Promise<void>;
-  saveRisk: (risk: Risk) => Promise<void>;
   deleteRequirement: (id: string) => Promise<void>;
   deleteUseCase: (id: string) => Promise<void>;
   deleteTestCase: (id: string) => Promise<void>;
   deleteInformation: (id: string) => Promise<void>;
-  deleteRisk: (id: string) => Promise<void>;
   saveProject: (project: Project) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   createProject: (name: string, description: string) => Promise<Project>;
   setCurrentProject: (projectId: string) => Promise<void>;
   getNextId: (
-    type: 'requirements' | 'useCases' | 'testCases' | 'information' | 'risks'
+    type:
+      | 'requirements'
+      | 'useCases'
+      | 'testCases'
+      | 'information'
+      | 'risks'
+      | 'links'
+      | 'customAttributes'
+      | 'workflows'
   ) => Promise<string>;
   // Reload from disk
   reloadData: () => Promise<void>;
   // Git operations
   commitFile: (filepath: string, message: string, authorName?: string) => Promise<void>;
   getArtifactHistory: (
-    type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks',
+    type: 'requirements' | 'usecases' | 'testcases' | 'information',
     id: string
   ) => Promise<CommitInfo[]>;
   readFileAtCommit: (filepath: string, commitHash: string) => Promise<string | null>;
-  baselines: ProjectBaseline[];
-  createBaseline: (name: string, message: string) => Promise<void>;
-  refreshBaselines: () => Promise<void>;
   push: () => Promise<void>;
   pull: () => Promise<PullResult>;
   hasRemote: () => Promise<boolean>;
@@ -96,7 +89,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [directoryName, setDirectoryName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingChanges, setPendingChanges] = useState<FileStatus[]>([]);
-  const [baselines, setBaselines] = useState<ProjectBaseline[]>([]);
+  const [information, setInformation] = useState<Information[]>([]);
 
   // All data from disk
   const [projects, setProjects] = useState<Project[]>([]);
@@ -104,8 +97,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [useCases, setUseCases] = useState<UseCase[]>([]);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
-  const [information, setInformation] = useState<Information[]>([]);
-  const [risks, setRisks] = useState<Risk[]>([]);
 
   // Counter for E2E mode to generate unique IDs
   const [e2eCounters, setE2eCounters] = useState({
@@ -136,24 +127,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [startTask, endTask]);
 
-  const refreshBaselines = useCallback(async () => {
-    if (realGitService.isInitialized()) {
-      const tags = await realGitService.getTagsWithDetails();
-      const projectBaselines: ProjectBaseline[] = tags.map((tag) => ({
-        id: tag.name,
-        projectId: 'global',
-        version: tag.name,
-        name: tag.name,
-        description: tag.message,
-        timestamp: tag.timestamp,
-        artifactCommits: {},
-        addedArtifacts: [],
-        removedArtifacts: [],
-      }));
-      setBaselines(projectBaselines);
-    }
-  }, []);
-
   // Load all data from disk using diskProjectService
   const reloadData = useCallback(async () => {
     const taskId = startTask('Loading data...');
@@ -166,7 +139,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setUseCases(data.useCases);
       setTestCases(data.testCases);
       setInformation(data.information);
-      setRisks(data.risks);
 
       // Recalculate counters to make sure they're in sync
       await diskProjectService.recalculateCounters();
@@ -176,7 +148,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         useCases: data.useCases.length,
         testCases: data.testCases.length,
         information: data.information.length,
-        risks: data.risks.length,
       });
     } finally {
       endTask(taskId);
@@ -231,9 +202,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               const status = await realGitService.getStatus();
               setPendingChanges(status);
 
-              // Load baselines
-              await refreshBaselines();
-
               setIsReady(true);
             }
           } finally {
@@ -248,7 +216,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
 
     tryRestore();
-  }, [reloadData, refreshBaselines, startTask, endTask]);
+  }, [reloadData, startTask, endTask]);
 
   const selectDirectory = useCallback(async () => {
     setIsLoading(true);
@@ -280,9 +248,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       debug.log('[selectDirectory] Setting pendingChanges to:', status);
       setPendingChanges(status);
 
-      // Load baselines
-      await refreshBaselines();
-
       setIsReady(true);
     } catch (err) {
       setError((err as Error).message);
@@ -290,7 +255,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       endTask(taskId);
       setIsLoading(false);
     }
-  }, [reloadData, refreshBaselines, startTask, endTask]);
+  }, [reloadData, startTask, endTask]);
 
   // CRUD operations - Requirements
   const saveRequirement = useCallback(
@@ -419,39 +384,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         await informationService.delete(id);
       }
       setInformation((prev) => prev.filter((i) => i.id !== id));
-      if (!isE2EMode()) await refreshStatus();
-    },
-    [isReady, refreshStatus]
-  );
-
-  // CRUD operations - Risks
-  const saveRisk = useCallback(
-    async (risk: Risk) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await riskService.save(risk);
-      }
-      setRisks((prev) => {
-        const idx = prev.findIndex((r) => r.id === risk.id);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = risk;
-          return updated;
-        }
-        return [...prev, risk];
-      });
-      if (!isE2EMode()) await refreshStatus();
-    },
-    [isReady, refreshStatus]
-  );
-
-  const deleteRisk = useCallback(
-    async (id: string) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await riskService.delete(id);
-      }
-      setRisks((prev) => prev.filter((r) => r.id !== id));
       if (!isE2EMode()) await refreshStatus();
     },
     [isReady, refreshStatus]
@@ -599,10 +531,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   );
 
   const getArtifactHistory = useCallback(
-    async (
-      type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks',
-      id: string
-    ) => {
+    async (type: 'requirements' | 'usecases' | 'testcases' | 'information', id: string) => {
       if (!isReady || isE2EMode()) return [];
       return await realGitService.getHistory(`${type}/${id}.md`);
     },
@@ -626,16 +555,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return await realGitService.hasRemote();
   }, []);
 
-  const createBaseline = useCallback(
-    async (name: string, message: string) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (isE2EMode()) return; // Skip git operations in E2E mode
-      await realGitService.createTag(name, message);
-      await refreshBaselines();
-    },
-    [isReady, refreshBaselines]
-  );
-
   return (
     <FileSystemContext.Provider
       value={{
@@ -652,7 +571,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         useCases,
         testCases,
         information,
-        risks,
         // Git
         pendingChanges,
         refreshStatus,
@@ -661,12 +579,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         saveUseCase,
         saveTestCase,
         saveInformation,
-        saveRisk,
         deleteRequirement,
         deleteUseCase,
         deleteTestCase,
         deleteInformation,
-        deleteRisk,
         saveProject,
         createProject,
         deleteProject,
@@ -677,9 +593,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         commitFile,
         getArtifactHistory,
         readFileAtCommit,
-        baselines,
-        createBaseline,
-        refreshBaselines,
         push,
         pull,
         hasRemote,

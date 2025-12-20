@@ -1,81 +1,152 @@
-import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react';
-import { debug } from '../../../utils/debug';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { useGlobalState } from '../GlobalStateProvider';
-import { useUI } from '../UIProvider';
-import { useFileSystem } from '../FileSystemProvider';
-import { useUser } from '../UserProvider';
-import { useToast } from '../ToastProvider';
-import type { Risk } from '../../../types';
 import { riskService } from '../../../services/artifactServices';
+import { useFileSystem } from '../FileSystemProvider';
+import { useToast } from '../ToastProvider';
+import { useUI } from '../UIProvider';
+import { useUser } from '../UserProvider';
+import { debug } from '../../../utils/debug';
+import type { Risk, CommitInfo } from '../../../types';
+import { realGitService } from '../../../services/realGitService';
 
 interface RisksContextValue {
-  // Data
   risks: Risk[];
-  setRisks: (risks: Risk[] | ((prev: Risk[]) => Risk[])) => void;
+  loading: boolean;
+  saveRisk: (risk: Risk) => Promise<void>;
+  deleteRisk: (id: string) => Promise<void>;
+  refreshRisks: () => Promise<void>;
+  getRiskHistory: (id: string) => Promise<CommitInfo[]>;
 
-  // CRUD operations
+  // UI helpers (compatible with old provider)
   handleAddRisk: (risk: Omit<Risk, 'id' | 'lastModified'>) => Promise<void>;
   handleUpdateRisk: (id: string, data: Partial<Risk>) => Promise<void>;
   handleDeleteRisk: (id: string) => void;
-  handleRestoreRisk: (id: string) => void;
   handlePermanentDeleteRisk: (id: string) => void;
-
-  // Page handlers
   handleEdit: (risk: Risk) => void;
 }
 
 const RisksContext = createContext<RisksContextValue | undefined>(undefined);
 
 export const RisksProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const globalState = useGlobalState();
-  const { risks, setRisks } = globalState;
-  const { setEditingRisk, setIsRiskModalOpen } = useUI();
-  const { isReady, getNextId } = useFileSystem();
-  const { currentUser } = useUser();
+  const [risks, setRisks] = useState<Risk[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { isReady, refreshStatus, getNextId } = useFileSystem();
   const { showToast } = useToast();
-  const hasSyncedInitial = useRef(false);
+  const { setEditingRisk, setIsRiskModalOpen } = useUI();
+  const { currentUser } = useUser();
+  const hasLoadedInitial = useRef(false);
 
-  // Sync risks from riskService on initial load
+  // Check if we're in E2E test mode
+  const isE2E =
+    typeof window !== 'undefined' &&
+    (window as unknown as { __E2E_TEST_MODE__?: boolean }).__E2E_TEST_MODE__;
+
+  const refreshRisks = useCallback(async () => {
+    if (!isReady && !isE2E) return;
+
+    setLoading(true);
+    try {
+      const loadedRisks = await riskService.loadAll();
+      setRisks(loadedRisks);
+    } catch (error) {
+      console.error('Failed to load risks:', error);
+      showToast('Failed to load risks', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [isReady, isE2E, showToast]);
+
   useEffect(() => {
-    const loadRisks = async () => {
-      if (isReady && !hasSyncedInitial.current) {
-        debug.log('[RisksProvider] Syncing from disk...');
-        const loadedRisks = await riskService.loadAll();
-        setRisks(loadedRisks);
-        hasSyncedInitial.current = true;
-      }
-    };
-    loadRisks();
-  }, [isReady, setRisks]);
+    if ((isReady || isE2E) && !hasLoadedInitial.current) {
+      refreshRisks();
+      hasLoadedInitial.current = true;
+    }
+  }, [isReady, isE2E, refreshRisks]);
 
+  const saveRisk = useCallback(
+    async (risk: Risk) => {
+      debug.log('[RisksProvider] Saving risk:', risk.id);
+
+      try {
+        if (!isE2E) {
+          await riskService.save(risk);
+        }
+
+        setRisks((prev) => {
+          const idx = prev.findIndex((r) => r.id === risk.id);
+          if (idx >= 0) {
+            const updated = [...prev];
+            updated[idx] = risk;
+            return updated;
+          }
+          return [...prev, risk];
+        });
+
+        if (!isE2E) {
+          await refreshStatus();
+        }
+
+        showToast(`Risk ${risk.id} saved`, 'success');
+      } catch (error) {
+        console.error('Failed to save risk:', error);
+        showToast('Failed to save risk', 'error');
+        throw error;
+      }
+    },
+    [isE2E, refreshStatus, showToast]
+  );
+
+  const deleteRisk = useCallback(
+    async (id: string) => {
+      debug.log('[RisksProvider] Deleting risk:', id);
+
+      try {
+        if (!isE2E) {
+          await riskService.delete(id);
+        }
+
+        setRisks((prev) => prev.filter((r) => r.id !== id));
+
+        if (!isE2E) {
+          await refreshStatus();
+        }
+
+        showToast('Risk deleted', 'success');
+      } catch (error) {
+        console.error('Failed to delete risk:', error);
+        showToast('Failed to delete risk', 'error');
+        throw error;
+      }
+    },
+    [isE2E, refreshStatus, showToast]
+  );
+
+  const getRiskHistory = useCallback(
+    async (id: string) => {
+      if ((!isReady || !realGitService.isInitialized()) && !isE2E) return [];
+      return await realGitService.getHistory(`risks/${id}.md`);
+    },
+    [isReady, isE2E]
+  );
+
+  // UI helpers
   const handleAddRisk = useCallback(
     async (newRiskData: Omit<Risk, 'id' | 'lastModified'>) => {
-      if (!currentUser) {
-        showToast(
-          'Please select a user before creating artifacts. Go to Settings → Users to select a user.',
-          'warning'
-        );
+      if (!currentUser && !isE2E) {
+        showToast('Please select a user before creating artifacts.', 'warning');
         return;
       }
 
       const newId = await getNextId('risks');
-
       const newRisk: Risk = {
         ...newRiskData,
         id: newId,
         lastModified: Date.now(),
       };
 
-      setRisks((prev) => [...prev, newRisk]);
-
-      try {
-        await riskService.save(newRisk, `Risk created: ${newRisk.title}`);
-      } catch (error) {
-        console.error('Failed to save risk:', error);
-      }
+      await saveRisk(newRisk);
     },
-    [currentUser, getNextId, setRisks, showToast]
+    [currentUser, getNextId, saveRisk, showToast, isE2E]
   );
 
   const handleUpdateRisk = useCallback(
@@ -89,17 +160,11 @@ export const RisksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         lastModified: Date.now(),
       };
 
-      setRisks((prev) => prev.map((r) => (r.id === id ? finalRisk : r)));
+      await saveRisk(finalRisk);
       setIsRiskModalOpen(false);
       setEditingRisk(null);
-
-      try {
-        await riskService.save(finalRisk, `Risk updated: ${finalRisk.title}`);
-      } catch (error) {
-        console.error('Failed to save risk:', error);
-      }
     },
-    [risks, setRisks, setEditingRisk, setIsRiskModalOpen]
+    [risks, saveRisk, setIsRiskModalOpen, setEditingRisk]
   );
 
   const handleDeleteRisk = useCallback(
@@ -113,71 +178,36 @@ export const RisksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         deletedAt: Date.now(),
       };
 
-      setRisks((prev) => prev.map((r) => (r.id === id ? deletedRisk : r)));
-      setIsRiskModalOpen(false);
-      setEditingRisk(null);
-
-      riskService
-        .save(deletedRisk, `Risk soft-deleted: ${id}`)
-        .catch((err) => console.error('Failed to soft-delete risk:', err));
+      saveRisk(deletedRisk).catch((err) => console.error('Failed to soft-delete risk:', err));
     },
-    [risks, setRisks, setEditingRisk, setIsRiskModalOpen]
-  );
-
-  const handleRestoreRisk = useCallback(
-    (id: string) => {
-      const existingRisk = risks.find((r) => r.id === id);
-      if (!existingRisk) return;
-
-      const restoredRisk: Risk = {
-        ...existingRisk,
-        isDeleted: false,
-        deletedAt: undefined,
-        lastModified: Date.now(),
-      };
-
-      setRisks((prev) => prev.map((r) => (r.id === id ? restoredRisk : r)));
-
-      riskService
-        .save(restoredRisk, `Risk restored: ${id}`)
-        .catch((err) => console.error('Failed to restore risk:', err));
-    },
-    [risks, setRisks]
+    [risks, saveRisk]
   );
 
   const handlePermanentDeleteRisk = useCallback(
     (id: string) => {
-      setRisks((prev) => prev.filter((r) => r.id !== id));
-
-      riskService
-        .delete(id, `Risk permanently deleted: ${id}`)
-        .catch((err) => console.error('Failed to permanently delete risk:', err));
+      deleteRisk(id).catch((err) => console.error('Failed to permanently delete risk:', err));
     },
-    [setRisks]
+    [deleteRisk]
   );
 
   const handleEdit = useCallback(
     (risk: Risk) => {
-      if (!currentUser) {
-        showToast(
-          'Please select a user before editing artifacts. Go to Settings → Users to select a user.',
-          'warning'
-        );
-        return;
-      }
       setEditingRisk(risk);
       setIsRiskModalOpen(true);
     },
-    [currentUser, setEditingRisk, setIsRiskModalOpen, showToast]
+    [setEditingRisk, setIsRiskModalOpen]
   );
 
   const value: RisksContextValue = {
     risks,
-    setRisks,
+    loading,
+    saveRisk,
+    deleteRisk,
+    refreshRisks,
+    getRiskHistory,
     handleAddRisk,
     handleUpdateRisk,
     handleDeleteRisk,
-    handleRestoreRisk,
     handlePermanentDeleteRisk,
     handleEdit,
   };
@@ -185,7 +215,7 @@ export const RisksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   return <RisksContext.Provider value={value}>{children}</RisksContext.Provider>;
 };
 
-export const useRisks = (): RisksContextValue => {
+export const useRisks = () => {
   const context = useContext(RisksContext);
   if (context === undefined) {
     throw new Error('useRisks must be used within a RisksProvider');

@@ -55,7 +55,7 @@ export interface ProjectBaseline {
   artifactCommits: {
     [artifactId: string]: {
       commitHash: string;
-      type: 'requirement' | 'usecase' | 'testcase' | 'information';
+      type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
     };
   };
   // Track what was added/removed from project since last baseline

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { debug } from '../utils/debug';
-import { useFileSystem } from '../app/providers/FileSystemProvider';
-import type { CommitInfo } from '../services/git/types';
+import { useFileSystem, useRisks } from '../app/providers';
+import type { CommitInfo } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import {
   markdownToRequirement,
@@ -23,14 +23,21 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
   const [history, setHistory] = useState<CommitInfo[]>([]);
   const [revisions, setRevisions] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const { getArtifactHistory, readFileAtCommit, isReady } = useFileSystem();
+  const { getArtifactHistory: getFsHistory, readFileAtCommit, isReady } = useFileSystem();
+  const { getRiskHistory } = useRisks();
 
   useEffect(() => {
     const loadHistory = async () => {
       if (!isReady) return;
       setLoading(true);
       try {
-        const commits = await getArtifactHistory(artifactType, artifactId);
+        const commits =
+          artifactType === 'risks'
+            ? await getRiskHistory(artifactId)
+            : await getFsHistory(
+                artifactType as 'requirements' | 'usecases' | 'testcases' | 'information',
+                artifactId
+              );
         setHistory(commits);
         const filePath = `${artifactType}/${artifactId}.md`;
         const revs: Record<string, string> = {};
@@ -109,7 +116,7 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
     } else {
       setLoading(false);
     }
-  }, [artifactId, artifactType, getArtifactHistory, readFileAtCommit, isReady]);
+  }, [artifactId, artifactType, getFsHistory, getRiskHistory, readFileAtCommit, isReady]);
 
   if (loading) {
     return (

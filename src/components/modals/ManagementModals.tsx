@@ -13,16 +13,26 @@ import {
   useUI,
   useProject,
   useGlobalState,
-  useFileSystem,
   useUser,
   useBackgroundTasks,
+  useBaselines,
+  useRisks,
 } from '../../app/providers';
 import { diskLinkService } from '../../services/diskLinkService';
 import { diskCustomAttributeService } from '../../services/diskCustomAttributeService';
 import { exportProjectToPDF } from '../../utils/pdfExportUtils';
 import { exportProjectToExcel } from '../../utils/excelExportUtils';
 import { exportProjectToJSON } from '../../utils/jsonExportUtils';
-import type { Link, LinkType, ExportOptions } from '../../types';
+import type {
+  Link,
+  LinkType,
+  ExportOptions,
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+  Risk,
+} from '../../types';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import type { LinkModalResult } from '../LinkModal';
 
@@ -33,7 +43,8 @@ export const ManagementModals: React.FC = () => {
   const { globalRequirements, globalUseCases, globalTestCases, globalInformation } =
     useGlobalState();
 
-  const { baselines, createBaseline, risks } = useFileSystem();
+  const { baselines, createBaseline } = useBaselines();
+  const { risks } = useRisks();
   const { currentUser } = useUser();
   const { startTask, endTask } = useBackgroundTasks();
 
@@ -153,7 +164,7 @@ export const ManagementModals: React.FC = () => {
     (artifactId: string, artifactType: string) => {
       switch (artifactType) {
         case 'requirements': {
-          const req = globalRequirements.find((r) => r.id === artifactId);
+          const req = globalRequirements.find((r: Requirement) => r.id === artifactId);
           if (req) {
             ui.setEditingRequirement(req);
             ui.setIsEditRequirementModalOpen(true);
@@ -161,7 +172,7 @@ export const ManagementModals: React.FC = () => {
           break;
         }
         case 'usecases': {
-          const uc = globalUseCases.find((u) => u.id === artifactId);
+          const uc = globalUseCases.find((u: UseCase) => u.id === artifactId);
           if (uc) {
             ui.setEditingUseCase(uc);
             ui.setIsUseCaseModalOpen(true);
@@ -169,7 +180,7 @@ export const ManagementModals: React.FC = () => {
           break;
         }
         case 'testcases': {
-          const tc = globalTestCases.find((t) => t.id === artifactId);
+          const tc = globalTestCases.find((t: TestCase) => t.id === artifactId);
           if (tc) {
             ui.setSelectedTestCaseId(tc.id);
             ui.setIsEditTestCaseModalOpen(true);
@@ -177,7 +188,7 @@ export const ManagementModals: React.FC = () => {
           break;
         }
         case 'information': {
-          const info = globalInformation.find((i) => i.id === artifactId);
+          const info = globalInformation.find((i: Information) => i.id === artifactId);
           if (info) {
             ui.setSelectedInformation(info);
             ui.setIsInformationModalOpen(true);
@@ -187,6 +198,14 @@ export const ManagementModals: React.FC = () => {
       }
     },
     [ui, globalRequirements, globalUseCases, globalTestCases, globalInformation]
+  );
+
+  const handleCreateBaselineWrapper = useCallback(
+    async (name: string, message: string) => {
+      const version = name.includes(']') ? name.split(']').pop()?.trim() || name : name;
+      await createBaseline(name, message, version);
+    },
+    [createBaseline]
   );
 
   return (
@@ -210,7 +229,7 @@ export const ManagementModals: React.FC = () => {
         baselines={baselines}
         projectName={currentProject?.name ?? null}
         onClose={ui.closeModal}
-        onCreateBaseline={createBaseline}
+        onCreateBaseline={handleCreateBaselineWrapper}
         onSelectArtifact={handleSelectArtifact}
       />
 
@@ -235,18 +254,19 @@ export const ManagementModals: React.FC = () => {
         onExport={handleExport}
         artifactCounts={{
           requirements: globalRequirements.filter(
-            (r) => !r.isDeleted && currentProject?.requirementIds.includes(r.id)
+            (r: Requirement) => !r.isDeleted && currentProject?.requirementIds.includes(r.id)
           ).length,
           useCases: globalUseCases.filter(
-            (u) => !u.isDeleted && currentProject?.useCaseIds.includes(u.id)
+            (u: UseCase) => !u.isDeleted && currentProject?.useCaseIds.includes(u.id)
           ).length,
           testCases: globalTestCases.filter(
-            (t) => !t.isDeleted && currentProject?.testCaseIds.includes(t.id)
+            (t: TestCase) => !t.isDeleted && currentProject?.testCaseIds.includes(t.id)
           ).length,
           information: globalInformation.filter(
-            (i) => !i.isDeleted && currentProject?.informationIds.includes(i.id)
+            (i: Information) => !i.isDeleted && currentProject?.informationIds.includes(i.id)
           ).length,
-          risks: risks.filter((r) => !r.isDeleted && currentProject?.riskIds.includes(r.id)).length,
+          risks: risks.filter((r: Risk) => !r.isDeleted && currentProject?.riskIds.includes(r.id))
+            .length,
           links: projectLinks.length,
         }}
       />
@@ -257,7 +277,7 @@ export const ManagementModals: React.FC = () => {
         onNavigateToArtifact={(type: string, id: string) => {
           switch (type) {
             case 'requirement': {
-              const req = globalRequirements.find((r) => r.id === id);
+              const req = globalRequirements.find((r: Requirement) => r.id === id);
               if (req) {
                 ui.openModal('requirement', true, {
                   id,
@@ -268,7 +288,7 @@ export const ManagementModals: React.FC = () => {
               break;
             }
             case 'usecase': {
-              const uc = globalUseCases.find((u) => u.id === id);
+              const uc = globalUseCases.find((u: UseCase) => u.id === id);
               if (uc) {
                 ui.openModal('usecase', true, {
                   id,
@@ -279,14 +299,14 @@ export const ManagementModals: React.FC = () => {
               break;
             }
             case 'testcase': {
-              const tc = globalTestCases.find((t) => t.id === id);
+              const tc = globalTestCases.find((t: TestCase) => t.id === id);
               if (tc) {
                 ui.openModal('testcase', true, { id, type: 'testcase' });
               }
               break;
             }
             case 'information': {
-              const info = globalInformation.find((i) => i.id === id);
+              const info = globalInformation.find((i: Information) => i.id === id);
               if (info) {
                 ui.openModal('information', true, {
                   id,
@@ -297,7 +317,7 @@ export const ManagementModals: React.FC = () => {
               break;
             }
             case 'risk': {
-              const risk = risks.find((r) => r.id === id);
+              const risk = risks.find((r: Risk) => r.id === id);
               if (risk) {
                 ui.openModal('risk', true, {
                   id,

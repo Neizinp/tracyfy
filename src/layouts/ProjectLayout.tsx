@@ -12,6 +12,8 @@ import {
   useUser,
   useBackgroundTasks,
   useToast,
+  useBaselines,
+  useRisks,
 } from '../app/providers';
 import { exportProjectToPDF } from '../utils/pdfExportUtils';
 import { exportProjectToExcel } from '../utils/excelExportUtils';
@@ -63,7 +65,7 @@ const informationColumns: {
   { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
   { key: 'revision', label: 'Rev' },
   { key: 'type', label: 'Type' },
-  { key: 'content', label: 'Content' },
+  { key: 'text', label: 'Content' },
   { key: 'created', label: 'Created' },
 ];
 
@@ -98,7 +100,13 @@ export const ProjectLayout: React.FC = () => {
     useGlobalState();
 
   // FileSystem context
-  const { baselines, reloadData, refreshStatus, risks } = useFileSystem();
+  const { reloadData, refreshStatus } = useFileSystem();
+
+  // Baselines context
+  const { baselines } = useBaselines();
+
+  // Risks context
+  const { risks } = useRisks();
 
   // Import/Export handlers
   const importExport = useImportExport();
