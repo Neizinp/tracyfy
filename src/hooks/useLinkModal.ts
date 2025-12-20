@@ -84,7 +84,10 @@ export function useLinkModal({
       artifacts = globalInformation.map((i) => ({
         id: i.id,
         title: i.title,
-        description: i.content.length > 100 ? i.content.substring(0, 100) + '...' : i.content,
+        description:
+          (i.content || i.text || '').length > 100
+            ? (i.content || i.text || '').substring(0, 100) + '...'
+            : i.content || i.text || '',
       }));
 
     // Filter out source artifact (can't link to self)

@@ -81,6 +81,7 @@ describe('BaselineRevisionHistory', () => {
         currentBaseline={mockCurrentBaseline}
         previousBaseline={null}
         onViewArtifact={mockOnViewArtifact}
+        projectName="Test Project"
       />
     );
     expect(container).toBeTruthy();
@@ -92,11 +93,14 @@ describe('BaselineRevisionHistory', () => {
         currentBaseline={mockCurrentBaseline}
         previousBaseline={null}
         onViewArtifact={mockOnViewArtifact}
+        projectName="Test Project"
       />
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Baseline 01: Version 1.0/i)).toBeInTheDocument();
+      expect(screen.getByText(/Baseline 01/i)).toBeInTheDocument();
+      expect(screen.getByText(/Version 1.0/i)).toBeInTheDocument();
+      expect(screen.getByText(/Test Project/i)).toBeInTheDocument();
     });
   });
 
@@ -106,6 +110,7 @@ describe('BaselineRevisionHistory', () => {
         currentBaseline={mockCurrentBaseline}
         previousBaseline={null}
         onViewArtifact={mockOnViewArtifact}
+        projectName="Test Project"
       />
     );
 
@@ -120,6 +125,7 @@ describe('BaselineRevisionHistory', () => {
         currentBaseline={mockCurrentBaseline}
         previousBaseline={mockPreviousBaseline}
         onViewArtifact={mockOnViewArtifact}
+        projectName="Test Project"
       />
     );
 
@@ -135,6 +141,7 @@ describe('BaselineRevisionHistory', () => {
         currentBaseline={mockCurrentBaseline}
         previousBaseline={mockPreviousBaseline}
         onViewArtifact={mockOnViewArtifact}
+        projectName="Test Project"
       />
     );
 
@@ -156,6 +163,7 @@ describe('BaselineRevisionHistory', () => {
         currentBaseline={baselineWithNoChanges}
         previousBaseline={null}
         onViewArtifact={mockOnViewArtifact}
+        projectName="Test Project"
       />
     );
 

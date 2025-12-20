@@ -61,11 +61,11 @@ export function useRiskForm({ isOpen, risk, onClose, onSubmit }: UseRiskFormOpti
   useEffect(() => {
     if (isOpen) {
       if (risk) {
-        setCategory(risk.category);
-        setImpact(risk.impact);
+        setCategory(risk.category || 'other');
+        setImpact(risk.impact || 'medium');
         setOwner(risk.owner || '');
-        setMitigation(risk.mitigation);
-        setContingency(risk.contingency);
+        setMitigation(risk.mitigation || '');
+        setContingency(risk.contingency || '');
       } else {
         setCategory('other');
         setImpact('medium');

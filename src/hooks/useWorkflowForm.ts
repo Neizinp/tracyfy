@@ -44,10 +44,10 @@ export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWor
   useEffect(() => {
     if (isOpen) {
       if (workflow) {
-        setTitle(workflow.title);
-        setDescription(workflow.description);
-        setAssignedTo(workflow.assignedTo);
-        setSelectedArtifactIds(workflow.artifactIds);
+        setTitle(workflow.title || '');
+        setDescription(workflow.description || '');
+        setAssignedTo(workflow.assignedTo || '');
+        setSelectedArtifactIds(workflow.artifactIds || []);
       } else {
         setTitle('');
         setDescription('');
@@ -67,14 +67,24 @@ export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWor
           id: r.id,
           title: r.title,
           type: 'Requirement',
-          status: r.status,
+          status: r.status || 'draft',
         })),
       ...useCases
         .filter((u: UseCase) => !u.isDeleted)
-        .map((u: UseCase) => ({ id: u.id, title: u.title, type: 'Use Case', status: u.status })),
+        .map((u: UseCase) => ({
+          id: u.id,
+          title: u.title,
+          type: 'Use Case',
+          status: u.status || 'draft',
+        })),
       ...testCases
         .filter((t: TestCase) => !t.isDeleted)
-        .map((t: TestCase) => ({ id: t.id, title: t.title, type: 'Test Case', status: t.status })),
+        .map((t: TestCase) => ({
+          id: t.id,
+          title: t.title,
+          type: 'Test Case',
+          status: t.status || 'draft',
+        })),
       ...information
         .filter((i: Information) => !i.isDeleted)
         .map((i: Information) => ({
@@ -85,7 +95,12 @@ export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWor
         })),
       ...risks
         .filter((r: Risk) => !r.isDeleted)
-        .map((r: Risk) => ({ id: r.id, title: r.title, type: 'Risk', status: r.status })),
+        .map((r: Risk) => ({
+          id: r.id,
+          title: r.title,
+          type: 'Risk',
+          status: r.status || 'identified',
+        })),
     ],
     [requirements, useCases, testCases, information, risks]
   );

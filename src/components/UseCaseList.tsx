@@ -141,11 +141,11 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
           <span
             style={{
               ...badgeStyle,
-              backgroundColor: getPriorityStyle(uc.priority).bg,
-              color: getPriorityStyle(uc.priority).text,
+              backgroundColor: getPriorityStyle(uc.priority || 'medium').bg,
+              color: getPriorityStyle(uc.priority || 'medium').text,
             }}
           >
-            {uc.priority}
+            {uc.priority || 'medium'}
           </span>
         ),
       },
@@ -158,11 +158,11 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
           <span
             style={{
               ...badgeStyle,
-              backgroundColor: getStatusStyle(uc.status).bg,
-              color: getStatusStyle(uc.status).text,
+              backgroundColor: getStatusStyle(uc.status || 'draft').bg,
+              color: getStatusStyle(uc.status || 'draft').text,
             }}
           >
-            {uc.status}
+            {uc.status || 'draft'}
           </span>
         ),
       },

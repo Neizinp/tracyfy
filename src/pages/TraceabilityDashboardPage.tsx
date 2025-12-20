@@ -37,7 +37,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
       return (
         req.id.toLowerCase().includes(query) ||
         req.title.toLowerCase().includes(query) ||
-        req.description.toLowerCase().includes(query) ||
+        req.description?.toLowerCase().includes(query) ||
         req.text.toLowerCase().includes(query)
       );
     });
@@ -77,7 +77,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
       return (
         info.id.toLowerCase().includes(query) ||
         info.title.toLowerCase().includes(query) ||
-        info.content.toLowerCase().includes(query)
+        (info.content || info.text || '').toLowerCase().includes(query)
       );
     });
   }, [information, searchQuery]);

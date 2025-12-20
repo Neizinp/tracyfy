@@ -31,6 +31,7 @@ export function requirementToMarkdown(requirement: Requirement): string {
     title: requirement.title,
     status: requirement.status,
     priority: requirement.priority,
+    category: requirement.category,
     revision: requirement.revision,
     dateCreated: requirement.dateCreated,
     lastModified: requirement.lastModified,
@@ -50,13 +51,13 @@ export function requirementToMarkdown(requirement: Requirement): string {
   const body = `# ${requirement.title}
 
 ## Description
-${requirement.description}
+${requirement.description || ''}
 
 ## Requirement Text
-${requirement.text}
+${requirement.text || ''}
 
 ## Rationale
-${requirement.rationale}
+${requirement.rationale || ''}
 
 ${requirement.comments ? `## Comments\n${requirement.comments}` : ''}
 `.trim();
@@ -78,10 +79,11 @@ export function markdownToRequirement(markdown: string): Requirement {
     text: sections['Requirement Text'] || '',
     rationale: sections['Rationale'] || '',
 
+    category: (frontmatter.category as string) || 'technical',
     useCaseIds: ensureArray<string>(frontmatter.useCaseIds),
     linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
-    status: (frontmatter.status as Requirement['status']) || 'draft',
-    priority: (frontmatter.priority as Requirement['priority']) || 'medium',
+    status: (frontmatter.status as string) || 'draft',
+    priority: (frontmatter.priority as string) || 'medium',
     author: (frontmatter.author as string) || undefined,
     verificationMethod: (frontmatter.verificationMethod as string) || undefined,
     comments: sections['Comments'] || undefined,
@@ -118,21 +120,21 @@ export function convertUseCaseToMarkdown(useCase: UseCase): string {
   const body = `# ${useCase.title}
 
 ## Description
-${useCase.description}
+${useCase.description || ''}
 
 ## Actor
-${useCase.actor}
+${useCase.actor || ''}
 
 ## Preconditions
-${useCase.preconditions}
+${useCase.preconditions || useCase.precondition || ''}
 
 ## Main Flow
-${useCase.mainFlow}
+${useCase.mainFlow || ''}
 
 ${useCase.alternativeFlows ? `## Alternative Flows\n${useCase.alternativeFlows}` : ''}
 
 ## Postconditions
-${useCase.postconditions}
+${useCase.postconditions || useCase.postcondition || ''}
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -150,13 +152,16 @@ export function markdownToUseCase(markdown: string): UseCase {
     title: (frontmatter.title as string) || '',
     description: sections['Description'] || '',
     actor: sections['Actor'] || (frontmatter.actor as string) || '',
-    preconditions: sections['Preconditions'] || '',
-    postconditions: sections['Postconditions'] || '',
+    precondition: sections['Precondition'] || sections['Preconditions'] || '',
+    postcondition: sections['Postcondition'] || sections['Postconditions'] || '',
+    preconditions: sections['Preconditions'] || sections['Precondition'] || '',
+    postconditions: sections['Postconditions'] || sections['Postcondition'] || '',
     mainFlow: sections['Main Flow'] || '',
-    alternativeFlows: sections['Alternative Flows'] || undefined,
-    priority: (frontmatter.priority as UseCase['priority']) || 'medium',
-    status: (frontmatter.status as UseCase['status']) || 'draft',
+    alternativeFlows: sections['Alternative Flows'] || '',
+    priority: (frontmatter.priority as string) || 'medium',
+    status: (frontmatter.status as string) || 'draft',
     lastModified: (frontmatter.lastModified as number) || Date.now(),
+    dateCreated: (frontmatter.dateCreated as number) || Date.now(),
     linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
     isDeleted: (frontmatter.isDeleted as boolean) || false,
     deletedAt: (frontmatter.deletedAt as number) || undefined,
@@ -177,7 +182,7 @@ export function testCaseToMarkdown(testCase: TestCase): string {
     revision: testCase.revision,
     dateCreated: testCase.dateCreated,
     lastModified: testCase.lastModified,
-    requirementIds: testCase.requirementIds,
+    requirementIds: testCase.requirementIds || [],
     author: testCase.author || '',
     lastRun: testCase.lastRun || null,
     linkedArtifacts: testCase.linkedArtifacts || [],
@@ -191,10 +196,16 @@ export function testCaseToMarkdown(testCase: TestCase): string {
   const body = `# ${testCase.title}
 
 ## Description
-${testCase.description}
+${testCase.description || ''}
+
+## Steps
+${testCase.steps || ''}
+
+## Expected Result
+${testCase.expectedResult || ''}
 
 ## Requirements Covered
-${testCase.requirementIds.map((id) => `- ${id}`).join('\n')}
+${(testCase.requirementIds || []).map((id) => `- ${id}`).join('\n')}
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -211,9 +222,11 @@ export function markdownToTestCase(markdown: string): TestCase {
     id: (frontmatter.id as string) || '',
     title: (frontmatter.title as string) || '',
     description: sections['Description'] || '',
+    steps: sections['Steps'] || '',
+    expectedResult: sections['Expected Result'] || '',
     requirementIds: ensureArray<string>(frontmatter.requirementIds),
-    status: (frontmatter.status as TestCase['status']) || 'draft',
-    priority: (frontmatter.priority as TestCase['priority']) || 'medium',
+    status: (frontmatter.status as string) || 'draft',
+    priority: (frontmatter.priority as string) || 'medium',
     author: (frontmatter.author as string) || undefined,
     lastRun: (frontmatter.lastRun as number) || undefined,
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
@@ -247,7 +260,7 @@ export function informationToMarkdown(information: Information): string {
 
   const body = `# ${information.title}
 
-${information.text}
+${information.text || information.content || ''}
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -262,12 +275,14 @@ export function markdownToInformation(markdown: string): Information {
   // Remove the title line from body
   const lines = body.split('\n');
   const contentLines = lines.filter((line) => !line.startsWith('# '));
+  const text = contentLines.join('\n').trim();
 
   return {
     id: (frontmatter.id as string) || '',
     title: (frontmatter.title as string) || '',
-    text: contentLines.join('\n').trim(),
-    type: (frontmatter.type as Information['type']) || 'note',
+    text: text,
+    content: text,
+    type: (frontmatter.type as string) || 'note',
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
     lastModified: (frontmatter.lastModified as number) || Date.now(),
     linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
@@ -393,13 +408,13 @@ export function riskToMarkdown(risk: Risk): string {
   const body = `# ${risk.title}
 
 ## Description
-${risk.description}
+${risk.description || ''}
 
 ## Mitigation Strategy
-${risk.mitigation}
+${risk.mitigation || ''}
 
 ## Contingency Plan
-${risk.contingency}
+${risk.contingency || ''}
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -416,12 +431,12 @@ export function markdownToRisk(markdown: string): Risk {
     id: (frontmatter.id as string) || '',
     title: (frontmatter.title as string) || '',
     description: sections['Description'] || '',
-    category: (frontmatter.category as Risk['category']) || 'other',
-    probability: (frontmatter.probability as Risk['probability']) || 'medium',
-    impact: (frontmatter.impact as Risk['impact']) || 'medium',
+    category: (frontmatter.category as string) || 'other',
+    probability: (frontmatter.probability as string) || 'medium',
+    impact: (frontmatter.impact as string) || 'medium',
     mitigation: sections['Mitigation Strategy'] || '',
     contingency: sections['Contingency Plan'] || '',
-    status: (frontmatter.status as Risk['status']) || 'identified',
+    status: (frontmatter.status as string) || 'identified',
     owner: (frontmatter.owner as string) || undefined,
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
     lastModified: (frontmatter.lastModified as number) || Date.now(),

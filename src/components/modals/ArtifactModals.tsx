@@ -8,13 +8,13 @@ import {
   useInformation,
   useFileSystem,
 } from '../../app/providers';
-import type { Information, Risk } from '../../types';
+import type { Information, Risk, UseCase } from '../../types';
 
 export const ArtifactModals: React.FC = () => {
   const ui = useUI();
   const { handleAddRequirement, handleUpdateRequirement, handleDeleteRequirement } =
     useRequirements();
-  const { handleAddUseCase } = useUseCases();
+  const { handleAddUseCase, handleUpdateUseCase } = useUseCases();
   const { testCases, handleAddTestCase, handleUpdateTestCase, handleDeleteTestCase } =
     useTestCases();
   const { handleAddInformation, handleUpdateInformation } = useInformation();
@@ -46,12 +46,23 @@ export const ArtifactModals: React.FC = () => {
     }
   };
 
+  // Combined handler for UseCaseModal - handles both add and update
+  const handleUseCaseSubmit = async (
+    data: Omit<UseCase, 'id' | 'lastModified'> | { id: string; updates: Partial<UseCase> }
+  ) => {
+    if ('id' in data && 'updates' in data) {
+      await handleUpdateUseCase(data.id, data.updates);
+    } else {
+      await handleAddUseCase(data as Omit<UseCase, 'id' | 'lastModified' | 'revision'>);
+    }
+  };
+
   // Combined handler for RiskModal - handles both add and update
   const handleRiskSubmit = async (
     data: Omit<Risk, 'id' | 'lastModified' | 'dateCreated'> | { id: string; updates: Partial<Risk> }
   ) => {
     if ('id' in data && 'updates' in data) {
-      const existing = risks.find((r) => r.id === data.id);
+      const existing = risks.find((r: Risk) => r.id === data.id);
       if (existing) {
         await saveRisk({
           ...existing,
@@ -96,7 +107,7 @@ export const ArtifactModals: React.FC = () => {
         isOpen={ui.activeModal.type === 'usecase'}
         useCase={editingUseCase}
         onClose={handleFullClose}
-        onSubmit={handleAddUseCase}
+        onSubmit={handleUseCaseSubmit}
         onBack={navigationStack.length > 0 ? popNavigationStack : undefined}
       />
 

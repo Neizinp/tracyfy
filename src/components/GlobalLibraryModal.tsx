@@ -119,7 +119,7 @@ export const GlobalLibraryModal: React.FC<GlobalLibraryModalProps> = ({
         (r) =>
           r.id.toLowerCase().includes(query) ||
           r.title.toLowerCase().includes(query) ||
-          r.description.toLowerCase().includes(query)
+          (r.description || '').toLowerCase().includes(query)
       );
       ucs = ucs.filter(
         (u) => u.id.toLowerCase().includes(query) || u.title.toLowerCase().includes(query)

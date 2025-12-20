@@ -111,7 +111,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                     : 'var(--color-text-muted)',
             }}
           >
-            {tc.status.charAt(0).toUpperCase() + tc.status.slice(1)}
+            {(tc.status || 'draft').charAt(0).toUpperCase() + (tc.status || 'draft').slice(1)}
           </span>
         ),
       },

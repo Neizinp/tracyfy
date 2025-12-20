@@ -68,7 +68,7 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
       <ArtifactOverviewFields
         title={title}
         setTitle={setTitle}
-        author={workflow ? getUserName(workflow.createdBy) : currentUser?.name}
+        author={workflow ? getUserName(workflow.createdBy || '') : currentUser?.name}
         dateCreated={workflow?.dateCreated}
         isEditMode={!!workflow}
         currentUser={currentUser?.name}

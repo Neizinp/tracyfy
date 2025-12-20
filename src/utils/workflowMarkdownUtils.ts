@@ -31,19 +31,21 @@ export function workflowToMarkdown(workflow: Workflow): string {
   const yaml = objectToYaml(frontmatter);
 
   const artifactsList =
-    workflow.artifactIds.length > 0
-      ? workflow.artifactIds.map((id) => `- ${id}`).join('\n')
+    (workflow.artifactIds?.length || 0) > 0
+      ? workflow.artifactIds!.map((id) => `- ${id}`).join('\n')
       : '_No artifacts linked_';
 
   let statusText = '_Pending approval_';
   if (workflow.status === 'approved') {
     statusText = `**Approved** by ${workflow.approvedBy} on ${new Date(
       workflow.approvalDate!
-    ).toISOString()}${workflow.approverComment ? `\n\n**Comment:**\n${workflow.approverComment}` : ''
-      }`;
+    ).toISOString()}${
+      workflow.approverComment ? `\n\n**Comment:**\n${workflow.approverComment}` : ''
+    }`;
   } else if (workflow.status === 'rejected') {
-    statusText = `**Rejected** by ${workflow.approvedBy}${workflow.approverComment ? `\n\n**Reason:**\n${workflow.approverComment}` : ''
-      }`;
+    statusText = `**Rejected** by ${workflow.approvedBy}${
+      workflow.approverComment ? `\n\n**Reason:**\n${workflow.approverComment}` : ''
+    }`;
   }
 
   const body = `# ${workflow.title}
@@ -77,7 +79,10 @@ export function parseMarkdownWorkflow(content: string): Workflow | null {
   }
 
   // Description is everything before the first H2 section
-  const description = body.split('\n## ')[0].replace(/^# [^\n]+\n+/, '').trim();
+  const description = body
+    .split('\n## ')[0]
+    .replace(/^# [^\n]+\n+/, '')
+    .trim();
 
   return {
     id: (frontmatter.id as string) || '',

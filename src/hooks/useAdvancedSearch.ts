@@ -283,17 +283,35 @@ export function useAdvancedSearch({ isOpen }: UseAdvancedSearchOptions) {
     requirements
       .filter((r: Requirement) => !r.isDeleted)
       .forEach((r: Requirement) => {
-        allArtifacts.push({ ...r, type: 'requirement' as ArtifactType });
+        allArtifacts.push({
+          ...r,
+          type: 'requirement' as ArtifactType,
+          status: r.status || 'draft',
+          priority: r.priority || 'medium',
+          description: r.description || '',
+        });
       });
     useCases
       .filter((u: UseCase) => !u.isDeleted)
       .forEach((u: UseCase) => {
-        allArtifacts.push({ ...u, type: 'useCase' as ArtifactType });
+        allArtifacts.push({
+          ...u,
+          type: 'useCase' as ArtifactType,
+          status: u.status || 'draft',
+          priority: u.priority || 'medium',
+          description: u.description || '',
+        });
       });
     testCases
       .filter((t: TestCase) => !t.isDeleted)
       .forEach((t: TestCase) => {
-        allArtifacts.push({ ...t, type: 'testCase' as ArtifactType });
+        allArtifacts.push({
+          ...t,
+          type: 'testCase' as ArtifactType,
+          status: t.status || 'draft',
+          priority: t.priority || 'medium',
+          description: t.description || '',
+        });
       });
     information
       .filter((i: Information) => !i.isDeleted)
@@ -303,13 +321,19 @@ export function useAdvancedSearch({ isOpen }: UseAdvancedSearchOptions) {
           type: 'information' as ArtifactType,
           status: 'active',
           priority: 'medium',
-          description: i.text,
+          description: i.text || '',
         });
       });
     risks
       .filter((r: Risk) => !r.isDeleted)
       .forEach((r: Risk) => {
-        allArtifacts.push({ ...r, type: 'risk' as ArtifactType, priority: r.impact });
+        allArtifacts.push({
+          ...r,
+          type: 'risk' as ArtifactType,
+          status: r.status || 'open',
+          priority: r.impact || 'medium',
+          description: r.description || '',
+        });
       });
 
     return allArtifacts.filter((artifact) => {

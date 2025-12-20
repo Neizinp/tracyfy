@@ -1,19 +1,22 @@
 import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react';
-import { debug } from '../../../utils/debug';
 import type { ReactNode } from 'react';
 import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
 import { useFileSystem } from '../FileSystemProvider';
 import { useUser } from '../UserProvider';
+import { useToast } from '../ToastProvider';
+import { debug } from '../../../utils/debug';
 import type { UseCase } from '../../../types';
-import { incrementRevision } from '../../../utils/revisionUtils';
+import { useArtifactCRUD } from './useArtifactCRUD';
 
 interface UseCasesContextValue {
   // Data
   useCases: UseCase[];
 
   // CRUD operations
-  handleAddUseCase: (uc: Omit<UseCase, 'id' | 'lastModified'> | any) => Promise<void>;
+  handleAddUseCase: (
+    uc: Omit<UseCase, 'id' | 'lastModified' | 'revision'>
+  ) => Promise<UseCase | null>;
   handleEditUseCase: (uc: UseCase) => void;
   handleUpdateUseCase: (id: string, data: Partial<UseCase>) => Promise<void>;
   handleDeleteUseCase: (id: string) => void;
@@ -34,9 +37,9 @@ export const UseCasesProvider: React.FC<{ children: ReactNode }> = ({ children }
     deleteUseCase: fsDeleteUseCase,
     useCases: fsUseCases,
     isReady,
-    getNextId,
   } = useFileSystem();
   const { currentUser } = useUser();
+  const { showToast } = useToast();
   const hasSyncedInitial = useRef(false);
 
   // Sync use cases from filesystem on initial load
@@ -48,124 +51,23 @@ export const UseCasesProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, [isReady, fsUseCases, setUseCases]);
 
-  const handleAddUseCase = useCallback(
-    async (newUcData: Omit<UseCase, 'id' | 'lastModified'>) => {
-      if (!currentUser) {
-        alert(
-          'Please select a user before creating artifacts.\n\nGo to Settings → Users to select a user.'
-        );
-        return;
-      }
-
-      const newId = await getNextId('useCases');
-
-      const newUseCase: UseCase = {
-        ...newUcData,
-        id: newId,
-        lastModified: Date.now(),
-        revision: '01',
-      };
-
-      setUseCases((prev) => [...prev, newUseCase]);
-
-      try {
-        await saveUseCase(newUseCase);
-      } catch (error) {
-        console.error('Failed to save use case:', error);
-      }
-    },
-    [currentUser, getNextId, saveUseCase, setUseCases]
-  );
-
-  const handleEditUseCase = useCallback(
-    (uc: UseCase) => {
-      if (!currentUser) {
-        alert(
-          'Please select a user before editing artifacts.\n\nGo to Settings → Users to select a user.'
-        );
-        return;
-      }
-      setEditingUseCase(uc);
-      setIsUseCaseModalOpen(true);
-    },
-    [currentUser, setEditingUseCase, setIsUseCaseModalOpen]
-  );
-
-  const handleUpdateUseCase = useCallback(
-    async (id: string, updatedData: Partial<UseCase>) => {
-      const existingUc = useCases.find((uc) => uc.id === id);
-      if (!existingUc) return;
-
-      const newRevision = incrementRevision(existingUc.revision || '01');
-      const finalUseCase: UseCase = {
-        ...existingUc,
-        ...updatedData,
-        revision: newRevision,
-        lastModified: Date.now(),
-      };
-
-      setUseCases((prev) => prev.map((uc) => (uc.id === id ? finalUseCase : uc)));
+  const {
+    handleAdd: handleAddUseCase,
+    handleUpdate: handleUpdateUseCase,
+    handleDelete: handleDeleteUseCase,
+    handleRestore: handleRestoreUseCase,
+    handlePermanentDelete: handlePermanentDeleteUseCase,
+  } = useArtifactCRUD<UseCase>({
+    type: 'useCases',
+    items: useCases,
+    setItems: setUseCases,
+    saveFn: saveUseCase,
+    deleteFn: fsDeleteUseCase,
+    onAfterUpdate: () => {
       setIsUseCaseModalOpen(false);
       setEditingUseCase(null);
-
-      try {
-        await saveUseCase(finalUseCase);
-      } catch (error) {
-        console.error('Failed to save use case:', error);
-      }
     },
-    [useCases, saveUseCase, setUseCases, setEditingUseCase, setIsUseCaseModalOpen]
-  );
-
-  const handleDeleteUseCase = useCallback(
-    (id: string) => {
-      const existingUc = useCases.find((uc) => uc.id === id);
-      if (!existingUc) return;
-
-      const deletedUc: UseCase = {
-        ...existingUc,
-        isDeleted: true,
-        deletedAt: Date.now(),
-      };
-
-      setUseCases((prev) => prev.map((uc) => (uc.id === id ? deletedUc : uc)));
-      setIsUseCaseModalOpen(false);
-      setEditingUseCase(null);
-
-      saveUseCase(deletedUc).catch((err) => console.error('Failed to soft-delete use case:', err));
-    },
-    [useCases, saveUseCase, setUseCases, setEditingUseCase, setIsUseCaseModalOpen]
-  );
-
-  const handleRestoreUseCase = useCallback(
-    (id: string) => {
-      const existingUc = useCases.find((uc) => uc.id === id);
-      if (!existingUc) return;
-
-      const restoredUc: UseCase = {
-        ...existingUc,
-        isDeleted: false,
-        deletedAt: undefined,
-        lastModified: Date.now(),
-      };
-
-      setUseCases((prev) => prev.map((uc) => (uc.id === id ? restoredUc : uc)));
-
-      saveUseCase(restoredUc).catch((err) => console.error('Failed to restore use case:', err));
-    },
-    [useCases, saveUseCase, setUseCases]
-  );
-
-  const handlePermanentDeleteUseCase = useCallback(
-    (id: string) => {
-      setUseCases((prev) => prev.filter((uc) => uc.id !== id));
-
-      fsDeleteUseCase(id).catch((err) =>
-        console.error('Failed to permanently delete use case:', err)
-      );
-    },
-    [fsDeleteUseCase, setUseCases]
-  );
+  });
 
   const handleBreakDownUseCase = useCallback(
     (_uc: UseCase) => {
@@ -173,6 +75,21 @@ export const UseCasesProvider: React.FC<{ children: ReactNode }> = ({ children }
       setIsNewRequirementModalOpen(true);
     },
     [setEditingUseCase, setIsNewRequirementModalOpen]
+  );
+
+  const handleEditUseCase = useCallback(
+    (uc: UseCase) => {
+      if (!currentUser) {
+        showToast(
+          'Please select a user before editing artifacts. Go to Settings → Users to select a user.',
+          'warning'
+        );
+        return;
+      }
+      setEditingUseCase(uc);
+      setIsUseCaseModalOpen(true);
+    },
+    [currentUser, setEditingUseCase, setIsUseCaseModalOpen, showToast]
   );
 
   const value: UseCasesContextValue = {

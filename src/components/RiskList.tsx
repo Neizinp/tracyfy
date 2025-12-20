@@ -179,11 +179,11 @@ export const RiskList: React.FC<RiskListProps> = ({
           <span
             style={{
               ...badgeStyle,
-              backgroundColor: getProbabilityStyle(risk.probability).bg,
-              color: getProbabilityStyle(risk.probability).text,
+              backgroundColor: getProbabilityStyle(risk.probability || 'medium').bg,
+              color: getProbabilityStyle(risk.probability || 'medium').text,
             }}
           >
-            {risk.probability}
+            {risk.probability || 'medium'}
           </span>
         ),
       },
@@ -196,11 +196,11 @@ export const RiskList: React.FC<RiskListProps> = ({
           <span
             style={{
               ...badgeStyle,
-              backgroundColor: getImpactStyle(risk.impact).bg,
-              color: getImpactStyle(risk.impact).text,
+              backgroundColor: getImpactStyle(risk.impact || 'medium').bg,
+              color: getImpactStyle(risk.impact || 'medium').text,
             }}
           >
-            {risk.impact}
+            {risk.impact || 'medium'}
           </span>
         ),
       },
@@ -213,11 +213,11 @@ export const RiskList: React.FC<RiskListProps> = ({
           <span
             style={{
               ...badgeStyle,
-              backgroundColor: getStatusStyle(risk.status).bg,
-              color: getStatusStyle(risk.status).text,
+              backgroundColor: getStatusStyle(risk.status || 'open').bg,
+              color: getStatusStyle(risk.status || 'open').text,
             }}
           >
-            {risk.status}
+            {risk.status || 'open'}
           </span>
         ),
       },

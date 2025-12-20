@@ -1,113 +1,112 @@
 import type { CustomAttributeValue } from './customAttributes';
 import type { ArtifactLink } from './link';
 
-export interface Requirement {
+export type ArtifactType = 'requirements' | 'useCases' | 'testCases' | 'information' | 'risks';
+
+export interface BaseArtifact {
   id: string;
+  lastModified: number;
+  revision: string;
+  isDeleted?: boolean;
+  deletedAt?: number;
+  customAttributes?: CustomAttributeValue[];
+  linkedArtifacts?: ArtifactLink[];
+}
+
+export interface Requirement extends BaseArtifact {
   title: string;
-  description: string;
   text: string;
-  rationale: string;
-  useCaseIds?: string[]; // Which use cases this requirement supports
-  linkedArtifacts?: ArtifactLink[]; // Links to other artifacts
-  status: 'draft' | 'approved' | 'implemented' | 'verified';
-  priority: 'low' | 'medium' | 'high';
-  author?: string;
-  verificationMethod?: string;
+  description?: string;
+  rationale?: string;
   comments?: string;
+  status?: string;
+  priority?: string;
+  category?: string;
   dateCreated: number;
+  verificationMethod?: string;
   approvalDate?: number;
-  lastModified: number;
-  isDeleted?: boolean;
-  deletedAt?: number;
-  revision: string;
-  customAttributes?: CustomAttributeValue[];
-}
-
-export interface UseCase {
-  id: string;
-  title: string;
-  description: string;
-  actor: string; // Who performs this use case
-  preconditions: string;
-  postconditions: string;
-  mainFlow: string;
-  alternativeFlows?: string;
-  linkedArtifacts?: ArtifactLink[]; // Links to other artifacts
-  priority: 'low' | 'medium' | 'high';
-  status: 'draft' | 'approved' | 'implemented' | 'verified';
-  lastModified: number;
-  isDeleted?: boolean;
-  deletedAt?: number;
-  revision: string;
-  customAttributes?: CustomAttributeValue[];
-}
-
-export interface TestCase {
-  id: string;
-  title: string;
-  description: string;
-  requirementIds: string[]; // Which requirements this test verifies
-  linkedArtifacts?: ArtifactLink[]; // Links to other artifacts
-  status: 'draft' | 'approved' | 'passed' | 'failed' | 'blocked';
-  priority: 'low' | 'medium' | 'high';
   author?: string;
-  lastRun?: number;
-  dateCreated: number;
-  lastModified: number;
-  isDeleted?: boolean;
-  deletedAt?: number;
-  revision: string;
-  customAttributes?: CustomAttributeValue[];
+  useCaseIds?: string[];
 }
 
-export interface Information {
-  id: string;
-  title: string;
-  text: string;
-  type: 'note' | 'meeting' | 'decision' | 'other';
-  linkedArtifacts?: ArtifactLink[]; // Links to other artifacts
-  dateCreated: number;
-  lastModified: number;
-  isDeleted?: boolean;
-  deletedAt?: number;
-  revision: string;
-  customAttributes?: CustomAttributeValue[];
-}
-
-export interface Risk {
-  id: string;
+export interface UseCase extends BaseArtifact {
   title: string;
   description: string;
-  category: 'technical' | 'schedule' | 'resource' | 'external' | 'other';
-  probability: 'low' | 'medium' | 'high';
-  impact: 'low' | 'medium' | 'high';
-  mitigation: string; // Mitigation strategy
-  contingency: string; // Contingency plan
-  status: 'identified' | 'analyzing' | 'mitigating' | 'resolved' | 'accepted';
-  owner?: string; // Person responsible
-  linkedArtifacts?: ArtifactLink[]; // Links to other artifacts
+  status?: string;
+  priority?: string;
+  actor?: string;
+  precondition?: string;
+  postcondition?: string;
+  preconditions?: string;
+  postconditions?: string;
+  mainFlow?: string;
+  alternativeFlows?: string;
+  dateCreated?: number;
+  useCaseIds?: string[];
+}
+
+export interface TestCase extends BaseArtifact {
+  title: string;
+  description: string;
+  status?: string;
+  priority?: string;
+  steps?: string;
+  expectedResult?: string;
+  dateCreated: number;
+  lastRun?: number;
+  author?: string;
+  requirementIds?: string[];
+}
+
+export interface Information extends BaseArtifact {
+  id: string;
+  title: string;
+  text?: string;
+  content?: string;
+  type?: string;
   dateCreated: number;
   lastModified: number;
   isDeleted?: boolean;
   deletedAt?: number;
   revision: string;
   customAttributes?: CustomAttributeValue[];
+  linkedArtifacts?: ArtifactLink[];
 }
 
-export interface Workflow {
-  id: string; // e.g., "WF-001"
+export interface Risk extends BaseArtifact {
   title: string;
-  description: string; // Markdown content
-  createdBy: string; // User ID who created
-  assignedTo: string; // User ID who must approve
-  status: 'pending' | 'approved' | 'rejected';
-  artifactIds: string[]; // Required: artifacts to approve (REQ-001, UC-002, etc.)
-  approvedBy?: string; // User ID who approved
-  approvalDate?: number;
-  approverComment?: string; // Comment from approver
+  description: string;
+  probability?: string;
+  impact?: string;
+  mitigation: string;
+  category?: string;
+  contingency?: string;
+  owner?: string;
+  status?: string;
   dateCreated: number;
-  lastModified: number;
-  isDeleted?: boolean;
-  deletedAt?: number;
-  revision: string;
+}
+
+export interface Workflow extends BaseArtifact {
+  title: string;
+  description: string;
+  type?: string;
+  status?: string;
+  assignedTo?: string;
+  createdBy?: string;
+  linkedArtifacts?: ArtifactLink[];
+  artifactIds?: string[];
+  history?: WorkflowAction[];
+  dateCreated: number;
+  approvedBy?: string;
+  approvalDate?: number;
+  approverComment?: string;
+}
+
+export interface WorkflowAction {
+  id: string;
+  type?: string;
+  user?: string;
+  timestamp?: number;
+  comment?: string;
+  metadata?: Record<string, unknown>;
 }

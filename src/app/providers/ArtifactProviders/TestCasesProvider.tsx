@@ -1,25 +1,26 @@
 import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react';
-import { debug } from '../../../utils/debug';
 import type { ReactNode } from 'react';
 import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
 import { useFileSystem } from '../FileSystemProvider';
 import { useUser } from '../UserProvider';
+import { useToast } from '../ToastProvider';
+import { debug } from '../../../utils/debug';
 import type { TestCase } from '../../../types';
-import { incrementRevision } from '../../../utils/revisionUtils';
+import { useArtifactCRUD } from './useArtifactCRUD';
 
 interface TestCasesContextValue {
   // Data
   testCases: TestCase[];
 
   // CRUD operations
-  handleAddTestCase: (tc: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated'>) => Promise<void>;
+  handleAddTestCase: (
+    tc: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated' | 'revision'>
+  ) => Promise<TestCase | null>;
   handleUpdateTestCase: (id: string, data: Partial<TestCase>) => Promise<void>;
   handleDeleteTestCase: (id: string) => void;
   handleRestoreTestCase: (id: string) => void;
   handlePermanentDeleteTestCase: (id: string) => void;
-
-  // Page handlers
   handleEditTestCase: (tc: TestCase) => void;
 }
 
@@ -33,9 +34,9 @@ export const TestCasesProvider: React.FC<{ children: ReactNode }> = ({ children 
     deleteTestCase: fsDeleteTestCase,
     testCases: fsTestCases,
     isReady,
-    getNextId,
   } = useFileSystem();
   const { currentUser } = useUser();
+  const { showToast } = useToast();
   const hasSyncedInitial = useRef(false);
 
   // Sync test cases from filesystem on initial load
@@ -47,127 +48,48 @@ export const TestCasesProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, [isReady, fsTestCases, setTestCases]);
 
+  const {
+    handleAdd: handleAddInternal,
+    handleUpdate: handleUpdateTestCase,
+    handleDelete: handleDeleteTestCase,
+    handleRestore: handleRestoreTestCase,
+    handlePermanentDelete: handlePermanentDeleteTestCase,
+  } = useArtifactCRUD<TestCase>({
+    type: 'testCases',
+    items: testCases,
+    setItems: setTestCases,
+    saveFn: saveTestCase,
+    deleteFn: fsDeleteTestCase,
+    onAfterUpdate: () => {
+      setIsEditTestCaseModalOpen(false);
+      setSelectedTestCaseId(null);
+    },
+  });
+
   const handleAddTestCase = useCallback(
-    async (newTcData: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated'>) => {
-      if (!currentUser) {
-        alert(
-          'Please select a user before creating artifacts.\n\nGo to Settings → Users to select a user.'
-        );
-        return;
-      }
-
-      const newId = await getNextId('testCases');
-      const now = Date.now();
-
-      const newTestCase: TestCase = {
-        ...newTcData,
-        id: newId,
-        dateCreated: now,
-        lastModified: now,
-        revision: '01',
-      };
-
-      setTestCases((prev) => [...prev, newTestCase]);
-
-      try {
-        await saveTestCase(newTestCase);
-      } catch (error) {
-        console.error('Failed to save test case:', error);
-      }
+    (data: Omit<TestCase, 'id' | 'lastModified' | 'dateCreated' | 'revision'>) => {
+      const fullData = {
+        ...data,
+        dateCreated: Date.now(),
+      } as Omit<TestCase, 'id' | 'lastModified' | 'revision'>;
+      return handleAddInternal(fullData);
     },
-    [currentUser, getNextId, saveTestCase, setTestCases]
-  );
-
-  const handleUpdateTestCase = useCallback(
-    async (id: string, updatedData: Partial<TestCase>) => {
-      const existingTc = testCases.find((tc) => tc.id === id);
-      if (!existingTc) return;
-
-      const newRevision = incrementRevision(existingTc.revision || '01');
-      const finalTestCase: TestCase = {
-        ...existingTc,
-        ...updatedData,
-        revision: newRevision,
-        lastModified: Date.now(),
-      };
-
-      setTestCases((prev) => prev.map((tc) => (tc.id === id ? finalTestCase : tc)));
-      setIsEditTestCaseModalOpen(false);
-      setSelectedTestCaseId(null);
-
-      try {
-        await saveTestCase(finalTestCase);
-      } catch (error) {
-        console.error('Failed to save test case:', error);
-      }
-    },
-    [testCases, saveTestCase, setTestCases, setSelectedTestCaseId, setIsEditTestCaseModalOpen]
-  );
-
-  const handleDeleteTestCase = useCallback(
-    (id: string) => {
-      const existingTc = testCases.find((tc) => tc.id === id);
-      if (!existingTc) return;
-
-      const deletedTc: TestCase = {
-        ...existingTc,
-        isDeleted: true,
-        deletedAt: Date.now(),
-      };
-
-      setTestCases((prev) => prev.map((tc) => (tc.id === id ? deletedTc : tc)));
-      setIsEditTestCaseModalOpen(false);
-      setSelectedTestCaseId(null);
-
-      saveTestCase(deletedTc).catch((err) =>
-        console.error('Failed to soft-delete test case:', err)
-      );
-    },
-    [testCases, saveTestCase, setTestCases, setSelectedTestCaseId, setIsEditTestCaseModalOpen]
-  );
-
-  const handleRestoreTestCase = useCallback(
-    (id: string) => {
-      const existingTc = testCases.find((tc) => tc.id === id);
-      if (!existingTc) return;
-
-      const restoredTc: TestCase = {
-        ...existingTc,
-        isDeleted: false,
-        deletedAt: undefined,
-        lastModified: Date.now(),
-      };
-
-      setTestCases((prev) => prev.map((tc) => (tc.id === id ? restoredTc : tc)));
-
-      saveTestCase(restoredTc).catch((err) => console.error('Failed to restore test case:', err));
-    },
-    [testCases, saveTestCase, setTestCases]
-  );
-
-  const handlePermanentDeleteTestCase = useCallback(
-    (id: string) => {
-      setTestCases((prev) => prev.filter((tc) => tc.id !== id));
-
-      fsDeleteTestCase(id).catch((err) =>
-        console.error('Failed to permanently delete test case:', err)
-      );
-    },
-    [fsDeleteTestCase, setTestCases]
+    [handleAddInternal]
   );
 
   const handleEditTestCase = useCallback(
     (tc: TestCase) => {
       if (!currentUser) {
-        alert(
-          'Please select a user before editing artifacts.\n\nGo to Settings → Users to select a user.'
+        showToast(
+          'Please select a user before editing artifacts. Go to Settings → Users to select a user.',
+          'warning'
         );
         return;
       }
       setSelectedTestCaseId(tc.id);
       setIsEditTestCaseModalOpen(true);
     },
-    [currentUser, setSelectedTestCaseId, setIsEditTestCaseModalOpen]
+    [currentUser, setSelectedTestCaseId, setIsEditTestCaseModalOpen, showToast]
   );
 
   const value: TestCasesContextValue = {

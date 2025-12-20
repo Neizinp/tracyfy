@@ -14,9 +14,10 @@ import {
   testCaseService,
   informationService,
   projectService,
+  riskService,
 } from '../../services/artifactServices';
 import { useBackgroundTasks } from './BackgroundTasksProvider';
-import type { Requirement, UseCase, TestCase, Information, Project } from '../../types';
+import type { Requirement, UseCase, TestCase, Information, Project, Risk } from '../../types';
 
 interface FileSystemContextValue {
   isReady: boolean;
@@ -32,6 +33,7 @@ interface FileSystemContextValue {
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
+  risks: Risk[];
   // Git-related
   pendingChanges: FileStatus[];
   refreshStatus: () => Promise<void>;
@@ -40,10 +42,12 @@ interface FileSystemContextValue {
   saveUseCase: (useCase: UseCase) => Promise<void>;
   saveTestCase: (testCase: TestCase) => Promise<void>;
   saveInformation: (info: Information) => Promise<void>;
+  saveRisk: (risk: Risk) => Promise<void>;
   deleteRequirement: (id: string) => Promise<void>;
   deleteUseCase: (id: string) => Promise<void>;
   deleteTestCase: (id: string) => Promise<void>;
   deleteInformation: (id: string) => Promise<void>;
+  deleteRisk: (id: string) => Promise<void>;
   saveProject: (project: Project) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   createProject: (name: string, description: string) => Promise<Project>;
@@ -64,7 +68,7 @@ interface FileSystemContextValue {
   // Git operations
   commitFile: (filepath: string, message: string, authorName?: string) => Promise<void>;
   getArtifactHistory: (
-    type: 'requirements' | 'usecases' | 'testcases' | 'information',
+    type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks',
     id: string
   ) => Promise<CommitInfo[]>;
   readFileAtCommit: (filepath: string, commitHash: string) => Promise<string | null>;
@@ -94,6 +98,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [error, setError] = useState<string | null>(null);
   const [pendingChanges, setPendingChanges] = useState<FileStatus[]>([]);
   const [information, setInformation] = useState<Information[]>([]);
+  const [risks, setRisks] = useState<Risk[]>([]);
 
   // All data from disk
   const [projects, setProjects] = useState<Project[]>([]);
@@ -144,6 +149,11 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setTestCases(data.testCases);
       setInformation(data.information);
 
+      // Risks are not part of data.loadAll() in diskProjectService?
+      // Let's check artifactServices. loadAll for risks.
+      const riskItems = await riskService.loadAll();
+      setRisks(riskItems);
+
       // Recalculate counters to make sure they're in sync
       await diskProjectService.recalculateCounters();
       debug.log('[reloadData] Data loaded:', {
@@ -152,6 +162,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         useCases: data.useCases.length,
         testCases: data.testCases.length,
         information: data.information.length,
+        risks: riskItems.length,
       });
     } finally {
       endTask(taskId);
@@ -182,6 +193,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           setUseCases([]);
           setTestCases([]);
           setInformation([]);
+          setRisks([]);
           setIsReady(true);
           setIsLoading(false);
           return;
@@ -393,6 +405,39 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [isReady, refreshStatus]
   );
 
+  // CRUD operations - Risks
+  const saveRisk = useCallback(
+    async (risk: Risk) => {
+      if (!isReady) throw new Error('Filesystem not ready');
+      if (!isE2EMode()) {
+        await riskService.save(risk);
+      }
+      setRisks((prev) => {
+        const idx = prev.findIndex((r) => r.id === risk.id);
+        if (idx >= 0) {
+          const updated = [...prev];
+          updated[idx] = risk;
+          return updated;
+        }
+        return [...prev, risk];
+      });
+      if (!isE2EMode()) await refreshStatus();
+    },
+    [isReady, refreshStatus]
+  );
+
+  const deleteRisk = useCallback(
+    async (id: string) => {
+      if (!isReady) throw new Error('Filesystem not ready');
+      if (!isE2EMode()) {
+        await riskService.delete(id);
+      }
+      setRisks((prev) => prev.filter((r) => r.id !== id));
+      if (!isE2EMode()) await refreshStatus();
+    },
+    [isReady, refreshStatus]
+  );
+
   // CRUD operations - Projects
   const saveProject = useCallback(
     async (project: Project) => {
@@ -422,7 +467,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (isE2EMode()) {
         // In E2E mode, create project in memory
         project = {
-          id: `project - ${Date.now()} `,
+          id: `project-${Date.now()}`,
           name,
           description,
           requirementIds: [],
@@ -506,7 +551,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }[type] as keyof typeof e2eCounters;
         const nextNum = e2eCounters[counterKey] + 1;
         setE2eCounters((prev) => ({ ...prev, [counterKey]: nextNum }));
-        return `${prefix} -${String(nextNum).padStart(3, '0')} `;
+        return `${prefix}-${String(nextNum).padStart(3, '0')}`;
       }
       return await diskProjectService.getNextIdWithSync(type);
     },
@@ -519,15 +564,9 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (!isReady) throw new Error('Filesystem not ready');
       if (isE2EMode()) return; // Skip git operations in E2E mode
       debug.log(
-        `[commitFile] Committing ${filepath} with message: ${message} by ${authorName || 'Tracyfy User'} `
+        `[commitFile] Committing ${filepath} with message: ${message} by ${authorName || 'Tracyfy User'}`
       );
       await realGitService.commitFile(filepath, message, authorName);
-      // Note: We intentionally don't call refreshStatus() here.
-      // Calling it after every commit causes massive performance issues
-      // when committing multiple files. The PendingChangesPanel handles
-      // removing items from the UI optimistically.
-      debug.log(`[commitFile] Committed ${filepath} successfully`);
-
       // Trigger sync status update
       window.dispatchEvent(new CustomEvent('git-check'));
     },
@@ -535,7 +574,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   );
 
   const getArtifactHistory = useCallback(
-    async (type: 'requirements' | 'usecases' | 'testcases' | 'information', id: string) => {
+    async (
+      type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks',
+      id: string
+    ) => {
       if (!isReady || isE2EMode()) return [];
       return await realGitService.getHistory(`${type}/${id}.md`);
     },
@@ -575,6 +617,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         useCases,
         testCases,
         information,
+        risks,
         // Git
         pendingChanges,
         refreshStatus,
@@ -583,10 +626,12 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         saveUseCase,
         saveTestCase,
         saveInformation,
+        saveRisk,
         deleteRequirement,
         deleteUseCase,
         deleteTestCase,
         deleteInformation,
+        deleteRisk,
         saveProject,
         createProject,
         deleteProject,

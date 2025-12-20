@@ -9,9 +9,12 @@ import { useBackgroundTasks } from '../app/providers/BackgroundTasksProvider';
 import { Loader2 } from 'lucide-react';
 
 export function StatusBar() {
+  const isE2E =
+    typeof window !== 'undefined' &&
+    (window as Window & { __E2E_TEST_MODE__?: boolean }).__E2E_TEST_MODE__;
   const { tasks, isWorking } = useBackgroundTasks();
 
-  if (!isWorking) {
+  if (!isWorking || isE2E) {
     return null;
   }
 

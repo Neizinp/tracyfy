@@ -42,13 +42,14 @@ export const WorkflowsPage: React.FC = () => {
     );
 
     const newlyApproved = workflows.filter(
-      (wf) => wf.createdBy === currentUser.id && wf.status === 'approved' && !notifiedIds.has(wf.id)
+      (wf) =>
+        wf.createdBy === currentUser.id && wf.status === 'approved' && !notifiedIds.has(wf.id!)
     );
 
     newlyApproved.forEach((wf) => {
       const approverName = users.find((u) => u.id === wf.approvedBy)?.name || 'Someone';
-      showToast(`🎉 Your workflow "${wf.title}" was approved by ${approverName} !`, 'success');
-      notifiedIds.add(wf.id);
+      showToast(`🎉 Your workflow "${wf.title!}" was approved by ${approverName} !`, 'success');
+      notifiedIds.add(wf.id!);
     });
 
     if (newlyApproved.length > 0) {
@@ -143,8 +144,8 @@ export const WorkflowsPage: React.FC = () => {
     searchQuery: '',
     filterFn: (wf: Workflow) => wf.assignedTo === currentUser?.id && wf.status === 'pending',
     getValueFn: (wf: Workflow, key: string) => {
-      if (key === 'createdBy') return getUserName(wf.createdBy);
-      if (key === 'artifactIds') return wf.artifactIds.length;
+      if (key === 'createdBy') return getUserName(wf.createdBy!);
+      if (key === 'artifactIds') return wf.artifactIds?.length || 0;
       return (wf as unknown as Record<string, string | number | undefined>)[key];
     },
   });
@@ -157,9 +158,9 @@ export const WorkflowsPage: React.FC = () => {
     searchQuery: '',
     filterFn: (wf: Workflow) => wf.createdBy === currentUser?.id,
     getValueFn: (wf: Workflow, key: string) => {
-      if (key === 'assignedTo') return getUserName(wf.assignedTo);
+      if (key === 'assignedTo') return getUserName(wf.assignedTo!);
       if (key === 'approvedBy') return wf.approvedBy ? getUserName(wf.approvedBy) : '';
-      if (key === 'artifactIds') return wf.artifactIds.length;
+      if (key === 'artifactIds') return wf.artifactIds?.length || 0;
       return (wf as unknown as Record<string, string | number | undefined>)[key];
     },
   });
@@ -173,11 +174,11 @@ export const WorkflowsPage: React.FC = () => {
       render: (wf) => <div style={{ fontWeight: 500 }}>{wf.title}</div>,
       sortable: true,
     },
-    { key: 'createdBy', label: 'From', render: (wf) => getUserName(wf.createdBy), sortable: true },
+    { key: 'createdBy', label: 'From', render: (wf) => getUserName(wf.createdBy!), sortable: true },
     {
       key: 'artifactIds',
       label: 'Artifacts',
-      render: (wf) => `${wf.artifactIds.length} items`,
+      render: (wf) => `${wf.artifactIds?.length || 0} items`,
       sortable: true,
     },
     {
@@ -199,13 +200,13 @@ export const WorkflowsPage: React.FC = () => {
     {
       key: 'assignedTo',
       label: 'Assigned To',
-      render: (wf) => getUserName(wf.assignedTo),
+      render: (wf) => getUserName(wf.assignedTo!),
       sortable: true,
     },
     {
       key: 'artifactIds',
       label: 'Artifacts',
-      render: (wf) => `${wf.artifactIds.length} items`,
+      render: (wf) => `${wf.artifactIds?.length || 0} items`,
       sortable: true,
     },
     {

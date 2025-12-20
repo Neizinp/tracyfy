@@ -731,7 +731,8 @@ export async function addInformationSection(
     doc.rect(boxLeft, currentY, boxWidth, 6, 'F');
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    const typeStr = info.type.charAt(0).toUpperCase() + info.type.slice(1);
+    const typeValue = info.type || 'information';
+    const typeStr = typeValue.charAt(0).toUpperCase() + typeValue.slice(1);
     const metadataText = `Type: ${typeStr}`;
     doc.text(metadataText, boxLeft + 3, currentY + 4);
     currentY += 6;

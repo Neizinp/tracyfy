@@ -38,8 +38,9 @@ interface ArtifactRevisionInfo {
 export function BaselineRevisionHistory({
   currentBaseline,
   previousBaseline,
+  projectName,
   onViewArtifact,
-}: Omit<BaselineRevisionHistoryProps, 'projectName'>) {
+}: BaselineRevisionHistoryProps) {
   const [modifiedArtifacts, setModifiedArtifacts] = useState<ArtifactRevisionInfo[]>([]);
   const [addedArtifacts, setAddedArtifacts] = useState<string[]>([]);
   const [removedArtifacts, setRemovedArtifacts] = useState<string[]>([]);
@@ -186,8 +187,9 @@ export function BaselineRevisionHistory({
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-white mb-2">
-            Baseline {currentBaseline.version}: {currentBaseline.name}
+            {projectName} - Baseline {currentBaseline.version}
           </h2>
+          <h3 className="text-lg text-gray-300 mb-1">{currentBaseline.name}</h3>
           <p className="text-gray-400 text-sm">{formatDateTime(currentBaseline.timestamp)}</p>
           {currentBaseline.description && (
             <p className="text-gray-300 mt-2">{currentBaseline.description}</p>

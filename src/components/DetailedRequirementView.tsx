@@ -254,7 +254,7 @@ const RequirementRow = React.memo<{
       )}
       {visibleColumns.description && (
         <td style={tdStyle}>
-          <MarkdownCell content={req.description} />
+          <MarkdownCell content={req.description || ''} />
         </td>
       )}
       {visibleColumns.text && (
@@ -297,7 +297,8 @@ const RequirementRow = React.memo<{
                     : 'var(--color-success)',
             }}
           >
-            {req.priority.charAt(0).toUpperCase() + req.priority.slice(1)}
+            {(req.priority || 'medium').charAt(0).toUpperCase() +
+              (req.priority || 'medium').slice(1)}
           </span>
         </td>
       )}
@@ -323,7 +324,7 @@ const RequirementRow = React.memo<{
                     : 'var(--color-info)',
             }}
           >
-            {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+            {(req.status || 'draft').charAt(0).toUpperCase() + (req.status || 'draft').slice(1)}
           </span>
         </td>
       )}

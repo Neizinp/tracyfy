@@ -118,7 +118,7 @@ export const RequirementList: React.FC<RequirementListProps> = ({
         label: 'Description',
         minWidth: '300px',
         visible: visibleColumns.description,
-        render: (req) => <MarkdownCell content={req.description} />,
+        render: (req) => <MarkdownCell content={req.description || ''} />,
       },
       {
         key: 'text',
@@ -169,7 +169,8 @@ export const RequirementList: React.FC<RequirementListProps> = ({
                     : 'var(--color-success)',
             }}
           >
-            {req.priority.charAt(0).toUpperCase() + req.priority.slice(1)}
+            {(req.priority || 'medium').charAt(0).toUpperCase() +
+              (req.priority || 'medium').slice(1)}
           </span>
         ),
       },
@@ -199,7 +200,7 @@ export const RequirementList: React.FC<RequirementListProps> = ({
                     : 'var(--color-info)',
             }}
           >
-            {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+            {(req.status || 'draft').charAt(0).toUpperCase() + (req.status || 'draft').slice(1)}
           </span>
         ),
       },

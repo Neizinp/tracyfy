@@ -120,7 +120,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
       }
 
       // 2. Update all linked artifact statuses to 'approved'
-      for (const artifactId of workflow.artifactIds) {
+      for (const artifactId of workflow.artifactIds || []) {
         try {
           await updateArtifactStatus(artifactId);
         } catch (err) {
@@ -132,7 +132,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
       await diskWorkflowService.commitApproval(workflow.id, workflow.title, currentUser.name);
 
       showToast(
-        `Workflow ${workflow.id} approved! ${workflow.artifactIds.length} artifact(s) updated.`,
+        `Workflow ${workflow.id} approved! ${(workflow.artifactIds || []).length} artifact(s) updated.`,
         'success'
       );
 
@@ -270,11 +270,11 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <User size={14} />
-              Created by: {getUserName(workflow.createdBy)}
+              Created by: {getUserName(workflow.createdBy || '')}
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <User size={14} />
-              Assigned to: {getUserName(workflow.assignedTo)}
+              Assigned to: {getUserName(workflow.assignedTo || '')}
             </span>
           </div>
 
@@ -314,10 +314,10 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
               }}
             >
               <FileText size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-              Artifacts for Approval ({workflow.artifactIds.length})
+              Artifacts for Approval ({(workflow.artifactIds || []).length})
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {workflow.artifactIds.map((id) => {
+              {(workflow.artifactIds || []).map((id) => {
                 const info = getArtifactInfo(id);
                 return (
                   <div

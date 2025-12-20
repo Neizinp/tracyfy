@@ -140,7 +140,7 @@ export function addRisksSection(
     doc.rect(boxLeft, currentY, boxWidth, 6, 'F');
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    const metadataText = `Category: ${capitalizeWord(risk.category)}  |  Probability: ${capitalizeWord(risk.probability)}  |  Impact: ${capitalizeWord(risk.impact)}  |  Status: ${capitalizeWord(risk.status)}`;
+    const metadataText = `Category: ${capitalizeWord(risk.category || 'other')}  |  Probability: ${capitalizeWord(risk.probability || 'medium')}  |  Impact: ${capitalizeWord(risk.impact || 'medium')}  |  Status: ${capitalizeWord(risk.status || 'open')}`;
     doc.text(metadataText, boxLeft + 3, currentY + 4);
     currentY += 6;
 

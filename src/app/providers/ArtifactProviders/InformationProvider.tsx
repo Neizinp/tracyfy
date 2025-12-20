@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react';
-import { debug } from '../../../utils/debug';
 import type { ReactNode } from 'react';
 import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
 import { useFileSystem } from '../FileSystemProvider';
 import { useUser } from '../UserProvider';
+import { useToast } from '../ToastProvider';
+import { debug } from '../../../utils/debug';
 import type { Information } from '../../../types';
-import { incrementRevision } from '../../../utils/revisionUtils';
+import { useArtifactCRUD } from './useArtifactCRUD';
 
 interface InformationContextValue {
   // Data
@@ -14,8 +15,8 @@ interface InformationContextValue {
 
   // CRUD operations
   handleAddInformation: (
-    info: Omit<Information, 'id' | 'lastModified' | 'dateCreated'>
-  ) => Promise<void>;
+    info: Omit<Information, 'id' | 'lastModified' | 'dateCreated' | 'revision'>
+  ) => Promise<Information | null>;
   handleEditInformation: (info: Information) => void;
   handleUpdateInformation: (id: string, data: Partial<Information>) => Promise<void>;
   handleDeleteInformation: (id: string) => void;
@@ -33,9 +34,9 @@ export const InformationProvider: React.FC<{ children: ReactNode }> = ({ childre
     deleteInformation: fsDeleteInformation,
     information: fsInformation,
     isReady,
-    getNextId,
   } = useFileSystem();
   const { currentUser } = useUser();
+  const { showToast } = useToast();
   const hasSyncedInitial = useRef(false);
 
   // Sync information from filesystem on initial load
@@ -51,141 +52,48 @@ export const InformationProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
   }, [isReady, fsInformation, setInformation]);
 
-  const handleAddInformation = useCallback(
-    async (newInfoData: Omit<Information, 'id' | 'lastModified' | 'dateCreated'>) => {
-      if (!currentUser) {
-        alert(
-          'Please select a user before creating artifacts.\n\nGo to Settings → Users to select a user.'
-        );
-        return;
-      }
-
-      const newId = await getNextId('information');
-      const now = Date.now();
-
-      const newInfo: Information = {
-        ...newInfoData,
-        id: newId,
-        dateCreated: now,
-        lastModified: now,
-        revision: '01',
-      };
-
-      setInformation((prev) => [...prev, newInfo]);
-
-      try {
-        await saveInformation(newInfo);
-      } catch (error) {
-        console.error('Failed to save information:', error);
-      }
+  const {
+    handleAdd: handleAddInternal,
+    handleUpdate: handleUpdateInformation,
+    handleDelete: handleDeleteInformation,
+    handleRestore: handleRestoreInformation,
+    handlePermanentDelete: handlePermanentDeleteInformation,
+  } = useArtifactCRUD<Information>({
+    type: 'information',
+    items: information,
+    setItems: setInformation,
+    saveFn: saveInformation,
+    deleteFn: fsDeleteInformation,
+    onAfterUpdate: () => {
+      setIsInformationModalOpen(false);
+      setSelectedInformation(null);
     },
-    [currentUser, getNextId, saveInformation, setInformation]
+  });
+
+  const handleAddInformation = useCallback(
+    (data: Omit<Information, 'id' | 'lastModified' | 'dateCreated' | 'revision'>) => {
+      const fullData = {
+        ...data,
+        dateCreated: Date.now(),
+      } as Omit<Information, 'id' | 'lastModified' | 'revision'>;
+      return handleAddInternal(fullData);
+    },
+    [handleAddInternal]
   );
 
   const handleEditInformation = useCallback(
     (info: Information) => {
       if (!currentUser) {
-        alert(
-          'Please select a user before editing artifacts.\n\nGo to Settings → Users to select a user.'
+        showToast(
+          'Please select a user before editing artifacts. Go to Settings → Users to select a user.',
+          'warning'
         );
         return;
       }
       setSelectedInformation(info);
       setIsInformationModalOpen(true);
     },
-    [currentUser, setSelectedInformation, setIsInformationModalOpen]
-  );
-
-  const handleUpdateInformation = useCallback(
-    async (id: string, updatedData: Partial<Information>) => {
-      const existingInfo = information.find((info) => info.id === id);
-      if (!existingInfo) return;
-
-      const newRevision = incrementRevision(existingInfo.revision || '01');
-      const finalInfo: Information = {
-        ...existingInfo,
-        ...updatedData,
-        revision: newRevision,
-        lastModified: Date.now(),
-      };
-
-      setInformation((prev) => prev.map((info) => (info.id === id ? finalInfo : info)));
-      setIsInformationModalOpen(false);
-      setSelectedInformation(null);
-
-      try {
-        await saveInformation(finalInfo);
-      } catch (error) {
-        console.error('Failed to save information:', error);
-      }
-    },
-    [
-      information,
-      saveInformation,
-      setInformation,
-      setSelectedInformation,
-      setIsInformationModalOpen,
-    ]
-  );
-
-  const handleDeleteInformation = useCallback(
-    (id: string) => {
-      const existingInfo = information.find((info) => info.id === id);
-      if (!existingInfo) return;
-
-      const deletedInfo: Information = {
-        ...existingInfo,
-        isDeleted: true,
-        deletedAt: Date.now(),
-      };
-
-      setInformation((prev) => prev.map((info) => (info.id === id ? deletedInfo : info)));
-      setIsInformationModalOpen(false);
-      setSelectedInformation(null);
-
-      saveInformation(deletedInfo).catch((err) =>
-        console.error('Failed to soft-delete information:', err)
-      );
-    },
-    [
-      information,
-      saveInformation,
-      setInformation,
-      setSelectedInformation,
-      setIsInformationModalOpen,
-    ]
-  );
-
-  const handleRestoreInformation = useCallback(
-    (id: string) => {
-      const existingInfo = information.find((info) => info.id === id);
-      if (!existingInfo) return;
-
-      const restoredInfo: Information = {
-        ...existingInfo,
-        isDeleted: false,
-        deletedAt: undefined,
-        lastModified: Date.now(),
-      };
-
-      setInformation((prev) => prev.map((info) => (info.id === id ? restoredInfo : info)));
-
-      saveInformation(restoredInfo).catch((err) =>
-        console.error('Failed to restore information:', err)
-      );
-    },
-    [information, saveInformation, setInformation]
-  );
-
-  const handlePermanentDeleteInformation = useCallback(
-    (id: string) => {
-      setInformation((prev) => prev.filter((info) => info.id !== id));
-
-      fsDeleteInformation(id).catch((err) =>
-        console.error('Failed to permanently delete information:', err)
-      );
-    },
-    [fsDeleteInformation, setInformation]
+    [currentUser, setSelectedInformation, setIsInformationModalOpen, showToast]
   );
 
   const value: InformationContextValue = {
