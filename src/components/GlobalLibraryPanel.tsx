@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, FileText, BookOpen, CheckSquare, Info, Plus, ShieldAlert } from 'lucide-react';
 import type { Requirement, UseCase, TestCase, Information, Risk, Project } from '../types';
+import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
 
 interface GlobalLibraryPanelProps {
   isOpen: boolean;
@@ -138,6 +139,32 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
 
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Filtering for each type
+  const { sortedData: filteredRequirements } = useArtifactFilteredData(requirements, {
+    searchQuery,
+    searchFields: ['id', 'title'],
+  });
+
+  const { sortedData: filteredUseCases } = useArtifactFilteredData(useCases, {
+    searchQuery,
+    searchFields: ['id', 'title'],
+  });
+
+  const { sortedData: filteredTestCases } = useArtifactFilteredData(testCases, {
+    searchQuery,
+    searchFields: ['id', 'title'],
+  });
+
+  const { sortedData: filteredInformation } = useArtifactFilteredData(information, {
+    searchQuery,
+    searchFields: ['id', 'title'],
+  });
+
+  const { sortedData: filteredRisks } = useArtifactFilteredData(risks, {
+    searchQuery,
+    searchFields: ['id', 'title'],
+  });
+
   useKeyboardShortcuts({
     onClose: onClose,
   });
@@ -166,23 +193,10 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
       .join(', ');
   };
 
-  const filterItems = <T extends { id: string; title: string; isDeleted?: boolean }>(
-    items: T[]
-  ) => {
-    return items
-      .filter(
-        (item) =>
-          !item.isDeleted &&
-          (item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.id.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-      .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
-  };
-
   const renderContent = () => {
     switch (activeTab) {
       case 'requirements':
-        return filterItems(requirements).map((req) => (
+        return filteredRequirements.map((req) => (
           <LibraryItem
             key={req.id}
             id={req.id}
@@ -194,7 +208,7 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
           />
         ));
       case 'usecases':
-        return filterItems(useCases).map((uc) => (
+        return filteredUseCases.map((uc) => (
           <LibraryItem
             key={uc.id}
             id={uc.id}
@@ -206,7 +220,7 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
           />
         ));
       case 'testcases':
-        return filterItems(testCases).map((tc) => (
+        return filteredTestCases.map((tc) => (
           <LibraryItem
             key={tc.id}
             id={tc.id}
@@ -218,7 +232,7 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
           />
         ));
       case 'information':
-        return filterItems(information).map((info) => (
+        return filteredInformation.map((info) => (
           <LibraryItem
             key={info.id}
             id={info.id}
@@ -230,7 +244,7 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
           />
         ));
       case 'risks':
-        return filterItems(risks).map((risk) => (
+        return filteredRisks.map((risk) => (
           <LibraryItem
             key={risk.id}
             id={risk.id}
@@ -359,15 +373,15 @@ export const GlobalLibraryPanel: React.FC<GlobalLibraryPanelProps> = ({
             const currentTabIds = (() => {
               switch (activeTab) {
                 case 'requirements':
-                  return filterItems(requirements).map((r) => r.id);
+                  return filteredRequirements.map((r) => r.id);
                 case 'usecases':
-                  return filterItems(useCases).map((uc) => uc.id);
+                  return filteredUseCases.map((uc) => uc.id);
                 case 'testcases':
-                  return filterItems(testCases).map((tc) => tc.id);
+                  return filteredTestCases.map((tc) => tc.id);
                 case 'information':
-                  return filterItems(information).map((info) => info.id);
+                  return filteredInformation.map((info) => info.id);
                 case 'risks':
-                  return filterItems(risks).map((risk) => risk.id);
+                  return filteredRisks.map((risk) => risk.id);
               }
             })();
             onSelectAll?.(currentTabIds);

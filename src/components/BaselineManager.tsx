@@ -3,6 +3,7 @@ import { Calendar, Plus, ChevronRight, GitCommit, Tag } from 'lucide-react';
 import type { ProjectBaseline, CommitInfo } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { realGitService } from '../services/realGitService';
+import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
 
 interface BaselineManagerProps {
   baselines: ProjectBaseline[];
@@ -54,7 +55,14 @@ export function BaselineManager({
     onViewBaseline(baseline.id);
   };
 
-  const sortedBaselines = [...baselines].sort((a, b) => b.timestamp - a.timestamp);
+  const { sortedData: sortedBaselines } = useArtifactFilteredData<ProjectBaseline>(baselines, {
+    searchQuery: '',
+    initialSort: { key: 'timestamp', direction: 'desc' },
+    getValueFn: (baseline, key) => {
+      if (key === 'timestamp') return baseline.timestamp;
+      return (baseline as unknown as Record<string, string | number | undefined>)[key];
+    },
+  });
 
   return (
     <div className="h-full flex flex-col bg-gray-900">

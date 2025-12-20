@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Search } from 'lucide-react';
 import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
 import type {
   CustomAttributeDefinition,
@@ -6,6 +7,7 @@ import type {
   ApplicableArtifactType,
 } from '../types/customAttributes';
 import { CustomAttributeDefinitionModal } from '../components/CustomAttributeDefinitionModal';
+import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
 
 const ARTIFACT_TYPE_LABELS: Record<ApplicableArtifactType, string> = {
   requirement: 'Requirements',
@@ -30,6 +32,15 @@ export const CustomAttributesPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDefinition, setEditingDefinition] = useState<CustomAttributeDefinition | null>(
     null
+  );
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const { sortedData: sortedDefinitions } = useArtifactFilteredData<CustomAttributeDefinition>(
+    definitions,
+    {
+      searchQuery,
+      searchFields: ['id', 'name', 'description'],
+    }
   );
 
   const loadDefinitions = useCallback(async () => {
@@ -109,6 +120,35 @@ export const CustomAttributesPage: React.FC = () => {
         Define custom fields that can be added to artifacts across all projects.
       </p>
 
+      {/* Search Bar */}
+      <div style={{ position: 'relative', marginBottom: 'var(--spacing-lg)' }}>
+        <Search
+          size={16}
+          style={{
+            position: 'absolute',
+            left: '12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: 'var(--color-text-muted)',
+          }}
+        />
+        <input
+          type="text"
+          placeholder="Search attributes..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '10px 12px 10px 40px',
+            borderRadius: '8px',
+            border: '1px solid var(--color-border)',
+            backgroundColor: 'var(--color-bg-card)',
+            color: 'var(--color-text-primary)',
+            fontSize: 'var(--font-size-sm)',
+          }}
+        />
+      </div>
+
       {/* Empty State */}
       {definitions.length === 0 ? (
         <div
@@ -133,7 +173,7 @@ export const CustomAttributesPage: React.FC = () => {
             gap: 'var(--spacing-sm)',
           }}
         >
-          {definitions.map((def) => (
+          {sortedDefinitions.map((def) => (
             <div
               key={def.id}
               onClick={() => handleEdit(def)}
