@@ -9,7 +9,7 @@ interface UseRiskFormOptions {
   risk: Risk | null;
   onClose: () => void;
   onSubmit: (
-    data: Omit<Risk, 'id' | 'lastModified' | 'dateCreated'> | { id: string; updates: Partial<Risk> }
+    data: Omit<Risk, 'id' | 'lastModified' | 'revision'> | { id: string; updates: Partial<Risk> }
   ) => void;
 }
 
@@ -50,8 +50,7 @@ export function useRiskForm({ isOpen, risk, onClose, onSubmit }: UseRiskFormOpti
     isOpen,
     artifact: risk,
     onClose,
-    onCreate: (data) =>
-      onSubmit(data as unknown as Omit<Risk, 'id' | 'lastModified' | 'dateCreated'>),
+    onCreate: (data) => onSubmit(data as unknown as Omit<Risk, 'id' | 'lastModified' | 'revision'>),
     onUpdate: (id, updates) => onSubmit({ id, updates }),
     onDelete: () => {},
     defaultTab: 'overview',

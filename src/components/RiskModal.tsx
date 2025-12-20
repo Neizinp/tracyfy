@@ -18,7 +18,7 @@ interface RiskModalProps {
   risk: Risk | null;
   onClose: () => void;
   onSubmit: (
-    data: Omit<Risk, 'id' | 'lastModified' | 'dateCreated'> | { id: string; updates: Partial<Risk> }
+    data: Omit<Risk, 'id' | 'lastModified' | 'revision'> | { id: string; updates: Partial<Risk> }
   ) => void;
   onDelete?: (id: string) => void;
   onBack?: () => void;
@@ -31,7 +31,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({
   risk,
   onClose,
   onSubmit,
-  onDelete,
+  onDelete: _onDelete,
   onBack,
 }) => {
   const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();

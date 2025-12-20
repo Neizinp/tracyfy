@@ -73,12 +73,12 @@ export const ArtifactModals: React.FC = () => {
 
   // Combined handler for RiskModal - handles both add and update
   const handleRiskSubmit = async (
-    data: Omit<Risk, 'id' | 'lastModified' | 'dateCreated'> | { id: string; updates: Partial<Risk> }
+    data: Omit<Risk, 'id' | 'lastModified' | 'revision'> | { id: string; updates: Partial<Risk> }
   ) => {
     if ('id' in data && 'updates' in data) {
       await handleUpdateRisk(data.id, data.updates);
     } else {
-      await handleAddRisk(data as Omit<Risk, 'id' | 'lastModified' | 'dateCreated'>);
+      await handleAddRisk(data as Omit<Risk, 'id' | 'lastModified' | 'revision'>);
     }
   };
 
