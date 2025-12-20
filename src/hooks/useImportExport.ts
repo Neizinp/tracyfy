@@ -1,4 +1,11 @@
-import type { Requirement, UseCase, TestCase, Information, Project } from '../types';
+import type {
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+  Project,
+  ArtifactDocument,
+} from '../types';
 import { exportProjectToJSON } from '../utils/jsonExportUtils';
 import * as XLSX from 'xlsx';
 
@@ -9,10 +16,14 @@ interface UseImportExportProps {
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
+  documents: ArtifactDocument[];
   setRequirements: (reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])) => void;
   setUseCases: (ucs: UseCase[] | ((prev: UseCase[]) => UseCase[])) => void;
   setTestCases: (tcs: TestCase[] | ((prev: TestCase[]) => TestCase[])) => void;
   setInformation: (info: Information[] | ((prev: Information[]) => Information[])) => void;
+  setDocuments: (
+    docs: ArtifactDocument[] | ((prev: ArtifactDocument[]) => ArtifactDocument[])
+  ) => void;
 }
 
 export function useImportExport({
@@ -22,10 +33,12 @@ export function useImportExport({
   useCases,
   testCases,
   information,
+  documents,
   setRequirements,
   setUseCases,
   setTestCases,
   setInformation,
+  setDocuments,
 }: UseImportExportProps) {
   const handleExport = async () => {
     const project = projects.find((p) => p.id === currentProjectId);
@@ -42,11 +55,14 @@ export function useImportExport({
           useCases,
           testCases,
           information,
+          documents,
         },
         project.requirementIds,
         project.useCaseIds,
         project.testCaseIds,
-        project.informationIds
+        project.informationIds,
+        project.riskIds || [],
+        project.documentIds || []
       );
     } catch (error) {
       console.error('Failed to export project:', error);
@@ -70,6 +86,7 @@ export function useImportExport({
             setUseCases(json.useCases || []);
             setTestCases(json.testCases || []);
             setInformation(json.information || []);
+            setDocuments(json.documents || []);
           } catch {
             alert('Failed to parse JSON file');
           }
@@ -93,11 +110,35 @@ export function useImportExport({
             const data = new Uint8Array(event.target?.result as ArrayBuffer);
             const workbook = XLSX.read(data, { type: 'array' });
 
+            interface RequirementExcelRow {
+              ID: string;
+              Title: string;
+              Status?: string;
+              Priority?: string;
+              Description?: string;
+              'Requirement Text'?: string;
+              Rationale?: string;
+              Parents?: string;
+            }
+
+            interface UseCaseExcelRow {
+              ID: string;
+              Title: string;
+              Actor?: string;
+              Description?: string;
+              Preconditions?: string;
+              'Main Flow'?: string;
+              'Alternative Flows'?: string;
+              Postconditions?: string;
+              Priority?: string;
+              Status?: string;
+            }
+
             // Parse Requirements
             const reqSheet = workbook.Sheets['Requirements'];
             if (reqSheet) {
-              const reqData = XLSX.utils.sheet_to_json<any>(reqSheet);
-              const parsedReqs: Requirement[] = reqData.map((row: any) => ({
+              const reqData = XLSX.utils.sheet_to_json<RequirementExcelRow>(reqSheet);
+              const parsedReqs: Requirement[] = reqData.map((row) => ({
                 id: row['ID'],
                 title: row['Title'],
                 status: row['Status'] || 'draft',
@@ -122,8 +163,8 @@ export function useImportExport({
             // Parse Use Cases
             const ucSheet = workbook.Sheets['Use Cases'];
             if (ucSheet) {
-              const ucData = XLSX.utils.sheet_to_json<any>(ucSheet);
-              const parsedUCs: UseCase[] = ucData.map((row: any) => ({
+              const ucData = XLSX.utils.sheet_to_json<UseCaseExcelRow>(ucSheet);
+              const parsedUCs: UseCase[] = ucData.map((row) => ({
                 id: row['ID'],
                 title: row['Title'],
                 actor: row['Actor'] || '',

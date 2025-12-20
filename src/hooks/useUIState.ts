@@ -4,6 +4,7 @@ import type {
   UseCase,
   Information,
   Risk,
+  ArtifactDocument,
   Project,
   ColumnVisibility,
   ActiveModal,
@@ -152,6 +153,8 @@ export function useUIState() {
   const isCustomAttributeModalOpen = activeModal.type === 'custom-attribute';
   const isWorkflowModalOpen = activeModal.type === 'workflow';
   const isGlobalLibraryModalOpen = activeModal.type === 'global-library';
+  const isDocumentsModalOpen = activeModal.type === 'documents';
+  const isEditDocumentModalOpen = activeModal.type === 'documents' && !!activeModal.isEdit;
 
   // Computed Legacy Selection State
   const selectedRequirementId =
@@ -172,6 +175,10 @@ export function useUIState() {
     selectedArtifact?.type === 'risk' ? (selectedArtifact.data as unknown as Risk) : null;
   const projectToEdit =
     selectedArtifact?.type === 'project' ? (selectedArtifact.data as unknown as Project) : null;
+  const editingDocument =
+    selectedArtifact?.type === 'documents'
+      ? (selectedArtifact.data as unknown as ArtifactDocument)
+      : null;
 
   return {
     // New State
@@ -267,6 +274,17 @@ export function useUIState() {
           ? { id: proj.id, type: 'project', data: proj as unknown as Record<string, unknown> }
           : null
       ),
+    editingDocument,
+    setEditingDocument: (doc: ArtifactDocument | null) =>
+      setSelectedArtifact(
+        doc
+          ? { id: doc.id, type: 'documents', data: doc as unknown as Record<string, unknown> }
+          : null
+      ),
+    isDocumentsModalOpen,
+    isEditDocumentModalOpen,
+    setIsEditDocumentModalOpen: (val: boolean) =>
+      val ? openModal('documents', true) : closeModal(),
 
     // Still standalone for now
     isLibraryPanelOpen,

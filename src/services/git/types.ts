@@ -14,7 +14,19 @@ export interface FileStatus {
   status: string;
 }
 
-export type ArtifactFolder = 'requirements' | 'usecases' | 'testcases' | 'information';
+export type ArtifactFolder =
+  | 'requirements'
+  | 'usecases'
+  | 'testcases'
+  | 'information'
+  | 'risks'
+  | 'links'
+  | 'workflows'
+  | 'custom-attributes'
+  | 'documents'
+  | 'projects'
+  | 'users'
+  | 'baselines';
 
 export interface Remote {
   name: string;

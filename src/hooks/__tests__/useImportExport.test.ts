@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useImportExport } from '../useImportExport';
-import type { Requirement, UseCase, TestCase, Information, Project } from '../../types';
+import type {
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+  Project,
+  ArtifactDocument,
+} from '../../types';
 
 // Mock jsonExportUtils
 vi.mock('../../utils/jsonExportUtils', () => ({
@@ -25,6 +32,7 @@ describe('useImportExport', () => {
   let mockSetUseCases: ReturnType<typeof vi.fn>;
   let mockSetTestCases: ReturnType<typeof vi.fn>;
   let mockSetInformation: ReturnType<typeof vi.fn>;
+  let mockSetDocuments: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -114,6 +122,7 @@ describe('useImportExport', () => {
     mockSetUseCases = vi.fn();
     mockSetTestCases = vi.fn();
     mockSetInformation = vi.fn();
+    mockSetDocuments = vi.fn();
   });
 
   const useTestHook = (currentProjectId = 'proj-001') =>
@@ -134,6 +143,10 @@ describe('useImportExport', () => {
       setInformation: mockSetInformation as (
         info: Information[] | ((prev: Information[]) => Information[])
       ) => void,
+      documents: [],
+      setDocuments: mockSetDocuments as (
+        docs: ArtifactDocument[] | ((prev: ArtifactDocument[]) => ArtifactDocument[])
+      ) => void,
     });
 
   describe('handleExport', () => {
@@ -150,11 +163,14 @@ describe('useImportExport', () => {
           useCases: mockUseCases,
           testCases: mockTestCases,
           information: mockInformation,
+          documents: [],
         },
         mockProjects[0].requirementIds,
         mockProjects[0].useCaseIds,
         mockProjects[0].testCaseIds,
-        mockProjects[0].informationIds
+        mockProjects[0].informationIds,
+        mockProjects[0].riskIds,
+        []
       );
     });
 

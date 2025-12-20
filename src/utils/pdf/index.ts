@@ -35,6 +35,9 @@ export {
   addInformationSection,
 } from './pdfArtifactSections';
 
+// Documents section
+export { addDocumentsSection } from './pdfDocumentExport';
+
 // Links and Risks sections
 export { addLinksSection, addRisksSection } from './pdfLinksRisksSection';
 

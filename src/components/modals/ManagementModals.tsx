@@ -17,6 +17,7 @@ import {
   useBackgroundTasks,
   useBaselines,
   useRisks,
+  useDocuments,
 } from '../../app/providers';
 import { diskLinkService } from '../../services/diskLinkService';
 import { diskCustomAttributeService } from '../../services/diskCustomAttributeService';
@@ -45,6 +46,7 @@ export const ManagementModals: React.FC = () => {
 
   const { baselines, createBaseline } = useBaselines();
   const { risks } = useRisks();
+  const { documents } = useDocuments();
   const { currentUser } = useUser();
   const { startTask, endTask } = useBackgroundTasks();
 
@@ -71,6 +73,7 @@ export const ManagementModals: React.FC = () => {
         testCases: globalTestCases,
         information: globalInformation,
         risks: risks,
+        documents: documents,
       };
 
       try {
@@ -87,7 +90,14 @@ export const ManagementModals: React.FC = () => {
                 infoIds,
                 baselines,
                 options.baseline,
-                currentUser?.name
+                currentUser?.name,
+                options.includeDocuments,
+                documents.filter(
+                  (d) =>
+                    !d.isDeleted &&
+                    (d.projectId === currentProject.id ||
+                      currentProject.documentIds?.includes(d.id))
+                )
               );
             } finally {
               endTask(taskId);
@@ -115,7 +125,16 @@ export const ManagementModals: React.FC = () => {
           case 'json': {
             const taskId = startTask('Exporting JSON...');
             try {
-              await exportProjectToJSON(currentProject, globalState, reqIds, ucIds, tcIds, infoIds);
+              await exportProjectToJSON(
+                currentProject,
+                globalState,
+                reqIds,
+                ucIds,
+                tcIds,
+                infoIds,
+                currentProject.riskIds || [],
+                currentProject.documentIds || []
+              );
             } finally {
               endTask(taskId);
             }
@@ -137,6 +156,7 @@ export const ManagementModals: React.FC = () => {
       currentUser,
       startTask,
       endTask,
+      documents,
     ]
   );
 
@@ -267,6 +287,11 @@ export const ManagementModals: React.FC = () => {
           ).length,
           risks: risks.filter((r: Risk) => !r.isDeleted && currentProject?.riskIds.includes(r.id))
             .length,
+          documents: documents.filter(
+            (d) =>
+              !d.isDeleted &&
+              (d.projectId === currentProject?.id || currentProject?.documentIds?.includes(d.id))
+          ).length,
           links: projectLinks.length,
         }}
       />

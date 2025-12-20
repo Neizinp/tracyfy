@@ -15,9 +15,18 @@ import {
   informationService,
   projectService,
   riskService,
+  documentService,
 } from '../../services/artifactServices';
 import { useBackgroundTasks } from './BackgroundTasksProvider';
-import type { Requirement, UseCase, TestCase, Information, Project, Risk } from '../../types';
+import type {
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+  Project,
+  Risk,
+  ArtifactDocument,
+} from '../../types';
 
 interface FileSystemContextValue {
   isReady: boolean;
@@ -34,6 +43,7 @@ interface FileSystemContextValue {
   testCases: TestCase[];
   information: Information[];
   risks: Risk[];
+  documents: ArtifactDocument[];
   // Git-related
   pendingChanges: FileStatus[];
   refreshStatus: () => Promise<void>;
@@ -43,11 +53,13 @@ interface FileSystemContextValue {
   saveTestCase: (testCase: TestCase) => Promise<void>;
   saveInformation: (info: Information) => Promise<void>;
   saveRisk: (risk: Risk) => Promise<void>;
+  saveDocument: (document: ArtifactDocument) => Promise<void>;
   deleteRequirement: (id: string) => Promise<void>;
   deleteUseCase: (id: string) => Promise<void>;
   deleteTestCase: (id: string) => Promise<void>;
   deleteInformation: (id: string) => Promise<void>;
   deleteRisk: (id: string) => Promise<void>;
+  deleteDocument: (id: string) => Promise<void>;
   saveProject: (project: Project) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   createProject: (name: string, description: string) => Promise<Project>;
@@ -62,13 +74,14 @@ interface FileSystemContextValue {
       | 'links'
       | 'customAttributes'
       | 'workflows'
+      | 'documents'
   ) => Promise<string>;
   // Reload from disk
   reloadData: () => Promise<void>;
   // Git operations
   commitFile: (filepath: string, message: string, authorName?: string) => Promise<void>;
   getArtifactHistory: (
-    type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks',
+    type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks' | 'documents',
     id: string
   ) => Promise<CommitInfo[]>;
   readFileAtCommit: (filepath: string, commitHash: string) => Promise<string | null>;
@@ -99,6 +112,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [pendingChanges, setPendingChanges] = useState<FileStatus[]>([]);
   const [information, setInformation] = useState<Information[]>([]);
   const [risks, setRisks] = useState<Risk[]>([]);
+  const [documents, setDocuments] = useState<ArtifactDocument[]>([]);
 
   // All data from disk
   const [projects, setProjects] = useState<Project[]>([]);
@@ -114,6 +128,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     tc: 0,
     info: 0,
     risk: 0,
+    doc: 0,
     link: 0,
     attr: 0,
     wf: 0,
@@ -148,11 +163,11 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setUseCases(data.useCases);
       setTestCases(data.testCases);
       setInformation(data.information);
+      setDocuments(data.documents);
 
       // Risks are not part of data.loadAll() in diskProjectService?
-      // Let's check artifactServices. loadAll for risks.
-      const riskItems = await riskService.loadAll();
-      setRisks(riskItems);
+      // Fixed in diskProjectService now.
+      setRisks(data.risks);
 
       // Recalculate counters to make sure they're in sync
       await diskProjectService.recalculateCounters();
@@ -162,7 +177,8 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         useCases: data.useCases.length,
         testCases: data.testCases.length,
         information: data.information.length,
-        risks: riskItems.length,
+        risks: data.risks.length,
+        documents: data.documents.length,
       });
     } finally {
       endTask(taskId);
@@ -194,6 +210,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           setTestCases([]);
           setInformation([]);
           setRisks([]);
+          setDocuments([]);
           setIsReady(true);
           setIsLoading(false);
           return;
@@ -438,6 +455,39 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [isReady, refreshStatus]
   );
 
+  // CRUD operations - Documents
+  const saveDocument = useCallback(
+    async (document: ArtifactDocument) => {
+      if (!isReady) throw new Error('Filesystem not ready');
+      if (!isE2EMode()) {
+        await documentService.save(document);
+      }
+      setDocuments((prev) => {
+        const idx = prev.findIndex((d) => d.id === document.id);
+        if (idx >= 0) {
+          const updated = [...prev];
+          updated[idx] = document;
+          return updated;
+        }
+        return [...prev, document];
+      });
+      if (!isE2EMode()) await refreshStatus();
+    },
+    [isReady, refreshStatus]
+  );
+
+  const deleteDocument = useCallback(
+    async (id: string) => {
+      if (!isReady) throw new Error('Filesystem not ready');
+      if (!isE2EMode()) {
+        await documentService.delete(id);
+      }
+      setDocuments((prev) => prev.filter((d) => d.id !== id));
+      if (!isE2EMode()) await refreshStatus();
+    },
+    [isReady, refreshStatus]
+  );
+
   // CRUD operations - Projects
   const saveProject = useCallback(
     async (project: Project) => {
@@ -526,6 +576,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         | 'links'
         | 'customAttributes'
         | 'workflows'
+        | 'documents'
     ): Promise<string> => {
       if (isE2EMode()) {
         // In E2E mode, use local counter
@@ -538,6 +589,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           links: 'LINK',
           customAttributes: 'ATTR',
           workflows: 'WF',
+          documents: 'DOC',
         }[type];
         const counterKey = {
           requirements: 'req',
@@ -548,6 +600,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           links: 'link',
           customAttributes: 'attr',
           workflows: 'wf',
+          documents: 'doc',
         }[type] as keyof typeof e2eCounters;
         const nextNum = e2eCounters[counterKey] + 1;
         setE2eCounters((prev) => ({ ...prev, [counterKey]: nextNum }));
@@ -575,11 +628,12 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const getArtifactHistory = useCallback(
     async (
-      type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks',
+      type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks' | 'documents',
       id: string
     ) => {
       if (!isReady || isE2EMode()) return [];
-      return await realGitService.getHistory(`${type}/${id}.md`);
+      const folder = type === 'documents' ? 'documents' : type;
+      return await realGitService.getHistory(`${folder}/${id}.md`);
     },
     [isReady]
   );
@@ -618,6 +672,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         testCases,
         information,
         risks,
+        documents,
         // Git
         pendingChanges,
         refreshStatus,
@@ -627,11 +682,13 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         saveTestCase,
         saveInformation,
         saveRisk,
+        saveDocument,
         deleteRequirement,
         deleteUseCase,
         deleteTestCase,
         deleteInformation,
         deleteRisk,
+        deleteDocument,
         saveProject,
         createProject,
         deleteProject,

@@ -4,6 +4,7 @@ import { useImportExport as useImportExportHook } from '../../hooks/useImportExp
 import { useGlobalState } from './GlobalStateProvider';
 import { useProject } from './ProjectProvider';
 import { useBackgroundTasks } from './BackgroundTasksProvider';
+import { useDocuments } from './ArtifactProviders';
 
 interface ImportExportContextValue {
   handleExport: () => void;
@@ -34,10 +35,12 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
     useCases,
     testCases,
     information,
+    documents: useDocuments().documents,
     setRequirements,
     setUseCases,
     setTestCases,
     setInformation,
+    setDocuments: useDocuments().setDocuments,
   });
 
   // Wrap handleExport with progress status

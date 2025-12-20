@@ -66,6 +66,12 @@ export const ARTIFACT_CONFIG: Record<string, ArtifactTypeConfig> = {
     label: 'Custom Attribute',
     type: 'customAttribute',
   },
+  documents: {
+    idPrefix: 'DOC',
+    folder: 'documents',
+    label: 'Document',
+    type: 'document',
+  },
 };
 
 // Map of folder names to internal types

@@ -1,4 +1,11 @@
-import type { Requirement, UseCase, TestCase, Information, Risk } from './artifact';
+import type {
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+  Risk,
+  ArtifactDocument,
+} from './artifact';
 
 export interface GlobalState {
   requirements: Requirement[];
@@ -6,4 +13,5 @@ export interface GlobalState {
   testCases: TestCase[];
   information: Information[];
   risks: Risk[];
+  documents: ArtifactDocument[];
 }

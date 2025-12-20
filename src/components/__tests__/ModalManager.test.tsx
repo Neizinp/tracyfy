@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { ModalManager } from '../ModalManager';
 import { AppProviders } from '../../app/AppProviders';
 
@@ -18,18 +19,22 @@ describe('ModalManager', () => {
 
   it('should render without crashing', () => {
     const { container } = render(
-      <AppProviders>
-        <ModalManager />
-      </AppProviders>
+      <MemoryRouter>
+        <AppProviders>
+          <ModalManager />
+        </AppProviders>
+      </MemoryRouter>
     );
     expect(container).toBeTruthy();
   });
 
   it('should not display any modals by default', () => {
     render(
-      <AppProviders>
-        <ModalManager />
-      </AppProviders>
+      <MemoryRouter>
+        <AppProviders>
+          <ModalManager />
+        </AppProviders>
+      </MemoryRouter>
     );
 
     // By default, no modals should be visible
@@ -41,9 +46,11 @@ describe('ModalManager', () => {
 
   it('should render modal container elements', async () => {
     const { container } = render(
-      <AppProviders>
-        <ModalManager />
-      </AppProviders>
+      <MemoryRouter>
+        <AppProviders>
+          <ModalManager />
+        </AppProviders>
+      </MemoryRouter>
     );
 
     // The ModalManager should be mounted even if no modals are open
@@ -56,9 +63,11 @@ describe('ModalManager', () => {
     // This test verifies that ModalManager works within AppProviders context
     expect(() => {
       render(
-        <AppProviders>
-          <ModalManager />
-        </AppProviders>
+        <MemoryRouter>
+          <AppProviders>
+            <ModalManager />
+          </AppProviders>
+        </MemoryRouter>
       );
     }).not.toThrow();
   });

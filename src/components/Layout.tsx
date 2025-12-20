@@ -30,6 +30,7 @@ export interface LayoutProps {
   onNewWorkflow?: () => void;
   onNewLink?: () => void;
   onNewCustomAttribute?: () => void;
+  onNewDocument?: () => void;
   baselines?: ProjectBaseline[];
   rightPanel?: React.ReactNode;
   onOpenUserSettings?: () => void;
@@ -68,6 +69,7 @@ export const Layout: React.FC<LayoutProps> = ({
   onNewWorkflow,
   onNewLink,
   onNewCustomAttribute,
+  onNewDocument,
   baselines = [],
   rightPanel,
   onOpenUserSettings,
@@ -99,6 +101,7 @@ export const Layout: React.FC<LayoutProps> = ({
           onNewWorkflow={onNewWorkflow}
           onNewLink={onNewLink}
           onNewCustomAttribute={onNewCustomAttribute}
+          onNewDocument={onNewDocument}
           onImport={onImport}
           onImportExcel={onImportExcel}
           onOpenGlobalLibrary={onOpenGlobalLibrary}

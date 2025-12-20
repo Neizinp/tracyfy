@@ -8,8 +8,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Link, Risk } from '../../types';
 import type { TOCEntry } from './types';
-import { formatDate } from '../dateUtils';
 import { LINK_TYPE_LABELS } from '../linkTypes';
+import { renderRisk } from './pdfArtifactRenderer';
 
 /**
  * Add links section to PDF
@@ -79,13 +79,13 @@ export function addLinksSection(
 /**
  * Add risks section to PDF
  */
-export function addRisksSection(
+export async function addRisksSection(
   doc: jsPDF,
   risks: Risk[],
   startPage: number,
   tocEntries: TOCEntry[],
   sectionNumber: number
-): number {
+): Promise<number> {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text(`${sectionNumber}. Risks`, 20, 20);
@@ -93,116 +93,11 @@ export function addRisksSection(
   let yPos = 30;
   let page = startPage;
 
-  const capitalizeWord = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
   for (const risk of risks) {
-    // Check if we need a new page
-    if (yPos > 230) {
-      doc.addPage();
-      page++;
-      yPos = 20;
-    }
-
-    const boxLeft = 15;
-    const boxWidth = 180;
-    const boxTop = yPos;
-    let currentY = boxTop;
-
-    // Draw outer box border
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.5);
-
-    // Header section with shaded background
-    const headerHeight = 10;
-    doc.setFillColor(240, 240, 240);
-    doc.rect(boxLeft, currentY, boxWidth, headerHeight, 'FD');
-
-    // Risk ID and Title
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0, 0, 0);
-    const title = `${risk.id} - ${risk.title}`;
-    doc.text(title, boxLeft + 3, currentY + 7);
-
-    // Revision (right-aligned)
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    const revText = `Rev: ${risk.revision || '01'}`;
-    doc.text(revText, boxLeft + boxWidth - 3, currentY + 7, { align: 'right' });
-
-    // Add to TOC
-    tocEntries.push({ title: title, page: page, level: 1 });
-
-    currentY += headerHeight;
-
-    // Metadata bar (Category | Probability | Impact | Status)
-    doc.setFillColor(250, 250, 250);
-    doc.rect(boxLeft, currentY, boxWidth, 6, 'F');
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    const metadataText = `Category: ${capitalizeWord(risk.category || 'other')}  |  Probability: ${capitalizeWord(risk.probability || 'medium')}  |  Impact: ${capitalizeWord(risk.impact || 'medium')}  |  Status: ${capitalizeWord(risk.status || 'open')}`;
-    doc.text(metadataText, boxLeft + 3, currentY + 4);
-    currentY += 6;
-
-    // Content sections
-    const contentLeft = boxLeft + 3;
-    const contentWidth = boxWidth - 6;
-    currentY += 3;
-
-    // Description
-    if (risk.description) {
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Description:', contentLeft, currentY);
-      currentY += 4;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      const descLines = doc.splitTextToSize(risk.description, contentWidth);
-      doc.text(descLines, contentLeft, currentY);
-      currentY += descLines.length * 4 + 3;
-    }
-
-    // Mitigation
-    if (risk.mitigation) {
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Mitigation Strategy:', contentLeft, currentY);
-      currentY += 4;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      const mitigationLines = doc.splitTextToSize(risk.mitigation, contentWidth);
-      doc.text(mitigationLines, contentLeft, currentY);
-      currentY += mitigationLines.length * 4 + 3;
-    }
-
-    // Contingency
-    if (risk.contingency) {
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Contingency Plan:', contentLeft, currentY);
-      currentY += 4;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      const contingencyLines = doc.splitTextToSize(risk.contingency, contentWidth);
-      doc.text(contingencyLines, contentLeft, currentY);
-      currentY += contingencyLines.length * 4 + 3;
-    }
-
-    // Footer metadata bar
-    currentY += 1;
-    doc.setFillColor(250, 250, 250);
-    doc.rect(boxLeft, currentY, boxWidth, 6, 'F');
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    const footerText = `Owner: ${risk.owner || 'N/A'}  |  Created: ${formatDate(risk.dateCreated)}  |  Modified: ${formatDate(risk.lastModified)}`;
-    doc.text(footerText, boxLeft + 3, currentY + 4);
-    currentY += 6;
-
-    // Draw final box border
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
-
-    yPos = currentY + 5; // Space between risks
+    const result = await renderRisk(doc, risk, yPos, page);
+    yPos = result.yPos;
+    page = result.page;
+    tocEntries.push({ title: `${risk.id} - ${risk.title}`, page: page, level: 1 });
   }
 
   return page;

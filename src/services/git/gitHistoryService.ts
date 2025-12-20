@@ -8,14 +8,27 @@ import { debug } from '../../utils/debug';
 import git from 'isomorphic-git';
 import { fileSystemService } from '../fileSystemService';
 import { fsAdapter } from '../fsAdapter';
-import { isElectronEnv, type CommitInfo } from './types';
-import type { Requirement, UseCase, TestCase, Information } from '../../types';
 import {
   markdownToRequirement,
   markdownToUseCase,
   markdownToTestCase,
   markdownToInformation,
+  markdownToRisk,
+  markdownToDocument,
 } from '../../utils/markdownUtils';
+import { parseMarkdownLink } from '../../utils/linkMarkdownUtils';
+import { parseMarkdownWorkflow } from '../../utils/workflowMarkdownUtils';
+import { isElectronEnv, type CommitInfo } from './types';
+import type {
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+  Risk,
+  Link,
+  Workflow,
+  ArtifactDocument,
+} from '../../types';
 
 /**
  * Get the root directory path (Electron uses absolute path, browser uses '.')
@@ -307,11 +320,19 @@ class GitHistoryService {
     useCases: UseCase[];
     testCases: TestCase[];
     information: Information[];
+    risks: Risk[];
+    links: Link[];
+    workflows: Workflow[];
+    documents: ArtifactDocument[];
   }> {
     const requirements: Requirement[] = [];
     const useCases: UseCase[] = [];
     const testCases: TestCase[] = [];
     const information: Information[] = [];
+    const risks: Risk[] = [];
+    const links: Link[] = [];
+    const workflows: Workflow[] = [];
+    const documents: ArtifactDocument[] = [];
 
     try {
       const allFiles = await this.listFilesAtCommit(commitHash);
@@ -337,12 +358,16 @@ class GitHistoryService {
         loadFiles('usecases/', markdownToUseCase, useCases),
         loadFiles('testcases/', markdownToTestCase, testCases),
         loadFiles('information/', markdownToInformation, information),
+        loadFiles('risks/', markdownToRisk, risks),
+        loadFiles('links/', (content) => parseMarkdownLink(content), links),
+        loadFiles('workflows/', (content) => parseMarkdownWorkflow(content), workflows),
+        loadFiles('documents/', markdownToDocument, documents),
       ]);
     } catch (error) {
       console.error('[loadProjectSnapshot] Failed to load snapshot:', error);
     }
 
-    return { requirements, useCases, testCases, information };
+    return { requirements, useCases, testCases, information, risks, links, workflows, documents };
   }
 }
 

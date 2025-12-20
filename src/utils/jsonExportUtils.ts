@@ -1,4 +1,13 @@
-import type { Project, Requirement, UseCase, TestCase, Information, Link, Risk } from '../types';
+import type {
+  Project,
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+  Link,
+  Risk,
+  ArtifactDocument,
+} from '../types';
 import { diskLinkService } from '../services/diskLinkService';
 
 /**
@@ -26,6 +35,7 @@ export interface ExportData {
   testCases: TestCase[];
   information: Information[];
   risks: Risk[];
+  documents: ArtifactDocument[];
   links: Link[];
   exportedAt: string;
 }
@@ -38,11 +48,14 @@ export async function exportProjectToJSON(
     testCases: TestCase[];
     information: Information[];
     risks?: Risk[];
+    documents?: ArtifactDocument[];
   },
   projectRequirementIds: string[],
   projectUseCaseIds: string[],
   projectTestCaseIds: string[],
-  projectInformationIds: string[]
+  projectInformationIds: string[],
+  projectRiskIds: string[] = [],
+  projectDocumentIds: string[] = []
 ): Promise<void> {
   // Filter artifacts and sort by ID number for consistent ordering
   const requirements = sortByIdNumber(
@@ -61,9 +74,14 @@ export async function exportProjectToJSON(
   // Fetch links visible to this project (global + project-specific)
   const links = sortByIdNumber(await diskLinkService.getLinksForProject(project.id));
 
-  // Filter risks for this project (if provided)
-  const projectRisks = sortByIdNumber(
-    (globalState.risks || []).filter((r) => project.riskIds?.includes(r.id) && !r.isDeleted)
+  // Filter risks for this project
+  const risks = sortByIdNumber(
+    (globalState.risks || []).filter((r) => projectRiskIds.includes(r.id) && !r.isDeleted)
+  );
+
+  // Filter documents for this project
+  const documents = sortByIdNumber(
+    (globalState.documents || []).filter((d) => projectDocumentIds.includes(d.id) && !d.isDeleted)
   );
 
   const dataToExport: ExportData = {
@@ -78,7 +96,8 @@ export async function exportProjectToJSON(
     useCases,
     testCases,
     information,
-    risks: projectRisks,
+    risks,
+    documents,
     links,
     exportedAt: new Date().toISOString(),
   };
@@ -95,7 +114,11 @@ export async function exportProjectToJSON(
   // Try to use File System Access API if available (for "Save As")
   try {
     if ('showSaveFilePicker' in window) {
-      const handle = await (window as any).showSaveFilePicker({
+      const handle = await (
+        window as any as Window & {
+          showSaveFilePicker: (options: any) => Promise<FileSystemFileHandle>;
+        }
+      ).showSaveFilePicker({
         suggestedName: filename,
         types: [
           {
@@ -111,7 +134,7 @@ export async function exportProjectToJSON(
     }
   } catch (err) {
     // Fallback to download if cancelled or not supported
-    if ((err as any).name !== 'AbortError') {
+    if (err instanceof Error && err.name !== 'AbortError') {
       console.error('Error with save file picker:', err);
     } else {
       return; // User cancelled

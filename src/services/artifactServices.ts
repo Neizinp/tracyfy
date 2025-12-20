@@ -82,6 +82,8 @@ export const userService = new BaseArtifactService<User>('users', userSerializer
 import { diskLinkService } from './diskLinkService';
 import { diskWorkflowService } from './diskWorkflowService';
 import { diskCustomAttributeService } from './diskCustomAttributeService';
+import { documentService } from './documentService';
+export { documentService };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ALL_ARTIFACT_SERVICES: Record<string, BaseArtifactService<any>> = {
@@ -95,4 +97,5 @@ export const ALL_ARTIFACT_SERVICES: Record<string, BaseArtifactService<any>> = {
   links: diskLinkService,
   workflows: diskWorkflowService,
   customAttributes: diskCustomAttributeService,
+  documents: documentService,
 };

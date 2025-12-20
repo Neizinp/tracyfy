@@ -14,6 +14,8 @@ export {
   useInformation,
   RisksProvider,
   useRisks,
+  DocumentsProvider,
+  useDocuments,
 } from './ArtifactProviders';
 
 export { ImportExportProvider, useImportExport } from './ImportExportProvider';

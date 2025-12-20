@@ -9,17 +9,32 @@ import git from 'isomorphic-git';
 import { fileSystemService } from '../fileSystemService';
 import { fsAdapter } from '../fsAdapter';
 import { isElectronEnv, parseStatusMatrix, type FileStatus, type ArtifactFolder } from './types';
-import type { Requirement, UseCase, TestCase, Information } from '../../types';
+import type {
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+  Risk,
+  Link,
+  Workflow,
+  ArtifactDocument,
+} from '../../types';
 import {
   requirementToMarkdown,
   convertUseCaseToMarkdown,
   testCaseToMarkdown,
   informationToMarkdown,
+  riskToMarkdown,
+  documentToMarkdown,
   markdownToRequirement,
   markdownToUseCase,
   markdownToTestCase,
   markdownToInformation,
+  markdownToRisk,
+  markdownToDocument,
 } from '../../utils/markdownUtils';
+import { linkToMarkdown, parseMarkdownLink } from '../../utils/linkMarkdownUtils';
+import { workflowToMarkdown, parseMarkdownWorkflow } from '../../utils/workflowMarkdownUtils';
 
 /**
  * Get the root directory path (Electron uses absolute path, browser uses '.')
@@ -172,7 +187,15 @@ class GitCoreService {
   async saveArtifact(
     type: ArtifactFolder,
     id: string,
-    artifact: Requirement | UseCase | TestCase | Information
+    artifact:
+      | Requirement
+      | UseCase
+      | TestCase
+      | Information
+      | Risk
+      | Link
+      | Workflow
+      | ArtifactDocument
   ): Promise<void> {
     if (!this.initialized) {
       throw new Error('Git service not initialized');
@@ -193,6 +216,22 @@ class GitCoreService {
       case 'information':
         markdown = informationToMarkdown(artifact as Information);
         break;
+      case 'risks':
+        markdown = riskToMarkdown(artifact as Risk);
+        break;
+      case 'links':
+        markdown = linkToMarkdown(artifact as Link);
+        break;
+      case 'workflows':
+        markdown = workflowToMarkdown(artifact as Workflow);
+        break;
+      case 'documents':
+        markdown = documentToMarkdown(artifact as ArtifactDocument);
+        break;
+      default:
+        // For types like projects, users, baselines that might use different serialization or are handled elsewhere
+        // But we should support them if they are passed here
+        markdown = JSON.stringify(artifact, null, 2);
     }
 
     const filePath = `${type}/${id}.md`;
@@ -313,6 +352,10 @@ class GitCoreService {
         'testcases',
         'information',
         'risks',
+        'links',
+        'workflows',
+        'custom-attributes',
+        'documents',
         'projects',
         'assets',
       ];
@@ -422,11 +465,19 @@ class GitCoreService {
     useCases: UseCase[];
     testCases: TestCase[];
     information: Information[];
+    risks: Risk[];
+    links: Link[];
+    workflows: Workflow[];
+    documents: ArtifactDocument[];
   }> {
     const requirements: Requirement[] = [];
     const useCases: UseCase[] = [];
     const testCases: TestCase[] = [];
     const information: Information[] = [];
+    const risks: Risk[] = [];
+    const links: Link[] = [];
+    const workflows: Workflow[] = [];
+    const documents: ArtifactDocument[] = [];
 
     // Load requirements
     const reqFiles = await fileSystemService.listFiles('requirements');
@@ -488,7 +539,67 @@ class GitCoreService {
       }
     }
 
-    return { requirements, useCases, testCases, information };
+    // Load risks
+    const riskFiles = await fileSystemService.listFiles('risks');
+    for (const file of riskFiles) {
+      if (!file.endsWith('.md')) continue;
+      try {
+        const content = await fileSystemService.readFile(`risks/${file}`);
+        if (content) {
+          const risk = markdownToRisk(content);
+          if (risk) risks.push(risk);
+        }
+      } catch (error) {
+        console.error(`Failed to load risk ${file}:`, error);
+      }
+    }
+
+    // Load links
+    const linkFiles = await fileSystemService.listFiles('links');
+    for (const file of linkFiles) {
+      if (!file.endsWith('.md')) continue;
+      try {
+        const content = await fileSystemService.readFile(`links/${file}`);
+        if (content) {
+          const link = parseMarkdownLink(content);
+          if (link) links.push(link);
+        }
+      } catch (error) {
+        console.error(`Failed to load link ${file}:`, error);
+      }
+    }
+
+    // Load workflows
+    const workflowFiles = await fileSystemService.listFiles('workflows');
+    for (const file of workflowFiles) {
+      if (!file.endsWith('.md')) continue;
+      try {
+        const content = await fileSystemService.readFile(`workflows/${file}`);
+        if (content) {
+          const workflow = parseMarkdownWorkflow(content);
+          if (workflow) workflows.push(workflow);
+        }
+      } catch (error) {
+        console.error(`Failed to load workflow ${file}:`, error);
+      }
+    }
+
+    // Load documents
+    const docFiles = await fileSystemService.listFiles('documents');
+    for (const file of docFiles) {
+      if (!file.endsWith('.md')) continue;
+      try {
+        const content = await fileSystemService.readFile(`documents/${file}`);
+        if (content) {
+          const doc = markdownToDocument(content);
+          if (doc) documents.push(doc);
+        }
+      } catch (error) {
+        console.error(`Failed to load document ${file}:`, error);
+      }
+    }
+
+    return { requirements, useCases, testCases, information, risks, links, workflows, documents };
   }
 }
 

@@ -94,6 +94,7 @@ export type ModalType =
   | 'custom-attribute'
   | 'workflow'
   | 'global-library'
+  | 'documents'
   | null;
 
 export interface ActiveModal {
@@ -103,7 +104,15 @@ export interface ActiveModal {
 
 export interface SelectedArtifact {
   id: string;
-  type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk' | 'project' | 'user';
+  type:
+    | 'requirement'
+    | 'usecase'
+    | 'testcase'
+    | 'information'
+    | 'risk'
+    | 'project'
+    | 'user'
+    | 'documents';
   data?: Record<string, unknown>;
 }
 
@@ -116,6 +125,7 @@ export interface ExportOptions {
   includeTestCases: boolean;
   includeInformation: boolean;
   includeRisks: boolean;
+  includeDocuments: boolean;
   includeLinks: boolean;
   // PDF-specific sections
   includeTitlePage: boolean;

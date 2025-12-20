@@ -31,7 +31,15 @@ import { BaseDiskService } from './baseDiskService';
 import { debug } from '../utils/debug';
 import { idService } from './idService';
 import { ARTIFACT_CONFIG } from '../constants/artifactConfig';
-import type { Project, Requirement, UseCase, TestCase, Information, Risk } from '../types';
+import type {
+  Project,
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+  Risk,
+  ArtifactDocument,
+} from '../types';
 import {
   ALL_ARTIFACT_SERVICES,
   requirementService,
@@ -40,6 +48,7 @@ import {
   informationService,
   riskService,
   projectService,
+  documentService,
 } from './artifactServices';
 
 const CURRENT_PROJECT_FILE = 'current-project.md';
@@ -268,17 +277,27 @@ class DiskProjectService extends BaseDiskService {
     testCases: TestCase[];
     information: Information[];
     risks: Risk[];
+    documents: ArtifactDocument[];
   }> {
-    const [projects, requirements, useCases, testCases, information, risks, currentProjectId] =
-      await Promise.all([
-        this.loadAllProjects(),
-        requirementService.loadAll(),
-        useCaseService.loadAll(),
-        testCaseService.loadAll(),
-        informationService.loadAll(),
-        riskService.loadAll(),
-        this.getCurrentProjectId(),
-      ]);
+    const [
+      projects,
+      requirements,
+      useCases,
+      testCases,
+      information,
+      risks,
+      documents,
+      currentProjectId,
+    ] = await Promise.all([
+      this.loadAllProjects(),
+      requirementService.loadAll(),
+      useCaseService.loadAll(),
+      testCaseService.loadAll(),
+      informationService.loadAll(),
+      riskService.loadAll(),
+      documentService.loadAll(),
+      this.getCurrentProjectId(),
+    ]);
 
     return {
       projects,
@@ -288,6 +307,7 @@ class DiskProjectService extends BaseDiskService {
       testCases,
       information,
       risks,
+      documents,
     };
   }
 

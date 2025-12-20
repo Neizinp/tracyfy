@@ -6,6 +6,7 @@ import type {
   UseCase,
   Information,
   Risk,
+  ArtifactDocument,
   Project,
   ColumnVisibility,
   UseCaseColumnVisibility,
@@ -87,6 +88,11 @@ export interface UIContextValue {
   setEditingUseCase: (uc: UseCase | null) => void;
   projectToEdit: Project | null;
   setProjectToEdit: (project: Project | null) => void;
+  isDocumentsModalOpen: boolean;
+  isEditDocumentModalOpen: boolean;
+  setIsEditDocumentModalOpen: (isOpen: boolean) => void;
+  editingDocument: ArtifactDocument | null;
+  setEditingDocument: (doc: ArtifactDocument | null) => void;
 
   // Library state
   activeLibraryTab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks';

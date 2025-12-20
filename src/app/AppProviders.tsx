@@ -16,6 +16,7 @@ import {
   CustomAttributeProvider,
   RisksProvider,
   BaselinesProvider,
+  DocumentsProvider,
 } from './providers';
 
 export const AppProviders: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -33,9 +34,11 @@ export const AppProviders: React.FC<{ children: ReactNode }> = ({ children }) =>
                         <TestCasesProvider>
                           <InformationProvider>
                             <RisksProvider>
-                              <BaselinesProvider>
-                                <ImportExportProvider>{children}</ImportExportProvider>
-                              </BaselinesProvider>
+                              <DocumentsProvider>
+                                <BaselinesProvider>
+                                  <ImportExportProvider>{children}</ImportExportProvider>
+                                </BaselinesProvider>
+                              </DocumentsProvider>
                             </RisksProvider>
                           </InformationProvider>
                         </TestCasesProvider>

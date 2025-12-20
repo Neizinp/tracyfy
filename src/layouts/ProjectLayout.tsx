@@ -96,7 +96,7 @@ export const ProjectLayout: React.FC = () => {
   const ui = useUI();
 
   // Global state
-  const { globalRequirements, globalUseCases, globalTestCases, globalInformation } =
+  const { globalRequirements, globalUseCases, globalTestCases, globalInformation, documents } =
     useGlobalState();
 
   // FileSystem context
@@ -224,6 +224,7 @@ export const ProjectLayout: React.FC = () => {
       onNewWorkflow={() => ui.setIsWorkflowModalOpen(true)}
       onNewLink={() => navigate('/links')}
       onNewCustomAttribute={() => ui.setIsCustomAttributeModalOpen(true)}
+      onNewDocument={() => ui.openModal('documents')}
       onExport={importExport.handleExport}
       onImport={importExport.handleImport}
       onImportExcel={importExport.handleImportExcel}
@@ -258,7 +259,9 @@ export const ProjectLayout: React.FC = () => {
             currentProject.informationIds,
             baselines,
             selectedBaseline, // selectedBaseline: ProjectBaseline | null
-            currentUser?.name
+            currentUser?.name,
+            true,
+            documents
           );
         } finally {
           endTask(taskId);
@@ -548,6 +551,27 @@ export const ProjectLayout: React.FC = () => {
             {location.pathname.includes('/workflows') && (
               <button
                 onClick={() => ui.setIsWorkflowModalOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  backgroundColor: 'var(--color-accent)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: 'var(--font-size-sm)',
+                  fontWeight: 500,
+                }}
+              >
+                <Plus size={16} />
+                Add
+              </button>
+            )}
+            {location.pathname.includes('/documents') && (
+              <button
+                onClick={() => ui.openModal('documents')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

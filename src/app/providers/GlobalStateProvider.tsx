@@ -2,7 +2,14 @@ import React, { createContext, useContext, useState, useRef, useEffect, useCallb
 import type { ReactNode } from 'react';
 import { useFileSystem } from './FileSystemProvider';
 import { useProject } from './ProjectProvider';
-import type { Requirement, UseCase, TestCase, Information, Risk } from '../../types';
+import type {
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+  Risk,
+  ArtifactDocument,
+} from '../../types';
 
 export interface GlobalStateContextValue {
   // Global artifacts (all artifacts regardless of project)
@@ -11,6 +18,7 @@ export interface GlobalStateContextValue {
   globalTestCases: TestCase[];
   globalInformation: Information[];
   globalRisks: Risk[];
+  globalDocuments: ArtifactDocument[];
 
   // Local project artifacts (filtered by current project)
   requirements: Requirement[];
@@ -23,6 +31,10 @@ export interface GlobalStateContextValue {
   setInformation: (info: Information[] | ((prev: Information[]) => Information[])) => void;
   risks: Risk[];
   setRisks: (risks: Risk[] | ((prev: Risk[]) => Risk[])) => void;
+  documents: ArtifactDocument[];
+  setDocuments: (
+    docs: ArtifactDocument[] | ((prev: ArtifactDocument[]) => ArtifactDocument[])
+  ) => void;
 
   // Internal ref
   isResetting: React.MutableRefObject<boolean>;
@@ -37,6 +49,7 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     testCases: fsTestCases,
     information: fsInformation,
     risks: fsRisks,
+    documents: fsDocuments,
   } = useFileSystem();
 
   const { currentProject } = useProject();
@@ -47,6 +60,7 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [globalTestCases, setGlobalTestCases] = useState<TestCase[]>([]);
   const [globalInformation, setGlobalInformation] = useState<Information[]>([]);
   const [globalRisks, setGlobalRisks] = useState<Risk[]>([]);
+  const [globalDocuments, setGlobalDocuments] = useState<ArtifactDocument[]>([]);
 
   // Project-filtered state
   const [requirements, setRequirementsState] = useState<Requirement[]>([]);
@@ -54,6 +68,7 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [testCases, setTestCasesState] = useState<TestCase[]>([]);
   const [information, setInformationState] = useState<Information[]>([]);
   const [risks, setRisksState] = useState<Risk[]>([]);
+  const [documents, setDocumentsState] = useState<ArtifactDocument[]>([]);
 
   const isResetting = useRef(false);
 
@@ -78,6 +93,10 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     setGlobalRisks(fsRisks || []);
   }, [fsRisks]);
 
+  useEffect(() => {
+    setGlobalDocuments(fsDocuments || []);
+  }, [fsDocuments]);
+
   // Filter artifacts by current project
   useEffect(() => {
     if (currentProject) {
@@ -90,6 +109,11 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
         globalInformation.filter((i) => currentProject.informationIds?.includes(i.id))
       );
       setRisksState(globalRisks.filter((r) => currentProject.riskIds?.includes(r.id)));
+      setDocumentsState(
+        globalDocuments.filter(
+          (d) => d.projectId === currentProject.id || currentProject.documentIds?.includes(d.id)
+        )
+      );
     } else {
       // No project selected - show all artifacts
       setRequirementsState(globalRequirements);
@@ -97,6 +121,7 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
       setTestCasesState(globalTestCases);
       setInformationState(globalInformation);
       setRisksState(globalRisks);
+      setDocumentsState(globalDocuments);
     }
   }, [
     currentProject,
@@ -105,6 +130,7 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     globalTestCases,
     globalInformation,
     globalRisks,
+    globalDocuments,
   ]);
 
   // Wrapper setters for requirements (update global state)
@@ -149,12 +175,23 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     });
   }, []);
 
+  const setDocuments = useCallback(
+    (docs: ArtifactDocument[] | ((prev: ArtifactDocument[]) => ArtifactDocument[])) => {
+      setGlobalDocuments((prev) => {
+        const newDocs = typeof docs === 'function' ? docs(prev) : docs;
+        return newDocs;
+      });
+    },
+    []
+  );
+
   const value: GlobalStateContextValue = {
     globalRequirements,
     globalUseCases,
     globalTestCases,
     globalInformation,
     globalRisks,
+    globalDocuments,
     requirements,
     setRequirements,
     useCases,
@@ -165,6 +202,8 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     setInformation,
     risks,
     setRisks,
+    documents,
+    setDocuments,
     isResetting,
   };
 

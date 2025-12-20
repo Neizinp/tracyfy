@@ -8,6 +8,8 @@ import type {
   Project,
   ProjectBaseline,
   Risk,
+  ArtifactDocument,
+  CustomAttributeDefinition,
 } from '../../types';
 import { realGitService } from '../../services/realGitService';
 import { diskLinkService } from '../../services/diskLinkService';
@@ -27,6 +29,7 @@ import {
   addTestCasesSection,
   addInformationSection,
 } from './pdfArtifactSections';
+import { addDocumentsSection, renderFlatStructure } from './pdfDocumentExport';
 import { addLinksSection, addRisksSection } from './pdfLinksRisksSection';
 import { addRevisionHistory } from './pdfRevisionHistory';
 
@@ -48,7 +51,9 @@ export async function exportProjectToPDF(
   projectInformationIds: string[],
   baselines: ProjectBaseline[],
   selectedBaseline: ProjectBaseline | null, // null = Current State
-  currentUserName?: string
+  currentUserName?: string,
+  includeDocuments: boolean = true,
+  projectDocuments: ArtifactDocument[] = []
 ): Promise<void> {
   // 0. Request File Handle FIRST (to ensure user activation is valid)
   let fileHandle: FileSystemFileHandle | null = null;
@@ -104,6 +109,7 @@ export async function exportProjectToPDF(
     (projectInformationIds.length > 0 ? 1 + projectInformationIds.length : 0) +
     (estimatedRisksCount > 0 ? 1 + estimatedRisksCount : 0) +
     (estimatedLinksCount > 0 ? 1 + estimatedLinksCount : 0) +
+    (includeDocuments && projectDocuments.length > 0 ? 1 + projectDocuments.length * 5 : 0) + // Estimate 5 items per doc
     1;
 
   const tocPagesNeeded = calculateTocPages(estimatedTocEntries);
@@ -326,10 +332,29 @@ export async function exportProjectToPDF(
     doc.addPage();
     sectionNumber++;
     tocEntries.push({ title: `${sectionNumber}. Risks`, page: currentPage, level: 0 });
-    currentPage = addRisksSection(doc, projectRisks, currentPage, tocEntries, sectionNumber);
+    currentPage = await addRisksSection(doc, projectRisks, currentPage, tocEntries, sectionNumber);
   }
 
-  // 10. Links Section
+  // 10. Documents Section
+  if (includeDocuments && projectDocuments.length > 0) {
+    currentPage = await addDocumentsSection(
+      {
+        doc,
+        tocEntries,
+        requirements: globalState.requirements,
+        useCases: globalState.useCases,
+        testCases: globalState.testCases,
+        information: globalState.information,
+        risks: globalState.risks || [],
+        customAttributeDefinitions,
+      },
+      projectDocuments,
+      sectionNumber + 1
+    );
+    sectionNumber += projectDocuments.length;
+  }
+
+  // 11. Links Section
   const projectLinks = await diskLinkService.getLinksForProject(project.id);
   if (projectLinks.length > 0) {
     doc.addPage();
@@ -341,14 +366,14 @@ export async function exportProjectToPDF(
   // Add TOC
   addTableOfContents(doc, tocEntries, tocStartPage, tocPagesNeeded);
 
-  // Add page numbers
+  // Add Page Numbers
   addPageNumbers(doc);
 
   // Save
-  if (fileHandle) {
+  if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
     try {
-      const writable = await fileHandle.createWritable();
       const pdfBlob = doc.output('blob');
+      const writable = await (fileHandle as any).createWritable();
       await writable.write(pdfBlob);
       await writable.close();
     } catch (err) {
@@ -358,4 +383,108 @@ export async function exportProjectToPDF(
   } else {
     doc.save(defaultFilename);
   }
+}
+
+/**
+ * Export a single Document as the primary PDF report
+ */
+export async function exportSingleDocumentToPDF(
+  document: ArtifactDocument,
+  globalState: {
+    requirements: Requirement[];
+    useCases: UseCase[];
+    testCases: TestCase[];
+    information: Information[];
+    risks?: Risk[];
+  },
+  currentUserName?: string
+): Promise<void> {
+  // 0. Request File Handle
+  let fileHandle: FileSystemFileHandle | null = null;
+  const defaultFilename = `Document_${document.id}_${document.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+
+  if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
+    try {
+      fileHandle = await (window as any).showSaveFilePicker({
+        suggestedName: defaultFilename,
+        types: [{ description: 'PDF Document', accept: { 'application/pdf': ['.pdf'] } }],
+      });
+    } catch (err) {
+      debug.log('Export cancelled or failed:', err);
+      return;
+    }
+  }
+
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const tocEntries: TOCEntry[] = [];
+
+  // 1. Cover Page (Simplified for Document)
+  doc.setFontSize(24);
+  doc.setFont('helvetica', 'bold');
+  doc.text(document.title, pageWidth / 2, 80, { align: 'center' });
+
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Requirements Project Document', pageWidth / 2, 95, { align: 'center' });
+
+  if (document.description) {
+    doc.setFontSize(11);
+    const descLines = doc.splitTextToSize(document.description, pageWidth - 40);
+    doc.text(descLines, pageWidth / 2, 110, { align: 'center', maxWidth: pageWidth - 40 });
+  }
+
+  doc.setFontSize(10);
+  doc.text(`ID: ${document.id}`, pageWidth / 2, 140, { align: 'center' });
+  doc.text(`Version: ${document.revision || '01'}`, pageWidth / 2, 146, { align: 'center' });
+
+  if (currentUserName) {
+    doc.text(`Exported by: ${currentUserName}`, pageWidth / 2, 160, { align: 'center' });
+  }
+
+  // 2. Reserve ToC Pages
+  const tocPagesReserved = 1;
+  const tocStartPage = 2;
+
+  // 3. Document Content
+  const customAttributeDefinitions = await diskCustomAttributeService.getAllDefinitions();
+
+  doc.addPage(); // TOC placeholder
+  doc.addPage(); // Content start
+  const currentPage = 3;
+
+  await renderFlatStructure(
+    {
+      doc,
+      requirements: globalState.requirements,
+      useCases: globalState.useCases,
+      testCases: globalState.testCases,
+      information: globalState.information,
+      risks: globalState.risks || [],
+      customAttributeDefinitions,
+      tocEntries,
+    },
+    document.structure,
+    20,
+    currentPage,
+    [] // Start with no base numbering to make it primary
+  );
+
+  // 4. Add TOC
+  addTableOfContents(doc, tocEntries, tocStartPage, tocPagesReserved);
+
+  // 5. Add Page Numbers
+  addPageNumbers(doc);
+
+  // 6. Save
+  if (fileHandle) {
+    const pdfBlob = doc.output('blob');
+    const writable = await (fileHandle as any).createWritable();
+    await writable.write(pdfBlob);
+    await writable.close();
+  } else {
+    doc.save(defaultFilename);
+  }
+
+  debug.log('Document export completed successfully');
 }

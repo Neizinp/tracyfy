@@ -39,3 +39,6 @@ export { UserSettingsModal } from './UserSettingsModal';
 export { AdvancedSearchModal } from './AdvancedSearchModal';
 export { CustomAttributeDefinitionModal } from './CustomAttributeDefinitionModal';
 export { WorkflowModal } from './WorkflowModal';
+export { DocumentList } from './DocumentList';
+export { DocumentModal } from './DocumentModal';
+export { DocumentEditor } from './DocumentEditor';

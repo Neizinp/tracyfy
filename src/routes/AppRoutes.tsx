@@ -12,6 +12,7 @@ import {
   ProjectManual as HelpPage,
   HelpCenter,
   EngineeringGuide,
+  DocumentsPage,
 } from '../pages';
 import { LinksPage } from '../pages/LinksPage';
 import { WorkflowsPage } from '../pages/WorkflowsPage';
@@ -26,6 +27,7 @@ export function AppRoutes() {
         <Route path="traceability" element={<TraceabilityDashboardPage />} />
         <Route path="links" element={<LinksPage />} />
         <Route path="workflows" element={<WorkflowsPage />} />
+        <Route path="documents" element={<DocumentsPage />} />
 
         <Route path="use-cases" element={<UseCasesPage />} />
         <Route path="test-cases" element={<TestCasesPage />} />

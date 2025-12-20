@@ -136,7 +136,7 @@ describe('jsonExportUtils', () => {
   };
 
   it('should export filtered data correctly', async () => {
-    await exportProjectToJSON(mockProject, globalState, ['r1'], ['u1'], ['t1'], ['i1']);
+    await exportProjectToJSON(mockProject, globalState, ['r1'], ['u1'], ['t1'], ['i1'], [], []);
 
     expect(mockWrite).toHaveBeenCalled();
     const callArg = mockWrite.mock.calls[0][0];
@@ -165,7 +165,7 @@ describe('jsonExportUtils', () => {
   });
 
   it('should use showSaveFilePicker if available', async () => {
-    await exportProjectToJSON(mockProject, globalState, ['r1'], [], [], []);
+    await exportProjectToJSON(mockProject, globalState, ['r1'], [], [], [], [], []);
 
     expect(mockShowSaveFilePicker).toHaveBeenCalledWith({
       suggestedName: 'Test_Project_Baseline_1_0.json',
@@ -183,7 +183,7 @@ describe('jsonExportUtils', () => {
   it('should fallback to download if showSaveFilePicker is not available', async () => {
     delete (window as unknown as Record<string, unknown>).showSaveFilePicker;
 
-    await exportProjectToJSON(mockProject, globalState, ['r1'], [], [], []);
+    await exportProjectToJSON(mockProject, globalState, ['r1'], [], [], [], [], []);
 
     expect(mockCreateElement).toHaveBeenCalledWith('a');
     expect(mockAppendChild).toHaveBeenCalled();
@@ -218,7 +218,9 @@ describe('jsonExportUtils', () => {
       risks: [mockRisk],
     };
 
-    await exportProjectToJSON(projectWithRisks, globalStateWithRisks, [], [], [], []);
+    const riskIds = ['RISK-001'];
+
+    await exportProjectToJSON(projectWithRisks, globalStateWithRisks, [], [], [], [], riskIds, []);
 
     expect(mockWrite).toHaveBeenCalled();
     const callArg = mockWrite.mock.calls[0][0];

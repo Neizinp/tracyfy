@@ -14,6 +14,7 @@ interface ExportModalProps {
     testCases: number;
     information: number;
     risks: number;
+    documents: number;
     links: number;
   };
 }
@@ -36,6 +37,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [includeTestCases, setIncludeTestCases] = useState(true);
   const [includeInformation, setIncludeInformation] = useState(true);
   const [includeRisks, setIncludeRisks] = useState(true);
+  const [includeDocuments, setIncludeDocuments] = useState(true);
   const [includeLinks, setIncludeLinks] = useState(true);
 
   // PDF-specific toggles
@@ -64,6 +66,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       includeTestCases,
       includeInformation,
       includeRisks,
+      includeDocuments,
       includeLinks,
       includeTitlePage,
       includeRevisionHistory,
@@ -343,6 +346,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     {artifactCounts && (
                       <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
                         [{artifactCounts.risks}]
+                      </span>
+                    )}
+                  </span>
+                </label>
+                <label style={checkboxStyle}>
+                  <input
+                    type="checkbox"
+                    checked={includeDocuments}
+                    onChange={(e) => setIncludeDocuments(e.target.checked)}
+                  />
+                  <span>
+                    Documents{' '}
+                    {artifactCounts?.documents !== undefined && (
+                      <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
+                        [{artifactCounts.documents}]
                       </span>
                     )}
                   </span>

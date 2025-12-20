@@ -7,6 +7,8 @@ import type {
   Project,
   Risk,
   ArtifactLink,
+  ArtifactDocument,
+  DocumentEntry,
 } from '../types';
 import type {
   CustomAttributeDefinition,
@@ -496,5 +498,58 @@ export function markdownToCustomAttributeDefinition(markdown: string): CustomAtt
     lastModified: (frontmatter.lastModified as number) || Date.now(),
     isDeleted: (frontmatter.isDeleted as boolean) || false,
     deletedAt: (frontmatter.deletedAt as number) || undefined,
+  };
+}
+
+/**
+ * Convert an ArtifactDocument to Markdown with YAML frontmatter
+ */
+export function documentToMarkdown(document: ArtifactDocument): string {
+  const frontmatter = {
+    id: document.id,
+    title: document.title,
+    projectId: document.projectId,
+    revision: document.revision,
+    dateCreated: document.dateCreated,
+    lastModified: document.lastModified,
+    isDeleted: document.isDeleted || false,
+    deletedAt: document.deletedAt || null,
+    structure: document.structure || [],
+    customAttributes: filterValidCustomAttributes(document.customAttributes),
+  };
+
+  const yaml = objectToYaml(frontmatter);
+
+  const body = `# ${document.title}
+
+${document.description || ''}
+`.trim();
+
+  return `${yaml}\n\n${body}`;
+}
+
+/**
+ * Parse Markdown content into an ArtifactDocument object
+ */
+export function markdownToDocument(markdown: string): ArtifactDocument {
+  const { frontmatter, body } = parseYamlFrontmatter(markdown);
+
+  // Extract description from body (skip title line)
+  const lines = body.split('\n');
+  const descriptionLines = lines.filter((line) => !line.startsWith('# '));
+  const description = descriptionLines.join('\n').trim();
+
+  return {
+    id: (frontmatter.id as string) || '',
+    title: (frontmatter.title as string) || '',
+    description: description,
+    projectId: (frontmatter.projectId as string) || '',
+    structure: ensureArray<DocumentEntry>(frontmatter.structure),
+    dateCreated: (frontmatter.dateCreated as number) || Date.now(),
+    lastModified: (frontmatter.lastModified as number) || Date.now(),
+    isDeleted: (frontmatter.isDeleted as boolean) || false,
+    deletedAt: (frontmatter.deletedAt as number) || undefined,
+    revision: (frontmatter.revision as string) || '01',
+    customAttributes: ensureArray<CustomAttributeValue>(frontmatter.customAttributes),
   };
 }

@@ -1,7 +1,14 @@
 import type { CustomAttributeValue } from './customAttributes';
 import type { ArtifactLink } from './link';
 
-export type ArtifactType = 'requirements' | 'useCases' | 'testCases' | 'information' | 'risks';
+export type ArtifactType =
+  | 'requirements'
+  | 'useCases'
+  | 'testCases'
+  | 'information'
+  | 'risks'
+  | 'documents'
+  | 'workflows';
 
 export interface BaseArtifact {
   id: string;
@@ -11,6 +18,22 @@ export interface BaseArtifact {
   deletedAt?: number;
   customAttributes?: CustomAttributeValue[];
   linkedArtifacts?: ArtifactLink[];
+}
+
+export interface DocumentEntry {
+  type: 'heading' | 'artifact';
+  id?: string; // id of the artifact if type === 'artifact'
+  artifactType?: ArtifactType; // type of the artifact
+  title?: string; // custom title OR heading text
+  level?: number; // 1, 2, 3... for headings
+}
+
+export interface ArtifactDocument extends BaseArtifact {
+  title: string;
+  description?: string;
+  projectId: string;
+  structure: DocumentEntry[];
+  dateCreated: number;
 }
 
 export interface Requirement extends BaseArtifact {

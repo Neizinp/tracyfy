@@ -1,6 +1,13 @@
 import React from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
-import { RequirementModal, UseCaseModal, TestCaseModal, InformationModal, RiskModal } from '../';
+import {
+  RequirementModal,
+  UseCaseModal,
+  TestCaseModal,
+  InformationModal,
+  RiskModal,
+  DocumentModal,
+} from '../';
 import {
   useUI,
   useRequirements,
@@ -8,8 +15,12 @@ import {
   useTestCases,
   useInformation,
   useRisks,
+  useDocuments,
+  useGlobalState,
+  useUser,
 } from '../../app/providers';
-import type { Information, Risk, UseCase } from '../../types';
+import type { Information, Risk, UseCase, ArtifactDocument } from '../../types';
+import { exportSingleDocumentToPDF } from '../../utils/pdf/pdfMainExport';
 
 export const ArtifactModals: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -24,6 +35,7 @@ export const ArtifactModals: React.FC = () => {
   const { handleAddInformation, handleUpdateInformation, handleDeleteInformation } =
     useInformation();
   const { handleAddRisk, handleUpdateRisk, handleDeleteRisk } = useRisks();
+  const { handleAddDocument, handleUpdateDocument, handleDeleteDocument } = useDocuments();
   const {
     closeModal,
     clearNavigationStack,
@@ -31,7 +43,14 @@ export const ArtifactModals: React.FC = () => {
     popNavigationStack,
     editingRequirement,
     editingUseCase,
+    editingDocument,
   } = ui;
+  const globalState = useGlobalState();
+  const { currentUser } = useUser();
+
+  const handleDocumentExport = async (doc: ArtifactDocument) => {
+    await exportSingleDocumentToPDF(doc, globalState, currentUser?.name);
+  };
 
   const handleFullClose = () => {
     // Dispatch event to block deep link from re-opening
@@ -79,6 +98,18 @@ export const ArtifactModals: React.FC = () => {
       await handleUpdateRisk(data.id, data.updates);
     } else {
       await handleAddRisk(data as Omit<Risk, 'id' | 'lastModified' | 'revision'>);
+    }
+  };
+
+  const handleDocumentSubmit = async (
+    data:
+      | Omit<ArtifactDocument, 'id' | 'lastModified' | 'revision'>
+      | { id: string; updates: Partial<ArtifactDocument> }
+  ) => {
+    if ('id' in data && 'updates' in data) {
+      await handleUpdateDocument(data.id, data.updates);
+    } else {
+      await handleAddDocument(data as Omit<ArtifactDocument, 'id' | 'lastModified' | 'revision'>);
     }
   };
 
@@ -140,6 +171,16 @@ export const ArtifactModals: React.FC = () => {
         onClose={handleFullClose}
         onSubmit={handleRiskSubmit}
         onDelete={handleDeleteRisk}
+        onBack={navigationStack.length > 0 ? popNavigationStack : undefined}
+      />
+
+      <DocumentModal
+        isOpen={ui.activeModal.type === 'documents'}
+        document={editingDocument}
+        onClose={handleFullClose}
+        onSubmit={handleDocumentSubmit}
+        onDelete={handleDeleteDocument}
+        onExport={handleDocumentExport}
         onBack={navigationStack.length > 0 ? popNavigationStack : undefined}
       />
     </>

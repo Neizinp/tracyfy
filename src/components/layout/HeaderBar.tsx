@@ -56,6 +56,7 @@ interface HeaderBarProps {
   onNewWorkflow?: () => void;
   onNewLink?: () => void;
   onNewCustomAttribute?: () => void;
+  onNewDocument?: () => void;
   onImport?: () => void;
   onImportExcel?: () => void;
   onOpenGlobalLibrary?: () => void;
@@ -93,6 +94,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   currentUserName,
   onOpenAdvancedSearch,
   onHelp,
+  onNewDocument,
 }) => {
   const {
     isExportMenuOpen,
@@ -275,7 +277,16 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   }}
                   icon={Plus}
                   label="New Information"
-                  showBorder
+                />
+              )}
+              {onNewDocument && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    onNewDocument();
+                    setIsCreateMenuOpen(false);
+                  }}
+                  icon={Plus}
+                  label="New Document"
                 />
               )}
               {onNewRisk && (

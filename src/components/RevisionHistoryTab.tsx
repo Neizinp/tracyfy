@@ -9,11 +9,12 @@ import {
   markdownToTestCase,
   markdownToInformation,
   markdownToRisk,
+  markdownToDocument,
 } from '../utils/markdownUtils';
 
 interface RevisionHistoryTabProps {
   artifactId: string;
-  artifactType: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks';
+  artifactType: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks' | 'documents';
 }
 
 export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
@@ -69,6 +70,8 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
                 parsed = markdownToInformation(content);
               } else if (artifactType === 'risks') {
                 parsed = markdownToRisk(content);
+              } else if (artifactType === 'documents') {
+                parsed = markdownToDocument(content);
               }
               // Extra debug log
 
