@@ -241,17 +241,37 @@ class GitSyncService {
       let localOID: string | undefined;
       let remoteOID: string | undefined;
 
-      // Helper to get commit details
-      const getCommits = async (lRef: string, rRef: string) => {
+      // Helper to get commit details by walking history until we find the merge base
+      const getCommits = async (localOid: string, remoteOid: string) => {
         try {
-          const localLog = await this.getHistoryFn(undefined, 50, lRef);
-          const remoteLog = await this.getHistoryFn(undefined, 50, rRef);
+          console.log(
+            '[getSyncStatus] Finding commits between',
+            localOid.slice(0, 7),
+            'and',
+            remoteOid.slice(0, 7)
+          );
 
-          const localHashes = new Set(localLog.map((c) => c.hash));
-          const remoteHashes = new Set(remoteLog.map((c) => c.hash));
+          // Get local history
+          const localLog = await this.getHistoryFn(undefined, 100, 'HEAD');
 
-          const aheadCommits = localLog.filter((c) => !remoteHashes.has(c.hash));
-          const behindCommits = remoteLog.filter((c) => !localHashes.has(c.hash));
+          // Find commits that are ahead: everything from HEAD until we find remoteOid
+          const aheadCommits: CommitInfo[] = [];
+          for (const commit of localLog) {
+            if (commit.hash === remoteOid) break;
+            aheadCommits.push(commit);
+          }
+
+          console.log('[getSyncStatus] Found', aheadCommits.length, 'ahead commits');
+
+          // For behind commits, get remote history and find commits until we reach localOid
+          const remoteLog = await this.getHistoryFn(undefined, 100, remoteRef);
+          const behindCommits: CommitInfo[] = [];
+          for (const commit of remoteLog) {
+            if (commit.hash === localOid) break;
+            behindCommits.push(commit);
+          }
+
+          console.log('[getSyncStatus] Found', behindCommits.length, 'behind commits');
 
           return { aheadCommits, behindCommits };
         } catch (e) {
@@ -290,7 +310,7 @@ class GitSyncService {
         const behind = behindResult === true;
         const diverged = !ahead && !behind;
 
-        const { aheadCommits, behindCommits } = await getCommits('HEAD', remoteRef);
+        const { aheadCommits, behindCommits } = await getCommits(localOID, remoteOID);
 
         return {
           ahead: ahead && !behind,
@@ -331,7 +351,7 @@ class GitSyncService {
         const behind = behindResult === true;
         const diverged = !ahead && !behind;
 
-        const { aheadCommits, behindCommits } = await getCommits('HEAD', remoteRef);
+        const { aheadCommits, behindCommits } = await getCommits(localOID, remoteOID);
 
         return {
           ahead: ahead && !behind,

@@ -60,20 +60,28 @@ export function useSidebar() {
 
   // Function to check sync status
   const checkSyncStatus = useCallback(async () => {
-    if (!realGitService.isInitialized()) return;
+    if (!realGitService.isInitialized()) {
+      console.log('[useSidebar] Git not initialized, skipping sync status check');
+      return;
+    }
     try {
+      console.log('[useSidebar] Checking sync status...');
       const status = await realGitService.getSyncStatus();
+      console.log('[useSidebar] Sync status result:', JSON.stringify(status, null, 2));
       setSyncStatus(status);
     } catch (err) {
-      debug.warn('[useSidebar] Failed to get sync status:', err);
+      console.error('[useSidebar] Failed to get sync status:', err);
     }
   }, []);
 
   useEffect(() => {
     if (isReady) {
+      console.log('[useSidebar] FileSystem ready, checking for remote...');
       checkHasRemote().then((remote) => {
+        console.log('[useSidebar] hasRemote:', remote);
         setHasRemote(remote);
         if (remote) {
+          console.log('[useSidebar] Remote found, checking sync status...');
           checkSyncStatus();
         }
       });
