@@ -31,30 +31,30 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const currentUser = users.find((u) => u.id === currentUserId) || null;
 
-  const createUser = useCallback(
-    async (name: string): Promise<User> => {
-      const id = await idService.getNextId('users');
-      const now = Date.now();
-      const newUser: User = {
-        id,
-        name,
-        dateCreated: now,
-        lastModified: now,
-      };
+  const createUser = useCallback(async (name: string): Promise<User> => {
+    const id = await idService.getNextId('users');
+    const now = Date.now();
+    const newUser: User = {
+      id,
+      name,
+      dateCreated: now,
+      lastModified: now,
+    };
 
-      await userService.save(newUser);
-      setUsers((prev) => [...prev, newUser]);
+    await userService.save(newUser);
+    setUsers((prev) => [...prev, newUser]);
 
-      // If no current user, set this as current
-      if (!currentUserId) {
-        await diskProjectService.setCurrentUserId(id);
-        setCurrentUserId(id);
+    // If no current user, set this as current
+    setCurrentUserId((prev) => {
+      if (!prev) {
+        diskProjectService.setCurrentUserId(id);
+        return id;
       }
+      return prev;
+    });
 
-      return newUser;
-    },
-    [currentUserId]
-  );
+    return newUser;
+  }, []);
 
   const updateUser = useCallback(async (user: User): Promise<void> => {
     const updatedUser = { ...user, lastModified: Date.now() };
@@ -119,7 +119,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     loadUsers();
-  }, [isReady, createUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady]); // createUser intentionally excluded to prevent infinite loop
 
   const value: UserContextValue = {
     users,

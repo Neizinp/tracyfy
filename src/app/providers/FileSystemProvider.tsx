@@ -83,9 +83,13 @@ interface ExtendedWindow extends Window {
 const isE2EMode = () =>
   typeof window !== 'undefined' && (window as unknown as ExtendedWindow).__E2E_TEST_MODE__;
 
+// Check E2E mode once at module load time for initial state
+const initialE2EMode = isE2EMode() || false;
+
 export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isReady, setIsReady] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isReady, setIsReady] = useState(initialE2EMode);
+  const [isLoading, setIsLoading] = useState(!initialE2EMode);
+
   const [directoryName, setDirectoryName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingChanges, setPendingChanges] = useState<FileStatus[]>([]);
