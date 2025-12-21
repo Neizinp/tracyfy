@@ -13,6 +13,7 @@ import type {
   TestCaseColumnVisibility,
   InformationColumnVisibility,
   RiskColumnVisibility,
+  DocumentColumnVisibility,
   ActiveModal,
   SelectedArtifact,
   ModalType,
@@ -118,6 +119,8 @@ export interface UIContextValue {
   setInformationColumnVisibility: (cols: InformationColumnVisibility) => void;
   riskColumnVisibility: RiskColumnVisibility;
   setRiskColumnVisibility: (cols: RiskColumnVisibility) => void;
+  documentColumnVisibility: DocumentColumnVisibility;
+  setDocumentColumnVisibility: (cols: DocumentColumnVisibility) => void;
 
   // Search
   searchQuery: string;

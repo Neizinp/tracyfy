@@ -26,6 +26,7 @@ import type {
   TestCaseColumnVisibility,
   InformationColumnVisibility,
   RiskColumnVisibility,
+  DocumentColumnVisibility,
   ExportOptions,
 } from '../types';
 
@@ -158,6 +159,27 @@ export const ProjectLayout: React.FC = () => {
       { key: 'mitigation', label: 'Mitigation' },
       { key: 'contingency', label: 'Contingency' },
       { key: 'created', label: 'Created' },
+      { key: 'projects', label: 'Project(s)' },
+    ];
+
+    const custom = customDefs.map((def) => ({
+      key: def.id,
+      label: def.name,
+    }));
+
+    return [...base, ...custom];
+  }, [getDefinitionsForType]);
+
+  const documentColumnsDynamic = useMemo(() => {
+    const customDefs = getDefinitionsForType('document');
+    const base: { key: string; label: string; alwaysVisible?: boolean }[] = [
+      { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
+      { key: 'revision', label: 'Rev' },
+      { key: 'status', label: 'Status' },
+      { key: 'author', label: 'Author' },
+      { key: 'structure', label: 'Items' },
+      { key: 'created', label: 'Created' },
+      { key: 'description', label: 'Description' },
       { key: 'projects', label: 'Project(s)' },
     ];
 
@@ -576,6 +598,39 @@ export const ProjectLayout: React.FC = () => {
                 />
               </>
             )}
+            {location.pathname.includes('/documents') && (
+              <>
+                <button
+                  onClick={() => {
+                    ui.setEditingDocument(null);
+                    ui.setIsEditDocumentModalOpen(true);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 12px',
+                    backgroundColor: 'var(--color-accent)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 500,
+                  }}
+                >
+                  <Plus size={16} />
+                  Add
+                </button>
+                <GenericColumnSelector
+                  columns={documentColumnsDynamic}
+                  visibleColumns={ui.documentColumnVisibility as Record<string, boolean>}
+                  onColumnVisibilityChange={(cols) =>
+                    ui.setDocumentColumnVisibility(cols as DocumentColumnVisibility)
+                  }
+                />
+              </>
+            )}
             {location.pathname.includes('/links') && (
               <button
                 onClick={() => ui.setIsLinkModalOpen(true)}
@@ -621,27 +676,6 @@ export const ProjectLayout: React.FC = () => {
             {location.pathname.includes('/workflows') && (
               <button
                 onClick={() => ui.setIsWorkflowModalOpen(true)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 12px',
-                  backgroundColor: 'var(--color-accent)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 500,
-                }}
-              >
-                <Plus size={16} />
-                Add
-              </button>
-            )}
-            {location.pathname.includes('/documents') && (
-              <button
-                onClick={() => ui.openModal('documents')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

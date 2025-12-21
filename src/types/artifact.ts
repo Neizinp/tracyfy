@@ -34,6 +34,8 @@ export interface ArtifactDocument extends BaseArtifact {
   projectId: string;
   structure: DocumentEntry[];
   dateCreated: number;
+  author?: string;
+  status?: string;
 }
 
 export interface Requirement extends BaseArtifact {

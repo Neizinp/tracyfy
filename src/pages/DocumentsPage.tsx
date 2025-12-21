@@ -6,7 +6,7 @@ import type { ArtifactDocument } from '../types';
 
 export const DocumentsPage: React.FC = () => {
   const { documents, handleEdit } = useDocuments();
-  const { searchQuery } = useUI();
+  const { searchQuery, documentColumnVisibility } = useUI();
 
   const { sortedData, sortConfig, handleSortChange } = useArtifactFilteredData<ArtifactDocument>(
     documents,
@@ -20,6 +20,7 @@ export const DocumentsPage: React.FC = () => {
     <DocumentList
       documents={sortedData}
       onEdit={handleEdit}
+      visibleColumns={documentColumnVisibility}
       sortConfig={sortConfig}
       onSortChange={handleSortChange}
     />

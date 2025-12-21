@@ -41,6 +41,8 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
     setTitle,
     description,
     setDescription,
+    author,
+    setAuthor,
     status,
     setStatus,
     showDeleteConfirm,
@@ -50,6 +52,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
     structure,
     setStructure,
     handleSubmit,
+    currentUser,
   } = useDocumentForm({ isOpen, document: document, onClose, onSubmit });
 
   useKeyboardShortcuts({
@@ -141,6 +144,9 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
             status={status}
             setStatus={setStatus}
             statusOptions={statusOptions}
+            author={author}
+            setAuthor={setAuthor}
+            currentUser={currentUser?.name}
             isEditMode={isEditMode}
             dateCreated={document?.dateCreated}
           />

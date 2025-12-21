@@ -71,6 +71,18 @@ export interface RiskColumnVisibility {
   [key: string]: boolean | undefined;
 }
 
+export interface DocumentColumnVisibility {
+  idTitle: boolean; // Always true
+  description: boolean;
+  structure: boolean;
+  created: boolean;
+  revision: boolean;
+  projects: boolean;
+  author: boolean;
+  status: boolean;
+  [key: string]: boolean | undefined;
+}
+
 export type ViewType =
   | 'tree'
   | 'detailed'

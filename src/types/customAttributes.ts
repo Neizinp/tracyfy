@@ -15,6 +15,7 @@ export type ApplicableArtifactType =
   | 'testCase'
   | 'information'
   | 'risk'
+  | 'document'
   | 'link';
 
 // Definition of a custom attribute (stored globally in custom-attributes/)

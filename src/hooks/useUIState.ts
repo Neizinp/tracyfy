@@ -11,6 +11,7 @@ import type {
   TestCaseColumnVisibility,
   InformationColumnVisibility,
   RiskColumnVisibility,
+  DocumentColumnVisibility,
   ActiveModal,
   SelectedArtifact,
   ModalType,
@@ -122,6 +123,18 @@ export function useUIState() {
     revision: false,
     projects: false,
   });
+
+  const [documentColumnVisibility, setDocumentColumnVisibility] =
+    useState<DocumentColumnVisibility>({
+      idTitle: true,
+      description: true,
+      structure: true,
+      created: true,
+      revision: false,
+      projects: false,
+      author: true,
+      status: true,
+    });
 
   // Modal Control Actions
   const openModal = useCallback((type: ModalType, isEdit = false, artifact?: SelectedArtifact) => {
@@ -335,6 +348,8 @@ export function useUIState() {
     clearNavigationStack,
     riskColumnVisibility,
     setRiskColumnVisibility,
+    documentColumnVisibility,
+    setDocumentColumnVisibility,
 
     // Helpers
     handleGlobalLibrarySelect: (id: string) => {
