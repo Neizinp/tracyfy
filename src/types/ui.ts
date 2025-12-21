@@ -1,54 +1,51 @@
 import type { ProjectBaseline } from './git';
 
 export interface ColumnVisibility {
-  idTitle: boolean; // Always true, not user-configurable
+  idTitle: boolean;
+  text: boolean;
   description: boolean;
-  text: boolean; // Requirement Text
-  rationale: boolean;
-  author: boolean;
-  verification: boolean;
   priority: boolean;
   status: boolean;
-  comments: boolean;
+  category: boolean;
   created: boolean;
-  approved: boolean;
+  revision: boolean;
   projects: boolean;
+  author: boolean;
   [key: string]: boolean | undefined;
 }
 
 export interface UseCaseColumnVisibility {
-  idTitle: boolean; // Always true
+  idTitle: boolean;
   description: boolean;
   actor: boolean;
   priority: boolean;
   status: boolean;
-  preconditions: boolean;
-  mainFlow: boolean;
-  alternativeFlows: boolean;
-  postconditions: boolean;
+  created: boolean;
   revision: boolean;
   projects: boolean;
+  author: boolean;
   [key: string]: boolean | undefined;
 }
 
 export interface TestCaseColumnVisibility {
-  idTitle: boolean; // Always true
+  idTitle: boolean;
   description: boolean;
-  requirements: boolean;
   priority: boolean;
   status: boolean;
-  author: boolean;
-  lastRun: boolean;
+  requirements: boolean;
   created: boolean;
   revision: boolean;
   projects: boolean;
+  author: boolean;
   [key: string]: boolean | undefined;
 }
 
 export interface InformationColumnVisibility {
-  idTitle: boolean; // Always true
+  idTitle: boolean;
+  description: boolean;
   type: boolean;
-  text: boolean;
+  status: boolean;
+  author: boolean;
   created: boolean;
   revision: boolean;
   projects: boolean;
@@ -56,7 +53,7 @@ export interface InformationColumnVisibility {
 }
 
 export interface RiskColumnVisibility {
-  idTitle: boolean; // Always true
+  idTitle: boolean;
   description: boolean;
   category: boolean;
   probability: boolean;
@@ -68,6 +65,7 @@ export interface RiskColumnVisibility {
   created: boolean;
   revision: boolean;
   projects: boolean;
+  author: boolean;
   [key: string]: boolean | undefined;
 }
 

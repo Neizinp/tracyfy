@@ -17,12 +17,14 @@ import {
   riskService,
   documentService,
 } from '../../services/artifactServices';
+import { diskLinkService } from '../../services/diskLinkService';
 import { useBackgroundTasks } from './BackgroundTasksProvider';
 import type {
   Requirement,
   UseCase,
   TestCase,
   Information,
+  Link,
   Project,
   Risk,
   ArtifactDocument,
@@ -44,6 +46,7 @@ interface FileSystemContextValue {
   information: Information[];
   risks: Risk[];
   documents: ArtifactDocument[];
+  links: Link[];
   // Git-related
   pendingChanges: FileStatus[];
   refreshStatus: () => Promise<void>;
@@ -62,6 +65,8 @@ interface FileSystemContextValue {
   deleteDocument: (id: string) => Promise<void>;
   saveProject: (project: Project) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
+  saveLink: (link: Link) => Promise<void>;
+  deleteLink: (id: string) => Promise<void>;
   createProject: (name: string, description: string) => Promise<Project>;
   setCurrentProject: (projectId: string) => Promise<void>;
   getNextId: (
@@ -75,6 +80,7 @@ interface FileSystemContextValue {
       | 'customAttributes'
       | 'workflows'
       | 'documents'
+      | 'links'
   ) => Promise<string>;
   // Reload from disk
   reloadData: () => Promise<void>;
@@ -113,6 +119,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [information, setInformation] = useState<Information[]>([]);
   const [risks, setRisks] = useState<Risk[]>([]);
   const [documents, setDocuments] = useState<ArtifactDocument[]>([]);
+  const [links, setLinks] = useState<Link[]>([]);
 
   // All data from disk
   const [projects, setProjects] = useState<Project[]>([]);
@@ -164,6 +171,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setTestCases(data.testCases);
       setInformation(data.information);
       setDocuments(data.documents);
+      setLinks(data.links);
 
       // Risks are not part of data.loadAll() in diskProjectService?
       // Fixed in diskProjectService now.
@@ -179,6 +187,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         information: data.information.length,
         risks: data.risks.length,
         documents: data.documents.length,
+        links: data.links.length,
       });
     } finally {
       endTask(taskId);
@@ -211,6 +220,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           setInformation([]);
           setRisks([]);
           setDocuments([]);
+          setLinks([]);
           setIsReady(true);
           setIsLoading(false);
           return;
@@ -564,6 +574,39 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [isReady]
   );
 
+  // CRUD operations - Links
+  const saveLink = useCallback(
+    async (link: Link) => {
+      if (!isReady) throw new Error('Filesystem not ready');
+      if (!isE2EMode()) {
+        await diskLinkService.save(link);
+      }
+      setLinks((prev) => {
+        const idx = prev.findIndex((l) => l.id === link.id);
+        if (idx >= 0) {
+          const updated = [...prev];
+          updated[idx] = link;
+          return updated;
+        }
+        return [...prev, link];
+      });
+      if (!isE2EMode()) await refreshStatus();
+    },
+    [isReady, refreshStatus]
+  );
+
+  const deleteLink = useCallback(
+    async (id: string) => {
+      if (!isReady) throw new Error('Filesystem not ready');
+      if (!isE2EMode()) {
+        await diskLinkService.delete(id);
+      }
+      setLinks((prev) => prev.filter((l) => l.id !== id));
+      if (!isE2EMode()) await refreshStatus();
+    },
+    [isReady, refreshStatus]
+  );
+
   // Get next ID
   const getNextId = useCallback(
     async (
@@ -673,6 +716,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         information,
         risks,
         documents,
+        links,
         // Git
         pendingChanges,
         refreshStatus,
@@ -692,6 +736,8 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         saveProject,
         createProject,
         deleteProject,
+        saveLink,
+        deleteLink,
         setCurrentProject,
         getNextId,
         reloadData,

@@ -24,7 +24,7 @@ interface RiskModalProps {
   onBack?: () => void;
 }
 
-type Tab = 'overview' | 'mitigation' | 'relationships' | 'customFields' | 'history';
+type Tab = 'overview' | 'mitigation' | 'relationships' | 'customAttributes' | 'history';
 
 export const RiskModal: React.FC<RiskModalProps> = ({
   isOpen,
@@ -53,6 +53,9 @@ export const RiskModal: React.FC<RiskModalProps> = ({
     setImpact,
     status,
     setStatus,
+    author,
+    setAuthor,
+    currentUser,
     owner,
     setOwner,
     mitigation,
@@ -134,7 +137,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({
     { id: 'overview', label: 'Overview' },
     { id: 'mitigation', label: 'Mitigation' },
     { id: 'relationships', label: 'Relationships' },
-    { id: 'customFields', label: 'Custom Attributes' },
+    { id: 'customAttributes', label: 'Custom Attributes' },
     ...(isEditMode ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
   ];
 
@@ -334,7 +337,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({
         <RevisionHistoryTab artifactId={risk.id} artifactType="risks" />
       )}
 
-      {activeTab === 'customFields' && (
+      {activeTab === 'customAttributes' && (
         <CustomAttributeEditor
           definitions={customAttributeDefinitions}
           values={customAttributes}

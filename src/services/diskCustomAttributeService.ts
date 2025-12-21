@@ -61,7 +61,7 @@ class DiskCustomAttributeService extends BaseArtifactService<CustomAttributeDefi
   async createDefinition(
     def: Omit<CustomAttributeDefinition, 'id' | 'dateCreated' | 'lastModified'>
   ): Promise<CustomAttributeDefinition> {
-    const nextId = await idService.getNextIdWithSync('ATTR');
+    const nextId = await idService.getNextIdWithSync('customAttributes');
     const newDef: CustomAttributeDefinition = {
       ...def,
       id: nextId,

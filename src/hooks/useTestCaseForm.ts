@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import type { TestCase } from '../types';
 import { useUI } from '../app/providers';
 import { useArtifactForm } from './useArtifactForm';
@@ -13,7 +13,7 @@ interface UseTestCaseFormOptions {
   onDelete: (id: string) => void;
 }
 
-type Tab = 'overview' | 'relationships' | 'customFields' | 'history';
+type Tab = 'overview' | 'relationships' | 'customAttributes' | 'history';
 
 export function useTestCaseForm({
   isOpen,
@@ -25,6 +25,10 @@ export function useTestCaseForm({
 }: UseTestCaseFormOptions) {
   useUI();
   const handleNavigateToArtifact = useArtifactNavigation(onClose);
+
+  // Specialized fields for Test Cases
+  const [steps, setSteps] = useState('');
+  const [expectedResult, setExpectedResult] = useState('');
 
   const {
     isEditMode,
@@ -39,6 +43,8 @@ export function useTestCaseForm({
     setPriority,
     status,
     setStatus,
+    author,
+    setAuthor,
     customAttributes,
     setCustomAttributes,
     handleSubmit: baseHandleSubmit,
@@ -58,9 +64,25 @@ export function useTestCaseForm({
     defaultTab: 'overview',
   });
 
+  // Sync specialized fields
+  useEffect(() => {
+    if (isOpen) {
+      if (testCase) {
+        setSteps(testCase.steps || '');
+        setExpectedResult(testCase.expectedResult || '');
+      } else {
+        setSteps('');
+        setExpectedResult('');
+      }
+    }
+  }, [isOpen, testCase]);
+
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
-      const updates: Partial<TestCase> = {};
+      const updates: Partial<TestCase> = {
+        steps,
+        expectedResult,
+      };
 
       // Update lastRun when status changes to passed/failed
       if (
@@ -72,7 +94,7 @@ export function useTestCaseForm({
 
       baseHandleSubmit(e, updates);
     },
-    [baseHandleSubmit, status, testCase]
+    [baseHandleSubmit, status, testCase, steps, expectedResult]
   );
 
   return {
@@ -89,10 +111,16 @@ export function useTestCaseForm({
     setTitle,
     description,
     setDescription,
+    steps,
+    setSteps,
+    expectedResult,
+    setExpectedResult,
     priority,
     setPriority,
     status,
     setStatus,
+    author,
+    setAuthor,
     customAttributes,
     setCustomAttributes,
 

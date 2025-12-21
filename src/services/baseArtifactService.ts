@@ -16,6 +16,7 @@ export interface ArtifactSerializer<T> {
 export class BaseArtifactService<T extends { id: string }> extends BaseDiskService {
   private typeKey: string;
   private serializer: ArtifactSerializer<T>;
+  private listeners: Set<() => void> = new Set();
 
   constructor(typeKey: string, serializer: ArtifactSerializer<T>) {
     super();
@@ -39,6 +40,30 @@ export class BaseArtifactService<T extends { id: string }> extends BaseDiskServi
     return config;
   }
 
+  /**
+   * Subscribe to changes (save/delete) in this artifact type
+   */
+  public subscribe(callback: () => void): () => void {
+    this.listeners.add(callback);
+    return () => this.listeners.delete(callback);
+  }
+
+  /**
+   * Notify all subscribers of a change
+   */
+  protected notify(): void {
+    this.listeners.forEach((callback) => {
+      try {
+        callback();
+      } catch (err) {
+        console.error(
+          `[BaseArtifactService] Error in subscriber callback for ${this.typeKey}:`,
+          err
+        );
+      }
+    });
+  }
+
   private getFilePath(id: string): string {
     const folder = this.config.folder;
     // Standardize on .md for all text-based storage including counters
@@ -60,6 +85,7 @@ export class BaseArtifactService<T extends { id: string }> extends BaseDiskServi
     const content = this.serializer.serialize(item);
     await this.writeTextFile(path, content, commitMessage);
     debug.log(`[BaseArtifactService] Saved ${this.typeKey}: ${item.id}`);
+    this.notify();
     return item;
   }
 
@@ -70,6 +96,7 @@ export class BaseArtifactService<T extends { id: string }> extends BaseDiskServi
     const path = this.getFilePath(id);
     await this.deleteFile(path, commitMessage);
     debug.log(`[BaseArtifactService] Deleted ${this.typeKey}: ${id}`);
+    this.notify();
   }
 
   /**

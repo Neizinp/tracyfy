@@ -32,6 +32,7 @@ import { debug } from '../utils/debug';
 import { idService } from './idService';
 import { ARTIFACT_CONFIG } from '../constants/artifactConfig';
 import type {
+  Link,
   Project,
   Requirement,
   UseCase,
@@ -50,6 +51,7 @@ import {
   projectService,
   documentService,
 } from './artifactServices';
+import { diskLinkService } from './diskLinkService';
 
 const CURRENT_PROJECT_FILE = 'current-project.md';
 const CURRENT_USER_FILE = 'current-user.md';
@@ -278,6 +280,7 @@ class DiskProjectService extends BaseDiskService {
     information: Information[];
     risks: Risk[];
     documents: ArtifactDocument[];
+    links: Link[];
   }> {
     const [
       projects,
@@ -287,6 +290,7 @@ class DiskProjectService extends BaseDiskService {
       information,
       risks,
       documents,
+      links,
       currentProjectId,
     ] = await Promise.all([
       this.loadAllProjects(),
@@ -296,6 +300,7 @@ class DiskProjectService extends BaseDiskService {
       informationService.loadAll(),
       riskService.loadAll(),
       documentService.loadAll(),
+      diskLinkService.getAllLinks(),
       this.getCurrentProjectId(),
     ]);
 
@@ -308,6 +313,7 @@ class DiskProjectService extends BaseDiskService {
       information,
       risks,
       documents,
+      links,
     };
   }
 

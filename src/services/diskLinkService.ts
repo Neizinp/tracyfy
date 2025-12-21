@@ -82,7 +82,8 @@ class DiskLinkService extends BaseArtifactService<Link> {
   async getLinksForProject(projectId: string): Promise<Link[]> {
     const allLinks = await this.getAllLinks();
     return allLinks.filter(
-      (link) => !link.projectIds || link.projectIds.length === 0 || link.projectIds.includes(projectId)
+      (link) =>
+        !link.projectIds || link.projectIds.length === 0 || link.projectIds.includes(projectId)
     );
   }
 
@@ -126,7 +127,7 @@ class DiskLinkService extends BaseArtifactService<Link> {
     type: LinkType,
     projectIds: string[] = []
   ): Promise<Link> {
-    const nextId = await idService.getNextIdWithSync('LINK');
+    const nextId = await idService.getNextIdWithSync('links');
     const link: Link = {
       id: nextId,
       sourceId,
@@ -135,6 +136,7 @@ class DiskLinkService extends BaseArtifactService<Link> {
       projectIds,
       dateCreated: Date.now(),
       lastModified: Date.now(),
+      revision: '01',
     };
     return this.save(link);
   }

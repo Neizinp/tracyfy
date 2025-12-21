@@ -193,6 +193,17 @@ export const RiskList: React.FC<RiskListProps> = ({
         ),
       },
       {
+        key: 'author',
+        label: 'Author',
+        width: '120px',
+        visible: visibleColumns.author,
+        render: (risk) => (
+          <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+            {risk.author || 'Unassigned'}
+          </span>
+        ),
+      },
+      {
         key: 'mitigation',
         label: 'Mitigation',
         minWidth: '200px',
@@ -232,6 +243,8 @@ export const RiskList: React.FC<RiskListProps> = ({
               'contingency',
               'created',
               'projects',
+              'author',
+              'revision',
             ].includes(key) && visibleColumns[key]
         )
         .map((key) => {

@@ -19,7 +19,8 @@ export type ArtifactType =
   | 'information'
   | 'risks'
   | 'workflows'
-  | 'documents';
+  | 'documents'
+  | 'links';
 
 export interface CRUDOptions<T> {
   type: ArtifactType;

@@ -49,9 +49,10 @@ export function useUIState() {
     verification: true,
     priority: true,
     status: true,
+    category: true,
     comments: true,
     created: true,
-    approved: true,
+    revision: true,
     projects: true,
   });
 
@@ -64,9 +65,10 @@ export function useUIState() {
     verification: true,
     priority: true,
     status: true,
+    category: false,
     comments: false,
     created: false,
-    approved: false,
+    revision: false,
     projects: false,
   });
 
@@ -77,12 +79,10 @@ export function useUIState() {
     actor: true,
     priority: true,
     status: true,
-    preconditions: false,
-    mainFlow: true,
-    alternativeFlows: false,
-    postconditions: false,
+    created: true,
     revision: false,
     projects: false,
+    author: true,
   });
 
   const [testCaseColumnVisibility, setTestCaseColumnVisibility] =
@@ -92,9 +92,8 @@ export function useUIState() {
       requirements: true,
       priority: true,
       status: true,
-      author: false,
-      lastRun: true,
-      created: false,
+      author: true,
+      created: true,
       revision: false,
       projects: false,
     });
@@ -102,8 +101,10 @@ export function useUIState() {
   const [informationColumnVisibility, setInformationColumnVisibility] =
     useState<InformationColumnVisibility>({
       idTitle: true,
+      description: true,
       type: true,
-      text: true,
+      status: true,
+      author: true,
       created: true,
       revision: false,
       projects: false,
@@ -119,9 +120,10 @@ export function useUIState() {
     owner: true,
     mitigation: false,
     contingency: false,
-    created: false,
+    created: true,
     revision: false,
     projects: false,
+    author: true,
   });
 
   const [documentColumnVisibility, setDocumentColumnVisibility] =

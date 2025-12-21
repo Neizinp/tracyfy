@@ -68,6 +68,7 @@ export interface UseCase extends BaseArtifact {
   alternativeFlows?: string;
   dateCreated?: number;
   useCaseIds?: string[];
+  author?: string;
 }
 
 export interface TestCase extends BaseArtifact {
@@ -86,9 +87,12 @@ export interface TestCase extends BaseArtifact {
 export interface Information extends BaseArtifact {
   id: string;
   title: string;
+  description?: string;
   text?: string;
   content?: string;
   type?: string;
+  status?: string;
+  author?: string;
   dateCreated: number;
   lastModified: number;
   isDeleted?: boolean;
@@ -107,6 +111,7 @@ export interface Risk extends BaseArtifact {
   category?: string;
   contingency?: string;
   owner?: string;
+  author?: string;
   status?: string;
   dateCreated: number;
 }

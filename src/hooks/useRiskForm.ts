@@ -13,7 +13,7 @@ interface UseRiskFormOptions {
   ) => void;
 }
 
-type Tab = 'overview' | 'mitigation' | 'relationships' | 'customFields' | 'history';
+type Tab = 'overview' | 'mitigation' | 'relationships' | 'customAttributes' | 'history';
 
 export function useRiskForm({ isOpen, risk, onClose, onSubmit }: UseRiskFormOptions) {
   useUI();
@@ -38,6 +38,9 @@ export function useRiskForm({ isOpen, risk, onClose, onSubmit }: UseRiskFormOpti
     setPriority: setProbability,
     status,
     setStatus,
+    author,
+    setAuthor,
+    currentUser,
     customAttributes,
     setCustomAttributes,
     handleSubmit: baseHandleSubmit,
@@ -128,6 +131,9 @@ export function useRiskForm({ isOpen, risk, onClose, onSubmit }: UseRiskFormOpti
     setImpact,
     status,
     setStatus,
+    author,
+    setAuthor,
+    currentUser,
     owner,
     setOwner,
     mitigation,

@@ -121,7 +121,7 @@ class DiskWorkflowService extends BaseArtifactService<Workflow> {
   async createWorkflow(
     workflow: Omit<Workflow, 'id' | 'dateCreated' | 'lastModified' | 'status'>
   ): Promise<Workflow> {
-    const nextId = await idService.getNextIdWithSync('WF');
+    const nextId = await idService.getNextIdWithSync('workflows');
     const newWorkflow: Workflow = {
       ...workflow,
       id: nextId,

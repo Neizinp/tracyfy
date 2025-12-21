@@ -22,7 +22,7 @@ interface RequirementModalProps {
   onBack?: () => void;
 }
 
-type Tab = 'overview' | 'details' | 'relationships' | 'comments' | 'customFields' | 'history';
+type Tab = 'overview' | 'details' | 'relationships' | 'comments' | 'customAttributes' | 'history';
 
 export const RequirementModal: React.FC<RequirementModalProps> = ({
   isOpen,
@@ -53,6 +53,8 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
     setPriority,
     status,
     setStatus,
+    author,
+    setAuthor,
     verificationMethod,
     setVerificationMethod,
     comments,
@@ -139,7 +141,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
     { id: 'details', label: 'Details' },
     { id: 'relationships', label: 'Relationships' },
     { id: 'comments', label: 'Comments' },
-    { id: 'customFields', label: 'Custom Attributes' },
+    { id: 'customAttributes', label: 'Custom Attributes' },
     ...(isEditMode ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
   ];
 
@@ -192,10 +194,11 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
             status={status}
             setStatus={setStatus}
             statusOptions={statusOptions}
-            author={requirement?.author}
-            dateCreated={requirement?.dateCreated}
-            isEditMode={isEditMode}
+            author={author}
+            setAuthor={setAuthor}
             currentUser={currentUser?.name}
+            isEditMode={isEditMode}
+            dateCreated={requirement?.dateCreated}
             titlePlaceholder="e.g., System shall authenticate users"
           />
           <ArtifactDetailsSections
@@ -286,7 +289,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
         />
       )}
 
-      {activeTab === 'customFields' && (
+      {activeTab === 'customAttributes' && (
         <CustomAttributeEditor
           definitions={customAttributeDefinitions}
           values={customAttributes}

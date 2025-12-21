@@ -26,7 +26,7 @@ interface InformationModalProps {
   onBack?: () => void;
 }
 
-type Tab = 'overview' | 'relationships' | 'customFields' | 'history';
+type Tab = 'overview' | 'relationships' | 'customAttributes' | 'history';
 
 export const InformationModal: React.FC<InformationModalProps> = ({
   isOpen,
@@ -49,6 +49,13 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     setText,
     type,
     setType,
+    priority,
+    setPriority,
+    status,
+    setStatus,
+    author,
+    setAuthor,
+    currentUser,
     customAttributes,
     setCustomAttributes,
     handleSubmit,
@@ -96,7 +103,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'relationships', label: 'Relationships' },
-    { id: 'customFields', label: 'Custom Attributes' },
+    { id: 'customAttributes', label: 'Custom Attributes' },
     ...(isEditMode ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
   ];
 
@@ -151,10 +158,15 @@ export const InformationModal: React.FC<InformationModalProps> = ({
             <ArtifactOverviewFields
               title={title}
               setTitle={setTitle}
+              priority={priority}
+              setPriority={setPriority}
+              status={status}
+              setStatus={setStatus}
+              author={author}
+              setAuthor={setAuthor}
+              currentUser={currentUser?.name}
               isEditMode={isEditMode}
               dateCreated={information?.dateCreated}
-              hidePriority
-              hideStatus
               titlePlaceholder="e.g., System Architecture"
             />
             <FormField label="Type">
@@ -217,7 +229,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
         <RevisionHistoryTab artifactId={information.id} artifactType="information" />
       )}
 
-      {activeTab === 'customFields' && (
+      {activeTab === 'customAttributes' && (
         <CustomAttributeEditor
           definitions={customAttributeDefinitions}
           values={customAttributes}

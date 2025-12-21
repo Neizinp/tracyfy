@@ -156,20 +156,35 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
               fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
               background:
-                tc.status === 'approved'
+                tc.status === 'approved' || tc.status === 'passed'
                   ? 'rgba(16, 185, 129, 0.1)'
                   : tc.status === 'draft'
                     ? 'rgba(107, 114, 128, 0.1)'
-                    : 'rgba(59, 130, 246, 0.1)',
+                    : tc.status === 'failed'
+                      ? 'rgba(239, 68, 68, 0.1)'
+                      : 'rgba(59, 130, 246, 0.1)',
               color:
-                tc.status === 'approved'
+                tc.status === 'approved' || tc.status === 'passed'
                   ? 'var(--color-success)'
                   : tc.status === 'draft'
                     ? 'var(--color-text-muted)'
-                    : 'var(--color-info)',
+                    : tc.status === 'failed'
+                      ? 'var(--color-error)'
+                      : 'var(--color-info)',
             }}
           >
             {(tc.status || 'draft').charAt(0).toUpperCase() + (tc.status || 'draft').slice(1)}
+          </span>
+        ),
+      },
+      {
+        key: 'author',
+        label: 'Author',
+        width: '120px',
+        visible: visibleColumns.author,
+        render: (tc) => (
+          <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+            {tc.author || 'Unassigned'}
           </span>
         ),
       },

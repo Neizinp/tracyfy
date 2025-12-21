@@ -117,6 +117,17 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
         ),
       },
       {
+        key: 'author',
+        label: 'Author',
+        width: '120px',
+        visible: visibleColumns.author,
+        render: (uc) => (
+          <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+            {uc.author || 'Unassigned'}
+          </span>
+        ),
+      },
+      {
         key: 'priority',
         label: 'Priority',
         width: '100px',
@@ -220,6 +231,8 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
               'alternativeFlows',
               'postconditions',
               'projects',
+              'author',
+              'created',
             ].includes(key) && visibleColumns[key]
         )
         .map((key) => {

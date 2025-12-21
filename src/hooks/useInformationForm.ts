@@ -15,7 +15,7 @@ interface UseInformationFormOptions {
   ) => void;
 }
 
-type Tab = 'overview' | 'relationships' | 'customFields' | 'history';
+type Tab = 'overview' | 'relationships' | 'customAttributes' | 'history';
 
 export function useInformationForm({
   isOpen,
@@ -37,6 +37,13 @@ export function useInformationForm({
     setTitle,
     text,
     setText,
+    priority,
+    setPriority,
+    status,
+    setStatus,
+    author,
+    setAuthor,
+    currentUser,
     customAttributes,
     setCustomAttributes,
     handleSubmit: baseHandleSubmit,
@@ -91,6 +98,13 @@ export function useInformationForm({
     setText,
     type,
     setType,
+    priority,
+    setPriority,
+    status,
+    setStatus,
+    author,
+    setAuthor,
+    currentUser,
     customAttributes,
     setCustomAttributes,
 

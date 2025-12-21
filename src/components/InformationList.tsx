@@ -103,6 +103,55 @@ export const InformationList: React.FC<InformationListProps> = ({
         ),
       },
       {
+        key: 'description',
+        label: 'Description',
+        minWidth: '200px',
+        visible: visibleColumns.description,
+        render: (info) => <MarkdownCell content={info.description || '-'} />,
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        width: '120px',
+        visible: visibleColumns.status,
+        render: (info) => (
+          <span
+            style={{
+              padding: '2px 8px',
+              borderRadius: '12px',
+              fontSize: 'var(--font-size-xs)',
+              fontWeight: 500,
+              background:
+                info.status === 'approved'
+                  ? 'rgba(16, 185, 129, 0.1)'
+                  : info.status === 'draft'
+                    ? 'rgba(107, 114, 128, 0.1)'
+                    : 'rgba(59, 130, 246, 0.1)',
+              color:
+                info.status === 'approved'
+                  ? 'var(--color-success)'
+                  : info.status === 'draft'
+                    ? 'var(--color-text-muted)'
+                    : 'var(--color-info)',
+              textTransform: 'capitalize',
+            }}
+          >
+            {info.status || 'Draft'}
+          </span>
+        ),
+      },
+      {
+        key: 'author',
+        label: 'Author',
+        width: '120px',
+        visible: visibleColumns.author,
+        render: (info) => (
+          <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+            {info.author || 'Unassigned'}
+          </span>
+        ),
+      },
+      {
         key: 'text',
         label: 'Content',
         minWidth: '300px',
@@ -124,7 +173,17 @@ export const InformationList: React.FC<InformationListProps> = ({
       ...Object.keys(visibleColumns)
         .filter(
           (key) =>
-            !['idTitle', 'type', 'text', 'created', 'projects'].includes(key) && visibleColumns[key]
+            ![
+              'idTitle',
+              'type',
+              'text',
+              'created',
+              'projects',
+              'author',
+              'status',
+              'revision',
+              'description',
+            ].includes(key) && visibleColumns[key]
         )
         .map((key) => {
           const definition = definitions.find((def) => def.id === key);

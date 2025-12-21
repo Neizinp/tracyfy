@@ -7,6 +7,11 @@ import { ArtifactOverviewFields } from './forms/ArtifactOverviewFields';
 import { ArtifactDetailsSections } from './forms/ArtifactDetailsSections';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { DocumentEditor } from './DocumentEditor';
+import { useLinkService } from '../hooks/useLinkService';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
+import { CustomAttributeEditor } from './CustomAttributeEditor';
+import { ArtifactRelationshipsTab } from './forms/ArtifactRelationshipsTab';
+import { useUI } from '../app/providers';
 
 interface DocumentModalProps {
   isOpen: boolean;
@@ -22,7 +27,7 @@ interface DocumentModalProps {
   onBack?: () => void;
 }
 
-type Tab = 'overview' | 'content' | 'history';
+type Tab = 'overview' | 'content' | 'relationships' | 'customAttributes' | 'history';
 
 export const DocumentModal: React.FC<DocumentModalProps> = ({
   isOpen,
@@ -33,6 +38,8 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
   onExport,
   onBack,
 }) => {
+  const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
+
   const {
     isEditMode,
     activeTab,
@@ -45,6 +52,8 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
     setAuthor,
     status,
     setStatus,
+    customAttributes,
+    setCustomAttributes,
     showDeleteConfirm,
     handleDelete,
     confirmDelete,
@@ -53,7 +62,20 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
     setStructure,
     handleSubmit,
     currentUser,
+    handleRemoveLink,
+    handleNavigateToArtifact,
   } = useDocumentForm({ isOpen, document: document, onClose, onSubmit });
+
+  const {
+    outgoingLinks,
+    incomingLinks,
+    loading: linksLoading,
+  } = useLinkService({
+    artifactId: document?.id,
+  });
+
+  const { definitions: customAttributeDefinitions, loading: attributesLoading } =
+    useCustomAttributes();
 
   useKeyboardShortcuts({
     onSave: handleSubmit,
@@ -75,6 +97,8 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'content', label: 'Content' },
+    { id: 'relationships', label: 'Relationships' },
+    { id: 'customAttributes', label: 'Custom Attributes' },
     ...(isEditMode ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
   ];
 
@@ -165,6 +189,36 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
       )}
 
       {activeTab === 'content' && <DocumentEditor structure={structure} onChange={setStructure} />}
+
+      {activeTab === 'relationships' && (
+        <ArtifactRelationshipsTab
+          artifactId={document?.id || ''}
+          artifactType="document"
+          isEditMode={isEditMode}
+          outgoingLinks={outgoingLinks}
+          incomingLinks={incomingLinks}
+          loading={linksLoading}
+          onAddLink={() => {
+            if (document) {
+              setLinkSourceId(document.id);
+              setLinkSourceType('document' as any);
+              setIsLinkModalOpen(true);
+            }
+          }}
+          onRemoveLink={handleRemoveLink}
+          onNavigateToArtifact={handleNavigateToArtifact}
+        />
+      )}
+
+      {activeTab === 'customAttributes' && (
+        <CustomAttributeEditor
+          definitions={customAttributeDefinitions}
+          values={customAttributes}
+          onChange={setCustomAttributes}
+          artifactType="document"
+          loading={attributesLoading}
+        />
+      )}
 
       {activeTab === 'history' && document && (
         <RevisionHistoryTab artifactId={document.id} artifactType="documents" />

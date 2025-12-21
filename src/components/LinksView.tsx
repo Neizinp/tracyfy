@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link as LinkIcon, ArrowRight, RefreshCw, Globe, Folder, Plus } from 'lucide-react';
-import { diskLinkService } from '../services/diskLinkService';
+import { useLinkService } from '../hooks/useLinkService';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import type { Link, Project } from '../types';
 import type { LinkType } from '../utils/linkTypes';
@@ -19,8 +19,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
   projects = [],
   onAdd,
 }) => {
-  const [links, setLinks] = useState<Link[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { allLinks: links, loading, refresh: loadLinks, deleteLink } = useLinkService();
   const [filter, setFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [scopeFilter, setScopeFilter] = useState<'all' | 'global' | 'project'>('all');
@@ -29,28 +28,10 @@ export const LinksView: React.FC<LinksViewProps> = ({
   const [editingLink, setEditingLink] = useState<Link | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Load all links
-  const loadLinks = useCallback(async () => {
-    setLoading(true);
-    try {
-      const allLinks = await diskLinkService.getAllLinks();
-      setLinks(allLinks);
-    } catch (error) {
-      console.error('Failed to load links:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadLinks();
-  }, [loadLinks]);
-
   // Delete a link (called from modal)
   const handleDeleteLink = async (linkId: string) => {
     try {
-      await diskLinkService.deleteLink(linkId);
-      await loadLinks();
+      await deleteLink(linkId);
     } catch (error) {
       console.error('Failed to delete link:', error);
       throw error;
@@ -69,6 +50,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
     updates: { type: LinkType; projectIds: string[] }
   ) => {
     try {
+      const { diskLinkService } = await import('../services/diskLinkService');
       await diskLinkService.updateLink(linkId, updates);
       await loadLinks();
     } catch (error) {
@@ -343,7 +325,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
           <option value="all">All Types</option>
           {uniqueTypes.map((type) => (
             <option key={type} value={type}>
-              {LINK_TYPE_LABELS[type] || type}
+              {LINK_TYPE_LABELS[type as LinkType] || type}
             </option>
           ))}
         </select>
@@ -366,7 +348,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div style={{ flex: 1, minHeight: '400px', overflow: 'hidden' }}>
         {loading && links.length === 0 ? (
           <div
             style={{
@@ -379,7 +361,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
           </div>
         ) : (
           <BaseArtifactTable
-            data={processedLinks}
+            data={links}
             columns={columns}
             sortConfig={sortConfig}
             onSortChange={handleSortChange}

@@ -9,6 +9,7 @@ import type {
   Information,
   Risk,
   ArtifactDocument,
+  Link,
 } from '../../types';
 
 export interface GlobalStateContextValue {
@@ -19,6 +20,7 @@ export interface GlobalStateContextValue {
   globalInformation: Information[];
   globalRisks: Risk[];
   globalDocuments: ArtifactDocument[];
+  globalLinks: Link[];
 
   // Local project artifacts (filtered by current project)
   requirements: Requirement[];
@@ -35,6 +37,8 @@ export interface GlobalStateContextValue {
   setDocuments: (
     docs: ArtifactDocument[] | ((prev: ArtifactDocument[]) => ArtifactDocument[])
   ) => void;
+  links: Link[];
+  setLinks: (links: Link[] | ((prev: Link[]) => Link[])) => void;
 
   // Internal ref
   isResetting: React.MutableRefObject<boolean>;
@@ -50,6 +54,7 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     information: fsInformation,
     risks: fsRisks,
     documents: fsDocuments,
+    links: fsLinks,
   } = useFileSystem();
 
   const { currentProject } = useProject();
@@ -61,6 +66,7 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [globalInformation, setGlobalInformation] = useState<Information[]>([]);
   const [globalRisks, setGlobalRisks] = useState<Risk[]>([]);
   const [globalDocuments, setGlobalDocuments] = useState<ArtifactDocument[]>([]);
+  const [globalLinks, setGlobalLinks] = useState<Link[]>([]);
 
   // Project-filtered state
   const [requirements, setRequirementsState] = useState<Requirement[]>([]);
@@ -69,6 +75,7 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [information, setInformationState] = useState<Information[]>([]);
   const [risks, setRisksState] = useState<Risk[]>([]);
   const [documents, setDocumentsState] = useState<ArtifactDocument[]>([]);
+  const [links, setLinksState] = useState<Link[]>([]);
 
   const isResetting = useRef(false);
 
@@ -97,6 +104,10 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     setGlobalDocuments(fsDocuments || []);
   }, [fsDocuments]);
 
+  useEffect(() => {
+    setGlobalLinks(fsLinks || []);
+  }, [fsLinks]);
+
   // Filter artifacts by current project
   useEffect(() => {
     if (currentProject) {
@@ -114,6 +125,7 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
           (d) => d.projectId === currentProject.id || currentProject.documentIds?.includes(d.id)
         )
       );
+      setLinksState(globalLinks); // Links are global for now, filtering can be added later if needed
     } else {
       // No project selected - show all artifacts
       setRequirementsState(globalRequirements);
@@ -122,6 +134,7 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
       setInformationState(globalInformation);
       setRisksState(globalRisks);
       setDocumentsState(globalDocuments);
+      setLinksState(globalLinks);
     }
   }, [
     currentProject,
@@ -131,6 +144,7 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     globalInformation,
     globalRisks,
     globalDocuments,
+    globalLinks,
   ]);
 
   // Wrapper setters for requirements (update global state)
@@ -185,6 +199,13 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     []
   );
 
+  const setLinks = useCallback((linksArg: Link[] | ((prev: Link[]) => Link[])) => {
+    setGlobalLinks((prev) => {
+      const newLinks = typeof linksArg === 'function' ? linksArg(prev) : linksArg;
+      return newLinks;
+    });
+  }, []);
+
   const value: GlobalStateContextValue = {
     globalRequirements,
     globalUseCases,
@@ -192,6 +213,7 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     globalInformation,
     globalRisks,
     globalDocuments,
+    globalLinks,
     requirements,
     setRequirements,
     useCases,
@@ -204,6 +226,8 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     setRisks,
     documents,
     setDocuments,
+    links,
+    setLinks,
     isResetting,
   };
 

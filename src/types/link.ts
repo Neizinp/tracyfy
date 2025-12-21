@@ -28,5 +28,8 @@ export interface Link {
   projectIds: string[]; // Empty = global (all projects), populated = project-specific
   dateCreated: number;
   lastModified: number;
+  revision: string; // Satisfies BaseArtifact
+  isDeleted?: boolean;
+  deletedAt?: number;
   customAttributes?: CustomAttributeValue[];
 }

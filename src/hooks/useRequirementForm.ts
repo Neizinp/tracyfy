@@ -20,7 +20,7 @@ interface UseRequirementFormOptions {
   onDelete: (id: string) => void;
 }
 
-type Tab = 'overview' | 'details' | 'relationships' | 'comments' | 'customFields' | 'history';
+type Tab = 'overview' | 'details' | 'relationships' | 'comments' | 'customAttributes' | 'history';
 
 export function useRequirementForm({
   isOpen,

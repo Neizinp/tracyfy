@@ -24,7 +24,7 @@ interface UseCaseModalProps {
   onBack?: () => void;
 }
 
-type Tab = 'overview' | 'flows' | 'conditions' | 'relationships' | 'customFields' | 'history';
+type Tab = 'overview' | 'flows' | 'conditions' | 'relationships' | 'customAttributes' | 'history';
 
 export const UseCaseModal: React.FC<UseCaseModalProps> = ({
   isOpen,
@@ -38,6 +38,9 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
 
   // Use the extracted hook for form state and handlers
   const {
+    author,
+    setAuthor,
+    currentUser,
     isEditMode,
     activeTab,
     setActiveTab,
@@ -116,7 +119,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     { id: 'flows', label: 'Flows' },
     { id: 'conditions', label: 'Conditions' },
     ...(isEditMode ? [{ id: 'relationships' as Tab, label: 'Relationships' }] : []),
-    { id: 'customFields', label: 'Custom Attributes' },
+    { id: 'customAttributes', label: 'Custom Attributes' },
     ...(isEditMode ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
   ];
 
@@ -177,7 +180,11 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
               status={status}
               setStatus={setStatus}
               statusOptions={statusOptions}
+              author={author}
+              setAuthor={setAuthor}
+              currentUser={currentUser?.name}
               isEditMode={isEditMode}
+              dateCreated={useCase?.dateCreated}
               titlePlaceholder="e.g., User Login"
             />
             <FormField label="Actor" required>
@@ -274,7 +281,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
         <RevisionHistoryTab artifactId={useCase.id} artifactType="usecases" />
       )}
 
-      {activeTab === 'customFields' && (
+      {activeTab === 'customAttributes' && (
         <CustomAttributeEditor
           definitions={customAttributeDefinitions}
           values={customAttributes}

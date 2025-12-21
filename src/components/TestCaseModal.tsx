@@ -24,6 +24,8 @@ interface TestCaseModalProps {
   onBack?: () => void;
 }
 
+type Tab = 'overview' | 'relationships' | 'customAttributes' | 'history';
+
 export const TestCaseModal: React.FC<TestCaseModalProps> = ({
   isOpen,
   testCase,
@@ -45,10 +47,16 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
     setTitle,
     description,
     setDescription,
+    steps,
+    setSteps,
+    expectedResult,
+    setExpectedResult,
     priority,
     setPriority,
     status,
     setStatus,
+    author,
+    setAuthor,
     customAttributes,
     setCustomAttributes,
     showDeleteConfirm,
@@ -105,11 +113,11 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
 
   if (!isOpen) return null;
 
-  const allTabs: { id: string; label: string }[] = [
+  const allTabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'relationships', label: 'Relationships' },
-    { id: 'customFields', label: 'Custom Attributes' },
-    ...(isEditMode ? [{ id: 'history', label: 'Revision History' }] : []),
+    { id: 'customAttributes', label: 'Custom Attributes' },
+    ...(isEditMode ? [{ id: 'history' as Tab, label: 'Revision History' }] : []),
   ];
 
   return (
@@ -120,9 +128,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
       title={isEditMode ? `Edit Test Case - ${testCase?.id}` : 'New Test Case'}
       tabs={allTabs}
       activeTab={activeTab}
-      onTabChange={(id) =>
-        setActiveTab(id as 'overview' | 'relationships' | 'customFields' | 'history')
-      }
+      onTabChange={(id) => setActiveTab(id as Tab)}
       onSubmit={handleSubmit}
       submitLabel={isEditMode ? 'Save Changes' : 'Create Test Case'}
       formId="new-testcase-form"
@@ -166,8 +172,10 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
               status={status}
               setStatus={setStatus}
               statusOptions={statusOptions}
+              author={author}
+              setAuthor={setAuthor}
+              currentUser={currentUser?.name}
               isEditMode={isEditMode}
-              author={isEditMode ? testCase?.author : currentUser?.name}
               dateCreated={testCase?.dateCreated}
               titlePlaceholder="e.g., Load Testing"
             />
@@ -198,7 +206,20 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
                 label: 'Description',
                 value: description,
                 onChange: setDescription,
+                height: 100,
+              },
+              {
+                label: 'Steps',
+                value: steps,
+                onChange: setSteps,
                 height: 150,
+                placeholder: '1. Open app\n2. Click login...',
+              },
+              {
+                label: 'Expected Result',
+                value: expectedResult,
+                onChange: setExpectedResult,
+                height: 100,
               },
             ]}
           />
@@ -229,7 +250,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
         <RevisionHistoryTab artifactId={testCase.id} artifactType="testcases" />
       )}
 
-      {activeTab === 'customFields' && (
+      {activeTab === 'customAttributes' && (
         <CustomAttributeEditor
           definitions={customAttributeDefinitions}
           values={customAttributes}

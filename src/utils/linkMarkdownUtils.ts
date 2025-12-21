@@ -20,6 +20,9 @@ export function linkToMarkdown(link: Link): string {
     projectIds: link.projectIds || [],
     dateCreated: link.dateCreated,
     lastModified: link.lastModified,
+    revision: link.revision || '01',
+    ...(link.isDeleted && { isDeleted: link.isDeleted }),
+    ...(link.deletedAt && { deletedAt: link.deletedAt }),
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -28,10 +31,11 @@ export function linkToMarkdown(link: Link): string {
 
 Links **${link.sourceId}** to **${link.targetId}** (${link.type.replace('_', ' ')})
 
-${link.projectIds.length > 0
-      ? `**Scope:** ${link.projectIds.join(', ')}`
-      : '**Scope:** Global (all projects)'
-    }
+${
+  link.projectIds.length > 0
+    ? `**Scope:** ${link.projectIds.join(', ')}`
+    : '**Scope:** Global (all projects)'
+}
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -55,6 +59,9 @@ export function parseMarkdownLink(content: string): Link | null {
     projectIds: ensureArray<string>(frontmatter.projectIds),
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
     lastModified: (frontmatter.lastModified as number) || Date.now(),
+    revision: (frontmatter.revision as string) || '01',
+    isDeleted: frontmatter.isDeleted as boolean | undefined,
+    deletedAt: frontmatter.deletedAt as number | undefined,
   };
 }
 

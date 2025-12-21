@@ -14,7 +14,7 @@ interface UseDocumentFormOptions {
   ) => void;
 }
 
-type Tab = 'overview' | 'content' | 'history';
+type Tab = 'overview' | 'content' | 'relationships' | 'customAttributes' | 'history';
 
 export function useDocumentForm({ isOpen, document, onClose, onSubmit }: UseDocumentFormOptions) {
   const handleNavigateToArtifact = useArtifactNavigation(onClose);

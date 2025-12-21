@@ -20,7 +20,7 @@ interface UseUseCaseFormOptions {
   ) => void;
 }
 
-type Tab = 'overview' | 'flows' | 'conditions' | 'relationships' | 'customFields' | 'history';
+type Tab = 'overview' | 'flows' | 'conditions' | 'relationships' | 'customAttributes' | 'history';
 
 export function useUseCaseForm({ isOpen, useCase, onClose, onSubmit }: UseUseCaseFormOptions) {
   useUI();
@@ -46,6 +46,9 @@ export function useUseCaseForm({ isOpen, useCase, onClose, onSubmit }: UseUseCas
     setPriority,
     status,
     setStatus,
+    author,
+    setAuthor,
+    currentUser,
     customAttributes,
     setCustomAttributes,
     handleSubmit: baseHandleSubmit,
@@ -120,6 +123,9 @@ export function useUseCaseForm({ isOpen, useCase, onClose, onSubmit }: UseUseCas
     setPriority,
     status,
     setStatus,
+    author,
+    setAuthor,
+    currentUser,
     customAttributes,
     setCustomAttributes,
 
