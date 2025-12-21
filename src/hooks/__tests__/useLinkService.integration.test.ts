@@ -71,7 +71,7 @@ vi.mock('../../app/providers/FileSystemProvider', () => ({
 
 vi.mock('../../services/diskLinkService', () => ({
   diskLinkService: {
-    getAllLinks: vi.fn().mockResolvedValue(mockLinks),
+    getAllLinks: vi.fn().mockResolvedValue([]),
     createLink: vi.fn(),
     updateLink: vi.fn(),
     deleteLink: vi.fn(),

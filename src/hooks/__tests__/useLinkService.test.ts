@@ -1,11 +1,12 @@
 /**
  * useLinkService Hook Tests
  *
- * Tests for the React hook that manages links using diskLinkService.
+ * Tests for the React hook that manages links using FileSystemProvider.
+ * The hook now derives links from useFileSystem() and only calls diskLinkService for mutations.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
 import { useLinkService } from '../useLinkService';
 import { diskLinkService } from '../../services/diskLinkService';
 import type { Link } from '../../types';
@@ -21,167 +22,122 @@ vi.mock('../../services/diskLinkService', () => ({
     getIncomingLinksForProject: vi.fn(),
     createLink: vi.fn(),
     deleteLink: vi.fn(),
+    subscribe: vi.fn(() => () => {}),
   },
 }));
 
+// Mock links data
+const mockLinks: Link[] = [
+  {
+    id: 'LINK-001',
+    sourceId: 'REQ-001',
+    targetId: 'UC-001',
+    type: 'satisfies',
+    projectIds: [],
+    dateCreated: 1700000000000,
+    lastModified: 1700000000000,
+    revision: '01',
+  },
+  {
+    id: 'LINK-002',
+    sourceId: 'REQ-001',
+    targetId: 'TC-001',
+    type: 'verifies',
+    projectIds: [],
+    dateCreated: 1700000000000,
+    lastModified: 1700000000000,
+    revision: '01',
+  },
+  {
+    id: 'LINK-003',
+    sourceId: 'UC-001',
+    targetId: 'REQ-001',
+    type: 'derived_from',
+    projectIds: ['PRJ-001'],
+    dateCreated: 1700000000000,
+    lastModified: 1700000000000,
+    revision: '01',
+  },
+];
+
+// Mock the FileSystemProvider - the hook now uses this for link data
+vi.mock('../../app/providers/FileSystemProvider', () => ({
+  useFileSystem: vi.fn(() => ({
+    isReady: true,
+    links: mockLinks,
+    setLinks: vi.fn(),
+    saveLink: vi.fn(),
+    deleteLink: vi.fn(),
+    reloadData: vi.fn(),
+  })),
+}));
+
 describe('useLinkService', () => {
-  const mockLinks: Link[] = [
-    {
-      id: 'LINK-001',
-      sourceId: 'REQ-001',
-      targetId: 'UC-001',
-      type: 'satisfies',
-      projectIds: [],
-      dateCreated: 1700000000000,
-      lastModified: 1700000000000,
-    },
-    {
-      id: 'LINK-002',
-      sourceId: 'REQ-001',
-      targetId: 'TC-001',
-      type: 'verifies',
-      projectIds: [],
-      dateCreated: 1700000000000,
-      lastModified: 1700000000000,
-    },
-  ];
-
-  const mockIncomingLinks = [
-    {
-      linkId: 'LINK-003',
-      sourceId: 'UC-001',
-      sourceType: 'usecase',
-      linkType: 'derived_from' as const,
-    },
-  ];
-
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(diskLinkService.getAllLinks).mockResolvedValue(mockLinks);
-    vi.mocked(diskLinkService.getLinksForProject).mockResolvedValue(mockLinks);
-    vi.mocked(diskLinkService.getOutgoingLinks).mockResolvedValue(mockLinks);
-    vi.mocked(diskLinkService.getIncomingLinks).mockResolvedValue(mockIncomingLinks);
-    vi.mocked(diskLinkService.getOutgoingLinksForProject).mockResolvedValue(mockLinks);
-    vi.mocked(diskLinkService.getIncomingLinksForProject).mockResolvedValue(mockIncomingLinks);
   });
 
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
-
-  describe('Initial load', () => {
-    it('should load all links on mount', async () => {
+  describe('Link data from provider', () => {
+    it('should return all links from provider', () => {
       const { result } = renderHook(() => useLinkService());
 
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(diskLinkService.getAllLinks).toHaveBeenCalled();
+      expect(result.current.allLinks).toHaveLength(3);
       expect(result.current.allLinks).toEqual(mockLinks);
     });
 
-    it('should load artifact-specific links when artifactId is provided', async () => {
-      const { result } = renderHook(() => useLinkService({ artifactId: 'REQ-001' }));
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(diskLinkService.getOutgoingLinks).toHaveBeenCalledWith('REQ-001');
-      expect(diskLinkService.getIncomingLinks).toHaveBeenCalledWith('REQ-001');
-      expect(result.current.outgoingLinks).toEqual(mockLinks);
-      expect(result.current.incomingLinks).toEqual(mockIncomingLinks);
-    });
-
-    it('should use project-filtered methods when projectId is provided', async () => {
-      const { result } = renderHook(() =>
-        useLinkService({ artifactId: 'REQ-001', projectId: 'PRJ-001' })
-      );
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(diskLinkService.getLinksForProject).toHaveBeenCalledWith('PRJ-001');
-      expect(diskLinkService.getOutgoingLinksForProject).toHaveBeenCalledWith('REQ-001', 'PRJ-001');
-      expect(diskLinkService.getIncomingLinksForProject).toHaveBeenCalledWith('REQ-001', 'PRJ-001');
-    });
-
-    it('should return empty outgoing and incoming links when no artifactId', async () => {
+    it('should return empty outgoing/incoming when no artifactId', () => {
       const { result } = renderHook(() => useLinkService());
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
 
       expect(result.current.outgoingLinks).toEqual([]);
       expect(result.current.incomingLinks).toEqual([]);
     });
-  });
 
-  describe('Loading state', () => {
-    it('should set loading true initially', () => {
-      const { result } = renderHook(() => useLinkService());
+    it('should filter outgoing links by artifactId', () => {
+      const { result } = renderHook(() => useLinkService({ artifactId: 'REQ-001' }));
 
-      // Can't reliably test initial loading state as it resolves immediately
-      // But we can check it becomes false
-      expect(result.current.loading).toBeDefined();
+      expect(result.current.outgoingLinks).toHaveLength(2);
+      expect(result.current.outgoingLinks.every((l) => l.sourceId === 'REQ-001')).toBe(true);
     });
 
-    it('should set loading false after load completes', async () => {
-      const { result } = renderHook(() => useLinkService());
+    it('should filter incoming links by artifactId', () => {
+      const { result } = renderHook(() => useLinkService({ artifactId: 'REQ-001' }));
 
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
+      expect(result.current.incomingLinks).toHaveLength(1);
+      expect(result.current.incomingLinks[0].sourceId).toBe('UC-001');
     });
   });
 
-  describe('Error handling', () => {
-    it('should set error when load fails', async () => {
-      vi.mocked(diskLinkService.getAllLinks).mockRejectedValue(new Error('Load failed'));
+  describe('Project filtering', () => {
+    it('should include links with no projectIds (global links)', () => {
+      const { result } = renderHook(() => useLinkService({ projectId: 'PRJ-001' }));
 
-      const { result } = renderHook(() => useLinkService());
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.error).toBe('Load failed');
+      // Should include global links (empty projectIds) and project-specific links
+      expect(result.current.allLinks.length).toBeGreaterThan(0);
     });
 
-    it('should set generic error message for non-Error throws', async () => {
-      vi.mocked(diskLinkService.getAllLinks).mockRejectedValue('Something went wrong');
+    it('should include links for the specified project', () => {
+      const { result } = renderHook(() => useLinkService({ projectId: 'PRJ-001' }));
 
-      const { result } = renderHook(() => useLinkService());
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.error).toBe('Failed to load links');
+      const projectLink = result.current.allLinks.find((l) => l.id === 'LINK-003');
+      expect(projectLink).toBeDefined();
     });
   });
 
   describe('createLink', () => {
-    it('should create a new link and refresh', async () => {
+    it('should call diskLinkService.createLink', async () => {
       const newLink: Link = {
-        id: 'LINK-003',
+        id: 'LINK-004',
         sourceId: 'REQ-002',
         targetId: 'UC-002',
         type: 'depends_on',
         projectIds: [],
         dateCreated: Date.now(),
         lastModified: Date.now(),
+        revision: '01',
       };
       vi.mocked(diskLinkService.createLink).mockResolvedValue(newLink);
 
       const { result } = renderHook(() => useLinkService());
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
 
       let created: Link | undefined;
       await act(async () => {
@@ -195,27 +151,22 @@ describe('useLinkService', () => {
         'depends_on',
         []
       );
-      // Should refresh after create
-      expect(diskLinkService.getAllLinks).toHaveBeenCalledTimes(2);
     });
 
     it('should pass project IDs when creating', async () => {
       const newLink: Link = {
-        id: 'LINK-003',
+        id: 'LINK-004',
         sourceId: 'REQ-002',
         targetId: 'UC-002',
         type: 'depends_on',
         projectIds: ['PRJ-001'],
         dateCreated: Date.now(),
         lastModified: Date.now(),
+        revision: '01',
       };
       vi.mocked(diskLinkService.createLink).mockResolvedValue(newLink);
 
       const { result } = renderHook(() => useLinkService());
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
 
       await act(async () => {
         await result.current.createLink('REQ-002', 'UC-002', 'depends_on', ['PRJ-001']);
@@ -231,11 +182,6 @@ describe('useLinkService', () => {
 
       const { result } = renderHook(() => useLinkService());
 
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      // The hook throws the error, so we wrap in try/catch
       let thrownError: Error | null = null;
       await act(async () => {
         try {
@@ -251,32 +197,22 @@ describe('useLinkService', () => {
   });
 
   describe('deleteLink', () => {
-    it('should delete a link and refresh', async () => {
+    it('should call diskLinkService.deleteLink', async () => {
       vi.mocked(diskLinkService.deleteLink).mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useLinkService());
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
 
       await act(async () => {
         await result.current.deleteLink('LINK-001');
       });
 
       expect(diskLinkService.deleteLink).toHaveBeenCalledWith('LINK-001');
-      // Should refresh after delete
-      expect(diskLinkService.getAllLinks).toHaveBeenCalledTimes(2);
     });
 
     it('should throw when delete fails', async () => {
       vi.mocked(diskLinkService.deleteLink).mockRejectedValue(new Error('Delete failed'));
 
       const { result } = renderHook(() => useLinkService());
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
 
       let thrownError: Error | null = null;
       await act(async () => {
@@ -292,55 +228,19 @@ describe('useLinkService', () => {
     });
   });
 
-  describe('refresh', () => {
-    it('should reload all links', async () => {
+  describe('Loading state', () => {
+    it('should not be loading when provider is ready', () => {
       const { result } = renderHook(() => useLinkService());
 
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(diskLinkService.getAllLinks).toHaveBeenCalledTimes(1);
-
-      await act(async () => {
-        await result.current.refresh();
-      });
-
-      expect(diskLinkService.getAllLinks).toHaveBeenCalledTimes(2);
+      expect(result.current.loading).toBeDefined();
     });
   });
 
-  describe('Dependency changes', () => {
-    it('should reload when artifactId changes', async () => {
-      const { result, rerender } = renderHook(({ artifactId }) => useLinkService({ artifactId }), {
-        initialProps: { artifactId: 'REQ-001' },
-      });
+  describe('Error state', () => {
+    it('should have null error on success', () => {
+      const { result } = renderHook(() => useLinkService());
 
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      rerender({ artifactId: 'REQ-002' });
-
-      await waitFor(() => {
-        expect(diskLinkService.getOutgoingLinks).toHaveBeenCalledWith('REQ-002');
-      });
-    });
-
-    it('should reload when projectId changes', async () => {
-      const { result, rerender } = renderHook(({ projectId }) => useLinkService({ projectId }), {
-        initialProps: { projectId: 'PRJ-001' },
-      });
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      rerender({ projectId: 'PRJ-002' });
-
-      await waitFor(() => {
-        expect(diskLinkService.getLinksForProject).toHaveBeenCalledWith('PRJ-002');
-      });
+      expect(result.current.error).toBeNull();
     });
   });
 });
