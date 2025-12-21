@@ -19,7 +19,7 @@ interface DetailedRequirementViewProps {
 }
 
 // Memoized Markdown renderer for table cells
-const MarkdownCell = React.memo<{ content: string }>(({ content }) => {
+export const MarkdownCell = React.memo<{ content: string }>(({ content }) => {
   if (!content) return <span>-</span>;
 
   return (

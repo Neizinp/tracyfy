@@ -1,7 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { UseCaseList } from '../UseCaseList';
-import type { UseCase, Requirement, UseCaseColumnVisibility } from '../../types';
+import type { UseCase, UseCaseColumnVisibility, Project } from '../../types';
+import { useProject, useCustomAttributes } from '../../app/providers';
+
+// Mock hooks
+vi.mock('../../app/providers', () => ({
+  useProject: vi.fn(),
+  useCustomAttributes: vi.fn(),
+}));
 
 // Mock react-virtuoso to render all items (bypasses virtualization in tests)
 vi.mock('react-virtuoso', () => ({
@@ -50,6 +57,7 @@ const defaultColumns: UseCaseColumnVisibility = {
   mainFlow: false,
   alternativeFlows: false,
   postconditions: false,
+  projects: true,
 };
 
 describe('UseCaseList', () => {
@@ -70,21 +78,37 @@ describe('UseCaseList', () => {
     },
   ];
 
-  const mockRequirements: Requirement[] = [];
   const mockOnEdit = vi.fn();
 
   beforeEach(() => {
     mockOnEdit.mockClear();
+    vi.mocked(useProject).mockReturnValue({
+      projects: [],
+      currentProjectId: '',
+      currentProject: null,
+      isLoading: false,
+      switchProject: vi.fn(),
+      createProject: vi.fn(),
+      updateProject: vi.fn(),
+      deleteProject: vi.fn(),
+      addToProject: vi.fn(),
+    });
+    vi.mocked(useCustomAttributes).mockReturnValue({
+      definitions: [],
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+      getDefinitionsForType: vi.fn(),
+    });
   });
 
   it('renders use cases', () => {
     render(
       <UseCaseList
         useCases={mockUseCases}
-        requirements={mockRequirements}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
-        sortConfig={{ key: 'id', direction: 'asc' }}
+        sortConfig={{ key: 'idTitle', direction: 'asc' }}
         onSortChange={vi.fn()}
       />
     );
@@ -98,10 +122,9 @@ describe('UseCaseList', () => {
     render(
       <UseCaseList
         useCases={mockUseCases}
-        requirements={mockRequirements}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
-        sortConfig={{ key: 'id', direction: 'asc' }}
+        sortConfig={{ key: 'idTitle', direction: 'asc' }}
         onSortChange={vi.fn()}
       />
     );
@@ -110,14 +133,53 @@ describe('UseCaseList', () => {
     expect(mockOnEdit).toHaveBeenCalledWith(mockUseCases[0]);
   });
 
+  it('renders project names', () => {
+    const mockProjects: Project[] = [
+      {
+        id: 'proj-1',
+        name: 'Project A',
+        description: '',
+        useCaseIds: ['UC-001'],
+        requirementIds: [],
+        testCaseIds: [],
+        informationIds: [],
+        riskIds: [],
+        lastModified: Date.now(),
+      },
+    ];
+
+    vi.mocked(useProject).mockReturnValue({
+      projects: mockProjects,
+      currentProjectId: '',
+      currentProject: null,
+      isLoading: false,
+      switchProject: vi.fn(),
+      createProject: vi.fn(),
+      updateProject: vi.fn(),
+      deleteProject: vi.fn(),
+      addToProject: vi.fn(),
+    });
+
+    render(
+      <UseCaseList
+        useCases={mockUseCases}
+        onEdit={mockOnEdit}
+        visibleColumns={defaultColumns}
+        sortConfig={{ key: 'idTitle', direction: 'asc' }}
+        onSortChange={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Project A')).toBeInTheDocument();
+  });
+
   it('renders empty state', () => {
     render(
       <UseCaseList
         useCases={[]}
-        requirements={mockRequirements}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
-        sortConfig={{ key: 'id', direction: 'asc' }}
+        sortConfig={{ key: 'idTitle', direction: 'asc' }}
         onSortChange={vi.fn()}
       />
     );

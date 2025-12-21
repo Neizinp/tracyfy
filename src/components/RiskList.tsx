@@ -1,8 +1,9 @@
 import React, { useMemo, useCallback } from 'react';
-import { ShieldAlert } from 'lucide-react';
-import type { Risk, RiskColumnVisibility, Project } from '../types';
+import type { Risk, Project, RiskColumnVisibility } from '../types';
+import { useProject, useCustomAttributes } from '../app/providers';
 import { formatDateTime } from '../utils/dateUtils';
-import { BaseArtifactTable, type ColumnDef } from './BaseArtifactTable';
+import { BaseArtifactTable, MarkdownCell } from './index';
+import type { ColumnDef } from './BaseArtifactTable';
 import type { SortConfig } from './SortableHeader';
 
 interface RiskListProps {
@@ -11,50 +12,7 @@ interface RiskListProps {
   visibleColumns: RiskColumnVisibility;
   sortConfig: SortConfig;
   onSortChange: (key: string) => void;
-  showProjectColumn?: boolean;
-  projects?: Project[];
 }
-
-const getProbabilityStyle = (probability: string) => {
-  switch (probability) {
-    case 'high':
-      return { bg: 'var(--color-error-bg)', text: 'var(--color-error-light)' };
-    case 'medium':
-      return { bg: 'var(--color-warning-bg)', text: 'var(--color-warning-light)' };
-    case 'low':
-      return { bg: 'var(--color-success-bg)', text: 'var(--color-success-light)' };
-    default:
-      return { bg: 'var(--color-bg-tertiary)', text: 'var(--color-text-secondary)' };
-  }
-};
-
-const getImpactStyle = (impact: string) => {
-  switch (impact) {
-    case 'high':
-      return { bg: 'var(--color-error-bg)', text: 'var(--color-error-light)' };
-    case 'medium':
-      return { bg: 'var(--color-warning-bg)', text: 'var(--color-warning-light)' };
-    case 'low':
-      return { bg: 'var(--color-success-bg)', text: 'var(--color-success-light)' };
-    default:
-      return { bg: 'var(--color-bg-tertiary)', text: 'var(--color-text-secondary)' };
-  }
-};
-
-const getStatusStyle = (status: string) => {
-  switch (status) {
-    case 'resolved':
-      return { bg: 'var(--color-success-bg)', text: 'var(--color-success-light)' };
-    case 'accepted':
-      return { bg: 'var(--color-info-bg)', text: 'var(--color-info-light)' };
-    case 'mitigating':
-      return { bg: 'var(--color-warning-bg)', text: 'var(--color-warning-light)' };
-    case 'analyzing':
-      return { bg: 'var(--color-bg-tertiary)', text: 'var(--color-text-secondary)' };
-    default:
-      return { bg: 'var(--color-error-bg)', text: 'var(--color-error-light)' };
-  }
-};
 
 export const RiskList: React.FC<RiskListProps> = ({
   risks,
@@ -62,19 +20,9 @@ export const RiskList: React.FC<RiskListProps> = ({
   visibleColumns,
   sortConfig,
   onSortChange,
-  showProjectColumn,
-  projects,
 }) => {
-  const badgeStyle: React.CSSProperties = useMemo(
-    () => ({
-      padding: '2px 8px',
-      borderRadius: '4px',
-      fontSize: 'var(--font-size-xs)',
-      fontWeight: 500,
-      textTransform: 'capitalize',
-    }),
-    []
-  );
+  const { projects } = useProject();
+  const { definitions } = useCustomAttributes();
 
   const getProjectNames = useCallback(
     (riskId: string) => {
@@ -90,12 +38,12 @@ export const RiskList: React.FC<RiskListProps> = ({
   const columns = useMemo<ColumnDef<Risk>[]>(
     () => [
       {
-        key: 'id',
+        key: 'idTitle',
         label: 'ID / Title',
         width: '250px',
-        render: (risk) => (
+        render: (risk: Risk) => (
           <>
-            <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '4px' }}>
+            <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '2px' }}>
               {risk.id}
             </div>
             <div style={{ color: 'var(--color-text-primary)' }}>{risk.title}</div>
@@ -103,37 +51,17 @@ export const RiskList: React.FC<RiskListProps> = ({
         ),
       },
       {
-        key: 'revision',
-        label: 'Rev',
-        width: '60px',
-        visible: visibleColumns.revision,
-        render: (risk) => (
-          <span
-            style={{
-              fontSize: 'var(--font-size-xs)',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              backgroundColor: 'var(--color-bg-tertiary)',
-              color: 'var(--color-text-secondary)',
-              border: '1px solid var(--color-border)',
-            }}
-          >
-            {risk.revision || '01'}
-          </span>
-        ),
-      },
-      {
         key: 'projects',
         label: 'Project(s)',
         width: '150px',
-        visible: showProjectColumn,
+        visible: visibleColumns.projects,
         sortable: false,
         render: (risk) => (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
             {getProjectNames(risk.id)
               .split(', ')
               .map(
-                (name: string, i: number) =>
+                (name, i) =>
                   name && (
                     <span
                       key={i}
@@ -161,130 +89,165 @@ export const RiskList: React.FC<RiskListProps> = ({
         render: (risk) => (
           <span
             style={{
-              ...badgeStyle,
-              backgroundColor: 'var(--color-bg-tertiary)',
-              color: 'var(--color-text-secondary)',
+              padding: '2px 8px',
+              borderRadius: '12px',
+              fontSize: 'var(--font-size-xs)',
+              fontWeight: 500,
+              background: 'rgba(59, 130, 246, 0.1)',
+              color: 'var(--color-info)',
             }}
           >
-            {risk.category}
+            {risk.category || 'General'}
           </span>
         ),
       },
       {
         key: 'probability',
-        label: 'Probability',
-        width: '100px',
+        label: 'Prob',
+        width: '80px',
         visible: visibleColumns.probability,
         render: (risk) => (
-          <span
-            style={{
-              ...badgeStyle,
-              backgroundColor: getProbabilityStyle(risk.probability || 'medium').bg,
-              color: getProbabilityStyle(risk.probability || 'medium').text,
-            }}
-          >
-            {risk.probability || 'medium'}
+          <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>
+            {risk.probability || '-'}
           </span>
         ),
       },
       {
         key: 'impact',
         label: 'Impact',
-        width: '100px',
+        width: '80px',
         visible: visibleColumns.impact,
         render: (risk) => (
-          <span
-            style={{
-              ...badgeStyle,
-              backgroundColor: getImpactStyle(risk.impact || 'medium').bg,
-              color: getImpactStyle(risk.impact || 'medium').text,
-            }}
-          >
-            {risk.impact || 'medium'}
+          <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>
+            {risk.impact || '-'}
           </span>
         ),
+      },
+      {
+        key: 'severity',
+        label: 'Severity',
+        width: '100px',
+        visible: visibleColumns.severity,
+        render: (risk) => {
+          const prob =
+            typeof risk.probability === 'number'
+              ? risk.probability
+              : parseFloat(risk.probability || '0');
+          const imp =
+            typeof risk.impact === 'number' ? risk.impact : parseFloat(risk.impact || '0');
+          const sev = prob * imp;
+          return (
+            <span
+              style={{
+                padding: '2px 8px',
+                borderRadius: '12px',
+                fontSize: 'var(--font-size-xs)',
+                fontWeight: 600,
+                background:
+                  sev >= 15
+                    ? 'rgba(239, 68, 68, 0.1)'
+                    : sev >= 8
+                      ? 'rgba(245, 158, 11, 0.1)'
+                      : 'rgba(16, 185, 129, 0.1)',
+                color:
+                  sev >= 15
+                    ? 'var(--color-error)'
+                    : sev >= 8
+                      ? 'var(--color-warning)'
+                      : 'var(--color-success)',
+              }}
+            >
+              {sev > 0 ? sev : '-'}
+            </span>
+          );
+        },
       },
       {
         key: 'status',
         label: 'Status',
-        width: '120px',
+        width: '100px',
         visible: visibleColumns.status,
         render: (risk) => (
           <span
             style={{
-              ...badgeStyle,
-              backgroundColor: getStatusStyle(risk.status || 'open').bg,
-              color: getStatusStyle(risk.status || 'open').text,
+              padding: '2px 8px',
+              borderRadius: '12px',
+              fontSize: 'var(--font-size-xs)',
+              fontWeight: 500,
+              background:
+                risk.status === 'mitigated'
+                  ? 'rgba(16, 185, 129, 0.1)'
+                  : risk.status === 'open'
+                    ? 'rgba(239, 68, 68, 0.1)'
+                    : 'rgba(107, 114, 128, 0.1)',
+              color:
+                risk.status === 'mitigated'
+                  ? 'var(--color-success)'
+                  : risk.status === 'open'
+                    ? 'var(--color-error)'
+                    : 'var(--color-text-muted)',
             }}
           >
-            {risk.status || 'open'}
+            {(risk.status || 'open').charAt(0).toUpperCase() + (risk.status || 'open').slice(1)}
           </span>
         ),
       },
       {
-        key: 'owner',
-        label: 'Owner',
-        width: '120px',
-        visible: visibleColumns.owner,
-        render: (risk) => (
-          <span style={{ color: 'var(--color-text-secondary)' }}>{risk.owner || '—'}</span>
-        ),
-      },
-      {
-        key: 'description',
-        label: 'Description',
+        key: 'mitigation',
+        label: 'Mitigation',
         minWidth: '200px',
-        visible: visibleColumns.description,
-        render: (risk) => (
-          <div
-            style={{
-              color: 'var(--color-text-secondary)',
-              maxWidth: '300px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {risk.description}
-          </div>
-        ),
+        visible: visibleColumns.mitigation,
+        render: (risk) => <MarkdownCell content={risk.mitigation || '-'} />,
       },
       {
-        key: 'dateCreated',
+        key: 'contingency',
+        label: 'Contingency',
+        minWidth: '200px',
+        visible: visibleColumns.contingency,
+        render: (risk) => <MarkdownCell content={risk.contingency || '-'} />,
+      },
+      {
+        key: 'created',
         label: 'Created',
-        width: '140px',
+        width: '120px',
         visible: visibleColumns.created,
         render: (risk) => (
-          <span style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
-            {formatDateTime(risk.dateCreated)}
+          <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+            {risk.dateCreated ? formatDateTime(risk.dateCreated) : '-'}
           </span>
         ),
       },
+      // Dynamic Custom Attributes
+      ...Object.keys(visibleColumns)
+        .filter(
+          (key) =>
+            ![
+              'idTitle',
+              'category',
+              'probability',
+              'impact',
+              'severity',
+              'status',
+              'mitigation',
+              'contingency',
+              'created',
+              'projects',
+            ].includes(key) && visibleColumns[key]
+        )
+        .map((key) => {
+          const definition = definitions.find((def) => def.id === key);
+          return {
+            key,
+            label: definition?.name || key,
+            render: (risk: Risk) => {
+              const val = risk.customAttributes?.find((ca) => ca.attributeId === key)?.value;
+              return typeof val === 'boolean' ? (val ? 'Yes' : 'No') : val?.toString() || '-';
+            },
+          };
+        }),
     ],
-    [visibleColumns, badgeStyle, getProjectNames, showProjectColumn]
+    [visibleColumns, getProjectNames, definitions]
   );
-
-  if (risks.length === 0) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 'var(--spacing-xl)',
-          color: 'var(--color-text-muted)',
-          textAlign: 'center',
-          gap: 'var(--spacing-md)',
-        }}
-      >
-        <ShieldAlert size={48} />
-        <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
-          No risks found. Create one to get started.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <BaseArtifactTable
@@ -293,7 +256,7 @@ export const RiskList: React.FC<RiskListProps> = ({
       sortConfig={sortConfig}
       onSortChange={onSortChange}
       onRowClick={onEdit}
-      emptyMessage="No risks found."
+      emptyMessage="No risks found. Create one to get started."
     />
   );
 };

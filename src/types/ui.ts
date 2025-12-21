@@ -12,6 +12,8 @@ export interface ColumnVisibility {
   comments: boolean;
   created: boolean;
   approved: boolean;
+  projects: boolean;
+  [key: string]: boolean | undefined;
 }
 
 export interface UseCaseColumnVisibility {
@@ -25,6 +27,8 @@ export interface UseCaseColumnVisibility {
   alternativeFlows: boolean;
   postconditions: boolean;
   revision: boolean;
+  projects: boolean;
+  [key: string]: boolean | undefined;
 }
 
 export interface TestCaseColumnVisibility {
@@ -37,6 +41,8 @@ export interface TestCaseColumnVisibility {
   lastRun: boolean;
   created: boolean;
   revision: boolean;
+  projects: boolean;
+  [key: string]: boolean | undefined;
 }
 
 export interface InformationColumnVisibility {
@@ -45,6 +51,8 @@ export interface InformationColumnVisibility {
   text: boolean;
   created: boolean;
   revision: boolean;
+  projects: boolean;
+  [key: string]: boolean | undefined;
 }
 
 export interface RiskColumnVisibility {
@@ -59,6 +67,8 @@ export interface RiskColumnVisibility {
   contingency: boolean;
   created: boolean;
   revision: boolean;
+  projects: boolean;
+  [key: string]: boolean | undefined;
 }
 
 export type ViewType =

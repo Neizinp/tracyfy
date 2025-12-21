@@ -2,6 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TestCaseList } from '../TestCaseList';
 import type { TestCase, TestCaseColumnVisibility } from '../../types';
+import { useProject, useCustomAttributes } from '../../app/providers';
+
+// Mock hooks
+vi.mock('../../app/providers', () => ({
+  useProject: vi.fn(),
+  useCustomAttributes: vi.fn(),
+}));
 
 // Mock react-virtuoso to render all items (bypasses virtualization in tests)
 vi.mock('react-virtuoso', () => ({
@@ -49,6 +56,7 @@ const defaultColumns: TestCaseColumnVisibility = {
   author: false,
   lastRun: true,
   created: false,
+  projects: true,
 };
 
 describe('TestCaseList', () => {
@@ -70,6 +78,24 @@ describe('TestCaseList', () => {
 
   beforeEach(() => {
     mockOnEdit.mockClear();
+    vi.mocked(useProject).mockReturnValue({
+      projects: [],
+      currentProjectId: '',
+      currentProject: null,
+      isLoading: false,
+      switchProject: vi.fn(),
+      createProject: vi.fn(),
+      updateProject: vi.fn(),
+      deleteProject: vi.fn(),
+      addToProject: vi.fn(),
+    });
+    vi.mocked(useCustomAttributes).mockReturnValue({
+      definitions: [],
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+      getDefinitionsForType: vi.fn(),
+    });
   });
 
   it('renders test cases', () => {
@@ -78,7 +104,7 @@ describe('TestCaseList', () => {
         testCases={mockTestCases}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
-        sortConfig={{ key: 'id', direction: 'asc' }}
+        sortConfig={{ key: 'idTitle', direction: 'asc' }}
         onSortChange={vi.fn()}
       />
     );
@@ -95,7 +121,7 @@ describe('TestCaseList', () => {
         testCases={mockTestCases}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
-        sortConfig={{ key: 'id', direction: 'asc' }}
+        sortConfig={{ key: 'idTitle', direction: 'asc' }}
         onSortChange={vi.fn()}
       />
     );
@@ -110,7 +136,7 @@ describe('TestCaseList', () => {
         testCases={[]}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
-        sortConfig={{ key: 'id', direction: 'asc' }}
+        sortConfig={{ key: 'idTitle', direction: 'asc' }}
         onSortChange={vi.fn()}
       />
     );

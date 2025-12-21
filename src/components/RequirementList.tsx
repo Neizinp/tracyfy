@@ -1,42 +1,25 @@
 import React, { useMemo, useCallback } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-import type { Requirement, ColumnVisibility, Project } from '../types';
+import type { Requirement, ColumnVisibility } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
+import { useProject, useCustomAttributes } from '../app/providers';
 import { BaseArtifactTable, type ColumnDef } from './BaseArtifactTable';
+import { MarkdownCell } from './index';
 import type { SortConfig } from './SortableHeader';
 
 interface RequirementListProps {
   requirements: Requirement[];
   onEdit: (requirement: Requirement) => void;
   visibleColumns: ColumnVisibility;
-  showProjectColumn?: boolean;
-  projects?: Project[];
   sortConfig: SortConfig;
   onSortChange: (key: string) => void;
 }
 
-const MarkdownCell = React.memo<{ content: string }>(({ content }) => {
-  if (!content) return <span>-</span>;
-  return (
-    <div className="markdown-cell" style={{ fontSize: 'var(--font-size-sm)' }}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-        {content}
-      </ReactMarkdown>
-    </div>
-  );
-});
+export const RequirementList: React.FC<
+  Omit<RequirementListProps, 'showProjectColumn' | 'projects'>
+> = ({ requirements, onEdit, visibleColumns, sortConfig, onSortChange }) => {
+  const { projects } = useProject();
+  const { definitions } = useCustomAttributes();
 
-export const RequirementList: React.FC<RequirementListProps> = ({
-  requirements,
-  onEdit,
-  visibleColumns,
-  showProjectColumn,
-  projects,
-  sortConfig,
-  onSortChange,
-}) => {
   const getProjectNames = useCallback(
     (reqId: string) => {
       if (!projects) return '';
@@ -51,12 +34,12 @@ export const RequirementList: React.FC<RequirementListProps> = ({
   const columns = useMemo<ColumnDef<Requirement>[]>(
     () => [
       {
-        key: 'id',
+        key: 'idTitle',
         label: 'ID / Title',
         width: '250px',
-        render: (req) => (
+        render: (req: Requirement) => (
           <>
-            <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '4px' }}>
+            <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '2px' }}>
               {req.id}
             </div>
             <div style={{ color: 'var(--color-text-primary)' }}>{req.title}</div>
@@ -86,7 +69,7 @@ export const RequirementList: React.FC<RequirementListProps> = ({
         key: 'projects',
         label: 'Project(s)',
         width: '150px',
-        visible: showProjectColumn,
+        visible: visibleColumns.projects,
         sortable: false,
         render: (req) => (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
@@ -133,6 +116,13 @@ export const RequirementList: React.FC<RequirementListProps> = ({
         minWidth: '200px',
         visible: visibleColumns.rationale,
         render: (req) => <MarkdownCell content={req.rationale || '-'} />,
+      },
+      {
+        key: 'verification',
+        label: 'Verification',
+        minWidth: '200px',
+        visible: visibleColumns.verification,
+        render: (req) => <MarkdownCell content={req.verificationMethod || '-'} />,
       },
       {
         key: 'author',
@@ -205,6 +195,15 @@ export const RequirementList: React.FC<RequirementListProps> = ({
         ),
       },
       {
+        key: 'comments',
+        label: 'Comments',
+        width: '150px',
+        visible: visibleColumns.comments,
+        render: (req) => (
+          <span style={{ color: 'var(--color-text-secondary)' }}>{req.comments || '-'}</span>
+        ),
+      },
+      {
         key: 'dateCreated',
         label: 'Created',
         width: '120px',
@@ -215,8 +214,59 @@ export const RequirementList: React.FC<RequirementListProps> = ({
           </span>
         ),
       },
+      {
+        key: 'approved',
+        label: 'Approved',
+        width: '100px',
+        visible: visibleColumns.approved,
+        render: (req) => (
+          <span
+            style={{
+              padding: '2px 8px',
+              borderRadius: '12px',
+              fontSize: 'var(--font-size-xs)',
+              fontWeight: 500,
+              background: req.status === 'approved' ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+              color: req.status === 'approved' ? 'var(--color-success)' : 'var(--color-text-muted)',
+            }}
+          >
+            {req.status === 'approved' ? 'Yes' : 'No'}
+          </span>
+        ),
+      },
+      // Dynamic Custom Attributes
+      ...Object.keys(visibleColumns)
+        .filter(
+          (key) =>
+            ![
+              'idTitle',
+              'id', // include 'id' just in case
+              'description',
+              'text',
+              'rationale',
+              'author',
+              'verification',
+              'priority',
+              'status',
+              'comments',
+              'created',
+              'approved',
+              'projects',
+            ].includes(key) && visibleColumns[key]
+        )
+        .map((key) => {
+          const definition = definitions.find((def) => def.id === key);
+          return {
+            key,
+            label: definition?.name || key,
+            render: (req: Requirement) => {
+              const val = req.customAttributes?.find((ca) => ca.attributeId === key)?.value;
+              return typeof val === 'boolean' ? (val ? 'Yes' : 'No') : val?.toString() || '-';
+            },
+          };
+        }),
     ],
-    [visibleColumns, showProjectColumn, getProjectNames]
+    [visibleColumns, getProjectNames, definitions]
   );
 
   return (

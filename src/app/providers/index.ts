@@ -25,3 +25,4 @@ export { BackgroundTasksProvider, useBackgroundTasks } from './BackgroundTasksPr
 export { ToastProvider, useToast } from './ToastProvider';
 export { CustomAttributeProvider, useCustomAttributeContext } from './CustomAttributeProvider';
 export { BaselinesProvider, useBaselines } from './BaselinesProvider';
+export { useCustomAttributes } from '../../hooks/useCustomAttributes';

@@ -7,6 +7,10 @@ import type {
   ArtifactDocument,
   Project,
   ColumnVisibility,
+  UseCaseColumnVisibility,
+  TestCaseColumnVisibility,
+  InformationColumnVisibility,
+  RiskColumnVisibility,
   ActiveModal,
   SelectedArtifact,
   ModalType,
@@ -47,58 +51,76 @@ export function useUIState() {
     comments: true,
     created: true,
     approved: true,
+    projects: true,
   });
 
-  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>(
-    getDefaultColumnVisibility()
-  );
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
+    idTitle: true,
+    description: true,
+    text: true,
+    rationale: true,
+    author: true,
+    verification: true,
+    priority: true,
+    status: true,
+    comments: false,
+    created: false,
+    approved: false,
+    projects: false,
+  });
 
   // Column Visibility - Other artifact types
-  const [useCaseColumnVisibility, setUseCaseColumnVisibility] = useState({
+  const [useCaseColumnVisibility, setUseCaseColumnVisibility] = useState<UseCaseColumnVisibility>({
     idTitle: true,
-    revision: true,
     description: true,
     actor: true,
     priority: true,
     status: true,
     preconditions: false,
-    mainFlow: false,
+    mainFlow: true,
     alternativeFlows: false,
     postconditions: false,
+    revision: false,
+    projects: false,
   });
 
-  const [testCaseColumnVisibility, setTestCaseColumnVisibility] = useState({
+  const [testCaseColumnVisibility, setTestCaseColumnVisibility] =
+    useState<TestCaseColumnVisibility>({
+      idTitle: true,
+      description: true,
+      requirements: true,
+      priority: true,
+      status: true,
+      author: false,
+      lastRun: true,
+      created: false,
+      revision: false,
+      projects: false,
+    });
+
+  const [informationColumnVisibility, setInformationColumnVisibility] =
+    useState<InformationColumnVisibility>({
+      idTitle: true,
+      type: true,
+      text: true,
+      created: true,
+      revision: false,
+      projects: false,
+    });
+
+  const [riskColumnVisibility, setRiskColumnVisibility] = useState<RiskColumnVisibility>({
     idTitle: true,
-    revision: true,
     description: true,
-    requirements: true,
-    priority: true,
-    status: true,
-    author: false,
-    lastRun: true,
-    created: false,
-  });
-
-  const [informationColumnVisibility, setInformationColumnVisibility] = useState({
-    idTitle: true,
-    revision: true,
-    type: true,
-    text: true,
-    created: true,
-  });
-
-  const [riskColumnVisibility, setRiskColumnVisibility] = useState({
-    idTitle: true,
-    revision: true,
     category: true,
     probability: true,
     impact: true,
     status: true,
     owner: true,
-    description: false,
     mitigation: false,
     contingency: false,
-    created: true,
+    created: false,
+    revision: false,
+    projects: false,
   });
 
   // Modal Control Actions

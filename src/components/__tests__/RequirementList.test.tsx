@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RequirementList } from '../RequirementList';
 import type { Requirement, ColumnVisibility, Project } from '../../types';
+import { useProject, useCustomAttributes } from '../../app/providers';
 
 // Mock ReactMarkdown to avoid ESM issues and simplify testing
 vi.mock('react-markdown', () => ({
@@ -10,6 +11,16 @@ vi.mock('react-markdown', () => ({
 
 vi.mock('remark-gfm', () => ({ default: () => {} }));
 vi.mock('rehype-raw', () => ({ default: () => {} }));
+
+// Mock hooks
+vi.mock('../../app/providers', () => ({
+  useProject: vi.fn(() => ({
+    projects: [],
+  })),
+  useCustomAttributes: vi.fn(() => ({
+    definitions: [],
+  })),
+}));
 
 // Mock react-virtuoso to render all items (bypasses virtualization in tests)
 vi.mock('react-virtuoso', () => ({
@@ -89,10 +100,29 @@ describe('RequirementList', () => {
     comments: true,
     created: true,
     approved: true,
+    projects: true,
   };
 
   beforeEach(() => {
     mockOnEdit.mockClear();
+    vi.mocked(useProject).mockReturnValue({
+      projects: [],
+      currentProjectId: '',
+      currentProject: null,
+      isLoading: false,
+      switchProject: vi.fn(),
+      createProject: vi.fn(),
+      updateProject: vi.fn(),
+      deleteProject: vi.fn(),
+      addToProject: vi.fn(),
+    });
+    vi.mocked(useCustomAttributes).mockReturnValue({
+      definitions: [],
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+      getDefinitionsForType: vi.fn(),
+    });
   });
 
   it('renders requirements correctly', () => {
@@ -101,7 +131,7 @@ describe('RequirementList', () => {
         requirements={mockRequirements}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
-        sortConfig={{ key: 'id', direction: 'asc' }}
+        sortConfig={{ key: 'idTitle', direction: 'asc' }}
         onSortChange={vi.fn()}
       />
     );
@@ -178,14 +208,24 @@ describe('RequirementList', () => {
       },
     ];
 
+    vi.mocked(useProject).mockReturnValue({
+      projects: mockProjects,
+      currentProjectId: '',
+      currentProject: null,
+      isLoading: false,
+      switchProject: vi.fn(),
+      createProject: vi.fn(),
+      updateProject: vi.fn(),
+      deleteProject: vi.fn(),
+      addToProject: vi.fn(),
+    });
+
     render(
       <RequirementList
         requirements={mockRequirements}
         onEdit={mockOnEdit}
         visibleColumns={defaultColumns}
-        showProjectColumn={true}
-        projects={mockProjects}
-        sortConfig={{ key: 'id', direction: 'asc' }}
+        sortConfig={{ key: 'idTitle', direction: 'asc' }}
         onSortChange={vi.fn()}
       />
     );

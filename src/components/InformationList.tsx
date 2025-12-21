@@ -1,6 +1,9 @@
 import React, { useMemo, useCallback } from 'react';
-import type { Information, InformationColumnVisibility, Project } from '../types';
-import { BaseArtifactTable, type ColumnDef } from './BaseArtifactTable';
+import type { Information, Project, InformationColumnVisibility } from '../types';
+import { formatDateTime } from '../utils/dateUtils';
+import { useProject, useCustomAttributes } from '../app/providers';
+import { BaseArtifactTable, MarkdownCell } from './index';
+import type { ColumnDef } from './BaseArtifactTable';
 import type { SortConfig } from './SortableHeader';
 
 interface InformationListProps {
@@ -9,8 +12,6 @@ interface InformationListProps {
   visibleColumns: InformationColumnVisibility;
   sortConfig: SortConfig;
   onSortChange: (key: string) => void;
-  showProjectColumn?: boolean;
-  projects?: Project[];
 }
 
 export const InformationList: React.FC<InformationListProps> = ({
@@ -19,9 +20,10 @@ export const InformationList: React.FC<InformationListProps> = ({
   visibleColumns,
   sortConfig,
   onSortChange,
-  showProjectColumn,
-  projects,
 }) => {
+  const { projects } = useProject();
+  const { definitions } = useCustomAttributes();
+
   const getProjectNames = useCallback(
     (infoId: string) => {
       if (!projects) return '';
@@ -32,15 +34,16 @@ export const InformationList: React.FC<InformationListProps> = ({
     },
     [projects]
   );
+
   const columns = useMemo<ColumnDef<Information>[]>(
     () => [
       {
-        key: 'id',
+        key: 'idTitle',
         label: 'ID / Title',
         width: '250px',
         render: (info: Information) => (
           <>
-            <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '4px' }}>
+            <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '2px' }}>
               {info.id}
             </div>
             <div style={{ color: 'var(--color-text-primary)' }}>{info.title}</div>
@@ -48,53 +51,17 @@ export const InformationList: React.FC<InformationListProps> = ({
         ),
       },
       {
-        key: 'text',
-        label: 'Content',
-        minWidth: '400px',
-        visible: visibleColumns.text,
-        render: (info: Information) => (
-          <div
-            style={{
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-text-secondary)',
-              whiteSpace: 'pre-wrap',
-            }}
-          >
-            {info.text}
-          </div>
-        ),
-      },
-      {
-        key: 'type',
-        label: 'Type',
-        width: '120px',
-        render: (info: Information) => (
-          <span
-            style={{
-              fontSize: 'var(--font-size-xs)',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              backgroundColor: 'var(--color-bg-tertiary)',
-              color: 'var(--color-text-secondary)',
-              border: '1px solid var(--color-border)',
-            }}
-          >
-            {info.type}
-          </span>
-        ),
-      }, // Added missing comma here
-      {
         key: 'projects',
         label: 'Project(s)',
         width: '150px',
-        visible: showProjectColumn,
+        visible: visibleColumns.projects,
         sortable: false,
         render: (info) => (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
             {getProjectNames(info.id)
               .split(', ')
               .map(
-                (name: string, i: number) =>
+                (name, i) =>
                   name && (
                     <span
                       key={i}
@@ -114,8 +81,64 @@ export const InformationList: React.FC<InformationListProps> = ({
           </div>
         ),
       },
+      {
+        key: 'type',
+        label: 'Type',
+        width: '120px',
+        visible: visibleColumns.type,
+        render: (info) => (
+          <span
+            style={{
+              padding: '2px 8px',
+              borderRadius: '12px',
+              fontSize: 'var(--font-size-xs)',
+              fontWeight: 500,
+              background: 'rgba(59, 130, 246, 0.1)',
+              color: 'var(--color-info)',
+              textTransform: 'capitalize',
+            }}
+          >
+            {info.type || 'General'}
+          </span>
+        ),
+      },
+      {
+        key: 'text',
+        label: 'Content',
+        minWidth: '300px',
+        visible: visibleColumns.text,
+        render: (info) => <MarkdownCell content={info.text || info.content || '-'} />,
+      },
+      {
+        key: 'created',
+        label: 'Created',
+        width: '120px',
+        visible: visibleColumns.created,
+        render: (info) => (
+          <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+            {info.dateCreated ? formatDateTime(info.dateCreated) : '-'}
+          </span>
+        ),
+      },
+      // Dynamic Custom Attributes
+      ...Object.keys(visibleColumns)
+        .filter(
+          (key) =>
+            !['idTitle', 'type', 'text', 'created', 'projects'].includes(key) && visibleColumns[key]
+        )
+        .map((key) => {
+          const definition = definitions.find((def) => def.id === key);
+          return {
+            key,
+            label: definition?.name || key,
+            render: (info: Information) => {
+              const val = info.customAttributes?.find((ca) => ca.attributeId === key)?.value;
+              return typeof val === 'boolean' ? (val ? 'Yes' : 'No') : val?.toString() || '-';
+            },
+          };
+        }),
     ],
-    [visibleColumns, showProjectColumn, getProjectNames]
+    [visibleColumns, getProjectNames, definitions]
   );
 
   return (

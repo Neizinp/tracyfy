@@ -42,3 +42,4 @@ export { WorkflowModal } from './WorkflowModal';
 export { DocumentList } from './DocumentList';
 export { DocumentModal } from './DocumentModal';
 export { DocumentEditor } from './DocumentEditor';
+export { MarkdownCell } from './DetailedRequirementView';

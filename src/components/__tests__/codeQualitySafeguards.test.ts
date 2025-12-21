@@ -29,6 +29,15 @@ describe('Code Quality Safeguards', () => {
       'src/utils/pdf/pdfMainExport.ts',
       'src/components/__tests__/InformationModal.test.tsx',
       'src/components/__tests__/UseCaseModal.test.tsx',
+      'src/components/__tests__/RequirementList.test.tsx',
+      'src/components/__tests__/UseCaseList.test.tsx',
+      'src/components/__tests__/TestCaseList.test.tsx',
+      'src/components/__tests__/InformationList.test.tsx',
+      'src/components/RequirementList.tsx',
+      'src/components/UseCaseList.tsx',
+      'src/components/TestCaseList.tsx',
+      'src/components/InformationList.tsx',
+      'src/components/RiskList.tsx',
       'src/components/__tests__/codeQualitySafeguards.test.ts',
     ];
 
