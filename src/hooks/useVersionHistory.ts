@@ -220,6 +220,16 @@ export function useVersionHistory({
     });
   }, []);
 
+  // Select all artifact types
+  const handleSelectAll = useCallback(() => {
+    setSelectedTypes(new Set(Object.keys(ARTIFACT_TYPE_CONFIG)));
+  }, []);
+
+  // Deselect all artifact types
+  const handleDeselectAll = useCallback(() => {
+    setSelectedTypes(new Set());
+  }, []);
+
   // Filter global commits based on selected types
   const filteredGlobalCommits = useMemo(() => {
     return globalCommits.filter((commit) => {
@@ -293,6 +303,8 @@ export function useVersionHistory({
     // Filters
     selectedTypes,
     handleToggleType,
+    handleSelectAll,
+    handleDeselectAll,
 
     // Snapshot
     viewingSnapshot,

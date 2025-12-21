@@ -107,7 +107,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
             }}
           >
             <span style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-xs)' }}>
-              {commit.hash.substring(0, 7)}
+              {commit.hash?.substring(0, 7) || 'unknown'}
             </span>
             <span>•</span>
             <span>{commit.author}</span>

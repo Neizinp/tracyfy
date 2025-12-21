@@ -104,7 +104,7 @@ ipcMain.handle('git:log', async (_event, dir, depth, filepath, ref) => {
       ref: ref || 'HEAD',
     });
     return commits.map((c) => ({
-      oid: c.oid,
+      hash: c.oid,
       message: c.commit.message,
       author: c.commit.author.name,
       timestamp: c.commit.author.timestamp * 1000,

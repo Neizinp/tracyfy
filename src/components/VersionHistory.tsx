@@ -54,6 +54,8 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     tagToCommitHash,
     selectedTypes,
     handleToggleType,
+    handleSelectAll,
+    handleDeselectAll,
     viewingSnapshot,
     setViewingSnapshot,
   } = useVersionHistory({
@@ -279,7 +281,12 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <CommitFilters selectedTypes={selectedTypes} onToggleType={handleToggleType} />
+                <CommitFilters
+                  selectedTypes={selectedTypes}
+                  onToggleType={handleToggleType}
+                  onSelectAll={handleSelectAll}
+                  onDeselectAll={handleDeselectAll}
+                />
                 {filteredGlobalCommits.length === 0 ? (
                   <div
                     style={{
