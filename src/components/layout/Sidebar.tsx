@@ -33,6 +33,7 @@ import { RepositoryButton } from './RepositoryButton';
 import { sectionHeaderStyle } from './layoutStyles';
 import { RemoteSettingsModal } from '../RemoteSettingsModal';
 import { useSidebar } from './useSidebar';
+import { formatDateTime } from '../../utils/dateUtils';
 
 const MIN_WIDTH = 180;
 const MAX_WIDTH = 400;
@@ -718,8 +719,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </nav>
 
-      <div style={{ padding: 'var(--spacing-md)', borderTop: '1px solid var(--color-border)' }}>
-        {/* Reserved for future use */}
+      <div
+        style={{
+          padding: 'var(--spacing-md)',
+          borderTop: '1px solid var(--color-border)',
+          fontSize: 'var(--font-size-xs)',
+          color: 'var(--color-text-muted)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.8 }}>
+          <span>
+            v{__APP_VERSION__} ({__APP_COMMIT_HASH__})
+          </span>
+          <span>{formatDateTime(new Date(__APP_BUILD_DATE__).getTime())}</span>
+        </div>
       </div>
 
       {/* Resize handle */}

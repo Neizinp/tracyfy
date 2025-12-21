@@ -96,4 +96,5 @@ mockedUseUI.mockReturnValue({
 
 ---
 
-_Last Updated: December 2025_
+Make sure all dates follow the formatting "YYYY-MM-DD"
+Make sure all clock times follow the 24H format
