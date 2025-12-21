@@ -15,7 +15,10 @@ class TestArtifactService extends BaseArtifactService<Requirement> {
   protected extension = '.md';
 
   constructor() {
-    super();
+    super('requirement', {
+      serialize: (item) => JSON.stringify(item),
+      deserialize: (content) => JSON.parse(content),
+    });
   }
 
   protected toMarkdown(artifact: Requirement): string {
@@ -34,12 +37,13 @@ title: ${artifact.title}
       title: 'Test',
       description: '',
       text: '',
-      author: '',
+      author: 'Admin',
       priority: 'medium',
       status: 'draft',
       dateCreated: Date.now(),
       lastModified: Date.now(),
       revision: '01',
+      rationale: '',
     };
   }
 

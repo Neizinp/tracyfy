@@ -16,6 +16,7 @@ const ARTIFACT_TYPE_LABELS: Record<ApplicableArtifactType, string> = {
   information: 'Information',
   risk: 'Risks',
   link: 'Links',
+  document: 'Documents',
 };
 
 const TYPE_COLORS: Record<AttributeType, string> = {

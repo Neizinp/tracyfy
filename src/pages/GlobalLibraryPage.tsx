@@ -3,7 +3,6 @@ import { useParams, Navigate } from 'react-router-dom';
 import { RequirementList, UseCaseList, TestCaseList, InformationList } from '../components';
 import {
   useGlobalState,
-  useProject,
   useUI,
   useRequirements,
   useUseCases,
@@ -15,7 +14,6 @@ import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
 export const GlobalLibraryPage: React.FC = () => {
   const { globalRequirements, globalUseCases, globalTestCases, globalInformation } =
     useGlobalState();
-  const { projects } = useProject();
   const {
     columnVisibility,
     useCaseColumnVisibility,
@@ -77,8 +75,6 @@ export const GlobalLibraryPage: React.FC = () => {
           requirements={sortedReqs}
           onEdit={handleEditRequirement}
           visibleColumns={columnVisibility}
-          showProjectColumn={true}
-          projects={projects}
           sortConfig={reqSort}
           onSortChange={onReqSort}
         />
@@ -88,10 +84,7 @@ export const GlobalLibraryPage: React.FC = () => {
       return (
         <UseCaseList
           useCases={sortedUCs}
-          requirements={globalRequirements}
           onEdit={handleEditUseCase}
-          showProjectColumn={true}
-          projects={projects}
           visibleColumns={useCaseColumnVisibility}
           sortConfig={ucSort}
           onSortChange={onUCSort}
@@ -103,8 +96,6 @@ export const GlobalLibraryPage: React.FC = () => {
         <TestCaseList
           testCases={sortedTCs}
           onEdit={handleEditTestCase}
-          showProjectColumn={true}
-          projects={projects}
           visibleColumns={testCaseColumnVisibility}
           sortConfig={tcSort}
           onSortChange={onTCSort}
@@ -116,8 +107,6 @@ export const GlobalLibraryPage: React.FC = () => {
         <InformationList
           information={sortedInfo}
           onEdit={handleEditInformation}
-          showProjectColumn={true}
-          projects={projects}
           visibleColumns={informationColumnVisibility}
           sortConfig={infoSort}
           onSortChange={onInfoSort}

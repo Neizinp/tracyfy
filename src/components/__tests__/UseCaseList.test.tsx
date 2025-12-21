@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { UseCaseList } from '../UseCaseList';
-import type { UseCase, UseCaseColumnVisibility, Project } from '../../types';
+import type { UseCase, Project } from '../../types';
 import { useProject, useCustomAttributes } from '../../app/providers';
 
 // Mock hooks
@@ -46,9 +46,8 @@ vi.mock('react-virtuoso', () => ({
   },
 }));
 
-const defaultColumns: UseCaseColumnVisibility = {
+const visibleColumns = {
   idTitle: true,
-  revision: true,
   description: true,
   actor: true,
   priority: true,
@@ -58,6 +57,9 @@ const defaultColumns: UseCaseColumnVisibility = {
   alternativeFlows: false,
   postconditions: false,
   projects: true,
+  created: true,
+  author: true,
+  revision: true,
 };
 
 describe('UseCaseList', () => {
@@ -107,7 +109,7 @@ describe('UseCaseList', () => {
       <UseCaseList
         useCases={mockUseCases}
         onEdit={mockOnEdit}
-        visibleColumns={defaultColumns}
+        visibleColumns={visibleColumns}
         sortConfig={{ key: 'idTitle', direction: 'asc' }}
         onSortChange={vi.fn()}
       />
@@ -123,7 +125,7 @@ describe('UseCaseList', () => {
       <UseCaseList
         useCases={mockUseCases}
         onEdit={mockOnEdit}
-        visibleColumns={defaultColumns}
+        visibleColumns={visibleColumns}
         sortConfig={{ key: 'idTitle', direction: 'asc' }}
         onSortChange={vi.fn()}
       />
@@ -164,7 +166,7 @@ describe('UseCaseList', () => {
       <UseCaseList
         useCases={mockUseCases}
         onEdit={mockOnEdit}
-        visibleColumns={defaultColumns}
+        visibleColumns={visibleColumns}
         sortConfig={{ key: 'idTitle', direction: 'asc' }}
         onSortChange={vi.fn()}
       />
@@ -178,7 +180,7 @@ describe('UseCaseList', () => {
       <UseCaseList
         useCases={[]}
         onEdit={mockOnEdit}
-        visibleColumns={defaultColumns}
+        visibleColumns={visibleColumns}
         sortConfig={{ key: 'idTitle', direction: 'asc' }}
         onSortChange={vi.fn()}
       />

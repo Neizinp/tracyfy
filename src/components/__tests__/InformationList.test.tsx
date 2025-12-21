@@ -53,6 +53,9 @@ const defaultColumns: InformationColumnVisibility = {
   text: true,
   created: true,
   projects: true,
+  description: true,
+  status: true,
+  author: true,
 };
 
 describe('InformationList', () => {

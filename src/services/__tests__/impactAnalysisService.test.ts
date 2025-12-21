@@ -12,10 +12,11 @@ describe('impactAnalysisService', () => {
     id: `LINK-${sourceId}-${targetId}`,
     sourceId,
     targetId,
-    type: type as any,
+    type: type as Link['type'],
     projectIds: [],
     dateCreated: Date.now(),
     lastModified: Date.now(),
+    revision: '01',
   });
 
   describe('getImpactChain', () => {

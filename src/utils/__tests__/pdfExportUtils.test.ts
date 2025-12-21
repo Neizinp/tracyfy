@@ -991,6 +991,7 @@ describe('pdfExportUtils', () => {
           projectIds: ['p1'],
           dateCreated: Date.now(),
           lastModified: Date.now(),
+          revision: '01',
         },
       ]);
 

@@ -18,6 +18,7 @@ describe('EditLinkModal', () => {
     projectIds: [],
     dateCreated: 1700000000000,
     lastModified: 1700000100000,
+    revision: '01',
   };
 
   const mockProjectScopedLink: Link = {
@@ -28,6 +29,7 @@ describe('EditLinkModal', () => {
     projectIds: ['PRJ-001'],
     dateCreated: 1700000000000,
     lastModified: 1700000000000,
+    revision: '01',
   };
 
   const mockProjects: Project[] = [

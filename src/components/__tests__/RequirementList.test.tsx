@@ -101,6 +101,8 @@ describe('RequirementList', () => {
     created: true,
     approved: true,
     projects: true,
+    category: true,
+    revision: true,
   };
 
   beforeEach(() => {

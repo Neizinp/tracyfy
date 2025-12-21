@@ -30,12 +30,6 @@ describe('Markdown Property Safeguards', () => {
       const interfaceMatch = typeContent.match(/interface\s+Link\s*\{([^}]+)\}/);
       if (!interfaceMatch) return;
 
-      const properties = interfaceMatch[1]
-        .split('\n')
-        .map((line) => line.trim())
-        .filter((line) => line && !line.startsWith('//') && line.includes(':'))
-        .map((line) => line.split(':')[0].replace('?', '').trim());
-
       // Required properties that MUST be in linkToMarkdown
       const requiredProps = ['id', 'sourceId', 'targetId', 'type', 'projectIds'];
 

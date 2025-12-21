@@ -19,6 +19,7 @@ describe('linkMarkdownUtils', () => {
         projectIds: [],
         dateCreated: 1700000000000,
         lastModified: 1700000100000,
+        revision: '01',
       };
 
       const markdown = linkToMarkdown(link);
@@ -42,6 +43,7 @@ describe('linkMarkdownUtils', () => {
         projectIds: ['PRJ-001', 'PRJ-002'],
         dateCreated: 1700000000000,
         lastModified: 1700000000000,
+        revision: '01',
       };
 
       const markdown = linkToMarkdown(link);
@@ -60,6 +62,7 @@ describe('linkMarkdownUtils', () => {
         projectIds: [],
         dateCreated: 1700000000000,
         lastModified: 1700000000000,
+        revision: '01',
       };
 
       const markdown = linkToMarkdown(link);
@@ -79,6 +82,7 @@ describe('linkMarkdownUtils', () => {
         projectIds: [],
         dateCreated: 1700000000000,
         lastModified: 1700000000000,
+        revision: '01',
       };
 
       const markdown = linkToMarkdown(link);
@@ -95,6 +99,7 @@ describe('linkMarkdownUtils', () => {
         projectIds: ['PRJ-001'],
         dateCreated: 1700000000000,
         lastModified: 1700000000000,
+        revision: '01',
       };
 
       const markdown = linkToMarkdown(link);
@@ -284,6 +289,7 @@ lastModified: 1700000000000
         projectIds: ['PRJ-001', 'PRJ-002'],
         dateCreated: 1700000000000,
         lastModified: 1700000100000,
+        revision: '01',
       };
 
       const markdown = linkToMarkdown(original);
@@ -308,6 +314,7 @@ lastModified: 1700000000000
         projectIds: [],
         dateCreated: 1700000000000,
         lastModified: 1700000000000,
+        revision: '01',
       };
 
       const markdown = linkToMarkdown(original);

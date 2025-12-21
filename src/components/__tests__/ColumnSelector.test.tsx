@@ -18,6 +18,9 @@ describe('ColumnSelector', () => {
     comments: true,
     created: true,
     approved: true,
+    category: true,
+    revision: true,
+    projects: true,
   };
 
   const defaultProps = {

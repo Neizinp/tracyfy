@@ -4,8 +4,7 @@
  * Tests for toggling column visibility in artifact lists.
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock the useUI hook
 const mockSetColumnVisibility = vi.fn();
@@ -21,6 +20,8 @@ const mockColumnVisibility = {
   created: true,
   approved: false,
   projects: true,
+  category: true,
+  revision: true,
 };
 
 vi.mock('../../app/providers', () => ({
