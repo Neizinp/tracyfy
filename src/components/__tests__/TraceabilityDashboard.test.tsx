@@ -25,7 +25,28 @@ vi.mock('../../services/diskLinkService', () => ({
 vi.mock('../../app/providers/FileSystemProvider', () => ({
   useFileSystem: () => ({
     isReady: true,
-    links: [],
+    links: [
+      {
+        id: 'LINK-001',
+        sourceId: 'REQ-001',
+        targetId: 'UC-001',
+        type: 'satisfies',
+        projectIds: [],
+        dateCreated: Date.now(),
+        lastModified: Date.now(),
+        revision: '01',
+      },
+      {
+        id: 'LINK-002',
+        sourceId: 'TC-001',
+        targetId: 'REQ-001',
+        type: 'verifies',
+        projectIds: [],
+        dateCreated: Date.now(),
+        lastModified: Date.now(),
+        revision: '01',
+      },
+    ],
     setLinks: vi.fn(),
     saveLink: vi.fn(),
     deleteLink: vi.fn(),
