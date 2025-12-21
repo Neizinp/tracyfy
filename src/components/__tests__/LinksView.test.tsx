@@ -19,6 +19,49 @@ vi.mock('../../services/diskLinkService', () => ({
   },
 }));
 
+// Mock the FileSystemProvider
+vi.mock('../../app/providers/FileSystemProvider', () => ({
+  useFileSystem: () => ({
+    isReady: true,
+    links: [
+      {
+        id: 'LINK-001',
+        sourceId: 'REQ-001',
+        targetId: 'UC-001',
+        type: 'satisfies',
+        projectIds: [],
+        dateCreated: 1700000000000,
+        lastModified: 1700000100000,
+        revision: '01',
+      },
+      {
+        id: 'LINK-002',
+        sourceId: 'REQ-002',
+        targetId: 'TC-001',
+        type: 'verifies',
+        projectIds: ['PRJ-001'],
+        dateCreated: 1700000000000,
+        lastModified: 1700000000000,
+        revision: '01',
+      },
+      {
+        id: 'LINK-003',
+        sourceId: 'UC-001',
+        targetId: 'INFO-001',
+        type: 'related_to',
+        projectIds: [],
+        dateCreated: 1700000000000,
+        lastModified: 1700000000000,
+        revision: '01',
+      },
+    ],
+    setLinks: vi.fn(),
+    saveLink: vi.fn(),
+    deleteLink: vi.fn(),
+    reloadData: vi.fn(),
+  }),
+}));
+
 describe('LinksView', () => {
   const mockLinks: Link[] = [
     {
@@ -29,6 +72,7 @@ describe('LinksView', () => {
       projectIds: [],
       dateCreated: 1700000000000,
       lastModified: 1700000100000,
+      revision: '01',
     },
     {
       id: 'LINK-002',
@@ -38,6 +82,7 @@ describe('LinksView', () => {
       projectIds: ['PRJ-001'],
       dateCreated: 1700000000000,
       lastModified: 1700000000000,
+      revision: '01',
     },
     {
       id: 'LINK-003',
@@ -47,6 +92,7 @@ describe('LinksView', () => {
       projectIds: [],
       dateCreated: 1700000000000,
       lastModified: 1700000000000,
+      revision: '01',
     },
   ];
 

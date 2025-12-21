@@ -17,7 +17,20 @@ vi.mock('../../services/diskLinkService', () => ({
     getAllLinks: vi.fn(),
     deleteLink: vi.fn(),
     updateLink: vi.fn(),
+    subscribe: vi.fn(() => () => {}),
   },
+}));
+
+// Mock the FileSystemProvider for LinksView
+vi.mock('../../app/providers/FileSystemProvider', () => ({
+  useFileSystem: () => ({
+    isReady: true,
+    links: [],
+    setLinks: vi.fn(),
+    saveLink: vi.fn(),
+    deleteLink: vi.fn(),
+    reloadData: vi.fn(),
+  }),
 }));
 
 // Default mock setup - reset before each test
@@ -233,6 +246,7 @@ describe('TraceabilityDashboard', () => {
         projectIds: [],
         dateCreated: Date.now(),
         lastModified: Date.now(),
+        revision: '01',
       },
       {
         id: 'LINK-002',
@@ -242,6 +256,7 @@ describe('TraceabilityDashboard', () => {
         projectIds: [],
         dateCreated: Date.now(),
         lastModified: Date.now(),
+        revision: '01',
       },
     ];
 
@@ -298,6 +313,7 @@ describe('TraceabilityDashboard', () => {
         projectIds: [],
         dateCreated: Date.now(),
         lastModified: Date.now(),
+        revision: '01',
       },
       {
         id: 'LINK-002',
@@ -307,6 +323,7 @@ describe('TraceabilityDashboard', () => {
         projectIds: [],
         dateCreated: Date.now(),
         lastModified: Date.now(),
+        revision: '01',
       },
     ];
 
