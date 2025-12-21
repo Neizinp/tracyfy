@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type MockedFunction } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { UseCaseModal } from '../UseCaseModal';
 import { useUseCaseForm } from '../../hooks/useUseCaseForm';
@@ -6,7 +6,7 @@ import type { UseCase } from '../../types';
 
 // Mock everything to solve the OOM/hang issues
 vi.mock('../../app/providers', () => ({
-  UIProvider: ({ children }: any) => <>{children}</>,
+  UIProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useUI: vi.fn(() => ({
     setIsLinkModalOpen: vi.fn(),
     setLinkSourceId: vi.fn(),
@@ -46,11 +46,19 @@ vi.mock('../BaseArtifactModal', () => ({
     onTabChange,
     tabs,
     onClose,
-  }: any) => (
+  }: {
+    children: React.ReactNode;
+    title: string;
+    onSubmit: (e: React.FormEvent) => void;
+    submitLabel: string;
+    onTabChange: (id: string) => void;
+    tabs: { id: string; label: string }[];
+    onClose: () => void;
+  }) => (
     <div>
       <h2>{title}</h2>
       <div data-testid="tabs">
-        {tabs?.map((t: any) => (
+        {tabs?.map((t: { id: string; label: string }) => (
           <button key={t.id} onClick={() => onTabChange?.(t.id)}>
             {t.label}
           </button>
@@ -78,7 +86,15 @@ vi.mock('../RevisionHistoryTab', () => ({
 }));
 
 vi.mock('../MarkdownEditor', () => ({
-  MarkdownEditor: ({ label, value, onChange }: any) => (
+  MarkdownEditor: ({
+    label,
+    value,
+    onChange,
+  }: {
+    label: string;
+    value: string;
+    onChange: (val: string) => void;
+  }) => (
     <div data-testid="markdown-editor">
       <label>{label}</label>
       <textarea aria-label={label} value={value} onChange={(e) => onChange(e.target.value)} />
@@ -107,6 +123,7 @@ describe('UseCaseModal', () => {
     useCase: null as UseCase | null,
     onClose: vi.fn(),
     onSubmit: vi.fn(),
+    onDelete: vi.fn(),
   };
 
   const mockFormState = {
@@ -134,13 +151,17 @@ describe('UseCaseModal', () => {
     customAttributes: [],
     setCustomAttributes: vi.fn(),
     handleSubmit: vi.fn(),
+    handleDelete: vi.fn(),
+    confirmDelete: vi.fn(),
+    cancelDelete: vi.fn(),
+    showDeleteConfirm: false,
     handleNavigateToArtifact: vi.fn(),
     handleRemoveLink: vi.fn(),
-  };
+  } as unknown as ReturnType<typeof useUseCaseForm>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useUseCaseForm as any).mockReturnValue(mockFormState);
+    (useUseCaseForm as MockedFunction<typeof useUseCaseForm>).mockReturnValue(mockFormState);
   });
 
   it('should render when isOpen is true', () => {
@@ -167,23 +188,23 @@ describe('UseCaseModal', () => {
   });
 
   it('should populate form fields when in overview tab', () => {
-    (useUseCaseForm as any).mockReturnValue({
+    (useUseCaseForm as MockedFunction<typeof useUseCaseForm>).mockReturnValue({
       ...mockFormState,
       title: 'User Login',
       actor: 'End User',
-    });
+    } as unknown as ReturnType<typeof useUseCaseForm>);
     render(<UseCaseModal {...defaultProps} />);
     expect(screen.getByDisplayValue('User Login')).toBeInTheDocument();
     expect(screen.getByDisplayValue('End User')).toBeInTheDocument();
   });
 
   it('should render flow fields when in flows tab', () => {
-    (useUseCaseForm as any).mockReturnValue({
+    (useUseCaseForm as MockedFunction<typeof useUseCaseForm>).mockReturnValue({
       ...mockFormState,
       activeTab: 'flows',
       mainFlow: 'Step 1',
       alternativeFlows: 'Alt 1',
-    });
+    } as unknown as ReturnType<typeof useUseCaseForm>);
     render(<UseCaseModal {...defaultProps} />);
     expect(screen.getByDisplayValue('Step 1')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Alt 1')).toBeInTheDocument();
@@ -196,10 +217,10 @@ describe('UseCaseModal', () => {
   });
 
   it('should show revision history tab when in edit mode', () => {
-    (useUseCaseForm as any).mockReturnValue({
+    (useUseCaseForm as MockedFunction<typeof useUseCaseForm>).mockReturnValue({
       ...mockFormState,
       isEditMode: true,
-    });
+    } as unknown as ReturnType<typeof useUseCaseForm>);
     render(<UseCaseModal {...defaultProps} useCase={mockUseCase} />);
     expect(screen.getByText('Revision History')).toBeInTheDocument();
   });

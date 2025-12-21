@@ -9,7 +9,6 @@ import type {
   ProjectBaseline,
   Risk,
   ArtifactDocument,
-  CustomAttributeDefinition,
 } from '../../types';
 import { realGitService } from '../../services/realGitService';
 import { diskLinkService } from '../../services/diskLinkService';
@@ -55,8 +54,18 @@ export async function exportProjectToPDF(
   includeDocuments: boolean = true,
   projectDocuments: ArtifactDocument[] = []
 ): Promise<void> {
+  // Types for File System Access API
+  interface ExtendedFileSystemFileHandle extends FileSystemHandle {
+    createWritable(): Promise<FileSystemWritableFileStream>;
+  }
+
+  interface FileSystemWritableFileStream extends WritableStream {
+    write(data: Blob | BufferSource | string): Promise<void>;
+    close(): Promise<void>;
+  }
+
   // 0. Request File Handle FIRST (to ensure user activation is valid)
-  let fileHandle: FileSystemFileHandle | null = null;
+  let fileHandle: ExtendedFileSystemFileHandle | null = null;
   const baselineSuffix = selectedBaseline ? selectedBaseline.name : 'Current State';
   const defaultFilename = `${project.name.replace(/[^a-z0-9]/gi, '_')} - ${baselineSuffix.replace(/[^a-z0-9]/gi, '_')}.pdf`;
 
@@ -64,7 +73,7 @@ export async function exportProjectToPDF(
     if ('showSaveFilePicker' in window) {
       fileHandle = await (
         window as unknown as {
-          showSaveFilePicker: (options: object) => Promise<FileSystemFileHandle>;
+          showSaveFilePicker: (options: object) => Promise<ExtendedFileSystemFileHandle>;
         }
       ).showSaveFilePicker({
         suggestedName: defaultFilename,
@@ -373,7 +382,7 @@ export async function exportProjectToPDF(
   if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
     try {
       const pdfBlob = doc.output('blob');
-      const writable = await (fileHandle as any).createWritable();
+      const writable = await fileHandle!.createWritable();
       await writable.write(pdfBlob);
       await writable.close();
     } catch (err) {
@@ -399,13 +408,27 @@ export async function exportSingleDocumentToPDF(
   },
   currentUserName?: string
 ): Promise<void> {
+  // Types for File System Access API
+  interface ExtendedFileSystemFileHandle extends FileSystemHandle {
+    createWritable(): Promise<FileSystemWritableFileStream>;
+  }
+
+  interface FileSystemWritableFileStream extends WritableStream {
+    write(data: Blob | BufferSource | string): Promise<void>;
+    close(): Promise<void>;
+  }
+
   // 0. Request File Handle
-  let fileHandle: FileSystemFileHandle | null = null;
+  let fileHandle: ExtendedFileSystemFileHandle | null = null;
   const defaultFilename = `Document_${document.id}_${document.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
 
   if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
     try {
-      fileHandle = await (window as any).showSaveFilePicker({
+      fileHandle = await (
+        window as unknown as {
+          showSaveFilePicker: (options: object) => Promise<ExtendedFileSystemFileHandle>;
+        }
+      ).showSaveFilePicker({
         suggestedName: defaultFilename,
         types: [{ description: 'PDF Document', accept: { 'application/pdf': ['.pdf'] } }],
       });
@@ -479,7 +502,7 @@ export async function exportSingleDocumentToPDF(
   // 6. Save
   if (fileHandle) {
     const pdfBlob = doc.output('blob');
-    const writable = await (fileHandle as any).createWritable();
+    const writable = await fileHandle.createWritable();
     await writable.write(pdfBlob);
     await writable.close();
   } else {

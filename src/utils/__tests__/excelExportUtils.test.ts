@@ -59,6 +59,7 @@ const defaultOptions = {
   includeTraceability: true,
   includeVerificationMatrix: false,
   includeTitlePage: false,
+  includeDocuments: false,
 };
 
 describe('excelExportUtils', () => {

@@ -66,7 +66,6 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     handleRemoveLink,
     handleDelete,
     showDeleteConfirm,
-    confirmDelete,
     cancelDelete,
   } = useUseCaseForm({
     isOpen,

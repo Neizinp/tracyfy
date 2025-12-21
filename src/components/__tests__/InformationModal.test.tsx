@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type MockedFunction } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { InformationModal } from '../InformationModal';
 import { useInformationForm } from '../../hooks/useInformationForm';
@@ -6,7 +6,7 @@ import type { Information } from '../../types';
 
 // Mock everything to solve the OOM/hang issues
 vi.mock('../../app/providers', () => ({
-  UIProvider: ({ children }: any) => <>{children}</>,
+  UIProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useUI: vi.fn(() => ({
     setIsLinkModalOpen: vi.fn(),
     setLinkSourceId: vi.fn(),
@@ -46,11 +46,19 @@ vi.mock('../BaseArtifactModal', () => ({
     onTabChange,
     tabs,
     onClose,
-  }: any) => (
+  }: {
+    children: React.ReactNode;
+    title: string;
+    onSubmit: (e: React.FormEvent) => void;
+    submitLabel: string;
+    onTabChange: (id: string) => void;
+    tabs: { id: string; label: string }[];
+    onClose: () => void;
+  }) => (
     <div>
       <h2>{title}</h2>
       <div data-testid="tabs">
-        {tabs?.map((t: any) => (
+        {tabs?.map((t: { id: string; label: string }) => (
           <button key={t.id} onClick={() => onTabChange?.(t.id)}>
             {t.label}
           </button>
@@ -78,7 +86,15 @@ vi.mock('../RevisionHistoryTab', () => ({
 }));
 
 vi.mock('../MarkdownEditor', () => ({
-  MarkdownEditor: ({ label, value, onChange }: any) => (
+  MarkdownEditor: ({
+    label,
+    value,
+    onChange,
+  }: {
+    label: string;
+    value: string;
+    onChange: (val: string) => void;
+  }) => (
     <div data-testid="markdown-editor">
       <label>{label}</label>
       <textarea aria-label={label} value={value} onChange={(e) => onChange(e.target.value)} />
@@ -102,6 +118,7 @@ describe('InformationModal', () => {
     information: null as Information | null,
     onClose: vi.fn(),
     onSubmit: vi.fn(),
+    onDelete: vi.fn(),
   };
 
   const mockFormState = {
@@ -117,13 +134,19 @@ describe('InformationModal', () => {
     customAttributes: [],
     setCustomAttributes: vi.fn(),
     handleSubmit: vi.fn(),
+    handleDelete: vi.fn(),
+    confirmDelete: vi.fn(),
+    cancelDelete: vi.fn(),
+    showDeleteConfirm: false,
     handleNavigateToArtifact: vi.fn(),
     handleRemoveLink: vi.fn(),
-  };
+  } as unknown as ReturnType<typeof useInformationForm>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useInformationForm as any).mockReturnValue(mockFormState);
+    (useInformationForm as MockedFunction<typeof useInformationForm>).mockReturnValue(
+      mockFormState
+    );
   });
 
   it('should render when isOpen is true', () => {
@@ -150,10 +173,10 @@ describe('InformationModal', () => {
   });
 
   it('should show revision history tab when in edit mode', () => {
-    (useInformationForm as any).mockReturnValue({
+    (useInformationForm as MockedFunction<typeof useInformationForm>).mockReturnValue({
       ...mockFormState,
       isEditMode: true,
-    });
+    } as unknown as ReturnType<typeof useInformationForm>);
     render(<InformationModal {...defaultProps} information={mockInformation} />);
     expect(screen.getByText('Revision History')).toBeInTheDocument();
   });
@@ -165,12 +188,12 @@ describe('InformationModal', () => {
   });
 
   it('should render correct fields in overview tab', () => {
-    (useInformationForm as any).mockReturnValue({
+    (useInformationForm as MockedFunction<typeof useInformationForm>).mockReturnValue({
       ...mockFormState,
       title: 'Test Title',
       text: 'Test Text',
       type: 'meeting',
-    });
+    } as unknown as ReturnType<typeof useInformationForm>);
     render(<InformationModal {...defaultProps} />);
 
     expect(screen.getByDisplayValue('Test Title')).toBeInTheDocument();
@@ -180,11 +203,11 @@ describe('InformationModal', () => {
   });
 
   it('should show revision history content when history tab is active', () => {
-    (useInformationForm as any).mockReturnValue({
+    (useInformationForm as MockedFunction<typeof useInformationForm>).mockReturnValue({
       ...mockFormState,
       isEditMode: true,
       activeTab: 'history',
-    });
+    } as unknown as ReturnType<typeof useInformationForm>);
     render(<InformationModal {...defaultProps} information={mockInformation} />);
     expect(screen.getByTestId('revision-history')).toBeInTheDocument();
   });

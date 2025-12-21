@@ -56,7 +56,6 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     handleRemoveLink,
     handleDelete,
     showDeleteConfirm,
-    confirmDelete,
     cancelDelete,
   } = useInformationForm({
     isOpen,
