@@ -319,8 +319,10 @@ class GitCoreService {
       let result: FileStatus[] = [];
       let statusMatrixFiles = new Set<string>();
 
-      // Electron path: use IPC for proper git status
       if (isElectronEnv()) {
+        console.log(
+          '[gitCoreService.getStatus] Electron: calling window.electronAPI.git.statusMatrix'
+        );
         const status = await window.electronAPI!.git.statusMatrix(getRootDir());
         if (Array.isArray(status)) {
           const parsed = parseStatusMatrix(status);
@@ -330,7 +332,11 @@ class GitCoreService {
       } else {
         // Browser path: Use git.statusMatrix directly with fsAdapter
         try {
+          console.log('[gitCoreService.getStatus] Browser: calling isomorphic-git.statusMatrix');
           const status = await git.statusMatrix({ fs: fsAdapter, dir: getRootDir() });
+          console.log(
+            `[gitCoreService.getStatus] Browser: statusMatrix returned ${status?.length || 0} items`
+          );
           if (Array.isArray(status)) {
             const parsed = parseStatusMatrix(status as [string, number, number, number][]);
             result = parsed.statuses;
@@ -455,6 +461,61 @@ class GitCoreService {
 
     // Wait for our commit to complete
     await this.commitQueue;
+  }
+
+  /**
+   * Revert changes to a file (Discard Changes)
+   */
+  async revertFile(filepath: string): Promise<void> {
+    if (!this.initialized) {
+      throw new Error('Git service not initialized');
+    }
+
+    debug.log(`[revertFile] Attempting to revert: ${filepath}`);
+
+    // Determine if file is tracked or untracked
+    const status = await this.getStatus();
+    const fileStatus = status.find((s) => s.path === filepath);
+
+    if (!fileStatus) {
+      debug.warn(`[revertFile] File not found in status: ${filepath}`);
+      return;
+    }
+
+    debug.log(`[revertFile] File status for ${filepath}: ${fileStatus.status}`);
+
+    if (fileStatus.status === 'new') {
+      // Untracked file: Delete it from disk
+      console.log(`[revertFile] Deleting untracked file: ${filepath}`);
+      await fileSystemService.deleteFile(filepath);
+    } else {
+      // Tracked/Modified file: Revert using git checkout
+      console.log(`[revertFile] Checking out ${filepath} from HEAD`);
+      if (isElectronEnv()) {
+        console.log('[revertFile] Electron: calling git.checkout');
+        const res = await window.electronAPI!.git.checkout(getRootDir(), filepath, true);
+        if (res.error) {
+          console.error(`[revertFile] Electron checkout failed: ${res.error}`);
+          throw new Error(res.error);
+        }
+      } else {
+        console.log('[revertFile] Browser: calling isomorphic-git.checkout');
+        await git.checkout({
+          fs: fsAdapter,
+          dir: getRootDir(),
+          ref: 'HEAD',
+          filepaths: [filepath],
+          force: true,
+        });
+      }
+    }
+
+    debug.log(`[revertFile] Successfully reverted ${filepath}`);
+
+    // Dispatch event to notify UI of status change
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('git-status-changed'));
+    }
   }
 
   /**

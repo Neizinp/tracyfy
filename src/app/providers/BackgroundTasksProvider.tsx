@@ -28,11 +28,13 @@ export const BackgroundTasksProvider: React.FC<{ children: React.ReactNode }> = 
 
   const startTask = useCallback((message: string): string => {
     const id = `task-${++taskIdCounter.current}`;
+    console.log(`[BackgroundTasks] Starting task: ${id} - ${message}`);
     setTasks((prev) => [...prev, { id, message, startTime: Date.now() }]);
     return id;
   }, []);
 
   const endTask = useCallback((id: string) => {
+    console.log(`[BackgroundTasks] Ending task: ${id}`);
     setTasks((prev) => prev.filter((t) => t.id !== id));
   }, []);
 

@@ -119,6 +119,11 @@ declare global {
           token?: string,
           author?: { name: string; email: string }
         ) => Promise<{ ok?: boolean; conflicts?: string[]; error?: string }>;
+        checkout: (
+          dir: string,
+          filepath: string,
+          force: boolean
+        ) => Promise<{ ok?: boolean; error?: string }>;
       };
       secure: {
         setToken: (token: string) => Promise<{ ok?: boolean; error?: string }>;

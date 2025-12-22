@@ -86,6 +86,7 @@ interface FileSystemContextValue {
   reloadData: () => Promise<void>;
   // Git operations
   commitFile: (filepath: string, message: string, authorName?: string) => Promise<void>;
+  revertFile: (filepath: string) => Promise<void>;
   getArtifactHistory: (
     type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks' | 'documents',
     id: string
@@ -148,13 +149,20 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     debug.log('[refreshStatus] Called');
     if (realGitService.isInitialized()) {
       const taskId = startTask('Refreshing git status...');
+      debug.log('[refreshStatus] Task started:', taskId);
       try {
+        console.log('[refreshStatus] Fetching status from realGitService...');
         const status = await realGitService.getStatus();
-        debug.log('[refreshStatus] Updated pendingChanges:', status);
+        console.log(`[refreshStatus] Received status result: ${status.length} files`);
         setPendingChanges(status);
+      } catch (err) {
+        console.error('[refreshStatus] Error during getStatus:', err);
       } finally {
+        console.log(`[refreshStatus] Ending task: ${taskId}`);
         endTask(taskId);
       }
+    } else {
+      debug.log('[refreshStatus] Git not initialized, skipping');
     }
   }, [startTask, endTask]);
 
@@ -669,6 +677,31 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [isReady]
   );
 
+  const revertFile = useCallback(
+    async (filepath: string) => {
+      debug.log('[revertFile] Called for:', filepath);
+      if (!isReady) throw new Error('Filesystem not ready');
+      if (isE2EMode()) {
+        debug.log('[revertFile] E2E mode, skipping');
+        return;
+      }
+
+      try {
+        console.log('[revertFile] Calling realGitService.revertFile...');
+        await realGitService.revertFile(filepath);
+        console.log('[revertFile] Successfully reverted. Reloading data...');
+        await reloadData();
+        console.log('[revertFile] Data reloaded. Refreshing status...');
+        await refreshStatus();
+        console.log('[revertFile] All steps complete.');
+      } catch (err) {
+        console.error('[revertFile] Failed:', err);
+        throw err;
+      }
+    },
+    [isReady, reloadData, refreshStatus]
+  );
+
   const getArtifactHistory = useCallback(
     async (
       type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks' | 'documents',
@@ -743,6 +776,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         reloadData,
         // Git operations
         commitFile,
+        revertFile,
         getArtifactHistory,
         readFileAtCommit,
         push,

@@ -117,6 +117,10 @@ class CompositeGitService {
     return gitCoreService.commitFile(path, msg, author);
   }
 
+  async revertFile(path: string): Promise<void> {
+    return gitCoreService.revertFile(path);
+  }
+
   async loadAllArtifacts(): Promise<{
     requirements: Requirement[];
     useCases: UseCase[];

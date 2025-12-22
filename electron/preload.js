@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('git:isDescendent', dir, oid, ancestor, depth),
     currentBranch: (dir) => ipcRenderer.invoke('git:currentBranch', dir),
     init: (dir) => ipcRenderer.invoke('git:init', dir),
+    checkout: (dir, filepath, force) => ipcRenderer.invoke('git:checkout', dir, filepath, force),
     annotatedTag: (dir, ref, message, tagger) =>
       ipcRenderer.invoke('git:annotatedTag', dir, ref, message, tagger),
     listTags: (dir) => ipcRenderer.invoke('git:listTags', dir),

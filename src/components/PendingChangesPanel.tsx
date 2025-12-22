@@ -6,7 +6,7 @@ import { useBackgroundTasks } from '../app/providers/BackgroundTasksProvider';
 import type { ArtifactChange } from '../types';
 
 export function PendingChangesPanel() {
-  const { pendingChanges, commitFile, projects, getArtifactHistory, refreshStatus } =
+  const { pendingChanges, commitFile, revertFile, projects, getArtifactHistory, refreshStatus } =
     useFileSystem();
   const { currentUser } = useUser();
   const { startTask, endTask } = useBackgroundTasks();
@@ -450,33 +450,73 @@ export function PendingChangesPanel() {
                   }}
                 />
 
-                <button
-                  onClick={() => handleCommit(change)}
-                  disabled={!commitMessages[change.id]?.trim() || committingIds.has(change.id)}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 'var(--spacing-sm)',
-                    padding: '6px 12px',
-                    fontSize: 'var(--font-size-xs)',
-                    fontWeight: 500,
-                    color: 'white',
-                    backgroundColor: 'var(--color-accent)',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor:
-                      !commitMessages[change.id]?.trim() || committingIds.has(change.id)
-                        ? 'not-allowed'
-                        : 'pointer',
-                    opacity:
-                      !commitMessages[change.id]?.trim() || committingIds.has(change.id) ? 0.5 : 1,
-                  }}
-                >
-                  <GitCommit size={14} />
-                  Commit
-                </button>
+                <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                  <button
+                    onClick={() => handleCommit(change)}
+                    disabled={!commitMessages[change.id]?.trim() || committingIds.has(change.id)}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 'var(--spacing-sm)',
+                      padding: '6px 12px',
+                      fontSize: 'var(--font-size-xs)',
+                      fontWeight: 500,
+                      color: 'white',
+                      backgroundColor: 'var(--color-accent)',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor:
+                        !commitMessages[change.id]?.trim() || committingIds.has(change.id)
+                          ? 'not-allowed'
+                          : 'pointer',
+                      opacity:
+                        !commitMessages[change.id]?.trim() || committingIds.has(change.id)
+                          ? 0.5
+                          : 1,
+                    }}
+                  >
+                    <GitCommit size={14} />
+                    Commit
+                  </button>
+                  <button
+                    onClick={async () => {
+                      console.log(
+                        '[PendingChangesPanel] Discard clicked for:',
+                        change.title,
+                        change.path
+                      );
+                      const confirmed = window.confirm(
+                        `Are you sure you want to discard changes for ${change.title}? This cannot be undone.`
+                      );
+                      console.log('[PendingChangesPanel] Discard confirmed:', confirmed);
+                      if (confirmed) {
+                        try {
+                          await revertFile(change.path);
+                          console.log('[PendingChangesPanel] Revert call complete');
+                        } catch (err) {
+                          console.error('[PendingChangesPanel] Revert failed:', err);
+                          alert('Failed to discard changes: ' + (err as Error).message);
+                        }
+                      }
+                    }}
+                    disabled={committingIds.has(change.id)}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: 'var(--font-size-xs)',
+                      fontWeight: 500,
+                      color: 'var(--color-error)',
+                      backgroundColor: 'transparent',
+                      border: '1px solid var(--color-error)',
+                      borderRadius: '4px',
+                      cursor: committingIds.has(change.id) ? 'not-allowed' : 'pointer',
+                      opacity: committingIds.has(change.id) ? 0.5 : 1,
+                    }}
+                  >
+                    Discard
+                  </button>
+                </div>
               </div>
             ))}
           </div>

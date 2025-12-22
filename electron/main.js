@@ -62,6 +62,25 @@ ipcMain.handle('git:statusMatrix', async (_event, dir) => {
   }
 });
 
+console.log('[Main] Registering git:checkout handler');
+ipcMain.handle('git:checkout', async (_event, dir, filepath, force) => {
+  try {
+    console.log(`[Main] git:checkout ${filepath} in ${dir} (force: ${force})`);
+    await git.checkout({
+      fs,
+      dir,
+      ref: 'HEAD',
+      filepaths: [filepath],
+      force: !!force,
+    });
+    console.log(`[Main] git:checkout ${filepath} success`);
+    return { ok: true };
+  } catch (error) {
+    console.error(`[Main] git:checkout ${filepath} failed:`, error);
+    return { error: error.message };
+  }
+});
+
 ipcMain.handle('git:add', async (_event, dir, filepath) => {
   try {
     await git.add({ fs, dir, filepath });
