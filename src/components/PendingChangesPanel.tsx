@@ -498,7 +498,7 @@ export function PendingChangesPanel() {
                       setParsedChanges((prev) => prev.filter((c) => c.path !== change.path));
 
                       // Run revert in background with task message
-                      const taskId = startTask(`Discarding ${change.title}...`);
+                      const taskId = startTask(`Discarding changes to ${change.title}...`);
                       revertFile(change.path)
                         .then(() => {
                           console.log('[PendingChangesPanel] Revert complete');
