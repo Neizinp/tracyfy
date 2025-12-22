@@ -16,6 +16,8 @@ export function PendingChangesPanel() {
   const [focusNextId, setFocusNextId] = useState<string | null>(null);
   // Track IDs currently being committed to prevent duplicate commits
   const [committingIds, setCommittingIds] = useState<Set<string>>(new Set());
+  // Track paths currently being discarded to prevent reappearing
+  const discardingPathsRef = useRef<Set<string>>(new Set());
   // Track IDs that have had their default message set (to avoid re-checking git history)
   const processedDefaultsRef = useRef<Set<string>>(new Set());
   // Track number of active commits for debounced refresh
@@ -106,6 +108,9 @@ export function PendingChangesPanel() {
         };
       })
       .filter(Boolean) as ArtifactChange[];
+
+    // Filter out paths currently being discarded
+    const filteredChanges = changes.filter((c) => !discardingPathsRef.current.has(c.path));
 
     // Set default commit messages based on git history
     const setDefaults = async () => {
@@ -216,7 +221,7 @@ export function PendingChangesPanel() {
     };
 
     setDefaults();
-    setParsedChanges(changes);
+    setParsedChanges(filteredChanges);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingChanges, projects, getArtifactHistory]);
 
@@ -481,25 +486,31 @@ export function PendingChangesPanel() {
                     Commit
                   </button>
                   <button
-                    onClick={async () => {
+                    onClick={() => {
                       console.log(
                         '[PendingChangesPanel] Discard clicked for:',
                         change.title,
                         change.path
                       );
-                      const confirmed = window.confirm(
-                        `Are you sure you want to discard changes for ${change.title}? This cannot be undone.`
-                      );
-                      console.log('[PendingChangesPanel] Discard confirmed:', confirmed);
-                      if (confirmed) {
-                        try {
-                          await revertFile(change.path);
-                          console.log('[PendingChangesPanel] Revert call complete');
-                        } catch (err) {
+                      // Track this path as discarding to prevent reappearing
+                      discardingPathsRef.current.add(change.path);
+                      // Optimistic UI: remove from list immediately
+                      setParsedChanges((prev) => prev.filter((c) => c.path !== change.path));
+
+                      // Run revert in background with task message
+                      const taskId = startTask(`Discarding ${change.title}...`);
+                      revertFile(change.path)
+                        .then(() => {
+                          console.log('[PendingChangesPanel] Revert complete');
+                        })
+                        .catch((err) => {
                           console.error('[PendingChangesPanel] Revert failed:', err);
-                          alert('Failed to discard changes: ' + (err as Error).message);
-                        }
-                      }
+                        })
+                        .finally(() => {
+                          // Clean up tracking - OK to remove since revert is done
+                          discardingPathsRef.current.delete(change.path);
+                          endTask(taskId);
+                        });
                     }}
                     disabled={committingIds.has(change.id)}
                     style={{

@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useFileSystem } from '../FileSystemProvider';
 import { useUser } from '../UserProvider';
 import { useToast } from '../ToastProvider';
+import { useBackgroundTasks } from '../BackgroundTasksProvider';
 import { incrementRevision } from '../../../utils/revisionUtils';
 
 export interface BaseArtifact {
@@ -50,6 +51,7 @@ export function useArtifactCRUD<T extends BaseArtifact>({
   const { getNextId } = useFileSystem();
   const { currentUser } = useUser();
   const { showToast } = useToast();
+  const { startTask, endTask } = useBackgroundTasks();
 
   const handleAdd = useCallback(
     async (data: Omit<T, 'id' | 'lastModified' | 'revision'>) => {
@@ -105,17 +107,22 @@ export function useArtifactCRUD<T extends BaseArtifact>({
         lastModified: Date.now(),
       };
 
+      // Update state immediately for responsive UI
       setItems((prev) => prev.map((item) => (item.id === id ? finalItem : item)));
 
+      // Save to disk with task message
+      const taskId = startTask(`Saving ${id}...`);
       try {
         await saveFn(finalItem);
         if (onAfterUpdate) onAfterUpdate(finalItem);
       } catch (error) {
         console.error(`Failed to update ${type}:`, error);
         showToast(`Failed to update ${type}`, 'error');
+      } finally {
+        endTask(taskId);
       }
     },
-    [items, saveFn, setItems, type, showToast, onBeforeUpdate, onAfterUpdate]
+    [items, saveFn, setItems, type, showToast, onBeforeUpdate, onAfterUpdate, startTask, endTask]
   );
 
   const handleDelete = useCallback(

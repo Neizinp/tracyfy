@@ -324,7 +324,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
         return [...prev, requirement];
       });
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -336,7 +336,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         await requirementService.delete(id);
       }
       setRequirements((prev) => prev.filter((r) => r.id !== id));
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -357,7 +357,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
         return [...prev, useCase];
       });
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -369,7 +369,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         await useCaseService.delete(id);
       }
       setUseCases((prev) => prev.filter((u) => u.id !== id));
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -390,7 +390,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
         return [...prev, testCase];
       });
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -402,7 +402,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         await testCaseService.delete(id);
       }
       setTestCases((prev) => prev.filter((t) => t.id !== id));
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -423,7 +423,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
         return [...prev, info];
       });
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -435,7 +435,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         await informationService.delete(id);
       }
       setInformation((prev) => prev.filter((i) => i.id !== id));
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -456,7 +456,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
         return [...prev, risk];
       });
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -468,7 +468,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         await riskService.delete(id);
       }
       setRisks((prev) => prev.filter((r) => r.id !== id));
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -489,7 +489,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
         return [...prev, document];
       });
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -501,7 +501,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         await documentService.delete(id);
       }
       setDocuments((prev) => prev.filter((d) => d.id !== id));
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -522,7 +522,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
         return [...prev, project];
       });
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -550,7 +550,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
       setProjects((prev) => [...prev, project]);
       setCurrentProjectIdState(project.id);
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
       return project;
     },
     [isReady, refreshStatus]
@@ -566,7 +566,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setProjects((prev) =>
         prev.map((p) => (p.id === id ? { ...p, isDeleted: true, lastModified: Date.now() } : p))
       );
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -598,7 +598,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
         return [...prev, link];
       });
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -610,7 +610,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         await diskLinkService.delete(id);
       }
       setLinks((prev) => prev.filter((l) => l.id !== id));
-      if (!isE2EMode()) await refreshStatus();
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
   );
@@ -692,7 +692,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         console.log('[revertFile] Successfully reverted. Reloading data...');
         await reloadData();
         console.log('[revertFile] Data reloaded. Refreshing status...');
-        await refreshStatus();
+        refreshStatus(); // Fire-and-forget for responsive UI
         console.log('[revertFile] All steps complete.');
       } catch (err) {
         console.error('[revertFile] Failed:', err);

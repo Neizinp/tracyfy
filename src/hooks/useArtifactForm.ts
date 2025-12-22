@@ -84,7 +84,7 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
   }, [isOpen, artifact, currentUser?.name]);
 
   const handleSubmit = useCallback(
-    async (e?: React.FormEvent, additionalData: Partial<T> = {}) => {
+    (e?: React.FormEvent, additionalData: Partial<T> = {}) => {
       if (e) e.preventDefault();
 
       const commonData = {
@@ -100,16 +100,19 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
         ...additionalData,
       } as Partial<T>;
 
+      // Close modal immediately for responsive UI
+      onClose();
+
+      // Fire-and-forget: save happens in background, state updates are synchronous
       if (isEditMode && artifact) {
-        await onUpdate(artifact.id, commonData as Partial<T>);
+        onUpdate(artifact.id, commonData as Partial<T>);
       } else {
-        await onCreate({
+        onCreate({
           ...commonData,
           dateCreated: Date.now(),
           revision: '01',
         });
       }
-      onClose();
     },
     [
       isEditMode,
