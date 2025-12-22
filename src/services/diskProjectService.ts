@@ -281,6 +281,8 @@ class DiskProjectService extends BaseDiskService {
     risks: Risk[];
     documents: ArtifactDocument[];
     links: Link[];
+    users: import('../types').User[];
+    currentUserId: string;
   }> {
     const [
       projects,
@@ -291,7 +293,9 @@ class DiskProjectService extends BaseDiskService {
       risks,
       documents,
       links,
+      users,
       currentProjectId,
+      currentUserId,
     ] = await Promise.all([
       this.loadAllProjects(),
       requirementService.loadAll(),
@@ -301,7 +305,9 @@ class DiskProjectService extends BaseDiskService {
       riskService.loadAll(),
       documentService.loadAll(),
       diskLinkService.getAllLinks(),
+      (await import('./artifactServices')).userService.loadAll(),
       this.getCurrentProjectId(),
+      this.getCurrentUserId(),
     ]);
 
     return {
@@ -314,6 +320,8 @@ class DiskProjectService extends BaseDiskService {
       risks,
       documents,
       links,
+      users,
+      currentUserId,
     };
   }
 

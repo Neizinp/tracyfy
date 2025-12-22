@@ -27,9 +27,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
-  const { isReady } = useFileSystem();
-
-  const currentUser = users.find((u) => u.id === currentUserId) || null;
+  const { isReady, preloadedUsers, preloadedCurrentUserId } = useFileSystem();
 
   const createUser = useCallback(
     async (name: string): Promise<User> => {
@@ -106,20 +104,21 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setCurrentUserId(userId);
   }, []);
 
-  // Load users when FileSystem is ready
+  // Load users when FileSystem is ready - use preloaded data from FileSystemProvider
   useEffect(() => {
     if (!isReady) {
       return;
     }
 
-    const loadUsers = async () => {
+    const initUsers = async () => {
       setIsLoading(true);
       try {
         const isE2E =
           typeof window !== 'undefined' &&
           (window as unknown as { __E2E_TEST_MODE__?: boolean }).__E2E_TEST_MODE__;
 
-        let loadedUsers = await userService.loadAll();
+        // Use preloaded user data from FileSystemProvider (no disk read needed!)
+        let loadedUsers = preloadedUsers;
 
         if (isE2E && loadedUsers.length === 0) {
           console.log('[UserProvider] E2E mode: creating default test user');
@@ -127,9 +126,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           loadedUsers = [testUser];
         }
 
-        const storedCurrentUserId = await diskProjectService.getCurrentUserId();
         setUsers(loadedUsers);
-        setCurrentUserId(storedCurrentUserId || (isE2E ? loadedUsers[0].id : ''));
+        setCurrentUserId(
+          preloadedCurrentUserId || (isE2E && loadedUsers.length > 0 ? loadedUsers[0].id : '')
+        );
       } catch (error) {
         console.error('Failed to load users:', error);
       } finally {
@@ -137,15 +137,21 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     };
 
-    loadUsers();
+    initUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isReady]); // createUser intentionally excluded to prevent infinite loop
+  }, [isReady, preloadedUsers, preloadedCurrentUserId]); // createUser intentionally excluded to prevent infinite loop
+
+  // Use preloaded data directly when local state hasn't been set yet
+  // This ensures users show IMMEDIATELY without waiting for the effect
+  const effectiveUsers = users.length > 0 ? users : preloadedUsers;
+  const effectiveCurrentUserId = currentUserId || preloadedCurrentUserId;
+  const effectiveCurrentUser = effectiveUsers.find((u) => u.id === effectiveCurrentUserId) || null;
 
   const value: UserContextValue = {
-    users,
-    currentUserId,
-    currentUser,
-    isLoading,
+    users: effectiveUsers,
+    currentUserId: effectiveCurrentUserId,
+    currentUser: effectiveCurrentUser,
+    isLoading: isLoading && preloadedUsers.length === 0, // Not loading if we have preloaded data
     createUser,
     updateUser,
     deleteUser,

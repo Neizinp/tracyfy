@@ -36,9 +36,17 @@ vi.mock('../../../services/idService', () => ({
   },
 }));
 
+// Dynamic mock state for FileSystemProvider
+let mockPreloadedUsers: import('../../../types').User[] = [];
+let mockPreloadedCurrentUserId = '';
+
 vi.mock('../FileSystemProvider', () => ({
   FileSystemProvider: ({ children }: { children: React.ReactNode }) => children,
-  useFileSystem: () => ({ isReady: true }),
+  useFileSystem: () => ({
+    isReady: true,
+    preloadedUsers: mockPreloadedUsers,
+    preloadedCurrentUserId: mockPreloadedCurrentUserId,
+  }),
 }));
 
 // Test component to consume context
@@ -56,6 +64,9 @@ const TestConsumer: React.FC = () => {
 describe('UserProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset mock state before each test
+    mockPreloadedUsers = [];
+    mockPreloadedCurrentUserId = '';
     vi.mocked(userService.loadAll).mockResolvedValue([]);
     vi.mocked(diskProjectService.getCurrentUserId).mockResolvedValue('');
   });
@@ -75,7 +86,8 @@ describe('UserProvider', () => {
     });
 
     it('should load users on mount when FileSystem is ready', async () => {
-      const mockUsers = [
+      // Set preloaded users via mock state
+      mockPreloadedUsers = [
         {
           id: 'USER-001',
           name: 'Test User',
@@ -83,8 +95,7 @@ describe('UserProvider', () => {
           lastModified: 1700000000000,
         },
       ];
-      vi.mocked(userService.loadAll).mockResolvedValue(mockUsers);
-      vi.mocked(diskProjectService.getCurrentUserId).mockResolvedValue('USER-001');
+      mockPreloadedCurrentUserId = 'USER-001';
 
       render(
         <UserProvider>
@@ -143,7 +154,8 @@ describe('UserProvider', () => {
 
   describe('switchUser', () => {
     it('should switch current user', async () => {
-      const mockUsers = [
+      // Set preloaded users via mock state
+      mockPreloadedUsers = [
         {
           id: 'USER-001',
           name: 'User One',
@@ -157,8 +169,7 @@ describe('UserProvider', () => {
           lastModified: 1700000000000,
         },
       ];
-      vi.mocked(userService.loadAll).mockResolvedValue(mockUsers);
-      vi.mocked(diskProjectService.getCurrentUserId).mockResolvedValue('USER-001');
+      mockPreloadedCurrentUserId = 'USER-001';
 
       const SwitchUserTest: React.FC = () => {
         const { switchUser, currentUser } = useUser();
@@ -194,7 +205,8 @@ describe('UserProvider', () => {
 
   describe('deleteUser', () => {
     it('should remove user from state', async () => {
-      const mockUsers = [
+      // Set preloaded users via mock state
+      mockPreloadedUsers = [
         {
           id: 'USER-001',
           name: 'User One',
@@ -208,8 +220,7 @@ describe('UserProvider', () => {
           lastModified: 1700000000000,
         },
       ];
-      vi.mocked(userService.loadAll).mockResolvedValue(mockUsers);
-      vi.mocked(diskProjectService.getCurrentUserId).mockResolvedValue('USER-002');
+      mockPreloadedCurrentUserId = 'USER-002';
 
       const DeleteUserTest: React.FC = () => {
         const { deleteUser, users } = useUser();

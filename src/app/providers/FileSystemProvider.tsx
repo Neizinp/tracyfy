@@ -47,6 +47,9 @@ interface FileSystemContextValue {
   risks: Risk[];
   documents: ArtifactDocument[];
   links: Link[];
+  // Preloaded user data for fast access
+  preloadedUsers: import('../../types').User[];
+  preloadedCurrentUserId: string;
   // Git-related
   pendingChanges: FileStatus[];
   refreshStatus: () => Promise<void>;
@@ -129,6 +132,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [useCases, setUseCases] = useState<UseCase[]>([]);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
 
+  // Preloaded user data for fast access by UserProvider
+  const [preloadedUsers, setPreloadedUsers] = useState<import('../../types').User[]>([]);
+  const [preloadedCurrentUserId, setPreloadedCurrentUserId] = useState<string>('');
+
   // Counter for E2E mode to generate unique IDs
   const [e2eCounters, setE2eCounters] = useState({
     req: 0,
@@ -180,10 +187,11 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setInformation(data.information);
       setDocuments(data.documents);
       setLinks(data.links);
-
-      // Risks are not part of data.loadAll() in diskProjectService?
-      // Fixed in diskProjectService now.
       setRisks(data.risks);
+
+      // Preload user data so UserProvider doesn't need a second disk read
+      setPreloadedUsers(data.users);
+      setPreloadedCurrentUserId(data.currentUserId);
 
       // Recalculate counters to make sure they're in sync
       await diskProjectService.recalculateCounters();
@@ -196,6 +204,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         risks: data.risks.length,
         documents: data.documents.length,
         links: data.links.length,
+        users: data.users.length,
       });
     } finally {
       endTask(taskId);
@@ -750,6 +759,8 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         risks,
         documents,
         links,
+        preloadedUsers,
+        preloadedCurrentUserId,
         // Git
         pendingChanges,
         refreshStatus,
