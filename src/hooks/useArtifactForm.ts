@@ -131,6 +131,21 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
     ]
   );
 
+  // Keyboard shortcut: Ctrl+S / Cmd+S to save and close
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSubmit();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, handleSubmit]);
+
   const handleRemoveLink = useCallback((targetId: string) => {
     setLinkedArtifacts((prev) => prev.filter((link) => link.targetId !== targetId));
   }, []);

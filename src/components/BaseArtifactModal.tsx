@@ -58,6 +58,24 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
   deleteConfirmMessage,
   deleteConfirmTitle,
 }) => {
+  // Keyboard shortcut: Ctrl+S / Cmd+S to save and close
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        const form = document.getElementById(formId) as HTMLFormElement;
+        if (form) {
+          form.requestSubmit();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, formId]);
+
   if (!isOpen) return null;
 
   return (
