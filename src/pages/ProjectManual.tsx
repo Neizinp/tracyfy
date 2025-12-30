@@ -12,6 +12,7 @@ import {
   Search,
   Lock,
   Download,
+  Layers,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -125,6 +126,45 @@ export const ProjectManual: React.FC = () => {
         <FeatureCard
           title="Project Navigation"
           description="Use the sidebar to navigate between different views: Requirements, Use Cases, Test Cases, Information, and Risks. The Traceability Dashboard provides a birds-eye view of your project's health."
+        />
+      </Section>
+
+      <Section title="Artifact Types" icon={<Layers size={20} />}>
+        <FeatureCard
+          title="Requirements (REQ)"
+          description="Capture what your system must do. Requirements include a title, detailed text, rationale, status, priority, category, and verification method. They form the foundation of your engineering specification."
+        />
+        <FeatureCard
+          title="Use Cases (UC)"
+          description="Define user interactions and system behaviors. Use Cases describe actors, preconditions, postconditions, main flows, and alternative flows. Link them to Requirements to show how functionality is realized."
+        />
+        <FeatureCard
+          title="Test Cases (TC)"
+          description="Verify that requirements are met. Test Cases include step-by-step instructions, expected results, and execution status. Link them to Requirements to establish verification traceability."
+        />
+        <FeatureCard
+          title="Information (INFO)"
+          description="Store supplementary content such as notes, references, glossary entries, or background context. Information artifacts help keep your project documentation organized without cluttering requirements."
+        />
+        <FeatureCard
+          title="Documents (DOC)"
+          description="Create structured documents by composing headings and artifact references. Documents let you assemble Requirements, Use Cases, and other artifacts into formal specification documents for export."
+        />
+        <FeatureCard
+          title="Risks (RISK)"
+          description="Identify and track project or technical risks. Capture probability, impact, mitigation strategies, contingency plans, and assign owners. Link risks to affected Requirements for impact analysis."
+        />
+        <FeatureCard
+          title="Workflows (WF)"
+          description="Manage approval and review processes. Workflows track the lifecycle of artifacts through states, recording who approved what and when. Use them for formal change control."
+        />
+        <FeatureCard
+          title="Links"
+          description="Establish traceability relationships between any two artifacts. Links define how artifacts relate to each other—for example, a Test Case verifies a Requirement, or a Risk impacts a Use Case. Links are bidirectional and visible from both connected artifacts."
+        />
+        <FeatureCard
+          title="Custom Attributes"
+          description="Extend any artifact type with your own fields. Define text, number, date, or dropdown attributes to capture project-specific metadata. Custom Attributes are configured per-project and appear in artifact modals and list views."
         />
       </Section>
 
