@@ -158,14 +158,14 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const taskId = startTask('Refreshing git status...');
       debug.log('[refreshStatus] Task started:', taskId);
       try {
-        console.log('[refreshStatus] Fetching status from realGitService...');
+        debug.log('[refreshStatus] Fetching status from realGitService...');
         const status = await realGitService.getStatus();
-        console.log(`[refreshStatus] Received status result: ${status.length} files`);
+        debug.log(`[refreshStatus] Received status result: ${status.length} files`);
         setPendingChanges(status);
       } catch (err) {
         console.error('[refreshStatus] Error during getStatus:', err);
       } finally {
-        console.log(`[refreshStatus] Ending task: ${taskId}`);
+        debug.log(`[refreshStatus] Ending task: ${taskId}`);
         endTask(taskId);
       }
     } else {
@@ -696,13 +696,13 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
 
       try {
-        console.log('[revertFile] Calling realGitService.revertFile...');
+        debug.log('[revertFile] Calling realGitService.revertFile...');
         await realGitService.revertFile(filepath);
-        console.log('[revertFile] Successfully reverted. Reloading data...');
+        debug.log('[revertFile] Successfully reverted. Reloading data...');
         await reloadData();
-        console.log('[revertFile] Data reloaded. Refreshing status...');
+        debug.log('[revertFile] Data reloaded. Refreshing status...');
         refreshStatus(); // Fire-and-forget for responsive UI
-        console.log('[revertFile] All steps complete.');
+        debug.log('[revertFile] All steps complete.');
       } catch (err) {
         console.error('[revertFile] Failed:', err);
         throw err;

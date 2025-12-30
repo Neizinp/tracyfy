@@ -5,6 +5,7 @@ import { diskProjectService } from '../../services/diskProjectService';
 import { userService } from '../../services/artifactServices';
 import { idService } from '../../services/idService';
 import { useFileSystem } from './FileSystemProvider';
+import { debug } from '../../utils/debug';
 
 interface UserContextValue {
   // State
@@ -121,7 +122,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         let loadedUsers = preloadedUsers;
 
         if (isE2E && loadedUsers.length === 0) {
-          console.log('[UserProvider] E2E mode: creating default test user');
+          debug.log('[UserProvider] E2E mode: creating default test user');
           const testUser = await createUser('E2E Test User');
           loadedUsers = [testUser];
         }

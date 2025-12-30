@@ -320,7 +320,7 @@ class GitCoreService {
       let statusMatrixFiles = new Set<string>();
 
       if (isElectronEnv()) {
-        console.log(
+        debug.log(
           '[gitCoreService.getStatus] Electron: calling window.electronAPI.git.statusMatrix'
         );
         const status = await window.electronAPI!.git.statusMatrix(getRootDir());
@@ -332,9 +332,9 @@ class GitCoreService {
       } else {
         // Browser path: Use git.statusMatrix directly with fsAdapter
         try {
-          console.log('[gitCoreService.getStatus] Browser: calling isomorphic-git.statusMatrix');
+          debug.log('[gitCoreService.getStatus] Browser: calling isomorphic-git.statusMatrix');
           const status = await git.statusMatrix({ fs: fsAdapter, dir: getRootDir() });
-          console.log(
+          debug.log(
             `[gitCoreService.getStatus] Browser: statusMatrix returned ${status?.length || 0} items`
           );
           if (Array.isArray(status)) {
@@ -486,20 +486,20 @@ class GitCoreService {
 
     if (fileStatus.status === 'new') {
       // Untracked file: Delete it from disk
-      console.log(`[revertFile] Deleting untracked file: ${filepath}`);
+      debug.log(`[revertFile] Deleting untracked file: ${filepath}`);
       await fileSystemService.deleteFile(filepath);
     } else {
       // Tracked/Modified file: Revert using git checkout
-      console.log(`[revertFile] Checking out ${filepath} from HEAD`);
+      debug.log(`[revertFile] Checking out ${filepath} from HEAD`);
       if (isElectronEnv()) {
-        console.log('[revertFile] Electron: calling git.checkout');
+        debug.log('[revertFile] Electron: calling git.checkout');
         const res = await window.electronAPI!.git.checkout(getRootDir(), filepath, true);
         if (res.error) {
           console.error(`[revertFile] Electron checkout failed: ${res.error}`);
           throw new Error(res.error);
         }
       } else {
-        console.log('[revertFile] Browser: calling isomorphic-git.checkout');
+        debug.log('[revertFile] Browser: calling isomorphic-git.checkout');
         await git.checkout({
           fs: fsAdapter,
           dir: getRootDir(),

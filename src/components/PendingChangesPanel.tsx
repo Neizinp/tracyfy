@@ -3,6 +3,7 @@ import { FileText, GitCommit, AlertCircle } from 'lucide-react';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { useUser } from '../app/providers/UserProvider';
 import { useBackgroundTasks } from '../app/providers/BackgroundTasksProvider';
+import { debug } from '../utils/debug';
 import type { ArtifactChange } from '../types';
 
 export function PendingChangesPanel() {
@@ -487,7 +488,7 @@ export function PendingChangesPanel() {
                   </button>
                   <button
                     onClick={() => {
-                      console.log(
+                      debug.log(
                         '[PendingChangesPanel] Discard clicked for:',
                         change.title,
                         change.path
@@ -501,7 +502,7 @@ export function PendingChangesPanel() {
                       const taskId = startTask(`Discarding changes to ${change.title}...`);
                       revertFile(change.path)
                         .then(() => {
-                          console.log('[PendingChangesPanel] Revert complete');
+                          debug.log('[PendingChangesPanel] Revert complete');
                         })
                         .catch((err) => {
                           console.error('[PendingChangesPanel] Revert failed:', err);
