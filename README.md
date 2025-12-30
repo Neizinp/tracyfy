@@ -65,6 +65,12 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 
 **Information** - ID (INFO-001), Title, Content (Markdown), Type (meeting/decision/note/other), Revision
 
+**Risks** - ID (RISK-001), Title, Description, Probability, Impact, Mitigation, Category, Owner, Status, Revision
+
+**Documents** - ID (DOC-001), Title, Description, Structure (composed of headings and artifact references), Author, Status, Revision
+
+**Workflows** - ID (WF-001), Title, Description, Type, Status, Assigned To, Approval History, Revision
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -172,7 +178,7 @@ npm run preview  # Preview the production build
 
 ### Testing
 
-- **Vitest** - 440+ unit and component tests
+- **Vitest** - 1000+ unit and component tests
 - **Playwright** - End-to-end testing
 - **React Testing Library** - Component testing utilities
 
@@ -217,7 +223,7 @@ src/
 │   ├── excelExportUtils.ts     # Excel generation
 │   └── ...
 ├── hooks/                      # Custom React hooks
-├── types.ts                    # TypeScript type definitions
+├── types/                      # TypeScript type definitions
 └── index.css                   # Global styles (CSS variables)
 ```
 
@@ -321,7 +327,7 @@ npx playwright test  # Run E2E tests
 - ESLint for code quality
 - Prettier for formatting (via ESLint)
 - Pre-commit hooks via lint-staged
-- 440+ unit tests with comprehensive coverage
+- 1000+ unit tests with comprehensive coverage
 
 ## 📝 Recent Updates
 
@@ -345,15 +351,15 @@ npx playwright test  # Run E2E tests
 
 ## 📝 License
 
-Private project - All rights reserved
+MIT License - See [LICENSE](LICENSE) for details.
 
 ## 🤝 Contributing
 
-This is a private project. Contributions are not currently accepted.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📧 Contact
 
-For questions or issues, please contact the repository owner.
+For questions or issues, please open an issue on GitHub.
 
 ---
 
