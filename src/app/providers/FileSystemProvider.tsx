@@ -255,11 +255,8 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               // Initialize disk project service directories
               await diskProjectService.initialize();
 
-              // Load all data from disk
-              await reloadData();
-
-              // Load git status
-              const status = await realGitService.getStatus();
+              // Load data and git status in parallel (they're independent)
+              const [, status] = await Promise.all([reloadData(), realGitService.getStatus()]);
               setPendingChanges(status);
 
               setIsReady(true);
@@ -300,11 +297,8 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // Initialize disk project service directories
       await diskProjectService.initialize();
 
-      // Load all data from disk
-      await reloadData();
-
-      // Load git status
-      const status = await realGitService.getStatus();
+      // Load data and git status in parallel (they're independent)
+      const [, status] = await Promise.all([reloadData(), realGitService.getStatus()]);
       debug.log('[selectDirectory] Setting pendingChanges to:', status);
       setPendingChanges(status);
 
