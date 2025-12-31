@@ -121,16 +121,20 @@ export class BaseArtifactService<T extends { id: string }> extends BaseDiskServi
    * Load all artifacts of this type from disk
    */
   async loadAll(includeDeleted: boolean = false): Promise<T[]> {
-    const items: T[] = [];
     const folder = this.config.folder;
     const extension = '.md';
 
     try {
       const files = await this.listFiles(folder);
-      for (const file of files) {
-        if (!file.endsWith(extension)) continue;
+      const mdFiles = files.filter((file) => file.endsWith(extension));
 
-        const content = await this.readTextFile(`${folder}/${file}`);
+      // Read all files in parallel for speed
+      const contents = await Promise.all(
+        mdFiles.map((file) => this.readTextFile(`${folder}/${file}`))
+      );
+
+      const items: T[] = [];
+      for (const content of contents) {
         if (content) {
           const item = this.serializer.deserialize(content);
           if (item) {
@@ -139,11 +143,12 @@ export class BaseArtifactService<T extends { id: string }> extends BaseDiskServi
           }
         }
       }
+
+      return items;
     } catch {
       debug.log(`[BaseArtifactService] Could not load ${this.typeKey} from ${folder}`);
+      return [];
     }
-
-    return items;
   }
 
   /**
