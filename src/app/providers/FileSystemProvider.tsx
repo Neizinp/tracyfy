@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { debug } from '../../utils/debug';
 import { fileSystemService } from '../../services/fileSystemService';
 import {
@@ -152,25 +152,32 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Background tasks for status bar
   const { startTask, endTask } = useBackgroundTasks();
 
+  // Debounce timer for refreshStatus to coalesce rapid calls
+  const refreshStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const REFRESH_STATUS_DEBOUNCE_MS = 300;
+
   const refreshStatus = useCallback(async () => {
-    debug.log('[refreshStatus] Called');
-    if (realGitService.isInitialized()) {
-      const taskId = startTask('Refreshing git status...');
-      debug.log('[refreshStatus] Task started:', taskId);
-      try {
-        debug.log('[refreshStatus] Fetching status from realGitService...');
-        const status = await realGitService.getStatus();
-        debug.log(`[refreshStatus] Received status result: ${status.length} files`);
-        setPendingChanges(status);
-      } catch (err) {
-        console.error('[refreshStatus] Error during getStatus:', err);
-      } finally {
-        debug.log(`[refreshStatus] Ending task: ${taskId}`);
-        endTask(taskId);
-      }
-    } else {
-      debug.log('[refreshStatus] Git not initialized, skipping');
+    // Clear any pending refresh
+    if (refreshStatusTimer.current) {
+      clearTimeout(refreshStatusTimer.current);
     }
+
+    // Debounce: wait before actually refreshing
+    refreshStatusTimer.current = setTimeout(async () => {
+      debug.log('[refreshStatus] Executing (debounced)');
+      if (realGitService.isInitialized()) {
+        const taskId = startTask('Refreshing git status...');
+        try {
+          const status = await realGitService.getStatus();
+          debug.log(`[refreshStatus] Received ${status.length} files`);
+          setPendingChanges(status);
+        } catch (err) {
+          console.error('[refreshStatus] Error during getStatus:', err);
+        } finally {
+          endTask(taskId);
+        }
+      }
+    }, REFRESH_STATUS_DEBOUNCE_MS);
   }, [startTask, endTask]);
 
   // Load all data from disk using diskProjectService
