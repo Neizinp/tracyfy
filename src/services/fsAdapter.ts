@@ -84,19 +84,41 @@ class FSAdapter {
     writeFile: async (path: string, data: string | Uint8Array): Promise<void> => {
       const normalizedPath = normalizePath(path);
 
+      // Enhanced debug logging for git internal files (especially index)
+      const isGitInternal =
+        normalizedPath.startsWith('.git/') ||
+        normalizedPath.startsWith('objects/') ||
+        normalizedPath.includes('/objects/');
+      const isIndex = normalizedPath === '.git/index' || normalizedPath.endsWith('/index');
+
+      if (isIndex) {
+        const dataSize = typeof data === 'string' ? data.length : data.byteLength;
+        debug.log(`[FSAdapter.writeFile] WRITING INDEX: ${normalizedPath}, size=${dataSize} bytes`);
+      }
+
       try {
         // Write ALL files (including .git internals) directly to filesystem
-        if (
-          normalizedPath.startsWith('.git/') ||
-          normalizedPath.startsWith('objects/') ||
-          normalizedPath.includes('/objects/')
-        ) {
+        if (isGitInternal) {
           const binaryData = typeof data === 'string' ? new TextEncoder().encode(data) : data;
           const finalPath = normalizedPath.startsWith('.git/')
             ? normalizedPath
             : `.git/${normalizedPath}`;
 
+          if (isIndex) {
+            debug.log(
+              `[FSAdapter.writeFile] INDEX final path: ${finalPath}, binary size=${binaryData.byteLength}`
+            );
+          }
+
           await fileSystemService.writeFileBinary(finalPath, binaryData);
+
+          // Verify the write by reading back (debug only for index)
+          if (isIndex) {
+            const readBack = await fileSystemService.readFileBinary(finalPath);
+            debug.log(
+              `[FSAdapter.writeFile] INDEX read-back verification: ${readBack ? readBack.byteLength : 'NULL'} bytes`
+            );
+          }
           return;
         }
 
@@ -119,6 +141,7 @@ class FSAdapter {
     ): Promise<{ bytesWritten: number }> => {
       // Handle path writes by redirecting to writeFile for compatibility
       if (typeof fdOrPath === 'string') {
+        debug.log(`[FSAdapter.write] Direct path write: ${fdOrPath}, buffer size=${buffer.length}`);
         await fsAdapter.promises.writeFile(fdOrPath, buffer);
         return { bytesWritten: buffer.length };
       }
@@ -132,12 +155,29 @@ class FSAdapter {
       const slice = buffer.subarray(start, end);
 
       const normalizedPath = open.path;
+      const isIndex = normalizedPath === '.git/index' || normalizedPath.endsWith('/index');
+
+      if (isIndex) {
+        // ALWAYS log index writes via write() (not conditional on debug flag)
+        console.log(
+          `[FSAdapter.write] INDEX fd=${fd}, path=${normalizedPath}, pos=${position}, sliceLen=${slice.length}, flags=${open.flags}`
+        );
+        debug.log(
+          `[FSAdapter.write] INDEX fd=${fd}, path=${normalizedPath}, pos=${position}, sliceLen=${slice.length}, flags=${open.flags}`
+        );
+      }
+
       // For append, move position to end
       if (open.flags.includes('a')) {
         const existing = await fileSystemService.readFileBinary(normalizedPath);
         const merged = new Uint8Array((existing?.length || 0) + slice.length);
         if (existing) merged.set(existing, 0);
         merged.set(slice, existing?.length || 0);
+        if (isIndex) {
+          debug.log(
+            `[FSAdapter.write] INDEX append mode: existing=${existing?.length || 0}, merged=${merged.length}`
+          );
+        }
         await fsAdapter.promises.writeFile(normalizedPath, merged);
         open.position = merged.length;
         return { bytesWritten: slice.length };
@@ -152,11 +192,20 @@ class FSAdapter {
         const merged = new Uint8Array(needed);
         merged.set(existing, 0);
         merged.set(slice, pos);
+        if (isIndex) {
+          debug.log(
+            `[FSAdapter.write] INDEX position write: pos=${pos}, existing=${existing.length}, merged=${merged.length}`
+          );
+        }
         await fsAdapter.promises.writeFile(normalizedPath, merged);
         open.position = pos + slice.length;
         return { bytesWritten: slice.length };
       }
 
+      // Position 0: just write the slice
+      if (isIndex) {
+        debug.log(`[FSAdapter.write] INDEX position-0 write: sliceLen=${slice.length}`);
+      }
       await fsAdapter.promises.writeFile(normalizedPath, slice);
       open.position = slice.length;
       return { bytesWritten: slice.length };

@@ -55,6 +55,10 @@ class GitCoreService {
   private addToCacheFn: (commitHash: string, files: string[]) => void = () => {};
   // Callback to ensure token is loaded
   private ensureTokenLoadedFn: () => Promise<void> = async () => {};
+  // Track recently committed files to filter stale statusMatrix results
+  // isomorphic-git's statusMatrix can return stale data immediately after commit
+  private recentlyCommittedFiles: Map<string, number> = new Map();
+  private readonly COMMIT_GRACE_PERIOD_MS = 5000; // 5 second grace period
 
   setInitialized(value: boolean): void {
     this.initialized = value;
@@ -70,6 +74,53 @@ class GitCoreService {
 
   setEnsureTokenLoadedFn(fn: () => Promise<void>): void {
     this.ensureTokenLoadedFn = fn;
+  }
+
+  /**
+   * Ensure HEAD is attached to main branch (not detached).
+   * If HEAD contains a raw SHA instead of "ref: refs/heads/main",
+   * this repairs it to be a symbolic reference.
+   * This is critical for commits to update the branch pointer.
+   */
+  private async ensureHeadAttached(): Promise<void> {
+    if (isElectronEnv()) {
+      // Electron handles this through native git
+      return;
+    }
+
+    try {
+      const headContent = await fsAdapter.promises.readFile('.git/HEAD', { encoding: 'utf8' });
+      const trimmedHead = (headContent as string).trim();
+
+      // Check if HEAD is detached (contains raw SHA instead of symbolic ref)
+      const isDetached = !trimmedHead.startsWith('ref: ');
+
+      if (isDetached) {
+        console.log(
+          `[ensureHeadAttached] HEAD is detached (contains: "${trimmedHead.substring(0, 20)}..."). Repairing to attach to main branch.`
+        );
+
+        // If there's a commit SHA in HEAD, make sure refs/heads/main points to it
+        const sha = trimmedHead;
+        if (sha.match(/^[0-9a-f]{40}$/i)) {
+          // Write the current SHA to refs/heads/main first
+          try {
+            await fsAdapter.promises.writeFile('.git/refs/heads/main', sha + '\n');
+            console.log(`[ensureHeadAttached] Updated refs/heads/main to ${sha}`);
+          } catch (err) {
+            console.error('[ensureHeadAttached] Failed to update refs/heads/main:', err);
+          }
+        }
+
+        // Now attach HEAD to main
+        await fsAdapter.promises.writeFile('.git/HEAD', 'ref: refs/heads/main\n');
+        console.log('[ensureHeadAttached] HEAD is now attached to refs/heads/main');
+      } else {
+        debug.log(`[ensureHeadAttached] HEAD is already attached: ${trimmedHead}`);
+      }
+    } catch (err) {
+      console.error('[ensureHeadAttached] Failed to check/repair HEAD:', err);
+    }
   }
 
   /**
@@ -331,9 +382,15 @@ class GitCoreService {
         }
       } else {
         // Browser path: Use git.statusMatrix directly with fsAdapter
+        // IMPORTANT: Use a fresh cache to avoid stale data after commits
         try {
           debug.log('[gitCoreService.getStatus] Browser: calling isomorphic-git.statusMatrix');
-          const status = await git.statusMatrix({ fs: fsAdapter, dir: getRootDir() });
+          const freshCache = {}; // Force fresh read to avoid stale refs/index
+          const status = await git.statusMatrix({
+            fs: fsAdapter,
+            dir: getRootDir(),
+            cache: freshCache,
+          });
           debug.log(
             `[gitCoreService.getStatus] Browser: statusMatrix returned ${status?.length || 0} items`
           );
@@ -392,7 +449,25 @@ class GitCoreService {
         }
       }
 
-      return [...result, ...untrackedFiles];
+      // Filter out recently committed files (grace period to avoid stale statusMatrix data)
+      const now = Date.now();
+      const filteredResult = [...result, ...untrackedFiles].filter((file) => {
+        const commitTime = this.recentlyCommittedFiles.get(file.path);
+        if (commitTime && now - commitTime < this.COMMIT_GRACE_PERIOD_MS) {
+          debug.log(`[getStatus] Filtering recently committed file: ${file.path}`);
+          return false;
+        }
+        return true;
+      });
+
+      // Clean up old entries
+      for (const [path, time] of this.recentlyCommittedFiles.entries()) {
+        if (now - time > this.COMMIT_GRACE_PERIOD_MS) {
+          this.recentlyCommittedFiles.delete(path);
+        }
+      }
+
+      return filteredResult;
     } catch (error) {
       console.error('Failed to get status:', error);
       return [];
@@ -410,52 +485,111 @@ class GitCoreService {
 
     // Queue the commit to ensure serialized execution
     this.commitQueue = this.commitQueue.then(async () => {
-      const fileExists = (await fileSystemService.readFileBinary(filepath)) !== null;
-      const authorNameToUse = authorName || 'Tracyfy User';
-      const author = { name: authorNameToUse, email: 'user@tracyfy.local' };
+      try {
+        debug.log(`[commitFile] Starting commit for ${filepath}...`);
+        const fileExists = (await fileSystemService.readFileBinary(filepath)) !== null;
+        debug.log(`[commitFile] File exists: ${fileExists}`);
+        const authorNameToUse = authorName || 'Tracyfy User';
+        const author = { name: authorNameToUse, email: 'user@tracyfy.local' };
 
-      let commitOid: string;
+        let commitOid: string;
 
-      if (isElectronEnv()) {
-        const rootDir = getRootDir();
-        if (fileExists) {
-          const res = await window.electronAPI!.git.add(rootDir, filepath);
-          if (res.error) throw new Error(res.error);
+        if (isElectronEnv()) {
+          const rootDir = getRootDir();
+          debug.log(`[commitFile] Electron mode, rootDir: ${rootDir}`);
+          if (fileExists) {
+            debug.log(`[commitFile] Adding file: ${filepath}`);
+            const res = await window.electronAPI!.git.add(rootDir, filepath);
+            if (res.error) {
+              debug.warn(`[commitFile] git.add failed: ${res.error}`);
+              throw new Error(`git.add failed: ${res.error}`);
+            }
+          } else {
+            debug.log(`[commitFile] Removing file: ${filepath}`);
+            const res = await window.electronAPI!.git.remove(rootDir, filepath);
+            if (res.error) {
+              debug.warn(`[commitFile] git.remove failed: ${res.error}`);
+              throw new Error(`git.remove failed: ${res.error}`);
+            }
+          }
+
+          debug.log(`[commitFile] Committing with message: "${message}"`);
+          const res = await window.electronAPI!.git.commit(rootDir, message, author);
+          if (res.error) {
+            debug.warn(`[commitFile] git.commit failed: ${res.error}`);
+            throw new Error(`git.commit failed: ${res.error}`);
+          }
+          commitOid = res.oid!;
         } else {
-          const res = await window.electronAPI!.git.remove(rootDir, filepath);
-          if (res.error) throw new Error(res.error);
+          // CRITICAL: Ensure HEAD is attached to main branch before committing
+          // If HEAD is detached (contains raw SHA), commits won't update the branch pointer
+          await this.ensureHeadAttached();
+
+          const cache = {};
+
+          // Debug: Check status BEFORE add
+          debug.log(`[commitFile] Browser mode: checking status BEFORE git.add for ${filepath}`);
+          const statusBefore = await git.statusMatrix({
+            fs: fsAdapter,
+            dir: getRootDir(),
+            filepaths: [filepath],
+          });
+          debug.log(`[commitFile] Status BEFORE add:`, statusBefore);
+
+          if (fileExists) {
+            debug.log(`[commitFile] Browser: calling git.add for ${filepath}`);
+            await git.add({ fs: fsAdapter, dir: getRootDir(), filepath, cache });
+          } else {
+            debug.log(`[commitFile] Browser: calling git.remove for ${filepath}`);
+            await git.remove({ fs: fsAdapter, dir: getRootDir(), filepath, cache });
+          }
+
+          // Debug: Check status AFTER add but BEFORE commit
+          const statusAfterAdd = await git.statusMatrix({
+            fs: fsAdapter,
+            dir: getRootDir(),
+            filepaths: [filepath],
+          });
+          debug.log(`[commitFile] Status AFTER add:`, statusAfterAdd);
+
+          debug.log(`[commitFile] Browser: calling git.commit with message: "${message}"`);
+          commitOid = await git.commit({
+            fs: fsAdapter,
+            dir: getRootDir(),
+            message,
+            author,
+            cache,
+          });
+
+          debug.log(`[commitFile] Browser: commit returned OID: ${commitOid}`);
+
+          // Debug: Check status AFTER commit
+          const statusAfterCommit = await git.statusMatrix({
+            fs: fsAdapter,
+            dir: getRootDir(),
+            filepaths: [filepath],
+          });
+          debug.log(`[commitFile] Status AFTER commit:`, statusAfterCommit);
         }
 
-        const res = await window.electronAPI!.git.commit(rootDir, message, author);
-        if (res.error) throw new Error(res.error);
-        commitOid = res.oid!;
-      } else {
-        const cache = {};
-        if (fileExists) {
-          await git.add({ fs: fsAdapter, dir: getRootDir(), filepath, cache });
-        } else {
-          await git.remove({ fs: fsAdapter, dir: getRootDir(), filepath, cache });
+        debug.log(
+          `[commitFile] Successfully committed ${filepath} by ${authorNameToUse}, SHA: ${commitOid}`
+        );
+
+        // Track this file as recently committed to filter stale statusMatrix results
+        this.recentlyCommittedFiles.set(filepath, Date.now());
+
+        // Proactively cache the file for this commit
+        this.addToCacheFn(commitOid, [filepath]);
+
+        // Dispatch event to notify UI of status change
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('git-status-changed'));
         }
-
-        commitOid = await git.commit({
-          fs: fsAdapter,
-          dir: getRootDir(),
-          message,
-          author,
-          cache,
-        });
-      }
-
-      debug.log(
-        `[commitFile] Successfully committed ${filepath} by ${authorNameToUse}, SHA: ${commitOid}`
-      );
-
-      // Proactively cache the file for this commit
-      this.addToCacheFn(commitOid, [filepath]);
-
-      // Dispatch event to notify UI of status change
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('git-status-changed'));
+      } catch (error) {
+        // Log the error with full details before rethrowing
+        console.error(`[commitFile] Failed to commit ${filepath}:`, error);
+        throw error;
       }
     });
 

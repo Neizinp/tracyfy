@@ -276,9 +276,15 @@ export function PendingChangesPanel() {
     activeCommitsRef.current += 1;
 
     // Run commit in background (don't await - let it complete asynchronously)
+    debug.log(
+      `[handleCommit] Starting commit for ${change.path}, message: "${message}", user: ${currentUser?.name}`
+    );
     commitFile(change.path, message, currentUser?.name)
+      .then(() => {
+        debug.log(`[handleCommit] Commit succeeded for ${change.path}`);
+      })
       .catch((error) => {
-        console.error('Failed to commit:', error);
+        console.error('[handleCommit] Failed to commit:', change.path, error);
         // On error, the user will see the change reappear on next status refresh
       })
       .finally(() => {
