@@ -592,22 +592,37 @@ class GitCoreService {
 
     debug.log(`[revertFile] Attempting to revert: ${filepath}`);
 
-    // Determine if file is tracked or untracked
-    const status = await this.getStatus();
-    const fileStatus = status.find((s) => s.path === filepath);
+    // Check if file exists on disk (new/untracked) vs tracked
+    const fileExists = (await fileSystemService.readFileBinary(filepath)) !== null;
 
-    if (!fileStatus) {
-      debug.warn(`[revertFile] File not found in status: ${filepath}`);
-      return;
+    // Use single-file statusMatrix to check if tracked (much faster than getStatus())
+    let isTracked = false;
+    if (isElectronEnv()) {
+      const status = await window.electronAPI!.git.statusMatrix(getRootDir());
+      if (Array.isArray(status)) {
+        const fileEntry = status.find(
+          (entry: [string, number, number, number]) => entry[0] === filepath
+        );
+        // A file is tracked if it exists in HEAD (entry[1] === 1)
+        isTracked = fileEntry ? fileEntry[1] === 1 : false;
+      }
+    } else {
+      const status = await git.statusMatrix({
+        fs: fsAdapter,
+        dir: getRootDir(),
+        filepaths: [filepath],
+      });
+      // A file is tracked if it exists in HEAD (entry[1] === 1)
+      isTracked = status.length > 0 && status[0][1] === 1;
     }
 
-    debug.log(`[revertFile] File status for ${filepath}: ${fileStatus.status}`);
+    debug.log(`[revertFile] File exists: ${fileExists}, isTracked: ${isTracked}`);
 
-    if (fileStatus.status === 'new') {
+    if (!isTracked && fileExists) {
       // Untracked file: Delete it from disk
       debug.log(`[revertFile] Deleting untracked file: ${filepath}`);
       await fileSystemService.deleteFile(filepath);
-    } else {
+    } else if (isTracked) {
       // Tracked/Modified file: Revert using git checkout
       debug.log(`[revertFile] Checking out ${filepath} from HEAD`);
       if (isElectronEnv()) {
@@ -627,6 +642,9 @@ class GitCoreService {
           force: true,
         });
       }
+    } else {
+      debug.warn(`[revertFile] File not found: ${filepath}`);
+      return;
     }
 
     debug.log(`[revertFile] Successfully reverted ${filepath}`);
