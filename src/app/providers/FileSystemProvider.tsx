@@ -698,17 +698,16 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       try {
         debug.log('[revertFile] Calling realGitService.revertFile...');
         await realGitService.revertFile(filepath);
-        debug.log('[revertFile] Successfully reverted. Reloading data...');
+        debug.log('[revertFile] Successfully reverted.');
+        // Note: git-status-changed event is dispatched by revertFile which triggers refreshStatus
+        // We reload data to pick up the reverted content
         await reloadData();
-        debug.log('[revertFile] Data reloaded. Refreshing status...');
-        refreshStatus(); // Fire-and-forget for responsive UI
-        debug.log('[revertFile] All steps complete.');
       } catch (err) {
         console.error('[revertFile] Failed:', err);
         throw err;
       }
     },
-    [isReady, reloadData, refreshStatus]
+    [isReady, reloadData]
   );
 
   const getArtifactHistory = useCallback(
