@@ -185,7 +185,7 @@ describe('Mode Parity Tests', () => {
   describe('Author Default Parity', () => {
     it('should use same default author in both modes', async () => {
       const mainContent = await nodeFs.readFile(ELECTRON_MAIN_PATH, 'utf8');
-      const serviceContent = await nodeFs.readFile(GIT_CORE_SERVICE_PATH, 'utf8');
+      await nodeFs.readFile(GIT_CORE_SERVICE_PATH, 'utf8');
 
       // Check for consistent default author pattern
       expect(mainContent).toContain('Tracyfy User');

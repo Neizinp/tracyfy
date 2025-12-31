@@ -178,8 +178,8 @@ npm run preview  # Preview the production build
 
 ### Testing
 
-- **Vitest** - 1000+ unit and component tests
-- **Playwright** - End-to-end testing
+- **Vitest** - 1075+ unit and component tests
+- **Mode Parity Tests** - Ensures Electron and Browser modes stay in sync
 - **React Testing Library** - Component testing utilities
 
 Run tests:
@@ -188,11 +188,9 @@ Run tests:
 npm test              # Run unit tests
 npm run typecheck     # TypeScript type checking
 npm run lint          # ESLint
-
-# For E2E tests, install browsers first:
-npx playwright install
-npx playwright test
 ```
+
+> **Note:** E2E browser automation tests are not possible due to the File System Access API requiring native OS dialogs for repository selection. See `docs/TESTING_GUIDE.md` for manual testing procedures.
 
 ### Project Structure
 
