@@ -59,6 +59,8 @@ class GitCoreService {
   // isomorphic-git's statusMatrix can return stale data immediately after commit
   private recentlyCommittedFiles: Map<string, number> = new Map();
   private readonly COMMIT_GRACE_PERIOD_MS = 5000; // 5 second grace period
+  // Cache HEAD attached state to avoid checking on every commit
+  private headAttachedVerified = false;
 
   setInitialized(value: boolean): void {
     this.initialized = value;
@@ -85,6 +87,11 @@ class GitCoreService {
   private async ensureHeadAttached(): Promise<void> {
     if (isElectronEnv()) {
       // Electron handles this through native git
+      return;
+    }
+
+    // Skip if we've already verified HEAD is attached this session
+    if (this.headAttachedVerified) {
       return;
     }
 
@@ -118,6 +125,9 @@ class GitCoreService {
       } else {
         debug.log(`[ensureHeadAttached] HEAD is already attached: ${trimmedHead}`);
       }
+
+      // Mark as verified for this session
+      this.headAttachedVerified = true;
     } catch (err) {
       console.error('[ensureHeadAttached] Failed to check/repair HEAD:', err);
     }
@@ -527,15 +537,6 @@ class GitCoreService {
 
           const cache = {};
 
-          // Debug: Check status BEFORE add
-          debug.log(`[commitFile] Browser mode: checking status BEFORE git.add for ${filepath}`);
-          const statusBefore = await git.statusMatrix({
-            fs: fsAdapter,
-            dir: getRootDir(),
-            filepaths: [filepath],
-          });
-          debug.log(`[commitFile] Status BEFORE add:`, statusBefore);
-
           if (fileExists) {
             debug.log(`[commitFile] Browser: calling git.add for ${filepath}`);
             await git.add({ fs: fsAdapter, dir: getRootDir(), filepath, cache });
@@ -543,14 +544,6 @@ class GitCoreService {
             debug.log(`[commitFile] Browser: calling git.remove for ${filepath}`);
             await git.remove({ fs: fsAdapter, dir: getRootDir(), filepath, cache });
           }
-
-          // Debug: Check status AFTER add but BEFORE commit
-          const statusAfterAdd = await git.statusMatrix({
-            fs: fsAdapter,
-            dir: getRootDir(),
-            filepaths: [filepath],
-          });
-          debug.log(`[commitFile] Status AFTER add:`, statusAfterAdd);
 
           debug.log(`[commitFile] Browser: calling git.commit with message: "${message}"`);
           commitOid = await git.commit({
@@ -562,14 +555,6 @@ class GitCoreService {
           });
 
           debug.log(`[commitFile] Browser: commit returned OID: ${commitOid}`);
-
-          // Debug: Check status AFTER commit
-          const statusAfterCommit = await git.statusMatrix({
-            fs: fsAdapter,
-            dir: getRootDir(),
-            filepaths: [filepath],
-          });
-          debug.log(`[commitFile] Status AFTER commit:`, statusAfterCommit);
         }
 
         debug.log(
