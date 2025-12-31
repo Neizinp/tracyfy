@@ -61,6 +61,9 @@ class GitCoreService {
   private readonly COMMIT_GRACE_PERIOD_MS = 5000; // 5 second grace period
   // Cache HEAD attached state to avoid checking on every commit
   private headAttachedVerified = false;
+  // Short-term cache for getStatus to avoid repeated enumeration
+  private statusCache: { result: import('./types').FileStatus[]; timestamp: number } | null = null;
+  private readonly STATUS_CACHE_TTL_MS = 500; // 500ms cache
 
   setInitialized(value: boolean): void {
     this.initialized = value;
@@ -76,6 +79,13 @@ class GitCoreService {
 
   setEnsureTokenLoadedFn(fn: () => Promise<void>): void {
     this.ensureTokenLoadedFn = fn;
+  }
+
+  /**
+   * Invalidate the status cache (for tests or forced refresh)
+   */
+  invalidateStatusCache(): void {
+    this.statusCache = null;
   }
 
   /**
@@ -220,6 +230,9 @@ class GitCoreService {
     }
 
     this.initialized = true;
+    // Clear status cache to ensure fresh status on next getStatus call
+    this.statusCache = null;
+    this.headAttachedVerified = false;
 
     // Ensure essential git files exist
     const essentialFiles = [
@@ -376,6 +389,13 @@ class GitCoreService {
   async getStatus(): Promise<FileStatus[]> {
     if (!this.initialized) return [];
 
+    // Return cached result if fresh
+    const now = Date.now();
+    if (this.statusCache && now - this.statusCache.timestamp < this.STATUS_CACHE_TTL_MS) {
+      debug.log('[getStatus] Returning cached result');
+      return this.statusCache.result;
+    }
+
     try {
       let result: FileStatus[] = [];
       let statusMatrixFiles = new Set<string>();
@@ -479,6 +499,9 @@ class GitCoreService {
         }
       }
 
+      // Cache the result
+      this.statusCache = { result: filteredResult, timestamp: Date.now() };
+
       return filteredResult;
     } catch (error) {
       console.error('Failed to get status:', error);
@@ -565,6 +588,9 @@ class GitCoreService {
 
         // Track this file as recently committed to filter stale statusMatrix results
         this.recentlyCommittedFiles.set(filepath, Date.now());
+
+        // Invalidate status cache so next getStatus returns fresh data
+        this.statusCache = null;
 
         // Proactively cache the file for this commit
         this.addToCacheFn(commitOid, [filepath]);
