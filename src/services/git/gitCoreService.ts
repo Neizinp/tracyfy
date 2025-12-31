@@ -414,7 +414,7 @@ class GitCoreService {
         }
       }
 
-      // Enumerate artifact files to find untracked files
+      // Enumerate artifact files to find untracked files (in parallel for speed)
       const trackedPaths =
         statusMatrixFiles.size > 0 ? statusMatrixFiles : new Set(result.map((f) => f.path));
       const untrackedFiles: FileStatus[] = [];
@@ -433,12 +433,12 @@ class GitCoreService {
         'assets',
       ];
       const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.tiff'];
-      for (const type of artifactTypes) {
+
+      // Parallel enumeration of all artifact directories
+      const listPromises = artifactTypes.map(async (type) => {
+        const filesForType: FileStatus[] = [];
         try {
           const files = await fileSystemService.listFiles(type);
-          if (type === 'assets') {
-            debug.log(`[getStatus] Assets folder contains: ${files.length} files`, files);
-          }
           for (const file of files) {
             const isMarkdown = file.endsWith('.md');
             const isImage =
@@ -446,17 +446,19 @@ class GitCoreService {
             if (isMarkdown || isImage) {
               const filePath = `${type}/${file}`;
               if (!trackedPaths.has(filePath)) {
-                debug.log(`[getStatus] Found untracked file: ${filePath}`);
-                untrackedFiles.push({ path: filePath, status: 'new' });
+                filesForType.push({ path: filePath, status: 'new' });
               }
             }
           }
-        } catch (err) {
+        } catch {
           // Directory might not exist yet
-          if (type === 'assets') {
-            debug.log(`[getStatus] Assets folder does not exist or error:`, err);
-          }
         }
+        return filesForType;
+      });
+
+      const allUntrackedArrays = await Promise.all(listPromises);
+      for (const arr of allUntrackedArrays) {
+        untrackedFiles.push(...arr);
       }
 
       // Filter out recently committed files (grace period to avoid stale statusMatrix data)
