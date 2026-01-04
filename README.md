@@ -22,6 +22,15 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 - **Traceability Matrix** - Visualize requirement relationships and dependencies
 - **Trash Bin** - Soft delete with restore capability for all artifact types
 
+### Advanced Features
+
+- **Electron Mode** - Native desktop app with faster Git operations using native Git
+- **Advanced Search** - Query builder with complex filters and saved search templates
+- **User Management** - Multi-user support with author tracking and user switching
+- **Remote Git Sync** - Push/pull to remote Git repositories for team collaboration
+- **Custom Attributes** - Extend artifacts with custom fields per project
+- **Workflow Management** - Track approval workflows with status and assignment
+
 ### Revision Control & Baselines
 
 - **Git Integration** - All artifacts stored as Markdown files in Git repositories
@@ -105,6 +114,24 @@ npm run dev
 ```
 
 The application will be available at `http://localhost:5173`
+
+### Electron Mode (Recommended)
+
+For better performance with native Git operations:
+
+```bash
+# Install Electron dependencies
+npm install
+
+# Run in Electron mode
+npm run electron:dev
+```
+
+Electron mode provides:
+
+- Faster Git operations using native Git
+- Better file system performance
+- No browser limitations
 
 ### First Run
 
@@ -328,6 +355,13 @@ npx playwright test  # Run E2E tests
 - 1000+ unit tests with comprehensive coverage
 
 ## 📝 Recent Updates
+
+### January 2026
+
+- ✅ **Electron mode** - Native desktop app with faster Git operations
+- ✅ **Folder management** - Non-empty folder warnings and in-app directory switching
+- ✅ **Transparency fixes** - Ensured all UI elements have opaque backgrounds
+- ✅ **Demo project fixes** - Resolved initialization issues in new folders
 
 ### December 2024
 
