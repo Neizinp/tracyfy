@@ -12,36 +12,37 @@ const getToastStyles = (type: 'info' | 'warning' | 'error' | 'success') => {
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
     minWidth: '320px',
     maxWidth: '450px',
+    opacity: 1, // Explicitly prevent any transparency
   };
 
   switch (type) {
     case 'warning':
       return {
         ...baseStyles,
-        backgroundColor: 'var(--color-warning-bg, #433422)',
-        border: '1px solid var(--color-warning, #f59e0b)',
-        color: 'var(--color-warning, #f59e0b)',
+        backgroundColor: '#433422', // Solid opaque background
+        border: '1px solid #f59e0b',
+        color: '#f59e0b',
       };
     case 'error':
       return {
         ...baseStyles,
-        backgroundColor: 'var(--color-error-bg, #422222)',
-        border: '1px solid var(--color-error, #ef4444)',
-        color: 'var(--color-error, #ef4444)',
+        backgroundColor: '#422222', // Solid opaque background
+        border: '1px solid #ef4444',
+        color: '#ef4444',
       };
     case 'success':
       return {
         ...baseStyles,
-        backgroundColor: 'var(--color-success-bg, #224422)',
-        border: '1px solid var(--color-success, #22c55e)',
-        color: 'var(--color-success, #22c55e)',
+        backgroundColor: '#224422', // Solid opaque background
+        border: '1px solid #22c55e',
+        color: '#22c55e',
       };
     default:
       return {
         ...baseStyles,
-        backgroundColor: 'var(--color-bg-card, #2a2a2a)',
-        border: '1px solid var(--color-accent, #6366f1)',
-        color: 'var(--color-accent, #6366f1)',
+        backgroundColor: '#2a2a2a', // Solid opaque background
+        border: '1px solid #6366f1',
+        color: '#6366f1',
       };
   }
 };
