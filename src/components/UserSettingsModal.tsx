@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '../app/providers';
+import { useUser, useFileSystem } from '../app/providers';
 import type { User } from '../types';
 
 interface UserSettingsModalProps {
@@ -12,6 +12,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }) => {
   const { users, currentUserId, currentUser, createUser, deleteUser, switchUser, updateUser } =
     useUser();
+  const { directoryName, changeDirectory } = useFileSystem();
 
   const [newUserName, setNewUserName] = useState('');
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -423,6 +424,89 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Working Directory Section */}
+          <div
+            style={{
+              marginTop: 'var(--spacing-lg)',
+              paddingTop: 'var(--spacing-lg)',
+              borderTop: '1px solid var(--color-border)',
+            }}
+          >
+            <h4
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 500,
+                marginBottom: 'var(--spacing-sm)',
+              }}
+            >
+              Working Directory
+            </h4>
+            <div
+              style={{
+                backgroundColor: 'var(--color-bg-card)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '6px',
+                padding: 'var(--spacing-md)',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-muted)',
+                  marginBottom: '4px',
+                }}
+              >
+                Current Directory
+              </div>
+              <div
+                style={{
+                  fontFamily: 'monospace',
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-text-primary)',
+                  marginBottom: 'var(--spacing-md)',
+                  wordBreak: 'break-all',
+                }}
+              >
+                {directoryName || 'No directory selected'}
+              </div>
+              <button
+                onClick={async () => {
+                  const confirmed = window.confirm(
+                    'Are you sure you want to change the working directory?\n\n' +
+                      'This will close the current project and prompt you to select a new folder.'
+                  );
+                  if (confirmed) {
+                    await changeDirectory();
+                    onClose();
+                  }
+                }}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  color: 'var(--color-text-primary)',
+                  cursor: 'pointer',
+                  fontSize: 'var(--font-size-sm)',
+                  fontWeight: 500,
+                }}
+              >
+                Change Directory
+              </button>
+              <p
+                style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-muted)',
+                  marginTop: 'var(--spacing-sm)',
+                  lineHeight: 1.4,
+                }}
+              >
+                Changing the directory will switch to a different project folder. Make sure to
+                commit any pending changes before switching.
+              </p>
+            </div>
           </div>
         </div>
 

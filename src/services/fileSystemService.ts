@@ -792,6 +792,84 @@ class FileSystemService {
     }
     return this.directoryHandle !== null;
   }
+
+  /**
+   * Check if the currently selected directory is empty
+   * Returns the number of entries (files + directories) in the root
+   */
+  async checkDirectoryEmpty(): Promise<{ isEmpty: boolean; entryCount: number }> {
+    // Electron path: use IPC
+    if (isElectron()) {
+      if (!this.rootPath) {
+        return { isEmpty: true, entryCount: 0 };
+      }
+      const api = getElectronAPI();
+      const result = await api.fs.listEntries(this.rootPath);
+
+      if (result.error) {
+        return { isEmpty: true, entryCount: 0 };
+      }
+
+      // Filter out .git directory from the count
+      const entries = result.entries.filter((name) => name !== '.git');
+      return { isEmpty: entries.length === 0, entryCount: entries.length };
+    }
+
+    // Browser path: use FSA
+    if (!this.directoryHandle) {
+      return { isEmpty: true, entryCount: 0 };
+    }
+
+    try {
+      let count = 0;
+      for await (const [name] of this.directoryHandle.entries()) {
+        // Skip .git directory
+        if (name === '.git') continue;
+        count++;
+      }
+      return { isEmpty: count === 0, entryCount: count };
+    } catch {
+      return { isEmpty: true, entryCount: 0 };
+    }
+  }
+
+  /**
+   * Clear the stored directory reference
+   * This will force the user to select a new directory on next app start
+   */
+  async clearDirectory(): Promise<void> {
+    // Electron: remove localStorage entry
+    if (isElectron()) {
+      try {
+        localStorage.removeItem(ELECTRON_DIR_KEY);
+      } catch {
+        debug.warn('[clearDirectory] Could not remove localStorage entry');
+      }
+      this.rootPath = null;
+      return;
+    }
+
+    // Browser: clear IndexedDB handle
+    if (this.isE2EMode) return;
+
+    try {
+      const db = await this.initDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.delete('directory');
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          this.directoryHandle = null;
+          resolve();
+        };
+      });
+    } catch (err) {
+      debug.warn('[clearDirectory] Could not clear IndexedDB handle:', err);
+      this.directoryHandle = null;
+    }
+  }
 }
 
 export const fileSystemService = new FileSystemService();

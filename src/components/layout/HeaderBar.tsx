@@ -69,6 +69,7 @@ interface HeaderBarProps {
   currentUserName?: string;
   onOpenAdvancedSearch?: () => void;
   onHelp?: () => void;
+  onChangeFolder?: () => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -95,6 +96,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onOpenAdvancedSearch,
   onHelp,
   onNewDocument,
+  onChangeFolder,
 }) => {
   const {
     isExportMenuOpen,
@@ -336,6 +338,27 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             </div>
           )}
         </div>
+
+        {/* Change Folder Button */}
+        {onChangeFolder && (
+          <button
+            onClick={() => {
+              const confirmed = window.confirm(
+                'Are you sure you want to change the working folder?\n\n' +
+                  'This will close the current project and prompt you to select a new folder.\n\n' +
+                  'Make sure to commit any pending changes before switching.'
+              );
+              if (confirmed) {
+                onChangeFolder();
+              }
+            }}
+            style={headerButtonStyle}
+            title="Change Working Folder"
+          >
+            <FolderOpen size={18} />
+            Change Folder
+          </button>
+        )}
 
         {/* History Button */}
         {onViewHistory && (

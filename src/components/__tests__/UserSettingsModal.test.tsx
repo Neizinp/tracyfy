@@ -24,6 +24,10 @@ vi.mock('../../app/providers', () => ({
     switchUser: mockSwitchUser,
     updateUser: mockUpdateUser,
   }),
+  useFileSystem: () => ({
+    directoryName: '/test/directory',
+    changeDirectory: vi.fn(),
+  }),
 }));
 
 // Mock keyboard shortcuts hook to avoid issues

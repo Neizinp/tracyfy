@@ -37,6 +37,7 @@ interface FileSystemContextValue {
   directoryName: string | null;
   error: string | null;
   selectDirectory: () => Promise<void>;
+  changeDirectory: () => Promise<void>;
   // Loaded data from disk
   projects: Project[];
   currentProjectId: string;
@@ -289,6 +290,26 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     try {
       const result = await fileSystemService.selectDirectory();
+
+      // Check if directory is empty (excluding .git)
+      const { isEmpty, entryCount } = await fileSystemService.checkDirectoryEmpty();
+
+      // If directory is not empty, ask for confirmation
+      if (!isEmpty) {
+        const confirmed = window.confirm(
+          `This folder contains ${entryCount} ${entryCount === 1 ? 'item' : 'items'}.\n\n` +
+            `Tracyfy will create project files in this folder. Are you sure you want to use this folder?`
+        );
+
+        if (!confirmed) {
+          // User cancelled, clear the selection
+          await fileSystemService.clearDirectory();
+          setError('Directory selection was cancelled.');
+          setIsLoading(false);
+          endTask(taskId);
+          return;
+        }
+      }
 
       // Initialize git (handle for browser, path for Electron)
       const gitInitialized = await realGitService.init(result.handle);
@@ -740,6 +761,29 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return await realGitService.hasRemote();
   }, []);
 
+  const changeDirectory = useCallback(async () => {
+    // Clear the stored directory
+    await fileSystemService.clearDirectory();
+
+    // Reset all state
+    setIsReady(false);
+    setIsLoading(false); // Set to false so DirectorySelector shows selection UI, not loading spinner
+    setDirectoryName(null);
+    setError(null);
+    setPendingChanges([]);
+    setProjects([]);
+    setCurrentProjectIdState('');
+    setRequirements([]);
+    setUseCases([]);
+    setTestCases([]);
+    setInformation([]);
+    setRisks([]);
+    setDocuments([]);
+    setLinks([]);
+    setPreloadedUsers([]);
+    setPreloadedCurrentUserId('');
+  }, []);
+
   return (
     <FileSystemContext.Provider
       value={{
@@ -749,6 +793,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         directoryName,
         error,
         selectDirectory,
+        changeDirectory,
         // Data
         projects,
         currentProjectId,

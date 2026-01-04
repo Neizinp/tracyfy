@@ -43,7 +43,7 @@ export const ProjectLayout: React.FC = () => {
     useGlobalState();
 
   // FileSystem context
-  const { reloadData, refreshStatus } = useFileSystem();
+  const { reloadData, refreshStatus, changeDirectory } = useFileSystem();
 
   // Baselines context
   const { baselines } = useBaselines();
@@ -318,6 +318,7 @@ export const ProjectLayout: React.FC = () => {
       onViewHistory={() => ui.setIsVersionHistoryOpen(true)}
       onOpenUserSettings={() => ui.setIsUserSettingsModalOpen(true)}
       onHelp={() => navigate('/help')}
+      onChangeFolder={changeDirectory}
       currentUserName={currentUser?.name}
       baselines={baselines}
       onExportPDF={async (selectedBaseline) => {
