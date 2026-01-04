@@ -32,6 +32,7 @@ class DiskWorkflowService extends BaseArtifactService<Workflow> {
   async approveWorkflow(
     workflowId: string,
     approvedBy: string,
+    approverName: string,
     approverComment?: string
   ): Promise<Workflow | null> {
     const workflow = await this.load(workflowId);
@@ -52,7 +53,9 @@ class DiskWorkflowService extends BaseArtifactService<Workflow> {
       lastModified: now,
     };
 
-    await this.save(updatedWorkflow);
+    // Auto-commit with approver's name
+    const commitMessage = `Approved by ${approverName}`;
+    await this.save(updatedWorkflow, commitMessage);
     return updatedWorkflow;
   }
 

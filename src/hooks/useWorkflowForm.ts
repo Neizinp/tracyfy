@@ -58,11 +58,11 @@ export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWor
     }
   }, [isOpen, workflow]);
 
-  // Get all artifacts for selection
+  // Get all artifacts for selection (exclude already approved)
   const allArtifacts = useMemo(
     () => [
       ...requirements
-        .filter((r: Requirement) => !r.isDeleted)
+        .filter((r: Requirement) => !r.isDeleted && r.status !== 'approved')
         .map((r: Requirement) => ({
           id: r.id,
           title: r.title,
@@ -70,7 +70,7 @@ export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWor
           status: r.status || 'draft',
         })),
       ...useCases
-        .filter((u: UseCase) => !u.isDeleted)
+        .filter((u: UseCase) => !u.isDeleted && u.status !== 'approved')
         .map((u: UseCase) => ({
           id: u.id,
           title: u.title,
@@ -78,7 +78,7 @@ export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWor
           status: u.status || 'draft',
         })),
       ...testCases
-        .filter((t: TestCase) => !t.isDeleted)
+        .filter((t: TestCase) => !t.isDeleted && t.status !== 'approved')
         .map((t: TestCase) => ({
           id: t.id,
           title: t.title,
@@ -94,7 +94,7 @@ export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWor
           status: 'draft',
         })),
       ...risks
-        .filter((r: Risk) => !r.isDeleted)
+        .filter((r: Risk) => !r.isDeleted && r.status !== 'approved')
         .map((r: Risk) => ({
           id: r.id,
           title: r.title,

@@ -162,6 +162,11 @@ export const InformationModal: React.FC<InformationModalProps> = ({
               setPriority={setPriority}
               status={status}
               setStatus={setStatus}
+              statusOptions={[
+                { value: 'draft', label: 'Draft' },
+                { value: 'approved', label: 'Approved' },
+                { value: 'archived', label: 'Archived' },
+              ]}
               author={author}
               setAuthor={setAuthor}
               currentUser={currentUser?.name}

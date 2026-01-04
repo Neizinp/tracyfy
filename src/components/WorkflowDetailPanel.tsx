@@ -8,7 +8,14 @@
 import React, { useState } from 'react';
 import { X, CheckCircle2, XCircle, Clock, User, FileText, MessageSquare } from 'lucide-react';
 import type { Workflow } from '../types';
-import { useUser, useRequirements, useUseCases, useTestCases } from '../app/providers';
+import {
+  useUser,
+  useRequirements,
+  useUseCases,
+  useTestCases,
+  useInformation,
+  useRisks,
+} from '../app/providers';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { diskWorkflowService } from '../services/diskWorkflowService';
 import { useToast } from '../app/providers/ToastProvider';
@@ -29,6 +36,8 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
   const { requirements, handleUpdateRequirement } = useRequirements();
   const { useCases, handleUpdateUseCase } = useUseCases();
   const { testCases, handleUpdateTestCase } = useTestCases();
+  const { information, handleUpdateInformation } = useInformation();
+  const { risks, handleUpdateRisk } = useRisks();
   const { reloadData } = useFileSystem();
   const { showToast } = useToast();
   const [comment, setComment] = useState('');
@@ -100,6 +109,24 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
       });
       return;
     }
+
+    // Check information
+    const info = information.find((i) => i.id === artifactId);
+    if (info) {
+      await handleUpdateInformation(artifactId, {
+        status: 'approved',
+      });
+      return;
+    }
+
+    // Check risks
+    const risk = risks.find((r) => r.id === artifactId);
+    if (risk) {
+      await handleUpdateRisk(artifactId, {
+        status: 'approved',
+      });
+      return;
+    }
   };
 
   const handleApprove = async () => {
@@ -111,6 +138,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
       const approvedWorkflow = await diskWorkflowService.approveWorkflow(
         workflow.id,
         currentUser.id,
+        currentUser.name,
         comment || undefined
       );
 
