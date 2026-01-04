@@ -96,8 +96,8 @@ export async function createDemoProject(): Promise<Project> {
   // 2. Batch allocate all IDs at once (single disk write per type)
   const [reqIds, ucIds, tcIds, infoIds, riskIds] = await Promise.all([
     idService.getNextIds('requirements', DEMO_ARTIFACTS.requirements.length),
-    idService.getNextIds('useCases', DEMO_ARTIFACTS.useCases.length),
-    idService.getNextIds('testCases', DEMO_ARTIFACTS.testCases.length),
+    idService.getNextIds('usecases', DEMO_ARTIFACTS.useCases.length),
+    idService.getNextIds('testcases', DEMO_ARTIFACTS.testCases.length),
     idService.getNextIds('information', DEMO_ARTIFACTS.information.length),
     idService.getNextIds('risks', DEMO_ARTIFACTS.risks.length),
   ]);
