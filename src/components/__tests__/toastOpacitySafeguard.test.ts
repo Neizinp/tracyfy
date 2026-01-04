@@ -60,7 +60,7 @@ describe('App-Wide Opacity Safeguard', () => {
         info: '#2a2a2a',
       };
 
-      Object.entries(expectedBackgrounds).forEach(([type, color]) => {
+      Object.entries(expectedBackgrounds).forEach(([, color]) => {
         expect(color).toMatch(/^#[0-9a-fA-F]{6}$/);
         expect(color.toLowerCase()).not.toContain('rgba');
         expect(color.toLowerCase()).not.toContain('transparent');
