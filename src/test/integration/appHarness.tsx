@@ -20,6 +20,7 @@ import { expect } from 'vitest';
 import { render, waitFor, act, screen, fireEvent } from '@testing-library/react';
 import git from 'isomorphic-git';
 import { createElectronIpc } from './electronIpc';
+import { classifyPendingPath } from '../../utils/pendingChanges';
 import { AppProviders } from '../../app/AppProviders';
 import { AppContent } from '../../app/AppContent';
 import { StatusBar, ToastContainer } from '../../components';
@@ -67,6 +68,12 @@ export interface Harness {
   exists: (relPath: string) => boolean;
   /** Paths with uncommitted changes according to real git (untracked, modified, deleted) */
   dirtyPaths: () => Promise<string[]>;
+  /**
+   * Uncommitted paths the user cannot see (and so cannot commit) in the
+   * Pending Changes panel. Must always be empty: code writing hidden
+   * bookkeeping files has to commit them itself.
+   */
+  invisibleDirtyPaths: () => Promise<string[]>;
   /** Commit messages on HEAD, newest first */
   commitMessages: () => Promise<string[]>;
   /** Wait until the debounced git status refresh in the app has settled */
@@ -181,6 +188,14 @@ export async function startApp(
       return matrix
         .filter(([, head, workdir, stage]) => !(head === 1 && workdir === 1 && stage === 1))
         .map(([filepath]) => filepath)
+        .sort();
+    },
+    invisibleDirtyPaths: async () => {
+      const matrix = await git.statusMatrix({ fs, dir });
+      return matrix
+        .filter(([, head, workdir, stage]) => !(head === 1 && workdir === 1 && stage === 1))
+        .map(([filepath]) => filepath)
+        .filter((p) => classifyPendingPath(p) === null)
         .sort();
     },
     commitMessages: async () => {

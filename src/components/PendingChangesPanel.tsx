@@ -5,6 +5,7 @@ import { useUser } from '../app/providers/UserProvider';
 import { useBackgroundTaskActions } from '../app/providers/BackgroundTasksProvider';
 import { debug } from '../utils/debug';
 import type { ArtifactChange } from '../types';
+import { classifyPendingPath } from '../utils/pendingChanges';
 
 export function PendingChangesPanel() {
   const { pendingChanges, commitFile, revertFile, projects, getArtifactHistory, refreshStatus } =
@@ -43,46 +44,10 @@ export function PendingChangesPanel() {
     // Convert file statuses to ArtifactChange objects
     const changes: ArtifactChange[] = pendingChanges
       .map((fs) => {
-        // Parse path: {type}/{id}.md
-        const parts = fs.path.split('/');
-        if (parts.length < 2) return null;
-
-        const typeStr = parts[0]; // 'requirements', 'usecases', 'assets', etc.
-        const filename = parts[1];
-        // For .md files, strip extension. For assets (images), keep the full filename as id.
-        const id = filename.endsWith('.md') ? filename.replace('.md', '') : filename;
-
-        // Map folder names to artifact types
-        let type:
-          | 'requirement'
-          | 'usecase'
-          | 'testcase'
-          | 'information'
-          | 'project'
-          | 'asset'
-          | 'risk'
-          | 'user'
-          | 'counter'
-          | 'link'
-          | 'custom-attribute'
-          | 'saved-filter'
-          | 'document'
-          | 'workflow';
-        if (typeStr === 'requirements') type = 'requirement';
-        else if (typeStr === 'usecases') type = 'usecase';
-        else if (typeStr === 'testcases') type = 'testcase';
-        else if (typeStr === 'information') type = 'information';
-        else if (typeStr === 'risks') type = 'risk';
-        else if (typeStr === 'projects') type = 'project';
-        else if (typeStr === 'assets') type = 'asset';
-        else if (typeStr === 'users') type = 'user';
-        // Skip internal files - these should be auto-committed, not shown for manual commits
-        else if (typeStr === 'counters') return null;
-        else if (typeStr === 'links') return null;
-        else if (typeStr === 'custom-attributes') return null;
-        else if (typeStr === 'saved-filters') type = 'saved-filter';
-        else if (typeStr === 'documents') type = 'document';
-        else return null;
+        // Hidden/unknown paths return null (see utils/pendingChanges)
+        const classified = classifyPendingPath(fs.path);
+        if (!classified) return null;
+        const { type, id, filename } = classified;
 
         const status = fs.status === 'new' ? 'new' : 'modified';
 

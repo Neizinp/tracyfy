@@ -23,8 +23,8 @@
  *   requirements.md    # just the number
  *   usecases.md
  *   ...
- * current-project.md   # current project ID
- * current-user.md      # current user ID
+ * .git/tracyfy-current-project  # selected project ID (local, not versioned)
+ * .git/tracyfy-current-user     # selected user ID (local, not versioned)
  */
 
 import { BaseDiskService } from './baseDiskService';
@@ -53,8 +53,13 @@ import {
 } from './artifactServices';
 import { diskLinkService } from './diskLinkService';
 
-const CURRENT_PROJECT_FILE = 'current-project.md';
-const CURRENT_USER_FILE = 'current-user.md';
+// Which project/user is selected is local to this clone (each collaborator has
+// their own), so it lives inside .git and is never committed or pushed.
+const CURRENT_PROJECT_FILE = '.git/tracyfy-current-project';
+const CURRENT_USER_FILE = '.git/tracyfy-current-user';
+// Older versions stored these in the shared project folder
+const LEGACY_CURRENT_PROJECT_FILE = 'current-project.md';
+const LEGACY_CURRENT_USER_FILE = 'current-user.md';
 
 class DiskProjectService extends BaseDiskService {
   /**
@@ -74,7 +79,10 @@ class DiskProjectService extends BaseDiskService {
    * Get current project ID
    */
   async getCurrentProjectId(): Promise<string> {
-    return this.readTextFile(CURRENT_PROJECT_FILE);
+    return (
+      (await this.readTextFile(CURRENT_PROJECT_FILE)) ||
+      this.readTextFile(LEGACY_CURRENT_PROJECT_FILE)
+    );
   }
 
   /**
@@ -88,7 +96,9 @@ class DiskProjectService extends BaseDiskService {
    * Get current user ID
    */
   async getCurrentUserId(): Promise<string> {
-    return this.readTextFile(CURRENT_USER_FILE);
+    return (
+      (await this.readTextFile(CURRENT_USER_FILE)) || this.readTextFile(LEGACY_CURRENT_USER_FILE)
+    );
   }
 
   /**
@@ -330,31 +340,24 @@ class DiskProjectService extends BaseDiskService {
    * Call this after loading to ensure counters are in sync
    */
   async recalculateCounters(): Promise<void> {
-    await Promise.all(
-      Object.entries(ALL_ARTIFACT_SERVICES).map(async ([key, service]) => {
-        // Skip projects - they use timestamps or names usually (proj-...)
-        if (key === 'projects' || key === 'users') {
-          // Users might have USER- prefix, but currently userService is separate?
-          // Let's check users prefix.
-        }
+    // Only ever RAISE counters to cover existing IDs. Lowering them (e.g. after a
+    // permanent delete, or when a collaborator's counter is ahead) would hand out
+    // IDs again. Sequential so the resulting commits don't run concurrently.
+    for (const [key, service] of Object.entries(ALL_ARTIFACT_SERVICES)) {
+      const config = ARTIFACT_CONFIG[key];
+      if (!config || !config.idPrefix) continue;
 
-        const items = await service.loadAll();
-        const config = ARTIFACT_CONFIG[key];
-        if (!config || !config.idPrefix) return;
+      const items = await service.loadAll(true);
+      const idRegex = new RegExp(`^${config.idPrefix}-(\\d+)$`);
+      let maxId = 0;
+      for (const item of items) {
+        const match = item.id.match(idRegex);
+        if (match) maxId = Math.max(maxId, parseInt(match[1], 10));
+      }
 
-        let maxId = 0;
-        const idRegex = new RegExp(`${config.idPrefix}-(\\d+)`);
-
-        for (const item of items) {
-          const match = item.id.match(idRegex);
-          if (match) {
-            maxId = Math.max(maxId, parseInt(match[1], 10));
-          }
-        }
-
-        await idService.setCounter(key, maxId, true);
-      })
-    );
+      // Writes (and commits) only when the counter actually has to move
+      await idService.ensureCounterAtLeast(key, maxId);
+    }
   }
 
   /**

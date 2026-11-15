@@ -103,7 +103,8 @@ class DiskFilterService extends BaseDiskService {
       // File doesn't exist
     }
     counter++;
-    await this.writeTextFile(FILTER_COUNTER_FILE, String(counter));
+    // counters/ is hidden from the pending-changes panel, so commit it right away
+    await this.writeTextFile(FILTER_COUNTER_FILE, String(counter), 'Update saved-filters counter');
     return `FILTER-${String(counter).padStart(3, '0')}`;
   }
 

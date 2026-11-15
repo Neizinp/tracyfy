@@ -43,13 +43,21 @@ describe('DiskProjectService - User Operations', () => {
   });
 
   describe('getCurrentUserId', () => {
-    it('should read current user ID from file', async () => {
+    it('should read the local (unversioned) current user file inside .git', async () => {
       vi.mocked(fileSystemService.readFile).mockResolvedValue('USER-001');
 
       const userId = await diskProjectService.getCurrentUserId();
 
-      expect(fileSystemService.readFile).toHaveBeenCalledWith('current-user.md');
+      expect(fileSystemService.readFile).toHaveBeenCalledWith('.git/tracyfy-current-user');
       expect(userId).toBe('USER-001');
+    });
+
+    it('should fall back to the legacy current-user.md in the project folder', async () => {
+      vi.mocked(fileSystemService.readFile).mockImplementation(async (p: string) =>
+        p === 'current-user.md' ? 'USER-007' : null
+      );
+
+      expect(await diskProjectService.getCurrentUserId()).toBe('USER-007');
     });
 
     it('should return empty string when file does not exist', async () => {
@@ -65,7 +73,10 @@ describe('DiskProjectService - User Operations', () => {
     it('should write user ID to file', async () => {
       await diskProjectService.setCurrentUserId('USER-001');
 
-      expect(fileSystemService.writeFile).toHaveBeenCalledWith('current-user.md', 'USER-001');
+      expect(fileSystemService.writeFile).toHaveBeenCalledWith(
+        '.git/tracyfy-current-user',
+        'USER-001'
+      );
     });
   });
 
