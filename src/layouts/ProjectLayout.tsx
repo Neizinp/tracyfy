@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useMemo } from 'react';
+import React, { Suspense, useCallback, useRef, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Layout, GlobalLibraryPanel, ModalManager } from '../components';
@@ -16,8 +16,6 @@ import {
   useRisks,
   useCustomAttributes,
 } from '../app/providers';
-import { exportProjectToPDF } from '../utils/pdfExportUtils';
-import { exportProjectToExcel } from '../utils/excelExportUtils';
 import { createDemoProject } from '../services/demoDataService';
 import type {
   Project,
@@ -29,6 +27,17 @@ import type {
   DocumentColumnVisibility,
   ExportOptions,
 } from '../types';
+
+/** Shown while a lazily loaded page chunk is being fetched */
+const PageLoadingFallback: React.FC = () => (
+  <div
+    role="status"
+    aria-live="polite"
+    style={{ padding: 'var(--spacing-lg)', color: 'var(--color-text-muted)' }}
+  >
+    Loading…
+  </div>
+);
 
 export const ProjectLayout: React.FC = () => {
   const { projects, currentProjectId, currentProject, switchProject, addToProject } = useProject();
@@ -329,6 +338,7 @@ export const ProjectLayout: React.FC = () => {
 
         const taskId = startTask('Exporting PDF...');
         try {
+          const { exportProjectToPDF } = await import('../utils/pdfExportUtils');
           await exportProjectToPDF(
             currentProject,
             {
@@ -359,6 +369,7 @@ export const ProjectLayout: React.FC = () => {
 
         const taskId = startTask('Exporting Excel...');
         try {
+          const { exportProjectToExcel } = await import('../utils/excelExportUtils');
           await exportProjectToExcel(
             currentProject,
             {
@@ -699,7 +710,9 @@ export const ProjectLayout: React.FC = () => {
         </div>
       </div>
 
-      <Outlet />
+      <Suspense fallback={<PageLoadingFallback />}>
+        <Outlet />
+      </Suspense>
 
       <ModalManager />
     </Layout>

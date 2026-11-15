@@ -7,7 +7,7 @@
  */
 
 import type { WorkBook } from 'xlsx';
-import * as XLSX from 'xlsx';
+import type * as XLSXModule from 'xlsx';
 import type { Requirement, UseCase, TestCase, Information, ArtifactDocument } from '../types';
 
 /** Letters, digits, '-' and '_' only; must start with a letter. No dots or slashes. */
@@ -116,14 +116,18 @@ const cell = (value: unknown): string =>
 /**
  * Parse an Excel workbook with "Requirements" and/or "Use Cases" sheets.
  */
-export function parseExcelImport(workbook: WorkBook, now: number = Date.now()): ImportBundle {
+export function parseExcelImport(
+  workbook: WorkBook,
+  xlsxUtils: typeof XLSXModule.utils,
+  now: number = Date.now()
+): ImportBundle {
   const skipped: SkippedImportRow[] = [];
   let requirements: Requirement[] = [];
   let useCases: UseCase[] = [];
 
   const reqSheet = workbook.Sheets['Requirements'];
   if (reqSheet) {
-    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(reqSheet);
+    const rows = xlsxUtils.sheet_to_json<Record<string, unknown>>(reqSheet);
     const mapped = rows.map((row) => ({
       id: cell(row['ID']),
       title: cell(row['Title']),
@@ -146,7 +150,7 @@ export function parseExcelImport(workbook: WorkBook, now: number = Date.now()): 
 
   const ucSheet = workbook.Sheets['Use Cases'];
   if (ucSheet) {
-    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ucSheet);
+    const rows = xlsxUtils.sheet_to_json<Record<string, unknown>>(ucSheet);
     const mapped = rows.map((row) => ({
       id: cell(row['ID']),
       title: cell(row['Title']),
@@ -166,6 +170,17 @@ export function parseExcelImport(workbook: WorkBook, now: number = Date.now()): 
   }
 
   return { requirements, useCases, testCases: [], information: [], documents: [], skipped };
+}
+
+/**
+ * Read an .xlsx/.xls file and parse it. The (large) xlsx library is loaded on demand.
+ */
+export async function parseExcelFile(
+  data: Uint8Array,
+  now: number = Date.now()
+): Promise<ImportBundle> {
+  const XLSX = await import('xlsx');
+  return parseExcelImport(XLSX.read(data, { type: 'array' }), XLSX.utils, now);
 }
 
 export function countImported(bundle: ImportBundle): number {

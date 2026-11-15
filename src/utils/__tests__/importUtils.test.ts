@@ -4,6 +4,7 @@ import {
   isValidArtifactId,
   parseJsonImport,
   parseExcelImport,
+  parseExcelFile,
   maxIdNumber,
   countImported,
   describeSkipped,
@@ -83,6 +84,7 @@ describe('parseExcelImport', () => {
         ],
         'Use Cases': [{ ID: 'UC-005', Title: 'Sign in', Actor: 'User' }],
       }),
+      XLSX.utils,
       1234
     );
 
@@ -99,8 +101,15 @@ describe('parseExcelImport', () => {
     expect(bundle.skipped).toHaveLength(1);
   });
 
+  it('parses raw file bytes via parseExcelFile', async () => {
+    const wb = workbookWith({ Requirements: [{ ID: 'REQ-020', Title: 'From bytes' }] });
+    const bytes = new Uint8Array(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }));
+    const bundle = await parseExcelFile(bytes);
+    expect(bundle.requirements.map((r) => r.id)).toEqual(['REQ-020']);
+  });
+
   it('returns an empty bundle for workbooks without known sheets', () => {
-    const bundle = parseExcelImport(workbookWith({ Other: [{ a: 1 }] }));
+    const bundle = parseExcelImport(workbookWith({ Other: [{ a: 1 }] }), XLSX.utils);
     expect(countImported(bundle)).toBe(0);
   });
 });

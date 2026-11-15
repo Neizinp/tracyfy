@@ -21,8 +21,6 @@ import {
 } from '../../app/providers';
 import { diskLinkService } from '../../services/diskLinkService';
 import { diskCustomAttributeService } from '../../services/diskCustomAttributeService';
-import { exportProjectToPDF } from '../../utils/pdfExportUtils';
-import { exportProjectToExcel } from '../../utils/excelExportUtils';
 import { exportProjectToJSON } from '../../utils/jsonExportUtils';
 import type {
   Link,
@@ -81,6 +79,7 @@ export const ManagementModals: React.FC = () => {
           case 'pdf': {
             const taskId = startTask('Exporting PDF...');
             try {
+              const { exportProjectToPDF } = await import('../../utils/pdfExportUtils');
               await exportProjectToPDF(
                 currentProject,
                 globalState,
@@ -107,6 +106,7 @@ export const ManagementModals: React.FC = () => {
           case 'excel': {
             const taskId = startTask('Exporting to Excel...');
             try {
+              const { exportProjectToExcel } = await import('../../utils/excelExportUtils');
               await exportProjectToExcel(
                 currentProject,
                 globalState,

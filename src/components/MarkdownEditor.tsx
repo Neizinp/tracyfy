@@ -1,6 +1,5 @@
 import { debug } from '../utils/debug';
-import { useState, useRef, useCallback, useEffect, useContext } from 'react';
-import MDEditor from '@uiw/react-md-editor';
+import { useState, useRef, useCallback, useEffect, useContext, lazy, Suspense } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { safeMarkdownRehypePlugins } from '../utils/markdownSanitize';
@@ -8,6 +7,9 @@ import { Eye, Edit2, ImagePlus } from 'lucide-react';
 import { assetService } from '../services/assetService';
 import { AssetImage } from './AssetImage';
 import { FileSystemContext } from '../app/providers/FileSystemProvider';
+
+// The editor (with its syntax highlighting deps) is large and only needed in edit mode
+const MDEditor = lazy(() => import('@uiw/react-md-editor'));
 
 interface MarkdownEditorProps {
   value: string;
@@ -272,19 +274,27 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
       {isEditMode ? (
         <div data-color-mode="dark">
-          <MDEditor
-            value={value}
-            onChange={(val) => onChange(val || '')}
-            height={height}
-            preview="edit"
-            previewOptions={{ rehypePlugins: safeMarkdownRehypePlugins }}
-            hideToolbar={false}
-            enableScroll={true}
-            commandsFilter={(cmd) => (cmd.name === 'image' ? false : cmd)}
-            textareaProps={{
-              placeholder: placeholder,
-            }}
-          />
+          <Suspense
+            fallback={
+              <div style={{ height, padding: '12px', color: 'var(--color-text-muted)' }}>
+                Loading editor…
+              </div>
+            }
+          >
+            <MDEditor
+              value={value}
+              onChange={(val) => onChange(val || '')}
+              height={height}
+              preview="edit"
+              previewOptions={{ rehypePlugins: safeMarkdownRehypePlugins }}
+              hideToolbar={false}
+              enableScroll={true}
+              commandsFilter={(cmd) => (cmd.name === 'image' ? false : cmd)}
+              textareaProps={{
+                placeholder: placeholder,
+              }}
+            />
+          </Suspense>
         </div>
       ) : (
         <div

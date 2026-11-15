@@ -9,12 +9,11 @@ import type {
 import { exportProjectToJSON } from '../utils/jsonExportUtils';
 import {
   parseJsonImport,
-  parseExcelImport,
+  parseExcelFile,
   countImported,
   describeSkipped,
   type ImportBundle,
 } from '../utils/importUtils';
-import * as XLSX from 'xlsx';
 
 export type ImportNotify = (
   message: string,
@@ -130,11 +129,11 @@ export function useImportExport({
   const handleImportExcel = () => {
     pickFile('.xlsx,.xls', (file) => {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         let bundle: ImportBundle;
         try {
           const data = new Uint8Array(event.target?.result as ArrayBuffer);
-          bundle = parseExcelImport(XLSX.read(data, { type: 'array' }));
+          bundle = await parseExcelFile(data);
         } catch (error) {
           console.error('Failed to parse Excel file:', error);
           notify(
