@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "engines": {
-    "node": "20.x"
+    "node": ">=22"
   },
   "main": "electron/main.js",
   "scripts": {
@@ -13,7 +13,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b",
     "prepare": "husky install",
     "preview": "vite preview",
     "test": "vitest",
