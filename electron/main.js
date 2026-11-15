@@ -9,6 +9,11 @@ const __dirname = path.dirname(__filename);
 
 const isDev = !!process.env.VITE_DEV_SERVER_URL;
 
+// Verbose logging only in dev (avoid logging paths / commit messages in production)
+const log = (...args) => {
+  if (isDev) console.log(...args);
+};
+
 // ========== PATH ACCESS CONTROL ==========
 // The renderer may only touch directories the user explicitly picked via the
 // native directory dialog. The allowlist is persisted so a previously chosen
@@ -144,11 +149,11 @@ ipcMain.handle('git:statusMatrix', async (_event, dir) => {
   }
 });
 
-console.log('[Main] Registering git:checkout handler');
+log('[Main] Registering git:checkout handler');
 ipcMain.handle('git:checkout', async (_event, dir, filepath, force) => {
   try {
     dir = await assertAllowedPath(dir);
-    console.log(`[Main] git:checkout ${filepath} in ${dir} (force: ${force})`);
+    log(`[Main] git:checkout ${filepath} in ${dir} (force: ${force})`);
     await git.checkout({
       fs,
       dir,
@@ -156,7 +161,7 @@ ipcMain.handle('git:checkout', async (_event, dir, filepath, force) => {
       filepaths: [filepath],
       force: !!force,
     });
-    console.log(`[Main] git:checkout ${filepath} success`);
+    log(`[Main] git:checkout ${filepath} success`);
     return { ok: true };
   } catch (error) {
     console.error(`[Main] git:checkout ${filepath} failed:`, error);
@@ -195,7 +200,7 @@ ipcMain.handle('git:commit', async (_event, dir, message, author) => {
       const trimmedHead = headContent.trim();
 
       if (!trimmedHead.startsWith('ref: ')) {
-        console.log(
+        log(
           `[Main] git:commit - HEAD is detached (contains: "${trimmedHead.substring(0, 20)}..."). Repairing...`
         );
 
@@ -226,25 +231,25 @@ ipcMain.handle('git:commit', async (_event, dir, message, author) => {
           const mainRefPath = path.join(dir, '.git', 'refs', 'heads', 'main');
           await fs.mkdir(path.dirname(mainRefPath), { recursive: true });
           await fs.writeFile(mainRefPath, trimmedHead + '\n', 'utf8');
-          console.log(`[Main] Updated refs/heads/main to ${trimmedHead}`);
+          log(`[Main] Updated refs/heads/main to ${trimmedHead}`);
         }
 
         // Attach HEAD to main
         await fs.writeFile(headPath, 'ref: refs/heads/main\n', 'utf8');
-        console.log('[Main] HEAD is now attached to refs/heads/main');
+        log('[Main] HEAD is now attached to refs/heads/main');
       }
     } catch (headError) {
       console.error('[Main] Failed to check/repair HEAD:', headError.message);
     }
 
-    console.log(`[Main] git:commit starting for ${dir}, message: "${message}"`);
+    log(`[Main] git:commit starting for ${dir}, message: "${message}"`);
     const oid = await git.commit({
       fs,
       dir,
       message,
       author: author || { name: 'Tracyfy User', email: 'user@tracyfy.local' },
     });
-    console.log(`[Main] git:commit success, OID: ${oid}`);
+    log(`[Main] git:commit success, OID: ${oid}`);
     return { oid };
   } catch (error) {
     console.error('[Main] git:commit failed:', error.message);

@@ -26,3 +26,7 @@ dist-ssr
 # Test results
 test-results/
 playwright-report/
+
+# Ad-hoc test output / debug screenshots
+/test-results.json
+/playwright-*.png
