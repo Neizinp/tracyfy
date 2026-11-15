@@ -26,7 +26,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
   const { testCases, handleUpdateTestCase } = useTestCases();
   const { information, handleUpdateInformation } = useInformation();
   const { searchQuery, setLinkSourceId, setLinkSourceType, setIsLinkModalOpen } = useUI();
-  const { allLinks: standaloneLinks } = useLinkService({});
+  const { allLinks: standaloneLinks, deleteLink } = useLinkService({});
   const { projects } = useProject();
 
   const filteredRequirements = useMemo(() => {
@@ -101,7 +101,14 @@ export const TraceabilityDashboardPage: React.FC = () => {
   // Handler to remove an orphan link
   const handleRemoveLink = useCallback(
     (artifactId: string, targetId: string) => {
-      // Find the artifact and remove the orphan link
+      // Link files (what the app creates): delete them
+      standaloneLinks
+        .filter((l) => l.sourceId === artifactId && l.targetId === targetId)
+        .forEach((l) => {
+          deleteLink(l.id).catch((err) => console.error('Failed to remove link:', err));
+        });
+
+      // Legacy links embedded in the artifact (unchanged artifacts are not rewritten)
       const req = requirements.find((r) => r.id === artifactId);
       if (req) {
         const updatedLinks = (req.linkedArtifacts || []).filter((l) => l.targetId !== targetId);
@@ -130,6 +137,8 @@ export const TraceabilityDashboardPage: React.FC = () => {
       }
     },
     [
+      standaloneLinks,
+      deleteLink,
       requirements,
       useCases,
       testCases,

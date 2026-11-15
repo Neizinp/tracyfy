@@ -112,31 +112,39 @@ export function useTraceabilityData({
     };
   }, [allArtifacts, allLinksSet]);
 
-  // Get gap artifacts with issue types
+  // Get gap artifacts with issue types.
+  // Considers both link files (standaloneLinks, what the app creates) and the
+  // legacy links embedded in artifacts (linkedArtifacts).
   const gapArtifacts = useMemo((): GapInfo[] => {
     const gaps: GapInfo[] = [];
     const artifactIds = new Set(allArtifacts.map((a) => a.id));
 
+    const outgoingTargets = new Map<string, string[]>();
+    const addOutgoing = (sourceId: string, targetId: string) => {
+      if (!targetId) return;
+      const list = outgoingTargets.get(sourceId) ?? [];
+      list.push(targetId);
+      outgoingTargets.set(sourceId, list);
+    };
+    allArtifacts.forEach((artifact) =>
+      artifact.linkedArtifacts.forEach((link) => addOutgoing(artifact.id, link.targetId))
+    );
+    standaloneLinks.forEach((link) => addOutgoing(link.sourceId, link.targetId));
+
     const hasIncomingLink = new Set<string>();
-    allArtifacts.forEach((artifact) => {
-      artifact.linkedArtifacts.forEach((link) => {
-        if (link.targetId) hasIncomingLink.add(link.targetId);
-      });
-    });
+    outgoingTargets.forEach((targets) => targets.forEach((t) => hasIncomingLink.add(t)));
 
     allArtifacts.forEach((artifact) => {
-      const hasOutgoing = artifact.linkedArtifacts.length > 0;
+      const targets = outgoingTargets.get(artifact.id) ?? [];
+      const hasOutgoing = targets.length > 0;
       const hasIncoming = hasIncomingLink.has(artifact.id);
+      const orphanTargets = targets.filter((id) => !artifactIds.has(id));
 
-      const orphanLinks = artifact.linkedArtifacts.filter(
-        (link) => link.targetId && !artifactIds.has(link.targetId)
-      );
-
-      if (orphanLinks.length > 0) {
+      if (orphanTargets.length > 0) {
         gaps.push({
           artifact,
           issueType: 'orphan_link',
-          details: `→ ${orphanLinks.map((l) => l.targetId).join(', ')}`,
+          details: `→ ${orphanTargets.join(', ')}`,
         });
       } else if (!hasOutgoing && !hasIncoming) {
         gaps.push({ artifact, issueType: 'unlinked' });
@@ -148,7 +156,7 @@ export function useTraceabilityData({
     });
 
     return gaps;
-  }, [allArtifacts]);
+  }, [allArtifacts, standaloneLinks]);
 
   // Get all links as flat list
   const allLinks = useMemo(() => {
