@@ -31,6 +31,10 @@ export const WorkflowsPage: React.FC = () => {
 
   useEffect(() => {
     loadWorkflows();
+    // Reload whenever a workflow is created/updated anywhere (e.g. via "Create New")
+    return diskWorkflowService.subscribe(() => {
+      loadWorkflows();
+    });
   }, [loadWorkflows]);
 
   // Check for newly approved workflows and show toast notification

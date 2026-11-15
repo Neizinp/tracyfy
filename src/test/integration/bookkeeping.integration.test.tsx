@@ -6,7 +6,7 @@
  * panel hides must be committed by the app itself.
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { startApp, type Harness } from './appHarness';
 
 describe('integration: no invisible uncommitted files', () => {
@@ -15,6 +15,42 @@ describe('integration: no invisible uncommitted files', () => {
 
   it('right after onboarding', async () => {
     h = await startApp();
+    expect(await h.invisibleDirtyPaths()).toEqual([]);
+  }, 60_000);
+
+  it('creating a workflow', async () => {
+    h = await startApp({ initialRoute: '/workflows' });
+    await act(() => h.app().user.createUser('Reviewer'));
+    await act(() =>
+      h.app().requirements.handleAddRequirement({
+        title: 'Login',
+        description: '',
+        text: '',
+        rationale: '',
+        status: 'draft',
+        priority: 'medium',
+        dateCreated: Date.now(),
+      } as never)
+    );
+    await h.settle();
+
+    fireEvent.click(screen.getByRole('button', { name: /create new/i }));
+    fireEvent.click(await screen.findByText('New Workflow'));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getAllByRole('textbox')[0], {
+      target: { value: 'Approve login' },
+    });
+    const reviewer = h.app().user.users.find((u) => u.name === 'Reviewer')!;
+    fireEvent.change(within(dialog).getByRole('combobox'), { target: { value: reviewer.id } });
+    fireEvent.change(within(dialog).getByPlaceholderText('Search artifacts by ID or title...'), {
+      target: { value: 'Login' },
+    });
+    fireEvent.click(await within(dialog).findByText('Login'));
+    fireEvent.click(within(dialog).getByRole('button', { name: /create workflow/i }));
+    await h.settle();
+
+    await waitFor(() => expect(h.exists('workflows')).toBe(true));
+    expect(await screen.findByText('Approve login')).toBeInTheDocument();
     expect(await h.invisibleDirtyPaths()).toEqual([]);
   }, 60_000);
 
