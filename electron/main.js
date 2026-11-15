@@ -199,8 +199,30 @@ ipcMain.handle('git:commit', async (_event, dir, message, author) => {
           `[Main] git:commit - HEAD is detached (contains: "${trimmedHead.substring(0, 20)}..."). Repairing...`
         );
 
-        // If HEAD is a valid SHA, ensure refs/heads/main points to it
+        // If HEAD is a valid SHA, move refs/heads/main to it - but only when that
+        // can't lose history: main doesn't exist yet, already points there, or the
+        // detached commit is a descendant of main (fast-forward).
         if (trimmedHead.match(/^[0-9a-f]{40}$/i)) {
+          let mainOid = null;
+          try {
+            mainOid = await git.resolveRef({ fs, dir, ref: 'refs/heads/main' });
+          } catch {
+            // main doesn't exist yet
+          }
+
+          const isFastForward =
+            !mainOid ||
+            mainOid === trimmedHead ||
+            (await git.isDescendent({ fs, dir, oid: trimmedHead, ancestor: mainOid, depth: -1 }));
+
+          if (!isFastForward) {
+            return {
+              error:
+                'HEAD is detached at a commit that is not on the main branch. ' +
+                'Committing would discard commits on main; check out main before committing.',
+            };
+          }
+
           const mainRefPath = path.join(dir, '.git', 'refs', 'heads', 'main');
           await fs.mkdir(path.dirname(mainRefPath), { recursive: true });
           await fs.writeFile(mainRefPath, trimmedHead + '\n', 'utf8');

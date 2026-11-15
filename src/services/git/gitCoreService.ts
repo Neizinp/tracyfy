@@ -36,6 +36,40 @@ import {
 import { linkToMarkdown, parseMarkdownLink } from '../../utils/linkMarkdownUtils';
 import { workflowToMarkdown, parseMarkdownWorkflow } from '../../utils/workflowMarkdownUtils';
 
+/** Thrown when HEAD is detached at a commit that isn't reachable from main */
+export class DetachedHeadError extends Error {
+  constructor() {
+    super(
+      'HEAD is detached at a commit that is not on the main branch. ' +
+        'Committing would discard commits on main; check out main before committing.'
+    );
+    this.name = 'DetachedHeadError';
+  }
+}
+
+/**
+ * Whether refs/heads/main can be moved to `oid` without losing history:
+ * main doesn't exist yet, already points at `oid`, or `oid` descends from main.
+ */
+export async function canMoveMainTo({
+  fs,
+  dir,
+  oid,
+}: {
+  fs: Parameters<typeof git.resolveRef>[0]['fs'];
+  dir: string;
+  oid: string;
+}): Promise<boolean> {
+  let mainOid: string;
+  try {
+    mainOid = await git.resolveRef({ fs, dir, ref: 'refs/heads/main' });
+  } catch {
+    return true; // main doesn't exist yet
+  }
+  if (mainOid === oid) return true;
+  return git.isDescendent({ fs, dir, oid, ancestor: mainOid, depth: -1 });
+}
+
 /**
  * Get the root directory path (Electron uses absolute path, browser uses '.')
  */
@@ -117,9 +151,15 @@ class GitCoreService {
           `[ensureHeadAttached] HEAD is detached (contains: "${trimmedHead.substring(0, 20)}..."). Repairing to attach to main branch.`
         );
 
-        // If there's a commit SHA in HEAD, make sure refs/heads/main points to it
+        // If there's a commit SHA in HEAD, move refs/heads/main to it - but only when
+        // that can't lose history (main missing, same commit, or fast-forward).
         const sha = trimmedHead;
         if (sha.match(/^[0-9a-f]{40}$/i)) {
+          const isFastForward = await canMoveMainTo({ fs: fsAdapter, dir: '.', oid: sha });
+          if (!isFastForward) {
+            throw new DetachedHeadError();
+          }
+
           // Write the current SHA to refs/heads/main first
           try {
             await fsAdapter.promises.writeFile('.git/refs/heads/main', sha + '\n');
@@ -139,6 +179,7 @@ class GitCoreService {
       // Mark as verified for this session
       this.headAttachedVerified = true;
     } catch (err) {
+      if (err instanceof DetachedHeadError) throw err;
       console.error('[ensureHeadAttached] Failed to check/repair HEAD:', err);
     }
   }
