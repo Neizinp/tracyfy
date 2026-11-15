@@ -1,8 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useFileSystem } from '../FileSystemProvider';
 import { useUser } from '../UserProvider';
 import { useToast } from '../ToastProvider';
-import { useBackgroundTasks } from '../BackgroundTasksProvider';
+import { useBackgroundTaskActions } from '../BackgroundTasksProvider';
 import { incrementRevision } from '../../../utils/revisionUtils';
 
 export interface BaseArtifact {
@@ -51,7 +51,7 @@ export function useArtifactCRUD<T extends BaseArtifact>({
   const { getNextId } = useFileSystem();
   const { currentUser } = useUser();
   const { showToast } = useToast();
-  const { startTask, endTask } = useBackgroundTasks();
+  const { startTask, endTask } = useBackgroundTaskActions();
 
   const handleAdd = useCallback(
     async (data: Omit<T, 'id' | 'lastModified' | 'revision'>) => {
@@ -168,11 +168,14 @@ export function useArtifactCRUD<T extends BaseArtifact>({
     [deleteFn, setItems, type]
   );
 
-  return {
-    handleAdd,
-    handleUpdate,
-    handleDelete,
-    handleRestore,
-    handlePermanentDelete,
-  };
+  return useMemo(
+    () => ({
+      handleAdd,
+      handleUpdate,
+      handleDelete,
+      handleRestore,
+      handlePermanentDelete,
+    }),
+    [handleAdd, handleDelete, handlePermanentDelete, handleRestore, handleUpdate]
+  );
 }

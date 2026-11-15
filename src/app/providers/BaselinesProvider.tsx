@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from 'react';
 import type { ReactNode } from 'react';
 import { diskBaselineService } from '../../services/diskBaselineService';
 import { useProject } from './ProjectProvider';
@@ -153,13 +161,16 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
     [showToast]
   );
 
-  const value: BaselinesContextValue = {
-    baselines,
-    loading,
-    createBaseline,
-    deleteBaseline,
-    refreshBaselines,
-  };
+  const value: BaselinesContextValue = useMemo(
+    () => ({
+      baselines,
+      loading,
+      createBaseline,
+      deleteBaseline,
+      refreshBaselines,
+    }),
+    [baselines, createBaseline, deleteBaseline, loading, refreshBaselines]
+  );
 
   return <BaselinesContext.Provider value={value}>{children}</BaselinesContext.Provider>;
 };

@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from 'react';
 import { debug } from '../../utils/debug';
 import { fileSystemService } from '../../services/fileSystemService';
 import {
@@ -18,7 +26,7 @@ import {
   documentService,
 } from '../../services/artifactServices';
 import { diskLinkService } from '../../services/diskLinkService';
-import { useBackgroundTasks } from './BackgroundTasksProvider';
+import { useBackgroundTaskActions } from './BackgroundTasksProvider';
 import type {
   Requirement,
   UseCase,
@@ -151,7 +159,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   });
 
   // Background tasks for status bar
-  const { startTask, endTask } = useBackgroundTasks();
+  const { startTask, endTask } = useBackgroundTaskActions();
 
   // Debounce timer for refreshStatus to coalesce rapid calls
   const refreshStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -784,65 +792,115 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setPreloadedCurrentUserId('');
   }, []);
 
-  return (
-    <FileSystemContext.Provider
-      value={{
-        isReady,
-        isLoading,
-        isApiSupported: fileSystemService.isSupported(),
-        directoryName,
-        error,
-        selectDirectory,
-        changeDirectory,
-        // Data
-        projects,
-        currentProjectId,
-        requirements,
-        useCases,
-        testCases,
-        information,
-        risks,
-        documents,
-        links,
-        preloadedUsers,
-        preloadedCurrentUserId,
-        // Git
-        pendingChanges,
-        refreshStatus,
-        // CRUD
-        saveRequirement,
-        saveUseCase,
-        saveTestCase,
-        saveInformation,
-        saveRisk,
-        saveDocument,
-        deleteRequirement,
-        deleteUseCase,
-        deleteTestCase,
-        deleteInformation,
-        deleteRisk,
-        deleteDocument,
-        saveProject,
-        createProject,
-        deleteProject,
-        saveLink,
-        deleteLink,
-        setCurrentProject,
-        getNextId,
-        reloadData,
-        // Git operations
-        commitFile,
-        revertFile,
-        getArtifactHistory,
-        readFileAtCommit,
-        push,
-        pull,
-        hasRemote,
-      }}
-    >
-      {children}
-    </FileSystemContext.Provider>
+  // Static capability check; no need to recompute per render
+  const isApiSupported = fileSystemService.isSupported();
+
+  const value = useMemo(
+    () => ({
+      isReady,
+      isLoading,
+      isApiSupported,
+      directoryName,
+      error,
+      selectDirectory,
+      changeDirectory,
+      // Data
+      projects,
+      currentProjectId,
+      requirements,
+      useCases,
+      testCases,
+      information,
+      risks,
+      documents,
+      links,
+      preloadedUsers,
+      preloadedCurrentUserId,
+      // Git
+      pendingChanges,
+      refreshStatus,
+      // CRUD
+      saveRequirement,
+      saveUseCase,
+      saveTestCase,
+      saveInformation,
+      saveRisk,
+      saveDocument,
+      deleteRequirement,
+      deleteUseCase,
+      deleteTestCase,
+      deleteInformation,
+      deleteRisk,
+      deleteDocument,
+      saveProject,
+      createProject,
+      deleteProject,
+      saveLink,
+      deleteLink,
+      setCurrentProject,
+      getNextId,
+      reloadData,
+      // Git operations
+      commitFile,
+      revertFile,
+      getArtifactHistory,
+      readFileAtCommit,
+      push,
+      pull,
+      hasRemote,
+    }),
+    [
+      changeDirectory,
+      commitFile,
+      createProject,
+      currentProjectId,
+      deleteDocument,
+      deleteInformation,
+      deleteLink,
+      deleteProject,
+      deleteRequirement,
+      deleteRisk,
+      deleteTestCase,
+      deleteUseCase,
+      directoryName,
+      documents,
+      error,
+      getArtifactHistory,
+      getNextId,
+      hasRemote,
+      information,
+      isApiSupported,
+      isLoading,
+      isReady,
+      links,
+      pendingChanges,
+      preloadedCurrentUserId,
+      preloadedUsers,
+      projects,
+      pull,
+      push,
+      readFileAtCommit,
+      refreshStatus,
+      reloadData,
+      requirements,
+      revertFile,
+      risks,
+      saveDocument,
+      saveInformation,
+      saveLink,
+      saveProject,
+      saveRequirement,
+      saveRisk,
+      saveTestCase,
+      saveUseCase,
+      selectDirectory,
+      setCurrentProject,
+      testCases,
+      useCases,
+    ]
   );
+
+  return <FileSystemContext.Provider value={value}>{children}</FileSystemContext.Provider>;
 };
 
 export const useFileSystem = (): FileSystemContextValue => {

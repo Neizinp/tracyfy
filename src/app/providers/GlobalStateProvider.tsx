@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from 'react';
 import type { ReactNode } from 'react';
 import { useFileSystem } from './FileSystemProvider';
 import { useProject } from './ProjectProvider';
@@ -206,30 +214,56 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     });
   }, []);
 
-  const value: GlobalStateContextValue = {
-    globalRequirements,
-    globalUseCases,
-    globalTestCases,
-    globalInformation,
-    globalRisks,
-    globalDocuments,
-    globalLinks,
-    requirements,
-    setRequirements,
-    useCases,
-    setUseCases,
-    testCases,
-    setTestCases,
-    information,
-    setInformation,
-    risks,
-    setRisks,
-    documents,
-    setDocuments,
-    links,
-    setLinks,
-    isResetting,
-  };
+  const value: GlobalStateContextValue = useMemo(
+    () => ({
+      globalRequirements,
+      globalUseCases,
+      globalTestCases,
+      globalInformation,
+      globalRisks,
+      globalDocuments,
+      globalLinks,
+      requirements,
+      setRequirements,
+      useCases,
+      setUseCases,
+      testCases,
+      setTestCases,
+      information,
+      setInformation,
+      risks,
+      setRisks,
+      documents,
+      setDocuments,
+      links,
+      setLinks,
+      isResetting,
+    }),
+    [
+      documents,
+      globalDocuments,
+      globalInformation,
+      globalLinks,
+      globalRequirements,
+      globalRisks,
+      globalTestCases,
+      globalUseCases,
+      information,
+      isResetting,
+      links,
+      requirements,
+      risks,
+      setDocuments,
+      setInformation,
+      setLinks,
+      setRequirements,
+      setRisks,
+      setTestCases,
+      setUseCases,
+      testCases,
+      useCases,
+    ]
+  );
 
   return <GlobalStateContext.Provider value={value}>{children}</GlobalStateContext.Provider>;
 };

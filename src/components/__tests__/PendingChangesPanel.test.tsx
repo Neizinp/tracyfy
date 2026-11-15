@@ -23,6 +23,10 @@ vi.mock('../../app/providers/BackgroundTasksProvider', () => ({
     startTask: vi.fn(() => 'task-1'),
     endTask: vi.fn(),
   }),
+  useBackgroundTaskActions: () => ({
+    startTask: vi.fn(() => 'task-1'),
+    endTask: vi.fn(),
+  }),
 }));
 
 import { useFileSystem } from '../../app/providers/FileSystemProvider';

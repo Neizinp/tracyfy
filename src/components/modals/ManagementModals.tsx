@@ -14,7 +14,7 @@ import {
   useProject,
   useGlobalState,
   useUser,
-  useBackgroundTasks,
+  useBackgroundTaskActions,
   useBaselines,
   useRisks,
   useDocuments,
@@ -46,7 +46,7 @@ export const ManagementModals: React.FC = () => {
   const { risks } = useRisks();
   const { documents } = useDocuments();
   const { currentUser } = useUser();
-  const { startTask, endTask } = useBackgroundTasks();
+  const { startTask, endTask } = useBackgroundTaskActions();
 
   const [projectLinks, setProjectLinks] = useState<Link[]>([]);
 

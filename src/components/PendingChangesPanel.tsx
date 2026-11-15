@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { FileText, GitCommit, AlertCircle } from 'lucide-react';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { useUser } from '../app/providers/UserProvider';
-import { useBackgroundTasks } from '../app/providers/BackgroundTasksProvider';
+import { useBackgroundTaskActions } from '../app/providers/BackgroundTasksProvider';
 import { debug } from '../utils/debug';
 import type { ArtifactChange } from '../types';
 
@@ -10,7 +10,7 @@ export function PendingChangesPanel() {
   const { pendingChanges, commitFile, revertFile, projects, getArtifactHistory, refreshStatus } =
     useFileSystem();
   const { currentUser } = useUser();
-  const { startTask, endTask } = useBackgroundTasks();
+  const { startTask, endTask } = useBackgroundTaskActions();
   const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
   const [parsedChanges, setParsedChanges] = useState<ArtifactChange[]>([]);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});

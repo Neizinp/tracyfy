@@ -10,7 +10,7 @@ import {
   useImportExport,
   useFileSystem,
   useUser,
-  useBackgroundTasks,
+  useBackgroundTaskActions,
   useToast,
   useBaselines,
   useRisks,
@@ -207,7 +207,7 @@ export const ProjectLayout: React.FC = () => {
   const { currentUser } = useUser();
 
   // Background tasks
-  const { startTask, endTask } = useBackgroundTasks();
+  const { startTask, endTask } = useBackgroundTaskActions();
 
   // Project action handlers
   const handleCreateProject = useCallback(() => {

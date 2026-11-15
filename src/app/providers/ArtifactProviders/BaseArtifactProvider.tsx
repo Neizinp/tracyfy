@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useCallback, useEffect, useRef, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
@@ -112,13 +112,17 @@ export function createArtifactProvider<T extends BaseArtifact>(options: CreatePr
       [setLinkSourceId, setIsLinkModalOpen]
     );
 
-    const value: BaseArtifactContextValue<T> = {
-      items,
-      setItems,
-      ...crud,
-      handleEdit,
-      handleLink: setLinkSourceId ? handleLink : undefined,
-    };
+    const hasLinking = !!setLinkSourceId;
+    const value = useMemo<BaseArtifactContextValue<T>>(
+      () => ({
+        items,
+        setItems,
+        ...crud,
+        handleEdit,
+        handleLink: hasLinking ? handleLink : undefined,
+      }),
+      [items, setItems, crud, handleEdit, hasLinking, handleLink]
+    );
 
     return <Context.Provider value={value}>{children}</Context.Provider>;
   };

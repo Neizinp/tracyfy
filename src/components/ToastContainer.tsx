@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, AlertTriangle, Info, CheckCircle, XCircle } from 'lucide-react';
-import { useToast } from '../app/providers/ToastProvider';
+import { useToast, useToasts } from '../app/providers/ToastProvider';
 
 const getToastStyles = (type: 'info' | 'warning' | 'error' | 'success') => {
   const baseStyles = {
@@ -61,7 +61,8 @@ const getIcon = (type: 'info' | 'warning' | 'error' | 'success') => {
 };
 
 export const ToastContainer: React.FC = () => {
-  const { toasts, removeToast } = useToast();
+  const toasts = useToasts();
+  const { removeToast } = useToast();
 
   if (toasts.length === 0) return null;
 

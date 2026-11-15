@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback } from 'react';
+import React, { createContext, useContext, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useFileSystem } from './FileSystemProvider';
 import type { Project } from '../../types';
@@ -112,17 +112,31 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     [currentProjectId, projects, saveProject]
   );
 
-  const value: ProjectContextValue = {
-    projects,
-    currentProjectId,
-    currentProject,
-    isLoading: isLoading || !isReady,
-    switchProject,
-    createProject,
-    updateProject,
-    deleteProject,
-    addToProject,
-  };
+  const value: ProjectContextValue = useMemo(
+    () => ({
+      projects,
+      currentProjectId,
+      currentProject,
+      isLoading: isLoading || !isReady,
+      switchProject,
+      createProject,
+      updateProject,
+      deleteProject,
+      addToProject,
+    }),
+    [
+      addToProject,
+      createProject,
+      currentProject,
+      currentProjectId,
+      deleteProject,
+      isLoading,
+      isReady,
+      projects,
+      switchProject,
+      updateProject,
+    ]
+  );
 
   return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>;
 };

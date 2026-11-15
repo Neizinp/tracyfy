@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type {
   Requirement,
   UseCase,
@@ -16,6 +16,23 @@ import type {
   SelectedArtifact,
   ModalType,
 } from '../types';
+
+/** Pure factory for the default column visibility (module-level so it's referentially stable) */
+const getDefaultColumnVisibility = (): ColumnVisibility => ({
+  idTitle: true,
+  description: true,
+  text: true,
+  rationale: true,
+  author: true,
+  verification: true,
+  priority: true,
+  status: true,
+  category: true,
+  comments: true,
+  created: true,
+  revision: true,
+  projects: true,
+});
 
 export function useUIState() {
   // Unified Modal and Selection State
@@ -40,21 +57,6 @@ export function useUIState() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Column Visibility - Requirements
-  const getDefaultColumnVisibility = (): ColumnVisibility => ({
-    idTitle: true,
-    description: true,
-    text: true,
-    rationale: true,
-    author: true,
-    verification: true,
-    priority: true,
-    status: true,
-    category: true,
-    comments: true,
-    created: true,
-    revision: true,
-    projects: true,
-  });
 
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
     idTitle: true,
@@ -217,160 +219,228 @@ export function useUIState() {
       ? (selectedArtifact.data as unknown as ArtifactDocument)
       : null;
 
-  return {
-    // New State
-    activeModal,
-    selectedArtifact,
-    openModal,
-    closeModal,
-    setActiveModal, // Keep for raw set if needed
-    setSelectedArtifact,
+  return useMemo(
+    () => ({
+      // New State
+      activeModal,
+      selectedArtifact,
+      openModal,
+      closeModal,
+      setActiveModal, // Keep for raw set if needed
+      setSelectedArtifact,
 
-    // Legacy States (Bridged)
-    selectedRequirementId,
-    setSelectedRequirementId: (id: string | null) =>
-      setSelectedArtifact(id ? { id, type: 'requirement' } : null),
-    selectedUseCaseId,
-    setSelectedUseCaseId: (id: string | null) =>
-      setSelectedArtifact(id ? { id, type: 'usecase' } : null),
-    isNewRequirementModalOpen,
-    setIsNewRequirementModalOpen: (val: boolean) => (val ? openModal('requirement') : closeModal()),
-    isEditRequirementModalOpen,
-    setIsEditRequirementModalOpen: (val: boolean) =>
-      val ? openModal('requirement', true) : closeModal(),
-    isUseCaseModalOpen,
-    setIsUseCaseModalOpen: (val: boolean) => (val ? openModal('usecase') : closeModal()),
-    isNewTestCaseModalOpen,
-    setIsNewTestCaseModalOpen: (val: boolean) => (val ? openModal('testcase') : closeModal()),
-    isEditTestCaseModalOpen,
-    setIsEditTestCaseModalOpen: (val: boolean) =>
-      val ? openModal('testcase', true) : closeModal(),
-    isInformationModalOpen,
-    setIsInformationModalOpen: (val: boolean) => (val ? openModal('information') : closeModal()),
-    isRiskModalOpen,
-    setIsRiskModalOpen: (val: boolean) => (val ? openModal('risk') : closeModal()),
-    isProjectSettingsOpen,
-    setIsProjectSettingsOpen: (val: boolean) =>
-      val ? openModal('project-settings') : closeModal(),
-    isCreateProjectModalOpen,
-    setIsCreateProjectModalOpen: (val: boolean) => (val ? openModal('project') : closeModal()),
-    isUserSettingsModalOpen,
-    setIsUserSettingsModalOpen: (val: boolean) => (val ? openModal('user-settings') : closeModal()),
-    isExportModalOpen,
-    setIsExportModalOpen: (val: boolean) => (val ? openModal('export') : closeModal()),
-    isVersionHistoryOpen,
-    setIsVersionHistoryOpen: (val: boolean) => (val ? openModal('history') : closeModal()),
-    isAdvancedSearchOpen,
-    setIsAdvancedSearchOpen: (val: boolean) => (val ? openModal('search') : closeModal()),
-    isCustomAttributeModalOpen,
-    setIsCustomAttributeModalOpen: (val: boolean) =>
-      val ? openModal('custom-attribute') : closeModal(),
-    isWorkflowModalOpen,
-    setIsWorkflowModalOpen: (val: boolean) => (val ? openModal('workflow') : closeModal()),
-    isGlobalLibraryModalOpen,
-    setIsGlobalLibraryModalOpen: (val: boolean) =>
-      val ? openModal('global-library') : closeModal(),
-    isNewLinkModalOpen: activeModal.type === 'link',
-    setIsNewLinkModalOpen: (val: boolean) => (val ? openModal('link') : closeModal()),
-    isLinkModalOpen,
-    setIsLinkModalOpen: (val: boolean) => (val ? openModal('link') : closeModal()),
+      // Legacy States (Bridged)
+      selectedRequirementId,
+      setSelectedRequirementId: (id: string | null) =>
+        setSelectedArtifact(id ? { id, type: 'requirement' } : null),
+      selectedUseCaseId,
+      setSelectedUseCaseId: (id: string | null) =>
+        setSelectedArtifact(id ? { id, type: 'usecase' } : null),
+      isNewRequirementModalOpen,
+      setIsNewRequirementModalOpen: (val: boolean) =>
+        val ? openModal('requirement') : closeModal(),
+      isEditRequirementModalOpen,
+      setIsEditRequirementModalOpen: (val: boolean) =>
+        val ? openModal('requirement', true) : closeModal(),
+      isUseCaseModalOpen,
+      setIsUseCaseModalOpen: (val: boolean) => (val ? openModal('usecase') : closeModal()),
+      isNewTestCaseModalOpen,
+      setIsNewTestCaseModalOpen: (val: boolean) => (val ? openModal('testcase') : closeModal()),
+      isEditTestCaseModalOpen,
+      setIsEditTestCaseModalOpen: (val: boolean) =>
+        val ? openModal('testcase', true) : closeModal(),
+      isInformationModalOpen,
+      setIsInformationModalOpen: (val: boolean) => (val ? openModal('information') : closeModal()),
+      isRiskModalOpen,
+      setIsRiskModalOpen: (val: boolean) => (val ? openModal('risk') : closeModal()),
+      isProjectSettingsOpen,
+      setIsProjectSettingsOpen: (val: boolean) =>
+        val ? openModal('project-settings') : closeModal(),
+      isCreateProjectModalOpen,
+      setIsCreateProjectModalOpen: (val: boolean) => (val ? openModal('project') : closeModal()),
+      isUserSettingsModalOpen,
+      setIsUserSettingsModalOpen: (val: boolean) =>
+        val ? openModal('user-settings') : closeModal(),
+      isExportModalOpen,
+      setIsExportModalOpen: (val: boolean) => (val ? openModal('export') : closeModal()),
+      isVersionHistoryOpen,
+      setIsVersionHistoryOpen: (val: boolean) => (val ? openModal('history') : closeModal()),
+      isAdvancedSearchOpen,
+      setIsAdvancedSearchOpen: (val: boolean) => (val ? openModal('search') : closeModal()),
+      isCustomAttributeModalOpen,
+      setIsCustomAttributeModalOpen: (val: boolean) =>
+        val ? openModal('custom-attribute') : closeModal(),
+      isWorkflowModalOpen,
+      setIsWorkflowModalOpen: (val: boolean) => (val ? openModal('workflow') : closeModal()),
+      isGlobalLibraryModalOpen,
+      setIsGlobalLibraryModalOpen: (val: boolean) =>
+        val ? openModal('global-library') : closeModal(),
+      isNewLinkModalOpen: activeModal.type === 'link',
+      setIsNewLinkModalOpen: (val: boolean) => (val ? openModal('link') : closeModal()),
+      isLinkModalOpen,
+      setIsLinkModalOpen: (val: boolean) => (val ? openModal('link') : closeModal()),
 
-    editingRequirement,
-    setEditingRequirement: (req: Requirement | null) =>
-      setSelectedArtifact(
-        req
-          ? { id: req.id, type: 'requirement', data: req as unknown as Record<string, unknown> }
-          : null
-      ),
-    editingUseCase,
-    setEditingUseCase: (uc: UseCase | null) =>
-      setSelectedArtifact(
-        uc ? { id: uc.id, type: 'usecase', data: uc as unknown as Record<string, unknown> } : null
-      ),
-    selectedTestCaseId,
-    setSelectedTestCaseId: (id: string | null) =>
-      setSelectedArtifact(id ? { id, type: 'testcase' } : null),
-    selectedInformation,
-    setSelectedInformation: (info: Information | null) =>
-      setSelectedArtifact(
-        info
-          ? { id: info.id, type: 'information', data: info as unknown as Record<string, unknown> }
-          : null
-      ),
-    editingRisk,
-    setEditingRisk: (risk: Risk | null) =>
-      setSelectedArtifact(
-        risk
-          ? { id: risk.id, type: 'risk', data: risk as unknown as Record<string, unknown> }
-          : null
-      ),
-    projectToEdit,
-    setProjectToEdit: (proj: Project | null) =>
-      setSelectedArtifact(
-        proj
-          ? { id: proj.id, type: 'project', data: proj as unknown as Record<string, unknown> }
-          : null
-      ),
-    editingDocument,
-    setEditingDocument: (doc: ArtifactDocument | null) =>
-      setSelectedArtifact(
-        doc
-          ? { id: doc.id, type: 'documents', data: doc as unknown as Record<string, unknown> }
-          : null
-      ),
-    isDocumentsModalOpen,
-    isEditDocumentModalOpen,
-    setIsEditDocumentModalOpen: (val: boolean) =>
-      val ? openModal('documents', true) : closeModal(),
+      editingRequirement,
+      setEditingRequirement: (req: Requirement | null) =>
+        setSelectedArtifact(
+          req
+            ? { id: req.id, type: 'requirement', data: req as unknown as Record<string, unknown> }
+            : null
+        ),
+      editingUseCase,
+      setEditingUseCase: (uc: UseCase | null) =>
+        setSelectedArtifact(
+          uc ? { id: uc.id, type: 'usecase', data: uc as unknown as Record<string, unknown> } : null
+        ),
+      selectedTestCaseId,
+      setSelectedTestCaseId: (id: string | null) =>
+        setSelectedArtifact(id ? { id, type: 'testcase' } : null),
+      selectedInformation,
+      setSelectedInformation: (info: Information | null) =>
+        setSelectedArtifact(
+          info
+            ? { id: info.id, type: 'information', data: info as unknown as Record<string, unknown> }
+            : null
+        ),
+      editingRisk,
+      setEditingRisk: (risk: Risk | null) =>
+        setSelectedArtifact(
+          risk
+            ? { id: risk.id, type: 'risk', data: risk as unknown as Record<string, unknown> }
+            : null
+        ),
+      projectToEdit,
+      setProjectToEdit: (proj: Project | null) =>
+        setSelectedArtifact(
+          proj
+            ? { id: proj.id, type: 'project', data: proj as unknown as Record<string, unknown> }
+            : null
+        ),
+      editingDocument,
+      setEditingDocument: (doc: ArtifactDocument | null) =>
+        setSelectedArtifact(
+          doc
+            ? { id: doc.id, type: 'documents', data: doc as unknown as Record<string, unknown> }
+            : null
+        ),
+      isDocumentsModalOpen,
+      isEditDocumentModalOpen,
+      setIsEditDocumentModalOpen: (val: boolean) =>
+        val ? openModal('documents', true) : closeModal(),
 
-    // Still standalone for now
-    isLibraryPanelOpen,
-    setIsLibraryPanelOpen,
-    activeLibraryTab,
-    setActiveLibraryTab,
-    globalLibrarySelection,
-    setGlobalLibrarySelection,
-    linkSourceId,
-    setLinkSourceId,
-    linkSourceType,
-    setLinkSourceType,
-    searchQuery,
-    setSearchQuery,
-    columnVisibility,
-    setColumnVisibility,
-    useCaseColumnVisibility,
-    setUseCaseColumnVisibility,
-    testCaseColumnVisibility,
-    setTestCaseColumnVisibility,
-    informationColumnVisibility,
-    setInformationColumnVisibility,
-    navigationStack,
-    pushNavigationStack,
-    popNavigationStack,
-    clearNavigationStack,
-    riskColumnVisibility,
-    setRiskColumnVisibility,
-    documentColumnVisibility,
-    setDocumentColumnVisibility,
+      // Still standalone for now
+      isLibraryPanelOpen,
+      setIsLibraryPanelOpen,
+      activeLibraryTab,
+      setActiveLibraryTab,
+      globalLibrarySelection,
+      setGlobalLibrarySelection,
+      linkSourceId,
+      setLinkSourceId,
+      linkSourceType,
+      setLinkSourceType,
+      searchQuery,
+      setSearchQuery,
+      columnVisibility,
+      setColumnVisibility,
+      useCaseColumnVisibility,
+      setUseCaseColumnVisibility,
+      testCaseColumnVisibility,
+      setTestCaseColumnVisibility,
+      informationColumnVisibility,
+      setInformationColumnVisibility,
+      navigationStack,
+      pushNavigationStack,
+      popNavigationStack,
+      clearNavigationStack,
+      riskColumnVisibility,
+      setRiskColumnVisibility,
+      documentColumnVisibility,
+      setDocumentColumnVisibility,
 
-    // Helpers
-    handleGlobalLibrarySelect: (id: string) => {
-      setGlobalLibrarySelection((prev) => {
-        const newSelection = new Set(prev);
-        if (newSelection.has(id)) {
-          newSelection.delete(id);
-        } else {
-          newSelection.add(id);
-        }
-        return newSelection;
-      });
-    },
-    handleOpenLibrary: (
-      tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
-    ) => {
-      setActiveLibraryTab(tab);
-      setIsLibraryPanelOpen(true);
-    },
-    getDefaultColumnVisibility,
-  };
+      // Helpers
+      handleGlobalLibrarySelect: (id: string) => {
+        setGlobalLibrarySelection((prev) => {
+          const newSelection = new Set(prev);
+          if (newSelection.has(id)) {
+            newSelection.delete(id);
+          } else {
+            newSelection.add(id);
+          }
+          return newSelection;
+        });
+      },
+      handleOpenLibrary: (
+        tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
+      ) => {
+        setActiveLibraryTab(tab);
+        setIsLibraryPanelOpen(true);
+      },
+      getDefaultColumnVisibility,
+    }),
+    [
+      activeLibraryTab,
+      activeModal,
+      clearNavigationStack,
+      closeModal,
+      columnVisibility,
+      documentColumnVisibility,
+      editingDocument,
+      editingRequirement,
+      editingRisk,
+      editingUseCase,
+      globalLibrarySelection,
+      informationColumnVisibility,
+      isAdvancedSearchOpen,
+      isCreateProjectModalOpen,
+      isCustomAttributeModalOpen,
+      isDocumentsModalOpen,
+      isEditDocumentModalOpen,
+      isEditRequirementModalOpen,
+      isEditTestCaseModalOpen,
+      isExportModalOpen,
+      isGlobalLibraryModalOpen,
+      isInformationModalOpen,
+      isLibraryPanelOpen,
+      isLinkModalOpen,
+      isNewRequirementModalOpen,
+      isNewTestCaseModalOpen,
+      isProjectSettingsOpen,
+      isRiskModalOpen,
+      isUseCaseModalOpen,
+      isUserSettingsModalOpen,
+      isVersionHistoryOpen,
+      isWorkflowModalOpen,
+      linkSourceId,
+      linkSourceType,
+      navigationStack,
+      openModal,
+      popNavigationStack,
+      projectToEdit,
+      pushNavigationStack,
+      riskColumnVisibility,
+      searchQuery,
+      selectedArtifact,
+      selectedInformation,
+      selectedRequirementId,
+      selectedTestCaseId,
+      selectedUseCaseId,
+      setActiveLibraryTab,
+      setActiveModal,
+      setColumnVisibility,
+      setDocumentColumnVisibility,
+      setGlobalLibrarySelection,
+      setInformationColumnVisibility,
+      setIsLibraryPanelOpen,
+      setLinkSourceId,
+      setLinkSourceType,
+      setRiskColumnVisibility,
+      setSearchQuery,
+      setSelectedArtifact,
+      setTestCaseColumnVisibility,
+      setUseCaseColumnVisibility,
+      testCaseColumnVisibility,
+      useCaseColumnVisibility,
+    ]
+  );
 }

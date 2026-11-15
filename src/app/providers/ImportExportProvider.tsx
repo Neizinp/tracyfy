@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { useImportExport as useImportExportHook } from '../../hooks/useImportExport';
 import { useGlobalState } from './GlobalStateProvider';
 import { useProject } from './ProjectProvider';
-import { useBackgroundTasks } from './BackgroundTasksProvider';
+import { useBackgroundTaskActions } from './BackgroundTasksProvider';
 import { useDocuments } from './ArtifactProviders';
 import { useFileSystem } from './FileSystemProvider';
 import { useToast } from './ToastProvider';
@@ -37,7 +37,7 @@ const ImportExportContext = createContext<ImportExportContextValue | undefined>(
 export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { currentProjectId, projects, addToProject } = useProject();
   const { requirements, useCases, testCases, information } = useGlobalState();
-  const { startTask, endTask } = useBackgroundTasks();
+  const { startTask, endTask } = useBackgroundTaskActions();
   const { showToast } = useToast();
   const fileSystem = useFileSystem();
   const { documents } = useDocuments();
