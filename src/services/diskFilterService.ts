@@ -7,6 +7,7 @@
 
 import { BaseDiskService } from './baseDiskService';
 import type { SavedFilter, FilterState } from '../types/filters';
+import { KeyedLock } from '../utils/keyedLock';
 
 const SAVED_FILTERS_DIR = 'saved-filters';
 const FILTER_COUNTER_FILE = 'counters/saved-filters.md';
@@ -75,6 +76,8 @@ function markdownToSavedFilter(content: string): SavedFilter | null {
 }
 
 class DiskFilterService extends BaseDiskService {
+  private counterLock = new KeyedLock();
+
   /**
    * Initialize saved-filters directory
    */
@@ -86,6 +89,10 @@ class DiskFilterService extends BaseDiskService {
    * Get next filter ID
    */
   private async getNextId(): Promise<string> {
+    return this.counterLock.run('filters', () => this.allocateNextId());
+  }
+
+  private async allocateNextId(): Promise<string> {
     let counter = 0;
     try {
       const content = await this.readTextFile(FILTER_COUNTER_FILE);

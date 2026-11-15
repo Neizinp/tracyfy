@@ -80,4 +80,43 @@ describe('IdService', () => {
       expect(id).toBe('REQ-006');
     });
   });
+
+  describe('concurrency', () => {
+    function useSlowInMemoryFs() {
+      const files = new Map<string, string>();
+      const delay = () => new Promise((r) => setTimeout(r, Math.random() * 5));
+      vi.mocked(fileSystemService.readFile).mockImplementation(async (path: string) => {
+        await delay();
+        return files.get(path) ?? null;
+      });
+      vi.mocked(fileSystemService.writeFile).mockImplementation(
+        async (path: string, content: string | Uint8Array) => {
+          await delay();
+          files.set(path, String(content));
+        }
+      );
+    }
+
+    it('never hands out duplicate IDs for concurrent getNextId calls', async () => {
+      useSlowInMemoryFs();
+      const ids = await Promise.all(
+        Array.from({ length: 10 }, () => idService.getNextId('requirements'))
+      );
+      expect(new Set(ids).size).toBe(10);
+      expect([...ids].sort()).toEqual(
+        Array.from({ length: 10 }, (_, i) => `REQ-${String(i + 1).padStart(3, '0')}`)
+      );
+    });
+
+    it('does not overlap between getNextIds batches and single allocations', async () => {
+      useSlowInMemoryFs();
+      const [batch, single, sync] = await Promise.all([
+        idService.getNextIds('testcases', 3),
+        idService.getNextId('testcases'),
+        idService.getNextIdWithSync('testcases'),
+      ]);
+      const all = [...batch, single, sync];
+      expect(new Set(all).size).toBe(5);
+    });
+  });
 });
