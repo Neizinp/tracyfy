@@ -12,7 +12,8 @@ interface ArtifactRelationshipsTabProps {
   incomingLinks: IncomingLink[];
   loading: boolean;
   onAddLink: () => void;
-  onRemoveLink: (targetId: string) => void;
+  /** Deletes the link with the given link ID */
+  onRemoveLink: (linkId: string) => void;
   onNavigateToArtifact: (id: string, type: string) => void;
 }
 
@@ -155,7 +156,7 @@ export const ArtifactRelationshipsTab: React.FC<ArtifactRelationshipsTabProps> =
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onRemoveLink(link.targetId);
+                      onRemoveLink(link.id);
                     }}
                     style={{
                       background: 'none',

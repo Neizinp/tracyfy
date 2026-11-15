@@ -18,6 +18,8 @@ import {
   useBaselines,
   useRisks,
   useDocuments,
+  useFileSystem,
+  useToast,
 } from '../../app/providers';
 import { diskLinkService } from '../../services/diskLinkService';
 import { diskCustomAttributeService } from '../../services/diskCustomAttributeService';
@@ -47,6 +49,8 @@ export const ManagementModals: React.FC = () => {
   const { documents } = useDocuments();
   const { currentUser } = useUser();
   const { startTask, endTask } = useBackgroundTaskActions();
+  const { links, createLink } = useFileSystem();
+  const { showToast } = useToast();
 
   const [projectLinks, setProjectLinks] = useState<Link[]>([]);
 
@@ -162,22 +166,39 @@ export const ManagementModals: React.FC = () => {
 
   const handleAddArtifactLink = useCallback(
     async (newLink: LinkModalResult) => {
-      const sourceId = ui.linkSourceId || ui.selectedRequirementId;
-      if (!sourceId) return;
+      const sourceId = newLink.sourceId || ui.linkSourceId || ui.selectedRequirementId;
+      if (!sourceId) {
+        showToast('Select a source artifact for the link', 'warning');
+        return;
+      }
+
+      const duplicate = links.some(
+        (l) => l.sourceId === sourceId && l.targetId === newLink.targetId && l.type === newLink.type
+      );
+      if (duplicate) {
+        showToast(`${sourceId} already has this link to ${newLink.targetId}`, 'warning');
+        ui.setIsLinkModalOpen(false);
+        return;
+      }
 
       try {
-        await diskLinkService.createLink(
+        const link = await createLink(
           sourceId,
           newLink.targetId,
           newLink.type as LinkType,
           newLink.projectIds
         );
+        showToast(`Created link ${link.id}: ${sourceId} → ${newLink.targetId}`, 'success');
       } catch (error) {
         console.error('Failed to create link:', error);
+        showToast(
+          `Failed to create link: ${error instanceof Error ? error.message : String(error)}`,
+          'error'
+        );
       }
       ui.setIsLinkModalOpen(false);
     },
-    [ui]
+    [ui, links, createLink, showToast]
   );
 
   const handleSelectArtifact = useCallback(

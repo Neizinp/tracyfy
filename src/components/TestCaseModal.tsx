@@ -65,7 +65,6 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
     cancelDelete,
     handleSubmit,
     handleNavigateToArtifact,
-    handleRemoveLink,
   } = useTestCaseForm({
     isOpen,
     testCase,
@@ -79,6 +78,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
     outgoingLinks,
     incomingLinks,
     loading: linksLoading,
+    deleteLink,
   } = useLinkService({
     artifactId: testCase?.id,
   });
@@ -241,7 +241,9 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
               setIsLinkModalOpen(true);
             }
           }}
-          onRemoveLink={handleRemoveLink}
+          onRemoveLink={(linkId) =>
+            deleteLink(linkId).catch((err) => console.error('Failed to remove link:', err))
+          }
           onNavigateToArtifact={handleNavigateToArtifact}
         />
       )}

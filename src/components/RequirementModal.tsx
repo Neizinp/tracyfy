@@ -66,7 +66,6 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
     confirmDelete,
     cancelDelete,
     handleSubmit,
-    handleRemoveLink,
     handleNavigateToArtifact,
   } = useRequirementForm({
     isOpen,
@@ -81,6 +80,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
     outgoingLinks,
     incomingLinks,
     loading: linksLoading,
+    deleteLink,
   } = useLinkService({
     artifactId: requirement?.id,
   });
@@ -270,7 +270,9 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
               setIsLinkModalOpen(true);
             }
           }}
-          onRemoveLink={handleRemoveLink}
+          onRemoveLink={(linkId) =>
+            deleteLink(linkId).catch((err) => console.error('Failed to remove link:', err))
+          }
           onNavigateToArtifact={handleNavigateToArtifact}
         />
       )}

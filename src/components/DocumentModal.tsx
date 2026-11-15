@@ -62,7 +62,6 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
     setStructure,
     handleSubmit,
     currentUser,
-    handleRemoveLink,
     handleNavigateToArtifact,
   } = useDocumentForm({ isOpen, document: document, onClose, onSubmit });
 
@@ -70,6 +69,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
     outgoingLinks,
     incomingLinks,
     loading: linksLoading,
+    deleteLink,
   } = useLinkService({
     artifactId: document?.id,
   });
@@ -205,7 +205,9 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
               setIsLinkModalOpen(true);
             }
           }}
-          onRemoveLink={handleRemoveLink}
+          onRemoveLink={(linkId) =>
+            deleteLink(linkId).catch((err) => console.error('Failed to remove link:', err))
+          }
           onNavigateToArtifact={handleNavigateToArtifact}
         />
       )}

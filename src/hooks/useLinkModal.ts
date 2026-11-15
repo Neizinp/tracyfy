@@ -9,6 +9,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Requirement, ArtifactLink, Project, UseCase, TestCase, Information } from '../types';
 
 export interface LinkModalResult {
+  /** Set when the source was chosen in the modal (e.g. from the Links page) */
+  sourceId?: string;
   targetId: string;
   type: ArtifactLink['type'];
   projectIds: string[];

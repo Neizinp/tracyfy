@@ -33,6 +33,7 @@ import type {
   TestCase,
   Information,
   Link,
+  LinkType,
   Project,
   Risk,
   ArtifactDocument,
@@ -79,6 +80,14 @@ interface FileSystemContextValue {
   deleteProject: (id: string) => Promise<void>;
   saveLink: (link: Link) => Promise<void>;
   deleteLink: (id: string) => Promise<void>;
+  /** Create (and auto-commit) a link; updates provider state so the UI reflects it immediately */
+  createLink: (
+    sourceId: string,
+    targetId: string,
+    type: LinkType,
+    projectIds?: string[]
+  ) => Promise<Link>;
+  updateLink: (id: string, updates: Partial<Link>) => Promise<Link | null>;
   createProject: (name: string, description: string) => Promise<Project>;
   setCurrentProject: (projectId: string) => Promise<void>;
   getNextId: (
@@ -622,31 +631,75 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   );
 
   // CRUD operations - Links
+  const upsertLinkState = useCallback((link: Link) => {
+    setLinks((prev) => {
+      const idx = prev.findIndex((l) => l.id === link.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = link;
+        return updated;
+      }
+      return [...prev, link];
+    });
+  }, []);
+
   const saveLink = useCallback(
     async (link: Link) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskLinkService.save(link);
+        // Link files are hidden from pending changes, so commit them right away
+        await diskLinkService.save(link, `Update link ${link.id}`);
       }
-      setLinks((prev) => {
-        const idx = prev.findIndex((l) => l.id === link.id);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = link;
-          return updated;
-        }
-        return [...prev, link];
-      });
+      upsertLinkState(link);
       if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
-    [isReady, refreshStatus]
+    [isReady, refreshStatus, upsertLinkState]
+  );
+
+  const e2eLinkCounter = useRef(0);
+
+  const createLink = useCallback(
+    async (sourceId: string, targetId: string, type: LinkType, projectIds: string[] = []) => {
+      if (!isReady) throw new Error('Filesystem not ready');
+      let link: Link;
+      if (isE2EMode()) {
+        const now = Date.now();
+        link = {
+          id: `LINK-${String(++e2eLinkCounter.current).padStart(3, '0')}`,
+          sourceId,
+          targetId,
+          type,
+          projectIds,
+          dateCreated: now,
+          lastModified: now,
+          revision: '01',
+        };
+      } else {
+        link = await diskLinkService.createLink(sourceId, targetId, type, projectIds);
+      }
+      upsertLinkState(link);
+      if (!isE2EMode()) refreshStatus();
+      return link;
+    },
+    [isReady, refreshStatus, upsertLinkState]
+  );
+
+  const updateLink = useCallback(
+    async (id: string, updates: Partial<Link>) => {
+      if (!isReady) throw new Error('Filesystem not ready');
+      const updated = await diskLinkService.updateLink(id, updates);
+      if (updated) upsertLinkState(updated);
+      refreshStatus();
+      return updated;
+    },
+    [isReady, refreshStatus, upsertLinkState]
   );
 
   const deleteLink = useCallback(
     async (id: string) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskLinkService.delete(id);
+        await diskLinkService.deleteLink(id);
       }
       setLinks((prev) => prev.filter((l) => l.id !== id));
       if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
@@ -837,6 +890,8 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       deleteProject,
       saveLink,
       deleteLink,
+      createLink,
+      updateLink,
       setCurrentProject,
       getNextId,
       reloadData,
@@ -850,12 +905,14 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       hasRemote,
     }),
     [
+      updateLink,
       changeDirectory,
       commitFile,
       createProject,
       currentProjectId,
       deleteDocument,
       deleteInformation,
+      createLink,
       deleteLink,
       deleteProject,
       deleteRequirement,

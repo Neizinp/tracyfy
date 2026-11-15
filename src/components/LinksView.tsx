@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link as LinkIcon, ArrowRight, RefreshCw, Globe, Folder, Plus } from 'lucide-react';
 import { useLinkService } from '../hooks/useLinkService';
+import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import type { Link, Project } from '../types';
 import type { LinkType } from '../utils/linkTypes';
@@ -20,6 +21,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
   onAdd,
 }) => {
   const { allLinks: links, loading, refresh: loadLinks, deleteLink } = useLinkService();
+  const { updateLink } = useFileSystem();
   const [filter, setFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [scopeFilter, setScopeFilter] = useState<'all' | 'global' | 'project'>('all');
@@ -50,9 +52,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
     updates: { type: LinkType; projectIds: string[] }
   ) => {
     try {
-      const { diskLinkService } = await import('../services/diskLinkService');
-      await diskLinkService.updateLink(linkId, updates);
-      await loadLinks();
+      await updateLink(linkId, updates);
     } catch (error) {
       console.error('Failed to update link:', error);
       throw error;

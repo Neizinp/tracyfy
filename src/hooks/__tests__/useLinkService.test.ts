@@ -60,6 +60,12 @@ const mockLinks: Link[] = [
   },
 ];
 
+// Writes must go through the provider (so link state updates everywhere), not the disk service
+const { mockCreateLink, mockDeleteLink } = vi.hoisted(() => ({
+  mockCreateLink: vi.fn(),
+  mockDeleteLink: vi.fn(),
+}));
+
 // Mock the FileSystemProvider - the hook now uses this for link data
 vi.mock('../../app/providers/FileSystemProvider', () => ({
   useFileSystem: vi.fn(() => ({
@@ -67,7 +73,8 @@ vi.mock('../../app/providers/FileSystemProvider', () => ({
     links: mockLinks,
     setLinks: vi.fn(),
     saveLink: vi.fn(),
-    deleteLink: vi.fn(),
+    deleteLink: mockDeleteLink,
+    createLink: mockCreateLink,
     reloadData: vi.fn(),
   })),
 }));
@@ -124,7 +131,7 @@ describe('useLinkService', () => {
   });
 
   describe('createLink', () => {
-    it('should call diskLinkService.createLink', async () => {
+    it('should create links through the FileSystemProvider', async () => {
       const newLink: Link = {
         id: 'LINK-004',
         sourceId: 'REQ-002',
@@ -135,7 +142,7 @@ describe('useLinkService', () => {
         lastModified: Date.now(),
         revision: '01',
       };
-      vi.mocked(diskLinkService.createLink).mockResolvedValue(newLink);
+      mockCreateLink.mockResolvedValue(newLink);
 
       const { result } = renderHook(() => useLinkService());
 
@@ -145,12 +152,8 @@ describe('useLinkService', () => {
       });
 
       expect(created).toEqual(newLink);
-      expect(diskLinkService.createLink).toHaveBeenCalledWith(
-        'REQ-002',
-        'UC-002',
-        'depends_on',
-        []
-      );
+      expect(diskLinkService.createLink).not.toHaveBeenCalled();
+      expect(mockCreateLink).toHaveBeenCalledWith('REQ-002', 'UC-002', 'depends_on', []);
     });
 
     it('should pass project IDs when creating', async () => {
@@ -164,7 +167,7 @@ describe('useLinkService', () => {
         lastModified: Date.now(),
         revision: '01',
       };
-      vi.mocked(diskLinkService.createLink).mockResolvedValue(newLink);
+      mockCreateLink.mockResolvedValue(newLink);
 
       const { result } = renderHook(() => useLinkService());
 
@@ -172,13 +175,11 @@ describe('useLinkService', () => {
         await result.current.createLink('REQ-002', 'UC-002', 'depends_on', ['PRJ-001']);
       });
 
-      expect(diskLinkService.createLink).toHaveBeenCalledWith('REQ-002', 'UC-002', 'depends_on', [
-        'PRJ-001',
-      ]);
+      expect(mockCreateLink).toHaveBeenCalledWith('REQ-002', 'UC-002', 'depends_on', ['PRJ-001']);
     });
 
     it('should throw when create fails', async () => {
-      vi.mocked(diskLinkService.createLink).mockRejectedValue(new Error('Create failed'));
+      mockCreateLink.mockRejectedValue(new Error('Create failed'));
 
       const { result } = renderHook(() => useLinkService());
 
@@ -197,8 +198,8 @@ describe('useLinkService', () => {
   });
 
   describe('deleteLink', () => {
-    it('should call diskLinkService.deleteLink', async () => {
-      vi.mocked(diskLinkService.deleteLink).mockResolvedValue(undefined);
+    it('should delete links through the FileSystemProvider', async () => {
+      mockDeleteLink.mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useLinkService());
 
@@ -206,11 +207,12 @@ describe('useLinkService', () => {
         await result.current.deleteLink('LINK-001');
       });
 
-      expect(diskLinkService.deleteLink).toHaveBeenCalledWith('LINK-001');
+      expect(diskLinkService.deleteLink).not.toHaveBeenCalled();
+      expect(mockDeleteLink).toHaveBeenCalledWith('LINK-001');
     });
 
     it('should throw when delete fails', async () => {
-      vi.mocked(diskLinkService.deleteLink).mockRejectedValue(new Error('Delete failed'));
+      mockDeleteLink.mockRejectedValue(new Error('Delete failed'));
 
       const { result } = renderHook(() => useLinkService());
 

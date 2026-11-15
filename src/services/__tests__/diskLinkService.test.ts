@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { diskLinkService } from '../diskLinkService';
 import { fileSystemService } from '../fileSystemService';
 import { idService } from '../idService';
+import { realGitService } from '../realGitService';
 
 // Mock the idService
 vi.mock('../idService', () => ({
@@ -24,6 +25,13 @@ vi.mock('../fileSystemService', () => ({
     deleteFile: vi.fn(),
     listFiles: vi.fn(),
     getOrCreateDirectory: vi.fn(),
+  },
+}));
+
+// Link files are hidden from the pending-changes panel, so writes must be committed
+vi.mock('../realGitService', () => ({
+  realGitService: {
+    commitFile: vi.fn(() => Promise.resolve()),
   },
 }));
 
@@ -184,6 +192,10 @@ lastModified: 1700000000000
         'links/LINK-001.md',
         expect.any(String)
       );
+      expect(realGitService.commitFile).toHaveBeenCalledWith(
+        'links/LINK-001.md',
+        'Add link LINK-001: REQ-001 satisfies UC-001'
+      );
     });
 
     it('should set dateCreated and lastModified', async () => {
@@ -210,6 +222,10 @@ lastModified: 1700000000000
       await diskLinkService.deleteLink('LINK-001');
 
       expect(fileSystemService.deleteFile).toHaveBeenCalledWith('links/LINK-001.md');
+      expect(realGitService.commitFile).toHaveBeenCalledWith(
+        'links/LINK-001.md',
+        'Remove link LINK-001'
+      );
     });
 
     it('should throw error if deletion fails', async () => {
@@ -352,5 +368,4 @@ lastModified: 1700000000000
       expect(links[0].id).toBe('LINK-001');
     });
   });
-
 });

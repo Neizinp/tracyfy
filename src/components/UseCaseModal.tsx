@@ -66,7 +66,6 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     setCustomAttributes,
     handleSubmit,
     handleNavigateToArtifact,
-    handleRemoveLink,
     handleDelete,
     showDeleteConfirm,
     cancelDelete,
@@ -81,6 +80,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     outgoingLinks,
     incomingLinks,
     loading: linksLoading,
+    deleteLink,
   } = useLinkService({
     artifactId: useCase?.id,
   });
@@ -272,7 +272,9 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
             setLinkSourceType('usecase');
             setIsLinkModalOpen(true);
           }}
-          onRemoveLink={handleRemoveLink}
+          onRemoveLink={(linkId) =>
+            deleteLink(linkId).catch((err) => console.error('Failed to remove link:', err))
+          }
           onNavigateToArtifact={handleNavigateToArtifact}
         />
       )}

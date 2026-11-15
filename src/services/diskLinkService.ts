@@ -138,14 +138,15 @@ class DiskLinkService extends BaseArtifactService<Link> {
       lastModified: Date.now(),
       revision: '01',
     };
-    return this.save(link);
+    // Link files are hidden from the pending-changes panel, so they are committed immediately
+    return this.save(link, `Add link ${link.id}: ${sourceId} ${type} ${targetId}`);
   }
 
   /**
    * Delete a link
    */
   async deleteLink(id: string): Promise<void> {
-    await this.delete(id);
+    await this.delete(id, `Remove link ${id}`);
   }
 
   /**
@@ -167,7 +168,7 @@ class DiskLinkService extends BaseArtifactService<Link> {
       ...updates,
       lastModified: Date.now(),
     };
-    return this.save(updatedLink);
+    return this.save(updatedLink, `Update link ${id}`);
   }
 }
 

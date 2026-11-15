@@ -69,13 +69,13 @@ export const RiskModal: React.FC<RiskModalProps> = ({
     cancelDelete,
     handleSubmit,
     handleNavigateToArtifact,
-    handleRemoveLink,
   } = useRiskForm({ isOpen, risk, onClose, onSubmit });
 
   const {
     outgoingLinks,
     incomingLinks,
     loading: linksLoading,
+    deleteLink,
   } = useLinkService({
     artifactId: risk?.id,
   });
@@ -325,7 +325,9 @@ export const RiskModal: React.FC<RiskModalProps> = ({
               setIsLinkModalOpen(true);
             }
           }}
-          onRemoveLink={handleRemoveLink}
+          onRemoveLink={(linkId) =>
+            deleteLink(linkId).catch((err) => console.error('Failed to remove link:', err))
+          }
           onNavigateToArtifact={handleNavigateToArtifact}
         />
       )}

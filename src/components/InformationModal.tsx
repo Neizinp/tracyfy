@@ -60,7 +60,6 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     setCustomAttributes,
     handleSubmit,
     handleNavigateToArtifact,
-    handleRemoveLink,
     handleDelete,
     showDeleteConfirm,
     cancelDelete,
@@ -75,6 +74,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     outgoingLinks,
     incomingLinks,
     loading: linksLoading,
+    deleteLink,
   } = useLinkService({
     artifactId: information?.id,
   });
@@ -225,7 +225,9 @@ export const InformationModal: React.FC<InformationModalProps> = ({
               setIsLinkModalOpen(true);
             }
           }}
-          onRemoveLink={handleRemoveLink}
+          onRemoveLink={(linkId) =>
+            deleteLink(linkId).catch((err) => console.error('Failed to remove link:', err))
+          }
           onNavigateToArtifact={handleNavigateToArtifact}
         />
       )}
