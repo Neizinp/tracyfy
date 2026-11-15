@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { Search } from 'lucide-react';
 import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
 import type {
@@ -28,8 +29,8 @@ const TYPE_COLORS: Record<AttributeType, string> = {
 };
 
 export const CustomAttributesPage: React.FC = () => {
-  const [definitions, setDefinitions] = useState<CustomAttributeDefinition[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Shared with the artifact dialogs via CustomAttributeProvider (single source of truth)
+  const { definitions, loading, refetch: loadDefinitions } = useCustomAttributes();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDefinition, setEditingDefinition] = useState<CustomAttributeDefinition | null>(
     null
@@ -43,22 +44,6 @@ export const CustomAttributesPage: React.FC = () => {
       searchFields: ['id', 'name', 'description'],
     }
   );
-
-  const loadDefinitions = useCallback(async () => {
-    setLoading(true);
-    try {
-      const defs = await diskCustomAttributeService.getAllDefinitions();
-      setDefinitions(defs);
-    } catch (error) {
-      console.error('Failed to load custom attribute definitions:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadDefinitions();
-  }, [loadDefinitions]);
 
   const handleEdit = (def: CustomAttributeDefinition) => {
     setEditingDefinition(def);

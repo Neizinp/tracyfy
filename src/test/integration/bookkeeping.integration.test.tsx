@@ -18,6 +18,22 @@ describe('integration: no invisible uncommitted files', () => {
     expect(await h.invisibleDirtyPaths()).toEqual([]);
   }, 60_000);
 
+  it('creating a custom attribute', async () => {
+    h = await startApp({ initialRoute: '/custom-attributes' });
+
+    fireEvent.click(screen.getByRole('button', { name: /create new/i }));
+    fireEvent.click(await screen.findByText('New Custom Attribute'));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByPlaceholderText('e.g., Component, Release Version'), {
+      target: { value: 'Component' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: /create attribute/i }));
+    await h.settle();
+
+    expect(await screen.findByText('Component')).toBeInTheDocument();
+    expect(await h.invisibleDirtyPaths()).toEqual([]);
+  }, 60_000);
+
   it('creating a workflow', async () => {
     h = await startApp({ initialRoute: '/workflows' });
     await act(() => h.app().user.createUser('Reviewer'));

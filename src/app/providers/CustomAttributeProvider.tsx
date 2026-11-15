@@ -43,6 +43,10 @@ export const CustomAttributeProvider: React.FC<{ children: ReactNode }> = ({ chi
 
   useEffect(() => {
     fetchDefinitions();
+    // Single source of truth: refetch whenever definitions change anywhere
+    return diskCustomAttributeService.subscribe(() => {
+      fetchDefinitions();
+    });
   }, [fetchDefinitions]);
 
   const getDefinitionsForType = useCallback(

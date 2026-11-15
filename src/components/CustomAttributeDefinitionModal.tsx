@@ -100,6 +100,9 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
           flexDirection: 'column',
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="custom-attribute-modal-title"
       >
         {/* Header */}
         <div
@@ -111,7 +114,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
             justifyContent: 'space-between',
           }}
         >
-          <h3 style={{ fontWeight: 600 }}>
+          <h3 id="custom-attribute-modal-title" style={{ fontWeight: 600 }}>
             {isEditMode ? `Edit Attribute - ${definition?.id}` : 'New Custom Attribute'}
           </h3>
           <button
