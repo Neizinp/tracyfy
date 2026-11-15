@@ -25,6 +25,8 @@ class GitRemoteService {
   private initialized = false;
   private authToken: string | null = null;
   private tokenLoaded = false;
+  /** Electron only: the token lives in the main process, we only know whether one exists */
+  private hasStoredToken = false;
 
   setInitialized(value: boolean): void {
     this.initialized = value;
@@ -114,9 +116,9 @@ class GitRemoteService {
 
     try {
       if (isElectronEnv()) {
-        const result = await window.electronAPI!.secure.getToken();
-        if (result.token) {
-          this.authToken = result.token;
+        const result = await window.electronAPI!.secure.hasToken();
+        if (result.hasToken) {
+          this.hasStoredToken = true;
           this.tokenLoaded = true;
           return;
         }
@@ -155,21 +157,34 @@ class GitRemoteService {
   }
 
   /**
+   * Whether a token is available for remote operations.
+   * In Electron the token itself is kept in the main process and never exposed here.
+   */
+  hasAuthToken(): boolean {
+    return this.hasStoredToken || !!this.getAuthToken();
+  }
+
+  /**
    * Set authentication token
    */
   async setAuthToken(token: string): Promise<void> {
-    this.authToken = token;
     this.tokenLoaded = true;
 
     try {
       if (isElectronEnv()) {
         const result = await window.electronAPI!.secure.setToken(token);
         if (result.error) throw new Error(result.error);
+        // Stored in the main process; don't keep a copy in the renderer
+        this.authToken = null;
+        this.hasStoredToken = true;
+        return;
       } else {
+        this.authToken = token;
         localStorage.setItem('git_pat_token', token);
       }
     } catch (err) {
       debug.warn('[setAuthToken] Failed:', err);
+      this.authToken = token;
       // Fallback to localStorage even in Electron if secure storage fails
       try {
         localStorage.setItem('git_pat_token', token);
@@ -184,6 +199,7 @@ class GitRemoteService {
    */
   async clearAuthToken(): Promise<void> {
     this.authToken = null;
+    this.hasStoredToken = false;
     this.tokenLoaded = true;
 
     try {
@@ -219,10 +235,11 @@ class GitRemoteService {
       throw new Error('Git service not initialized');
     }
 
-    const token = this.getAuthToken();
-    if (!token) {
+    if (!this.hasAuthToken()) {
       throw new Error('No authentication token configured. Please set a token first.');
     }
+    // In Electron this is normally undefined and the main process uses its stored token
+    const token = this.getAuthToken() ?? undefined;
 
     try {
       if (isElectronEnv()) {
@@ -256,10 +273,11 @@ class GitRemoteService {
       throw new Error('Git service not initialized');
     }
 
-    const token = this.getAuthToken();
-    if (!token) {
+    if (!this.hasAuthToken()) {
       throw new Error('No authentication token configured. Please set a token first.');
     }
+    // In Electron this is normally undefined and the main process uses its stored token
+    const token = this.getAuthToken() ?? undefined;
 
     if (isElectronEnv()) {
       const result = await window.electronAPI!.git.push(getRootDir(), remote, branch, token);
@@ -288,10 +306,11 @@ class GitRemoteService {
       throw new Error('Git service not initialized');
     }
 
-    const token = this.getAuthToken();
-    if (!token) {
+    if (!this.hasAuthToken()) {
       throw new Error('No authentication token configured. Please set a token first.');
     }
+    // In Electron this is normally undefined and the main process uses its stored token
+    const token = this.getAuthToken() ?? undefined;
 
     try {
       if (isElectronEnv()) {

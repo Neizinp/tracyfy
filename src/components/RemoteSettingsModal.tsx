@@ -96,7 +96,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
   };
 
   const handleTestConnection = async () => {
-    if (!token.trim()) {
+    if (!token.trim() && !realGitService.hasAuthToken()) {
       setError('Please enter an authentication token');
       return;
     }
@@ -106,8 +106,10 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
     setSuccess(null);
 
     try {
-      // Save token first
-      await realGitService.setAuthToken(token.trim());
+      // Save token first (if a new one was entered)
+      if (token.trim()) {
+        await realGitService.setAuthToken(token.trim());
+      }
 
       // Try to fetch
       await realGitService.fetch('origin');
@@ -321,7 +323,11 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
             type="password"
             value={token}
             onChange={(e) => setToken(e.target.value)}
-            placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+            placeholder={
+              realGitService.hasAuthToken() && !token
+                ? 'Token saved – enter a new one to replace it'
+                : 'ghp_xxxxxxxxxxxxxxxxxxxx'
+            }
             style={{
               width: '100%',
               padding: '10px 12px',

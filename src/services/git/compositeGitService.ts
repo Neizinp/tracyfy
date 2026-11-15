@@ -205,6 +205,10 @@ class CompositeGitService {
     return gitRemoteService.getAuthToken();
   }
 
+  hasAuthToken(): boolean {
+    return gitRemoteService.hasAuthToken();
+  }
+
   async setAuthToken(token: string): Promise<void> {
     return gitRemoteService.setAuthToken(token);
   }

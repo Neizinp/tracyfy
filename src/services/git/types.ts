@@ -127,7 +127,7 @@ declare global {
       };
       secure: {
         setToken: (token: string) => Promise<{ ok?: boolean; error?: string }>;
-        getToken: () => Promise<{ token?: string | null; error?: string }>;
+        hasToken: () => Promise<{ hasToken: boolean }>;
         removeToken: () => Promise<{ ok?: boolean; error?: string }>;
       };
     };

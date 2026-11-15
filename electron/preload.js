@@ -52,7 +52,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Secure storage
   secure: {
     setToken: (token) => ipcRenderer.invoke('secure:setToken', token),
-    getToken: () => ipcRenderer.invoke('secure:getToken'),
+    hasToken: () => ipcRenderer.invoke('secure:hasToken'),
     removeToken: () => ipcRenderer.invoke('secure:removeToken'),
   },
 
