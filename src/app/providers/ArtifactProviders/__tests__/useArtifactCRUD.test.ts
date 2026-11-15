@@ -29,8 +29,14 @@ describe('hasArtifactChanges', () => {
     expect(hasArtifactChanges(existing, { revision: '04', lastModified: 2000 })).toBe(false);
   });
 
-  it('treats undefined, null and empty string as equal', () => {
+  it('treats undefined, null, empty string, [] and {} as equal (what forms send)', () => {
     expect(hasArtifactChanges(existing, { description: '' })).toBe(false);
+    expect(
+      hasArtifactChanges(existing, {
+        linkedArtifacts: [],
+        customAttributes: {},
+      } as Partial<Item>)
+    ).toBe(false);
   });
 
   it('detects changed values, including inside arrays', () => {

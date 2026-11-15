@@ -25,22 +25,39 @@ export type ArtifactType =
 
 export interface CRUDOptions<T> {
   type: ArtifactType;
+  /** Items shown in the current view (may be filtered to the current project) */
   items: T[];
+  /**
+   * Every item of this type (source of truth). Used to find the artifact being
+   * updated/deleted, so artifacts outside the current project (e.g. opened from
+   * the Global Library) can be edited. Defaults to `items`.
+   */
+  allItems?: T[];
   setItems: (items: T[] | ((prev: T[]) => T[])) => void;
   saveFn: (item: T) => Promise<void>;
   deleteFn: (id: string) => Promise<void>;
   onBeforeUpdate?: (item: T) => void;
   onAfterUpdate?: (item: T) => void;
   onBeforeAdd?: (data: Omit<T, 'id' | 'lastModified' | 'revision'>) => void;
+  /** Called after a new item was saved (e.g. to add it to the current project) */
+  onAfterAdd?: (item: T) => Promise<void> | void;
 }
 
 /**
  * True if any field in `updates` differs from `existing`.
- * Values are compared structurally (artifact fields are plain JSON data).
+ * Values are compared structurally (artifact fields are plain JSON data);
+ * undefined, null, '', [] and {} are all treated as "empty" and equal.
  * Bookkeeping fields (revision, lastModified) are ignored.
  */
 export function hasArtifactChanges<T extends object>(existing: T, updates: Partial<T>): boolean {
-  const normalize = (v: unknown) => (v === undefined || v === null ? '' : v);
+  // Forms send '' / [] / {} for fields that are simply absent on stored artifacts
+  const isEmpty = (v: unknown) =>
+    v === undefined ||
+    v === null ||
+    v === '' ||
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === 'object' && !Array.isArray(v) && Object.keys(v as object).length === 0);
+  const normalize = (v: unknown) => (isEmpty(v) ? '' : v);
   return Object.entries(updates).some(([key, value]) => {
     if (key === 'revision' || key === 'lastModified') return false;
     const current = (existing as Record<string, unknown>)[key];
@@ -55,13 +72,16 @@ export function hasArtifactChanges<T extends object>(existing: T, updates: Parti
 export function useArtifactCRUD<T extends BaseArtifact>({
   type,
   items,
+  allItems,
   setItems,
   saveFn,
   deleteFn,
   onBeforeUpdate,
   onAfterUpdate,
   onBeforeAdd,
+  onAfterAdd,
 }: CRUDOptions<T>) {
+  const lookupItems = allItems ?? items;
   const { getNextId } = useFileSystem();
   const { currentUser } = useUser();
   const { showToast } = useToast();
@@ -92,6 +112,7 @@ export function useArtifactCRUD<T extends BaseArtifact>({
 
         setItems((prev) => [...prev, newItem]);
         await saveFn(newItem);
+        if (onAfterAdd) await onAfterAdd(newItem);
         showToast(
           `${type.charAt(0).toUpperCase() + type.slice(1, -1)} ${newId} created`,
           'success'
@@ -103,12 +124,12 @@ export function useArtifactCRUD<T extends BaseArtifact>({
         return null;
       }
     },
-    [currentUser, getNextId, saveFn, setItems, showToast, type, onBeforeAdd]
+    [currentUser, getNextId, saveFn, setItems, showToast, type, onBeforeAdd, onAfterAdd]
   );
 
   const handleUpdate = useCallback(
     async (id: string, updatedData: Partial<T>) => {
-      const existing = items.find((item) => item.id === id);
+      const existing = lookupItems.find((item) => item.id === id);
       if (!existing) return;
 
       // Saving without changes must not bump the revision or rewrite the file,
@@ -140,12 +161,22 @@ export function useArtifactCRUD<T extends BaseArtifact>({
         endTask(taskId);
       }
     },
-    [items, saveFn, setItems, type, showToast, onBeforeUpdate, onAfterUpdate, startTask, endTask]
+    [
+      lookupItems,
+      saveFn,
+      setItems,
+      type,
+      showToast,
+      onBeforeUpdate,
+      onAfterUpdate,
+      startTask,
+      endTask,
+    ]
   );
 
   const handleDelete = useCallback(
     (id: string) => {
-      const existing = items.find((item) => item.id === id);
+      const existing = lookupItems.find((item) => item.id === id);
       if (!existing) return;
 
       const deletedItem: T = {
@@ -157,12 +188,12 @@ export function useArtifactCRUD<T extends BaseArtifact>({
       setItems((prev) => prev.map((item) => (item.id === id ? deletedItem : item)));
       saveFn(deletedItem).catch((err) => console.error(`Failed to soft-delete ${type}:`, err));
     },
-    [items, saveFn, setItems, type]
+    [lookupItems, saveFn, setItems, type]
   );
 
   const handleRestore = useCallback(
     (id: string) => {
-      const existing = items.find((item) => item.id === id);
+      const existing = lookupItems.find((item) => item.id === id);
       if (!existing) return;
 
       const restoredItem: T = {
@@ -175,7 +206,7 @@ export function useArtifactCRUD<T extends BaseArtifact>({
       setItems((prev) => prev.map((item) => (item.id === id ? restoredItem : item)));
       saveFn(restoredItem).catch((err) => console.error(`Failed to restore ${type}:`, err));
     },
-    [items, saveFn, setItems, type]
+    [lookupItems, saveFn, setItems, type]
   );
 
   const handlePermanentDelete = useCallback(

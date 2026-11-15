@@ -46,7 +46,8 @@ class GitHistoryService {
   // Cache for getCommitFiles results (commit hash -> files)
   private commitFilesCache = new Map<string, string[]>();
   // Path to cache file in project folder
-  private readonly CACHE_FILE = '.tracyfy/commit-cache.json';
+  // Local per-clone cache: lives inside .git so it is never tracked or pushed
+  private readonly CACHE_FILE = '.git/tracyfy-commit-cache.json';
   // Flag to track if cache has been loaded from disk
   private cacheLoadedFromDisk = false;
 

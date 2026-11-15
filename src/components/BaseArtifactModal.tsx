@@ -108,6 +108,9 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
           overflow: 'hidden',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
         }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`${formId}-title`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -140,6 +143,7 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
               </button>
             )}
             <h2
+              id={`${formId}-title`}
               style={{
                 margin: 0,
                 fontSize: 'var(--font-size-lg)',

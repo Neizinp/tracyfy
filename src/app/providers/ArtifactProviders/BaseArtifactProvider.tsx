@@ -5,6 +5,7 @@ import { useUI } from '../UIProvider';
 import { useFileSystem } from '../FileSystemProvider';
 import { useUser } from '../UserProvider';
 import { useToast } from '../ToastProvider';
+import { useProject } from '../ProjectProvider';
 import { debug } from '../../../utils/debug';
 import { useArtifactCRUD } from './useArtifactCRUD';
 import type { ArtifactType, BaseArtifact } from './useArtifactCRUD';
@@ -44,6 +45,17 @@ export interface CreateProviderOptions<T extends BaseArtifact> {
   };
 }
 
+/** Which Project id-list an artifact type is tracked in (types not listed aren't project-scoped this way) */
+const PROJECT_MEMBERSHIP_KEY: Partial<
+  Record<ArtifactType, 'requirements' | 'useCases' | 'testCases' | 'information' | 'risks'>
+> = {
+  requirements: 'requirements',
+  useCases: 'useCases',
+  testCases: 'testCases',
+  information: 'information',
+  risks: 'risks',
+};
+
 export function createArtifactProvider<T extends BaseArtifact>(options: CreateProviderOptions<T>) {
   const Context = createContext<BaseArtifactContextValue<T> | undefined>(undefined);
 
@@ -75,9 +87,29 @@ export function createArtifactProvider<T extends BaseArtifact>(options: CreatePr
       }
     }, [isReady, fsItems, setItems]);
 
+    // New artifacts belong to the project the user is working in
+    const { currentProjectId, addToProject } = useProject();
+    const projectKey = PROJECT_MEMBERSHIP_KEY[options.type];
+    const onAfterAdd = useCallback(
+      async (item: T) => {
+        if (!projectKey || !currentProjectId) return;
+        await addToProject({
+          requirements: [],
+          useCases: [],
+          testCases: [],
+          information: [],
+          risks: [],
+          [projectKey]: [item.id],
+        });
+      },
+      [projectKey, currentProjectId, addToProject]
+    );
+
     const crud = useArtifactCRUD<T>({
       type: options.type,
       items,
+      allItems: fsItems,
+      onAfterAdd,
       setItems,
       saveFn: save,
       deleteFn: fsDelete,

@@ -135,7 +135,7 @@ describe('CompositeGitService', () => {
 
       // Should save to disk
       expect(fileSystemService.writeFile).toHaveBeenCalledWith(
-        '.tracyfy/commit-cache.json',
+        '.git/tracyfy-commit-cache.json',
         expect.stringContaining(hash)
       );
     });
