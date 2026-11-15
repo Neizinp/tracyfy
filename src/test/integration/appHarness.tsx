@@ -37,6 +37,12 @@ import {
   useUI,
 } from '../../app/providers';
 
+/**
+ * Generous: the whole app boots per test, and the suite runs many files in
+ * parallel (cold transform cache in CI / fresh worktrees makes this slower).
+ */
+const READY_TIMEOUT = 30_000;
+
 export interface AppHooks {
   fileSystem: ReturnType<typeof useFileSystem>;
   user: ReturnType<typeof useUser>;
@@ -135,11 +141,15 @@ export async function startApp(
 
   // First run, through the real UI: pick the folder, then onboard the first user
   fireEvent.click(
-    await screen.findByRole('button', { name: /choose folder/i }, { timeout: 10_000 })
+    await screen.findByRole('button', { name: /choose folder/i }, { timeout: READY_TIMEOUT })
   );
-  await waitFor(() => expect(app().fileSystem.isReady).toBe(true), { timeout: 10_000 });
+  await waitFor(() => expect(app().fileSystem.isReady).toBe(true), { timeout: READY_TIMEOUT });
 
-  const nameInput = await screen.findByPlaceholderText('Enter your name', {}, { timeout: 10_000 });
+  const nameInput = await screen.findByPlaceholderText(
+    'Enter your name',
+    {},
+    { timeout: READY_TIMEOUT }
+  );
   fireEvent.change(nameInput, { target: { value: options.userName ?? 'Test User' } });
   fireEvent.submit(nameInput.closest('form')!);
   await waitFor(() => expect(app().user.currentUser?.name).toBe(options.userName ?? 'Test User'));
@@ -182,7 +192,7 @@ export async function startApp(
       rendered.unmount();
       latest.current = null;
       rendered = render(tree);
-      await waitFor(() => expect(app().fileSystem.isReady).toBe(true), { timeout: 10_000 });
+      await waitFor(() => expect(app().fileSystem.isReady).toBe(true), { timeout: READY_TIMEOUT });
       await settle();
     },
     cleanup: () => {
