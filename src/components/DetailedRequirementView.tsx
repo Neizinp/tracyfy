@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { TableVirtuoso } from 'react-virtuoso';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
+import { safeMarkdownRehypePlugins } from '../utils/markdownSanitize';
 import type { Requirement, ColumnVisibility, Project } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { SortableHeader, sortItems, type SortConfig } from './SortableHeader';
@@ -26,7 +26,7 @@ export const MarkdownCell = React.memo<{ content: string }>(({ content }) => {
     <div className="markdown-cell" style={{ fontSize: 'var(--font-size-sm)' }}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
+        rehypePlugins={safeMarkdownRehypePlugins}
         components={{
           h1: ({ ...props }) => (
             <h1

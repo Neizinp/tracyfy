@@ -3,7 +3,7 @@ import { useState, useRef, useCallback, useEffect, useContext } from 'react';
 import MDEditor from '@uiw/react-md-editor';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
+import { safeMarkdownRehypePlugins } from '../utils/markdownSanitize';
 import { Eye, Edit2, ImagePlus } from 'lucide-react';
 import { assetService } from '../services/assetService';
 import { AssetImage } from './AssetImage';
@@ -277,6 +277,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             onChange={(val) => onChange(val || '')}
             height={height}
             preview="edit"
+            previewOptions={{ rehypePlugins: safeMarkdownRehypePlugins }}
             hideToolbar={false}
             enableScroll={true}
             commandsFilter={(cmd) => (cmd.name === 'image' ? false : cmd)}
@@ -302,7 +303,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           {value ? (
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
+              rehypePlugins={safeMarkdownRehypePlugins}
               components={{
                 // Custom styling for rendered elements - smaller, consistent with app
                 h1: ({ ...props }) => (
