@@ -12,7 +12,7 @@ import path from 'path';
 describe('Code Quality Safeguards', () => {
   it('should pass TypeScript type check', () => {
     try {
-      // Run tsc --noEmit to verify full project type safety
+      // Run the project typecheck (tsc -b) to verify full project type safety
       // Using execSync because this is an integration-style test for build integrity
       execSync('npm run typecheck', { stdio: 'pipe' });
     } catch (error: unknown) {
@@ -20,7 +20,8 @@ describe('Code Quality Safeguards', () => {
       const output = execError.stdout?.toString() || execError.message;
       throw new Error(`TypeScript type check failed. Please fix these errors:\n${output}`);
     }
-  });
+    // A real full-project typecheck takes several seconds, more under parallel test load
+  }, 120_000);
 
   it('should not contain forbidden "any" types in critical files', () => {
     const CRITICAL_FILES = [
