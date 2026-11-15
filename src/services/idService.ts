@@ -68,6 +68,22 @@ export class IdService extends BaseDiskService {
   }
 
   /**
+   * Raise the counter to at least `value` (never lowers it).
+   * Used after importing artifacts with explicit IDs so new IDs don't collide.
+   */
+  async ensureCounterAtLeast(type: string, value: number): Promise<void> {
+    if (!ARTIFACT_CONFIG[type]) {
+      throw new Error(`[IdService] No config found for type: ${type}`);
+    }
+    await this.counterLock.run(type, async () => {
+      const current = await this.getCounter(type);
+      if (value > current) {
+        await this.setCounter(type, value);
+      }
+    });
+  }
+
+  /**
    * Read-modify-write of the counter. Must only be called while holding counterLock for `type`.
    */
   private async allocate(type: string, count: number): Promise<string[]> {
