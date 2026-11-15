@@ -645,7 +645,11 @@ export const ProjectLayout: React.FC = () => {
             )}
             {location.pathname.includes('/links') && (
               <button
-                onClick={() => ui.setIsLinkModalOpen(true)}
+                onClick={() => {
+                  // No preset source: the user picks one in the modal
+                  ui.setLinkSourceId(null);
+                  ui.setIsLinkModalOpen(true);
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

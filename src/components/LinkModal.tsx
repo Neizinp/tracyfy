@@ -51,6 +51,11 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     filteredArtifacts,
     findProjectForArtifact,
     handleSubmit,
+    needsSourceSelection,
+    chosenSourceId,
+    setChosenSourceId,
+    effectiveSourceId,
+    sourceOptions,
   } = useLinkModal({
     isOpen,
     sourceArtifactId,
@@ -78,7 +83,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     onClose: onClose,
   });
 
-  if (!isOpen || !sourceArtifactId) return null;
+  if (!isOpen) return null;
 
   return (
     <BaseArtifactModal
@@ -88,59 +93,89 @@ export const LinkModal: React.FC<LinkModalProps> = ({
       title="Create Link"
       icon={<LinkIcon size={20} style={{ color: 'var(--color-accent)' }} />}
       submitLabel="Create Link"
-      isSubmitDisabled={!selectedTargetId}
+      isSubmitDisabled={!selectedTargetId || !effectiveSourceId}
       width="600px"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {/* Source Artifact (read-only) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label
-            style={{
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-text-muted)',
-              fontWeight: 500,
-            }}
+        {needsSourceSelection ? (
+          <FormField
+            label="Source Artifact"
+            fullWidth
+            description="Select the artifact the link starts from."
           >
-            Source Artifact
-          </label>
-          <div
-            style={{
-              padding: '10px 12px',
-              backgroundColor: 'var(--color-bg-secondary)',
-              borderRadius: '6px',
-              border: '1px solid var(--color-border)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              fontSize: 'var(--font-size-sm)',
-              fontFamily: 'monospace',
-            }}
-          >
-            <span
+            <select
+              aria-label="Source Artifact"
+              value={chosenSourceId}
+              onChange={(e) => setChosenSourceId(e.target.value)}
               style={{
-                fontSize: '10px',
-                color: '#fff',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                textTransform: 'uppercase',
-                fontWeight: 700,
-                backgroundColor:
-                  sourceArtifactType === 'requirement'
-                    ? 'var(--color-info)'
-                    : sourceArtifactType === 'usecase'
-                      ? 'var(--color-accent)'
-                      : sourceArtifactType === 'testcase'
-                        ? 'var(--color-success)'
-                        : 'var(--color-warning)',
+                width: '100%',
+                padding: '10px 12px',
+                backgroundColor: 'var(--color-bg-secondary)',
+                borderRadius: '6px',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-primary)',
+                fontSize: 'var(--font-size-sm)',
               }}
             >
-              {sourceArtifactType.substring(0, 3)}
-            </span>
-            <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>
-              {sourceArtifactId}
-            </span>
+              <option value="">Select source…</option>
+              {sourceOptions.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.id} – {a.title}
+                </option>
+              ))}
+            </select>
+          </FormField>
+        ) : (
+          // Source Artifact (read-only)
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label
+              style={{
+                fontSize: 'var(--font-size-xs)',
+                color: 'var(--color-text-muted)',
+                fontWeight: 500,
+              }}
+            >
+              Source Artifact
+            </label>
+            <div
+              style={{
+                padding: '10px 12px',
+                backgroundColor: 'var(--color-bg-secondary)',
+                borderRadius: '6px',
+                border: '1px solid var(--color-border)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                fontSize: 'var(--font-size-sm)',
+                fontFamily: 'monospace',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '10px',
+                  color: '#fff',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                  backgroundColor:
+                    sourceArtifactType === 'requirement'
+                      ? 'var(--color-info)'
+                      : sourceArtifactType === 'usecase'
+                        ? 'var(--color-accent)'
+                        : sourceArtifactType === 'testcase'
+                          ? 'var(--color-success)'
+                          : 'var(--color-warning)',
+                }}
+              >
+                {sourceArtifactType.substring(0, 3)}
+              </span>
+              <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>
+                {sourceArtifactId}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Target Selection */}
         <FormField

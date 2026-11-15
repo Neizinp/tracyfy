@@ -49,10 +49,16 @@ export function useLinkModal({
   const [selectedTargetId, setSelectedTargetId] = useState('');
   const [linkType, setLinkType] = useState<ArtifactLink['type']>('related_to');
   const [linkScope, setLinkScope] = useState<'global' | 'project'>('project');
+  // Source chosen inside the modal when none was preset (e.g. opened from the Links page)
+  const [chosenSourceId, setChosenSourceId] = useState('');
+
+  const needsSourceSelection = !sourceArtifactId;
+  const effectiveSourceId = sourceArtifactId || chosenSourceId;
 
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
+      setChosenSourceId('');
       setTargetType('requirement');
       setSearchQuery('');
       setSelectedTargetId('');
@@ -93,7 +99,7 @@ export function useLinkModal({
       }));
 
     // Filter out source artifact (can't link to self)
-    artifacts = artifacts.filter((a) => a.id !== sourceArtifactId);
+    artifacts = artifacts.filter((a) => a.id !== effectiveSourceId);
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -112,15 +118,25 @@ export function useLinkModal({
     globalUseCases,
     globalTestCases,
     globalInformation,
-    sourceArtifactId,
+    effectiveSourceId,
     searchQuery,
   ]);
+
+  /** All artifacts that can act as a link source (used when no source is preset) */
+  const sourceOptions = useMemo(
+    () =>
+      [...globalRequirements, ...globalUseCases, ...globalTestCases, ...globalInformation]
+        .filter((a) => !a.isDeleted)
+        .map((a) => ({ id: a.id, title: a.title })),
+    [globalRequirements, globalUseCases, globalTestCases, globalInformation]
+  );
 
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
       if (e) e.preventDefault();
-      if (selectedTargetId) {
+      if (selectedTargetId && effectiveSourceId) {
         onAddLink({
+          sourceId: effectiveSourceId,
           targetId: selectedTargetId,
           type: linkType,
           projectIds: linkScope === 'global' ? [] : [currentProjectId],
@@ -128,7 +144,7 @@ export function useLinkModal({
         onClose();
       }
     },
-    [selectedTargetId, linkType, linkScope, currentProjectId, onAddLink, onClose]
+    [selectedTargetId, effectiveSourceId, linkType, linkScope, currentProjectId, onAddLink, onClose]
   );
 
   const selectTargetType = useCallback((type: ArtifactType) => {
@@ -156,5 +172,10 @@ export function useLinkModal({
 
     // Actions
     handleSubmit,
+    needsSourceSelection,
+    chosenSourceId,
+    setChosenSourceId,
+    effectiveSourceId,
+    sourceOptions,
   };
 }
