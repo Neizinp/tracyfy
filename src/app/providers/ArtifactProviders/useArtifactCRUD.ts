@@ -35,6 +35,20 @@ export interface CRUDOptions<T> {
 }
 
 /**
+ * True if any field in `updates` differs from `existing`.
+ * Values are compared structurally (artifact fields are plain JSON data).
+ * Bookkeeping fields (revision, lastModified) are ignored.
+ */
+export function hasArtifactChanges<T extends object>(existing: T, updates: Partial<T>): boolean {
+  const normalize = (v: unknown) => (v === undefined || v === null ? '' : v);
+  return Object.entries(updates).some(([key, value]) => {
+    if (key === 'revision' || key === 'lastModified') return false;
+    const current = (existing as Record<string, unknown>)[key];
+    return JSON.stringify(normalize(current)) !== JSON.stringify(normalize(value));
+  });
+}
+
+/**
  * Generic hook for artifact CRUD operations.
  * Consolidates common logic across different artifact providers.
  */
@@ -96,6 +110,10 @@ export function useArtifactCRUD<T extends BaseArtifact>({
     async (id: string, updatedData: Partial<T>) => {
       const existing = items.find((item) => item.id === id);
       if (!existing) return;
+
+      // Saving without changes must not bump the revision or rewrite the file,
+      // otherwise the artifact shows up as modified and needs a pointless commit.
+      if (!hasArtifactChanges(existing, updatedData)) return;
 
       if (onBeforeUpdate) onBeforeUpdate(existing);
 
