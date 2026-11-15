@@ -1,0 +1,198 @@
+/**
+ * Integration test harness: runs the real app stack against a real temp
+ * directory with real git. Nothing in the data path is mocked:
+ *
+ *   React providers → services → window.electronAPI (the real preload.js)
+ *     → IPC handlers (the real electron/ipcHandlers.js) → node fs + isomorphic-git
+ *
+ * Only the Electron runtime objects are faked (ipcMain, dialog, safeStorage),
+ * and IPC arguments/results go through structuredClone like real Electron IPC.
+ *
+ * Use it to assert what the user would actually get: files on disk, git
+ * status/history, and the state the UI renders from.
+ */
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import React, { StrictMode, useLayoutEffect } from 'react';
+import { MemoryRouter } from 'react-router-dom';
+import { expect } from 'vitest';
+import { render, waitFor, act, screen, fireEvent } from '@testing-library/react';
+import git from 'isomorphic-git';
+import { createElectronIpc } from './electronIpc';
+import { AppProviders } from '../../app/AppProviders';
+import { AppContent } from '../../app/AppContent';
+import { StatusBar, ToastContainer } from '../../components';
+import {
+  useFileSystem,
+  useUser,
+  useProject,
+  useRequirements,
+  useUseCases,
+  useTestCases,
+  useInformation,
+  useRisks,
+  useDocuments,
+  useGlobalState,
+  useUI,
+} from '../../app/providers';
+
+export interface AppHooks {
+  fileSystem: ReturnType<typeof useFileSystem>;
+  user: ReturnType<typeof useUser>;
+  project: ReturnType<typeof useProject>;
+  requirements: ReturnType<typeof useRequirements>;
+  useCases: ReturnType<typeof useUseCases>;
+  testCases: ReturnType<typeof useTestCases>;
+  information: ReturnType<typeof useInformation>;
+  risks: ReturnType<typeof useRisks>;
+  documents: ReturnType<typeof useDocuments>;
+  globalState: ReturnType<typeof useGlobalState>;
+  ui: ReturnType<typeof useUI>;
+}
+
+export interface Harness {
+  /** Project directory on disk (what the user picked) */
+  dir: string;
+  /** Latest hook values - read after act()/waitFor() */
+  app: () => AppHooks;
+  /** Read a project file from disk, or null if missing */
+  readFile: (relPath: string) => string | null;
+  exists: (relPath: string) => boolean;
+  /** Paths with uncommitted changes according to real git (untracked, modified, deleted) */
+  dirtyPaths: () => Promise<string[]>;
+  /** Commit messages on HEAD, newest first */
+  commitMessages: () => Promise<string[]>;
+  /** Wait until the debounced git status refresh in the app has settled */
+  settle: () => Promise<void>;
+  /** Unmount and remount the app on the same directory (simulates a restart) */
+  restart: () => Promise<void>;
+  cleanup: () => void;
+}
+
+function installElectronApi(projectDir: string, userDataDir: string) {
+  const { api } = createElectronIpc({ pickedDirectory: projectDir, userDataDir });
+  (window as unknown as Record<string, unknown>).electronAPI = api;
+}
+
+/**
+ * Start the app on a fresh, empty project folder with a user and a project
+ * created - the state a real user is in right after onboarding.
+ */
+export async function startApp(
+  options: { userName?: string; projectName?: string; initialRoute?: string } = {}
+): Promise<Harness> {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'tracyfy-it-'));
+  const dir = path.join(root, 'project');
+  const userData = path.join(root, 'userData');
+  fs.mkdirSync(dir);
+  fs.mkdirSync(userData);
+
+  localStorage.clear();
+  installElectronApi(dir, userData);
+
+  const latest: { current: AppHooks | null } = { current: null };
+  const Probe: React.FC = () => {
+    const hooks: AppHooks = {
+      fileSystem: useFileSystem(),
+      user: useUser(),
+      project: useProject(),
+      requirements: useRequirements(),
+      useCases: useUseCases(),
+      testCases: useTestCases(),
+      information: useInformation(),
+      risks: useRisks(),
+      documents: useDocuments(),
+      globalState: useGlobalState(),
+      ui: useUI(),
+    };
+    // Publish after commit so tests always read the latest rendered values
+    useLayoutEffect(() => {
+      latest.current = hooks;
+    });
+    return null;
+  };
+
+  // Same tree as App.tsx / main.tsx (StrictMode like `npm run electron:dev`), plus a probe
+  const tree = (
+    <StrictMode>
+      <MemoryRouter initialEntries={[options.initialRoute ?? '/requirements']}>
+        <AppProviders>
+          <AppContent />
+          <StatusBar />
+          <ToastContainer />
+          <Probe />
+        </AppProviders>
+      </MemoryRouter>
+    </StrictMode>
+  );
+  let rendered = render(tree);
+
+  const app = () => {
+    if (!latest.current) throw new Error('App not rendered');
+    return latest.current;
+  };
+
+  // First run, through the real UI: pick the folder, then onboard the first user
+  fireEvent.click(
+    await screen.findByRole('button', { name: /choose folder/i }, { timeout: 10_000 })
+  );
+  await waitFor(() => expect(app().fileSystem.isReady).toBe(true), { timeout: 10_000 });
+
+  const nameInput = await screen.findByPlaceholderText('Enter your name', {}, { timeout: 10_000 });
+  fireEvent.change(nameInput, { target: { value: options.userName ?? 'Test User' } });
+  fireEvent.submit(nameInput.closest('form')!);
+  await waitFor(() => expect(app().user.currentUser?.name).toBe(options.userName ?? 'Test User'));
+
+  if (!app().project.currentProject) {
+    const project = await act(() =>
+      app().project.createProject(options.projectName ?? 'Test Project', '')
+    );
+    await act(() => app().project.switchProject(project.id));
+    await waitFor(() => expect(app().project.currentProjectId).toBe(project.id));
+  }
+
+  const settle = async () => {
+    // refreshStatus is debounced (300 ms) and runs async git status
+    await act(() => new Promise((r) => setTimeout(r, 450)));
+    await act(() => new Promise((r) => setTimeout(r, 50)));
+  };
+
+  const harness: Harness = {
+    dir,
+    app,
+    readFile: (rel) => {
+      const p = path.join(dir, rel);
+      return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : null;
+    },
+    exists: (rel) => fs.existsSync(path.join(dir, rel)),
+    dirtyPaths: async () => {
+      const matrix = await git.statusMatrix({ fs, dir });
+      return matrix
+        .filter(([, head, workdir, stage]) => !(head === 1 && workdir === 1 && stage === 1))
+        .map(([filepath]) => filepath)
+        .sort();
+    },
+    commitMessages: async () => {
+      const log = await git.log({ fs, dir });
+      return log.map((c) => c.commit.message.trim());
+    },
+    settle,
+    restart: async () => {
+      rendered.unmount();
+      latest.current = null;
+      rendered = render(tree);
+      await waitFor(() => expect(app().fileSystem.isReady).toBe(true), { timeout: 10_000 });
+      await settle();
+    },
+    cleanup: () => {
+      rendered.unmount();
+      fs.rmSync(root, { recursive: true, force: true });
+      delete (window as unknown as Record<string, unknown>).electronAPI;
+      localStorage.clear();
+    },
+  };
+
+  await settle();
+  return harness;
+}
