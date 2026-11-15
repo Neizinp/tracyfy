@@ -71,7 +71,7 @@ declare global {
           dir: string,
           oid: string,
           filepath: string
-        ) => Promise<{ blob?: number[]; error?: string }>;
+        ) => Promise<{ blob?: Uint8Array; error?: string }>;
         resolveRef: (dir: string, ref: string) => Promise<string>;
         isDescendent: (
           dir: string,

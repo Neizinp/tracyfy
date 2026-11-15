@@ -292,7 +292,7 @@ ipcMain.handle('git:readBlob', async (_event, dir, oid, filepath) => {
   try {
     dir = await assertAllowedPath(dir);
     const { blob } = await git.readBlob({ fs, dir, oid, filepath });
-    return { blob: Array.from(blob) };
+    return { blob: new Uint8Array(blob) };
   } catch (error) {
     return { error: error.message };
   }
@@ -407,7 +407,8 @@ ipcMain.handle('fs:readFileBinary', async (_event, fullPath) => {
   try {
     fullPath = await assertAllowedPath(fullPath);
     const buffer = await fs.readFile(fullPath);
-    return { data: Array.from(buffer) };
+    // Uint8Array is sent as one binary blob via structured clone, not one number per byte
+    return { data: new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) };
   } catch (error) {
     if (error.code === 'ENOENT') {
       return { notFound: true };
@@ -427,12 +428,12 @@ ipcMain.handle('fs:writeFile', async (_event, fullPath, content) => {
   }
 });
 
-ipcMain.handle('fs:writeFileBinary', async (_event, fullPath, dataArray) => {
+ipcMain.handle('fs:writeFileBinary', async (_event, fullPath, data) => {
   try {
     fullPath = await assertAllowedPath(fullPath);
     await fs.mkdir(path.dirname(fullPath), { recursive: true });
-    const buffer = Buffer.from(dataArray);
-    await fs.writeFile(fullPath, buffer);
+    // Accepts a Uint8Array (current renderer) or a number[] (legacy)
+    await fs.writeFile(fullPath, data instanceof Uint8Array ? data : Buffer.from(data));
     return { ok: true };
   } catch (error) {
     return { error: error.message };
