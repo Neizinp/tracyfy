@@ -86,40 +86,41 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: 'var(--color-bg-overlay)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
-        backdropFilter: 'blur(4px)',
+        backdropFilter: 'blur(2px)',
       }}
       onClick={onClose}
     >
       <div
         style={{
-          backgroundColor: 'var(--color-bg-card)',
-          borderRadius: '12px',
-          border: '1px solid var(--color-border)',
+          backgroundColor: 'var(--color-bg-raised)',
+          borderRadius: 'var(--radius-xl)',
+          border: '1px solid var(--color-border-light)',
           width: width,
           maxWidth: '95%',
           maxHeight: maxHeight,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          boxShadow: 'var(--shadow-dialog)',
         }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`${formId}-title`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
           style={{
-            padding: 'var(--spacing-lg)',
-            borderBottom: '1px solid var(--color-border)',
+            padding: tabs.length > 0 ? '16px 18px 6px' : '16px 18px',
+            borderBottom: tabs.length > 0 ? 'none' : '1px solid var(--color-border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background:
-              'linear-gradient(to bottom, var(--color-bg-card), var(--color-bg-secondary))',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
@@ -140,10 +141,12 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
               </button>
             )}
             <h2
+              id={`${formId}-title`}
               style={{
                 margin: 0,
-                fontSize: 'var(--font-size-lg)',
+                fontSize: 'var(--font-size-base)',
                 fontWeight: 600,
+                letterSpacing: '-0.01em',
                 color: 'var(--color-text-primary)',
                 display: 'flex',
                 alignItems: 'center',
@@ -157,21 +160,21 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="btn-icon"
+            className="tf-btn"
+            aria-label="Close"
             style={{
-              background: 'none',
               border: 'none',
               color: 'var(--color-text-muted)',
               cursor: 'pointer',
-              padding: '4px',
-              borderRadius: '4px',
+              width: '30px',
+              height: '30px',
+              borderRadius: 'var(--radius-sm)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'all 0.2s',
             }}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
@@ -180,29 +183,29 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
           <div
             style={{
               display: 'flex',
+              gap: '4px',
               borderBottom: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-bg-secondary)',
-              padding: '0 var(--spacing-lg)',
+              padding: '0 12px',
             }}
           >
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => onTabChange?.(tab.id)}
+                type="button"
                 style={{
-                  padding: '12px 16px',
+                  padding: '8px 8px 9px',
                   border: 'none',
                   backgroundColor: 'transparent',
                   color:
-                    activeTab === tab.id ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                    activeTab === tab.id ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
                   cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: activeTab === tab.id ? 600 : 400,
+                  fontSize: 'var(--font-size-sm)',
+                  fontWeight: 500,
                   borderBottom:
                     activeTab === tab.id
                       ? '2px solid var(--color-accent)'
                       : '2px solid transparent',
-                  transition: 'all 0.2s',
                   position: 'relative',
                   bottom: '-1px',
                 }}
@@ -220,10 +223,10 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: 'var(--spacing-lg)',
+            padding: '18px',
             display: 'flex',
             flexDirection: 'column',
-            gap: 'var(--spacing-lg)',
+            gap: '16px',
           }}
         >
           {children}
@@ -234,9 +237,9 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
             style={{
               padding: 'var(--spacing-md)',
               margin: '0 var(--spacing-lg) var(--spacing-lg)',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid var(--color-status-error)',
-              borderRadius: '6px',
+              backgroundColor: 'var(--color-error-bg)',
+              border: '1px solid var(--color-error)',
+              borderRadius: 'var(--radius-md)',
             }}
           >
             <div
@@ -249,7 +252,7 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
                 gap: '8px',
               }}
             >
-              <span>⚠️</span> {deleteConfirmTitle || 'Move to Trash'}
+              {deleteConfirmTitle || 'Move to Trash'}
             </div>
             <div
               style={{
@@ -267,13 +270,14 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
                 onClick={onDeleteConfirm}
                 className="btn-danger"
                 style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
+                  height: '32px',
+                  padding: '0 12px',
+                  borderRadius: 'var(--radius-md)',
                   border: 'none',
-                  backgroundColor: 'var(--color-status-error)',
-                  color: 'white',
+                  backgroundColor: 'var(--color-error)',
+                  color: 'var(--color-on-accent)',
                   cursor: 'pointer',
-                  fontWeight: 600,
+                  fontWeight: 500,
                 }}
               >
                 Confirm Delete
@@ -281,14 +285,15 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
               <button
                 type="button"
                 onClick={onDeleteCancel}
-                className="btn-secondary"
+                className="tf-btn"
                 style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--color-bg-card)',
+                  height: '32px',
+                  padding: '0 12px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border-light)',
                   color: 'var(--color-text-secondary)',
                   cursor: 'pointer',
+                  fontWeight: 500,
                 }}
               >
                 Cancel
@@ -300,12 +305,11 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
         {/* Footer */}
         <div
           style={{
-            padding: 'var(--spacing-lg)',
+            padding: '12px 18px',
             borderTop: '1px solid var(--color-border)',
             display: 'flex',
             alignItems: 'center',
-            gap: 'var(--spacing-md)',
-            backgroundColor: 'var(--color-bg-secondary)',
+            gap: '8px',
           }}
         >
           {footerLeft}
@@ -314,14 +318,15 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="btn-secondary"
+            className="tf-btn"
             style={{
-              padding: '8px 16px',
-              borderRadius: '6px',
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'transparent',
-              color: 'var(--color-text)',
+              height: '32px',
+              padding: '0 12px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--color-border-light)',
+              color: 'var(--color-text-primary)',
               cursor: 'pointer',
+              fontWeight: 500,
             }}
           >
             Cancel
@@ -330,16 +335,18 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
             type="submit"
             form={formId}
             disabled={isSubmitting || isSubmitDisabled}
-            className="btn-primary"
+            className="tf-btn-primary"
             style={{
-              padding: '8px 24px',
-              borderRadius: '6px',
+              height: '32px',
+              padding: '0 14px',
+              borderRadius: 'var(--radius-md)',
               border: 'none',
               backgroundColor: 'var(--color-accent)',
-              color: 'white',
+              color: 'var(--color-on-accent)',
               cursor: isSubmitting || isSubmitDisabled ? 'not-allowed' : 'pointer',
-              fontWeight: 600,
-              opacity: isSubmitting || isSubmitDisabled ? 0.7 : 1,
+              fontWeight: 500,
+              boxShadow: 'var(--shadow-popover)',
+              opacity: isSubmitting || isSubmitDisabled ? 0.6 : 1,
             }}
           >
             {isSubmitting ? 'Processing...' : submitLabel}

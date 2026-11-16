@@ -79,7 +79,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const formatButtonStyle = (selected: boolean) => ({
     flex: 1,
     padding: '12px',
-    borderRadius: '12px',
+    borderRadius: 'var(--radius-lg)',
     border: '2px solid transparent',
     backgroundColor: selected ? 'rgba(var(--color-accent-rgb), 0.1)' : 'var(--color-bg-card)',
     borderColor: selected ? 'var(--color-accent)' : 'transparent',
@@ -98,7 +98,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     alignItems: 'center',
     gap: '12px',
     padding: '12px 16px',
-    borderRadius: '12px',
+    borderRadius: 'var(--radius-lg)',
     backgroundColor: 'var(--color-bg-card)',
     border: '1px solid var(--color-border)',
     cursor: 'pointer',
@@ -113,7 +113,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backgroundColor: 'var(--color-bg-overlay)',
         backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
@@ -132,7 +132,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          boxShadow: 'var(--shadow-popover)',
           overflow: 'hidden',
         }}
       >
@@ -236,7 +236,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                borderRadius: '12px',
+                borderRadius: 'var(--radius-lg)',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'var(--color-bg-card)',
                 color: 'var(--color-text-primary)',
@@ -458,7 +458,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             onClick={onClose}
             style={{
               padding: '12px 24px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'transparent',
               color: 'var(--color-text-secondary)',
@@ -473,10 +473,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             onClick={handleExport}
             style={{
               padding: '12px 32px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               border: 'none',
               backgroundColor: 'var(--color-accent)',
-              color: 'white',
+              color: 'var(--color-on-accent)',
               cursor: 'pointer',
               fontWeight: 700,
               boxShadow: '0 4px 6px -1px rgba(var(--color-accent-rgb), 0.4)',

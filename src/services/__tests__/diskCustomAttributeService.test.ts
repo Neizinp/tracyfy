@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { diskCustomAttributeService } from '../diskCustomAttributeService';
 import { fileSystemService } from '../fileSystemService';
 import { idService } from '../idService';
+import { realGitService } from '../realGitService';
 
 // Mock the idService
 vi.mock('../idService', () => ({
@@ -24,6 +25,13 @@ vi.mock('../fileSystemService', () => ({
     deleteFile: vi.fn(),
     listFiles: vi.fn(),
     getOrCreateDirectory: vi.fn(),
+  },
+}));
+
+// custom-attributes/ is hidden from the pending-changes panel, so writes must be committed
+vi.mock('../realGitService', () => ({
+  realGitService: {
+    commitFile: vi.fn(() => Promise.resolve()),
   },
 }));
 
@@ -175,6 +183,10 @@ Is this a safety-critical item?
         'custom-attributes/ATTR-001.md',
         expect.any(String)
       );
+      expect(realGitService.commitFile).toHaveBeenCalledWith(
+        'custom-attributes/ATTR-001.md',
+        'Add custom attribute ATTR-001: Test Attribute'
+      );
     });
 
     it('should set dateCreated and lastModified', async () => {
@@ -283,9 +295,9 @@ Is this a safety-critical item?
     it('should throw error if deletion fails', async () => {
       vi.mocked(fileSystemService.deleteFile).mockRejectedValue(new Error('Delete failed'));
 
-      await expect(
-        diskCustomAttributeService.deleteDefinition('ATTR-999', true)
-      ).rejects.toThrow('Delete failed');
+      await expect(diskCustomAttributeService.deleteDefinition('ATTR-999', true)).rejects.toThrow(
+        'Delete failed'
+      );
     });
   });
 

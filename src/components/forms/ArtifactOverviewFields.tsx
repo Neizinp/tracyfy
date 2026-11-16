@@ -29,16 +29,19 @@ interface ArtifactOverviewFieldsProps {
 
 const defaultInputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '8px 12px',
-  borderRadius: '6px',
+  height: '34px',
+  padding: '0 10px',
+  borderRadius: 'var(--radius-md)',
   border: '1px solid var(--color-border)',
-  backgroundColor: 'var(--color-bg-app)',
+  backgroundColor: 'var(--color-bg-hover)',
   color: 'var(--color-text-primary)',
   outline: 'none',
 };
 
 const readonlyStyle: React.CSSProperties = {
   ...defaultInputStyle,
+  display: 'flex',
+  alignItems: 'center',
   backgroundColor: 'var(--color-bg-secondary)',
   color: 'var(--color-text-muted)',
   cursor: 'not-allowed',

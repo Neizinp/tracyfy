@@ -96,24 +96,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
       }}
     >
       {/* Logo */}
-      <div style={{ padding: 'var(--spacing-md)', borderBottom: '1px solid var(--color-border)' }}>
+      <div style={{ height: '52px', display: 'flex', alignItems: 'center', padding: '0 16px' }}>
         <h1
           style={{
-            fontSize: 'var(--font-size-xl)',
-            fontWeight: '600',
+            fontSize: 'var(--font-size-base)',
+            fontWeight: 600,
+            letterSpacing: '-0.01em',
             display: 'flex',
             alignItems: 'center',
-            gap: 'var(--spacing-sm)',
+            gap: '10px',
           }}
         >
-          <LayoutGrid size={24} color="var(--color-accent)" />
+          <span
+            aria-hidden="true"
+            style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '7px',
+              display: 'grid',
+              placeItems: 'center',
+              color: 'var(--color-on-accent)',
+              background: 'linear-gradient(180deg, var(--color-accent), var(--color-accent-hover))',
+              boxShadow: '0 0 0 1px rgba(255, 255, 255, 0.12) inset',
+            }}
+          >
+            <LayoutGrid size={14} />
+          </span>
           Tracyfy
         </h1>
       </div>
 
-      <nav style={{ flex: 1, padding: 'var(--spacing-md)', overflowY: 'auto' }}>
+      <nav style={{ flex: 1, padding: '4px 8px 12px', overflowY: 'auto' }}>
         {/* Projects Section */}
-        <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+        <div style={{ marginBottom: 'var(--spacing-md)' }}>
           <div
             style={{
               display: 'flex',
@@ -146,7 +161,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     cursor: 'pointer',
                     color: 'var(--color-text-muted)',
                     padding: '4px',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-xs)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -168,7 +183,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   cursor: 'pointer',
                   color: 'var(--color-text-muted)',
                   padding: '4px',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-xs)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -202,7 +217,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Pending Changes Section */}
-        <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+        <div style={{ marginBottom: 'var(--spacing-md)' }}>
           <h2
             onClick={() => toggleSection('pendingChanges')}
             style={{
@@ -246,7 +261,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   color: 'var(--color-text-muted)',
                   display: 'flex',
                   alignItems: 'center',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-xs)',
                 }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
@@ -262,7 +277,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Remote Sync Section */}
-        <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+        <div style={{ marginBottom: 'var(--spacing-md)' }}>
           <div
             style={{
               display: 'flex',
@@ -307,7 +322,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   color: 'var(--color-text-muted)',
                   display: 'flex',
                   alignItems: 'center',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-xs)',
                 }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
@@ -326,7 +341,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 cursor: 'pointer',
                 color: 'var(--color-text-muted)',
                 padding: '4px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 display: 'flex',
                 alignItems: 'center',
               }}
@@ -347,7 +362,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   style={{
                     padding: '8px 12px',
                     backgroundColor: 'var(--color-bg-secondary)',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     fontSize: 'var(--font-size-sm)',
                     color: 'var(--color-text-muted)',
                     textAlign: 'center',
@@ -379,7 +394,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         padding: '8px 12px',
                         backgroundColor: 'var(--color-bg-secondary)',
                         border: '1px solid var(--color-border)',
-                        borderRadius: '6px',
+                        borderRadius: 'var(--radius-sm)',
                         cursor: isPulling ? 'wait' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -404,13 +419,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         padding: '8px 12px',
                         backgroundColor: 'var(--color-accent)',
                         border: 'none',
-                        borderRadius: '6px',
+                        borderRadius: 'var(--radius-sm)',
                         cursor: isPushing ? 'wait' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '6px',
-                        color: 'white',
+                        color: 'var(--color-on-accent)',
                         fontSize: 'var(--font-size-sm)',
                       }}
                     >
@@ -428,7 +443,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         padding: '8px 12px',
                         backgroundColor: 'color-mix(in srgb, var(--color-error) 10%, transparent)',
                         border: '1px solid var(--color-error)',
-                        borderRadius: '6px',
+                        borderRadius: 'var(--radius-sm)',
                         color: 'var(--color-error)',
                         fontSize: 'var(--font-size-xs)',
                         display: 'flex',
@@ -449,7 +464,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         backgroundColor: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
                         border:
                           '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)',
-                        borderRadius: '6px',
+                        borderRadius: 'var(--radius-sm)',
                         fontSize: 'var(--font-size-xs)',
                         color: 'var(--color-accent)',
                         display: 'flex',
@@ -467,7 +482,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           style={{
                             padding: '8px 12px',
                             backgroundColor: 'var(--color-bg-secondary)',
-                            borderRadius: '6px',
+                            borderRadius: 'var(--radius-sm)',
                             fontSize: 'var(--font-size-xs)',
                           }}
                         >
@@ -499,7 +514,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 style={{
                                   padding: '4px 6px',
                                   backgroundColor: 'var(--color-bg-app)',
-                                  borderRadius: '4px',
+                                  borderRadius: 'var(--radius-xs)',
                                   border: '1px solid var(--color-border)',
                                 }}
                               >
@@ -534,7 +549,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           style={{
                             padding: '8px 12px',
                             backgroundColor: 'var(--color-bg-secondary)',
-                            borderRadius: '6px',
+                            borderRadius: 'var(--radius-sm)',
                             fontSize: 'var(--font-size-xs)',
                           }}
                         >
@@ -566,7 +581,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 style={{
                                   padding: '4px 6px',
                                   backgroundColor: 'var(--color-bg-app)',
-                                  borderRadius: '4px',
+                                  borderRadius: 'var(--radius-xs)',
                                   border: '1px solid var(--color-border)',
                                 }}
                               >
@@ -601,7 +616,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           style={{
                             padding: '8px 12px',
                             backgroundColor: 'var(--color-bg-secondary)',
-                            borderRadius: '6px',
+                            borderRadius: 'var(--radius-sm)',
                             fontSize: 'var(--font-size-xs)',
                             color: 'var(--color-text-muted)',
                             textAlign: 'center',
@@ -622,7 +637,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <RemoteSettingsModal isOpen={isRemoteSettingsOpen} onClose={closeRemoteSettings} />
 
         {/* Views Navigation */}
-        <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+        <div style={{ marginBottom: 'var(--spacing-md)' }}>
           <h2
             onClick={() => toggleSection('views')}
             style={{
@@ -665,7 +680,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Repository Navigation */}
-        <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+        <div style={{ marginBottom: 'var(--spacing-md)' }}>
           <h2
             onClick={() => toggleSection('repository')}
             style={{

@@ -81,7 +81,10 @@ export async function exportProjectToJSON(
 
   // Filter documents for this project
   const documents = sortByIdNumber(
-    (globalState.documents || []).filter((d) => projectDocumentIds.includes(d.id) && !d.isDeleted)
+    // Documents belong to a project via projectId (documentIds is an older/optional list)
+    (globalState.documents || []).filter(
+      (d) => (d.projectId === project.id || projectDocumentIds.includes(d.id)) && !d.isDeleted
+    )
   );
 
   const dataToExport: ExportData = {

@@ -20,7 +20,7 @@ export const BaselineCard: React.FC<BaselineCardProps> = ({ baseline, versionLab
     <div
       style={{
         padding: 'var(--spacing-md)',
-        borderRadius: '6px',
+        borderRadius: 'var(--radius-sm)',
         border: '1px solid var(--color-border)',
         backgroundColor: 'var(--color-bg-secondary)',
         borderColor: 'var(--color-border)',
@@ -50,9 +50,9 @@ export const BaselineCard: React.FC<BaselineCardProps> = ({ baseline, versionLab
             <span
               style={{
                 padding: '2px 8px',
-                borderRadius: '12px',
+                borderRadius: 'var(--radius-lg)',
                 backgroundColor: 'var(--color-info)',
-                color: 'white',
+                color: 'var(--color-on-accent)',
                 fontSize: 'var(--font-size-xs)',
                 fontWeight: 500,
                 display: 'flex',
@@ -77,7 +77,7 @@ export const BaselineCard: React.FC<BaselineCardProps> = ({ baseline, versionLab
           onClick={onView}
           style={{
             padding: '4px 12px',
-            borderRadius: '4px',
+            borderRadius: 'var(--radius-xs)',
             border: '1px solid var(--color-border)',
             backgroundColor: 'var(--color-bg-tertiary)',
             color: 'var(--color-text-primary)',

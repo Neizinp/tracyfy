@@ -5,3 +5,4 @@ export { LinkRow } from './LinkRow';
 export { ImpactAnalysisPanel } from './ImpactAnalysisPanel';
 export { useTraceabilityData } from './useTraceabilityData';
 export { MatrixView } from './MatrixView';
+export { TypeFilterButtons } from './TypeFilterButtons';

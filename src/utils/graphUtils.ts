@@ -117,7 +117,14 @@ function calculateHierarchicalLayout(artifacts: UnifiedArtifact[]): { x: number;
   const verticalSpacing = 150;
 
   // Group by artifact type for hierarchical levels
-  const typeOrder: ArtifactType[] = ['requirement', 'useCase', 'testCase', 'information'];
+  const typeOrder: ArtifactType[] = [
+    'requirement',
+    'useCase',
+    'testCase',
+    'information',
+    'risk',
+    'document',
+  ];
   const grouped = new Map<ArtifactType, UnifiedArtifact[]>();
 
   typeOrder.forEach((type) => {
@@ -176,15 +183,15 @@ function calculateDagreLayout(artifacts: UnifiedArtifact[]): { x: number; y: num
  */
 function getLinkColor(linkType: string): string {
   const colorMap: Record<string, string> = {
-    parent: '#8b5cf6', // purple
-    child: '#8b5cf6',
-    derived_from: '#3b82f6', // blue
-    depends_on: '#ef4444', // red
-    conflicts_with: '#f59e0b', // amber
+    parent: 'var(--color-accent-light)', // purple
+    child: 'var(--color-accent-light)',
+    derived_from: 'var(--color-info)', // blue
+    depends_on: 'var(--color-error)', // red
+    conflicts_with: 'var(--color-warning)', // amber
     duplicates: '#f97316', // orange
     refines: '#06b6d4', // cyan
     satisfies: '#10b981', // green
-    verifies: '#22c55e', // green
+    verifies: 'var(--color-success)', // green
     constrains: '#6366f1', // indigo
     requires: '#ec4899', // pink
     related_to: '#64748b', // slate

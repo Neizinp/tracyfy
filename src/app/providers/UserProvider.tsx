@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '../../types';
 import { diskProjectService } from '../../services/diskProjectService';
@@ -148,16 +148,29 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const effectiveCurrentUserId = currentUserId || preloadedCurrentUserId;
   const effectiveCurrentUser = effectiveUsers.find((u) => u.id === effectiveCurrentUserId) || null;
 
-  const value: UserContextValue = {
-    users: effectiveUsers,
-    currentUserId: effectiveCurrentUserId,
-    currentUser: effectiveCurrentUser,
-    isLoading: isLoading && preloadedUsers.length === 0, // Not loading if we have preloaded data
-    createUser,
-    updateUser,
-    deleteUser,
-    switchUser,
-  };
+  const value: UserContextValue = useMemo(
+    () => ({
+      users: effectiveUsers,
+      currentUserId: effectiveCurrentUserId,
+      currentUser: effectiveCurrentUser,
+      isLoading: isLoading && preloadedUsers.length === 0, // Not loading if we have preloaded data
+      createUser,
+      updateUser,
+      deleteUser,
+      switchUser,
+    }),
+    [
+      createUser,
+      deleteUser,
+      effectiveCurrentUser,
+      effectiveCurrentUserId,
+      effectiveUsers,
+      isLoading,
+      preloadedUsers,
+      switchUser,
+      updateUser,
+    ]
+  );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };

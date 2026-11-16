@@ -59,11 +59,11 @@ export const BaselineHistoryPage: React.FC = () => {
         <button
           onClick={() => setCompareToCurrent(false)}
           style={{
-            background: !compareToCurrent ? '#2ecc40' : '#222',
-            color: !compareToCurrent ? 'white' : '#aaa',
-            border: '1px solid #2ecc40',
-            borderRadius: 6,
-            padding: '6px 16px',
+            background: !compareToCurrent ? 'var(--color-accent-bg)' : 'transparent',
+            color: !compareToCurrent ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+            border: '1px solid var(--color-border-light)',
+            borderRadius: 'var(--radius-md)',
+            padding: '6px 14px',
             cursor: 'pointer',
           }}
         >
@@ -72,11 +72,11 @@ export const BaselineHistoryPage: React.FC = () => {
         <button
           onClick={() => setCompareToCurrent(true)}
           style={{
-            background: compareToCurrent ? '#2ecc40' : '#222',
-            color: compareToCurrent ? 'white' : '#aaa',
-            border: '1px solid #2ecc40',
-            borderRadius: 6,
-            padding: '6px 16px',
+            background: compareToCurrent ? 'var(--color-accent-bg)' : 'transparent',
+            color: compareToCurrent ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+            border: '1px solid var(--color-border-light)',
+            borderRadius: 'var(--radius-md)',
+            padding: '6px 14px',
             cursor: 'pointer',
           }}
         >

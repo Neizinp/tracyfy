@@ -7,10 +7,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link2, CheckCircle2 } from 'lucide-react';
-import type { Requirement, UseCase, TestCase, Information, Link, Project } from '../types';
-import type { ArtifactType } from './traceability';
+import type {
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+  Risk,
+  ArtifactDocument,
+  Link,
+  Project,
+} from '../types';
 import {
   TYPE_COLORS,
+  TRACE_TYPES,
+  TypeFilterButtons,
   SummaryCard,
   GapItem,
   ImpactAnalysisPanel,
@@ -46,6 +56,8 @@ interface TraceabilityDashboardProps {
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
+  risks?: Risk[];
+  documents?: ArtifactDocument[];
   standaloneLinks?: Link[];
   projects?: Project[];
   initialTab?: TabType;
@@ -59,6 +71,8 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   useCases,
   testCases,
   information,
+  risks = [],
+  documents = [],
   standaloneLinks = [],
   projects = [],
   initialTab = 'overview',
@@ -90,6 +104,8 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
     useCases,
     testCases,
     information,
+    risks,
+    documents,
     standaloneLinks,
   });
 
@@ -98,7 +114,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
     backgroundColor: isActive ? 'var(--color-accent)' : 'transparent',
     color: isActive ? 'white' : 'var(--color-text-secondary)',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: 'var(--radius-sm)',
     cursor: 'pointer',
     fontWeight: isActive ? 600 : 400,
     fontSize: 'var(--font-size-sm)',
@@ -115,7 +131,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
             gap: '4px',
             backgroundColor: 'var(--color-bg-tertiary)',
             padding: '4px',
-            borderRadius: '8px',
+            borderRadius: 'var(--radius-md)',
           }}
         >
           <button
@@ -173,7 +189,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
               gap: 'var(--spacing-lg)',
               padding: 'var(--spacing-lg)',
               backgroundColor: 'var(--color-bg-card)',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md)',
               border: '1px solid var(--color-border)',
             }}
           >
@@ -245,50 +261,20 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
 
           {/* Summary Cards */}
           <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap' }}>
-            <SummaryCard
-              title="Requirements"
-              total={stats.requirement.total}
-              linked={stats.requirement.linked}
-              gaps={stats.requirement.gaps}
-              color={TYPE_COLORS.requirement}
-              onViewGaps={() => {
-                setSelectedTypes(new Set(['requirement']));
-                setActiveTab('gaps');
-              }}
-            />
-            <SummaryCard
-              title="Use Cases"
-              total={stats.useCase.total}
-              linked={stats.useCase.linked}
-              gaps={stats.useCase.gaps}
-              color={TYPE_COLORS.useCase}
-              onViewGaps={() => {
-                setSelectedTypes(new Set(['useCase']));
-                setActiveTab('gaps');
-              }}
-            />
-            <SummaryCard
-              title="Test Cases"
-              total={stats.testCase.total}
-              linked={stats.testCase.linked}
-              gaps={stats.testCase.gaps}
-              color={TYPE_COLORS.testCase}
-              onViewGaps={() => {
-                setSelectedTypes(new Set(['testCase']));
-                setActiveTab('gaps');
-              }}
-            />
-            <SummaryCard
-              title="Information"
-              total={stats.information.total}
-              linked={stats.information.linked}
-              gaps={stats.information.gaps}
-              color={TYPE_COLORS.information}
-              onViewGaps={() => {
-                setSelectedTypes(new Set(['information']));
-                setActiveTab('gaps');
-              }}
-            />
+            {TRACE_TYPES.map(({ type, label }) => (
+              <SummaryCard
+                key={type}
+                title={label}
+                total={stats[type].total}
+                linked={stats[type].linked}
+                gaps={stats[type].gaps}
+                color={TYPE_COLORS[type]}
+                onViewGaps={() => {
+                  setSelectedTypes(new Set([type]));
+                  setActiveTab('gaps');
+                }}
+              />
+            ))}
           </div>
 
           {/* Quick Links Legend */}
@@ -296,7 +282,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
             style={{
               padding: 'var(--spacing-md)',
               backgroundColor: 'var(--color-bg-tertiary)',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md)',
               fontSize: 'var(--font-size-sm)',
               color: 'var(--color-text-secondary)',
             }}
@@ -320,7 +306,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
         <div
           style={{
             backgroundColor: 'var(--color-bg-card)',
-            borderRadius: '8px',
+            borderRadius: 'var(--radius-md)',
             border: '1px solid var(--color-border)',
             padding: 'var(--spacing-md)',
           }}
@@ -342,43 +328,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
             >
               Unlinked Artifacts ({filteredGaps.length})
             </h3>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {[
-                { type: 'useCase' as ArtifactType, label: 'UC', color: TYPE_COLORS.useCase.text },
-                {
-                  type: 'requirement' as ArtifactType,
-                  label: 'REQ',
-                  color: TYPE_COLORS.requirement.text,
-                },
-                { type: 'testCase' as ArtifactType, label: 'TC', color: TYPE_COLORS.testCase.text },
-                {
-                  type: 'information' as ArtifactType,
-                  label: 'INFO',
-                  color: TYPE_COLORS.information.text,
-                },
-              ].map(({ type, label, color }) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => toggleType(type)}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    border: selectedTypes.has(type)
-                      ? `2px solid ${color}`
-                      : '2px solid var(--color-border)',
-                    backgroundColor: selectedTypes.has(type) ? `${color}20` : 'transparent',
-                    color: selectedTypes.has(type) ? color : 'var(--color-text-muted)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-xs)',
-                    fontWeight: 600,
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            <TypeFilterButtons selectedTypes={selectedTypes} onToggle={toggleType} />
           </div>
           {filteredGaps.length === 0 ? (
             <div

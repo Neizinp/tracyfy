@@ -47,7 +47,7 @@ export const getStatusStyle = (status: string): BadgeStyle => {
 // Common badge/pill styles
 export const badgeStyle = {
   padding: '2px 8px',
-  borderRadius: '4px',
+  borderRadius: 'var(--radius-xs)',
   fontSize: 'var(--font-size-xs)',
   textTransform: 'capitalize' as const,
   fontWeight: 500,
@@ -60,14 +60,14 @@ export const idBadgeStyle = {
   color: 'var(--color-accent-light)',
   backgroundColor: 'var(--color-bg-secondary)',
   padding: '2px 6px',
-  borderRadius: '4px',
+  borderRadius: 'var(--radius-xs)',
 };
 
 // Revision badge style
 export const revisionBadgeStyle = {
   fontSize: 'var(--font-size-xs)',
   padding: '1px 5px',
-  borderRadius: '3px',
+  borderRadius: 'var(--radius-xs)',
   backgroundColor: 'var(--color-bg-tertiary)',
   color: 'var(--color-text-muted)',
   border: '1px solid var(--color-border)',

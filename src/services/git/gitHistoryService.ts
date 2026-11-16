@@ -5,9 +5,8 @@
  */
 
 import { debug } from '../../utils/debug';
-import git from 'isomorphic-git';
 import { fileSystemService } from '../fileSystemService';
-import { fsAdapter } from '../fsAdapter';
+import { gitBackend, getRootDir } from './gitBackend';
 import {
   markdownToRequirement,
   markdownToUseCase,
@@ -18,7 +17,7 @@ import {
 } from '../../utils/markdownUtils';
 import { parseMarkdownLink } from '../../utils/linkMarkdownUtils';
 import { parseMarkdownWorkflow } from '../../utils/workflowMarkdownUtils';
-import { isElectronEnv, type CommitInfo } from './types';
+import type { CommitInfo } from './types';
 import type {
   Requirement,
   UseCase,
@@ -30,23 +29,13 @@ import type {
   ArtifactDocument,
 } from '../../types';
 
-/**
- * Get the root directory path (Electron uses absolute path, browser uses '.')
- */
-function getRootDir(): string {
-  if (isElectronEnv()) {
-    const rootPath = fileSystemService.getRootPath();
-    return rootPath || '.';
-  }
-  return '.';
-}
-
 class GitHistoryService {
   private initialized = false;
   // Cache for getCommitFiles results (commit hash -> files)
   private commitFilesCache = new Map<string, string[]>();
   // Path to cache file in project folder
-  private readonly CACHE_FILE = '.tracyfy/commit-cache.json';
+  // Local per-clone cache: lives inside .git so it is never tracked or pushed
+  private readonly CACHE_FILE = '.git/tracyfy-commit-cache.json';
   // Flag to track if cache has been loaded from disk
   private cacheLoadedFromDisk = false;
 
@@ -112,30 +101,7 @@ class GitHistoryService {
     }
 
     try {
-      let commits: CommitInfo[];
-
-      // Electron path: use IPC
-      if (isElectronEnv()) {
-        commits = await window.electronAPI!.git.log(getRootDir(), depth, filepath, ref);
-      } else {
-        // Browser path: use fsAdapter
-        const logs = await git.log({
-          fs: fsAdapter,
-          dir: getRootDir(),
-          depth: depth,
-          ref: ref,
-          filepath: filepath || undefined,
-        });
-        commits = logs.map((log) => ({
-          hash: log.oid,
-          message: log.commit.message,
-          author: log.commit.author.name,
-          timestamp: log.commit.author.timestamp * 1000,
-          parent: log.commit.parent,
-        }));
-      }
-
-      return Array.isArray(commits) ? commits : [];
+      return await gitBackend().log(getRootDir(), { depth, filepath, ref });
     } catch (error) {
       console.error('[getHistory] Failed to get git history:', error);
       return [];
@@ -162,57 +128,13 @@ class GitHistoryService {
     }
 
     try {
-      let parentHash: string | undefined;
-      let currentFiles: string[];
-      let parentFiles: string[] = [];
-
-      if (isElectronEnv()) {
-        const rootDir = getRootDir();
-        // Get the commit to find its parent
-        const commitLogs = await window.electronAPI!.git.log(rootDir, 1, undefined, commitHash);
-        const commitLog = commitLogs[0];
-        if (!commitLog) return [];
-
-        parentHash = commitLog.parent?.[0];
-
-        // Get files in this commit's tree
-        currentFiles = await window.electronAPI!.git.listFiles(rootDir, commitHash);
-
-        if (parentHash) {
-          // Get files in parent's tree
-          parentFiles = await window.electronAPI!.git.listFiles(rootDir, parentHash);
-        }
-      } else {
-        // Browser path
-        // Get the commit to find its parent
-        const logs = await git.log({
-          fs: fsAdapter,
-          dir: getRootDir(),
-          ref: commitHash,
-          depth: 1,
-        });
-
-        const commitLog = logs[0];
-        if (!commitLog) return [];
-
-        parentHash = commitLog.commit.parent[0];
-
-        // Get files in this commit's tree
-        currentFiles = await git.listFiles({
-          fs: fsAdapter,
-          dir: getRootDir(),
-          ref: commitHash,
-        });
-
-        if (parentHash) {
-          // Get files in parent's tree
-          parentFiles = await git.listFiles({
-            fs: fsAdapter,
-            dir: getRootDir(),
-            ref: parentHash,
-          });
-        }
-      }
+      const backend = gitBackend();
+      const rootDir = getRootDir();
+      const [commitLog] = await backend.log(rootDir, { depth: 1, ref: commitHash });
+      if (!commitLog) return [];
+      const parentHash = commitLog.parent?.[0];
+      const currentFiles = await backend.listFiles(rootDir, commitHash);
+      const parentFiles = parentHash ? await backend.listFiles(rootDir, parentHash) : [];
 
       if (!parentHash) {
         // Initial commit - all files are new
@@ -249,29 +171,8 @@ class GitHistoryService {
     }
 
     try {
-      if (isElectronEnv()) {
-        const result = await window.electronAPI!.git.readBlob(getRootDir(), commitHash, filepath);
-        if (result.error) {
-          if (result.error.includes('NotFoundError')) return null;
-          throw new Error(result.error);
-        }
-        if (!result.blob) return null;
-        return new TextDecoder().decode(new Uint8Array(result.blob));
-      } else {
-        const result = await git.readBlob({
-          fs: fsAdapter,
-          dir: getRootDir(),
-          oid: commitHash,
-          filepath,
-        });
-
-        const blob = result?.blob;
-        if (!blob) {
-          return null;
-        }
-
-        return new TextDecoder().decode(blob);
-      }
+      const blob = await gitBackend().readBlob(getRootDir(), commitHash, filepath);
+      return new TextDecoder().decode(blob);
     } catch (error: unknown) {
       const err = error as { code?: string };
       if (err?.code === 'NotFoundError') {
@@ -297,15 +198,7 @@ class GitHistoryService {
     }
 
     try {
-      if (isElectronEnv()) {
-        return await window.electronAPI!.git.listFiles(getRootDir(), commitHash);
-      } else {
-        return await git.listFiles({
-          fs: fsAdapter,
-          dir: getRootDir(),
-          ref: commitHash,
-        });
-      }
+      return await gitBackend().listFiles(getRootDir(), commitHash);
     } catch (error) {
       console.error('[listFilesAtCommit] Failed to list files:', error);
       return [];

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useMemo } from 'react';
+import React, { Suspense, useCallback, useRef, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Layout, GlobalLibraryPanel, ModalManager } from '../components';
@@ -10,14 +10,12 @@ import {
   useImportExport,
   useFileSystem,
   useUser,
-  useBackgroundTasks,
+  useBackgroundTaskActions,
   useToast,
   useBaselines,
   useRisks,
   useCustomAttributes,
 } from '../app/providers';
-import { exportProjectToPDF } from '../utils/pdfExportUtils';
-import { exportProjectToExcel } from '../utils/excelExportUtils';
 import { createDemoProject } from '../services/demoDataService';
 import type {
   Project,
@@ -29,6 +27,17 @@ import type {
   DocumentColumnVisibility,
   ExportOptions,
 } from '../types';
+
+/** Shown while a lazily loaded page chunk is being fetched */
+const PageLoadingFallback: React.FC = () => (
+  <div
+    role="status"
+    aria-live="polite"
+    style={{ padding: 'var(--spacing-lg)', color: 'var(--color-text-muted)' }}
+  >
+    Loading…
+  </div>
+);
 
 export const ProjectLayout: React.FC = () => {
   const { projects, currentProjectId, currentProject, switchProject, addToProject } = useProject();
@@ -198,7 +207,7 @@ export const ProjectLayout: React.FC = () => {
   const { currentUser } = useUser();
 
   // Background tasks
-  const { startTask, endTask } = useBackgroundTasks();
+  const { startTask, endTask } = useBackgroundTaskActions();
 
   // Project action handlers
   const handleCreateProject = useCallback(() => {
@@ -329,6 +338,7 @@ export const ProjectLayout: React.FC = () => {
 
         const taskId = startTask('Exporting PDF...');
         try {
+          const { exportProjectToPDF } = await import('../utils/pdfExportUtils');
           await exportProjectToPDF(
             currentProject,
             {
@@ -359,6 +369,7 @@ export const ProjectLayout: React.FC = () => {
 
         const taskId = startTask('Exporting Excel...');
         try {
+          const { exportProjectToExcel } = await import('../utils/excelExportUtils');
           await exportProjectToExcel(
             currentProject,
             {
@@ -431,7 +442,11 @@ export const ProjectLayout: React.FC = () => {
           }}
         >
           <div>
-            <h2 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 600 }}>{getPageTitle()}</h2>
+            <h2
+              style={{ fontSize: 'var(--font-size-xl)', fontWeight: 600, letterSpacing: '-0.02em' }}
+            >
+              {getPageTitle()}
+            </h2>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             {(location.pathname === '/requirements' ||
@@ -439,15 +454,17 @@ export const ProjectLayout: React.FC = () => {
               <>
                 <button
                   onClick={() => ui.setIsNewRequirementModalOpen(true)}
+                  className="tf-btn-primary"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '8px 12px',
+                    height: '32px',
+                    padding: '0 12px',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
@@ -480,15 +497,17 @@ export const ProjectLayout: React.FC = () => {
                     ui.setEditingUseCase(null);
                     ui.setIsUseCaseModalOpen(true);
                   }}
+                  className="tf-btn-primary"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '8px 12px',
+                    height: '32px',
+                    padding: '0 12px',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
@@ -510,15 +529,17 @@ export const ProjectLayout: React.FC = () => {
               <>
                 <button
                   onClick={() => ui.setIsNewTestCaseModalOpen(true)}
+                  className="tf-btn-primary"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '8px 12px',
+                    height: '32px',
+                    padding: '0 12px',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
@@ -543,15 +564,17 @@ export const ProjectLayout: React.FC = () => {
                     ui.setSelectedInformation(null);
                     ui.setIsInformationModalOpen(true);
                   }}
+                  className="tf-btn-primary"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '8px 12px',
+                    height: '32px',
+                    padding: '0 12px',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
@@ -573,15 +596,17 @@ export const ProjectLayout: React.FC = () => {
               <>
                 <button
                   onClick={() => ui.setIsRiskModalOpen(true)}
+                  className="tf-btn-primary"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '8px 12px',
+                    height: '32px',
+                    padding: '0 12px',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
@@ -606,15 +631,17 @@ export const ProjectLayout: React.FC = () => {
                     ui.setEditingDocument(null);
                     ui.setIsEditDocumentModalOpen(true);
                   }}
+                  className="tf-btn-primary"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '8px 12px',
+                    height: '32px',
+                    padding: '0 12px',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
@@ -634,16 +661,21 @@ export const ProjectLayout: React.FC = () => {
             )}
             {location.pathname.includes('/links') && (
               <button
-                onClick={() => ui.setIsLinkModalOpen(true)}
+                onClick={() => {
+                  // No preset source: the user picks one in the modal
+                  ui.setLinkSourceId(null);
+                  ui.setIsLinkModalOpen(true);
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '8px 12px',
+                  height: '32px',
+                  padding: '0 12px',
                   backgroundColor: 'var(--color-accent)',
-                  color: 'white',
+                  color: 'var(--color-on-accent)',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   cursor: 'pointer',
                   fontSize: 'var(--font-size-sm)',
                   fontWeight: 500,
@@ -660,11 +692,12 @@ export const ProjectLayout: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '8px 12px',
+                  height: '32px',
+                  padding: '0 12px',
                   backgroundColor: 'var(--color-accent)',
-                  color: 'white',
+                  color: 'var(--color-on-accent)',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   cursor: 'pointer',
                   fontSize: 'var(--font-size-sm)',
                   fontWeight: 500,
@@ -681,11 +714,12 @@ export const ProjectLayout: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '8px 12px',
+                  height: '32px',
+                  padding: '0 12px',
                   backgroundColor: 'var(--color-accent)',
-                  color: 'white',
+                  color: 'var(--color-on-accent)',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   cursor: 'pointer',
                   fontSize: 'var(--font-size-sm)',
                   fontWeight: 500,
@@ -699,7 +733,9 @@ export const ProjectLayout: React.FC = () => {
         </div>
       </div>
 
-      <Outlet />
+      <Suspense fallback={<PageLoadingFallback />}>
+        <Outlet />
+      </Suspense>
 
       <ModalManager />
     </Layout>

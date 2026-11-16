@@ -55,11 +55,11 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
   const getStatusColor = (status: Workflow['status']): string => {
     switch (status) {
       case 'pending':
-        return 'rgba(234, 179, 8, 0.2)';
+        return 'var(--color-warning-bg)';
       case 'approved':
-        return 'rgba(34, 197, 94, 0.2)';
+        return 'var(--color-success-bg)';
       case 'rejected':
-        return 'rgba(239, 68, 68, 0.2)';
+        return 'var(--color-error-bg)';
       default:
         return 'var(--color-bg-secondary)';
     }
@@ -68,11 +68,11 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
   const getStatusTextColor = (status: Workflow['status']): string => {
     switch (status) {
       case 'pending':
-        return 'rgb(234, 179, 8)';
+        return 'var(--color-warning)';
       case 'approved':
-        return 'rgb(34, 197, 94)';
+        return 'var(--color-success)';
       case 'rejected':
-        return 'rgb(239, 68, 68)';
+        return 'var(--color-error)';
       default:
         return 'var(--color-text-secondary)';
     }
@@ -212,7 +212,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'var(--color-bg-overlay)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -223,13 +223,13 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
       <div
         style={{
           backgroundColor: 'var(--color-bg-card)',
-          borderRadius: '12px',
+          borderRadius: 'var(--radius-lg)',
           width: '600px',
           maxHeight: '90vh',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+          boxShadow: 'var(--shadow-popover)',
         }}
       >
         {/* Header */}
@@ -252,7 +252,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
                 alignItems: 'center',
                 gap: '4px',
                 padding: '4px 8px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 backgroundColor: getStatusColor(workflow.status),
                 color: getStatusTextColor(workflow.status),
                 fontSize: 'var(--font-size-sm)',
@@ -322,7 +322,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
                 style={{
                   padding: 'var(--spacing-sm)',
                   backgroundColor: 'var(--color-bg-secondary)',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   fontSize: 'var(--font-size-sm)',
                   whiteSpace: 'pre-wrap',
                 }}
@@ -356,7 +356,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
                       gap: 'var(--spacing-sm)',
                       padding: '8px 12px',
                       backgroundColor: 'var(--color-bg-secondary)',
-                      borderRadius: '6px',
+                      borderRadius: 'var(--radius-sm)',
                     }}
                   >
                     <span style={{ fontFamily: 'monospace', color: 'var(--color-accent)' }}>
@@ -372,14 +372,14 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
                       style={{
                         fontSize: 'var(--font-size-xs)',
                         padding: '2px 6px',
-                        borderRadius: '4px',
+                        borderRadius: 'var(--radius-xs)',
                         backgroundColor:
                           info.status === 'approved'
-                            ? 'rgba(34, 197, 94, 0.2)'
+                            ? 'var(--color-success-bg)'
                             : 'var(--color-bg-app)',
                         color:
                           info.status === 'approved'
-                            ? 'rgb(34, 197, 94)'
+                            ? 'var(--color-success)'
                             : 'var(--color-text-muted)',
                       }}
                     >
@@ -397,7 +397,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
               style={{
                 padding: 'var(--spacing-md)',
                 backgroundColor: getStatusColor(workflow.status),
-                borderRadius: '8px',
+                borderRadius: 'var(--radius-md)',
                 marginBottom: 'var(--spacing-lg)',
               }}
             >
@@ -443,7 +443,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-app)',
                   color: 'var(--color-text-primary)',
@@ -469,7 +469,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
             onClick={onClose}
             style={{
               padding: '8px 16px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'transparent',
               color: 'var(--color-text-primary)',
@@ -487,10 +487,10 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
                 disabled={isSubmitting}
                 style={{
                   padding: '8px 16px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: 'none',
-                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                  color: 'rgb(239, 68, 68)',
+                  backgroundColor: 'var(--color-error-bg)',
+                  color: 'var(--color-error)',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   fontSize: 'var(--font-size-sm)',
                   fontWeight: 500,
@@ -507,10 +507,10 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
                 disabled={isSubmitting}
                 style={{
                   padding: '8px 16px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: 'none',
-                  backgroundColor: 'rgb(34, 197, 94)',
-                  color: 'white',
+                  backgroundColor: 'var(--color-success)',
+                  color: 'var(--color-on-accent)',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   fontSize: 'var(--font-size-sm)',
                   fontWeight: 500,

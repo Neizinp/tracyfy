@@ -6,7 +6,6 @@ import { createArtifactProvider } from './BaseArtifactProvider';
 // Define the Link context value interface
 interface LinksContextValue {
   links: Link[];
-  setLinks: (links: Link[] | ((prev: Link[]) => Link[])) => void;
   handleAddLink: (link: Omit<Link, 'id' | 'lastModified'>) => Promise<Link | null>;
   handleUpdateLink: (id: string, data: Partial<Link>) => Promise<void>;
   handleDeleteLink: (id: string) => void;
@@ -18,7 +17,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Li
   displayName: 'Links',
   useData: (state) => ({
     items: state.links,
-    setItems: state.setLinks,
   }),
   useFS: (fs) => ({
     save: fs.saveLink,
@@ -45,7 +43,6 @@ export const useLinks = (): LinksContextValue => {
 
   return {
     links: context.items,
-    setLinks: context.setItems,
     handleAddLink: context.handleAdd,
     handleUpdateLink: context.handleUpdate,
     handleDeleteLink: context.handleDelete,

@@ -33,13 +33,17 @@ export const SortableHeader: React.FC<SortableHeaderProps> = ({
   return (
     <th
       style={{
-        padding: '12px 16px',
+        height: '34px',
+        padding: '0 12px',
         textAlign: 'left',
-        fontWeight: 600,
-        color: 'var(--color-text-secondary)',
-        fontSize: 'var(--font-size-sm)',
+        fontWeight: 500,
+        color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+        fontSize: 'var(--font-size-xs)',
+        whiteSpace: 'nowrap',
         cursor: 'pointer',
         userSelect: 'none',
+        backgroundColor: 'var(--color-bg-app)',
+        borderBottom: '1px solid var(--color-border)',
         ...style,
       }}
       onClick={handleClick}

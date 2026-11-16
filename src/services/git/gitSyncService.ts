@@ -5,10 +5,9 @@
  */
 
 import { debug } from '../../utils/debug';
-import git from 'isomorphic-git';
 import { fileSystemService } from '../fileSystemService';
-import { fsAdapter } from '../fsAdapter';
-import { isElectronEnv, type SyncStatus, type CommitInfo } from './types';
+import { gitBackend, getRootDir } from './gitBackend';
+import type { SyncStatus, CommitInfo } from './types';
 
 // Counter files to sync
 const COUNTER_FILES = [
@@ -21,18 +20,9 @@ const COUNTER_FILES = [
   'counters/links.md',
   'counters/custom-attributes.md',
   'counters/workflows.md',
+  'counters/documents.md',
+  'counters/saved-filters.md',
 ];
-
-/**
- * Get the root directory path (Electron uses absolute path, browser uses '.')
- */
-function getRootDir(): string {
-  if (isElectronEnv()) {
-    const rootPath = fileSystemService.getRootPath();
-    return rootPath || '.';
-  }
-  return '.';
-}
 
 class GitSyncService {
   private initialized = false;
@@ -80,11 +70,7 @@ class GitSyncService {
   async getCurrentBranch(): Promise<string> {
     if (!this.initialized) return 'main';
     try {
-      if (isElectronEnv()) {
-        const branch = await window.electronAPI!.git.currentBranch(getRootDir());
-        return branch || 'main';
-      }
-      return (await git.currentBranch({ fs: fsAdapter, dir: getRootDir() })) || 'main';
+      return await gitBackend().currentBranch(getRootDir());
     } catch {
       return 'main';
     }
@@ -105,33 +91,13 @@ class GitSyncService {
 
       // Check if counters have changed
       const remoteRef = `${remote}/${branch}`;
-      let localHead: string;
+      const backend = gitBackend();
+      const localHead = await backend.resolveRef(getRootDir(), 'HEAD');
       let remoteHead: string;
-
-      if (isElectronEnv()) {
-        const rootDir = getRootDir();
-        localHead = await window.electronAPI!.git.resolveRef(rootDir, 'HEAD');
-        try {
-          remoteHead = await window.electronAPI!.git.resolveRef(rootDir, remoteRef);
-        } catch {
-          return false;
-        }
-      } else {
-        localHead = await git.resolveRef({
-          fs: fsAdapter,
-          dir: getRootDir(),
-          ref: 'HEAD',
-        });
-        try {
-          remoteHead = await git.resolveRef({
-            fs: fsAdapter,
-            dir: getRootDir(),
-            ref: remoteRef,
-          });
-        } catch {
-          // Remote ref doesn't exist yet
-          return false;
-        }
+      try {
+        remoteHead = await backend.resolveRef(getRootDir(), remoteRef);
+      } catch {
+        return false; // Remote ref doesn't exist yet
       }
 
       if (localHead === remoteHead) {
@@ -175,46 +141,22 @@ class GitSyncService {
     }
 
     try {
-      // Stage and commit counter files
-      const cache = {};
-      let hasChanges = false;
-
-      for (const file of COUNTER_FILES) {
-        try {
-          const exists = await fileSystemService.readFileBinary(file).then((b) => b !== null);
-          if (exists) {
-            if (isElectronEnv()) {
-              const res = await window.electronAPI!.git.add(getRootDir(), file);
-              if (res.error) throw new Error(res.error);
-            } else {
-              await git.add({ fs: fsAdapter, dir: getRootDir(), filepath: file, cache });
-            }
-            hasChanges = true;
-          }
-        } catch {
-          // File might not exist
-        }
-      }
-
-      if (!hasChanges) {
-        return true; // Nothing to push
-      }
-
-      // Commit counter update
-      const author = { name: 'Tracyfy Sync', email: 'sync@tracyfy.local' };
-      const message = 'Sync: Update artifact counters';
-
-      if (isElectronEnv()) {
-        const res = await window.electronAPI!.git.commit(getRootDir(), message, author);
-        if (res.error) throw new Error(res.error);
-      } else {
-        await git.commit({
-          fs: fsAdapter,
-          dir: getRootDir(),
-          message,
-          author,
-          cache,
-        });
+      // Commit only counter files that actually changed (no empty sync commits)
+      const backend = gitBackend();
+      const dir = getRootDir();
+      const changed = (await backend.statusMatrix(dir, COUNTER_FILES))
+        .filter(([, head, workdir, stage]) => !(head === 1 && workdir === 1 && stage === 1))
+        .map(([filepath, , workdir]) => ({ filepath, deleted: workdir === 0 }));
+      if (changed.length > 0) {
+        await backend.commitPaths(
+          dir,
+          {
+            add: changed.filter((c) => !c.deleted).map((c) => c.filepath),
+            remove: changed.filter((c) => c.deleted).map((c) => c.filepath),
+          },
+          'Sync: Update artifact counters',
+          { name: 'Tracyfy Sync', email: 'sync@tracyfy.local' }
+        );
       }
 
       // Push to remote
@@ -238,8 +180,8 @@ class GitSyncService {
       const rootDir = getRootDir();
       const remoteRef = `${remote}/${activeBranch}`;
 
-      let localOID: string | undefined;
-      let remoteOID: string | undefined;
+      let localOID: string;
+      let remoteOID: string;
 
       // Helper to get commit details by walking history until we find the merge base
       const getCommits = async (localOid: string, remoteOid: string) => {
@@ -269,87 +211,32 @@ class GitSyncService {
         }
       };
 
-      if (isElectronEnv()) {
-        try {
-          localOID = await window.electronAPI!.git.resolveRef(rootDir, 'HEAD');
-        } catch {
-          return { ahead: false, behind: false, diverged: false };
-        }
-
-        try {
-          remoteOID = await window.electronAPI!.git.resolveRef(rootDir, remoteRef);
-        } catch {
-          return { ahead: !!localOID, behind: false, diverged: false, aheadCommits: [] };
-        }
-
-        if (localOID === remoteOID) return { ahead: false, behind: false, diverged: false };
-
-        const aheadResult = await window.electronAPI!.git.isDescendent(
-          rootDir,
-          localOID,
-          remoteOID
-        );
-        const behindResult = await window.electronAPI!.git.isDescendent(
-          rootDir,
-          remoteOID,
-          localOID
-        );
-
-        const ahead = aheadResult === true;
-        const behind = behindResult === true;
-        const diverged = !ahead && !behind;
-
-        const { aheadCommits, behindCommits } = await getCommits(localOID, remoteOID);
-
-        return {
-          ahead: ahead && !behind,
-          behind: behind && !ahead,
-          diverged,
-          aheadCommits,
-          behindCommits,
-        };
-      } else {
-        try {
-          localOID = await git.resolveRef({ fs: fsAdapter, dir: rootDir, ref: 'HEAD' });
-        } catch {
-          return { ahead: false, behind: false, diverged: false };
-        }
-
-        try {
-          remoteOID = await git.resolveRef({ fs: fsAdapter, dir: rootDir, ref: remoteRef });
-        } catch {
-          return { ahead: !!localOID, behind: false, diverged: false };
-        }
-
-        if (localOID === remoteOID) return { ahead: false, behind: false, diverged: false };
-
-        const aheadResult = await git.isDescendent({
-          fs: fsAdapter,
-          dir: rootDir,
-          oid: localOID!,
-          ancestor: remoteOID!,
-        });
-        const behindResult = await git.isDescendent({
-          fs: fsAdapter,
-          dir: rootDir,
-          oid: remoteOID!,
-          ancestor: localOID!,
-        });
-
-        const ahead = aheadResult === true;
-        const behind = behindResult === true;
-        const diverged = !ahead && !behind;
-
-        const { aheadCommits, behindCommits } = await getCommits(localOID, remoteOID);
-
-        return {
-          ahead: ahead && !behind,
-          behind: behind && !ahead,
-          diverged,
-          aheadCommits,
-          behindCommits,
-        };
+      const backend = gitBackend();
+      try {
+        localOID = await backend.resolveRef(rootDir, 'HEAD');
+      } catch {
+        return { ahead: false, behind: false, diverged: false };
       }
+      try {
+        remoteOID = await backend.resolveRef(rootDir, remoteRef);
+      } catch {
+        // Never fetched / remote branch doesn't exist yet: everything local is ahead
+        return { ahead: true, behind: false, diverged: false, aheadCommits: [] };
+      }
+
+      if (localOID === remoteOID) return { ahead: false, behind: false, diverged: false };
+
+      const ahead = await backend.isDescendent(rootDir, localOID, remoteOID);
+      const behind = await backend.isDescendent(rootDir, remoteOID, localOID);
+      const { aheadCommits, behindCommits } = await getCommits(localOID, remoteOID);
+
+      return {
+        ahead: ahead && !behind,
+        behind: behind && !ahead,
+        diverged: !ahead && !behind,
+        aheadCommits,
+        behindCommits,
+      };
     } catch (error) {
       console.error('[getSyncStatus] Failed:', error);
       return { ahead: false, behind: false, diverged: false };

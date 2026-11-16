@@ -39,10 +39,11 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
       {
         key: 'idTitle',
         label: 'ID / Title',
-        width: '250px',
+        width: '280px',
+        minWidth: '240px',
         render: (uc: UseCase) => (
           <>
-            <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '2px' }}>
+            <div className="tf-mono" style={{ color: 'var(--color-accent)', marginBottom: '2px' }}>
               {uc.id}
             </div>
             <div style={{ color: 'var(--color-text-primary)' }}>{uc.title}</div>
@@ -67,7 +68,7 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
                       style={{
                         fontSize: 'var(--font-size-xs)',
                         padding: '2px 6px',
-                        borderRadius: '4px',
+                        borderRadius: 'var(--radius-xs)',
                         background: 'var(--color-bg-tertiary)',
                         color: 'var(--color-text-secondary)',
                         border: '1px solid var(--color-border)',
@@ -90,7 +91,7 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
             style={{
               fontSize: 'var(--font-size-xs)',
               padding: '2px 6px',
-              borderRadius: '4px',
+              borderRadius: 'var(--radius-xs)',
               backgroundColor: 'var(--color-bg-tertiary)',
               color: 'var(--color-text-secondary)',
               border: '1px solid var(--color-border)',
@@ -136,15 +137,15 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
           <span
             style={{
               padding: '2px 8px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
               background:
                 uc.priority === 'high'
-                  ? 'rgba(239, 68, 68, 0.1)'
+                  ? 'var(--color-error-bg)'
                   : uc.priority === 'medium'
-                    ? 'rgba(245, 158, 11, 0.1)'
-                    : 'rgba(16, 185, 129, 0.1)',
+                    ? 'var(--color-warning-bg)'
+                    : 'var(--color-success-bg)',
               color:
                 uc.priority === 'high'
                   ? 'var(--color-error)'
@@ -166,15 +167,15 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
           <span
             style={{
               padding: '2px 8px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
               background:
                 uc.status === 'approved'
-                  ? 'rgba(16, 185, 129, 0.1)'
+                  ? 'var(--color-success-bg)'
                   : uc.status === 'draft'
-                    ? 'rgba(107, 114, 128, 0.1)'
-                    : 'rgba(59, 130, 246, 0.1)',
+                    ? 'var(--color-bg-hover)'
+                    : 'var(--color-info-bg)',
               color:
                 uc.status === 'approved'
                   ? 'var(--color-success)'

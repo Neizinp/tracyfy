@@ -5,26 +5,15 @@
  */
 
 import { debug } from '../../utils/debug';
-import git from 'isomorphic-git';
-import { fileSystemService } from '../fileSystemService';
-import { fsAdapter } from '../fsAdapter';
+import { gitBackend, getRootDir } from './gitBackend';
 import { isElectronEnv, type Remote, type PullResult } from './types';
-
-/**
- * Get the root directory path (Electron uses absolute path, browser uses '.')
- */
-function getRootDir(): string {
-  if (isElectronEnv()) {
-    const rootPath = fileSystemService.getRootPath();
-    return rootPath || '.';
-  }
-  return '.';
-}
 
 class GitRemoteService {
   private initialized = false;
   private authToken: string | null = null;
   private tokenLoaded = false;
+  /** Electron only: the token lives in the main process, we only know whether one exists */
+  private hasStoredToken = false;
 
   setInitialized(value: boolean): void {
     this.initialized = value;
@@ -38,17 +27,7 @@ class GitRemoteService {
       throw new Error('Git service not initialized');
     }
 
-    if (isElectronEnv()) {
-      const result = await window.electronAPI!.git.addRemote(getRootDir(), name, url);
-      if (result.error) throw new Error(result.error);
-    } else {
-      await git.addRemote({
-        fs: fsAdapter,
-        dir: getRootDir(),
-        remote: name,
-        url,
-      });
-    }
+    await gitBackend().addRemote(getRootDir(), name, url);
     debug.log(`[addRemote] Added remote '${name}': ${url}`);
   }
 
@@ -60,16 +39,7 @@ class GitRemoteService {
       throw new Error('Git service not initialized');
     }
 
-    if (isElectronEnv()) {
-      const result = await window.electronAPI!.git.removeRemote(getRootDir(), name);
-      if (result.error) throw new Error(result.error);
-    } else {
-      await git.deleteRemote({
-        fs: fsAdapter,
-        dir: getRootDir(),
-        remote: name,
-      });
-    }
+    await gitBackend().removeRemote(getRootDir(), name);
     debug.log(`[removeRemote] Removed remote '${name}'`);
   }
 
@@ -82,16 +52,7 @@ class GitRemoteService {
     }
 
     try {
-      if (isElectronEnv()) {
-        const result = await window.electronAPI!.git.listRemotes(getRootDir());
-        if ('error' in result) throw new Error(result.error);
-        return result;
-      }
-      const remotes = await git.listRemotes({
-        fs: fsAdapter,
-        dir: getRootDir(),
-      });
-      return remotes.map((r) => ({ name: r.remote, url: r.url }));
+      return await gitBackend().listRemotes(getRootDir());
     } catch (error) {
       console.error('[getRemotes] Failed:', error);
       return [];
@@ -114,9 +75,9 @@ class GitRemoteService {
 
     try {
       if (isElectronEnv()) {
-        const result = await window.electronAPI!.secure.getToken();
-        if (result.token) {
-          this.authToken = result.token;
+        const result = await window.electronAPI!.secure.hasToken();
+        if (result.hasToken) {
+          this.hasStoredToken = true;
           this.tokenLoaded = true;
           return;
         }
@@ -155,21 +116,34 @@ class GitRemoteService {
   }
 
   /**
+   * Whether a token is available for remote operations.
+   * In Electron the token itself is kept in the main process and never exposed here.
+   */
+  hasAuthToken(): boolean {
+    return this.hasStoredToken || !!this.getAuthToken();
+  }
+
+  /**
    * Set authentication token
    */
   async setAuthToken(token: string): Promise<void> {
-    this.authToken = token;
     this.tokenLoaded = true;
 
     try {
       if (isElectronEnv()) {
         const result = await window.electronAPI!.secure.setToken(token);
         if (result.error) throw new Error(result.error);
+        // Stored in the main process; don't keep a copy in the renderer
+        this.authToken = null;
+        this.hasStoredToken = true;
+        return;
       } else {
+        this.authToken = token;
         localStorage.setItem('git_pat_token', token);
       }
     } catch (err) {
       debug.warn('[setAuthToken] Failed:', err);
+      this.authToken = token;
       // Fallback to localStorage even in Electron if secure storage fails
       try {
         localStorage.setItem('git_pat_token', token);
@@ -184,6 +158,7 @@ class GitRemoteService {
    */
   async clearAuthToken(): Promise<void> {
     this.authToken = null;
+    this.hasStoredToken = false;
     this.tokenLoaded = true;
 
     try {
@@ -197,85 +172,34 @@ class GitRemoteService {
   }
 
   /**
-   * Create auth callback for git operations
+   * Token to pass to remote operations: in the browser the stored token; in
+   * Electron undefined (the main process uses its securely stored token).
    */
-  private getAuthCallback() {
-    const token = this.getAuthToken();
-    if (!token) return undefined;
-
-    return {
-      onAuth: () => ({
-        username: 'x-access-token',
-        password: token, // GitHub PAT as password
-      }),
-    };
+  private requireToken(): string | undefined {
+    if (!this.initialized) {
+      throw new Error('Git service not initialized');
+    }
+    if (!this.hasAuthToken()) {
+      throw new Error('No authentication token configured. Please set a token first.');
+    }
+    return this.getAuthToken() ?? undefined;
   }
 
   /**
    * Fetch from remote repository
    */
   async fetch(remote: string = 'origin', branch?: string): Promise<void> {
-    if (!this.initialized) {
-      throw new Error('Git service not initialized');
-    }
-
-    const token = this.getAuthToken();
-    if (!token) {
-      throw new Error('No authentication token configured. Please set a token first.');
-    }
-
-    try {
-      if (isElectronEnv()) {
-        const result = await window.electronAPI!.git.fetch(getRootDir(), remote, branch, token);
-        if (result.error) throw new Error(result.error);
-      } else {
-        const auth = this.getAuthCallback();
-        await git.fetch({
-          fs: fsAdapter,
-          http: await import('isomorphic-git/http/web').then((m) => m.default),
-          dir: getRootDir(),
-          corsProxy: 'https://corsproxy.io/?',
-          remote,
-          ref: branch,
-          singleBranch: !!branch,
-          ...auth,
-        });
-      }
-      debug.log(`[fetch] Fetched from ${remote}${branch ? '/' + branch : ''}`);
-    } catch (error) {
-      console.error('[fetch] Failed:', error);
-      throw error;
-    }
+    const token = this.requireToken();
+    await gitBackend().fetch(getRootDir(), { remote, branch, token });
+    debug.log(`[fetch] Fetched from ${remote}${branch ? '/' + branch : ''}`);
   }
 
   /**
    * Push to remote repository
    */
   async push(remote: string = 'origin', branch: string = 'main'): Promise<void> {
-    if (!this.initialized) {
-      throw new Error('Git service not initialized');
-    }
-
-    const token = this.getAuthToken();
-    if (!token) {
-      throw new Error('No authentication token configured. Please set a token first.');
-    }
-
-    if (isElectronEnv()) {
-      const result = await window.electronAPI!.git.push(getRootDir(), remote, branch, token);
-      if (result.error) throw new Error(result.error);
-    } else {
-      const auth = this.getAuthCallback();
-      await git.push({
-        fs: fsAdapter,
-        http: await import('isomorphic-git/http/web').then((m) => m.default),
-        dir: getRootDir(),
-        corsProxy: 'https://corsproxy.io/?',
-        remote,
-        ref: branch,
-        ...auth,
-      });
-    }
+    const token = this.requireToken();
+    await gitBackend().push(getRootDir(), { remote, branch, token });
     debug.log(`[push] Pushed to ${remote}/${branch}`);
   }
 
@@ -284,51 +208,14 @@ class GitRemoteService {
    * Returns list of conflicted files if merge conflicts occur
    */
   async pull(remote: string = 'origin', branch: string = 'main'): Promise<PullResult> {
-    if (!this.initialized) {
-      throw new Error('Git service not initialized');
+    const token = this.requireToken();
+    const result = await gitBackend().pull(getRootDir(), { remote, branch, token });
+    if (!result.ok) {
+      debug.warn(`[pull] Merge conflicts in: ${result.conflicts.join(', ')}`);
+      return { success: false, conflicts: result.conflicts };
     }
-
-    const token = this.getAuthToken();
-    if (!token) {
-      throw new Error('No authentication token configured. Please set a token first.');
-    }
-
-    try {
-      if (isElectronEnv()) {
-        const result = await window.electronAPI!.git.pull(getRootDir(), remote, branch, token, {
-          name: 'Tracyfy User',
-          email: 'user@tracyfy.local',
-        });
-        if (result.error) throw new Error(result.error);
-        if (!result.ok) {
-          return { success: false, conflicts: result.conflicts || [] };
-        }
-        debug.log(`[pull] Pulled from ${remote}/${branch}`);
-        return { success: true, conflicts: [] };
-      }
-
-      const auth = this.getAuthCallback();
-      await git.pull({
-        fs: fsAdapter,
-        http: await import('isomorphic-git/http/web').then((m) => m.default),
-        dir: getRootDir(),
-        corsProxy: 'https://corsproxy.io/?',
-        remote,
-        ref: branch,
-        author: { name: 'Tracyfy User', email: 'user@tracyfy.local' },
-        ...auth,
-      });
-      debug.log(`[pull] Pulled from ${remote}/${branch}`);
-      return { success: true, conflicts: [] };
-    } catch (error: unknown) {
-      const err = error as { code?: string; data?: { filepaths?: string[] } };
-      if (err?.code === 'MergeConflictError' || err?.code === 'CheckoutConflictError') {
-        const conflicts = err.data?.filepaths || [];
-        debug.warn(`[pull] Merge conflicts in: ${conflicts.join(', ')}`);
-        return { success: false, conflicts };
-      }
-      throw error;
-    }
+    debug.log(`[pull] Pulled from ${remote}/${branch}`);
+    return { success: true, conflicts: [] };
   }
 }
 

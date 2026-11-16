@@ -2,15 +2,23 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { FileText, GitCommit, AlertCircle } from 'lucide-react';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { useUser } from '../app/providers/UserProvider';
-import { useBackgroundTasks } from '../app/providers/BackgroundTasksProvider';
+import { useBackgroundTaskActions } from '../app/providers/BackgroundTasksProvider';
 import { debug } from '../utils/debug';
 import type { ArtifactChange } from '../types';
+import { classifyPendingPath } from '../utils/pendingChanges';
 
 export function PendingChangesPanel() {
-  const { pendingChanges, commitFile, revertFile, projects, getArtifactHistory, refreshStatus } =
-    useFileSystem();
+  const {
+    pendingChanges,
+    statusError,
+    commitFile,
+    revertFile,
+    projects,
+    getArtifactHistory,
+    refreshStatus,
+  } = useFileSystem();
   const { currentUser } = useUser();
-  const { startTask, endTask } = useBackgroundTasks();
+  const { startTask, endTask } = useBackgroundTaskActions();
   const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
   const [parsedChanges, setParsedChanges] = useState<ArtifactChange[]>([]);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -43,46 +51,10 @@ export function PendingChangesPanel() {
     // Convert file statuses to ArtifactChange objects
     const changes: ArtifactChange[] = pendingChanges
       .map((fs) => {
-        // Parse path: {type}/{id}.md
-        const parts = fs.path.split('/');
-        if (parts.length < 2) return null;
-
-        const typeStr = parts[0]; // 'requirements', 'usecases', 'assets', etc.
-        const filename = parts[1];
-        // For .md files, strip extension. For assets (images), keep the full filename as id.
-        const id = filename.endsWith('.md') ? filename.replace('.md', '') : filename;
-
-        // Map folder names to artifact types
-        let type:
-          | 'requirement'
-          | 'usecase'
-          | 'testcase'
-          | 'information'
-          | 'project'
-          | 'asset'
-          | 'risk'
-          | 'user'
-          | 'counter'
-          | 'link'
-          | 'custom-attribute'
-          | 'saved-filter'
-          | 'document'
-          | 'workflow';
-        if (typeStr === 'requirements') type = 'requirement';
-        else if (typeStr === 'usecases') type = 'usecase';
-        else if (typeStr === 'testcases') type = 'testcase';
-        else if (typeStr === 'information') type = 'information';
-        else if (typeStr === 'risks') type = 'risk';
-        else if (typeStr === 'projects') type = 'project';
-        else if (typeStr === 'assets') type = 'asset';
-        else if (typeStr === 'users') type = 'user';
-        // Skip internal files - these should be auto-committed, not shown for manual commits
-        else if (typeStr === 'counters') return null;
-        else if (typeStr === 'links') return null;
-        else if (typeStr === 'custom-attributes') return null;
-        else if (typeStr === 'saved-filters') type = 'saved-filter';
-        else if (typeStr === 'documents') type = 'document';
-        else return null;
+        // Hidden/unknown paths return null (see utils/pendingChanges)
+        const classified = classifyPendingPath(fs.path);
+        if (!classified) return null;
+        const { type, id, filename } = classified;
 
         const status = fs.status === 'new' ? 'new' : 'modified';
 
@@ -321,6 +293,25 @@ export function PendingChangesPanel() {
     return status === 'new' ? 'New' : 'Modified';
   };
 
+  if (statusError) {
+    return (
+      <div
+        role="alert"
+        style={{
+          padding: 'var(--spacing-sm)',
+          fontSize: 'var(--font-size-sm)',
+          color: 'var(--color-error, #ef4444)',
+          display: 'flex',
+          gap: '6px',
+          alignItems: 'flex-start',
+        }}
+      >
+        <AlertCircle size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
+        <span>Could not read git status: {statusError}</span>
+      </div>
+    );
+  }
+
   if (parsedChanges.length === 0) {
     return (
       <div
@@ -398,7 +389,7 @@ export function PendingChangesPanel() {
                 key={change.id}
                 style={{
                   backgroundColor: 'var(--color-bg-card)',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   padding: 'var(--spacing-sm)',
                   border: '1px solid var(--color-border)',
                 }}
@@ -455,7 +446,7 @@ export function PendingChangesPanel() {
                     fontSize: 'var(--font-size-xs)',
                     backgroundColor: 'var(--color-bg-app)',
                     border: '1px solid var(--color-border)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-xs)',
                     color: 'var(--color-text-primary)',
                     marginBottom: 'var(--spacing-sm)',
                     outline: 'none',
@@ -475,10 +466,10 @@ export function PendingChangesPanel() {
                       padding: '6px 12px',
                       fontSize: 'var(--font-size-xs)',
                       fontWeight: 500,
-                      color: 'white',
+                      color: 'var(--color-on-accent)',
                       backgroundColor: 'var(--color-accent)',
                       border: 'none',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                       cursor:
                         !commitMessages[change.id]?.trim() || committingIds.has(change.id)
                           ? 'not-allowed'
@@ -527,7 +518,7 @@ export function PendingChangesPanel() {
                       color: 'var(--color-error)',
                       backgroundColor: 'transparent',
                       border: '1px solid var(--color-error)',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                       cursor: committingIds.has(change.id) ? 'not-allowed' : 'pointer',
                       opacity: committingIds.has(change.id) ? 0.5 : 1,
                     }}
@@ -548,7 +539,7 @@ export function PendingChangesPanel() {
           gap: 'var(--spacing-sm)',
           padding: 'var(--spacing-sm)',
           backgroundColor: 'var(--color-bg-secondary)',
-          borderRadius: '6px',
+          borderRadius: 'var(--radius-sm)',
           fontSize: 'var(--font-size-xs)',
           color: 'var(--color-text-muted)',
         }}

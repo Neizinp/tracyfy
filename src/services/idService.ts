@@ -9,8 +9,12 @@ import { BaseDiskService } from './baseDiskService';
 import { realGitService } from './realGitService';
 import { ARTIFACT_CONFIG } from '../constants/artifactConfig';
 import { debug } from '../utils/debug';
+import { KeyedLock } from '../utils/keyedLock';
 
 export class IdService extends BaseDiskService {
+  /** Serializes counter read-modify-write per artifact type to prevent duplicate IDs */
+  private counterLock = new KeyedLock();
+
   /**
    * Get counter value from file
    */
@@ -44,20 +48,13 @@ export class IdService extends BaseDiskService {
    * Get next artifact ID and increment counter
    */
   async getNextId(type: string): Promise<string> {
-    const config = ARTIFACT_CONFIG[type];
-    if (!config) {
-      throw new Error(`[IdService] No config found for type: ${type}`);
-    }
-
-    const current = await this.getCounter(type);
-    const next = current + 1;
-    await this.setCounter(type, next);
-
-    return `${config.idPrefix}-${String(next).padStart(3, '0')}`;
+    const [id] = await this.getNextIds(type, 1);
+    return id;
   }
 
   /**
-   * Get multiple artifact IDs at once (batch allocation)
+   * Get multiple artifact IDs at once (batch allocation).
+   * Allocation is serialized per type, so concurrent callers never receive the same ID.
    */
   async getNextIds(type: string, count: number): Promise<string[]> {
     if (count <= 0) return [];
@@ -67,6 +64,30 @@ export class IdService extends BaseDiskService {
       throw new Error(`[IdService] No config found for type: ${type}`);
     }
 
+    return this.counterLock.run(type, () => this.allocate(type, count));
+  }
+
+  /**
+   * Raise the counter to at least `value` (never lowers it).
+   * Used after importing artifacts with explicit IDs so new IDs don't collide.
+   */
+  async ensureCounterAtLeast(type: string, value: number): Promise<void> {
+    if (!ARTIFACT_CONFIG[type]) {
+      throw new Error(`[IdService] No config found for type: ${type}`);
+    }
+    await this.counterLock.run(type, async () => {
+      const current = await this.getCounter(type);
+      if (value > current) {
+        await this.setCounter(type, value);
+      }
+    });
+  }
+
+  /**
+   * Read-modify-write of the counter. Must only be called while holding counterLock for `type`.
+   */
+  private async allocate(type: string, count: number): Promise<string[]> {
+    const config = ARTIFACT_CONFIG[type];
     const current = await this.getCounter(type);
     const nextEnd = current + count;
     await this.setCounter(type, nextEnd);
@@ -75,7 +96,6 @@ export class IdService extends BaseDiskService {
     for (let i = current + 1; i <= nextEnd; i++) {
       ids.push(`${config.idPrefix}-${String(i).padStart(3, '0')}`);
     }
-
     return ids;
   }
 
@@ -83,15 +103,21 @@ export class IdService extends BaseDiskService {
    * Get next artifact ID with remote sync (for collaboration)
    */
   async getNextIdWithSync(type: string): Promise<string> {
-    try {
-      // Pull latest counters from remote (silently fails if no remote)
-      await realGitService.pullCounters();
-    } catch (err) {
-      debug.log(`[IdService] Failed to pull counters:`, err);
+    if (!ARTIFACT_CONFIG[type]) {
+      throw new Error(`[IdService] No config found for type: ${type}`);
     }
 
-    // Get next ID locally
-    const id = await this.getNextId(type);
+    // Pull + allocate under the same lock so a pull can't interleave with a local allocation
+    const id = await this.counterLock.run(type, async () => {
+      try {
+        // Pull latest counters from remote (silently fails if no remote)
+        await realGitService.pullCounters();
+      } catch (err) {
+        debug.log(`[IdService] Failed to pull counters:`, err);
+      }
+      const [allocated] = await this.allocate(type, 1);
+      return allocated;
+    });
 
     try {
       // Push counter update to remote (background, don't block)

@@ -12,6 +12,7 @@ import {
   type ImpactChain,
   type ImpactNode,
 } from '../../services/impactAnalysisService';
+import { TYPE_COLORS } from './types';
 import type { Link } from '../../types';
 import type { UnifiedArtifact } from '../traceability';
 
@@ -20,13 +21,6 @@ interface ImpactAnalysisPanelProps {
   links: Link[];
   onSelectArtifact?: (id: string) => void;
 }
-
-const TYPE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  requirement: { bg: 'rgba(59, 130, 246, 0.1)', text: '#3b82f6', border: '#3b82f6' },
-  useCase: { bg: 'rgba(34, 197, 94, 0.1)', text: '#22c55e', border: '#22c55e' },
-  testCase: { bg: 'rgba(245, 158, 11, 0.1)', text: '#f59e0b', border: '#f59e0b' },
-  information: { bg: 'rgba(139, 92, 246, 0.1)', text: '#8b5cf6', border: '#8b5cf6' },
-};
 
 export const ImpactAnalysisPanel: React.FC<ImpactAnalysisPanelProps> = ({
   artifacts,
@@ -112,7 +106,7 @@ export const ImpactAnalysisPanel: React.FC<ImpactAnalysisPanelProps> = ({
                       style={{
                         padding: '2px 6px',
                         backgroundColor: 'var(--color-bg-tertiary)',
-                        borderRadius: '4px',
+                        borderRadius: 'var(--radius-xs)',
                         fontSize: 'var(--font-size-xs)',
                         color: 'var(--color-text-secondary)',
                       }}
@@ -152,7 +146,7 @@ export const ImpactAnalysisPanel: React.FC<ImpactAnalysisPanelProps> = ({
     <div
       style={{
         backgroundColor: 'var(--color-bg-card)',
-        borderRadius: '8px',
+        borderRadius: 'var(--radius-md)',
         border: '1px solid var(--color-border)',
         padding: 'var(--spacing-md)',
       }}
@@ -202,7 +196,7 @@ export const ImpactAnalysisPanel: React.FC<ImpactAnalysisPanelProps> = ({
               style={{
                 width: '100%',
                 padding: '8px 12px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'var(--color-bg-secondary)',
                 color: 'var(--color-text-primary)',
@@ -216,7 +210,7 @@ export const ImpactAnalysisPanel: React.FC<ImpactAnalysisPanelProps> = ({
               style={{
                 width: '100%',
                 padding: '8px 12px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'var(--color-bg-secondary)',
                 color: 'var(--color-text-primary)',
@@ -260,7 +254,7 @@ export const ImpactAnalysisPanel: React.FC<ImpactAnalysisPanelProps> = ({
                 title={label}
                 style={{
                   padding: '8px 12px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border:
                     direction === value
                       ? '2px solid var(--color-accent)'
@@ -313,7 +307,7 @@ export const ImpactAnalysisPanel: React.FC<ImpactAnalysisPanelProps> = ({
             padding: 'var(--spacing-sm) var(--spacing-md)',
             backgroundColor: selectedColors.bg,
             border: `2px solid ${selectedColors.border}`,
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-sm)',
             marginBottom: 'var(--spacing-md)',
           }}
         >
@@ -332,7 +326,7 @@ export const ImpactAnalysisPanel: React.FC<ImpactAnalysisPanelProps> = ({
             gap: 'var(--spacing-md)',
             padding: 'var(--spacing-sm)',
             backgroundColor: 'var(--color-bg-tertiary)',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-sm)',
             marginBottom: 'var(--spacing-md)',
             fontSize: 'var(--font-size-sm)',
           }}

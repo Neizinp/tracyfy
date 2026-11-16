@@ -7,7 +7,18 @@ import type {
   ArtifactDocument,
 } from '../types';
 import { exportProjectToJSON } from '../utils/jsonExportUtils';
-import * as XLSX from 'xlsx';
+import {
+  parseJsonImport,
+  parseExcelFile,
+  countImported,
+  describeSkipped,
+  type ImportBundle,
+} from '../utils/importUtils';
+
+export type ImportNotify = (
+  message: string,
+  type: 'info' | 'warning' | 'error' | 'success'
+) => void;
 
 interface UseImportExportProps {
   currentProjectId: string;
@@ -17,13 +28,10 @@ interface UseImportExportProps {
   testCases: TestCase[];
   information: Information[];
   documents: ArtifactDocument[];
-  setRequirements: (reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])) => void;
-  setUseCases: (ucs: UseCase[] | ((prev: UseCase[]) => UseCase[])) => void;
-  setTestCases: (tcs: TestCase[] | ((prev: TestCase[]) => TestCase[])) => void;
-  setInformation: (info: Information[] | ((prev: Information[]) => Information[])) => void;
-  setDocuments: (
-    docs: ArtifactDocument[] | ((prev: ArtifactDocument[]) => ArtifactDocument[])
-  ) => void;
+  /** Persist validated imported artifacts (merge by ID, never wipe existing data) */
+  applyImport: (bundle: ImportBundle) => Promise<void>;
+  /** Show a user-facing message (toast) */
+  notify: ImportNotify;
 }
 
 export function useImportExport({
@@ -34,16 +42,13 @@ export function useImportExport({
   testCases,
   information,
   documents,
-  setRequirements,
-  setUseCases,
-  setTestCases,
-  setInformation,
-  setDocuments,
+  applyImport,
+  notify,
 }: UseImportExportProps) {
   const handleExport = async () => {
     const project = projects.find((p) => p.id === currentProjectId);
     if (!project) {
-      alert('No project selected');
+      notify('No project selected', 'warning');
       return;
     }
 
@@ -66,134 +71,81 @@ export function useImportExport({
       );
     } catch (error) {
       console.error('Failed to export project:', error);
-      alert('Failed to export project: ' + error);
+      notify('Failed to export project: ' + error, 'error');
     }
   };
 
-  const handleImport = () => {
+  /**
+   * Validate the parsed bundle and hand it to the persistence callback.
+   */
+  const importBundle = async (bundle: ImportBundle) => {
+    const skippedMessage = describeSkipped(bundle.skipped);
+    if (countImported(bundle) === 0) {
+      notify(skippedMessage || 'No artifacts found in file', 'warning');
+      return;
+    }
+    if (skippedMessage) {
+      notify(skippedMessage, 'warning');
+    }
+    try {
+      await applyImport(bundle);
+    } catch (error) {
+      console.error('Failed to import artifacts:', error);
+      notify(`Import failed: ${error instanceof Error ? error.message : String(error)}`, 'error');
+    }
+  };
+
+  const pickFile = (accept: string, onFile: (file: File) => void) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json';
+    input.accept = accept;
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const json = JSON.parse(event.target?.result as string);
-            // Links are now stored in each artifact's linkedArtifacts field
-            setRequirements(json.requirements || []);
-            setUseCases(json.useCases || []);
-            setTestCases(json.testCases || []);
-            setInformation(json.information || []);
-            setDocuments(json.documents || []);
-          } catch {
-            alert('Failed to parse JSON file');
-          }
-        };
-        reader.readAsText(file);
-      }
+      if (file) onFile(file);
     };
     input.click();
   };
 
+  const handleImport = () => {
+    pickFile('.json', (file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        let bundle: ImportBundle;
+        try {
+          bundle = parseJsonImport(event.target?.result as string);
+        } catch (error) {
+          notify(
+            `Failed to parse JSON file: ${error instanceof Error ? error.message : String(error)}`,
+            'error'
+          );
+          return;
+        }
+        void importBundle(bundle);
+      };
+      reader.readAsText(file);
+    });
+  };
+
   const handleImportExcel = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.xlsx,.xls';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const data = new Uint8Array(event.target?.result as ArrayBuffer);
-            const workbook = XLSX.read(data, { type: 'array' });
-
-            interface RequirementExcelRow {
-              ID: string;
-              Title: string;
-              Status?: string;
-              Priority?: string;
-              Description?: string;
-              'Requirement Text'?: string;
-              Rationale?: string;
-              Parents?: string;
-            }
-
-            interface UseCaseExcelRow {
-              ID: string;
-              Title: string;
-              Actor?: string;
-              Description?: string;
-              Preconditions?: string;
-              'Main Flow'?: string;
-              'Alternative Flows'?: string;
-              Postconditions?: string;
-              Priority?: string;
-              Status?: string;
-            }
-
-            // Parse Requirements
-            const reqSheet = workbook.Sheets['Requirements'];
-            if (reqSheet) {
-              const reqData = XLSX.utils.sheet_to_json<RequirementExcelRow>(reqSheet);
-              const parsedReqs: Requirement[] = reqData.map((row) => ({
-                id: row['ID'],
-                title: row['Title'],
-                status: row['Status'] || 'draft',
-                priority: row['Priority'] || 'medium',
-                description: row['Description'] || '',
-                text: row['Requirement Text'] || '',
-                rationale: row['Rationale'] || '',
-                parentIds: row['Parents']
-                  ? row['Parents']
-                      .split(',')
-                      .map((id: string) => id.trim())
-                      .filter((id: string) => id)
-                  : [],
-                dateCreated: Date.now(),
-                lastModified: Date.now(),
-                revision: '01',
-                linkedArtifacts: [], // Links are now per-artifact
-              }));
-              setRequirements(parsedReqs);
-            }
-
-            // Parse Use Cases
-            const ucSheet = workbook.Sheets['Use Cases'];
-            if (ucSheet) {
-              const ucData = XLSX.utils.sheet_to_json<UseCaseExcelRow>(ucSheet);
-              const parsedUCs: UseCase[] = ucData.map((row) => ({
-                id: row['ID'],
-                title: row['Title'],
-                actor: row['Actor'] || '',
-                description: row['Description'] || '',
-                preconditions: row['Preconditions'] || '',
-                mainFlow: row['Main Flow'] || '',
-                alternativeFlows: row['Alternative Flows'] || '',
-                postconditions: row['Postconditions'] || '',
-                priority: row['Priority'] || 'medium',
-                status: row['Status'] || 'draft',
-                lastModified: Date.now(),
-                revision: '01',
-                linkedArtifacts: [], // Links are now per-artifact
-              }));
-              setUseCases(parsedUCs);
-            }
-
-            // Note: Links sheet is deprecated - links are now stored in each artifact's linkedArtifacts
-
-            alert('Excel file imported successfully');
-          } catch (error) {
-            console.error('Failed to parse Excel file:', error);
-            alert('Failed to parse Excel file: ' + error);
-          }
-        };
-        reader.readAsArrayBuffer(file);
-      }
-    };
-    input.click();
+    pickFile('.xlsx,.xls', (file) => {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        let bundle: ImportBundle;
+        try {
+          const data = new Uint8Array(event.target?.result as ArrayBuffer);
+          bundle = await parseExcelFile(data);
+        } catch (error) {
+          console.error('Failed to parse Excel file:', error);
+          notify(
+            `Failed to parse Excel file: ${error instanceof Error ? error.message : String(error)}`,
+            'error'
+          );
+          return;
+        }
+        void importBundle(bundle);
+      };
+      reader.readAsArrayBuffer(file);
+    });
   };
 
   return {

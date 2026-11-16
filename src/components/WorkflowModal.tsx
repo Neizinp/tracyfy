@@ -83,9 +83,9 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
           <div
             style={{
               padding: '12px',
-              backgroundColor: 'rgba(234, 179, 8, 0.1)',
-              borderRadius: '6px',
-              color: 'rgb(234, 179, 8)',
+              backgroundColor: 'var(--color-warning-bg)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--color-warning)',
               fontSize: 'var(--font-size-sm)',
             }}
           >
@@ -98,7 +98,7 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
             style={{
               width: '100%',
               padding: '8px 12px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-app)',
               color: 'var(--color-text-primary)',
@@ -145,7 +145,7 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
                       gap: '6px',
                       padding: '4px 8px',
                       backgroundColor: 'var(--color-bg-secondary)',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                       fontSize: 'var(--font-size-sm)',
                       border: '1px solid var(--color-border)',
                     }}
@@ -215,7 +215,7 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
                 style={{
                   width: '100%',
                   padding: '8px 12px 8px 32px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-app)',
                   color: 'var(--color-text-primary)',
@@ -237,8 +237,8 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
                   overflow: 'auto',
                   backgroundColor: 'var(--color-bg-card)',
                   border: '1px solid var(--color-border)',
-                  borderRadius: '6px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  borderRadius: 'var(--radius-sm)',
+                  boxShadow: 'var(--shadow-popover)',
                   zIndex: 10,
                 }}
               >
@@ -299,7 +299,7 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
                           color: 'var(--color-text-muted)',
                           backgroundColor: 'var(--color-bg-secondary)',
                           padding: '2px 4px',
-                          borderRadius: '3px',
+                          borderRadius: 'var(--radius-xs)',
                         }}
                       >
                         {artifact.type}

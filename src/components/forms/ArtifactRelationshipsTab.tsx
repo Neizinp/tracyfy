@@ -12,7 +12,8 @@ interface ArtifactRelationshipsTabProps {
   incomingLinks: IncomingLink[];
   loading: boolean;
   onAddLink: () => void;
-  onRemoveLink: (targetId: string) => void;
+  /** Deletes the link with the given link ID */
+  onRemoveLink: (linkId: string) => void;
   onNavigateToArtifact: (id: string, type: string) => void;
 }
 
@@ -48,7 +49,7 @@ export const ArtifactRelationshipsTab: React.FC<ArtifactRelationshipsTabProps> =
                 color: 'var(--color-accent)',
                 background: 'none',
                 border: '1px solid var(--color-accent)',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 padding: '2px 8px',
                 cursor: 'pointer',
               }}
@@ -60,7 +61,7 @@ export const ArtifactRelationshipsTab: React.FC<ArtifactRelationshipsTabProps> =
         <div
           style={{
             border: '1px solid var(--color-border)',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-sm)',
             padding: '8px',
             backgroundColor: 'var(--color-bg-app)',
             minHeight: '100px',
@@ -111,7 +112,7 @@ export const ArtifactRelationshipsTab: React.FC<ArtifactRelationshipsTabProps> =
                     justifyContent: 'space-between',
                     padding: '6px 8px',
                     backgroundColor: 'var(--color-bg-card)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-xs)',
                     border: '1px solid var(--color-border)',
                     transition: 'background-color 0.15s ease',
                   }}
@@ -138,7 +139,7 @@ export const ArtifactRelationshipsTab: React.FC<ArtifactRelationshipsTabProps> =
                     <span
                       style={{
                         padding: '2px 6px',
-                        borderRadius: '4px',
+                        borderRadius: 'var(--radius-xs)',
                         backgroundColor: 'var(--color-bg-secondary)',
                         fontSize: 'var(--font-size-xs)',
                         fontFamily: 'monospace',
@@ -155,7 +156,7 @@ export const ArtifactRelationshipsTab: React.FC<ArtifactRelationshipsTabProps> =
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onRemoveLink(link.targetId);
+                      onRemoveLink(link.id);
                     }}
                     style={{
                       background: 'none',
@@ -163,7 +164,7 @@ export const ArtifactRelationshipsTab: React.FC<ArtifactRelationshipsTabProps> =
                       color: 'var(--color-text-muted)',
                       cursor: 'pointer',
                       padding: '4px',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -204,7 +205,7 @@ export const ArtifactRelationshipsTab: React.FC<ArtifactRelationshipsTabProps> =
         <div
           style={{
             border: '1px solid var(--color-border)',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-sm)',
             padding: '8px',
             backgroundColor: 'var(--color-bg-app)',
             minHeight: '80px',
@@ -233,7 +234,7 @@ export const ArtifactRelationshipsTab: React.FC<ArtifactRelationshipsTabProps> =
                     alignItems: 'center',
                     padding: '6px 8px',
                     backgroundColor: 'var(--color-bg-card)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-xs)',
                     border: '1px solid var(--color-border)',
                     fontSize: 'var(--font-size-sm)',
                     gap: '8px',
@@ -248,7 +249,7 @@ export const ArtifactRelationshipsTab: React.FC<ArtifactRelationshipsTabProps> =
                   <span
                     style={{
                       padding: '2px 6px',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                       backgroundColor: 'var(--color-bg-secondary)',
                       fontSize: 'var(--font-size-xs)',
                       fontFamily: 'monospace',

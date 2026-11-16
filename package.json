@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "engines": {
-    "node": "20.x"
+    "node": ">=22"
   },
   "main": "electron/main.js",
   "scripts": {
@@ -13,26 +13,25 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b",
     "prepare": "husky install",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
-    "test:git": "node test-handlers.mjs",
     "audit:arch": "node scripts/audit-architecture.cjs",
-    "test:missing-head": "node test-missing-head.mjs",
-    "test:pending": "node test-pending-changes.mjs",
     "electron:dev": "concurrently -k \"npm:dev:electron\" \"npm:electron:launch\"",
     "electron:launch": "wait-on http://localhost:5181 && VITE_DEV_SERVER_URL=http://localhost:5181 electron .",
     "electron:start": "npm run build && electron ."
   },
   "dependencies": {
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
     "@uiw/react-md-editor": "^4.0.8",
     "buffer": "^6.0.3",
     "isomorphic-git": "^1.35.1",
-    "jspdf": "^3.0.4",
-    "jspdf-autotable": "^5.0.2",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.9",
     "lucide-react": "^0.554.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -41,6 +40,7 @@
     "react-virtuoso": "^4.17.0",
     "reactflow": "^11.11.4",
     "rehype-raw": "^7.0.0",
+    "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.1",
     "xlsx": "^0.18.5"
   },

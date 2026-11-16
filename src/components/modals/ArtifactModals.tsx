@@ -20,7 +20,6 @@ import {
   useUser,
 } from '../../app/providers';
 import type { Information, Risk, UseCase, ArtifactDocument } from '../../types';
-import { exportSingleDocumentToPDF } from '../../utils/pdf/pdfMainExport';
 
 export const ArtifactModals: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -49,6 +48,7 @@ export const ArtifactModals: React.FC = () => {
   const { currentUser } = useUser();
 
   const handleDocumentExport = async (doc: ArtifactDocument) => {
+    const { exportSingleDocumentToPDF } = await import('../../utils/pdf/pdfMainExport');
     await exportSingleDocumentToPDF(doc, globalState, currentUser?.name);
   };
 

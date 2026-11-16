@@ -60,7 +60,6 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     setCustomAttributes,
     handleSubmit,
     handleNavigateToArtifact,
-    handleRemoveLink,
     handleDelete,
     showDeleteConfirm,
     cancelDelete,
@@ -75,6 +74,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
     outgoingLinks,
     incomingLinks,
     loading: linksLoading,
+    deleteLink,
   } = useLinkService({
     artifactId: information?.id,
   });
@@ -138,9 +138,9 @@ export const InformationModal: React.FC<InformationModalProps> = ({
             style={{
               padding: '8px 16px',
               backgroundColor: 'transparent',
-              border: '1px solid var(--color-error)',
+              border: '1px solid transparent',
               color: 'var(--color-error)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
               fontWeight: 600,
             }}
@@ -182,7 +182,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-app)',
                   color: 'var(--color-text-primary)',
@@ -225,7 +225,9 @@ export const InformationModal: React.FC<InformationModalProps> = ({
               setIsLinkModalOpen(true);
             }
           }}
-          onRemoveLink={handleRemoveLink}
+          onRemoveLink={(linkId) =>
+            deleteLink(linkId).catch((err) => console.error('Failed to remove link:', err))
+          }
           onNavigateToArtifact={handleNavigateToArtifact}
         />
       )}

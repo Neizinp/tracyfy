@@ -68,7 +68,8 @@ class DiskCustomAttributeService extends BaseArtifactService<CustomAttributeDefi
       dateCreated: Date.now(),
       lastModified: Date.now(),
     };
-    return this.save(newDef);
+    // custom-attributes/ is hidden from the pending-changes panel, so commit right away
+    return this.save(newDef, `Add custom attribute ${newDef.id}: ${newDef.name}`);
   }
 
   /**
@@ -93,7 +94,7 @@ class DiskCustomAttributeService extends BaseArtifactService<CustomAttributeDefi
       ...updates,
       lastModified: Date.now(),
     };
-    return this.save(updatedDef);
+    return this.save(updatedDef, `Update custom attribute ${id}`);
   }
 
   /**
@@ -101,9 +102,9 @@ class DiskCustomAttributeService extends BaseArtifactService<CustomAttributeDefi
    */
   async deleteDefinition(id: string, hardDelete: boolean = false): Promise<void> {
     if (hardDelete) {
-      await this.delete(id);
+      await this.delete(id, `Delete custom attribute ${id}`);
     } else {
-      await this.softDelete(id);
+      await this.softDelete(id, `Delete custom attribute ${id}`);
     }
   }
 }

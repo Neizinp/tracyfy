@@ -1,6 +1,12 @@
 import React, { useCallback } from 'react';
 import { Search, Link as LinkIcon, Globe, Folder } from 'lucide-react';
-import type { Requirement, ArtifactLink, Project, UseCase, TestCase, Information } from '../types';
+import type { ArtifactLink, Project } from '../types';
+import {
+  LINKABLE_TYPES,
+  linkableTypeInfo,
+  type ArtifactsByType,
+  type LinkableType,
+} from '../constants/linkableArtifacts';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useLinkModal, type LinkModalResult } from '../hooks/useLinkModal';
 import { BaseArtifactModal } from './BaseArtifactModal';
@@ -11,18 +17,14 @@ export type { LinkModalResult };
 interface LinkModalProps {
   isOpen: boolean;
   sourceArtifactId: string | null;
-  sourceArtifactType: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
+  sourceArtifactType: LinkableType;
   projects: Project[];
   currentProjectId: string;
-  globalRequirements: Requirement[];
-  globalUseCases: UseCase[];
-  globalTestCases: TestCase[];
-  globalInformation: Information[];
+  /** Every linkable artifact, grouped by type */
+  artifactsByType: ArtifactsByType;
   onClose: () => void;
   onAddLink: (link: LinkModalResult) => void;
 }
-
-type ArtifactType = 'requirement' | 'usecase' | 'testcase' | 'information';
 
 export const LinkModal: React.FC<LinkModalProps> = ({
   isOpen,
@@ -30,10 +32,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
   sourceArtifactType,
   projects,
   currentProjectId,
-  globalRequirements,
-  globalUseCases,
-  globalTestCases,
-  globalInformation,
+  artifactsByType,
   onClose,
   onAddLink,
 }) => {
@@ -51,16 +50,18 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     filteredArtifacts,
     findProjectForArtifact,
     handleSubmit,
+    needsSourceSelection,
+    chosenSourceId,
+    setChosenSourceId,
+    effectiveSourceId,
+    sourceOptions,
   } = useLinkModal({
     isOpen,
     sourceArtifactId,
     sourceArtifactType,
     projects,
     currentProjectId,
-    globalRequirements,
-    globalUseCases,
-    globalTestCases,
-    globalInformation,
+    artifactsByType,
     onClose,
     onAddLink,
   });
@@ -78,7 +79,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     onClose: onClose,
   });
 
-  if (!isOpen || !sourceArtifactId) return null;
+  if (!isOpen) return null;
 
   return (
     <BaseArtifactModal
@@ -88,59 +89,82 @@ export const LinkModal: React.FC<LinkModalProps> = ({
       title="Create Link"
       icon={<LinkIcon size={20} style={{ color: 'var(--color-accent)' }} />}
       submitLabel="Create Link"
-      isSubmitDisabled={!selectedTargetId}
+      isSubmitDisabled={!selectedTargetId || !effectiveSourceId}
       width="600px"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {/* Source Artifact (read-only) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label
-            style={{
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-text-muted)',
-              fontWeight: 500,
-            }}
+        {needsSourceSelection ? (
+          <FormField
+            label="Source Artifact"
+            fullWidth
+            description="Select the artifact the link starts from."
           >
-            Source Artifact
-          </label>
-          <div
-            style={{
-              padding: '10px 12px',
-              backgroundColor: 'var(--color-bg-secondary)',
-              borderRadius: '6px',
-              border: '1px solid var(--color-border)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              fontSize: 'var(--font-size-sm)',
-              fontFamily: 'monospace',
-            }}
-          >
-            <span
+            <select
+              aria-label="Source Artifact"
+              value={chosenSourceId}
+              onChange={(e) => setChosenSourceId(e.target.value)}
               style={{
-                fontSize: '10px',
-                color: '#fff',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                textTransform: 'uppercase',
-                fontWeight: 700,
-                backgroundColor:
-                  sourceArtifactType === 'requirement'
-                    ? 'var(--color-info)'
-                    : sourceArtifactType === 'usecase'
-                      ? 'var(--color-accent)'
-                      : sourceArtifactType === 'testcase'
-                        ? 'var(--color-success)'
-                        : 'var(--color-warning)',
+                width: '100%',
+                padding: '10px 12px',
+                backgroundColor: 'var(--color-bg-secondary)',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-primary)',
+                fontSize: 'var(--font-size-sm)',
               }}
             >
-              {sourceArtifactType.substring(0, 3)}
-            </span>
-            <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>
-              {sourceArtifactId}
-            </span>
+              <option value="">Select source…</option>
+              {sourceOptions.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.id} – {a.title}
+                </option>
+              ))}
+            </select>
+          </FormField>
+        ) : (
+          // Source Artifact (read-only)
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label
+              style={{
+                fontSize: 'var(--font-size-xs)',
+                color: 'var(--color-text-muted)',
+                fontWeight: 500,
+              }}
+            >
+              Source Artifact
+            </label>
+            <div
+              style={{
+                padding: '10px 12px',
+                backgroundColor: 'var(--color-bg-secondary)',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--color-border)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                fontSize: 'var(--font-size-sm)',
+                fontFamily: 'monospace',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '10px',
+                  color: 'var(--color-on-accent)',
+                  padding: '2px 6px',
+                  borderRadius: 'var(--radius-xs)',
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                  backgroundColor: linkableTypeInfo(sourceArtifactType).color,
+                }}
+              >
+                {linkableTypeInfo(sourceArtifactType).short}
+              </span>
+              <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>
+                {sourceArtifactId}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Target Selection */}
         <FormField
@@ -154,41 +178,38 @@ export const LinkModal: React.FC<LinkModalProps> = ({
               style={{
                 display: 'flex',
                 backgroundColor: 'var(--color-bg-secondary)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 padding: '4px',
                 border: '1px solid var(--color-border)',
                 gap: '4px',
               }}
             >
-              {(['requirement', 'usecase', 'testcase', 'information'] as ArtifactType[]).map(
-                (type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => selectTargetType(type)}
-                    style={{
-                      flex: 1,
-                      padding: '6px',
-                      borderRadius: '4px',
-                      border: 'none',
-                      fontSize: 'var(--font-size-xs)',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      backgroundColor: targetType === type ? 'var(--color-accent)' : 'transparent',
-                      color: targetType === type ? '#fff' : 'var(--color-text-secondary)',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    {type === 'requirement'
-                      ? 'REQ'
-                      : type === 'usecase'
-                        ? 'UC'
-                        : type === 'testcase'
-                          ? 'TC'
-                          : 'INFO'}
-                  </button>
-                )
-              )}
+              {LINKABLE_TYPES.map(({ type, short, label }) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => selectTargetType(type)}
+                  title={label}
+                  aria-pressed={targetType === type}
+                  style={{
+                    flex: 1,
+                    padding: '6px',
+                    borderRadius: 'var(--radius-xs)',
+                    border: 'none',
+                    fontSize: 'var(--font-size-xs)',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    backgroundColor: targetType === type ? 'var(--color-accent)' : 'transparent',
+                    color:
+                      targetType === type
+                        ? 'var(--color-on-accent)'
+                        : 'var(--color-text-secondary)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {short}
+                </button>
+              ))}
             </div>
 
             {/* Search */}
@@ -211,7 +232,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                 style={{
                   width: '100%',
                   padding: '8px 12px 8px 32px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-app)',
                   color: 'var(--color-text-primary)',
@@ -225,7 +246,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
             <div
               style={{
                 border: '1px solid var(--color-border)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 backgroundColor: 'var(--color-bg-secondary)',
                 maxHeight: '180px',
                 overflowY: 'auto',
@@ -260,7 +281,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                        backgroundColor: isSelected ? 'var(--color-info-bg)' : 'transparent',
                         transition: 'background-color 0.15s',
                       }}
                       onMouseEnter={(e) =>
@@ -308,18 +329,18 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                           style={{
                             fontSize: '10px',
                             padding: '2px 8px',
-                            borderRadius: '10px',
+                            borderRadius: 'var(--radius-lg)',
                             whiteSpace: 'nowrap',
                             backgroundColor: isCurrentProject
                               ? 'var(--color-bg-card)'
-                              : 'rgba(99, 102, 241, 0.15)',
+                              : 'var(--color-accent-bg)',
                             color: isCurrentProject
                               ? 'var(--color-text-muted)'
                               : 'var(--color-accent)',
                             fontWeight: 500,
                             border: isCurrentProject
                               ? '1px solid var(--color-border)'
-                              : '1px solid rgba(99, 102, 241, 0.3)',
+                              : '1px solid var(--color-accent-ring)',
                           }}
                         >
                           {isCurrentProject ? 'Local' : project.name}
@@ -341,7 +362,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
             style={{
               width: '100%',
               padding: '8px 12px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-app)',
               color: 'var(--color-text-primary)',
@@ -374,7 +395,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
             style={{
               display: 'flex',
               backgroundColor: 'var(--color-bg-secondary)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               padding: '4px',
               border: '1px solid var(--color-border)',
               gap: '4px',
@@ -386,7 +407,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
               style={{
                 flex: 1,
                 padding: '8px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 border: 'none',
                 fontSize: 'var(--font-size-sm)',
                 fontWeight: 500,
@@ -396,7 +417,10 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                 justifyContent: 'center',
                 gap: '8px',
                 backgroundColor: linkScope === 'project' ? 'var(--color-accent)' : 'transparent',
-                color: linkScope === 'project' ? '#fff' : 'var(--color-text-secondary)',
+                color:
+                  linkScope === 'project'
+                    ? 'var(--color-on-accent)'
+                    : 'var(--color-text-secondary)',
                 transition: 'all 0.2s',
               }}
             >
@@ -409,7 +433,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
               style={{
                 flex: 1,
                 padding: '8px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 border: 'none',
                 fontSize: 'var(--font-size-sm)',
                 fontWeight: 500,
@@ -419,7 +443,8 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                 justifyContent: 'center',
                 gap: '8px',
                 backgroundColor: linkScope === 'global' ? 'var(--color-accent)' : 'transparent',
-                color: linkScope === 'global' ? '#fff' : 'var(--color-text-secondary)',
+                color:
+                  linkScope === 'global' ? 'var(--color-on-accent)' : 'var(--color-text-secondary)',
                 transition: 'all 0.2s',
               }}
             >

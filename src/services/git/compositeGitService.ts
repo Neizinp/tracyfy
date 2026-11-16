@@ -31,7 +31,8 @@ class CompositeGitService {
     gitBaselineService.setInitialized(value);
   }
   private commitFilesCache = new Map<string, string[]>();
-  private readonly CACHE_FILE = '.tracyfy/commit-cache.json';
+  // Local per-clone cache: lives inside .git so it is never tracked or pushed
+  private readonly CACHE_FILE = '.git/tracyfy-commit-cache.json';
   private cacheLoadedFromDisk = false;
 
   constructor() {
@@ -203,6 +204,10 @@ class CompositeGitService {
 
   getAuthToken(): string | null {
     return gitRemoteService.getAuthToken();
+  }
+
+  hasAuthToken(): boolean {
+    return gitRemoteService.hasAuthToken();
   }
 
   async setAuthToken(token: string): Promise<void> {

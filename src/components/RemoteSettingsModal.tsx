@@ -96,7 +96,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
   };
 
   const handleTestConnection = async () => {
-    if (!token.trim()) {
+    if (!token.trim() && !realGitService.hasAuthToken()) {
       setError('Please enter an authentication token');
       return;
     }
@@ -106,8 +106,10 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
     setSuccess(null);
 
     try {
-      // Save token first
-      await realGitService.setAuthToken(token.trim());
+      // Save token first (if a new one was entered)
+      if (token.trim()) {
+        await realGitService.setAuthToken(token.trim());
+      }
 
       // Try to fetch
       await realGitService.fetch('origin');
@@ -139,7 +141,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'var(--color-bg-overlay)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -150,12 +152,12 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          backgroundColor: '#1a1a2e',
-          borderRadius: '12px',
+          backgroundColor: 'var(--color-bg-raised)',
+          borderRadius: 'var(--radius-lg)',
           padding: 'var(--spacing-lg)',
           width: '500px',
           maxWidth: '90vw',
-          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
+          boxShadow: 'var(--shadow-popover)',
           border: '1px solid var(--color-border)',
         }}
       >
@@ -182,6 +184,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
           </h2>
           <button
             onClick={onClose}
+            aria-label="Close"
             style={{
               background: 'none',
               border: 'none',
@@ -198,10 +201,10 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
         <div
           style={{
             padding: '12px',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            borderRadius: '8px',
-            color: '#60a5fa',
+            backgroundColor: 'var(--color-info-bg)',
+            border: '1px solid var(--color-info-border)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--color-info)',
             marginBottom: 'var(--spacing-md)',
             fontSize: 'var(--font-size-sm)',
             display: 'flex',
@@ -242,7 +245,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
                   justifyContent: 'space-between',
                   padding: '8px 12px',
                   backgroundColor: 'var(--color-bg-secondary)',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   marginBottom: '4px',
                 }}
               >
@@ -297,7 +300,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
               padding: '10px 12px',
               backgroundColor: 'var(--color-bg-secondary)',
               border: '1px solid var(--color-border)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               color: 'var(--color-text-primary)',
               fontSize: 'var(--font-size-sm)',
             }}
@@ -321,13 +324,17 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
             type="password"
             value={token}
             onChange={(e) => setToken(e.target.value)}
-            placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+            placeholder={
+              realGitService.hasAuthToken() && !token
+                ? 'Token saved – enter a new one to replace it'
+                : 'ghp_xxxxxxxxxxxxxxxxxxxx'
+            }
             style={{
               width: '100%',
               padding: '10px 12px',
               backgroundColor: 'var(--color-bg-secondary)',
               border: '1px solid var(--color-border)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               color: 'var(--color-text-primary)',
               fontSize: 'var(--font-size-sm)',
             }}
@@ -350,7 +357,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
               marginBottom: 'var(--spacing-md)',
               padding: '12px',
               backgroundColor: 'var(--color-bg-secondary)',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -423,7 +430,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
               padding: '10px 12px',
               backgroundColor: 'color-mix(in srgb, var(--color-error) 10%, transparent)',
               border: '1px solid var(--color-error)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               color: 'var(--color-error)',
               marginBottom: 'var(--spacing-md)',
               display: 'flex',
@@ -441,7 +448,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
               padding: '10px 12px',
               backgroundColor: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
               border: '1px solid var(--color-success)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               color: 'var(--color-success)',
               marginBottom: 'var(--spacing-md)',
               display: 'flex',
@@ -463,7 +470,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
               padding: '10px 16px',
               backgroundColor: 'var(--color-bg-secondary)',
               border: '1px solid var(--color-border)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               color: 'var(--color-text-primary)',
               cursor: isTesting ? 'wait' : 'pointer',
               display: 'flex',
@@ -482,8 +489,8 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
               padding: '10px 16px',
               backgroundColor: 'var(--color-accent)',
               border: 'none',
-              borderRadius: '6px',
-              color: 'white',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--color-on-accent)',
               cursor: isLoading ? 'wait' : 'pointer',
               display: 'flex',
               alignItems: 'center',

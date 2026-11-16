@@ -40,10 +40,11 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
       {
         key: 'idTitle',
         label: 'ID / Title',
-        width: '250px',
+        width: '280px',
+        minWidth: '240px',
         render: (tc: TestCase) => (
           <>
-            <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '2px' }}>
+            <div className="tf-mono" style={{ color: 'var(--color-accent)', marginBottom: '2px' }}>
               {tc.id}
             </div>
             <div style={{ color: 'var(--color-text-primary)' }}>{tc.title}</div>
@@ -68,7 +69,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                       style={{
                         fontSize: 'var(--font-size-xs)',
                         padding: '2px 6px',
-                        borderRadius: '4px',
+                        borderRadius: 'var(--radius-xs)',
                         background: 'var(--color-bg-tertiary)',
                         color: 'var(--color-text-secondary)',
                         border: '1px solid var(--color-border)',
@@ -94,10 +95,10 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
                 style={{
                   fontSize: 'var(--font-size-xs)',
                   padding: '1px 5px',
-                  borderRadius: '3px',
-                  background: 'rgba(59, 130, 246, 0.1)',
+                  borderRadius: 'var(--radius-xs)',
+                  background: 'var(--color-info-bg)',
                   color: 'var(--color-info)',
-                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                  border: '1px solid var(--color-info-bg)',
                 }}
               >
                 {id}
@@ -122,15 +123,15 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
           <span
             style={{
               padding: '2px 8px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
               background:
                 tc.priority === 'high'
-                  ? 'rgba(239, 68, 68, 0.1)'
+                  ? 'var(--color-error-bg)'
                   : tc.priority === 'medium'
-                    ? 'rgba(245, 158, 11, 0.1)'
-                    : 'rgba(16, 185, 129, 0.1)',
+                    ? 'var(--color-warning-bg)'
+                    : 'var(--color-success-bg)',
               color:
                 tc.priority === 'high'
                   ? 'var(--color-error)'
@@ -152,17 +153,17 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
           <span
             style={{
               padding: '2px 8px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
               background:
                 tc.status === 'approved' || tc.status === 'passed'
-                  ? 'rgba(16, 185, 129, 0.1)'
+                  ? 'var(--color-success-bg)'
                   : tc.status === 'draft'
-                    ? 'rgba(107, 114, 128, 0.1)'
+                    ? 'var(--color-bg-hover)'
                     : tc.status === 'failed'
-                      ? 'rgba(239, 68, 68, 0.1)'
-                      : 'rgba(59, 130, 246, 0.1)',
+                      ? 'var(--color-error-bg)'
+                      : 'var(--color-info-bg)',
               color:
                 tc.status === 'approved' || tc.status === 'passed'
                   ? 'var(--color-success)'

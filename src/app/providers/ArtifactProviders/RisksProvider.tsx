@@ -1,9 +1,7 @@
 import React, { useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { riskService } from '../../../services/artifactServices';
 import { useFileSystem } from '../FileSystemProvider';
 import { useToast } from '../ToastProvider';
-import { useGlobalState } from '../GlobalStateProvider';
 import type { Risk, CommitInfo } from '../../../types';
 import { realGitService } from '../../../services/realGitService';
 import { createArtifactProvider } from './BaseArtifactProvider';
@@ -26,7 +24,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Ri
   displayName: 'Risks',
   useData: (state) => ({
     items: state.risks,
-    setItems: state.setRisks,
   }),
   useFS: (fs) => ({
     save: fs.saveRisk,
@@ -46,8 +43,7 @@ export const RisksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
 export const useRisks = (): RisksContextValue => {
   const context = useProviderContext();
-  const { setRisks } = useGlobalState();
-  const { isReady } = useFileSystem();
+  const { isReady, reloadData } = useFileSystem();
   const { showToast } = useToast();
   const [loading, setLoading] = React.useState(false);
 
@@ -61,15 +57,15 @@ export const useRisks = (): RisksContextValue => {
 
     setLoading(true);
     try {
-      const loadedRisks = await riskService.loadAll();
-      setRisks(loadedRisks);
+      // Reload through FileSystemProvider (the single source of truth)
+      await reloadData();
     } catch (error) {
       console.error('Failed to load risks:', error);
       showToast('Failed to load risks', 'error');
     } finally {
       setLoading(false);
     }
-  }, [isReady, isE2E, setRisks, showToast]);
+  }, [isReady, isE2E, reloadData, showToast]);
 
   const getRiskHistory = useCallback(
     async (id: string) => {

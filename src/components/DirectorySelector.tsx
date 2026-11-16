@@ -64,12 +64,12 @@ export const DirectorySelector: React.FC<DirectorySelectorProps> = ({ onReady })
       <div
         style={{
           backgroundColor: 'var(--color-bg-card)',
-          borderRadius: '12px',
+          borderRadius: 'var(--radius-lg)',
           border: '1px solid var(--color-border)',
           padding: '48px',
           maxWidth: '500px',
           textAlign: 'center',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          boxShadow: 'var(--shadow-popover)',
         }}
       >
         <div
@@ -114,7 +114,7 @@ export const DirectorySelector: React.FC<DirectorySelectorProps> = ({ onReady })
             style={{
               backgroundColor: 'var(--color-bg-secondary)',
               border: '1px solid var(--color-danger)',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md)',
               padding: '12px 16px',
               marginBottom: '24px',
               display: 'flex',
@@ -134,7 +134,7 @@ export const DirectorySelector: React.FC<DirectorySelectorProps> = ({ onReady })
           <div
             style={{
               backgroundColor: 'var(--color-bg-secondary)',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md)',
               padding: '12px 16px',
               marginBottom: '24px',
               display: 'flex',
@@ -156,9 +156,9 @@ export const DirectorySelector: React.FC<DirectorySelectorProps> = ({ onReady })
               disabled={isLoading}
               style={{
                 padding: '14px 32px',
-                borderRadius: '8px',
+                borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--color-accent)',
-                color: 'white',
+                color: 'var(--color-on-accent)',
                 border: 'none',
                 cursor: isLoading ? 'not-allowed' : 'pointer',
                 fontSize: 'var(--font-size-base)',

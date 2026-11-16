@@ -129,7 +129,7 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
               padding: '16px',
               backgroundColor: 'var(--color-bg-card)',
               border: '1px solid var(--color-border)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -184,14 +184,14 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
       <div
         style={{
           backgroundColor: 'var(--color-bg-app)',
-          borderRadius: '8px',
+          borderRadius: 'var(--radius-md)',
           border: '1px solid var(--color-border)',
           width: '900px',
           maxWidth: '95%',
           height: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          boxShadow: 'var(--shadow-popover)',
         }}
       >
         {/* Header */}
@@ -213,7 +213,7 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
               <span
                 style={{
                   padding: '2px 8px',
-                  borderRadius: '12px',
+                  borderRadius: 'var(--radius-lg)',
                   backgroundColor: 'var(--color-info-bg)',
                   color: 'var(--color-info-light)',
                   fontSize: 'var(--font-size-xs)',
@@ -290,7 +290,7 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
                       activeTab === tab.id ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
                     color: activeTab === tab.id ? 'white' : 'var(--color-text-muted)',
                     padding: '0 6px',
-                    borderRadius: '10px',
+                    borderRadius: 'var(--radius-lg)',
                     fontSize: '10px',
                     minWidth: '20px',
                     textAlign: 'center',

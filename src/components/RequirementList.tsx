@@ -36,10 +36,11 @@ export const RequirementList: React.FC<
       {
         key: 'idTitle',
         label: 'ID / Title',
-        width: '250px',
+        width: '280px',
+        minWidth: '240px',
         render: (req: Requirement) => (
           <>
-            <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '2px' }}>
+            <div className="tf-mono" style={{ color: 'var(--color-accent)', marginBottom: '2px' }}>
               {req.id}
             </div>
             <div style={{ color: 'var(--color-text-primary)' }}>{req.title}</div>
@@ -55,7 +56,7 @@ export const RequirementList: React.FC<
             style={{
               fontSize: 'var(--font-size-xs)',
               padding: '2px 6px',
-              borderRadius: '4px',
+              borderRadius: 'var(--radius-xs)',
               backgroundColor: 'var(--color-bg-tertiary)',
               color: 'var(--color-text-secondary)',
               border: '1px solid var(--color-border)',
@@ -83,7 +84,7 @@ export const RequirementList: React.FC<
                       style={{
                         fontSize: 'var(--font-size-xs)',
                         padding: '2px 6px',
-                        borderRadius: '4px',
+                        borderRadius: 'var(--radius-xs)',
                         background: 'var(--color-bg-tertiary)',
                         color: 'var(--color-text-secondary)',
                         border: '1px solid var(--color-border)',
@@ -142,15 +143,15 @@ export const RequirementList: React.FC<
           <span
             style={{
               padding: '2px 8px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
               background:
                 req.priority === 'high'
-                  ? 'rgba(239, 68, 68, 0.1)'
+                  ? 'var(--color-error-bg)'
                   : req.priority === 'medium'
-                    ? 'rgba(245, 158, 11, 0.1)'
-                    : 'rgba(16, 185, 129, 0.1)',
+                    ? 'var(--color-warning-bg)'
+                    : 'var(--color-success-bg)',
               color:
                 req.priority === 'high'
                   ? 'var(--color-error)'
@@ -173,15 +174,15 @@ export const RequirementList: React.FC<
           <span
             style={{
               padding: '2px 8px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
               background:
                 req.status === 'approved'
-                  ? 'rgba(16, 185, 129, 0.1)'
+                  ? 'var(--color-success-bg)'
                   : req.status === 'draft'
-                    ? 'rgba(107, 114, 128, 0.1)'
-                    : 'rgba(59, 130, 246, 0.1)',
+                    ? 'var(--color-bg-hover)'
+                    : 'var(--color-info-bg)',
               color:
                 req.status === 'approved'
                   ? 'var(--color-success)'
@@ -223,10 +224,10 @@ export const RequirementList: React.FC<
           <span
             style={{
               padding: '2px 8px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
-              background: req.status === 'approved' ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+              background: req.status === 'approved' ? 'var(--color-success-bg)' : 'transparent',
               color: req.status === 'approved' ? 'var(--color-success)' : 'var(--color-text-muted)',
             }}
           >

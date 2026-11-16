@@ -8,8 +8,12 @@ import {
   useInformation,
   useUI,
   useProject,
+  useRisks,
+  useDocuments,
 } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
+import { notifyError } from '../app/providers/ToastProvider';
+import type { LinkableType } from '../constants/linkableArtifacts';
 
 type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
 
@@ -21,12 +25,14 @@ export const TraceabilityDashboardPage: React.FC = () => {
       ? tabParam
       : 'overview';
 
-  const { requirements, handleUpdateRequirement } = useRequirements();
-  const { useCases, handleUpdateUseCase } = useUseCases();
-  const { testCases, handleUpdateTestCase } = useTestCases();
-  const { information, handleUpdateInformation } = useInformation();
+  const { requirements } = useRequirements();
+  const { useCases } = useUseCases();
+  const { testCases } = useTestCases();
+  const { information } = useInformation();
+  const { risks } = useRisks();
+  const { documents } = useDocuments();
   const { searchQuery, setLinkSourceId, setLinkSourceType, setIsLinkModalOpen } = useUI();
-  const { allLinks: standaloneLinks } = useLinkService({});
+  const { allLinks: standaloneLinks, deleteLink } = useLinkService({});
   const { projects } = useProject();
 
   const filteredRequirements = useMemo(() => {
@@ -82,14 +88,38 @@ export const TraceabilityDashboardPage: React.FC = () => {
     });
   }, [information, searchQuery]);
 
+  const filteredRisks = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return risks.filter((risk) => {
+      if (risk.isDeleted) return false;
+      if (!searchQuery) return true;
+      return (
+        risk.id.toLowerCase().includes(query) ||
+        risk.title.toLowerCase().includes(query) ||
+        (risk.description || '').toLowerCase().includes(query)
+      );
+    });
+  }, [risks, searchQuery]);
+
+  const filteredDocuments = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return documents.filter((doc) => {
+      if (doc.isDeleted) return false;
+      if (!searchQuery) return true;
+      return doc.id.toLowerCase().includes(query) || doc.title.toLowerCase().includes(query);
+    });
+  }, [documents, searchQuery]);
+
   // Handler to open LinkModal for adding a link
   const handleAddLink = useCallback(
     (artifactId: string, artifactType: string) => {
-      const typeMap: Record<string, 'requirement' | 'usecase' | 'testcase' | 'information'> = {
+      const typeMap: Record<string, LinkableType> = {
         requirement: 'requirement',
         useCase: 'usecase',
         testCase: 'testcase',
         information: 'information',
+        risk: 'risk',
+        document: 'document',
       };
       setLinkSourceId(artifactId);
       setLinkSourceType(typeMap[artifactType] || 'requirement');
@@ -101,44 +131,13 @@ export const TraceabilityDashboardPage: React.FC = () => {
   // Handler to remove an orphan link
   const handleRemoveLink = useCallback(
     (artifactId: string, targetId: string) => {
-      // Find the artifact and remove the orphan link
-      const req = requirements.find((r) => r.id === artifactId);
-      if (req) {
-        const updatedLinks = (req.linkedArtifacts || []).filter((l) => l.targetId !== targetId);
-        handleUpdateRequirement(artifactId, { linkedArtifacts: updatedLinks });
-        return;
-      }
-
-      const uc = useCases.find((u) => u.id === artifactId);
-      if (uc) {
-        const updatedLinks = (uc.linkedArtifacts || []).filter((l) => l.targetId !== targetId);
-        handleUpdateUseCase(artifactId, { linkedArtifacts: updatedLinks });
-        return;
-      }
-
-      const tc = testCases.find((t) => t.id === artifactId);
-      if (tc) {
-        const updatedLinks = (tc.linkedArtifacts || []).filter((l) => l.targetId !== targetId);
-        handleUpdateTestCase(artifactId, { linkedArtifacts: updatedLinks });
-        return;
-      }
-
-      const info = information.find((i) => i.id === artifactId);
-      if (info) {
-        const updatedLinks = (info.linkedArtifacts || []).filter((l) => l.targetId !== targetId);
-        handleUpdateInformation(artifactId, { linkedArtifacts: updatedLinks });
-      }
+      standaloneLinks
+        .filter((l) => l.sourceId === artifactId && l.targetId === targetId)
+        .forEach((l) => {
+          deleteLink(l.id).catch((err) => notifyError('Could not remove link', err));
+        });
     },
-    [
-      requirements,
-      useCases,
-      testCases,
-      information,
-      handleUpdateRequirement,
-      handleUpdateUseCase,
-      handleUpdateTestCase,
-      handleUpdateInformation,
-    ]
+    [standaloneLinks, deleteLink]
   );
 
   return (
@@ -148,6 +147,8 @@ export const TraceabilityDashboardPage: React.FC = () => {
       useCases={filteredUseCases}
       testCases={filteredTestCases}
       information={filteredInformation}
+      risks={filteredRisks}
+      documents={filteredDocuments}
       standaloneLinks={standaloneLinks}
       projects={projects}
       initialTab={initialTab}

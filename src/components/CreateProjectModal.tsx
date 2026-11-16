@@ -52,12 +52,12 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     >
       <div
         style={{
-          backgroundColor: '#222',
-          borderRadius: '8px',
-          border: '1px solid var(--color-border)',
+          backgroundColor: 'var(--color-bg-raised)',
+          borderRadius: 'var(--radius-xl)',
+          border: '1px solid var(--color-border-light)',
           width: '500px',
           maxWidth: '90%',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          boxShadow: 'var(--shadow-popover)',
         }}
       >
         <div
@@ -101,7 +101,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               style={{
                 width: '100%',
                 padding: '8px 12px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'var(--color-bg-app)',
                 color: 'var(--color-text-primary)',
@@ -129,7 +129,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               style={{
                 width: '100%',
                 padding: '8px 12px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'var(--color-bg-app)',
                 color: 'var(--color-text-primary)',
@@ -147,7 +147,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               onClick={onClose}
               style={{
                 padding: '8px 16px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'var(--color-bg-card)',
                 color: 'var(--color-text-primary)',
@@ -161,10 +161,10 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               disabled={!name.trim()}
               style={{
                 padding: '8px 16px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: 'none',
                 backgroundColor: 'var(--color-accent)',
-                color: 'white',
+                color: 'var(--color-on-accent)',
                 cursor: !name.trim() ? 'not-allowed' : 'pointer',
                 fontWeight: 500,
                 opacity: !name.trim() ? 0.5 : 1,

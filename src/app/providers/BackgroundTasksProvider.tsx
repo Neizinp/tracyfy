@@ -3,9 +3,13 @@
  *
  * Tracks background operations and provides status to UI components.
  * Used to show a status bar when the app is busy.
+ *
+ * State (the task list) and actions (startTask/endTask) live in separate
+ * contexts: most consumers only start/end tasks and must not re-render every
+ * time a task starts or finishes (which happens on every save).
  */
 
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useMemo } from 'react';
 import { debug } from '../../utils/debug';
 
 interface BackgroundTask {
@@ -14,14 +18,20 @@ interface BackgroundTask {
   startTime: number;
 }
 
-interface BackgroundTasksContextValue {
-  tasks: BackgroundTask[];
-  isWorking: boolean;
+interface BackgroundTaskActions {
   startTask: (message: string) => string;
   endTask: (id: string) => void;
 }
 
-const BackgroundTasksContext = createContext<BackgroundTasksContextValue | undefined>(undefined);
+interface BackgroundTasksState {
+  tasks: BackgroundTask[];
+  isWorking: boolean;
+}
+
+type BackgroundTasksContextValue = BackgroundTasksState & BackgroundTaskActions;
+
+const BackgroundTasksStateContext = createContext<BackgroundTasksState | undefined>(undefined);
+const BackgroundTaskActionsContext = createContext<BackgroundTaskActions | undefined>(undefined);
 
 export const BackgroundTasksProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<BackgroundTask[]>([]);
@@ -39,19 +49,38 @@ export const BackgroundTasksProvider: React.FC<{ children: React.ReactNode }> = 
     setTasks((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const isWorking = tasks.length > 0;
+  const actions = useMemo(() => ({ startTask, endTask }), [startTask, endTask]);
+  const state = useMemo(() => ({ tasks, isWorking: tasks.length > 0 }), [tasks]);
 
   return (
-    <BackgroundTasksContext.Provider value={{ tasks, isWorking, startTask, endTask }}>
-      {children}
-    </BackgroundTasksContext.Provider>
+    <BackgroundTaskActionsContext.Provider value={actions}>
+      <BackgroundTasksStateContext.Provider value={state}>
+        {children}
+      </BackgroundTasksStateContext.Provider>
+    </BackgroundTaskActionsContext.Provider>
   );
 };
 
+/**
+ * Stable startTask/endTask. Prefer this unless you need the task list,
+ * so the component doesn't re-render whenever a task starts or ends.
+ */
+export const useBackgroundTaskActions = (): BackgroundTaskActions => {
+  const actions = useContext(BackgroundTaskActionsContext);
+  if (!actions) {
+    throw new Error('useBackgroundTaskActions must be used within a BackgroundTasksProvider');
+  }
+  return actions;
+};
+
+/**
+ * Task list + actions. Re-renders on every task change (e.g. the status bar).
+ */
 export const useBackgroundTasks = (): BackgroundTasksContextValue => {
-  const context = useContext(BackgroundTasksContext);
-  if (!context) {
+  const state = useContext(BackgroundTasksStateContext);
+  const actions = useContext(BackgroundTaskActionsContext);
+  if (!state || !actions) {
     throw new Error('useBackgroundTasks must be used within a BackgroundTasksProvider');
   }
-  return context;
+  return useMemo(() => ({ ...state, ...actions }), [state, actions]);
 };

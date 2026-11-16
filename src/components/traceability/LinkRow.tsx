@@ -39,7 +39,7 @@ export const LinkRow: React.FC<LinkRowProps> = ({
             cursor: onClickSource ? 'pointer' : 'default',
             padding: '2px 6px',
             backgroundColor: sourceColors.bg,
-            borderRadius: '4px',
+            borderRadius: 'var(--radius-xs)',
           }}
         >
           {sourceId}
@@ -50,7 +50,7 @@ export const LinkRow: React.FC<LinkRowProps> = ({
           style={{
             padding: '2px 8px',
             backgroundColor: 'var(--color-bg-tertiary)',
-            borderRadius: '4px',
+            borderRadius: 'var(--radius-xs)',
             fontSize: 'var(--font-size-sm)',
             color: 'var(--color-text-secondary)',
           }}
@@ -68,7 +68,7 @@ export const LinkRow: React.FC<LinkRowProps> = ({
             cursor: onClickTarget ? 'pointer' : 'default',
             padding: '2px 6px',
             backgroundColor: targetColors.bg,
-            borderRadius: '4px',
+            borderRadius: 'var(--radius-xs)',
           }}
         >
           {targetId}
@@ -86,7 +86,7 @@ export const LinkRow: React.FC<LinkRowProps> = ({
               border: 'none',
               cursor: 'pointer',
               padding: '4px',
-              borderRadius: '4px',
+              borderRadius: 'var(--radius-xs)',
               color: 'var(--color-text-muted)',
               display: 'flex',
               alignItems: 'center',

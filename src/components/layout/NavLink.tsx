@@ -31,16 +31,17 @@ export const NavLink: React.FC<NavLinkProps> = ({ to, icon: Icon, label, iconSty
   return (
     <Link
       to={to}
-      style={{
-        ...(isActive ? navLinkActiveStyle : navLinkInactiveStyle),
-        transition: 'background-color 0.15s',
-      }}
-      onMouseEnter={(e) =>
-        !isActive && (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
-      }
-      onMouseLeave={(e) => !isActive && (e.currentTarget.style.backgroundColor = 'transparent')}
+      style={isActive ? navLinkActiveStyle : navLinkInactiveStyle}
+      className={isActive ? undefined : 'tf-nav'}
+      aria-current={isActive ? 'page' : undefined}
     >
-      <Icon size={18} style={iconStyle} />
+      <Icon
+        size={16}
+        style={{
+          color: isActive ? 'var(--color-accent)' : 'var(--color-text-muted)',
+          ...iconStyle,
+        }}
+      />
       {label}
     </Link>
   );

@@ -94,10 +94,14 @@ describe('LinkModal', () => {
     sourceArtifactType: 'requirement' as const,
     projects: [mockProject],
     currentProjectId: 'PROJ-001',
-    globalRequirements: [mockReq1, mockReq2],
-    globalUseCases: [mockUseCase],
-    globalTestCases: [mockTestCase],
-    globalInformation: [mockInformation],
+    artifactsByType: {
+      requirement: [mockReq1, mockReq2],
+      usecase: [mockUseCase],
+      testcase: [mockTestCase],
+      information: [mockInformation],
+      risk: [],
+      document: [],
+    },
     onClose: mockOnClose,
     onAddLink: mockOnAddLink,
   };
@@ -118,10 +122,41 @@ describe('LinkModal', () => {
     expect(screen.queryByText(/Create Link/i)).not.toBeInTheDocument();
   });
 
-  it('should not render without sourceArtifactId', () => {
+  it('should let the user pick a source when none is preset (Links page)', () => {
     render(<LinkModal {...defaultProps} sourceArtifactId={null} />);
 
-    expect(screen.queryByText(/Create Link/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Create Link/i })).toBeInTheDocument();
+    const sourceSelect = screen.getByLabelText('Source Artifact');
+    fireEvent.change(sourceSelect, { target: { value: 'REQ-001' } });
+
+    const targetCard = screen.getByText('Target Requirement').closest('div');
+    if (targetCard) fireEvent.click(targetCard);
+
+    const submitButton = screen
+      .getAllByRole('button')
+      .find(
+        (btn) => btn.textContent?.includes('Create Link') && btn.getAttribute('type') === 'submit'
+      );
+    fireEvent.click(submitButton!);
+
+    expect(mockOnAddLink).toHaveBeenCalledWith(
+      expect.objectContaining({ sourceId: 'REQ-001', targetId: 'REQ-002' })
+    );
+  });
+
+  it('should not submit until a source is chosen', () => {
+    render(<LinkModal {...defaultProps} sourceArtifactId={null} />);
+
+    const targetCard = screen.getByText('Target Requirement').closest('div');
+    if (targetCard) fireEvent.click(targetCard);
+    const submitButton = screen
+      .getAllByRole('button')
+      .find(
+        (btn) => btn.textContent?.includes('Create Link') && btn.getAttribute('type') === 'submit'
+      );
+    fireEvent.click(submitButton!);
+
+    expect(mockOnAddLink).not.toHaveBeenCalled();
   });
 
   it('should call onClose when close button is clicked', () => {

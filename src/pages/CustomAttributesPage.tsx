@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { Search } from 'lucide-react';
 import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
 import type {
@@ -8,6 +9,7 @@ import type {
 } from '../types/customAttributes';
 import { CustomAttributeDefinitionModal } from '../components/CustomAttributeDefinitionModal';
 import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
+import { notifyError } from '../app/providers/ToastProvider';
 
 const ARTIFACT_TYPE_LABELS: Record<ApplicableArtifactType, string> = {
   requirement: 'Requirements',
@@ -28,8 +30,8 @@ const TYPE_COLORS: Record<AttributeType, string> = {
 };
 
 export const CustomAttributesPage: React.FC = () => {
-  const [definitions, setDefinitions] = useState<CustomAttributeDefinition[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Shared with the artifact dialogs via CustomAttributeProvider (single source of truth)
+  const { definitions, loading, refetch: loadDefinitions } = useCustomAttributes();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDefinition, setEditingDefinition] = useState<CustomAttributeDefinition | null>(
     null
@@ -43,22 +45,6 @@ export const CustomAttributesPage: React.FC = () => {
       searchFields: ['id', 'name', 'description'],
     }
   );
-
-  const loadDefinitions = useCallback(async () => {
-    setLoading(true);
-    try {
-      const defs = await diskCustomAttributeService.getAllDefinitions();
-      setDefinitions(defs);
-    } catch (error) {
-      console.error('Failed to load custom attribute definitions:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadDefinitions();
-  }, [loadDefinitions]);
 
   const handleEdit = (def: CustomAttributeDefinition) => {
     setEditingDefinition(def);
@@ -82,7 +68,7 @@ export const CustomAttributesPage: React.FC = () => {
       await loadDefinitions();
       handleModalClose();
     } catch (error) {
-      console.error('Failed to save attribute:', error);
+      notifyError('Could not save custom attribute', error);
     }
   };
 
@@ -141,7 +127,7 @@ export const CustomAttributesPage: React.FC = () => {
           style={{
             width: '100%',
             padding: '10px 12px 10px 40px',
-            borderRadius: '8px',
+            borderRadius: 'var(--radius-md)',
             border: '1px solid var(--color-border)',
             backgroundColor: 'var(--color-bg-card)',
             color: 'var(--color-text-primary)',
@@ -157,7 +143,7 @@ export const CustomAttributesPage: React.FC = () => {
             textAlign: 'center',
             padding: 'var(--spacing-xl)',
             backgroundColor: 'var(--color-bg-card)',
-            borderRadius: '8px',
+            borderRadius: 'var(--radius-md)',
             border: '1px solid var(--color-border)',
           }}
         >
@@ -184,7 +170,7 @@ export const CustomAttributesPage: React.FC = () => {
                 justifyContent: 'space-between',
                 padding: 'var(--spacing-md)',
                 backgroundColor: 'var(--color-bg-card)',
-                borderRadius: '8px',
+                borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--color-border)',
                 transition: 'border-color 0.15s, background-color 0.15s',
                 cursor: 'pointer',
@@ -207,7 +193,7 @@ export const CustomAttributesPage: React.FC = () => {
                       color: 'var(--color-text-muted)',
                       backgroundColor: 'var(--color-bg-secondary)',
                       padding: '2px 6px',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                     }}
                   >
                     {def.id}
@@ -217,9 +203,9 @@ export const CustomAttributesPage: React.FC = () => {
                     style={{
                       fontSize: 'var(--font-size-xs)',
                       padding: '2px 8px',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                       backgroundColor: TYPE_COLORS[def.type],
-                      color: 'white',
+                      color: 'var(--color-on-accent)',
                       textTransform: 'uppercase',
                     }}
                   >
@@ -262,7 +248,7 @@ export const CustomAttributesPage: React.FC = () => {
                       style={{
                         fontSize: 'var(--font-size-xs)',
                         padding: '2px 6px',
-                        borderRadius: '4px',
+                        borderRadius: 'var(--radius-xs)',
                         backgroundColor: 'var(--color-bg-secondary)',
                         color: 'var(--color-text-secondary)',
                       }}

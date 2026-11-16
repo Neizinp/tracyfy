@@ -24,16 +24,20 @@ interface AdvancedSearchModalProps {
 type ArtifactType = 'requirement' | 'useCase' | 'testCase' | 'information' | 'risk';
 
 const TYPE_CONFIG: Record<ArtifactType, { label: string; color: string; bgColor: string }> = {
-  requirement: { label: 'REQ', color: '#3b82f6', bgColor: 'rgba(59, 130, 246, 0.15)' },
-  useCase: { label: 'UC', color: '#22c55e', bgColor: 'rgba(34, 197, 94, 0.15)' },
-  testCase: { label: 'TC', color: '#f59e0b', bgColor: 'rgba(245, 158, 11, 0.15)' },
-  information: { label: 'INF', color: '#8b5cf6', bgColor: 'rgba(139, 92, 246, 0.15)' },
-  risk: { label: 'RSK', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)' },
+  requirement: { label: 'REQ', color: 'var(--color-info)', bgColor: 'var(--color-info-bg)' },
+  useCase: { label: 'UC', color: 'var(--color-success)', bgColor: 'var(--color-success-bg)' },
+  testCase: { label: 'TC', color: 'var(--color-warning)', bgColor: 'var(--color-warning-bg)' },
+  information: {
+    label: 'INF',
+    color: 'var(--color-accent-light)',
+    bgColor: 'var(--color-accent-bg)',
+  },
+  risk: { label: 'RSK', color: 'var(--color-error)', bgColor: 'var(--color-error-bg)' },
 };
 
 const selectStyle: React.CSSProperties = {
   padding: '8px 12px',
-  borderRadius: '6px',
+  borderRadius: 'var(--radius-sm)',
   border: '1px solid var(--color-border)',
   backgroundColor: 'var(--color-bg-app)',
   color: 'var(--color-text-primary)',
@@ -93,7 +97,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backgroundColor: 'var(--color-bg-overlay)',
         backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'flex-start',
@@ -106,14 +110,14 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
       <div
         style={{
           backgroundColor: 'var(--color-bg-card)',
-          borderRadius: '16px',
+          borderRadius: 'var(--radius-xl)',
           width: '95%',
           maxWidth: '950px',
           maxHeight: '85vh',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
+          boxShadow: 'var(--shadow-popover)',
           border: '1px solid var(--color-border)',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -177,8 +181,8 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
               <span
                 style={{
                   backgroundColor: 'var(--color-accent)',
-                  color: 'white',
-                  borderRadius: '10px',
+                  color: 'var(--color-on-accent)',
+                  borderRadius: 'var(--radius-lg)',
                   padding: '1px 7px',
                   fontSize: '11px',
                   fontWeight: 600,
@@ -195,7 +199,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
               onClick={handleClearAll}
               style={{
                 padding: '5px 10px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'transparent',
                 color: 'var(--color-text-secondary)',
@@ -209,10 +213,10 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
               onClick={() => setShowSaveDialog(true)}
               style={{
                 padding: '5px 10px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: 'none',
                 backgroundColor: 'var(--color-accent)',
-                color: 'white',
+                color: 'var(--color-on-accent)',
                 fontSize: '12px',
                 fontWeight: 500,
                 cursor: 'pointer',
@@ -393,7 +397,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                 marginTop: '4px',
                 background: 'none',
                 border: '1px dashed var(--color-border)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 padding: '8px 14px',
                 cursor: 'pointer',
                 color: 'var(--color-text-secondary)',
@@ -439,7 +443,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                     onClick={() => handleResultClick(result)}
                     style={{
                       padding: '12px 14px',
-                      borderRadius: '10px',
+                      borderRadius: 'var(--radius-lg)',
                       marginBottom: '6px',
                       cursor: 'pointer',
                       backgroundColor: 'var(--color-bg-secondary)',
@@ -461,9 +465,9 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                           fontSize: '10px',
                           fontWeight: 700,
                           padding: '3px 8px',
-                          borderRadius: '4px',
-                          backgroundColor: typeConfig?.bgColor || 'rgba(100,100,100,0.15)',
-                          color: typeConfig?.color || '#888',
+                          borderRadius: 'var(--radius-xs)',
+                          backgroundColor: typeConfig?.bgColor || 'var(--color-bg-hover)',
+                          color: typeConfig?.color || 'var(--color-text-muted)',
                         }}
                       >
                         {result.id}
@@ -561,7 +565,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                     alignItems: 'center',
                     gap: '6px',
                     padding: '8px 10px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     marginBottom: '4px',
                     cursor: 'pointer',
                     backgroundColor: 'var(--color-bg-secondary)',
@@ -614,11 +618,11 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
             style={{
               position: 'absolute',
               inset: 0,
-              backgroundColor: 'rgba(0,0,0,0.4)',
+              backgroundColor: 'var(--color-bg-overlay)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: '16px',
+              borderRadius: 'var(--radius-xl)',
             }}
             onClick={() => setShowSaveDialog(false)}
           >
@@ -626,9 +630,9 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
               style={{
                 backgroundColor: 'var(--color-bg-card)',
                 padding: '24px',
-                borderRadius: '12px',
+                borderRadius: 'var(--radius-lg)',
                 width: '320px',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+                boxShadow: 'var(--shadow-popover)',
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -644,7 +648,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                 style={{
                   width: '100%',
                   padding: '10px 14px',
-                  borderRadius: '8px',
+                  borderRadius: 'var(--radius-md)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-app)',
                   color: 'var(--color-text-primary)',
@@ -659,7 +663,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                   onClick={() => setShowSaveDialog(false)}
                   style={{
                     padding: '8px 16px',
-                    borderRadius: '8px',
+                    borderRadius: 'var(--radius-md)',
                     border: '1px solid var(--color-border)',
                     backgroundColor: 'transparent',
                     color: 'var(--color-text-secondary)',
@@ -674,7 +678,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                   disabled={!saveFilterName.trim()}
                   style={{
                     padding: '8px 16px',
-                    borderRadius: '8px',
+                    borderRadius: 'var(--radius-md)',
                     border: 'none',
                     backgroundColor: saveFilterName.trim()
                       ? 'var(--color-accent)'

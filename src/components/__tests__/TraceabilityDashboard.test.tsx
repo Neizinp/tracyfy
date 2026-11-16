@@ -74,7 +74,6 @@ describe('TraceabilityDashboard', () => {
       dateCreated: Date.now(),
       text: '',
       rationale: '',
-      linkedArtifacts: [{ targetId: 'UC-001', type: 'satisfies' }],
     },
     {
       id: 'REQ-002',
@@ -104,7 +103,6 @@ describe('TraceabilityDashboard', () => {
       status: 'draft',
       revision: '01',
       lastModified: Date.now(),
-      linkedArtifacts: [{ targetId: 'REQ-001', type: 'derived_from' }],
     },
   ];
 
@@ -134,11 +132,36 @@ describe('TraceabilityDashboard', () => {
     },
   ];
 
+  // Links as the app stores them (link files)
+  const fixtureLinks: Link[] = [
+    {
+      id: 'LINK-101',
+      sourceId: 'REQ-001',
+      targetId: 'UC-001',
+      type: 'satisfies',
+      projectIds: [],
+      dateCreated: 1,
+      lastModified: 1,
+      revision: '01',
+    },
+    {
+      id: 'LINK-102',
+      sourceId: 'UC-001',
+      targetId: 'REQ-001',
+      type: 'derived_from',
+      projectIds: [],
+      dateCreated: 1,
+      lastModified: 1,
+      revision: '01',
+    },
+  ];
+
   const defaultProps = {
     requirements: mockRequirements,
     useCases: mockUseCases,
     testCases: mockTestCases,
     information: mockInformation,
+    standaloneLinks: fixtureLinks,
   };
 
   // Helper to get the tab bar
@@ -247,6 +270,7 @@ describe('TraceabilityDashboard', () => {
         useCases: mockUseCases,
         testCases: [],
         information: [],
+        standaloneLinks: fixtureLinks,
       };
 
       render(<TraceabilityDashboard {...allLinkedProps} />);

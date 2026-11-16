@@ -1,13 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useImportExport } from '../useImportExport';
-import type {
-  Requirement,
-  UseCase,
-  TestCase,
-  Information,
-  Project,
-  ArtifactDocument,
-} from '../../types';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { useImportExport, type ImportNotify } from '../useImportExport';
+import type { ImportBundle } from '../../utils/importUtils';
+import type { Requirement, UseCase, TestCase, Information, Project } from '../../types';
 
 // Mock jsonExportUtils
 vi.mock('../../utils/jsonExportUtils', () => ({
@@ -28,11 +22,8 @@ describe('useImportExport', () => {
   let mockUseCases: UseCase[];
   let mockTestCases: TestCase[];
   let mockInformation: Information[];
-  let mockSetRequirements: ReturnType<typeof vi.fn>;
-  let mockSetUseCases: ReturnType<typeof vi.fn>;
-  let mockSetTestCases: ReturnType<typeof vi.fn>;
-  let mockSetInformation: ReturnType<typeof vi.fn>;
-  let mockSetDocuments: ReturnType<typeof vi.fn>;
+  let mockApplyImport: Mock<(bundle: ImportBundle) => Promise<void>>;
+  let mockNotify: Mock<ImportNotify>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -118,11 +109,8 @@ describe('useImportExport', () => {
       },
     ];
 
-    mockSetRequirements = vi.fn();
-    mockSetUseCases = vi.fn();
-    mockSetTestCases = vi.fn();
-    mockSetInformation = vi.fn();
-    mockSetDocuments = vi.fn();
+    mockApplyImport = vi.fn<(bundle: ImportBundle) => Promise<void>>().mockResolvedValue(undefined);
+    mockNotify = vi.fn<ImportNotify>();
   });
 
   const useTestHook = (currentProjectId = 'proj-001') =>
@@ -133,20 +121,9 @@ describe('useImportExport', () => {
       useCases: mockUseCases,
       testCases: mockTestCases,
       information: mockInformation,
-      setRequirements: mockSetRequirements as (
-        reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])
-      ) => void,
-      setUseCases: mockSetUseCases as (ucs: UseCase[] | ((prev: UseCase[]) => UseCase[])) => void,
-      setTestCases: mockSetTestCases as (
-        tcs: TestCase[] | ((prev: TestCase[]) => TestCase[])
-      ) => void,
-      setInformation: mockSetInformation as (
-        info: Information[] | ((prev: Information[]) => Information[])
-      ) => void,
       documents: [],
-      setDocuments: mockSetDocuments as (
-        docs: ArtifactDocument[] | ((prev: ArtifactDocument[]) => ArtifactDocument[])
-      ) => void,
+      applyImport: mockApplyImport,
+      notify: mockNotify,
     });
 
   describe('handleExport', () => {
@@ -174,15 +151,12 @@ describe('useImportExport', () => {
       );
     });
 
-    it('should show alert if no project is selected', async () => {
-      const alertMock = vi.fn();
-      vi.stubGlobal('alert', alertMock);
-
+    it('should notify if no project is selected', async () => {
       const hook = useTestHook('non-existent-project');
 
       await hook.handleExport();
 
-      expect(alertMock).toHaveBeenCalledWith('No project selected');
+      expect(mockNotify).toHaveBeenCalledWith('No project selected', 'warning');
     });
 
     it('should handle export errors gracefully', async () => {
@@ -190,21 +164,50 @@ describe('useImportExport', () => {
       (exportProjectToJSON as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error('Export failed')
       );
-      const alertMock = vi.fn();
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      vi.stubGlobal('alert', alertMock);
 
       const hook = useTestHook();
 
       await hook.handleExport();
 
       expect(consoleError).toHaveBeenCalledWith('Failed to export project:', expect.any(Error));
-      expect(alertMock).toHaveBeenCalledWith('Failed to export project: Error: Export failed');
+      expect(mockNotify).toHaveBeenCalledWith(
+        'Failed to export project: Error: Export failed',
+        'error'
+      );
       consoleError.mockRestore();
     });
   });
 
   describe('handleImport', () => {
+    /** Simulate picking a JSON file with the given text content */
+    const importJson = async (hook: ReturnType<typeof useTestHook>, content: string) => {
+      const mockInput = {
+        type: '',
+        accept: '',
+        onchange: null as ((e: Event) => void) | null,
+        click: vi.fn(),
+      };
+      vi.spyOn(document, 'createElement').mockReturnValue(mockInput as unknown as HTMLElement);
+
+      class MockFileReader {
+        onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
+        readAsText() {
+          this.onload?.({ target: { result: content } } as unknown as ProgressEvent<FileReader>);
+        }
+      }
+      vi.stubGlobal('FileReader', MockFileReader);
+
+      hook.handleImport();
+      mockInput.onchange?.({
+        target: { files: [new File([content], 'test.json')] },
+      } as unknown as Event);
+      // let the async import pipeline settle
+      await new Promise((r) => setTimeout(r, 0));
+      vi.restoreAllMocks();
+      return mockInput;
+    };
+
     it('should create file input and set up change handler', () => {
       const createElementSpy = vi.spyOn(document, 'createElement');
       const hook = useTestHook();
@@ -215,147 +218,73 @@ describe('useImportExport', () => {
       createElementSpy.mockRestore();
     });
 
-    it('should parse JSON and set state correctly', () => {
-      const hook = useTestHook();
+    it('should parse JSON and pass validated artifacts to applyImport', async () => {
+      await importJson(
+        useTestHook(),
+        JSON.stringify({
+          requirements: [{ id: 'REQ-002', title: 'Imported Requirement' }],
+          useCases: [{ id: 'UC-002', title: 'Imported Use Case' }],
+          testCases: [{ id: 'TC-002', title: 'Imported Test Case' }],
+          information: [{ id: 'INFO-002', title: 'Imported Information' }],
+        })
+      );
 
-      // Mock document.createElement to capture the input element
-      const mockInput = {
-        type: '',
-        accept: '',
-        onchange: null as ((e: Event) => void) | null,
-        click: vi.fn(),
-      };
-
-      vi.spyOn(document, 'createElement').mockReturnValue(mockInput as unknown as HTMLElement);
-
-      // Create a mock FileReader class
-      class MockFileReader {
-        onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
-        readAsText() {
-          if (this.onload) {
-            this.onload({
-              target: {
-                result: JSON.stringify({
-                  requirements: [{ id: 'REQ-002', title: 'Imported Requirement' }],
-                  useCases: [{ id: 'UC-002', title: 'Imported Use Case' }],
-                  testCases: [{ id: 'TC-002', title: 'Imported Test Case' }],
-                  information: [{ id: 'INFO-002', title: 'Imported Information' }],
-                }),
-              },
-            } as unknown as ProgressEvent<FileReader>);
-          }
-        }
-      }
-
-      vi.stubGlobal('FileReader', MockFileReader);
-
-      hook.handleImport();
-
-      // Simulate file selection
-      if (mockInput.onchange) {
-        mockInput.onchange({
-          target: { files: [new File(['{}'], 'test.json')] },
-        } as unknown as Event);
-
-        expect(mockSetRequirements).toHaveBeenCalledWith([
-          { id: 'REQ-002', title: 'Imported Requirement' },
-        ]);
-        expect(mockSetUseCases).toHaveBeenCalledWith([
-          { id: 'UC-002', title: 'Imported Use Case' },
-        ]);
-        expect(mockSetTestCases).toHaveBeenCalledWith([
-          { id: 'TC-002', title: 'Imported Test Case' },
-        ]);
-        expect(mockSetInformation).toHaveBeenCalledWith([
-          { id: 'INFO-002', title: 'Imported Information' },
-        ]);
-      }
-
-      vi.restoreAllMocks();
+      expect(mockApplyImport).toHaveBeenCalledTimes(1);
+      const bundle = mockApplyImport.mock.calls[0][0];
+      expect(bundle.requirements).toEqual([{ id: 'REQ-002', title: 'Imported Requirement' }]);
+      expect(bundle.useCases).toEqual([{ id: 'UC-002', title: 'Imported Use Case' }]);
+      expect(bundle.testCases).toEqual([{ id: 'TC-002', title: 'Imported Test Case' }]);
+      expect(bundle.information).toEqual([{ id: 'INFO-002', title: 'Imported Information' }]);
+      expect(bundle.skipped).toEqual([]);
     });
 
-    it('should handle missing arrays in import data', () => {
-      const hook = useTestHook();
+    it('should not call applyImport (and never wipe data) when the file has no artifacts', async () => {
+      await importJson(useTestHook(), '{}');
 
-      const mockInput = {
-        type: '',
-        accept: '',
-        onchange: null as ((e: Event) => void) | null,
-        click: vi.fn(),
-      };
-
-      vi.spyOn(document, 'createElement').mockReturnValue(mockInput as unknown as HTMLElement);
-
-      // Create a mock FileReader class
-      class MockFileReader {
-        onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
-        readAsText() {
-          if (this.onload) {
-            this.onload({
-              target: { result: '{}' },
-            } as unknown as ProgressEvent<FileReader>);
-          }
-        }
-      }
-
-      vi.stubGlobal('FileReader', MockFileReader);
-
-      hook.handleImport();
-
-      if (mockInput.onchange) {
-        mockInput.onchange({
-          target: { files: [new File(['{}'], 'test.json')] },
-        } as unknown as Event);
-
-        expect(mockSetRequirements).toHaveBeenCalledWith([]);
-        expect(mockSetUseCases).toHaveBeenCalledWith([]);
-        expect(mockSetTestCases).toHaveBeenCalledWith([]);
-        expect(mockSetInformation).toHaveBeenCalledWith([]);
-      }
-
-      vi.restoreAllMocks();
+      expect(mockApplyImport).not.toHaveBeenCalled();
+      expect(mockNotify).toHaveBeenCalledWith('No artifacts found in file', 'warning');
     });
 
-    it('should show alert on JSON parse error', () => {
-      const alertMock = vi.fn();
-      vi.stubGlobal('alert', alertMock);
+    it('should skip rows with unsafe IDs and report them', async () => {
+      await importJson(
+        useTestHook(),
+        JSON.stringify({
+          requirements: [
+            { id: '../../etc/passwd', title: 'Evil' },
+            { id: 'REQ-003', title: 'Fine' },
+          ],
+        })
+      );
 
-      const hook = useTestHook();
+      const bundle = mockApplyImport.mock.calls[0][0];
+      expect(bundle.requirements.map((r) => r.id)).toEqual(['REQ-003']);
+      expect(mockNotify).toHaveBeenCalledWith(
+        expect.stringContaining('Skipped 1 invalid row'),
+        'warning'
+      );
+    });
 
-      const mockInput = {
-        type: '',
-        accept: '',
-        onchange: null as ((e: Event) => void) | null,
-        click: vi.fn(),
-      };
+    it('should notify on JSON parse error', async () => {
+      await importJson(useTestHook(), 'not valid json');
 
-      vi.spyOn(document, 'createElement').mockReturnValue(mockInput as unknown as HTMLElement);
+      expect(mockApplyImport).not.toHaveBeenCalled();
+      expect(mockNotify).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to parse JSON file'),
+        'error'
+      );
+    });
 
-      // Create a mock FileReader class
-      class MockFileReader {
-        onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
-        readAsText() {
-          if (this.onload) {
-            this.onload({
-              target: { result: 'not valid json' },
-            } as unknown as ProgressEvent<FileReader>);
-          }
-        }
-      }
+    it('should notify when persisting fails', async () => {
+      mockApplyImport.mockRejectedValue(new Error('disk full'));
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      vi.stubGlobal('FileReader', MockFileReader);
+      await importJson(
+        useTestHook(),
+        JSON.stringify({ requirements: [{ id: 'REQ-004', title: 'X' }] })
+      );
 
-      hook.handleImport();
-
-      if (mockInput.onchange) {
-        mockInput.onchange({
-          target: { files: [new File(['not valid json'], 'test.json')] },
-        } as unknown as Event);
-
-        expect(alertMock).toHaveBeenCalledWith('Failed to parse JSON file');
-      }
-
-      vi.restoreAllMocks();
+      expect(mockNotify).toHaveBeenCalledWith('Import failed: disk full', 'error');
+      consoleError.mockRestore();
     });
   });
 

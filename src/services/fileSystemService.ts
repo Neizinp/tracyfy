@@ -27,9 +27,9 @@ interface ElectronFsAPI {
     readFile: (path: string) => Promise<{ content?: string; notFound?: boolean; error?: string }>;
     readFileBinary: (
       path: string
-    ) => Promise<{ data?: number[]; notFound?: boolean; error?: string }>;
+    ) => Promise<{ data?: Uint8Array; notFound?: boolean; error?: string }>;
     writeFile: (path: string, content: string) => Promise<{ error?: string }>;
-    writeFileBinary: (path: string, data: number[]) => Promise<{ error?: string }>;
+    writeFileBinary: (path: string, data: Uint8Array) => Promise<{ error?: string }>;
     deleteFile: (path: string) => Promise<void>;
     listFiles: (path: string) => Promise<{ files: string[]; error?: string }>;
     listEntries: (path: string) => Promise<{ entries: string[]; error?: string }>;
@@ -573,11 +573,9 @@ class FileSystemService {
         await api.fs.mkdir(dirPath);
       }
 
-      // Convert to plain array for IPC
-      const dataArray = Array.from(
-        content instanceof ArrayBuffer ? new Uint8Array(content) : content
-      );
-      const result = await api.fs.writeFileBinary(fullPath, dataArray);
+      // Send as Uint8Array: structured clone transfers it as binary, not one number per byte
+      const data = content instanceof ArrayBuffer ? new Uint8Array(content) : content;
+      const result = await api.fs.writeFileBinary(fullPath, data);
 
       if (result.error) {
         console.error(`[writeFileBinary] Error writing binary file: ${path}`, result.error);

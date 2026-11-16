@@ -35,7 +35,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'var(--color-bg-overlay)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -45,11 +45,11 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
       <div
         style={{
           backgroundColor: 'var(--color-bg-card, #2a2a2a)',
-          borderRadius: '12px',
+          borderRadius: 'var(--radius-lg)',
           padding: '32px',
           width: '400px',
           maxWidth: '90%',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
+          boxShadow: 'var(--shadow-popover)',
           textAlign: 'center',
         }}
       >
@@ -100,7 +100,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
             style={{
               width: '100%',
               padding: '12px 16px',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-app)',
               color: 'var(--color-text-primary)',
@@ -116,7 +116,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
             style={{
               width: '100%',
               padding: '12px 24px',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md)',
               border: 'none',
               backgroundColor: userName.trim()
                 ? 'var(--color-accent, #6366f1)'

@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from 'react';
 import { debug } from '../../utils/debug';
 import { fileSystemService } from '../../services/fileSystemService';
 import {
@@ -18,13 +26,25 @@ import {
   documentService,
 } from '../../services/artifactServices';
 import { diskLinkService } from '../../services/diskLinkService';
-import { useBackgroundTasks } from './BackgroundTasksProvider';
+import { migrateEmbeddedLinks } from '../../services/linkMigrationService';
+import { notifyError } from './ToastProvider';
+
+/** Convert links embedded by older versions into link files (no-op once done) */
+async function migrateLegacyLinks(): Promise<void> {
+  try {
+    await migrateEmbeddedLinks();
+  } catch (err) {
+    notifyError('Could not migrate links from an older version of the project', err);
+  }
+}
+import { useBackgroundTaskActions } from './BackgroundTasksProvider';
 import type {
   Requirement,
   UseCase,
   TestCase,
   Information,
   Link,
+  LinkType,
   Project,
   Risk,
   ArtifactDocument,
@@ -53,6 +73,8 @@ interface FileSystemContextValue {
   preloadedCurrentUserId: string;
   // Git-related
   pendingChanges: FileStatus[];
+  /** Set when git status could not be read (shown instead of "No pending changes") */
+  statusError: string | null;
   refreshStatus: () => Promise<void>;
   // CRUD operations (save to disk)
   saveRequirement: (requirement: Requirement) => Promise<void>;
@@ -71,6 +93,14 @@ interface FileSystemContextValue {
   deleteProject: (id: string) => Promise<void>;
   saveLink: (link: Link) => Promise<void>;
   deleteLink: (id: string) => Promise<void>;
+  /** Create (and auto-commit) a link; updates provider state so the UI reflects it immediately */
+  createLink: (
+    sourceId: string,
+    targetId: string,
+    type: LinkType,
+    projectIds?: string[]
+  ) => Promise<Link>;
+  updateLink: (id: string, updates: Partial<Link>) => Promise<Link | null>;
   createProject: (name: string, description: string) => Promise<Project>;
   setCurrentProject: (projectId: string) => Promise<void>;
   getNextId: (
@@ -121,6 +151,19 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [directoryName, setDirectoryName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingChanges, setPendingChanges] = useState<FileStatus[]>([]);
+  const [statusError, setStatusError] = useState<string | null>(null);
+
+  /** git status, recording (not throwing) a failure so the UI can show it */
+  const loadStatus = useCallback(async (): Promise<FileStatus[]> => {
+    try {
+      const status = await realGitService.getStatus();
+      setStatusError(null);
+      return status;
+    } catch (err) {
+      setStatusError(err instanceof Error ? err.message : String(err));
+      return [];
+    }
+  }, []);
   const [information, setInformation] = useState<Information[]>([]);
   const [risks, setRisks] = useState<Risk[]>([]);
   const [documents, setDocuments] = useState<ArtifactDocument[]>([]);
@@ -151,7 +194,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   });
 
   // Background tasks for status bar
-  const { startTask, endTask } = useBackgroundTasks();
+  const { startTask, endTask } = useBackgroundTaskActions();
 
   // Debounce timer for refreshStatus to coalesce rapid calls
   const refreshStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -169,17 +212,15 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (realGitService.isInitialized()) {
         const taskId = startTask('Refreshing git status...');
         try {
-          const status = await realGitService.getStatus();
+          const status = await loadStatus();
           debug.log(`[refreshStatus] Received ${status.length} files`);
           setPendingChanges(status);
-        } catch (err) {
-          console.error('[refreshStatus] Error during getStatus:', err);
         } finally {
           endTask(taskId);
         }
       }
     }, REFRESH_STATUS_DEBOUNCE_MS);
-  }, [startTask, endTask]);
+  }, [startTask, endTask, loadStatus]);
 
   // Load all data from disk using diskProjectService
   const reloadData = useCallback(async () => {
@@ -219,8 +260,14 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [startTask, endTask]);
 
-  // Try to restore previously selected directory on mount
+  // Try to restore previously selected directory on mount.
+  // Runs once per mount: React StrictMode (dev) invokes effects twice, and the
+  // effect's deps may change identity, but restoring (git init, counter
+  // recalculation, link migration) must not run concurrently or repeatedly.
+  const restoreStartedRef = useRef(false);
   useEffect(() => {
+    if (restoreStartedRef.current) return;
+    restoreStartedRef.current = true;
     const tryRestore = async () => {
       if (!fileSystemService.isSupported()) {
         setError('File System Access API is not supported. Please use Chrome, Edge, or Opera.');
@@ -262,9 +309,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
               // Initialize disk project service directories
               await diskProjectService.initialize();
+              await migrateLegacyLinks();
 
               // Load data and git status in parallel (they're independent)
-              const [, status] = await Promise.all([reloadData(), realGitService.getStatus()]);
+              const [, status] = await Promise.all([reloadData(), loadStatus()]);
               setPendingChanges(status);
 
               setIsReady(true);
@@ -274,14 +322,18 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           }
         }
       } catch (err) {
+        // Shown by the folder selector instead of silently asking to pick a folder again
         console.error('Failed to restore directory:', err);
+        setError(
+          `Could not open the project folder: ${err instanceof Error ? err.message : String(err)}`
+        );
       }
 
       setIsLoading(false);
     };
 
     tryRestore();
-  }, [reloadData, startTask, endTask]);
+  }, [reloadData, startTask, endTask, loadStatus]);
 
   const selectDirectory = useCallback(async () => {
     setIsLoading(true);
@@ -324,9 +376,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       // Initialize disk project service directories
       await diskProjectService.initialize();
+      await migrateLegacyLinks();
 
       // Load data and git status in parallel (they're independent)
-      const [, status] = await Promise.all([reloadData(), realGitService.getStatus()]);
+      const [, status] = await Promise.all([reloadData(), loadStatus()]);
       debug.log('[selectDirectory] Setting pendingChanges to:', status);
       setPendingChanges(status);
 
@@ -337,7 +390,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       endTask(taskId);
       setIsLoading(false);
     }
-  }, [reloadData, startTask, endTask]);
+  }, [reloadData, startTask, endTask, loadStatus]);
 
   // CRUD operations - Requirements
   const saveRequirement = useCallback(
@@ -614,31 +667,75 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   );
 
   // CRUD operations - Links
+  const upsertLinkState = useCallback((link: Link) => {
+    setLinks((prev) => {
+      const idx = prev.findIndex((l) => l.id === link.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = link;
+        return updated;
+      }
+      return [...prev, link];
+    });
+  }, []);
+
   const saveLink = useCallback(
     async (link: Link) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskLinkService.save(link);
+        // Link files are hidden from pending changes, so commit them right away
+        await diskLinkService.save(link, `Update link ${link.id}`);
       }
-      setLinks((prev) => {
-        const idx = prev.findIndex((l) => l.id === link.id);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = link;
-          return updated;
-        }
-        return [...prev, link];
-      });
+      upsertLinkState(link);
       if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
-    [isReady, refreshStatus]
+    [isReady, refreshStatus, upsertLinkState]
+  );
+
+  const e2eLinkCounter = useRef(0);
+
+  const createLink = useCallback(
+    async (sourceId: string, targetId: string, type: LinkType, projectIds: string[] = []) => {
+      if (!isReady) throw new Error('Filesystem not ready');
+      let link: Link;
+      if (isE2EMode()) {
+        const now = Date.now();
+        link = {
+          id: `LINK-${String(++e2eLinkCounter.current).padStart(3, '0')}`,
+          sourceId,
+          targetId,
+          type,
+          projectIds,
+          dateCreated: now,
+          lastModified: now,
+          revision: '01',
+        };
+      } else {
+        link = await diskLinkService.createLink(sourceId, targetId, type, projectIds);
+      }
+      upsertLinkState(link);
+      if (!isE2EMode()) refreshStatus();
+      return link;
+    },
+    [isReady, refreshStatus, upsertLinkState]
+  );
+
+  const updateLink = useCallback(
+    async (id: string, updates: Partial<Link>) => {
+      if (!isReady) throw new Error('Filesystem not ready');
+      const updated = await diskLinkService.updateLink(id, updates);
+      if (updated) upsertLinkState(updated);
+      refreshStatus();
+      return updated;
+    },
+    [isReady, refreshStatus, upsertLinkState]
   );
 
   const deleteLink = useCallback(
     async (id: string) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskLinkService.delete(id);
+        await diskLinkService.deleteLink(id);
       }
       setLinks((prev) => prev.filter((l) => l.id !== id));
       if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
@@ -754,8 +851,15 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   const pull = useCallback(async () => {
-    return await realGitService.pull();
-  }, []);
+    const result = await realGitService.pull();
+    if (result.success) {
+      // The pull changed files on disk: reload so the app (and the next save)
+      // works on the pulled data instead of stale in-memory state
+      await reloadData();
+      refreshStatus();
+    }
+    return result;
+  }, [reloadData, refreshStatus]);
 
   const hasRemote = useCallback(async () => {
     return await realGitService.hasRemote();
@@ -784,65 +888,121 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setPreloadedCurrentUserId('');
   }, []);
 
-  return (
-    <FileSystemContext.Provider
-      value={{
-        isReady,
-        isLoading,
-        isApiSupported: fileSystemService.isSupported(),
-        directoryName,
-        error,
-        selectDirectory,
-        changeDirectory,
-        // Data
-        projects,
-        currentProjectId,
-        requirements,
-        useCases,
-        testCases,
-        information,
-        risks,
-        documents,
-        links,
-        preloadedUsers,
-        preloadedCurrentUserId,
-        // Git
-        pendingChanges,
-        refreshStatus,
-        // CRUD
-        saveRequirement,
-        saveUseCase,
-        saveTestCase,
-        saveInformation,
-        saveRisk,
-        saveDocument,
-        deleteRequirement,
-        deleteUseCase,
-        deleteTestCase,
-        deleteInformation,
-        deleteRisk,
-        deleteDocument,
-        saveProject,
-        createProject,
-        deleteProject,
-        saveLink,
-        deleteLink,
-        setCurrentProject,
-        getNextId,
-        reloadData,
-        // Git operations
-        commitFile,
-        revertFile,
-        getArtifactHistory,
-        readFileAtCommit,
-        push,
-        pull,
-        hasRemote,
-      }}
-    >
-      {children}
-    </FileSystemContext.Provider>
+  // Static capability check; no need to recompute per render
+  const isApiSupported = fileSystemService.isSupported();
+
+  const value = useMemo(
+    () => ({
+      isReady,
+      isLoading,
+      isApiSupported,
+      directoryName,
+      error,
+      selectDirectory,
+      changeDirectory,
+      // Data
+      projects,
+      currentProjectId,
+      requirements,
+      useCases,
+      testCases,
+      information,
+      risks,
+      documents,
+      links,
+      preloadedUsers,
+      preloadedCurrentUserId,
+      // Git
+      pendingChanges,
+      statusError,
+      refreshStatus,
+      // CRUD
+      saveRequirement,
+      saveUseCase,
+      saveTestCase,
+      saveInformation,
+      saveRisk,
+      saveDocument,
+      deleteRequirement,
+      deleteUseCase,
+      deleteTestCase,
+      deleteInformation,
+      deleteRisk,
+      deleteDocument,
+      saveProject,
+      createProject,
+      deleteProject,
+      saveLink,
+      deleteLink,
+      createLink,
+      updateLink,
+      setCurrentProject,
+      getNextId,
+      reloadData,
+      // Git operations
+      commitFile,
+      revertFile,
+      getArtifactHistory,
+      readFileAtCommit,
+      push,
+      pull,
+      hasRemote,
+    }),
+    [
+      updateLink,
+      changeDirectory,
+      commitFile,
+      createProject,
+      currentProjectId,
+      deleteDocument,
+      deleteInformation,
+      createLink,
+      deleteLink,
+      deleteProject,
+      deleteRequirement,
+      deleteRisk,
+      deleteTestCase,
+      deleteUseCase,
+      directoryName,
+      documents,
+      error,
+      getArtifactHistory,
+      getNextId,
+      hasRemote,
+      information,
+      isApiSupported,
+      isLoading,
+      isReady,
+      links,
+      pendingChanges,
+      statusError,
+      preloadedCurrentUserId,
+      preloadedUsers,
+      projects,
+      pull,
+      push,
+      readFileAtCommit,
+      refreshStatus,
+      reloadData,
+      requirements,
+      revertFile,
+      risks,
+      saveDocument,
+      saveInformation,
+      saveLink,
+      saveProject,
+      saveRequirement,
+      saveRisk,
+      saveTestCase,
+      saveUseCase,
+      selectDirectory,
+      setCurrentProject,
+      testCases,
+      useCases,
+    ]
   );
+
+  return <FileSystemContext.Provider value={value}>{children}</FileSystemContext.Provider>;
 };
 
 export const useFileSystem = (): FileSystemContextValue => {

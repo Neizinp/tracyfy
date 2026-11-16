@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Link as LinkIcon, ArrowRight, RefreshCw, Globe, Folder, Plus } from 'lucide-react';
 import { useLinkService } from '../hooks/useLinkService';
+import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
+import { linkableTypeInfo, linkableTypeOf } from '../constants/linkableArtifacts';
 import type { Link, Project } from '../types';
 import type { LinkType } from '../utils/linkTypes';
 import { EditLinkModal } from './EditLinkModal';
@@ -20,6 +22,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
   onAdd,
 }) => {
   const { allLinks: links, loading, refresh: loadLinks, deleteLink } = useLinkService();
+  const { updateLink } = useFileSystem();
   const [filter, setFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [scopeFilter, setScopeFilter] = useState<'all' | 'global' | 'project'>('all');
@@ -50,9 +53,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
     updates: { type: LinkType; projectIds: string[] }
   ) => {
     try {
-      const { diskLinkService } = await import('../services/diskLinkService');
-      await diskLinkService.updateLink(linkId, updates);
-      await loadLinks();
+      await updateLink(linkId, updates);
     } catch (error) {
       console.error('Failed to update link:', error);
       throw error;
@@ -60,22 +61,11 @@ export const LinksView: React.FC<LinksViewProps> = ({
   };
 
   // Helpers
-  const getArtifactType = (id: string): string => {
-    if (id.startsWith('REQ-')) return 'requirement';
-    if (id.startsWith('UC-')) return 'usecase';
-    if (id.startsWith('TC-')) return 'testcase';
-    if (id.startsWith('INFO-')) return 'information';
-    if (id.startsWith('RISK-')) return 'risk';
-    return 'unknown';
-  };
+  const getArtifactType = (id: string): string => linkableTypeOf(id) ?? 'unknown';
 
   const getTypeColor = (id: string): string => {
-    if (id.startsWith('REQ-')) return 'var(--color-info)';
-    if (id.startsWith('UC-')) return 'var(--color-accent)';
-    if (id.startsWith('TC-')) return 'var(--color-success)';
-    if (id.startsWith('INFO-')) return 'var(--color-warning)';
-    if (id.startsWith('RISK-')) return 'var(--color-status-error)';
-    return 'var(--color-text-muted)';
+    const type = linkableTypeOf(id);
+    return type ? linkableTypeInfo(type).color : 'var(--color-text-muted)';
   };
 
   const getProjectNames = (projectIds: string[]): string => {
@@ -163,7 +153,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
             alignItems: 'center',
             gap: '6px',
             padding: '4px 8px',
-            borderRadius: '4px',
+            borderRadius: 'var(--radius-xs)',
             backgroundColor: 'var(--color-bg-secondary)',
             fontSize: 'var(--font-size-xs)',
             fontFamily: 'monospace',
@@ -206,12 +196,10 @@ export const LinksView: React.FC<LinksViewProps> = ({
             alignItems: 'center',
             gap: '4px',
             padding: '2px 8px',
-            borderRadius: '10px',
+            borderRadius: 'var(--radius-lg)',
             fontSize: 'var(--font-size-xs)',
             backgroundColor:
-              link.projectIds.length === 0
-                ? 'rgba(59, 130, 246, 0.2)'
-                : 'var(--color-bg-secondary)',
+              link.projectIds.length === 0 ? 'var(--color-info-bg)' : 'var(--color-bg-secondary)',
             color:
               link.projectIds.length === 0 ? 'var(--color-accent)' : 'var(--color-text-secondary)',
           }}
@@ -259,9 +247,9 @@ export const LinksView: React.FC<LinksViewProps> = ({
                 gap: '6px',
                 padding: '8px 12px',
                 backgroundColor: 'var(--color-accent)',
-                color: 'white',
+                color: 'var(--color-on-accent)',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 cursor: 'pointer',
                 fontSize: 'var(--font-size-sm)',
                 fontWeight: 600,
@@ -278,7 +266,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
               alignItems: 'center',
               gap: '6px',
               padding: '6px 12px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-card)',
               color: 'var(--color-text-primary)',
@@ -303,7 +291,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
             flex: 1,
             minWidth: '200px',
             padding: '8px 12px',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--color-border)',
             backgroundColor: 'var(--color-bg-app)',
             color: 'var(--color-text-primary)',
@@ -315,7 +303,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
           onChange={(e) => setTypeFilter(e.target.value)}
           style={{
             padding: '8px 12px',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--color-border)',
             backgroundColor: 'var(--color-bg-app)',
             color: 'var(--color-text-primary)',
@@ -334,7 +322,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
           onChange={(e) => setScopeFilter(e.target.value as 'all' | 'global' | 'project')}
           style={{
             padding: '8px 12px',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--color-border)',
             backgroundColor: 'var(--color-bg-app)',
             color: 'var(--color-text-primary)',

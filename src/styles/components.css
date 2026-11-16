@@ -1,0 +1,165 @@
+/*
+ * Interaction states for shared controls. Inline styles set layout; hover,
+ * active and focus live here so every control behaves the same way.
+ */
+
+/* Quiet button (toolbar, header, secondary actions) */
+.tf-btn {
+  background-color: transparent;
+}
+.tf-btn:hover:not(:disabled) {
+  background-color: var(--color-bg-hover);
+  color: var(--color-text-primary) !important;
+}
+.tf-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Primary button */
+.tf-btn-primary:hover:not(:disabled) {
+  background-color: var(--color-accent-hover) !important;
+}
+
+/* Sidebar navigation item */
+.tf-nav:hover {
+  background-color: var(--color-bg-hover);
+  color: var(--color-text-primary) !important;
+}
+.tf-nav[aria-current='page'] svg {
+  color: var(--color-accent);
+}
+
+/* Menu item in dropdowns */
+.tf-menu-item:hover:not(:disabled) {
+  background-color: var(--color-bg-hover) !important;
+}
+
+/* Search box focus */
+.tf-search:focus-within {
+  border-color: var(--color-accent) !important;
+  box-shadow: 0 0 0 3px var(--color-accent-ring);
+}
+.tf-search input:focus {
+  box-shadow: none;
+}
+
+/* Monospace data (IDs, revisions, dates, counts) */
+.tf-mono {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Table rows */
+.tf-row td {
+  transition: background-color var(--transition-fast);
+}
+.tf-row-clickable:hover td {
+  background-color: var(--color-bg-hover);
+}
+
+/* Markdown editor (@uiw/react-md-editor) follows the app theme */
+.w-md-editor {
+  --md-editor-background-color: var(--color-bg-secondary);
+  --md-editor-box-shadow-color: var(--color-border);
+  --md-editor-font-family: var(--font-mono);
+  --color-canvas-default: var(--color-bg-secondary);
+  --color-fg-default: var(--color-text-primary);
+  --color-border-default: var(--color-border);
+  --color-neutral-muted: var(--color-bg-hover);
+  --color-accent-fg: var(--color-accent);
+  border-radius: var(--radius-md) !important;
+  box-shadow: 0 0 0 1px var(--color-border) !important;
+  overflow: hidden;
+  color: var(--color-text-primary);
+}
+.w-md-editor:focus-within {
+  --md-editor-box-shadow-color: var(--color-accent);
+  box-shadow:
+    0 0 0 1px var(--color-accent),
+    0 0 0 4px var(--color-accent-ring) !important;
+}
+.w-md-editor,
+.w-md-editor-content,
+.w-md-editor-area,
+.w-md-editor-text,
+.w-md-editor-preview,
+.w-md-editor .wmde-markdown {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+}
+.w-md-editor-toolbar {
+  background-color: var(--color-bg-tertiary) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  border-radius: 0 !important;
+}
+.w-md-editor-toolbar li > button {
+  color: var(--color-text-muted) !important;
+  border-radius: var(--radius-xs) !important;
+}
+.w-md-editor-toolbar li > button:hover,
+.w-md-editor-toolbar li.active > button {
+  color: var(--color-text-primary) !important;
+  background-color: var(--color-bg-hover) !important;
+}
+.w-md-editor-text-input,
+.w-md-editor-text-pre > code,
+.w-md-editor-text-pre {
+  font-family: var(--font-mono) !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+}
+.w-md-editor-text-input::placeholder {
+  color: var(--color-text-muted) !important;
+}
+
+/*
+ * Form controls: one look everywhere. Components style inputs inline in many
+ * different ways, so the shared look is enforced here (!important beats inline).
+ */
+:is(
+    input:not([type]),
+    input[type='text'],
+    input[type='search'],
+    input[type='email'],
+    input[type='url'],
+    input[type='number'],
+    input[type='date'],
+    input[type='password'],
+    select,
+    textarea
+  ):not(.w-md-editor *):not(.tf-search *):not(.tf-unstyled) {
+  background-color: var(--color-bg-hover) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--color-text-primary) !important;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+:is(input, select, textarea):not(.w-md-editor *):not(.tf-search *):not(.tf-unstyled):hover {
+  border-color: var(--color-border-hover) !important;
+}
+:is(input, select, textarea):not(.w-md-editor *):not(.tf-search *):not(.tf-unstyled):focus {
+  border-color: var(--color-accent) !important;
+  box-shadow: 0 0 0 3px var(--color-accent-ring);
+}
+:is(input, textarea)[readonly]:not(.w-md-editor *),
+:is(input, select, textarea):disabled {
+  color: var(--color-text-muted) !important;
+  background-color: var(--color-bg-subtle) !important;
+}
+::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+select option {
+  background-color: var(--color-bg-raised);
+  color: var(--color-text-primary);
+}
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--color-accent);
+}

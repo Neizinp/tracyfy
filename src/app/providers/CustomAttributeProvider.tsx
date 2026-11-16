@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { diskCustomAttributeService } from '../../services/diskCustomAttributeService';
 import type {
@@ -43,6 +43,10 @@ export const CustomAttributeProvider: React.FC<{ children: ReactNode }> = ({ chi
 
   useEffect(() => {
     fetchDefinitions();
+    // Single source of truth: refetch whenever definitions change anywhere
+    return diskCustomAttributeService.subscribe(() => {
+      fetchDefinitions();
+    });
   }, [fetchDefinitions]);
 
   const getDefinitionsForType = useCallback(
@@ -52,18 +56,19 @@ export const CustomAttributeProvider: React.FC<{ children: ReactNode }> = ({ chi
     [definitions]
   );
 
+  const value = useMemo(
+    () => ({
+      definitions,
+      loading,
+      error,
+      refetch: fetchDefinitions,
+      getDefinitionsForType,
+    }),
+    [definitions, error, fetchDefinitions, getDefinitionsForType, loading]
+  );
+
   return (
-    <CustomAttributeContext.Provider
-      value={{
-        definitions,
-        loading,
-        error,
-        refetch: fetchDefinitions,
-        getDefinitionsForType,
-      }}
-    >
-      {children}
-    </CustomAttributeContext.Provider>
+    <CustomAttributeContext.Provider value={value}>{children}</CustomAttributeContext.Provider>
   );
 };
 

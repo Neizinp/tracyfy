@@ -10,7 +10,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { Maximize2, RotateCw } from 'lucide-react';
 import type { UnifiedArtifact, ArtifactType } from '../traceability';
-import { TYPE_COLORS } from '../traceability';
+import { TRACE_TYPES, ALL_TRACE_TYPES, TypeFilterButtons } from '../traceability';
 import {
   transformArtifactsToNodes,
   transformLinksToEdges,
@@ -51,7 +51,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
 
   // Filter artifacts by selected types
   const filteredArtifacts = useMemo(() => {
-    if (selectedTypes.size === 4) return artifacts;
+    if (selectedTypes.size === ALL_TRACE_TYPES.length) return artifacts;
     return artifacts.filter((a) => selectedTypes.has(a.type));
   }, [artifacts, selectedTypes]);
 
@@ -140,7 +140,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
     <div
       style={{
         backgroundColor: 'var(--color-bg-card)',
-        borderRadius: '8px',
+        borderRadius: 'var(--radius-md)',
         border: '1px solid var(--color-border)',
         overflow: 'hidden',
         position: 'relative',
@@ -183,7 +183,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
             onChange={(e) => handleLayoutChange(e.target.value as LayoutAlgorithm)}
             style={{
               padding: '6px 10px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-tertiary)',
               color: 'var(--color-text-primary)',
@@ -204,7 +204,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
               alignItems: 'center',
               gap: '6px',
               padding: '6px 12px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-tertiary)',
               color: 'var(--color-text-primary)',
@@ -225,42 +225,8 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
 
           {/* Artifact Type Filter Buttons */}
           {onToggleType && (
-            <div style={{ display: 'flex', gap: '4px', marginLeft: 'var(--spacing-sm)' }}>
-              {[
-                { type: 'useCase' as ArtifactType, label: 'UC', color: TYPE_COLORS.useCase.text },
-                {
-                  type: 'requirement' as ArtifactType,
-                  label: 'REQ',
-                  color: TYPE_COLORS.requirement.text,
-                },
-                { type: 'testCase' as ArtifactType, label: 'TC', color: TYPE_COLORS.testCase.text },
-                {
-                  type: 'information' as ArtifactType,
-                  label: 'INFO',
-                  color: TYPE_COLORS.information.text,
-                },
-              ].map(({ type, label, color }) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => onToggleType(type)}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    border: selectedTypes.has(type)
-                      ? `2px solid ${color}`
-                      : '2px solid var(--color-border)',
-                    backgroundColor: selectedTypes.has(type) ? `${color}20` : 'transparent',
-                    color: selectedTypes.has(type) ? color : 'var(--color-text-muted)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-xs)',
-                    fontWeight: 600,
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
+            <div style={{ marginLeft: 'var(--spacing-sm)' }}>
+              <TypeFilterButtons selectedTypes={selectedTypes} onToggle={onToggleType} />
             </div>
           )}
         </div>
@@ -322,7 +288,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
                 flexDirection: 'column',
                 backgroundColor: 'var(--color-bg-card)',
                 border: '1px solid var(--color-border)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
               }}
             />
             <MiniMap
@@ -333,7 +299,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
               style={{
                 backgroundColor: 'var(--color-bg-card)',
                 border: '1px solid var(--color-border)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
               }}
               maskColor="rgba(0, 0, 0, 0.1)"
             />
@@ -354,12 +320,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
           fontSize: 'var(--font-size-xs)',
         }}
       >
-        {[
-          { type: 'requirement' as ArtifactType, label: 'Requirements' },
-          { type: 'useCase' as ArtifactType, label: 'Use Cases' },
-          { type: 'testCase' as ArtifactType, label: 'Test Cases' },
-          { type: 'information' as ArtifactType, label: 'Information' },
-        ].map(({ type, label }) => {
+        {TRACE_TYPES.map(({ type, label }) => {
           const colors = getNodeColor(type);
           return (
             <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -367,7 +328,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
                 style={{
                   width: '12px',
                   height: '12px',
-                  borderRadius: '2px',
+                  borderRadius: 'var(--radius-xs)',
                   backgroundColor: colors.bg,
                   border: `2px solid ${colors.border}`,
                 }}

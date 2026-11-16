@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { TableVirtuoso } from 'react-virtuoso';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
+import { safeMarkdownRehypePlugins } from '../utils/markdownSanitize';
 import type { Requirement, ColumnVisibility, Project } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { SortableHeader, sortItems, type SortConfig } from './SortableHeader';
@@ -26,7 +26,7 @@ export const MarkdownCell = React.memo<{ content: string }>(({ content }) => {
     <div className="markdown-cell" style={{ fontSize: 'var(--font-size-sm)' }}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
+        rehypePlugins={safeMarkdownRehypePlugins}
         components={{
           h1: ({ ...props }) => (
             <h1
@@ -109,7 +109,7 @@ export const MarkdownCell = React.memo<{ content: string }>(({ content }) => {
                 style={{
                   backgroundColor: 'var(--color-bg-secondary)',
                   padding: '1px 4px',
-                  borderRadius: '3px',
+                  borderRadius: 'var(--radius-xs)',
                   fontSize: 'var(--font-size-sm)',
                   color: 'var(--color-accent-light)',
                 }}
@@ -123,7 +123,7 @@ export const MarkdownCell = React.memo<{ content: string }>(({ content }) => {
                   display: 'block',
                   backgroundColor: 'var(--color-bg-secondary)',
                   padding: '4px 8px',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-xs)',
                   fontSize: 'var(--font-size-sm)',
                   overflowX: 'auto',
                   margin: '4px 0',
@@ -217,7 +217,7 @@ const RequirementRow = React.memo<{
           style={{
             fontSize: 'var(--font-size-xs)',
             padding: '2px 6px',
-            borderRadius: '4px',
+            borderRadius: 'var(--radius-xs)',
             backgroundColor: 'var(--color-bg-tertiary)',
             color: 'var(--color-text-secondary)',
             border: '1px solid var(--color-border)',
@@ -239,7 +239,7 @@ const RequirementRow = React.memo<{
                       style={{
                         fontSize: 'var(--font-size-xs)',
                         padding: '2px 6px',
-                        borderRadius: '4px',
+                        borderRadius: 'var(--radius-xs)',
                         background: 'var(--color-bg-tertiary)',
                         color: 'var(--color-text-secondary)',
                         border: '1px solid var(--color-border)',
@@ -280,15 +280,15 @@ const RequirementRow = React.memo<{
           <span
             style={{
               padding: '2px 8px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
               background:
                 req.priority === 'high'
-                  ? 'rgba(239, 68, 68, 0.1)'
+                  ? 'var(--color-error-bg)'
                   : req.priority === 'medium'
-                    ? 'rgba(245, 158, 11, 0.1)'
-                    : 'rgba(16, 185, 129, 0.1)',
+                    ? 'var(--color-warning-bg)'
+                    : 'var(--color-success-bg)',
               color:
                 req.priority === 'high'
                   ? 'var(--color-error)'
@@ -307,15 +307,15 @@ const RequirementRow = React.memo<{
           <span
             style={{
               padding: '2px 8px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
               background:
                 req.status === 'approved'
-                  ? 'rgba(16, 185, 129, 0.1)'
+                  ? 'var(--color-success-bg)'
                   : req.status === 'draft'
-                    ? 'rgba(107, 114, 128, 0.1)'
-                    : 'rgba(59, 130, 246, 0.1)',
+                    ? 'var(--color-bg-hover)'
+                    : 'var(--color-info-bg)',
               color:
                 req.status === 'approved'
                   ? 'var(--color-success)'
@@ -375,7 +375,7 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
       <div
         style={{
           background: 'var(--color-bg-primary)',
-          borderRadius: '8px',
+          borderRadius: 'var(--radius-md)',
           border: '1px solid var(--color-border)',
           padding: '32px',
           textAlign: 'center',
@@ -391,7 +391,7 @@ export const DetailedRequirementView: React.FC<DetailedRequirementViewProps> = (
     <div
       style={{
         background: 'var(--color-bg-primary)',
-        borderRadius: '8px',
+        borderRadius: 'var(--radius-md)',
         border: '1px solid var(--color-border)',
         overflow: 'hidden',
         height: '100%',

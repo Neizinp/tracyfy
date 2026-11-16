@@ -22,6 +22,9 @@ import {
   parseYamlFrontmatter,
   extractH2Sections,
   ensureArray,
+  escapeBodyText as esc,
+  unescapeBodyText,
+  bodyWithoutTitle,
 } from './markdownBase';
 
 /**
@@ -53,15 +56,15 @@ export function requirementToMarkdown(requirement: Requirement): string {
   const body = `# ${requirement.title}
 
 ## Description
-${requirement.description || ''}
+${esc(requirement.description)}
 
 ## Requirement Text
-${requirement.text || ''}
+${esc(requirement.text)}
 
 ## Rationale
-${requirement.rationale || ''}
+${esc(requirement.rationale)}
 
-${requirement.comments ? `## Comments\n${requirement.comments}` : ''}
+${requirement.comments ? `## Comments\n${esc(requirement.comments)}` : ''}
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -109,8 +112,11 @@ export function convertUseCaseToMarkdown(useCase: UseCase): string {
     status: useCase.status,
     priority: useCase.priority,
     revision: useCase.revision,
+    dateCreated: useCase.dateCreated,
     lastModified: useCase.lastModified,
     actor: useCase.actor,
+    author: useCase.author || '',
+    useCaseIds: useCase.useCaseIds || [],
     linkedArtifacts: useCase.linkedArtifacts || [],
     isDeleted: useCase.isDeleted || false,
     deletedAt: useCase.deletedAt || null,
@@ -122,21 +128,21 @@ export function convertUseCaseToMarkdown(useCase: UseCase): string {
   const body = `# ${useCase.title}
 
 ## Description
-${useCase.description || ''}
+${esc(useCase.description)}
 
 ## Actor
-${useCase.actor || ''}
+${esc(useCase.actor)}
 
 ## Preconditions
-${useCase.preconditions || useCase.precondition || ''}
+${esc(useCase.preconditions || useCase.precondition)}
 
 ## Main Flow
-${useCase.mainFlow || ''}
+${esc(useCase.mainFlow)}
 
-${useCase.alternativeFlows ? `## Alternative Flows\n${useCase.alternativeFlows}` : ''}
+${useCase.alternativeFlows ? `## Alternative Flows\n${esc(useCase.alternativeFlows)}` : ''}
 
 ## Postconditions
-${useCase.postconditions || useCase.postcondition || ''}
+${esc(useCase.postconditions || useCase.postcondition)}
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -164,6 +170,8 @@ export function markdownToUseCase(markdown: string): UseCase {
     status: (frontmatter.status as string) || 'draft',
     lastModified: (frontmatter.lastModified as number) || Date.now(),
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
+    author: (frontmatter.author as string) || undefined,
+    useCaseIds: ensureArray<string>(frontmatter.useCaseIds),
     linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
     isDeleted: (frontmatter.isDeleted as boolean) || false,
     deletedAt: (frontmatter.deletedAt as number) || undefined,
@@ -198,13 +206,13 @@ export function testCaseToMarkdown(testCase: TestCase): string {
   const body = `# ${testCase.title}
 
 ## Description
-${testCase.description || ''}
+${esc(testCase.description)}
 
 ## Steps
-${testCase.steps || ''}
+${esc(testCase.steps)}
 
 ## Expected Result
-${testCase.expectedResult || ''}
+${esc(testCase.expectedResult)}
 
 ## Requirements Covered
 ${(testCase.requirementIds || []).map((id) => `- ${id}`).join('\n')}
@@ -249,6 +257,9 @@ export function informationToMarkdown(information: Information): string {
     id: information.id,
     title: information.title,
     type: information.type,
+    status: information.status,
+    author: information.author || '',
+    description: information.description,
     revision: information.revision,
     dateCreated: information.dateCreated,
     lastModified: information.lastModified,
@@ -262,7 +273,7 @@ export function informationToMarkdown(information: Information): string {
 
   const body = `# ${information.title}
 
-${information.text || information.content || ''}
+${esc(information.text || information.content)}
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -274,10 +285,8 @@ ${information.text || information.content || ''}
 export function markdownToInformation(markdown: string): Information {
   const { frontmatter, body } = parseYamlFrontmatter(markdown);
 
-  // Remove the title line from body
-  const lines = body.split('\n');
-  const contentLines = lines.filter((line) => !line.startsWith('# '));
-  const text = contentLines.join('\n').trim();
+  // Everything after the "# Title" line is the user's text
+  const text = unescapeBodyText(bodyWithoutTitle(body));
 
   return {
     id: (frontmatter.id as string) || '',
@@ -285,6 +294,9 @@ export function markdownToInformation(markdown: string): Information {
     text: text,
     content: text,
     type: (frontmatter.type as string) || 'note',
+    description: (frontmatter.description as string) || undefined,
+    status: (frontmatter.status as string) || undefined,
+    author: (frontmatter.author as string) || undefined,
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
     lastModified: (frontmatter.lastModified as number) || Date.now(),
     linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
@@ -341,6 +353,9 @@ export function projectToMarkdown(project: Project): string {
     testCaseIds: project.testCaseIds,
     informationIds: project.informationIds,
     riskIds: project.riskIds || [],
+    documentIds: project.documentIds || [],
+    baselines: project.baselines || [],
+    currentBaseline: project.currentBaseline,
     isDeleted: project.isDeleted || false,
   };
 
@@ -348,7 +363,7 @@ export function projectToMarkdown(project: Project): string {
 
   const body = `# ${project.name}
 
-${project.description}
+${esc(project.description)}
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -364,11 +379,9 @@ export function markdownToProject(markdown: string): Project | null {
     return null;
   }
 
-  // Extract description from body (skip title line)
-  const lines = body.split('\n');
-  const descriptionLines = lines.filter((line) => !line.startsWith('# '));
+  // Description is the body after the "# Name" line (frontmatter copy as fallback)
   const description =
-    descriptionLines.join('\n').trim() || (frontmatter.description as string) || '';
+    unescapeBodyText(bodyWithoutTitle(body)) || (frontmatter.description as string) || '';
 
   return {
     id: frontmatter.id as string,
@@ -379,6 +392,9 @@ export function markdownToProject(markdown: string): Project | null {
     testCaseIds: ensureArray<string>(frontmatter.testCaseIds),
     informationIds: ensureArray<string>(frontmatter.informationIds),
     riskIds: ensureArray<string>(frontmatter.riskIds),
+    documentIds: ensureArray<string>(frontmatter.documentIds),
+    baselines: ensureArray<string>(frontmatter.baselines),
+    currentBaseline: (frontmatter.currentBaseline as string) || undefined,
     lastModified: (frontmatter.lastModified as number) || Date.now(),
     isDeleted: (frontmatter.isDeleted as boolean) || false,
   };
@@ -396,6 +412,7 @@ export function riskToMarkdown(risk: Risk): string {
     impact: risk.impact,
     status: risk.status,
     owner: risk.owner || '',
+    author: risk.author || '',
     revision: risk.revision,
     dateCreated: risk.dateCreated,
     lastModified: risk.lastModified,
@@ -410,13 +427,13 @@ export function riskToMarkdown(risk: Risk): string {
   const body = `# ${risk.title}
 
 ## Description
-${risk.description || ''}
+${esc(risk.description)}
 
 ## Mitigation Strategy
-${risk.mitigation || ''}
+${esc(risk.mitigation)}
 
 ## Contingency Plan
-${risk.contingency || ''}
+${esc(risk.contingency)}
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -440,6 +457,7 @@ export function markdownToRisk(markdown: string): Risk {
     contingency: sections['Contingency Plan'] || '',
     status: (frontmatter.status as string) || 'identified',
     owner: (frontmatter.owner as string) || undefined,
+    author: (frontmatter.author as string) || undefined,
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
     lastModified: (frontmatter.lastModified as number) || Date.now(),
     linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
@@ -473,7 +491,7 @@ export function customAttributeDefinitionToMarkdown(def: CustomAttributeDefiniti
 
   const body = `# ${def.name}
 
-${def.description || 'No description provided.'}
+${esc(def.description) || 'No description provided.'}
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -509,12 +527,15 @@ export function documentToMarkdown(document: ArtifactDocument): string {
     id: document.id,
     title: document.title,
     projectId: document.projectId,
+    author: document.author || '',
+    status: document.status,
     revision: document.revision,
     dateCreated: document.dateCreated,
     lastModified: document.lastModified,
     isDeleted: document.isDeleted || false,
     deletedAt: document.deletedAt || null,
     structure: document.structure || [],
+    linkedArtifacts: document.linkedArtifacts || [],
     customAttributes: filterValidCustomAttributes(document.customAttributes),
   };
 
@@ -522,7 +543,7 @@ export function documentToMarkdown(document: ArtifactDocument): string {
 
   const body = `# ${document.title}
 
-${document.description || ''}
+${esc(document.description)}
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -534,10 +555,8 @@ ${document.description || ''}
 export function markdownToDocument(markdown: string): ArtifactDocument {
   const { frontmatter, body } = parseYamlFrontmatter(markdown);
 
-  // Extract description from body (skip title line)
-  const lines = body.split('\n');
-  const descriptionLines = lines.filter((line) => !line.startsWith('# '));
-  const description = descriptionLines.join('\n').trim();
+  // Description is the body after the "# Title" line
+  const description = unescapeBodyText(bodyWithoutTitle(body));
 
   return {
     id: (frontmatter.id as string) || '',
@@ -545,6 +564,9 @@ export function markdownToDocument(markdown: string): ArtifactDocument {
     description: description,
     projectId: (frontmatter.projectId as string) || '',
     structure: ensureArray<DocumentEntry>(frontmatter.structure),
+    author: (frontmatter.author as string) || undefined,
+    status: (frontmatter.status as string) || undefined,
+    linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
     lastModified: (frontmatter.lastModified as number) || Date.now(),
     isDeleted: (frontmatter.isDeleted as boolean) || false,

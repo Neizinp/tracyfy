@@ -18,6 +18,7 @@ import type {
   SelectedArtifact,
   ModalType,
 } from '../../types';
+import type { LinkableType } from '../../constants/linkableArtifacts';
 
 export interface UIContextValue {
   // New States
@@ -129,10 +130,8 @@ export interface UIContextValue {
   // Link source
   linkSourceId: string | null;
   setLinkSourceId: (id: string | null) => void;
-  linkSourceType: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk' | null;
-  setLinkSourceType: (
-    type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk' | null
-  ) => void;
+  linkSourceType: LinkableType | null;
+  setLinkSourceType: (type: LinkableType | null) => void;
 
   // Helper functions
   handleGlobalLibrarySelect: (id: string) => void;

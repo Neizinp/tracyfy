@@ -1,63 +1,92 @@
-/* Import shared variables and themes */
+/* Fonts ship with the app (works offline / under the CSP) */
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
 @import './styles/variables.css';
 @import './styles/themes/dark.css';
 @import './styles/themes/light.css';
+@import './styles/components.css';
 
-/* Base Styles and Resets */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+html {
+  font-size: 16px;
+}
+
 body {
   font-family: var(--font-family);
+  font-size: var(--font-size-sm);
   background-color: var(--color-bg-app);
   color: var(--color-text-primary);
-  line-height: 1.5;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
 }
 
 button {
-  font-family: inherit;
   transition:
-    background-color 0.2s ease,
-    color 0.2s ease,
-    box-shadow 0.2s ease;
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
-button:hover,
-button:focus {
-  background-color: var(--color-bg-hover);
-  color: var(--color-accent);
-  box-shadow: 0 0 8px var(--color-accent);
+/* Keyboard focus: a soft ring instead of glows on every hover/click */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent-ring);
+}
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--color-accent) !important;
+  box-shadow: 0 0 0 3px var(--color-accent-ring);
 }
 
-/* Dropdown menu items should not have the glowing hover effect */
-[data-testid='export-dropdown'] button:hover,
-[data-testid='export-dropdown'] button:focus,
-div[style*='position: absolute'] button:hover,
-div[style*='position: absolute'] button:focus {
-  background-color: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-  box-shadow: none;
+::selection {
+  background: var(--color-accent-bg);
 }
 
-/* Scrollbar Styling */
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono);
+}
+
+/* Scrollbars that recede until used */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 4px;
+  background: var(--color-border-light);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: var(--radius-pill);
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-muted);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
 }

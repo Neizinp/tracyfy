@@ -14,15 +14,15 @@ import {
   useProject,
   useGlobalState,
   useUser,
-  useBackgroundTasks,
+  useBackgroundTaskActions,
   useBaselines,
   useRisks,
   useDocuments,
+  useFileSystem,
+  useToast,
 } from '../../app/providers';
 import { diskLinkService } from '../../services/diskLinkService';
 import { diskCustomAttributeService } from '../../services/diskCustomAttributeService';
-import { exportProjectToPDF } from '../../utils/pdfExportUtils';
-import { exportProjectToExcel } from '../../utils/excelExportUtils';
 import { exportProjectToJSON } from '../../utils/jsonExportUtils';
 import type {
   Link,
@@ -36,6 +36,8 @@ import type {
 } from '../../types';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import type { LinkModalResult } from '../LinkModal';
+import { useLinkableArtifacts } from '../../hooks/useLinkableArtifacts';
+import { notifyError } from '../../app/providers/ToastProvider';
 
 export const ManagementModals: React.FC = () => {
   const ui = useUI();
@@ -48,7 +50,10 @@ export const ManagementModals: React.FC = () => {
   const { risks } = useRisks();
   const { documents } = useDocuments();
   const { currentUser } = useUser();
-  const { startTask, endTask } = useBackgroundTasks();
+  const { startTask, endTask } = useBackgroundTaskActions();
+  const { links, createLink } = useFileSystem();
+  const linkableArtifacts = useLinkableArtifacts();
+  const { showToast } = useToast();
 
   const [projectLinks, setProjectLinks] = useState<Link[]>([]);
 
@@ -81,6 +86,7 @@ export const ManagementModals: React.FC = () => {
           case 'pdf': {
             const taskId = startTask('Exporting PDF...');
             try {
+              const { exportProjectToPDF } = await import('../../utils/pdfExportUtils');
               await exportProjectToPDF(
                 currentProject,
                 globalState,
@@ -107,6 +113,7 @@ export const ManagementModals: React.FC = () => {
           case 'excel': {
             const taskId = startTask('Exporting to Excel...');
             try {
+              const { exportProjectToExcel } = await import('../../utils/excelExportUtils');
               await exportProjectToExcel(
                 currentProject,
                 globalState,
@@ -142,7 +149,7 @@ export const ManagementModals: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('Export failed:', error);
+        notifyError('Export failed', error);
       }
     },
     [
@@ -162,22 +169,39 @@ export const ManagementModals: React.FC = () => {
 
   const handleAddArtifactLink = useCallback(
     async (newLink: LinkModalResult) => {
-      const sourceId = ui.linkSourceId || ui.selectedRequirementId;
-      if (!sourceId) return;
+      const sourceId = newLink.sourceId || ui.linkSourceId;
+      if (!sourceId) {
+        showToast('Select a source artifact for the link', 'warning');
+        return;
+      }
+
+      const duplicate = links.some(
+        (l) => l.sourceId === sourceId && l.targetId === newLink.targetId && l.type === newLink.type
+      );
+      if (duplicate) {
+        showToast(`${sourceId} already has this link to ${newLink.targetId}`, 'warning');
+        ui.setIsLinkModalOpen(false);
+        return;
+      }
 
       try {
-        await diskLinkService.createLink(
+        const link = await createLink(
           sourceId,
           newLink.targetId,
           newLink.type as LinkType,
           newLink.projectIds
         );
+        showToast(`Created link ${link.id}: ${sourceId} → ${newLink.targetId}`, 'success');
       } catch (error) {
         console.error('Failed to create link:', error);
+        showToast(
+          `Failed to create link: ${error instanceof Error ? error.message : String(error)}`,
+          'error'
+        );
       }
       ui.setIsLinkModalOpen(false);
     },
-    [ui]
+    [ui, links, createLink, showToast]
   );
 
   const handleSelectArtifact = useCallback(
@@ -232,14 +256,12 @@ export const ManagementModals: React.FC = () => {
     <>
       <LinkModal
         isOpen={ui.activeModal.type === 'link'}
-        sourceArtifactId={ui.linkSourceId || ui.selectedRequirementId}
+        // Only an explicitly chosen source; never whatever artifact happens to be selected
+        sourceArtifactId={ui.linkSourceId}
         sourceArtifactType={ui.linkSourceType || 'requirement'}
         projects={projects}
         currentProjectId={currentProjectId}
-        globalRequirements={globalRequirements}
-        globalUseCases={globalUseCases}
-        globalTestCases={globalTestCases}
-        globalInformation={globalInformation}
+        artifactsByType={linkableArtifacts}
         onClose={ui.closeModal}
         onAddLink={handleAddArtifactLink}
       />

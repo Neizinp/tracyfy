@@ -6,26 +6,29 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Requirement, ArtifactLink, Project, UseCase, TestCase, Information } from '../types';
+import type { ArtifactLink, Project } from '../types';
+import {
+  LINKABLE_TYPES,
+  type ArtifactsByType,
+  type LinkableType,
+} from '../constants/linkableArtifacts';
 
 export interface LinkModalResult {
+  /** Set when the source was chosen in the modal (e.g. from the Links page) */
+  sourceId?: string;
   targetId: string;
   type: ArtifactLink['type'];
   projectIds: string[];
 }
 
-type ArtifactType = 'requirement' | 'usecase' | 'testcase' | 'information';
-
 interface UseLinkModalOptions {
   isOpen: boolean;
   sourceArtifactId: string | null;
-  sourceArtifactType: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
+  sourceArtifactType: LinkableType;
   projects: Project[];
   currentProjectId: string;
-  globalRequirements: Requirement[];
-  globalUseCases: UseCase[];
-  globalTestCases: TestCase[];
-  globalInformation: Information[];
+  /** Every linkable artifact, grouped by type */
+  artifactsByType: ArtifactsByType;
   onClose: () => void;
   onAddLink: (link: LinkModalResult) => void;
 }
@@ -35,22 +38,25 @@ export function useLinkModal({
   sourceArtifactId,
   projects,
   currentProjectId,
-  globalRequirements,
-  globalUseCases,
-  globalTestCases,
-  globalInformation,
+  artifactsByType,
   onClose,
   onAddLink,
 }: UseLinkModalOptions) {
-  const [targetType, setTargetType] = useState<ArtifactType>('requirement');
+  const [targetType, setTargetType] = useState<LinkableType>('requirement');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
   const [linkType, setLinkType] = useState<ArtifactLink['type']>('related_to');
   const [linkScope, setLinkScope] = useState<'global' | 'project'>('project');
+  // Source chosen inside the modal when none was preset (e.g. opened from the Links page)
+  const [chosenSourceId, setChosenSourceId] = useState('');
+
+  const needsSourceSelection = !sourceArtifactId;
+  const effectiveSourceId = sourceArtifactId || chosenSourceId;
 
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
+      setChosenSourceId('');
       setTargetType('requirement');
       setSearchQuery('');
       setSelectedTargetId('');
@@ -67,32 +73,19 @@ export function useLinkModal({
           p.requirementIds.includes(id) ||
           p.useCaseIds.includes(id) ||
           p.testCaseIds.includes(id) ||
-          p.informationIds.includes(id)
+          p.informationIds.includes(id) ||
+          (p.riskIds ?? []).includes(id) ||
+          (p.documentIds ?? []).includes(id)
       );
     },
     [projects]
   );
 
-  // Filter artifacts based on type and search
+  // Artifacts of the selected type, minus deleted ones and the source itself
   const filteredArtifacts = useMemo(() => {
-    let artifacts: { id: string; title: string; description?: string }[] = [];
-
-    if (targetType === 'requirement') artifacts = globalRequirements;
-    else if (targetType === 'usecase') artifacts = globalUseCases;
-    else if (targetType === 'testcase') artifacts = globalTestCases;
-    else if (targetType === 'information')
-      artifacts = globalInformation.map((i) => ({
-        id: i.id,
-        title: i.title,
-        description:
-          (i.content || i.text || '').length > 100
-            ? (i.content || i.text || '').substring(0, 100) + '...'
-            : i.content || i.text || '',
-      }));
-
-    // Filter out source artifact (can't link to self)
-    artifacts = artifacts.filter((a) => a.id !== sourceArtifactId);
-
+    let artifacts = artifactsByType[targetType].filter(
+      (a) => !a.isDeleted && a.id !== effectiveSourceId
+    );
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       artifacts = artifacts.filter(
@@ -102,23 +95,24 @@ export function useLinkModal({
           (a.description && a.description.toLowerCase().includes(query))
       );
     }
-
     return artifacts;
-  }, [
-    targetType,
-    globalRequirements,
-    globalUseCases,
-    globalTestCases,
-    globalInformation,
-    sourceArtifactId,
-    searchQuery,
-  ]);
+  }, [artifactsByType, targetType, effectiveSourceId, searchQuery]);
+
+  /** All artifacts that can act as a link source (used when no source is preset) */
+  const sourceOptions = useMemo(
+    () =>
+      LINKABLE_TYPES.flatMap(({ type }) => artifactsByType[type])
+        .filter((a) => !a.isDeleted)
+        .map((a) => ({ id: a.id, title: a.title })),
+    [artifactsByType]
+  );
 
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
       if (e) e.preventDefault();
-      if (selectedTargetId) {
+      if (selectedTargetId && effectiveSourceId) {
         onAddLink({
+          sourceId: effectiveSourceId,
           targetId: selectedTargetId,
           type: linkType,
           projectIds: linkScope === 'global' ? [] : [currentProjectId],
@@ -126,10 +120,10 @@ export function useLinkModal({
         onClose();
       }
     },
-    [selectedTargetId, linkType, linkScope, currentProjectId, onAddLink, onClose]
+    [selectedTargetId, effectiveSourceId, linkType, linkScope, currentProjectId, onAddLink, onClose]
   );
 
-  const selectTargetType = useCallback((type: ArtifactType) => {
+  const selectTargetType = useCallback((type: LinkableType) => {
     setTargetType(type);
     setSelectedTargetId('');
   }, []);
@@ -154,5 +148,10 @@ export function useLinkModal({
 
     // Actions
     handleSubmit,
+    needsSourceSelection,
+    chosenSourceId,
+    setChosenSourceId,
+    effectiveSourceId,
+    sourceOptions,
   };
 }

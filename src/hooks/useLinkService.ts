@@ -1,13 +1,14 @@
 /**
  * useLinkService Hook
  *
- * React hook for managing links using the diskLinkService.
+ * React hook for reading/managing links. State comes from FileSystemProvider;
+ * writes go through the provider so all views update immediately.
  * Provides loading state, caching, and easy access to link operations.
  * Now leverages the centralized LinksProvider for state management.
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { diskLinkService, type IncomingLink } from '../services/diskLinkService';
+import type { IncomingLink } from '../services/diskLinkService';
 import type { Link } from '../types';
 import type { LinkType } from '../utils/linkTypes';
 import { debug } from '../utils/debug';
@@ -48,7 +49,12 @@ export function useLinkService(options: UseLinkServiceOptions = {}): UseLinkServ
   const [error, setError] = useState<string | null>(null);
 
   // Get centralized links from FileSystemProvider
-  const { isReady, links: allLinksFromProvider } = useFileSystem();
+  const {
+    isReady,
+    links: allLinksFromProvider,
+    createLink: createLinkInProvider,
+    deleteLink: deleteLinkInProvider,
+  } = useFileSystem();
 
   // Derive allLinks from provider state, filtering by project if needed
   const allLinks = useMemo(() => {
@@ -89,13 +95,6 @@ export function useLinkService(options: UseLinkServiceOptions = {}): UseLinkServ
     if (isReady) {
       setLoading(false);
     }
-
-    // Subscribe to diskLinkService changes for real-time updates (still needed for write operations)
-    const unsubscribe = diskLinkService.subscribe(() => {
-      debug.log('[useLinkService] Service change detected');
-    });
-
-    return () => unsubscribe();
   }, [isReady]);
 
   // Create a new link
@@ -107,31 +106,27 @@ export function useLinkService(options: UseLinkServiceOptions = {}): UseLinkServ
       projectIds: string[] = []
     ): Promise<Link> => {
       try {
-        const link = await diskLinkService.createLink(sourceId, targetId, type, projectIds);
-        // Refresh to get updated lists
-        await loadLinks();
-        return link;
+        // Goes through the provider so link state (and every view) updates immediately
+        return await createLinkInProvider(sourceId, targetId, type, projectIds);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to create link');
         throw err;
       }
     },
-    [loadLinks]
+    [createLinkInProvider]
   );
 
   // Delete a link
   const deleteLink = useCallback(
     async (linkId: string): Promise<void> => {
       try {
-        await diskLinkService.deleteLink(linkId);
-        // Refresh to get updated lists
-        await loadLinks();
+        await deleteLinkInProvider(linkId);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to delete link');
         throw err;
       }
     },
-    [loadLinks]
+    [deleteLinkInProvider]
   );
 
   return {

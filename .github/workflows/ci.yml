@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
@@ -26,7 +26,7 @@ jobs:
         run: npm run lint
 
       - name: Typecheck
-        run: npm run typecheck || true
+        run: npm run typecheck
 
       - name: Unit tests
         env:
@@ -49,18 +49,23 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node.js
+        # Skipped until Playwright specs exist in ./e2e (see playwright.config.ts)
+        if: hashFiles('e2e/**') != ''
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
+        if: hashFiles('e2e/**') != ''
         run: npm ci
 
       - name: Install Playwright Browsers
+        if: hashFiles('e2e/**') != ''
         run: npx playwright install --with-deps
 
       - name: Run Playwright E2E tests
+        if: hashFiles('e2e/**') != ''
         env:
           CI: true
         run: npm run test:e2e

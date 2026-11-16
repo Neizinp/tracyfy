@@ -44,56 +44,20 @@ export const ThemeToggle: React.FC = () => {
       onClick={toggleTheme}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      className="tf-btn"
       style={{
+        width: '32px',
+        height: '32px',
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-        padding: '6px 12px',
-        borderRadius: '20px',
-        border: '1px solid var(--color-border)',
-        backgroundColor: 'var(--color-bg-secondary)',
-        color: 'var(--color-text-primary)',
+        justifyContent: 'center',
+        borderRadius: 'var(--radius-md)',
+        border: '1px solid transparent',
+        color: 'var(--color-text-secondary)',
         cursor: 'pointer',
-        transition: 'all 0.3s ease',
-        position: 'relative',
-        overflow: 'hidden',
       }}
     >
-      {/* Toggle Track */}
-      <div
-        style={{
-          width: '44px',
-          height: '24px',
-          borderRadius: '12px',
-          backgroundColor: theme === 'dark' ? 'var(--color-accent)' : '#f59e0b',
-          position: 'relative',
-          transition: 'background-color 0.3s ease',
-        }}
-      >
-        {/* Toggle Thumb */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '2px',
-            left: theme === 'dark' ? '22px' : '2px',
-            width: '20px',
-            height: '20px',
-            borderRadius: '50%',
-            backgroundColor: 'white',
-            transition: 'left 0.3s ease',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-          }}
-        >
-          {theme === 'dark' ? (
-            <Moon size={12} style={{ color: 'var(--color-accent)' }} />
-          ) : (
-            <Sun size={12} style={{ color: '#f59e0b' }} />
-          )}
-        </div>
-      </div>
+      {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
     </button>
   );
 };

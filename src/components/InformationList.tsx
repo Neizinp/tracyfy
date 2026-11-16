@@ -40,10 +40,11 @@ export const InformationList: React.FC<InformationListProps> = ({
       {
         key: 'idTitle',
         label: 'ID / Title',
-        width: '250px',
+        width: '280px',
+        minWidth: '240px',
         render: (info: Information) => (
           <>
-            <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '2px' }}>
+            <div className="tf-mono" style={{ color: 'var(--color-accent)', marginBottom: '2px' }}>
               {info.id}
             </div>
             <div style={{ color: 'var(--color-text-primary)' }}>{info.title}</div>
@@ -68,7 +69,7 @@ export const InformationList: React.FC<InformationListProps> = ({
                       style={{
                         fontSize: 'var(--font-size-xs)',
                         padding: '2px 6px',
-                        borderRadius: '4px',
+                        borderRadius: 'var(--radius-xs)',
                         background: 'var(--color-bg-tertiary)',
                         color: 'var(--color-text-secondary)',
                         border: '1px solid var(--color-border)',
@@ -90,10 +91,10 @@ export const InformationList: React.FC<InformationListProps> = ({
           <span
             style={{
               padding: '2px 8px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
-              background: 'rgba(59, 130, 246, 0.1)',
+              background: 'var(--color-info-bg)',
               color: 'var(--color-info)',
               textTransform: 'capitalize',
             }}
@@ -118,15 +119,15 @@ export const InformationList: React.FC<InformationListProps> = ({
           <span
             style={{
               padding: '2px 8px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
               background:
                 info.status === 'approved'
-                  ? 'rgba(16, 185, 129, 0.1)'
+                  ? 'var(--color-success-bg)'
                   : info.status === 'draft'
-                    ? 'rgba(107, 114, 128, 0.1)'
-                    : 'rgba(59, 130, 246, 0.1)',
+                    ? 'var(--color-bg-hover)'
+                    : 'var(--color-info-bg)',
               color:
                 info.status === 'approved'
                   ? 'var(--color-success)'

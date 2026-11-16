@@ -5,9 +5,9 @@
  */
 
 import { debug } from '../../utils/debug';
-import git from 'isomorphic-git';
 import { fileSystemService } from '../fileSystemService';
 import { fsAdapter } from '../fsAdapter';
+import { gitBackend, getRootDir } from './gitBackend';
 import { isElectronEnv, parseStatusMatrix, type FileStatus, type ArtifactFolder } from './types';
 import type {
   Requirement,
@@ -36,16 +36,7 @@ import {
 import { linkToMarkdown, parseMarkdownLink } from '../../utils/linkMarkdownUtils';
 import { workflowToMarkdown, parseMarkdownWorkflow } from '../../utils/workflowMarkdownUtils';
 
-/**
- * Get the root directory path (Electron uses absolute path, browser uses '.')
- */
-function getRootDir(): string {
-  if (isElectronEnv()) {
-    const rootPath = fileSystemService.getRootPath();
-    return rootPath || '.';
-  }
-  return '.';
-}
+export { DetachedHeadError } from './gitBackend';
 
 class GitCoreService {
   private initialized = false;
@@ -59,8 +50,6 @@ class GitCoreService {
   // isomorphic-git's statusMatrix can return stale data immediately after commit
   private recentlyCommittedFiles: Map<string, number> = new Map();
   private readonly COMMIT_GRACE_PERIOD_MS = 5000; // 5 second grace period
-  // Cache HEAD attached state to avoid checking on every commit
-  private headAttachedVerified = false;
   // Short-term cache for getStatus to avoid repeated enumeration
   private statusCache: { result: import('./types').FileStatus[]; timestamp: number } | null = null;
   private readonly STATUS_CACHE_TTL_MS = 500; // 500ms cache
@@ -86,61 +75,6 @@ class GitCoreService {
    */
   invalidateStatusCache(): void {
     this.statusCache = null;
-  }
-
-  /**
-   * Ensure HEAD is attached to main branch (not detached).
-   * If HEAD contains a raw SHA instead of "ref: refs/heads/main",
-   * this repairs it to be a symbolic reference.
-   * This is critical for commits to update the branch pointer.
-   */
-  private async ensureHeadAttached(): Promise<void> {
-    if (isElectronEnv()) {
-      // Electron handles this through native git
-      return;
-    }
-
-    // Skip if we've already verified HEAD is attached this session
-    if (this.headAttachedVerified) {
-      return;
-    }
-
-    try {
-      const headContent = await fsAdapter.promises.readFile('.git/HEAD', { encoding: 'utf8' });
-      const trimmedHead = (headContent as string).trim();
-
-      // Check if HEAD is detached (contains raw SHA instead of symbolic ref)
-      const isDetached = !trimmedHead.startsWith('ref: ');
-
-      if (isDetached) {
-        console.log(
-          `[ensureHeadAttached] HEAD is detached (contains: "${trimmedHead.substring(0, 20)}..."). Repairing to attach to main branch.`
-        );
-
-        // If there's a commit SHA in HEAD, make sure refs/heads/main points to it
-        const sha = trimmedHead;
-        if (sha.match(/^[0-9a-f]{40}$/i)) {
-          // Write the current SHA to refs/heads/main first
-          try {
-            await fsAdapter.promises.writeFile('.git/refs/heads/main', sha + '\n');
-            console.log(`[ensureHeadAttached] Updated refs/heads/main to ${sha}`);
-          } catch (err) {
-            console.error('[ensureHeadAttached] Failed to update refs/heads/main:', err);
-          }
-        }
-
-        // Now attach HEAD to main
-        await fsAdapter.promises.writeFile('.git/HEAD', 'ref: refs/heads/main\n');
-        console.log('[ensureHeadAttached] HEAD is now attached to refs/heads/main');
-      } else {
-        debug.log(`[ensureHeadAttached] HEAD is already attached: ${trimmedHead}`);
-      }
-
-      // Mark as verified for this session
-      this.headAttachedVerified = true;
-    } catch (err) {
-      console.error('[ensureHeadAttached] Failed to check/repair HEAD:', err);
-    }
   }
 
   /**
@@ -193,46 +127,18 @@ class GitCoreService {
         }
       }
 
-      // In Electron, use IPC to initialize git - auto-init without prompting
-      if (isElectronEnv()) {
-        debug.log('[init] Auto-initializing git repository...');
-
-        const rootDir = getRootDir();
-        debug.log('[gitCoreService.init] Calling git.init with rootDir:', rootDir);
-        const result = await window.electronAPI!.git.init(rootDir);
-        if (result.error) {
-          console.error('[init] Git init failed:', result.error);
-          return false;
-        }
-
-        this.initialized = true;
-        await this.ensureTokenLoadedFn();
-        debug.log('[gitCoreService.init] Success! initialized =', this.initialized);
-        return true;
-      }
-
-      // Browser path: auto-initialize git without prompting
-      debug.log('[init] Auto-initializing git repository (browser)...');
-
-      // Initialize git repository
-      await git.init({
-        fs: fsAdapter,
-        dir: '.',
-        defaultBranch: 'main',
-      });
-
-      // Create HEAD pointing to main branch
+      debug.log('[init] Auto-initializing git repository...');
       try {
-        await fsAdapter.promises.writeFile('.git/HEAD', 'ref: refs/heads/main\n');
+        await gitBackend().init(getRootDir());
       } catch (err) {
-        console.error('[init] Failed to create HEAD:', err);
+        console.error('[init] Git init failed:', err);
+        return false;
       }
     }
 
     this.initialized = true;
     // Clear status cache to ensure fresh status on next getStatus call
     this.statusCache = null;
-    this.headAttachedVerified = false;
 
     // Ensure essential git files exist
     const essentialFiles = [
@@ -245,9 +151,11 @@ class GitCoreService {
 
     for (const file of essentialFiles) {
       try {
-        await fsAdapter.promises.readFile(file.path, { encoding: 'utf8' });
+        if ((await fileSystemService.readFile(file.path)) === null) {
+          await fileSystemService.writeFile(file.path, file.content);
+        }
       } catch {
-        await fsAdapter.promises.writeFile(file.path, file.content);
+        await fileSystemService.writeFile(file.path, file.content);
       }
     }
 
@@ -342,8 +250,6 @@ class GitCoreService {
       throw new Error('Git service not initialized');
     }
 
-    const cache = {};
-
     // 1. Write the new file with updated content
     await fileSystemService.writeFile(newPath, newContent);
 
@@ -354,31 +260,8 @@ class GitCoreService {
     const newName = newPath.split('/').pop()?.replace('.md', '') || newPath;
     const message = commitMessage || `Renamed project: ${oldName} → ${newName}`;
 
-    if (isElectronEnv()) {
-      // Use IPC for atomic git operations in Electron
-      const resultRm = await window.electronAPI!.git.remove(getRootDir(), oldPath);
-      if (resultRm.error) throw new Error(resultRm.error);
-
-      const resultAdd = await window.electronAPI!.git.add(getRootDir(), newPath);
-      if (resultAdd.error) throw new Error(resultAdd.error);
-
-      const resultCommit = await window.electronAPI!.git.commit(getRootDir(), message);
-      if (resultCommit.error) throw new Error(resultCommit.error);
-      return;
-    }
-
-    // Browser path
-    await git.remove({ fs: fsAdapter, dir: getRootDir(), filepath: oldPath, cache });
-    await git.add({ fs: fsAdapter, dir: getRootDir(), filepath: newPath, cache });
-
-    const author = { name: 'Tracyfy User', email: 'user@tracyfy.local' };
-    await git.commit({
-      fs: fsAdapter,
-      dir: getRootDir(),
-      message,
-      author,
-      cache,
-    });
+    // One commit: remove the old path, add the new one
+    await gitBackend().commitPaths(getRootDir(), { remove: [oldPath], add: [newPath] }, message);
 
     debug.log(`[renameFile] Committed rename: ${oldPath} -> ${newPath}`);
   }
@@ -400,39 +283,10 @@ class GitCoreService {
       let result: FileStatus[] = [];
       let statusMatrixFiles = new Set<string>();
 
-      if (isElectronEnv()) {
-        debug.log(
-          '[gitCoreService.getStatus] Electron: calling window.electronAPI.git.statusMatrix'
-        );
-        const status = await window.electronAPI!.git.statusMatrix(getRootDir());
-        if (Array.isArray(status)) {
-          const parsed = parseStatusMatrix(status);
-          result = parsed.statuses;
-          statusMatrixFiles = parsed.allFiles;
-        }
-      } else {
-        // Browser path: Use git.statusMatrix directly with fsAdapter
-        // IMPORTANT: Use a fresh cache to avoid stale data after commits
-        try {
-          debug.log('[gitCoreService.getStatus] Browser: calling isomorphic-git.statusMatrix');
-          const freshCache = {}; // Force fresh read to avoid stale refs/index
-          const status = await git.statusMatrix({
-            fs: fsAdapter,
-            dir: getRootDir(),
-            cache: freshCache,
-          });
-          debug.log(
-            `[gitCoreService.getStatus] Browser: statusMatrix returned ${status?.length || 0} items`
-          );
-          if (Array.isArray(status)) {
-            const parsed = parseStatusMatrix(status as [string, number, number, number][]);
-            result = parsed.statuses;
-            statusMatrixFiles = parsed.allFiles;
-          }
-        } catch (statusError) {
-          console.error('[getStatus] statusMatrix failed:', statusError);
-        }
-      }
+      // Throws if git can't be read: never report "no changes" in that case
+      const parsed = parseStatusMatrix(await gitBackend().statusMatrix(getRootDir()));
+      result = parsed.statuses;
+      statusMatrixFiles = parsed.allFiles;
 
       // Enumerate artifact files to find untracked files (in parallel for speed)
       const trackedPaths =
@@ -504,8 +358,9 @@ class GitCoreService {
 
       return filteredResult;
     } catch (error) {
+      // Callers must surface this; an empty list would look like "everything committed"
       console.error('Failed to get status:', error);
-      return [];
+      throw error;
     }
   }
 
@@ -527,60 +382,13 @@ class GitCoreService {
         const authorNameToUse = authorName || 'Tracyfy User';
         const author = { name: authorNameToUse, email: 'user@tracyfy.local' };
 
-        let commitOid: string;
-
-        if (isElectronEnv()) {
-          const rootDir = getRootDir();
-          debug.log(`[commitFile] Electron mode, rootDir: ${rootDir}`);
-          if (fileExists) {
-            debug.log(`[commitFile] Adding file: ${filepath}`);
-            const res = await window.electronAPI!.git.add(rootDir, filepath);
-            if (res.error) {
-              debug.warn(`[commitFile] git.add failed: ${res.error}`);
-              throw new Error(`git.add failed: ${res.error}`);
-            }
-          } else {
-            debug.log(`[commitFile] Removing file: ${filepath}`);
-            const res = await window.electronAPI!.git.remove(rootDir, filepath);
-            if (res.error) {
-              debug.warn(`[commitFile] git.remove failed: ${res.error}`);
-              throw new Error(`git.remove failed: ${res.error}`);
-            }
-          }
-
-          debug.log(`[commitFile] Committing with message: "${message}"`);
-          const res = await window.electronAPI!.git.commit(rootDir, message, author);
-          if (res.error) {
-            debug.warn(`[commitFile] git.commit failed: ${res.error}`);
-            throw new Error(`git.commit failed: ${res.error}`);
-          }
-          commitOid = res.oid!;
-        } else {
-          // CRITICAL: Ensure HEAD is attached to main branch before committing
-          // If HEAD is detached (contains raw SHA), commits won't update the branch pointer
-          await this.ensureHeadAttached();
-
-          const cache = {};
-
-          if (fileExists) {
-            debug.log(`[commitFile] Browser: calling git.add for ${filepath}`);
-            await git.add({ fs: fsAdapter, dir: getRootDir(), filepath, cache });
-          } else {
-            debug.log(`[commitFile] Browser: calling git.remove for ${filepath}`);
-            await git.remove({ fs: fsAdapter, dir: getRootDir(), filepath, cache });
-          }
-
-          debug.log(`[commitFile] Browser: calling git.commit with message: "${message}"`);
-          commitOid = await git.commit({
-            fs: fsAdapter,
-            dir: getRootDir(),
-            message,
-            author,
-            cache,
-          });
-
-          debug.log(`[commitFile] Browser: commit returned OID: ${commitOid}`);
-        }
+        // Stage the file (or its deletion) and commit; HEAD safety is part of commitPaths
+        const commitOid = await gitBackend().commitPaths(
+          getRootDir(),
+          fileExists ? { add: [filepath] } : { remove: [filepath] },
+          message,
+          author
+        );
 
         debug.log(
           `[commitFile] Successfully committed ${filepath} by ${authorNameToUse}, SHA: ${commitOid}`
@@ -624,25 +432,9 @@ class GitCoreService {
     const fileExists = (await fileSystemService.readFileBinary(filepath)) !== null;
 
     // Use single-file statusMatrix to check if tracked (much faster than getStatus())
-    let isTracked = false;
-    if (isElectronEnv()) {
-      const status = await window.electronAPI!.git.statusMatrix(getRootDir());
-      if (Array.isArray(status)) {
-        const fileEntry = status.find(
-          (entry: [string, number, number, number]) => entry[0] === filepath
-        );
-        // A file is tracked if it exists in HEAD (entry[1] === 1)
-        isTracked = fileEntry ? fileEntry[1] === 1 : false;
-      }
-    } else {
-      const status = await git.statusMatrix({
-        fs: fsAdapter,
-        dir: getRootDir(),
-        filepaths: [filepath],
-      });
-      // A file is tracked if it exists in HEAD (entry[1] === 1)
-      isTracked = status.length > 0 && status[0][1] === 1;
-    }
+    const status = await gitBackend().statusMatrix(getRootDir(), [filepath]);
+    // A file is tracked if it exists in HEAD (entry[1] === 1)
+    const isTracked = status.length > 0 && status[0][1] === 1;
 
     debug.log(`[revertFile] File exists: ${fileExists}, isTracked: ${isTracked}`);
 
@@ -653,23 +445,7 @@ class GitCoreService {
     } else if (isTracked) {
       // Tracked/Modified file: Revert using git checkout
       debug.log(`[revertFile] Checking out ${filepath} from HEAD`);
-      if (isElectronEnv()) {
-        debug.log('[revertFile] Electron: calling git.checkout');
-        const res = await window.electronAPI!.git.checkout(getRootDir(), filepath, true);
-        if (res.error) {
-          console.error(`[revertFile] Electron checkout failed: ${res.error}`);
-          throw new Error(res.error);
-        }
-      } else {
-        debug.log('[revertFile] Browser: calling isomorphic-git.checkout');
-        await git.checkout({
-          fs: fsAdapter,
-          dir: getRootDir(),
-          ref: 'HEAD',
-          filepaths: [filepath],
-          force: true,
-        });
-      }
+      await gitBackend().checkoutFile(getRootDir(), filepath);
     } else {
       debug.warn(`[revertFile] File not found: ${filepath}`);
       return;

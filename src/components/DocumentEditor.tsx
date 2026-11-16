@@ -150,7 +150,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
         style={{
           flex: 1,
           border: '1px solid var(--color-border)',
-          borderRadius: '8px',
+          borderRadius: 'var(--radius-md)',
           backgroundColor: 'var(--color-bg-secondary)',
           padding: 'var(--spacing-md)',
           display: 'flex',
@@ -175,7 +175,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
                 padding: '10px 12px',
                 backgroundColor: 'var(--color-bg-card)',
                 border: '1px solid var(--color-border)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 marginLeft: entry.type === 'heading' ? `${(entry.level || 1) * 20 - 20}px` : '40px',
               }}
             >
@@ -223,7 +223,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
                     }
                     style={{
                       padding: '4px',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                       border: '1px solid var(--color-border)',
                       backgroundColor: 'var(--color-bg-secondary)',
                       color: 'var(--color-text-primary)',
@@ -241,7 +241,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
                     style={{
                       flex: 1,
                       padding: '4px 8px',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                       border: '1px solid var(--color-border)',
                       backgroundColor: 'var(--color-bg-secondary)',
                       color: 'var(--color-text-primary)',
@@ -313,7 +313,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
             padding: '8px 16px',
             backgroundColor: 'var(--color-bg-secondary)',
             border: '1px solid var(--color-border)',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-sm)',
             color: 'var(--color-text-primary)',
             cursor: 'pointer',
             fontWeight: 500,
@@ -331,8 +331,8 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
             padding: '8px 16px',
             backgroundColor: 'var(--color-accent)',
             border: 'none',
-            borderRadius: '6px',
-            color: 'white',
+            borderRadius: 'var(--radius-sm)',
+            color: 'var(--color-on-accent)',
             cursor: 'pointer',
             fontWeight: 500,
           }}
@@ -350,7 +350,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
+            backgroundColor: 'var(--color-bg-overlay)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -361,8 +361,8 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
             style={{
               width: '500px',
               backgroundColor: 'var(--color-bg-card)',
-              borderRadius: '12px',
-              boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
+              borderRadius: 'var(--radius-lg)',
+              boxShadow: 'var(--shadow-popover)',
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
@@ -398,7 +398,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
                   gap: '4px',
                   backgroundColor: 'var(--color-bg-secondary)',
                   padding: '4px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                 }}
               >
                 {(
@@ -417,7 +417,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
                       flex: 1,
                       padding: '6px',
                       border: 'none',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                       fontSize: 'var(--font-size-xs)',
                       fontWeight: 600,
                       cursor: 'pointer',
@@ -449,7 +449,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
                   style={{
                     width: '100%',
                     padding: '8px 12px 8px 36px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--color-border)',
                     backgroundColor: 'var(--color-bg-secondary)',
                     color: 'var(--color-text-primary)',
@@ -462,7 +462,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
                   maxHeight: '300px',
                   overflowY: 'auto',
                   border: '1px solid var(--color-border)',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                 }}
               >
                 {filteredArtifacts.length === 0 ? (

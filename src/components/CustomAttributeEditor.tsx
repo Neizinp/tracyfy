@@ -157,7 +157,7 @@ export const CustomAttributeEditor: React.FC<CustomAttributeEditorProps> = ({
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-app)',
                   color: 'var(--color-text-primary)',
@@ -178,7 +178,7 @@ export const CustomAttributeEditor: React.FC<CustomAttributeEditorProps> = ({
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-app)',
                   color: 'var(--color-text-primary)',
@@ -196,7 +196,7 @@ export const CustomAttributeEditor: React.FC<CustomAttributeEditorProps> = ({
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-app)',
                   color: 'var(--color-text-primary)',
@@ -213,7 +213,7 @@ export const CustomAttributeEditor: React.FC<CustomAttributeEditorProps> = ({
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-app)',
                   color: 'var(--color-text-primary)',

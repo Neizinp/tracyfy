@@ -25,7 +25,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
       style={{
         backgroundColor: 'var(--color-bg-card)',
         border: `1px solid ${color.border}`,
-        borderRadius: '8px',
+        borderRadius: 'var(--radius-md)',
         padding: 'var(--spacing-md)',
         flex: 1,
         minWidth: '200px',
@@ -69,7 +69,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
           style={{
             height: '8px',
             backgroundColor: 'var(--color-bg-tertiary)',
-            borderRadius: '4px',
+            borderRadius: 'var(--radius-xs)',
             overflow: 'hidden',
           }}
         >
@@ -78,7 +78,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
               height: '100%',
               width: `${coverage}%`,
               backgroundColor: color.text,
-              borderRadius: '4px',
+              borderRadius: 'var(--radius-xs)',
               transition: 'width 0.3s ease',
             }}
           />

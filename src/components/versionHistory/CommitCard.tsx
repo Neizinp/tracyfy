@@ -34,7 +34,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
     <div
       style={{
         padding: 'var(--spacing-md)',
-        borderRadius: '6px',
+        borderRadius: 'var(--radius-sm)',
         border: isBaseline ? '1px solid var(--color-info-bg)' : '1px solid var(--color-border)',
         backgroundColor: isBaseline ? 'var(--color-info-bg)' : 'var(--color-bg-secondary)',
         transition: 'background-color 0.2s',
@@ -68,7 +68,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
                   alignItems: 'center',
                   gap: '4px',
                   padding: '2px 8px',
-                  borderRadius: '12px',
+                  borderRadius: 'var(--radius-lg)',
                   backgroundColor: 'var(--color-info-bg)',
                   color: 'var(--color-info-light)',
                   fontSize: 'var(--font-size-xs)',
@@ -85,7 +85,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
                   display: 'inline-flex',
                   alignItems: 'center',
                   padding: '2px 8px',
-                  borderRadius: '12px',
+                  borderRadius: 'var(--radius-lg)',
                   backgroundColor: 'var(--color-success-bg)',
                   color: 'var(--color-success-light)',
                   fontSize: 'var(--font-size-xs)',

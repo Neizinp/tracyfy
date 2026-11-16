@@ -103,14 +103,14 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
       <div
         style={{
           backgroundColor: 'var(--color-bg-card)',
-          borderRadius: '8px',
+          borderRadius: 'var(--radius-md)',
           border: '1px solid var(--color-border)',
           width: '800px',
           maxWidth: '90%',
           maxHeight: '85vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          boxShadow: 'var(--shadow-popover)',
         }}
       >
         {/* Header */}

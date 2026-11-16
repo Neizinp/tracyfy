@@ -2,29 +2,34 @@ import type { CSSProperties } from 'react';
 
 // Section header style used in sidebar
 export const sectionHeaderStyle: CSSProperties = {
-  fontSize: 'var(--font-size-xs)',
+  fontSize: '11px',
+  fontWeight: 500,
   textTransform: 'uppercase',
   color: 'var(--color-text-muted)',
-  letterSpacing: '0.05em',
+  letterSpacing: '0.06em',
   margin: 0,
+  padding: '0 8px',
 };
 
 // Base style for nav links in sidebar (internal use only)
 const navLinkBaseStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  gap: 'var(--spacing-sm)',
-  padding: 'var(--spacing-sm) var(--spacing-md)',
+  gap: '10px',
+  height: '30px',
+  padding: '0 8px',
   textDecoration: 'none',
-  borderRadius: '6px',
+  borderRadius: 'var(--radius-sm)',
   cursor: 'pointer',
   textAlign: 'left',
+  fontSize: 'var(--font-size-sm)',
+  transition: 'background-color var(--transition-fast), color var(--transition-fast)',
 };
 
 // Inactive nav link style
 export const navLinkInactiveStyle: CSSProperties = {
   ...navLinkBaseStyle,
-  background: 'var(--color-bg-card)',
+  background: 'transparent',
   color: 'var(--color-text-secondary)',
   fontWeight: 400,
 };
@@ -32,8 +37,8 @@ export const navLinkInactiveStyle: CSSProperties = {
 // Active nav link style
 export const navLinkActiveStyle: CSSProperties = {
   ...navLinkBaseStyle,
-  background: 'var(--color-bg-hover)',
-  color: 'var(--color-accent)',
+  background: 'var(--color-accent-bg)',
+  color: 'var(--color-text-primary)',
   fontWeight: 500,
 };
 
@@ -41,55 +46,56 @@ export const navLinkActiveStyle: CSSProperties = {
 export const sidebarButtonStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  gap: 'var(--spacing-sm)',
-  padding: 'var(--spacing-sm) var(--spacing-md)',
+  gap: '10px',
+  height: '30px',
+  padding: '0 8px',
   border: 'none',
-  background: 'var(--color-bg-card)',
+  background: 'transparent',
   color: 'var(--color-text-secondary)',
-  borderRadius: '6px',
+  borderRadius: 'var(--radius-sm)',
   cursor: 'pointer',
   textAlign: 'left',
   fontFamily: 'inherit',
-  fontSize: 'inherit',
+  fontSize: 'var(--font-size-sm)',
   width: '100%',
 };
 
-// Header action button style
+// Header action button style: quiet until hovered
 export const headerButtonStyle: CSSProperties = {
-  height: '36px',
-  backgroundColor: 'var(--color-bg-card)',
+  height: '32px',
   color: 'var(--color-text-secondary)',
-  border: '1px solid var(--color-border)',
-  padding: '0 12px',
-  borderRadius: '6px',
+  border: '1px solid transparent',
+  padding: '0 10px',
+  borderRadius: 'var(--radius-md)',
   display: 'flex',
   alignItems: 'center',
-  gap: 'var(--spacing-sm)',
+  gap: '7px',
   cursor: 'pointer',
   fontWeight: 500,
   fontSize: 'var(--font-size-sm)',
   lineHeight: 1,
-  transition: 'background-color 0.2s',
+  transition: 'background-color var(--transition-fast), color var(--transition-fast)',
   whiteSpace: 'nowrap',
   flexShrink: 0,
 };
 
 // Primary accent button style
 export const primaryButtonStyle: CSSProperties = {
-  height: '36px',
+  height: '32px',
   backgroundColor: 'var(--color-accent)',
-  color: 'white',
+  color: 'var(--color-on-accent)',
   border: 'none',
   padding: '0 12px',
-  borderRadius: '6px',
+  borderRadius: 'var(--radius-md)',
   display: 'flex',
   alignItems: 'center',
-  gap: 'var(--spacing-sm)',
+  gap: '7px',
   cursor: 'pointer',
   fontWeight: 500,
   fontSize: 'var(--font-size-sm)',
   lineHeight: 1,
-  transition: 'background-color 0.2s',
+  boxShadow: 'var(--shadow-popover)',
+  transition: 'background-color var(--transition-fast)',
   whiteSpace: 'nowrap',
   flexShrink: 0,
 };
@@ -99,13 +105,14 @@ export const dropdownMenuStyle: CSSProperties = {
   position: 'absolute',
   top: '100%',
   right: 0,
-  marginTop: '0.5rem',
-  backgroundColor: 'var(--color-bg-card)',
-  border: '2px solid var(--color-border)',
-  borderRadius: '8px',
-  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
+  marginTop: '6px',
+  padding: '4px',
+  backgroundColor: 'var(--color-bg-raised)',
+  border: '1px solid var(--color-border-light)',
+  borderRadius: 'var(--radius-lg)',
+  boxShadow: 'var(--shadow-popover)',
   zIndex: 100,
-  minWidth: '180px',
+  minWidth: '200px',
   overflow: 'hidden',
 };
 
@@ -113,42 +120,44 @@ export const dropdownMenuStyle: CSSProperties = {
 export const dropdownItemStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  gap: 'var(--spacing-sm)',
+  gap: '10px',
   width: '100%',
-  padding: '0.75rem 1rem',
+  height: '32px',
+  padding: '0 10px',
   border: 'none',
-  background: 'var(--color-bg-card)',
+  borderRadius: 'var(--radius-sm)',
+  background: 'transparent',
   color: 'var(--color-text-primary)',
   cursor: 'pointer',
   textAlign: 'left',
   fontSize: 'var(--font-size-sm)',
 };
 
-// Dropdown item with top border
+// Dropdown item with a separator above it
 export const dropdownItemWithBorderStyle: CSSProperties = {
   ...dropdownItemStyle,
   borderTop: '1px solid var(--color-border)',
+  borderRadius: 0,
+  marginTop: '4px',
+  paddingTop: '4px',
+  height: '36px',
 };
 
 // Hover handlers for dropdown menu items
 export const hoverHandlers = {
   onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
-    e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)';
-    e.currentTarget.style.boxShadow = 'none';
-    e.currentTarget.style.color = 'var(--color-text-primary)';
+    e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
   },
   onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
-    e.currentTarget.style.backgroundColor = 'var(--color-bg-card)';
-    e.currentTarget.style.boxShadow = 'none';
-    e.currentTarget.style.color = 'var(--color-text-primary)';
+    e.currentTarget.style.backgroundColor = 'transparent';
   },
 };
 
-// Hover handlers for sidebar buttons (with accent color)
+// Hover handlers for sidebar buttons
 export const sidebarHoverHandlers = {
   onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
     e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
-    e.currentTarget.style.color = 'var(--color-accent)';
+    e.currentTarget.style.color = 'var(--color-text-primary)';
   },
   onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
     e.currentTarget.style.backgroundColor = 'transparent';
@@ -158,11 +167,12 @@ export const sidebarHoverHandlers = {
 
 // Delete button - solid red background
 export const deleteButtonStyle: CSSProperties = {
-  padding: '8px 16px',
-  borderRadius: '6px',
+  height: '32px',
+  padding: '0 12px',
+  borderRadius: 'var(--radius-md)',
   border: 'none',
   backgroundColor: 'var(--color-error)',
-  color: 'white',
+  color: 'var(--color-on-accent)',
   cursor: 'pointer',
   fontWeight: 500,
   display: 'flex',
@@ -172,9 +182,10 @@ export const deleteButtonStyle: CSSProperties = {
 
 // Delete button - outline style
 export const deleteButtonOutlineStyle: CSSProperties = {
-  padding: '8px 16px',
-  borderRadius: '6px',
-  border: '1px solid var(--color-error)',
+  height: '32px',
+  padding: '0 12px',
+  borderRadius: 'var(--radius-md)',
+  border: '1px solid transparent',
   backgroundColor: 'transparent',
   color: 'var(--color-error)',
   cursor: 'pointer',
@@ -208,18 +219,21 @@ export const searchContainerStyle: CSSProperties = {
   position: 'relative',
   display: 'flex',
   alignItems: 'center',
-  width: '320px',
-  backgroundColor: 'var(--color-bg-secondary)',
+  width: '100%',
+  maxWidth: '380px',
+  height: '32px',
+  backgroundColor: 'var(--color-bg-hover)',
   border: '1px solid var(--color-border)',
-  borderRadius: '8px',
-  transition: 'border-color 0.2s, box-shadow 0.2s',
-  margin: '0 var(--spacing-md)',
+  borderRadius: 'var(--radius-md)',
+  transition: 'border-color var(--transition-fast), box-shadow var(--transition-fast)',
+  margin: '0',
 };
 
 export const searchInputStyle: CSSProperties = {
   width: '100%',
-  padding: '8px 40px 8px 36px',
-  borderRadius: '8px',
+  height: '30px',
+  padding: '0 40px 0 34px',
+  borderRadius: 'var(--radius-md)',
   border: 'none',
   backgroundColor: 'transparent',
   color: 'var(--color-text-primary)',
@@ -243,8 +257,8 @@ export const advancedSearchButtonStyle: CSSProperties = {
   transform: 'translateY(-50%)',
   background: 'transparent',
   border: 'none',
-  padding: '6px',
-  borderRadius: '6px',
+  padding: '5px',
+  borderRadius: 'var(--radius-sm)',
   color: 'var(--color-text-muted)',
   cursor: 'pointer',
   display: 'flex',

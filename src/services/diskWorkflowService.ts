@@ -85,7 +85,8 @@ class DiskWorkflowService extends BaseArtifactService<Workflow> {
       lastModified: now,
     };
 
-    await this.save(updatedWorkflow);
+    // Approval decisions are part of the audit trail: commit like approvals do
+    await this.save(updatedWorkflow, `Rejected workflow ${workflowId} by ${rejectedBy}`);
     return updatedWorkflow;
   }
 
@@ -132,7 +133,7 @@ class DiskWorkflowService extends BaseArtifactService<Workflow> {
       dateCreated: Date.now(),
       lastModified: Date.now(),
     };
-    return this.save(newWorkflow);
+    return this.save(newWorkflow, `Create workflow ${nextId}: ${newWorkflow.title}`);
   }
 
   /**
@@ -146,7 +147,7 @@ class DiskWorkflowService extends BaseArtifactService<Workflow> {
    * Delete a workflow
    */
   async deleteWorkflow(id: string): Promise<void> {
-    await this.delete(id);
+    await this.delete(id, `Delete workflow ${id}`);
   }
 
   /**
@@ -161,7 +162,7 @@ class DiskWorkflowService extends BaseArtifactService<Workflow> {
       ...updates,
       lastModified: Date.now(),
     };
-    return this.save(updatedWorkflow);
+    return this.save(updatedWorkflow, `Update workflow ${id}`);
   }
 }
 

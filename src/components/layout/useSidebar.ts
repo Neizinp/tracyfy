@@ -121,6 +121,10 @@ export function useSidebar() {
           debug.log('[useSidebar] Auto-sync: push successful');
         } catch (err) {
           debug.warn('[useSidebar] Auto-sync push failed:', err);
+          // The user relies on auto-sync; tell them their commit was NOT pushed
+          setSyncError(
+            `Automatic push failed: ${err instanceof Error ? err.message : String(err)}`
+          );
         }
       } else {
         // Just refresh status if not auto-syncing

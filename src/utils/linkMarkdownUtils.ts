@@ -6,7 +6,13 @@
 
 import type { Link } from '../types';
 import type { LinkType } from './linkTypes';
-import { objectToYaml, parseYamlFrontmatter, ensureArray } from './markdownBase';
+import {
+  objectToYaml,
+  parseYamlFrontmatter,
+  ensureArray,
+  filterValidCustomAttributes,
+} from './markdownBase';
+import type { CustomAttributeValue } from '../types/customAttributes';
 
 /**
  * Convert a Link object to Markdown with YAML frontmatter
@@ -23,6 +29,7 @@ export function linkToMarkdown(link: Link): string {
     revision: link.revision || '01',
     ...(link.isDeleted && { isDeleted: link.isDeleted }),
     ...(link.deletedAt && { deletedAt: link.deletedAt }),
+    customAttributes: filterValidCustomAttributes(link.customAttributes),
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -62,6 +69,7 @@ export function parseMarkdownLink(content: string): Link | null {
     revision: (frontmatter.revision as string) || '01',
     isDeleted: frontmatter.isDeleted as boolean | undefined,
     deletedAt: frontmatter.deletedAt as number | undefined,
+    customAttributes: ensureArray<CustomAttributeValue>(frontmatter.customAttributes),
   };
 }
 

@@ -6,8 +6,9 @@
  */
 
 import React from 'react';
-import type { ArtifactType } from './index';
-import { TYPE_COLORS } from './index';
+import type { ArtifactType } from './types';
+import { TYPE_COLORS, ALL_TRACE_TYPES } from './types';
+import { TypeFilterButtons } from './TypeFilterButtons';
 
 export interface MatrixArtifact {
   id: string;
@@ -32,13 +33,13 @@ interface MatrixViewProps {
 const MAX_MATRIX_SIZE = 20;
 
 const LINK_SYMBOLS: Record<string, { symbol: string; color: string }> = {
-  parent: { symbol: '↑', color: '#3b82f6' },
-  child: { symbol: '↓', color: '#3b82f6' },
-  depends_on: { symbol: '◆', color: '#f59e0b' },
-  dependency_of: { symbol: '◇', color: '#f59e0b' },
-  related_to: { symbol: '↔', color: '#8b5cf6' },
-  satisfies: { symbol: '✓', color: '#22c55e' },
-  satisfied_by: { symbol: '✓', color: '#22c55e' },
+  parent: { symbol: '↑', color: 'var(--color-info)' },
+  child: { symbol: '↓', color: 'var(--color-info)' },
+  depends_on: { symbol: '◆', color: 'var(--color-warning)' },
+  dependency_of: { symbol: '◇', color: 'var(--color-warning)' },
+  related_to: { symbol: '↔', color: 'var(--color-accent-light)' },
+  satisfies: { symbol: '✓', color: 'var(--color-success)' },
+  satisfied_by: { symbol: '✓', color: 'var(--color-success)' },
   verifies: { symbol: '✔', color: '#10b981' },
   verified_by: { symbol: '✔', color: '#10b981' },
   implements: { symbol: '▸', color: '#06b6d4' },
@@ -52,6 +53,8 @@ const TYPE_ORDER: Record<string, number> = {
   requirement: 1,
   testCase: 2,
   information: 3,
+  risk: 4,
+  document: 5,
 };
 
 export const MatrixView: React.FC<MatrixViewProps> = ({
@@ -61,7 +64,9 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
   toggleType,
 }) => {
   const unsortedArtifacts =
-    selectedTypes.size === 4 ? allArtifacts : allArtifacts.filter((a) => selectedTypes.has(a.type));
+    selectedTypes.size === ALL_TRACE_TYPES.length
+      ? allArtifacts
+      : allArtifacts.filter((a) => selectedTypes.has(a.type));
 
   const matrixArtifacts = [...unsortedArtifacts]
     .sort((a, b) => {
@@ -104,7 +109,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
     <div
       style={{
         backgroundColor: 'var(--color-bg-card)',
-        borderRadius: '8px',
+        borderRadius: 'var(--radius-md)',
         border: '1px solid var(--color-border)',
         padding: 'var(--spacing-md)',
       }}
@@ -126,43 +131,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
         >
           Traceability Matrix
         </h3>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          {[
-            { type: 'useCase' as ArtifactType, label: 'UC', color: TYPE_COLORS.useCase.text },
-            {
-              type: 'requirement' as ArtifactType,
-              label: 'REQ',
-              color: TYPE_COLORS.requirement.text,
-            },
-            { type: 'testCase' as ArtifactType, label: 'TC', color: TYPE_COLORS.testCase.text },
-            {
-              type: 'information' as ArtifactType,
-              label: 'INFO',
-              color: TYPE_COLORS.information.text,
-            },
-          ].map(({ type, label, color }) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => toggleType(type)}
-              style={{
-                padding: '4px 8px',
-                borderRadius: '4px',
-                border: selectedTypes.has(type)
-                  ? `2px solid ${color}`
-                  : '2px solid var(--color-border)',
-                backgroundColor: selectedTypes.has(type) ? `${color}20` : 'transparent',
-                color: selectedTypes.has(type) ? color : 'var(--color-text-muted)',
-                cursor: 'pointer',
-                fontSize: 'var(--font-size-xs)',
-                fontWeight: 600,
-                transition: 'all 0.15s',
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <TypeFilterButtons selectedTypes={selectedTypes} onToggle={toggleType} />
       </div>
 
       {matrixArtifacts.length === 0 ? (
@@ -177,21 +146,22 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
         </div>
       ) : (
         <>
-          {allArtifacts.length > MAX_MATRIX_SIZE && selectedTypes.size === 4 && (
-            <div
-              style={{
-                padding: '8px 12px',
-                backgroundColor: 'rgba(234, 179, 8, 0.1)',
-                borderRadius: '6px',
-                marginBottom: 'var(--spacing-md)',
-                fontSize: 'var(--font-size-sm)',
-                color: 'var(--color-warning-light)',
-              }}
-            >
-              Showing first {MAX_MATRIX_SIZE} of {allArtifacts.length} artifacts. Use the toggles to
-              narrow down.
-            </div>
-          )}
+          {allArtifacts.length > MAX_MATRIX_SIZE &&
+            selectedTypes.size === ALL_TRACE_TYPES.length && (
+              <div
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: 'var(--color-warning-bg)',
+                  borderRadius: 'var(--radius-sm)',
+                  marginBottom: 'var(--spacing-md)',
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-warning-light)',
+                }}
+              >
+                Showing first {MAX_MATRIX_SIZE} of {allArtifacts.length} artifacts. Use the toggles
+                to narrow down.
+              </div>
+            )}
 
           <div style={{ overflowX: 'auto' }}>
             <table
@@ -296,7 +266,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
               marginTop: 'var(--spacing-md)',
               padding: 'var(--spacing-sm)',
               backgroundColor: 'var(--color-bg-tertiary)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               fontSize: 'var(--font-size-xs)',
               display: 'flex',
               flexWrap: 'wrap',
@@ -305,19 +275,19 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
           >
             <span style={{ fontWeight: 600, color: 'var(--color-text-secondary)' }}>Legend:</span>
             <span>
-              <span style={{ color: '#3b82f6' }}>↑↓</span> parent/child
+              <span style={{ color: 'var(--color-info)' }}>↑↓</span> parent/child
             </span>
             <span>
-              <span style={{ color: '#22c55e' }}>✓</span> satisfies
+              <span style={{ color: 'var(--color-success)' }}>✓</span> satisfies
             </span>
             <span>
               <span style={{ color: '#10b981' }}>✔</span> verifies
             </span>
             <span>
-              <span style={{ color: '#8b5cf6' }}>↔</span> related
+              <span style={{ color: 'var(--color-accent-light)' }}>↔</span> related
             </span>
             <span>
-              <span style={{ color: '#f59e0b' }}>◆</span> depends
+              <span style={{ color: 'var(--color-warning)' }}>◆</span> depends
             </span>
             <span>
               <span style={{ color: '#6366f1' }}>→←</span> references
