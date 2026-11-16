@@ -19,7 +19,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { expect } from 'vitest';
 import { render, waitFor, act, screen, fireEvent } from '@testing-library/react';
 import git from 'isomorphic-git';
-import { createElectronIpc } from './electronIpc';
+import { createElectronIpc, type ElectronIpc } from './electronIpc';
 import { classifyPendingPath } from '../../utils/pendingChanges';
 import { AppProviders } from '../../app/AppProviders';
 import { AppContent } from '../../app/AppContent';
@@ -61,6 +61,11 @@ export interface AppHooks {
 export interface Harness {
   /** Project directory on disk (what the user picked) */
   dir: string;
+  /**
+   * The real IPC handlers. Tests may replace network-facing ones (git:fetch,
+   * git:push, git:pull) to simulate a remote; everything else stays real.
+   */
+  ipc: ElectronIpc;
   /** Latest hook values - read after act()/waitFor() */
   app: () => AppHooks;
   /** Read a project file from disk, or null if missing */
@@ -83,9 +88,10 @@ export interface Harness {
   cleanup: () => void;
 }
 
-function installElectronApi(projectDir: string, userDataDir: string) {
-  const { api } = createElectronIpc({ pickedDirectory: projectDir, userDataDir });
-  (window as unknown as Record<string, unknown>).electronAPI = api;
+function installElectronApi(projectDir: string, userDataDir: string): ElectronIpc {
+  const ipc = createElectronIpc({ pickedDirectory: projectDir, userDataDir });
+  (window as unknown as Record<string, unknown>).electronAPI = ipc.api;
+  return ipc;
 }
 
 /**
@@ -102,7 +108,7 @@ export async function startApp(
   fs.mkdirSync(userData);
 
   localStorage.clear();
-  installElectronApi(dir, userData);
+  const ipc = installElectronApi(dir, userData);
 
   const latest: { current: AppHooks | null } = { current: null };
   const Probe: React.FC = () => {
@@ -177,6 +183,7 @@ export async function startApp(
 
   const harness: Harness = {
     dir,
+    ipc,
     app,
     readFile: (rel) => {
       const p = path.join(dir, rel);

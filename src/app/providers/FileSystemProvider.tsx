@@ -828,8 +828,15 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   const pull = useCallback(async () => {
-    return await realGitService.pull();
-  }, []);
+    const result = await realGitService.pull();
+    if (result.success) {
+      // The pull changed files on disk: reload so the app (and the next save)
+      // works on the pulled data instead of stale in-memory state
+      await reloadData();
+      refreshStatus();
+    }
+    return result;
+  }, [reloadData, refreshStatus]);
 
   const hasRemote = useCallback(async () => {
     return await realGitService.hasRemote();

@@ -184,6 +184,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
           </h2>
           <button
             onClick={onClose}
+            aria-label="Close"
             style={{
               background: 'none',
               border: 'none',
