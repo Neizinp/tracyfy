@@ -6,6 +6,7 @@
  */
 
 import type { Link } from '../types';
+import { kindOfId } from '../domain/artifactKinds';
 
 export type ImpactDirection = 'upstream' | 'downstream' | 'both';
 
@@ -59,17 +60,7 @@ function buildAdjacencyMap(links: Link[]): {
   return { outgoing, incoming };
 }
 
-/**
- * Get artifact type from ID prefix
- */
-function getArtifactTypeFromId(id: string): string {
-  if (id.startsWith('REQ-')) return 'requirement';
-  if (id.startsWith('UC-')) return 'useCase';
-  if (id.startsWith('TC-')) return 'testCase';
-  if (id.startsWith('INFO-')) return 'information';
-  if (id.startsWith('RSK-')) return 'risk';
-  return 'unknown';
-}
+const getArtifactTypeFromId = (id: string): string => kindOfId(id) ?? 'unknown';
 
 /**
  * Compute the full impact chain for a given artifact
