@@ -2,24 +2,11 @@ import React, { useState } from 'react';
 import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { Search } from 'lucide-react';
 import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
-import type {
-  CustomAttributeDefinition,
-  AttributeType,
-  ApplicableArtifactType,
-} from '../types/customAttributes';
+import type { CustomAttributeDefinition, AttributeType } from '../types/customAttributes';
 import { CustomAttributeDefinitionModal } from '../components/CustomAttributeDefinitionModal';
 import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
 import { notifyError } from '../app/providers/ToastProvider';
-
-const ARTIFACT_TYPE_LABELS: Record<ApplicableArtifactType, string> = {
-  requirement: 'Requirements',
-  useCase: 'Use Cases',
-  testCase: 'Test Cases',
-  information: 'Information',
-  risk: 'Risks',
-  link: 'Links',
-  document: 'Documents',
-};
+import { kind } from '../domain/artifactKinds';
 
 const TYPE_COLORS: Record<AttributeType, string> = {
   text: 'var(--color-info)',
@@ -253,7 +240,7 @@ export const CustomAttributesPage: React.FC = () => {
                         color: 'var(--color-text-secondary)',
                       }}
                     >
-                      {ARTIFACT_TYPE_LABELS[type]}
+                      {type === 'link' ? 'Links' : kind(type).label.plural}
                     </span>
                   ))}
                 </div>

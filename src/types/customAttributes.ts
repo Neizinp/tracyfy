@@ -5,18 +5,13 @@
  * Definitions are stored globally in custom-attributes/ folder.
  */
 
+import type { ArtifactKindId } from '../domain/artifactKinds';
+
 // Supported value types for custom attributes
 export type AttributeType = 'text' | 'number' | 'date' | 'dropdown' | 'checkbox';
 
 // Which artifact types an attribute can apply to
-export type ApplicableArtifactType =
-  | 'requirement'
-  | 'useCase'
-  | 'testCase'
-  | 'information'
-  | 'risk'
-  | 'document'
-  | 'link';
+export type ApplicableArtifactType = ArtifactKindId | 'link';
 
 // Definition of a custom attribute (stored globally in custom-attributes/)
 export interface CustomAttributeDefinition {
