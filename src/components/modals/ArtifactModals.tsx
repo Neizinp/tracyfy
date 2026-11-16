@@ -114,7 +114,7 @@ export const ArtifactModals: React.FC = () => {
   };
 
   const selectedTestCase =
-    ui.activeModal.type === 'testcase' && ui.activeModal.isEdit
+    ui.activeModal.type === 'testCase' && ui.activeModal.isEdit
       ? testCases.find((t) => t.id === ui.selectedArtifact?.id) || null
       : null;
 
@@ -134,7 +134,7 @@ export const ArtifactModals: React.FC = () => {
       />
 
       <UseCaseModal
-        isOpen={ui.activeModal.type === 'usecase'}
+        isOpen={ui.activeModal.type === 'useCase'}
         useCase={editingUseCase}
         onClose={handleFullClose}
         onSubmit={handleUseCaseSubmit}
@@ -143,7 +143,7 @@ export const ArtifactModals: React.FC = () => {
       />
 
       <TestCaseModal
-        isOpen={ui.activeModal.type === 'testcase'}
+        isOpen={ui.activeModal.type === 'testCase'}
         testCase={selectedTestCase}
         onClose={handleFullClose}
         onCreate={handleAddTestCase}
@@ -175,7 +175,7 @@ export const ArtifactModals: React.FC = () => {
       />
 
       <DocumentModal
-        isOpen={ui.activeModal.type === 'documents'}
+        isOpen={ui.activeModal.type === 'document'}
         document={editingDocument}
         onClose={handleFullClose}
         onSubmit={handleDocumentSubmit}

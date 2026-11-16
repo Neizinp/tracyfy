@@ -223,7 +223,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
       )}
 
       {activeTab === 'history' && document && (
-        <RevisionHistoryTab artifactId={document.id} artifactType="documents" />
+        <RevisionHistoryTab artifactId={document.id} artifactType="document" />
       )}
     </BaseArtifactModal>
   );

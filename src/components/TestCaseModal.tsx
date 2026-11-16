@@ -249,7 +249,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
       )}
 
       {activeTab === 'history' && testCase && (
-        <RevisionHistoryTab artifactId={testCase.id} artifactType="testcases" />
+        <RevisionHistoryTab artifactId={testCase.id} artifactType="testCase" />
       )}
 
       {activeTab === 'customAttributes' && (

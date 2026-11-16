@@ -180,3 +180,64 @@ describe.each(TYPES)('integration: custom attribute on a $name', (t) => {
     expect(await within(dialog).findByText('Component')).toBeInTheDocument();
   }, 60_000);
 });
+
+describe.each(TYPES)('integration: opening a $name from elsewhere', (t) => {
+  let h: Harness;
+  afterEach(() => h?.cleanup());
+
+  const expectDialogFor = async (title: string) => {
+    const dialog = await screen.findByRole('dialog');
+    await waitFor(() => expect(titleInput(dialog)).toHaveValue(title));
+    return dialog;
+  };
+
+  it('from the Links page and from search', async () => {
+    h = await startApp({ initialRoute: '/links' });
+
+    // Something to link from
+    const source = await act(() =>
+      h.app().requirements.handleAddRequirement({
+        title: 'Link source',
+        description: '',
+        text: '',
+        rationale: '',
+        status: 'draft',
+        priority: 'medium',
+        dateCreated: Date.now(),
+      } as never)
+    );
+
+    // The artifact, created through the UI
+    fireEvent.click(screen.getByRole('button', { name: /create new/i }));
+    fireEvent.click(await screen.findByText(t.menuItem));
+    let dialog = await screen.findByRole('dialog');
+    fireEvent.change(titleInput(dialog), { target: { value: `My ${t.name}` } });
+    dialog
+      .querySelectorAll<HTMLInputElement>('input[required], textarea[required]')
+      .forEach((el) => {
+        if (!el.value) fireEvent.change(el, { target: { value: 'Someone' } });
+      });
+    fireEvent.click(within(dialog).getByRole('button', { name: t.createLabel }));
+    await h.settle();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    const target = t.all(h.app()).find((a) => a.title === `My ${t.name}`)!;
+
+    await act(() =>
+      h.app().fileSystem.createLink((source as { id: string }).id, target.id, 'related_to')
+    );
+    await h.settle();
+
+    // Links page: click the target's ID
+    fireEvent.click(await within(await screen.findByRole('table')).findByText(target.id));
+    dialog = await expectDialogFor(`My ${t.name}`);
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    // Search: click the result (search does not cover documents yet, see DESIGN.md)
+    if (t.kind === 'document') return;
+    await act(async () => h.app().ui.setIsAdvancedSearchOpen(true));
+    const search = await screen.findByRole('dialog', { name: 'Advanced Search' });
+    fireEvent.click(await within(search).findByText(target.id));
+    await expectDialogFor(`My ${t.name}`);
+  }, 90_000);
+});

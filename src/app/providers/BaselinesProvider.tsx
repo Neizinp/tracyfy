@@ -11,8 +11,8 @@ import type { ReactNode } from 'react';
 import { diskBaselineService } from '../../services/diskBaselineService';
 import { useFileSystem } from './FileSystemProvider';
 import { useToast } from './ToastProvider';
-import { useRisks } from './ArtifactProviders';
 import type { ProjectBaseline } from '../../types';
+import { KIND_IDS, type ArtifactKindId } from '../../domain/artifactKinds';
 
 interface BaselinesContextValue {
   baselines: ProjectBaseline[];
@@ -31,9 +31,16 @@ const BaselinesContext = createContext<BaselinesContextValue | undefined>(undefi
 export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [baselines, setBaselines] = useState<ProjectBaseline[]>([]);
   const [loading, setLoading] = useState(false);
-  const { isReady, requirements, useCases, testCases, information, getArtifactHistory } =
-    useFileSystem();
-  const { risks, getRiskHistory } = useRisks();
+  const {
+    isReady,
+    requirements,
+    useCases,
+    testCases,
+    information,
+    risks,
+    documents,
+    getArtifactHistory,
+  } = useFileSystem();
   const { showToast } = useToast();
   const hasLoadedInitial = useRef(false);
 
@@ -62,53 +69,26 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
     async (name: string, description: string, version: string) => {
       try {
         // 1. Get latest commit hash for every artifact
-        const artifactCommits: {
-          [artifactId: string]: {
-            commitHash: string;
-            type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
-          };
-        } = {};
+        const artifactCommits: ProjectBaseline['artifactCommits'] = {};
 
-        const captureCommits = async (
-          items: { id: string }[],
-          type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
-        ) => {
-          // Map long naming (provider) to short naming (git folder)
-          const gitType =
-            type === 'requirements'
-              ? 'requirement'
-              : type === 'usecases'
-                ? 'usecase'
-                : type === 'testcases'
-                  ? 'testcase'
-                  : type === 'risks'
-                    ? 'risk'
-                    : 'information';
-
-          for (const item of items) {
-            const history =
-              type === 'risks'
-                ? await getRiskHistory(item.id)
-                : await getArtifactHistory(
-                    type as 'requirements' | 'usecases' | 'testcases' | 'information',
-                    item.id
-                  );
-            if (history.length > 0) {
-              artifactCommits[item.id] = {
-                commitHash: history[0].hash,
-                type: gitType as 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk',
-              };
-            }
-          }
+        const byKind: Record<ArtifactKindId, { id: string }[]> = {
+          requirement: requirements,
+          useCase: useCases,
+          testCase: testCases,
+          information,
+          risk: risks,
+          document: documents,
         };
-
-        await Promise.all([
-          captureCommits(requirements, 'requirements'),
-          captureCommits(useCases, 'usecases'),
-          captureCommits(testCases, 'testcases'),
-          captureCommits(information, 'information'),
-          captureCommits(risks, 'risks'),
-        ]);
+        await Promise.all(
+          KIND_IDS.flatMap((kind) =>
+            byKind[kind].map(async (item) => {
+              const history = await getArtifactHistory(kind, item.id);
+              if (history.length > 0) {
+                artifactCommits[item.id] = { commitHash: history[0].hash, type: kind };
+              }
+            })
+          )
+        );
 
         const newBaseline: ProjectBaseline = {
           id: `bl-${Date.now()}`,
@@ -135,8 +115,8 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
       testCases,
       information,
       risks,
+      documents,
       getArtifactHistory,
-      getRiskHistory,
       showToast,
     ]
   );

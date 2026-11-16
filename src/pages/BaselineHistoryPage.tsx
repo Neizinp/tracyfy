@@ -25,8 +25,8 @@ export const BaselineHistoryPage: React.FC = () => {
         artifactCommits[id] = { commitHash: '', type };
       });
     add(activeIds(requirements), 'requirement');
-    add(activeIds(useCases), 'usecase');
-    add(activeIds(testCases), 'testcase');
+    add(activeIds(useCases), 'useCase');
+    add(activeIds(testCases), 'testCase');
     add(activeIds(information), 'information');
     // We'll fill commit hashes in BaselineRevisionHistory (it already fetches history)
     return {

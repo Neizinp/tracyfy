@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useUI, useGlobalState } from '../app/providers';
-import { getTypeFromId, ARTIFACT_CONFIG } from '../constants/artifactConfig';
-import type { ModalType, SelectedArtifact } from '../types';
+import { useUI } from '../app/providers';
+import { kindOfId } from '../domain/artifactKinds';
+import { useOpenArtifact } from './useOpenArtifact';
 
 /**
  * Hook to handle deep linking to artifacts via URL search parameters.
@@ -11,8 +11,8 @@ import type { ModalType, SelectedArtifact } from '../types';
  */
 export function useArtifactDeepLink() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { openModal, activeModal, selectedArtifact } = useUI();
-  const { requirements, useCases, testCases, information, risks } = useGlobalState();
+  const { activeModal, selectedArtifact } = useUI();
+  const openArtifact = useOpenArtifact();
 
   // Track the last processed ID to avoid re-opening if it was manually closed
   const lastProcessedIdRef = useRef<string | null>(null);
@@ -51,53 +51,10 @@ export function useArtifactDeepLink() {
       return;
     }
 
-    const configKey = getTypeFromId(id);
-    const config = ARTIFACT_CONFIG[configKey];
-    if (!config) return;
-
-    // Mapping from config type to modal type if they differ
-    const modalType = config.type as ModalType;
-
-    // Find artifact in the global pool (not just current project)
-    let artifactData: unknown = null;
-    switch (modalType) {
-      case 'requirement':
-        artifactData = requirements.find((r) => r.id === id);
-        break;
-      case 'usecase':
-        artifactData = useCases.find((u) => u.id === id);
-        break;
-      case 'testcase':
-        artifactData = testCases.find((t) => t.id === id);
-        break;
-      case 'information':
-        artifactData = information.find((i) => i.id === id);
-        break;
-      case 'risk':
-        artifactData = risks.find((r) => r.id === id);
-        break;
-      default:
-        return;
-    }
-
-    if (artifactData) {
+    if (openArtifact(id)) {
       lastProcessedIdRef.current = id;
-      openModal(modalType, true, {
-        id,
-        type: modalType as SelectedArtifact['type'],
-        data: artifactData as Record<string, unknown>,
-      });
     }
-  }, [
-    searchParams,
-    openModal,
-    activeModal.type,
-    requirements,
-    useCases,
-    testCases,
-    information,
-    risks,
-  ]);
+  }, [searchParams, openArtifact, activeModal.type]);
 
   // Sync modal state back to URL parameters
   useEffect(() => {
@@ -113,7 +70,7 @@ export function useArtifactDeepLink() {
     } else if (!activeModal.type && currentId) {
       // If modal is closed but URL still has ID, remove it
       // Only remove if it looks like an artifact ID to avoid breaking other features
-      if (getTypeFromId(currentId) !== 'unknown') {
+      if (kindOfId(currentId)) {
         const newParams = new URLSearchParams(searchParams);
         newParams.delete('id');
         setSearchParams(newParams, { replace: true });

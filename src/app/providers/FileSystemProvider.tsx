@@ -48,6 +48,7 @@ import type {
   Risk,
   ArtifactDocument,
 } from '../../types';
+import { kind, type ArtifactKindId } from '../../domain/artifactKinds';
 
 interface FileSystemContextValue {
   isReady: boolean;
@@ -112,10 +113,7 @@ interface FileSystemContextValue {
   // Git operations
   commitFile: (filepath: string, message: string, authorName?: string) => Promise<void>;
   revertFile: (filepath: string) => Promise<void>;
-  getArtifactHistory: (
-    type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks' | 'documents',
-    id: string
-  ) => Promise<CommitInfo[]>;
+  getArtifactHistory: (kind: ArtifactKindId, id: string) => Promise<CommitInfo[]>;
   readFileAtCommit: (filepath: string, commitHash: string) => Promise<string | null>;
   push: () => Promise<void>;
   pull: () => Promise<PullResult>;
@@ -756,13 +754,9 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   );
 
   const getArtifactHistory = useCallback(
-    async (
-      type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks' | 'documents',
-      id: string
-    ) => {
+    async (kindId: ArtifactKindId, id: string) => {
       if (!isReady || isE2EMode()) return [];
-      const folder = type === 'documents' ? 'documents' : type;
-      return await realGitService.getHistory(`${folder}/${id}.md`);
+      return await realGitService.getHistory(`${kind(kindId).folder}/${id}.md`);
     },
     [isReady]
   );

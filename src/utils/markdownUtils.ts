@@ -9,6 +9,7 @@ import type {
   ArtifactLink,
   ArtifactDocument,
   DocumentEntry,
+  BaseArtifact,
 } from '../types';
 import type {
   CustomAttributeDefinition,
@@ -26,6 +27,7 @@ import {
   unescapeBodyText,
   bodyWithoutTitle,
 } from './markdownBase';
+import type { ArtifactKindId } from '../domain/artifactKinds';
 
 /**
  * Convert a Requirement to Markdown with YAML frontmatter
@@ -530,3 +532,13 @@ export function markdownToDocument(markdown: string): ArtifactDocument {
     customAttributes: ensureArray<CustomAttributeValue>(frontmatter.customAttributes),
   };
 }
+
+/** Parse an artifact file of the given kind */
+export const MARKDOWN_TO_ARTIFACT: Record<ArtifactKindId, (markdown: string) => BaseArtifact> = {
+  requirement: markdownToRequirement,
+  useCase: markdownToUseCase,
+  testCase: markdownToTestCase,
+  information: markdownToInformation,
+  risk: markdownToRisk,
+  document: markdownToDocument,
+};

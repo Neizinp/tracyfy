@@ -51,7 +51,7 @@ describe('BaselineRevisionHistory', () => {
     version: '01',
     artifactCommits: {
       'REQ-001': { commitHash: 'abc123', type: 'requirement' },
-      'UC-001': { commitHash: 'def456', type: 'usecase' },
+      'UC-001': { commitHash: 'def456', type: 'useCase' },
     },
     addedArtifacts: ['REQ-002'],
     removedArtifacts: ['REQ-003'],

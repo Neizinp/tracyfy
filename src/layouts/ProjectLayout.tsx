@@ -273,7 +273,7 @@ export const ProjectLayout: React.FC = () => {
       onNewWorkflow={() => ui.setIsWorkflowModalOpen(true)}
       onNewLink={() => navigate('/links')}
       onNewCustomAttribute={() => ui.setIsCustomAttributeModalOpen(true)}
-      onNewDocument={() => ui.openModal('documents')}
+      onNewDocument={() => ui.openModal('document')}
       onExport={importExport.handleExport}
       onImport={importExport.handleImport}
       onImportExcel={importExport.handleImportExcel}

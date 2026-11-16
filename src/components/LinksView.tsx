@@ -11,7 +11,7 @@ import { BaseArtifactTable, type ColumnDef } from './BaseArtifactTable';
 import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
 
 interface LinksViewProps {
-  onNavigateToArtifact?: (id: string, type: string) => void;
+  onNavigateToArtifact?: (id: string) => void;
   onAdd?: () => void;
 }
 
@@ -52,7 +52,6 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
   };
 
   // Helpers
-  const getArtifactType = (id: string): string => kindOfId(id) ?? 'unknown';
 
   const getTypeColor = (id: string): string => {
     const type = kindOfId(id);
@@ -102,7 +101,7 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
         <span
           onClick={(e) => {
             e.stopPropagation();
-            onNavigateToArtifact?.(link.sourceId, getArtifactType(link.sourceId));
+            onNavigateToArtifact?.(link.sourceId);
           }}
           style={{
             color: getTypeColor(link.sourceId),
@@ -147,7 +146,7 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
         <span
           onClick={(e) => {
             e.stopPropagation();
-            onNavigateToArtifact?.(link.targetId, getArtifactType(link.targetId));
+            onNavigateToArtifact?.(link.targetId);
           }}
           style={{
             color: getTypeColor(link.targetId),

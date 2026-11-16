@@ -71,8 +71,9 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
 
   const handleResultClick = useCallback(
     (result: SearchResult) => {
-      onNavigateToArtifact(result.type, result.id);
+      // Close first: closing clears the active modal, which would close the artifact's
       onClose();
+      onNavigateToArtifact(result.type, result.id);
     },
     [onNavigateToArtifact, onClose]
   );
@@ -95,6 +96,9 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Advanced Search"
         style={{
           backgroundColor: 'var(--color-bg-card)',
           borderRadius: 'var(--radius-xl)',

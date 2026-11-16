@@ -13,6 +13,7 @@ import {
 import { useLinkService } from '../hooks/useLinkService';
 import { notifyError } from '../app/providers/ToastProvider';
 import { isKindId } from '../domain/artifactKinds';
+import { useOpenArtifact } from '../hooks/useOpenArtifact';
 
 type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
 
@@ -31,6 +32,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
   const { risks } = useRisks();
   const { documents } = useDocuments();
   const { searchQuery, setLinkSourceId, setLinkSourceType, setIsLinkModalOpen } = useUI();
+  const openArtifact = useOpenArtifact();
   const { allLinks: standaloneLinks, deleteLink } = useLinkService({});
 
   const filteredRequirements = useMemo(() => {
@@ -141,6 +143,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
       documents={filteredDocuments}
       standaloneLinks={standaloneLinks}
       initialTab={initialTab}
+      onSelectArtifact={openArtifact}
       onAddLink={handleAddLink}
       onRemoveLink={handleRemoveLink}
     />

@@ -25,13 +25,13 @@ describe('RevisionHistoryTab', () => {
 
   it('should render loading state initially', () => {
     mockGetArtifactHistory.mockReturnValue(new Promise(() => {}));
-    render(<RevisionHistoryTab artifactId="123" artifactType="requirements" />);
+    render(<RevisionHistoryTab artifactId="123" artifactType="requirement" />);
     expect(screen.getByText('Loading history...')).toBeInTheDocument();
   });
 
   it('should render empty state when no history', async () => {
     mockGetArtifactHistory.mockResolvedValue([]);
-    render(<RevisionHistoryTab artifactId="123" artifactType="requirements" />);
+    render(<RevisionHistoryTab artifactId="123" artifactType="requirement" />);
 
     await waitFor(() => {
       expect(screen.queryByText('Loading history...')).not.toBeInTheDocument();
@@ -50,7 +50,7 @@ describe('RevisionHistoryTab', () => {
     ];
     mockGetArtifactHistory.mockResolvedValue(mockCommits);
 
-    render(<RevisionHistoryTab artifactId="123" artifactType="requirements" />);
+    render(<RevisionHistoryTab artifactId="123" artifactType="requirement" />);
 
     await waitFor(() => {
       expect(screen.queryByText('Loading history...')).not.toBeInTheDocument();

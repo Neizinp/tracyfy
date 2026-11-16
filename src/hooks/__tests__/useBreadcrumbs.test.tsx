@@ -21,11 +21,11 @@ describe('useUIState - Navigation Stack (Breadcrumbs)', () => {
     const { result } = renderHook(() => useUIState());
 
     const art1: SelectedArtifact = { id: 'REQ-001', type: 'requirement', data: {} };
-    const art2: SelectedArtifact = { id: 'TC-001', type: 'testcase', data: {} };
+    const art2: SelectedArtifact = { id: 'TC-001', type: 'testCase', data: {} };
 
     act(() => {
       result.current.pushNavigationStack(art1);
-      result.current.openModal('testcase', true, art2);
+      result.current.openModal('testCase', true, art2);
     });
 
     expect(result.current.navigationStack).toHaveLength(1);

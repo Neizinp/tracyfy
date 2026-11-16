@@ -1,24 +1,10 @@
 import { useState, useEffect } from 'react';
 import { FileText, GitCommit, Plus, Minus, Edit, Calendar, User } from 'lucide-react';
-import type {
-  ProjectBaseline,
-  ArtifactRevision,
-  Requirement,
-  UseCase,
-  TestCase,
-  Information,
-  Risk,
-  CommitInfo,
-} from '../types';
+import type { ProjectBaseline, ArtifactRevision, CommitInfo } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
-import { useFileSystem, useRisks } from '../app/providers';
-import {
-  markdownToRequirement,
-  markdownToUseCase,
-  markdownToTestCase,
-  markdownToInformation,
-  markdownToRisk,
-} from '../utils/markdownUtils';
+import { useFileSystem } from '../app/providers';
+import { MARKDOWN_TO_ARTIFACT } from '../utils/markdownUtils';
+import { kind, type ArtifactKindId } from '../domain/artifactKinds';
 
 interface BaselineRevisionHistoryProps {
   currentBaseline: ProjectBaseline;
@@ -29,7 +15,7 @@ interface BaselineRevisionHistoryProps {
 
 interface ArtifactRevisionInfo {
   id: string;
-  type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
+  type: ArtifactKindId;
   commitHash: string;
   revisions: ArtifactRevision[];
   revision?: string;
@@ -46,7 +32,6 @@ export function BaselineRevisionHistory({
   const [removedArtifacts, setRemovedArtifacts] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const { getArtifactHistory, readFileAtCommit } = useFileSystem();
-  const { getRiskHistory } = useRisks();
 
   useEffect(() => {
     const loadRevisionHistory = async () => {
@@ -63,82 +48,47 @@ export function BaselineRevisionHistory({
         const modified: ArtifactRevisionInfo[] = [];
 
         if (previousBaseline) {
-          for (const [artifactId, info] of Object.entries(currentBaseline.artifactCommits)) {
-            const currentInfo = info as {
-              commitHash: string;
-              type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
-            };
+          for (const [artifactId, currentInfo] of Object.entries(currentBaseline.artifactCommits)) {
             const prevInfo = previousBaseline.artifactCommits[artifactId];
 
             if (prevInfo && prevInfo.commitHash !== currentInfo.commitHash) {
-              const providerType =
-                currentInfo.type === 'requirement'
-                  ? 'requirements'
-                  : currentInfo.type === 'usecase'
-                    ? 'usecases'
-                    : currentInfo.type === 'testcase'
-                      ? 'testcases'
-                      : currentInfo.type === 'information'
-                        ? 'information'
-                        : null;
+              try {
+                const history: CommitInfo[] = await getArtifactHistory(
+                  currentInfo.type,
+                  artifactId
+                );
 
-              if (currentInfo.type === 'risk' || providerType) {
+                const relevantRevisions: ArtifactRevision[] = history.map((commit: CommitInfo) => ({
+                  commitHash: commit.hash,
+                  message: commit.message,
+                  author: commit.author,
+                  timestamp: commit.timestamp,
+                }));
+
+                let revision = '01';
                 try {
-                  const history: CommitInfo[] =
-                    currentInfo.type === 'risk'
-                      ? await getRiskHistory(artifactId)
-                      : await getArtifactHistory(
-                          providerType as 'requirements' | 'usecases' | 'testcases' | 'information',
-                          artifactId
-                        );
+                  const folderPath = `${kind(currentInfo.type).folder}/${artifactId}.md`;
+                  const fileContent = await readFileAtCommit(folderPath, currentInfo.commitHash);
 
-                  const relevantRevisions: ArtifactRevision[] = history.map(
-                    (commit: CommitInfo) => ({
-                      commitHash: commit.hash,
-                      message: commit.message,
-                      author: commit.author,
-                      timestamp: commit.timestamp,
-                    })
-                  );
-
-                  let revision = '01';
-                  try {
-                    const folder = currentInfo.type === 'risk' ? 'risks' : providerType;
-                    const folderPath = `${folder}/${artifactId}.md`;
-                    const fileContent = await readFileAtCommit(folderPath, currentInfo.commitHash);
-
-                    if (fileContent) {
-                      let parsed: Requirement | UseCase | TestCase | Information | Risk | null =
-                        null;
-                      if (currentInfo.type === 'requirement') {
-                        parsed = markdownToRequirement(fileContent);
-                      } else if (currentInfo.type === 'usecase') {
-                        parsed = markdownToUseCase(fileContent);
-                      } else if (currentInfo.type === 'testcase') {
-                        parsed = markdownToTestCase(fileContent);
-                      } else if (currentInfo.type === 'information') {
-                        parsed = markdownToInformation(fileContent);
-                      } else if (currentInfo.type === 'risk') {
-                        parsed = markdownToRisk(fileContent);
-                      }
-                      if (parsed && 'revision' in parsed && parsed.revision) {
-                        revision = parsed.revision;
-                      }
+                  if (fileContent) {
+                    const parsed = MARKDOWN_TO_ARTIFACT[currentInfo.type](fileContent);
+                    if (parsed && 'revision' in parsed && parsed.revision) {
+                      revision = parsed.revision;
                     }
-                  } catch {
-                    // ignore
                   }
-
-                  modified.push({
-                    id: artifactId,
-                    type: currentInfo.type,
-                    commitHash: currentInfo.commitHash,
-                    revisions: relevantRevisions.slice(0, 5),
-                    revision,
-                  });
-                } catch (err) {
-                  console.error(`Failed to fetch history for ${artifactId}`, err);
+                } catch {
+                  // ignore
                 }
+
+                modified.push({
+                  id: artifactId,
+                  type: currentInfo.type,
+                  commitHash: currentInfo.commitHash,
+                  revisions: relevantRevisions.slice(0, 5),
+                  revision,
+                });
+              } catch (err) {
+                console.error(`Failed to fetch history for ${artifactId}`, err);
               }
             }
           }
@@ -153,26 +103,13 @@ export function BaselineRevisionHistory({
     };
 
     loadRevisionHistory();
-  }, [currentBaseline, previousBaseline, getArtifactHistory, getRiskHistory, readFileAtCommit]);
+  }, [currentBaseline, previousBaseline, getArtifactHistory, readFileAtCommit]);
 
   const getTypeIcon = () => {
     return <FileText size={16} className="text-blue-400" />;
   };
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'requirement':
-        return 'Requirement';
-      case 'usecase':
-        return 'Use Case';
-      case 'testcase':
-        return 'Test Case';
-      case 'risk':
-        return 'Risk';
-      default:
-        return 'Information';
-    }
-  };
+  const getTypeLabel = (type: ArtifactKindId) => kind(type).label.singular;
 
   if (loading) {
     return (

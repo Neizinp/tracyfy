@@ -8,24 +8,9 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatDate } from '../dateUtils';
 import type { ArtifactCommit, RemovedArtifact } from './types';
+import { kind, type ArtifactKindId } from '../../domain/artifactKinds';
 
-/**
- * Helper to get human-readable type name
- */
-function getTypeName(type: string): string {
-  switch (type) {
-    case 'requirement':
-      return 'Requirement';
-    case 'usecase':
-      return 'Use case';
-    case 'testcase':
-      return 'Test case';
-    case 'information':
-      return 'Information';
-    default:
-      return type;
-  }
-}
+const getTypeName = (type: ArtifactKindId): string => kind(type).label.singular;
 
 /**
  * Add revision history section to PDF

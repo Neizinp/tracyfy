@@ -30,11 +30,11 @@ import type {
   UseCase,
   TestCase,
   Information,
-  Risk,
 } from '../../types';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import type { LinkModalResult } from '../LinkModal';
 import { useLinkableArtifacts } from '../../hooks/useLinkableArtifacts';
+import { useOpenArtifact } from '../../hooks/useOpenArtifact';
 import { notifyError } from '../../app/providers/ToastProvider';
 
 export const ManagementModals: React.FC = () => {
@@ -51,6 +51,7 @@ export const ManagementModals: React.FC = () => {
   const { links, createLink } = useFileSystem();
   const linkableArtifacts = useLinkableArtifacts();
   const { showToast } = useToast();
+  const openArtifact = useOpenArtifact();
 
   const handleExport = useCallback(
     async (options: ExportOptions) => {
@@ -269,61 +270,7 @@ export const ManagementModals: React.FC = () => {
       <AdvancedSearchModal
         isOpen={ui.activeModal.type === 'search'}
         onClose={ui.closeModal}
-        onNavigateToArtifact={(type: string, id: string) => {
-          switch (type) {
-            case 'requirement': {
-              const req = requirements.find((r: Requirement) => r.id === id);
-              if (req) {
-                ui.openModal('requirement', true, {
-                  id,
-                  type: 'requirement',
-                  data: req as unknown as Record<string, unknown>,
-                });
-              }
-              break;
-            }
-            case 'usecase': {
-              const uc = useCases.find((u: UseCase) => u.id === id);
-              if (uc) {
-                ui.openModal('usecase', true, {
-                  id,
-                  type: 'usecase',
-                  data: uc as unknown as Record<string, unknown>,
-                });
-              }
-              break;
-            }
-            case 'testcase': {
-              const tc = testCases.find((t: TestCase) => t.id === id);
-              if (tc) {
-                ui.openModal('testcase', true, { id, type: 'testcase' });
-              }
-              break;
-            }
-            case 'information': {
-              const info = information.find((i: Information) => i.id === id);
-              if (info) {
-                ui.openModal('information', true, {
-                  id,
-                  type: 'information',
-                  data: info as unknown as Record<string, unknown>,
-                });
-              }
-              break;
-            }
-            case 'risk': {
-              const risk = risks.find((r: Risk) => r.id === id);
-              if (risk) {
-                ui.openModal('risk', true, {
-                  id,
-                  type: 'risk',
-                  data: risk as unknown as Record<string, unknown>,
-                });
-              }
-              break;
-            }
-          }
-        }}
+        onNavigateToArtifact={(_type: string, id: string) => openArtifact(id)}
       />
 
       <CustomAttributeDefinitionModal

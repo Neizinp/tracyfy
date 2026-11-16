@@ -273,6 +273,10 @@ Things noticed while doing a step that belong to a later one:
   it moves into `tracyfy.yaml` in step 4.
 - The requirements column selector writes `column-visibility` to localStorage, but nothing
   reads it back. Column visibility should be stored once, for all kinds, in step 6.
+- **Advanced search does not cover documents**: `useAdvancedSearch` lists kinds by hand.
+  Search should iterate the registry and the field defs in step 6.
+- **PDF and Excel export miss kinds**: revision history in the PDF only covers requirements,
+  use cases, test cases and information. This gets fixed by the rewrite in step 8.
 
 ## 8. Open questions
 
