@@ -446,11 +446,13 @@ class GitCoreService {
           '[gitCoreService.getStatus] Electron: calling window.electronAPI.git.statusMatrix'
         );
         const status = await window.electronAPI!.git.statusMatrix(getRootDir());
-        if (Array.isArray(status)) {
-          const parsed = parseStatusMatrix(status);
-          result = parsed.statuses;
-          statusMatrixFiles = parsed.allFiles;
+        if (!Array.isArray(status)) {
+          // Don't report "no changes" when git couldn't be read
+          throw new Error((status as { error?: string })?.error || 'git statusMatrix failed');
         }
+        const parsed = parseStatusMatrix(status);
+        result = parsed.statuses;
+        statusMatrixFiles = parsed.allFiles;
       } else {
         // Browser path: Use git.statusMatrix directly with fsAdapter
         // IMPORTANT: Use a fresh cache to avoid stale data after commits
@@ -472,6 +474,7 @@ class GitCoreService {
           }
         } catch (statusError) {
           console.error('[getStatus] statusMatrix failed:', statusError);
+          throw statusError;
         }
       }
 
@@ -545,8 +548,9 @@ class GitCoreService {
 
       return filteredResult;
     } catch (error) {
+      // Callers must surface this; an empty list would look like "everything committed"
       console.error('Failed to get status:', error);
-      return [];
+      throw error;
     }
   }
 

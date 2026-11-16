@@ -62,6 +62,8 @@ interface FileSystemContextValue {
   preloadedCurrentUserId: string;
   // Git-related
   pendingChanges: FileStatus[];
+  /** Set when git status could not be read (shown instead of "No pending changes") */
+  statusError: string | null;
   refreshStatus: () => Promise<void>;
   // CRUD operations (save to disk)
   saveRequirement: (requirement: Requirement) => Promise<void>;
@@ -138,6 +140,19 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [directoryName, setDirectoryName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingChanges, setPendingChanges] = useState<FileStatus[]>([]);
+  const [statusError, setStatusError] = useState<string | null>(null);
+
+  /** git status, recording (not throwing) a failure so the UI can show it */
+  const loadStatus = useCallback(async (): Promise<FileStatus[]> => {
+    try {
+      const status = await realGitService.getStatus();
+      setStatusError(null);
+      return status;
+    } catch (err) {
+      setStatusError(err instanceof Error ? err.message : String(err));
+      return [];
+    }
+  }, []);
   const [information, setInformation] = useState<Information[]>([]);
   const [risks, setRisks] = useState<Risk[]>([]);
   const [documents, setDocuments] = useState<ArtifactDocument[]>([]);
@@ -186,17 +201,15 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (realGitService.isInitialized()) {
         const taskId = startTask('Refreshing git status...');
         try {
-          const status = await realGitService.getStatus();
+          const status = await loadStatus();
           debug.log(`[refreshStatus] Received ${status.length} files`);
           setPendingChanges(status);
-        } catch (err) {
-          console.error('[refreshStatus] Error during getStatus:', err);
         } finally {
           endTask(taskId);
         }
       }
     }, REFRESH_STATUS_DEBOUNCE_MS);
-  }, [startTask, endTask]);
+  }, [startTask, endTask, loadStatus]);
 
   // Load all data from disk using diskProjectService
   const reloadData = useCallback(async () => {
@@ -281,7 +294,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               await diskProjectService.initialize();
 
               // Load data and git status in parallel (they're independent)
-              const [, status] = await Promise.all([reloadData(), realGitService.getStatus()]);
+              const [, status] = await Promise.all([reloadData(), loadStatus()]);
               setPendingChanges(status);
 
               setIsReady(true);
@@ -298,7 +311,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
 
     tryRestore();
-  }, [reloadData, startTask, endTask]);
+  }, [reloadData, startTask, endTask, loadStatus]);
 
   const selectDirectory = useCallback(async () => {
     setIsLoading(true);
@@ -343,7 +356,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       await diskProjectService.initialize();
 
       // Load data and git status in parallel (they're independent)
-      const [, status] = await Promise.all([reloadData(), realGitService.getStatus()]);
+      const [, status] = await Promise.all([reloadData(), loadStatus()]);
       debug.log('[selectDirectory] Setting pendingChanges to:', status);
       setPendingChanges(status);
 
@@ -354,7 +367,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       endTask(taskId);
       setIsLoading(false);
     }
-  }, [reloadData, startTask, endTask]);
+  }, [reloadData, startTask, endTask, loadStatus]);
 
   // CRUD operations - Requirements
   const saveRequirement = useCallback(
@@ -871,6 +884,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       preloadedCurrentUserId,
       // Git
       pendingChanges,
+      statusError,
       refreshStatus,
       // CRUD
       saveRequirement,
@@ -931,6 +945,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       isReady,
       links,
       pendingChanges,
+      statusError,
       preloadedCurrentUserId,
       preloadedUsers,
       projects,

@@ -8,8 +8,15 @@ import type { ArtifactChange } from '../types';
 import { classifyPendingPath } from '../utils/pendingChanges';
 
 export function PendingChangesPanel() {
-  const { pendingChanges, commitFile, revertFile, projects, getArtifactHistory, refreshStatus } =
-    useFileSystem();
+  const {
+    pendingChanges,
+    statusError,
+    commitFile,
+    revertFile,
+    projects,
+    getArtifactHistory,
+    refreshStatus,
+  } = useFileSystem();
   const { currentUser } = useUser();
   const { startTask, endTask } = useBackgroundTaskActions();
   const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
@@ -285,6 +292,25 @@ export function PendingChangesPanel() {
   const getStatusText = (status: string) => {
     return status === 'new' ? 'New' : 'Modified';
   };
+
+  if (statusError) {
+    return (
+      <div
+        role="alert"
+        style={{
+          padding: 'var(--spacing-sm)',
+          fontSize: 'var(--font-size-sm)',
+          color: 'var(--color-error, #ef4444)',
+          display: 'flex',
+          gap: '6px',
+          alignItems: 'flex-start',
+        }}
+      >
+        <AlertCircle size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
+        <span>Could not read git status: {statusError}</span>
+      </div>
+    );
+  }
 
   if (parsedChanges.length === 0) {
     return (
