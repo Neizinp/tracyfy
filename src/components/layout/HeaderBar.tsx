@@ -7,7 +7,6 @@
  */
 
 import React from 'react';
-import { debug } from '../../utils/debug';
 import {
   Plus,
   Download,
@@ -38,12 +37,6 @@ import { DropdownMenuItem } from './DropdownMenuItem';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { useHeaderBar } from '../../hooks/useHeaderBar';
 import { ThemeToggle } from './ThemeToggle';
-
-// Type for E2E test mode window properties
-interface E2EWindow extends Window {
-  __E2E_TEST_MODE__?: boolean;
-  __E2E_EXPORT_MENU_OPENED?: boolean;
-}
 
 interface HeaderBarProps {
   onSearch?: (query: string) => void;
@@ -126,24 +119,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   });
 
   const handleExportPDF = () => {
-    if (typeof window !== 'undefined' && (window as E2EWindow).__E2E_TEST_MODE__) {
-      const blob = new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d])], {
-        type: 'application/pdf',
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'project.pdf';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
-      setIsExportMenuOpen(false);
-      return;
-    }
-
     const selected =
       selectedBaselineId === 'current'
         ? null
@@ -153,34 +128,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   };
 
   const handleExportJSON = () => {
-    if (typeof window !== 'undefined' && (window as E2EWindow).__E2E_TEST_MODE__) {
-      const blob = new Blob(
-        [
-          JSON.stringify({
-            requirements: [
-              {
-                title: 'Test Requirement',
-                description: 'test requirement for export',
-              },
-            ],
-          }),
-        ],
-        { type: 'application/json' }
-      );
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'requirements.json';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
-      setIsExportMenuOpen(false);
-      return;
-    }
-
     onExport?.();
     setIsExportMenuOpen(false);
   };
@@ -457,24 +404,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
             {isExportMenuOpen && (
               <div data-testid="export-dropdown" style={dropdownMenuStyle}>
-                {/* E2E debug indicator */}
-                {typeof window !== 'undefined' && (window as E2EWindow).__E2E_TEST_MODE__ && (
-                  <div
-                    style={{
-                      background: 'red',
-                      color: 'white',
-                      padding: 4,
-                      fontSize: 12,
-                      textAlign: 'center',
-                    }}
-                  >
-                    E2E EXPORT DROPDOWN OPEN
-                  </div>
-                )}
-                {typeof window !== 'undefined' &&
-                  (window as E2EWindow).__E2E_TEST_MODE__ &&
-                  (debug.log('E2E: Export dropdown rendered'), null)}
-
                 {/* PDF Export with baseline selection */}
                 {onExportPDF && (
                   <div style={{ padding: '0.5rem 1rem' }}>
