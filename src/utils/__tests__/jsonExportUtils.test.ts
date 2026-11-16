@@ -6,7 +6,7 @@ import { diskLinkService } from '../../services/diskLinkService';
 // Mock diskLinkService
 vi.mock('../../services/diskLinkService', () => ({
   diskLinkService: {
-    getLinksForProject: vi.fn(),
+    getAllLinks: vi.fn(),
   },
 }));
 
@@ -56,7 +56,7 @@ describe('jsonExportUtils', () => {
     });
 
     // Mock diskLinkService
-    vi.mocked(diskLinkService.getLinksForProject).mockResolvedValue([]);
+    vi.mocked(diskLinkService.getAllLinks).mockResolvedValue([]);
   });
 
   const mockProject: Project = {

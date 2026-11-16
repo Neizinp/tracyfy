@@ -159,9 +159,7 @@ export async function createDemoProject(): Promise<Project> {
     const targetId = getArtifactId(linkDef.targetType, linkDef.targetIndex, createdIds);
 
     if (sourceId && targetId) {
-      // Global links have empty projectIds, project links include this project's ID
-      const projectIds = linkDef.scope === 'global' ? [] : [project.id];
-      await diskLinkService.createLink(sourceId, targetId, linkDef.type, projectIds);
+      await diskLinkService.createLink(sourceId, targetId, linkDef.type);
     }
   }
 

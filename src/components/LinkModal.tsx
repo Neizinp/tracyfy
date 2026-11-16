@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Search, Link as LinkIcon, Globe, Folder } from 'lucide-react';
+import { Search, Link as LinkIcon } from 'lucide-react';
 import type { ArtifactLink } from '../types';
 import {
   LINKABLE_TYPES,
@@ -18,7 +18,6 @@ interface LinkModalProps {
   isOpen: boolean;
   sourceArtifactId: string | null;
   sourceArtifactType: LinkableType;
-  currentProjectId: string;
   /** Every linkable artifact, grouped by type */
   artifactsByType: ArtifactsByType;
   onClose: () => void;
@@ -29,7 +28,6 @@ export const LinkModal: React.FC<LinkModalProps> = ({
   isOpen,
   sourceArtifactId,
   sourceArtifactType,
-  currentProjectId,
   artifactsByType,
   onClose,
   onAddLink,
@@ -43,8 +41,6 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     setSelectedTargetId,
     linkType,
     setLinkType,
-    linkScope,
-    setLinkScope,
     filteredArtifacts,
     handleSubmit,
     needsSourceSelection,
@@ -56,7 +52,6 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     isOpen,
     sourceArtifactId,
     sourceArtifactType,
-    currentProjectId,
     artifactsByType,
     onClose,
     onAddLink,
@@ -355,75 +350,6 @@ export const LinkModal: React.FC<LinkModalProps> = ({
             <option value="requires">Requires (precondition)</option>
             <option value="related_to">Related To (generic association)</option>
           </select>
-        </FormField>
-
-        {/* Link Scope */}
-        <FormField
-          label="Link Visibility"
-          fullWidth
-          description="Define where this link can be seen."
-        >
-          <div
-            style={{
-              display: 'flex',
-              backgroundColor: 'var(--color-bg-secondary)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '4px',
-              border: '1px solid var(--color-border)',
-              gap: '4px',
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setLinkScope('project')}
-              style={{
-                flex: 1,
-                padding: '8px',
-                borderRadius: 'var(--radius-xs)',
-                border: 'none',
-                fontSize: 'var(--font-size-sm)',
-                fontWeight: 500,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                backgroundColor: linkScope === 'project' ? 'var(--color-accent)' : 'transparent',
-                color:
-                  linkScope === 'project'
-                    ? 'var(--color-on-accent)'
-                    : 'var(--color-text-secondary)',
-                transition: 'all 0.2s',
-              }}
-            >
-              <Folder size={14} />
-              Current Project
-            </button>
-            <button
-              type="button"
-              onClick={() => setLinkScope('global')}
-              style={{
-                flex: 1,
-                padding: '8px',
-                borderRadius: 'var(--radius-xs)',
-                border: 'none',
-                fontSize: 'var(--font-size-sm)',
-                fontWeight: 500,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                backgroundColor: linkScope === 'global' ? 'var(--color-accent)' : 'transparent',
-                color:
-                  linkScope === 'global' ? 'var(--color-on-accent)' : 'var(--color-text-secondary)',
-                transition: 'all 0.2s',
-              }}
-            >
-              <Globe size={14} />
-              Global
-            </button>
-          </div>
         </FormField>
       </div>
     </BaseArtifactModal>

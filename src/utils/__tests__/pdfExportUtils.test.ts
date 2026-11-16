@@ -161,7 +161,7 @@ vi.mock('../../services/realGitService', () => ({
 // Mock diskLinkService
 vi.mock('../../services/diskLinkService', () => ({
   diskLinkService: {
-    getLinksForProject: vi.fn().mockResolvedValue([]),
+    getAllLinks: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -977,13 +977,12 @@ describe('pdfExportUtils', () => {
         });
 
       // Mock diskLinkService to return links
-      vi.mocked(diskLinkService.getLinksForProject).mockResolvedValue([
+      vi.mocked(diskLinkService.getAllLinks).mockResolvedValue([
         {
           id: 'LINK-001',
           sourceId: 'REQ-001',
           targetId: 'UC-001',
           type: 'derived_from',
-          projectIds: ['p1'],
           dateCreated: Date.now(),
           lastModified: Date.now(),
           revision: '01',
@@ -1021,7 +1020,7 @@ describe('pdfExportUtils', () => {
         });
 
       // Mock diskLinkService to return empty array
-      vi.mocked(diskLinkService.getLinksForProject).mockResolvedValue([]);
+      vi.mocked(diskLinkService.getAllLinks).mockResolvedValue([]);
 
       await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
 

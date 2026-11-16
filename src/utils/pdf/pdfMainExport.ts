@@ -360,7 +360,7 @@ export async function exportProjectToPDF(
   }
 
   // 11. Links Section
-  const projectLinks = await diskLinkService.getLinksForProject(project.id);
+  const projectLinks = await diskLinkService.getAllLinks();
   if (projectLinks.length > 0) {
     doc.addPage();
     sectionNumber++;

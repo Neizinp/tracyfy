@@ -1,5 +1,5 @@
 import { activeIds } from '../../utils/activeArtifacts';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
   LinkModal,
   VersionHistory,
@@ -21,11 +21,9 @@ import {
   useFileSystem,
   useToast,
 } from '../../app/providers';
-import { diskLinkService } from '../../services/diskLinkService';
 import { diskCustomAttributeService } from '../../services/diskCustomAttributeService';
 import { exportProjectToJSON } from '../../utils/jsonExportUtils';
 import type {
-  Link,
   LinkType,
   ExportOptions,
   Requirement,
@@ -41,7 +39,7 @@ import { notifyError } from '../../app/providers/ToastProvider';
 
 export const ManagementModals: React.FC = () => {
   const ui = useUI();
-  const { currentProjectId, currentProject } = useProject();
+  const { currentProject } = useProject();
 
   const { requirements, useCases, testCases, information } = useGlobalState();
 
@@ -53,14 +51,6 @@ export const ManagementModals: React.FC = () => {
   const { links, createLink } = useFileSystem();
   const linkableArtifacts = useLinkableArtifacts();
   const { showToast } = useToast();
-
-  const [projectLinks, setProjectLinks] = useState<Link[]>([]);
-
-  useEffect(() => {
-    if (currentProjectId) {
-      diskLinkService.getLinksForProject(currentProjectId).then(setProjectLinks);
-    }
-  }, [currentProjectId]);
 
   const handleExport = useCallback(
     async (options: ExportOptions) => {
@@ -179,12 +169,7 @@ export const ManagementModals: React.FC = () => {
       }
 
       try {
-        const link = await createLink(
-          sourceId,
-          newLink.targetId,
-          newLink.type as LinkType,
-          newLink.projectIds
-        );
+        const link = await createLink(sourceId, newLink.targetId, newLink.type as LinkType);
         showToast(`Created link ${link.id}: ${sourceId} → ${newLink.targetId}`, 'success');
       } catch (error) {
         console.error('Failed to create link:', error);
@@ -253,7 +238,6 @@ export const ManagementModals: React.FC = () => {
         // Only an explicitly chosen source; never whatever artifact happens to be selected
         sourceArtifactId={ui.linkSourceId}
         sourceArtifactType={ui.linkSourceType || 'requirement'}
-        currentProjectId={currentProjectId}
         artifactsByType={linkableArtifacts}
         onClose={ui.closeModal}
         onAddLink={handleAddArtifactLink}
@@ -282,7 +266,7 @@ export const ManagementModals: React.FC = () => {
           information: activeIds(information).length,
           risks: activeIds(risks).length,
           documents: activeIds(documents).length,
-          links: projectLinks.length,
+          links: activeIds(links).length,
         }}
       />
 

@@ -185,7 +185,6 @@ const link: Link = {
   sourceId: 'REQ-042',
   targetId: 'UC-007',
   type: 'satisfies',
-  projectIds: ['PROJ-001', 'PROJ-002'],
   dateCreated: T0,
   lastModified: T0 + 1,
   revision: '02',

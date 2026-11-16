@@ -23,7 +23,6 @@ export function linkToMarkdown(link: Link): string {
     sourceId: link.sourceId,
     targetId: link.targetId,
     type: link.type,
-    projectIds: link.projectIds || [],
     dateCreated: link.dateCreated,
     lastModified: link.lastModified,
     revision: link.revision || '01',
@@ -36,13 +35,7 @@ export function linkToMarkdown(link: Link): string {
 
   const body = `# ${link.id}
 
-Links **${link.sourceId}** to **${link.targetId}** (${link.type.replace('_', ' ')})
-
-${
-  link.projectIds.length > 0
-    ? `**Scope:** ${link.projectIds.join(', ')}`
-    : '**Scope:** Global (all projects)'
-}
+Links **${link.sourceId}** to **${link.targetId}** (${link.type.replaceAll('_', ' ')})
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -63,7 +56,6 @@ export function parseMarkdownLink(content: string): Link | null {
     sourceId: (frontmatter.sourceId as string) || '',
     targetId: (frontmatter.targetId as string) || '',
     type: frontmatter.type as LinkType,
-    projectIds: ensureArray<string>(frontmatter.projectIds),
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
     lastModified: (frontmatter.lastModified as number) || Date.now(),
     revision: (frontmatter.revision as string) || '01',

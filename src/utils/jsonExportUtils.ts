@@ -71,8 +71,7 @@ export async function exportProjectToJSON(
     globalState.information.filter((i) => projectInformationIds.includes(i.id) && !i.isDeleted)
   );
 
-  // Fetch links visible to this project (global + project-specific)
-  const links = sortByIdNumber(await diskLinkService.getLinksForProject(project.id));
+  const links = sortByIdNumber(await diskLinkService.getAllLinks());
 
   // Filter risks
   const risks = sortByIdNumber(

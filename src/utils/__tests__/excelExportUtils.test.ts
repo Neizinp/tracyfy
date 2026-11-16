@@ -41,7 +41,7 @@ vi.mock('../../services/diskCustomAttributeService', () => ({
 // Mock diskLinkService
 vi.mock('../../services/diskLinkService', () => ({
   diskLinkService: {
-    getLinksForProject: vi.fn().mockResolvedValue([]),
+    getAllLinks: vi.fn().mockResolvedValue([]),
   },
 }));
 

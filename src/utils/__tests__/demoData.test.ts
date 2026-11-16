@@ -62,7 +62,6 @@ describe('Demo Data', () => {
       expect(link).toHaveProperty('targetType');
       expect(link).toHaveProperty('targetIndex');
       expect(link).toHaveProperty('type');
-      expect(link).toHaveProperty('scope');
     });
   });
 });

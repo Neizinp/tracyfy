@@ -18,14 +18,12 @@ export interface LinkModalResult {
   sourceId?: string;
   targetId: string;
   type: ArtifactLink['type'];
-  projectIds: string[];
 }
 
 interface UseLinkModalOptions {
   isOpen: boolean;
   sourceArtifactId: string | null;
   sourceArtifactType: LinkableType;
-  currentProjectId: string;
   /** Every linkable artifact, grouped by type */
   artifactsByType: ArtifactsByType;
   onClose: () => void;
@@ -35,7 +33,6 @@ interface UseLinkModalOptions {
 export function useLinkModal({
   isOpen,
   sourceArtifactId,
-  currentProjectId,
   artifactsByType,
   onClose,
   onAddLink,
@@ -44,7 +41,6 @@ export function useLinkModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
   const [linkType, setLinkType] = useState<ArtifactLink['type']>('related_to');
-  const [linkScope, setLinkScope] = useState<'global' | 'project'>('project');
   // Source chosen inside the modal when none was preset (e.g. opened from the Links page)
   const [chosenSourceId, setChosenSourceId] = useState('');
 
@@ -59,7 +55,6 @@ export function useLinkModal({
       setSearchQuery('');
       setSelectedTargetId('');
       setLinkType('related_to');
-      setLinkScope('project');
     }
   }, [isOpen]);
 
@@ -97,12 +92,11 @@ export function useLinkModal({
           sourceId: effectiveSourceId,
           targetId: selectedTargetId,
           type: linkType,
-          projectIds: linkScope === 'global' ? [] : [currentProjectId],
         });
         onClose();
       }
     },
-    [selectedTargetId, effectiveSourceId, linkType, linkScope, currentProjectId, onAddLink, onClose]
+    [selectedTargetId, effectiveSourceId, linkType, onAddLink, onClose]
   );
 
   const selectTargetType = useCallback((type: LinkableType) => {
@@ -120,12 +114,9 @@ export function useLinkModal({
     setSelectedTargetId,
     linkType,
     setLinkType,
-    linkScope,
-    setLinkScope,
 
     // Computed
     filteredArtifacts,
-    currentProjectId,
 
     // Actions
     handleSubmit,

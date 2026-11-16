@@ -84,14 +84,7 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
         for (const i of bundle.information) await fileSystem.saveInformation(i);
         for (const r of bundle.risks) await fileSystem.saveRisk(r);
         for (const d of bundle.documents) await fileSystem.saveDocument(d);
-        // Project-scoped links belong to the project they're imported into
-        for (const l of bundle.links) {
-          await fileSystem.saveLink(
-            currentProjectId && l.projectIds.length > 0
-              ? { ...l, projectIds: [currentProjectId] }
-              : l
-          );
-        }
+        for (const l of bundle.links) await fileSystem.saveLink(l);
 
         // Bump ID counters past imported IDs so new artifacts don't collide with them
         for (const kind of IMPORT_KINDS) {

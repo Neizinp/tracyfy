@@ -182,7 +182,7 @@ export async function exportProjectToExcel(
   // Pre-fetch links and build artifact ID list if needed for Matrices or Links sheet
   const projectLinks =
     includeLinks || includeTraceability || includeVerificationMatrix
-      ? await diskLinkService.getLinksForProject(project.id)
+      ? await diskLinkService.getAllLinks()
       : [];
 
   const allArtifactIds = includeTraceability
@@ -447,7 +447,6 @@ export async function exportProjectToExcel(
       Source: link.sourceId,
       Type: LINK_TYPE_LABELS[link.type] || link.type,
       Target: link.targetId,
-      Scope: link.projectIds.length === 0 ? 'Global' : 'Project',
       Created: formatDate(link.dateCreated),
       'Last Modified': formatDate(link.lastModified),
     }));

@@ -22,7 +22,6 @@ export interface DemoArtifacts {
     targetIndex: number;
     targetType: 'req' | 'uc' | 'tc' | 'info' | 'risk';
     type: LinkType;
-    scope: 'global' | 'project'; // 'global' = visible everywhere, 'project' = only in this project
   }[];
 }
 
@@ -720,7 +719,6 @@ Most Requirement Management Tools (RMTs) use a single monolithic database. This 
       targetIndex: 0,
       targetType: 'req',
       type: 'verifies',
-      scope: 'project',
     }, // Verify Atomic Save -> Atomic Storage
     {
       sourceIndex: 1,
@@ -728,7 +726,6 @@ Most Requirement Management Tools (RMTs) use a single monolithic database. This 
       targetIndex: 7,
       targetType: 'req',
       type: 'verifies',
-      scope: 'project',
     }, // Test Link Integrity -> Universal Linking
     {
       sourceIndex: 2,
@@ -736,7 +733,6 @@ Most Requirement Management Tools (RMTs) use a single monolithic database. This 
       targetIndex: 3,
       targetType: 'req',
       type: 'verifies',
-      scope: 'project',
     }, // Verify Privacy -> Data Privacy
     {
       sourceIndex: 3,
@@ -744,7 +740,6 @@ Most Requirement Management Tools (RMTs) use a single monolithic database. This 
       targetIndex: 11,
       targetType: 'req',
       type: 'verifies',
-      scope: 'project',
     }, // Check PDF -> PDF Generation
     {
       sourceIndex: 0,
@@ -752,7 +747,6 @@ Most Requirement Management Tools (RMTs) use a single monolithic database. This 
       targetIndex: 0,
       targetType: 'req',
       type: 'satisfies',
-      scope: 'project',
     }, // Create Artifact -> Atomic Storage
     {
       sourceIndex: 1,
@@ -760,7 +754,6 @@ Most Requirement Management Tools (RMTs) use a single monolithic database. This 
       targetIndex: 7,
       targetType: 'req',
       type: 'satisfies',
-      scope: 'project',
     }, // Establish Link -> Universal Linking
     {
       sourceIndex: 2,
@@ -768,7 +761,6 @@ Most Requirement Management Tools (RMTs) use a single monolithic database. This 
       targetIndex: 13,
       targetType: 'req',
       type: 'satisfies',
-      scope: 'project',
     }, // Run Analysis -> Dependency Traversal
     {
       sourceIndex: 0,
@@ -776,7 +768,6 @@ Most Requirement Management Tools (RMTs) use a single monolithic database. This 
       targetIndex: 2,
       targetType: 'req',
       type: 'related_to',
-      scope: 'project',
     }, // Browser Compatibility -> Local-First Indexing
     {
       sourceIndex: 1,
@@ -784,7 +775,6 @@ Most Requirement Management Tools (RMTs) use a single monolithic database. This 
       targetIndex: 15,
       targetType: 'req',
       type: 'related_to',
-      scope: 'project',
     }, // Performance Scale -> Full-Text Search
   ],
 };

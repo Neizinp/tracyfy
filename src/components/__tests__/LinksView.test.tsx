@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { LinksView } from '../LinksView';
 import { diskLinkService } from '../../services/diskLinkService';
-import type { Link, Project } from '../../types';
+import type { Link } from '../../types';
 
 // Mock the diskLinkService
 vi.mock('../../services/diskLinkService', () => ({
@@ -70,7 +70,6 @@ describe('LinksView', () => {
       sourceId: 'REQ-001',
       targetId: 'UC-001',
       type: 'satisfies',
-      projectIds: [],
       dateCreated: 1700000000000,
       lastModified: 1700000100000,
       revision: '01',
@@ -80,7 +79,6 @@ describe('LinksView', () => {
       sourceId: 'REQ-002',
       targetId: 'TC-001',
       type: 'verifies',
-      projectIds: ['PRJ-001'],
       dateCreated: 1700000000000,
       lastModified: 1700000000000,
       revision: '01',
@@ -90,19 +88,9 @@ describe('LinksView', () => {
       sourceId: 'UC-001',
       targetId: 'INFO-001',
       type: 'related_to',
-      projectIds: [],
       dateCreated: 1700000000000,
       lastModified: 1700000000000,
       revision: '01',
-    },
-  ];
-
-  const mockProjects: Project[] = [
-    {
-      id: 'PRJ-001',
-      name: 'Test Project',
-      description: '',
-      lastModified: 1700000000000,
     },
   ];
 
@@ -114,7 +102,7 @@ describe('LinksView', () => {
 
   describe('Rendering', () => {
     it('should render the component', async () => {
-      render(<LinksView projects={mockProjects} />);
+      render(<LinksView />);
 
       // Component uses useFileSystem for data - just check it renders
       await waitFor(() => {
@@ -123,7 +111,7 @@ describe('LinksView', () => {
     });
 
     it('should display links table after loading', async () => {
-      render(<LinksView projects={mockProjects} />);
+      render(<LinksView />);
 
       await waitFor(() => {
         expect(screen.getByText('Source')).toBeInTheDocument();
@@ -132,7 +120,7 @@ describe('LinksView', () => {
     });
 
     it('should show link IDs in the table', async () => {
-      render(<LinksView projects={mockProjects} />);
+      render(<LinksView />);
 
       await waitFor(() => {
         expect(screen.getByText('LINK-001')).toBeInTheDocument();
@@ -145,7 +133,7 @@ describe('LinksView', () => {
     it.skip('should show empty state when no links exist', async () => {
       // This test is skipped because the component now uses useFileSystem
       // and vi.mock is hoisted, making per-test mocking difficult
-      render(<LinksView projects={mockProjects} />);
+      render(<LinksView />);
 
       await waitFor(() => {
         expect(screen.getByText(/No links/i)).toBeInTheDocument();
@@ -155,7 +143,7 @@ describe('LinksView', () => {
 
   describe('Table headers', () => {
     it('should display Source and Target columns', async () => {
-      render(<LinksView projects={mockProjects} />);
+      render(<LinksView />);
 
       await waitFor(() => {
         expect(screen.getByText('Source')).toBeInTheDocument();
@@ -164,7 +152,7 @@ describe('LinksView', () => {
     });
 
     it('should display Type column', async () => {
-      render(<LinksView projects={mockProjects} />);
+      render(<LinksView />);
 
       await waitFor(() => {
         // Type might be in header
@@ -176,7 +164,7 @@ describe('LinksView', () => {
 
   describe('Data display', () => {
     it('should display link IDs in the table', async () => {
-      render(<LinksView projects={mockProjects} />);
+      render(<LinksView />);
 
       await waitFor(() => {
         expect(screen.getByText('LINK-001')).toBeInTheDocument();
@@ -187,7 +175,7 @@ describe('LinksView', () => {
 
   describe('Refresh functionality', () => {
     it('should have a refresh button', async () => {
-      render(<LinksView projects={mockProjects} />);
+      render(<LinksView />);
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /refresh/i })).toBeInTheDocument();

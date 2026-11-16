@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Link as LinkIcon, ArrowRight, RefreshCw, Globe, Folder, Plus } from 'lucide-react';
+import { Link as LinkIcon, ArrowRight, RefreshCw, Plus } from 'lucide-react';
 import { useLinkService } from '../hooks/useLinkService';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import { linkableTypeInfo, linkableTypeOf } from '../constants/linkableArtifacts';
-import type { Link, Project } from '../types';
+import type { Link } from '../types';
 import type { LinkType } from '../utils/linkTypes';
 import { EditLinkModal } from './EditLinkModal';
 import { BaseArtifactTable, type ColumnDef } from './BaseArtifactTable';
@@ -12,20 +12,14 @@ import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
 
 interface LinksViewProps {
   onNavigateToArtifact?: (id: string, type: string) => void;
-  projects?: Project[];
   onAdd?: () => void;
 }
 
-export const LinksView: React.FC<LinksViewProps> = ({
-  onNavigateToArtifact,
-  projects = [],
-  onAdd,
-}) => {
+export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAdd }) => {
   const { allLinks: links, loading, refresh: loadLinks, deleteLink } = useLinkService();
   const { updateLink } = useFileSystem();
   const [filter, setFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [scopeFilter, setScopeFilter] = useState<'all' | 'global' | 'project'>('all');
 
   // Edit modal state
   const [editingLink, setEditingLink] = useState<Link | null>(null);
@@ -48,10 +42,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
   };
 
   // Save link edits
-  const handleSaveLink = async (
-    linkId: string,
-    updates: { type: LinkType; projectIds: string[] }
-  ) => {
+  const handleSaveLink = async (linkId: string, updates: { type: LinkType }) => {
     try {
       await updateLink(linkId, updates);
     } catch (error) {
@@ -68,16 +59,6 @@ export const LinksView: React.FC<LinksViewProps> = ({
     return type ? linkableTypeInfo(type).color : 'var(--color-text-muted)';
   };
 
-  const getProjectNames = (projectIds: string[]): string => {
-    if (projectIds.length === 0) return 'Global';
-    return projectIds
-      .map((id) => {
-        const project = projects.find((p) => p.id === id);
-        return project?.name || id;
-      })
-      .join(', ');
-  };
-
   // Unique link types for filter
   const uniqueTypes = useMemo(() => Array.from(new Set(links.map((l) => l.type))), [links]);
 
@@ -90,12 +71,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
     searchQuery: filter,
     searchFields: ['id', 'sourceId', 'targetId', 'type'],
     filterFn: (link: Link) => {
-      const matchesType = typeFilter === 'all' || link.type === typeFilter;
-      const matchesScope =
-        scopeFilter === 'all' ||
-        (scopeFilter === 'global' && link.projectIds.length === 0) ||
-        (scopeFilter === 'project' && link.projectIds.length > 0);
-      return matchesType && matchesScope;
+      return typeFilter === 'all' || link.type === typeFilter;
     },
     getValueFn: (link: Link, key: string) => {
       switch (key) {
@@ -103,8 +79,6 @@ export const LinksView: React.FC<LinksViewProps> = ({
           return parseInt(link.id.replace(/\D/g, ''), 10) || 0;
         case 'type':
           return (LINK_TYPE_LABELS[link.type as LinkType] || link.type).toLowerCase();
-        case 'projectIds':
-          return link.projectIds.length === 0 ? 0 : 1;
         default:
           return (link as unknown as Record<string, string | number | undefined>)[key];
       }
@@ -182,30 +156,6 @@ export const LinksView: React.FC<LinksViewProps> = ({
           }}
         >
           {link.targetId}
-        </span>
-      ),
-    },
-    {
-      key: 'projectIds',
-      label: 'Scope',
-      sortable: true,
-      render: (link) => (
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '2px 8px',
-            borderRadius: 'var(--radius-lg)',
-            fontSize: 'var(--font-size-xs)',
-            backgroundColor:
-              link.projectIds.length === 0 ? 'var(--color-info-bg)' : 'var(--color-bg-secondary)',
-            color:
-              link.projectIds.length === 0 ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-          }}
-        >
-          {link.projectIds.length === 0 ? <Globe size={10} /> : <Folder size={10} />}
-          {getProjectNames(link.projectIds)}
         </span>
       ),
     },
@@ -317,22 +267,6 @@ export const LinksView: React.FC<LinksViewProps> = ({
             </option>
           ))}
         </select>
-        <select
-          value={scopeFilter}
-          onChange={(e) => setScopeFilter(e.target.value as 'all' | 'global' | 'project')}
-          style={{
-            padding: '8px 12px',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-bg-app)',
-            color: 'var(--color-text-primary)',
-            fontSize: 'var(--font-size-sm)',
-          }}
-        >
-          <option value="all">All Scopes</option>
-          <option value="global">Global Only</option>
-          <option value="project">Project-Specific</option>
-        </select>
       </div>
 
       {/* Content */}
@@ -363,7 +297,6 @@ export const LinksView: React.FC<LinksViewProps> = ({
       <EditLinkModal
         isOpen={isEditModalOpen}
         link={editingLink}
-        projects={projects}
         onClose={() => {
           setIsEditModalOpen(false);
           setEditingLink(null);

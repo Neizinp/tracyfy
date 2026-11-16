@@ -52,7 +52,7 @@ export async function migrateEmbeddedLinks(): Promise<{
         if (!isValidArtifactId(link?.targetId) || typeof link.type !== 'string') continue;
         const k = key(item.id, link.targetId, link.type);
         if (known.has(k)) continue;
-        await diskLinkService.createLink(item.id, link.targetId, link.type as LinkType, []);
+        await diskLinkService.createLink(item.id, link.targetId, link.type as LinkType);
         known.add(k);
         linksCreated++;
       }

@@ -94,12 +94,7 @@ interface FileSystemContextValue {
   saveLink: (link: Link) => Promise<void>;
   deleteLink: (id: string) => Promise<void>;
   /** Create (and auto-commit) a link; updates provider state so the UI reflects it immediately */
-  createLink: (
-    sourceId: string,
-    targetId: string,
-    type: LinkType,
-    projectIds?: string[]
-  ) => Promise<Link>;
+  createLink: (sourceId: string, targetId: string, type: LinkType) => Promise<Link>;
   updateLink: (id: string, updates: Partial<Link>) => Promise<Link | null>;
   createProject: (name: string, description: string) => Promise<Project>;
   setCurrentProject: (projectId: string) => Promise<void>;
@@ -690,7 +685,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const e2eLinkCounter = useRef(0);
 
   const createLink = useCallback(
-    async (sourceId: string, targetId: string, type: LinkType, projectIds: string[] = []) => {
+    async (sourceId: string, targetId: string, type: LinkType) => {
       if (!isReady) throw new Error('Filesystem not ready');
       let link: Link;
       if (isE2EMode()) {
@@ -700,13 +695,12 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           sourceId,
           targetId,
           type,
-          projectIds,
           dateCreated: now,
           lastModified: now,
           revision: '01',
         };
       } else {
-        link = await diskLinkService.createLink(sourceId, targetId, type, projectIds);
+        link = await diskLinkService.createLink(sourceId, targetId, type);
       }
       upsertLinkState(link);
       if (!isE2EMode()) refreshStatus();
