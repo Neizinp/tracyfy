@@ -30,3 +30,4 @@ playwright-report/
 # Ad-hoc test output / debug screenshots
 /test-results.json
 /playwright-*.png
+/*-export.xlsx

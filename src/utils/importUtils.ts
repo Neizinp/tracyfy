@@ -8,7 +8,15 @@
 
 import type { WorkBook } from 'xlsx';
 import type * as XLSXModule from 'xlsx';
-import type { Requirement, UseCase, TestCase, Information, ArtifactDocument } from '../types';
+import type {
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+  ArtifactDocument,
+  Risk,
+  Link,
+} from '../types';
 
 /** Letters, digits, '-' and '_' only; must start with a letter. No dots or slashes. */
 export const ARTIFACT_ID_PATTERN = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
@@ -18,19 +26,27 @@ export function isValidArtifactId(id: unknown): id is string {
 }
 
 export interface SkippedImportRow {
-  kind: ImportKind;
+  kind: ImportKind | 'links';
   index: number;
   reason: string;
 }
 
-export type ImportKind = 'requirements' | 'useCases' | 'testCases' | 'information' | 'documents';
+export type ImportKind =
+  | 'requirements'
+  | 'useCases'
+  | 'testCases'
+  | 'information'
+  | 'risks'
+  | 'documents';
 
 export interface ImportBundle {
   requirements: Requirement[];
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
+  risks: Risk[];
   documents: ArtifactDocument[];
+  links: Link[];
   skipped: SkippedImportRow[];
 }
 
@@ -39,6 +55,7 @@ export const IMPORT_KINDS: ImportKind[] = [
   'useCases',
   'testCases',
   'information',
+  'risks',
   'documents',
 ];
 
@@ -105,7 +122,9 @@ export function parseJsonImport(text: string): ImportBundle {
     useCases: validateImportedArtifacts<UseCase>(data.useCases, 'useCases', skipped),
     testCases: validateImportedArtifacts<TestCase>(data.testCases, 'testCases', skipped),
     information: validateImportedArtifacts<Information>(data.information, 'information', skipped),
+    risks: validateImportedArtifacts<Risk>(data.risks, 'risks', skipped),
     documents: validateImportedArtifacts<ArtifactDocument>(data.documents, 'documents', skipped),
+    links: validateImportedLinks(data.links, skipped),
     skipped,
   };
 }
@@ -169,7 +188,16 @@ export function parseExcelImport(
     useCases = validateImportedArtifacts<UseCase>(mapped, 'useCases', skipped);
   }
 
-  return { requirements, useCases, testCases: [], information: [], documents: [], skipped };
+  return {
+    requirements,
+    useCases,
+    testCases: [],
+    information: [],
+    risks: [],
+    documents: [],
+    links: [],
+    skipped,
+  };
 }
 
 /**
@@ -183,8 +211,46 @@ export async function parseExcelFile(
   return parseExcelImport(XLSX.read(data, { type: 'array' }), XLSX.utils, now);
 }
 
+/**
+ * Links have no title; they need valid IDs for the link and both ends.
+ */
+export function validateImportedLinks(rows: unknown, skipped: SkippedImportRow[]): Link[] {
+  if (rows === undefined || rows === null) return [];
+  if (!Array.isArray(rows)) {
+    skipped.push({ kind: 'links', index: -1, reason: '"links" is not a list' });
+    return [];
+  }
+  const seen = new Set<string>();
+  const valid: Link[] = [];
+  rows.forEach((row, index) => {
+    const l = (typeof row === 'object' && row !== null ? row : {}) as Record<string, unknown>;
+    if (
+      !isValidArtifactId(l.id) ||
+      !isValidArtifactId(l.sourceId) ||
+      !isValidArtifactId(l.targetId)
+    ) {
+      skipped.push({
+        kind: 'links',
+        index,
+        reason: `invalid link ${JSON.stringify(l.id ?? null)}`,
+      });
+      return;
+    }
+    if (typeof l.type !== 'string' || seen.has(l.id)) {
+      skipped.push({ kind: 'links', index, reason: `${l.id}: missing type or duplicate` });
+      return;
+    }
+    seen.add(l.id);
+    valid.push({
+      ...(l as unknown as Link),
+      projectIds: Array.isArray(l.projectIds) ? (l.projectIds as string[]) : [],
+    });
+  });
+  return valid;
+}
+
 export function countImported(bundle: ImportBundle): number {
-  return IMPORT_KINDS.reduce((sum, kind) => sum + bundle[kind].length, 0);
+  return IMPORT_KINDS.reduce((sum, kind) => sum + bundle[kind].length, 0) + bundle.links.length;
 }
 
 /**

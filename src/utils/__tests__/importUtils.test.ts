@@ -120,3 +120,22 @@ describe('maxIdNumber', () => {
     expect(maxIdNumber([], 'REQ')).toBe(0);
   });
 });
+
+describe('parseJsonImport links', () => {
+  it('keeps valid links and rejects unsafe IDs', () => {
+    const bundle = parseJsonImport(
+      JSON.stringify({
+        links: [
+          { id: 'LINK-001', sourceId: 'REQ-001', targetId: 'UC-001', type: 'satisfies' },
+          { id: '../x', sourceId: 'REQ-001', targetId: 'UC-001', type: 'satisfies' },
+          { id: 'LINK-002', sourceId: 'REQ-001', targetId: '../../etc', type: 'satisfies' },
+          { id: 'LINK-003', sourceId: 'REQ-001', targetId: 'UC-001' },
+        ],
+      })
+    );
+    expect(bundle.links.map((l) => l.id)).toEqual(['LINK-001']);
+    expect(bundle.links[0].projectIds).toEqual([]);
+    expect(bundle.skipped).toHaveLength(3);
+    expect(countImported(bundle)).toBe(1);
+  });
+});

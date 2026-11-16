@@ -23,6 +23,7 @@ const COUNTER_TYPES = {
   useCases: 'usecases',
   testCases: 'testcases',
   information: 'information',
+  risks: 'risks',
   documents: 'documents',
 } as const;
 
@@ -53,12 +54,15 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
         ...fileSystem.useCases.map((a) => a.id),
         ...fileSystem.testCases.map((a) => a.id),
         ...fileSystem.information.map((a) => a.id),
+        ...fileSystem.risks.map((a) => a.id),
         ...fileSystem.documents.map((a) => a.id),
+        ...fileSystem.links.map((a) => a.id),
       ]);
       const total = countImported(bundle);
-      const overwrites = IMPORT_KINDS.flatMap((kind) => bundle[kind].map((a) => a.id)).filter(
-        (id) => existingIds.has(id)
-      );
+      const overwrites = [
+        ...IMPORT_KINDS.flatMap((kind) => bundle[kind].map((a) => a.id)),
+        ...bundle.links.map((l) => l.id),
+      ].filter((id) => existingIds.has(id));
 
       if (overwrites.length > 0) {
         const preview = overwrites.slice(0, 5).join(', ') + (overwrites.length > 5 ? ', …' : '');
@@ -78,7 +82,20 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
         for (const u of bundle.useCases) await fileSystem.saveUseCase(u);
         for (const t of bundle.testCases) await fileSystem.saveTestCase(t);
         for (const i of bundle.information) await fileSystem.saveInformation(i);
-        for (const d of bundle.documents) await fileSystem.saveDocument(d);
+        for (const r of bundle.risks) await fileSystem.saveRisk(r);
+        // Documents and project-scoped links belong to the project they're imported into
+        for (const d of bundle.documents) {
+          await fileSystem.saveDocument(
+            currentProjectId ? { ...d, projectId: currentProjectId } : d
+          );
+        }
+        for (const l of bundle.links) {
+          await fileSystem.saveLink(
+            currentProjectId && l.projectIds.length > 0
+              ? { ...l, projectIds: [currentProjectId] }
+              : l
+          );
+        }
 
         // Make imported artifacts visible in the current project
         if (currentProjectId) {
@@ -87,6 +104,7 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
             useCases: bundle.useCases.map((a) => a.id),
             testCases: bundle.testCases.map((a) => a.id),
             information: bundle.information.map((a) => a.id),
+            risks: bundle.risks.map((a) => a.id),
           });
         }
 
@@ -103,6 +121,18 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
             } catch (err) {
               debug.warn(`[import] Failed to bump ${type} counter:`, err);
             }
+          }
+        }
+
+        const highestLink = maxIdNumber(
+          bundle.links.map((l) => l.id),
+          ARTIFACT_CONFIG.links.idPrefix
+        );
+        if (highestLink > 0) {
+          try {
+            await idService.ensureCounterAtLeast('links', highestLink);
+          } catch (err) {
+            debug.warn('[import] Failed to bump links counter:', err);
           }
         }
 
