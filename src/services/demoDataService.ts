@@ -23,6 +23,7 @@ import {
   createDemoAttributeValues,
 } from '../utils/demoData';
 import type { Project, Requirement, UseCase, TestCase, Information, Risk } from '../types';
+import type { ArtifactKindId } from '../domain/artifactKinds';
 
 interface CreatedArtifactIds {
   requirements: string[];
@@ -170,22 +171,16 @@ export async function loadDemoData(): Promise<Project> {
  * Get artifact ID from type and index
  */
 function getArtifactId(
-  type: 'req' | 'uc' | 'tc' | 'info' | 'risk',
+  kind: ArtifactKindId,
   index: number,
   ids: CreatedArtifactIds
 ): string | null {
-  switch (type) {
-    case 'req':
-      return ids.requirements[index] ?? null;
-    case 'uc':
-      return ids.useCases[index] ?? null;
-    case 'tc':
-      return ids.testCases[index] ?? null;
-    case 'info':
-      return ids.information[index] ?? null;
-    case 'risk':
-      return ids.risks[index] ?? null;
-    default:
-      return null;
-  }
+  const byKind: Partial<Record<ArtifactKindId, string[]>> = {
+    requirement: ids.requirements,
+    useCase: ids.useCases,
+    testCase: ids.testCases,
+    information: ids.information,
+    risk: ids.risks,
+  };
+  return byKind[kind]?.[index] ?? null;
 }

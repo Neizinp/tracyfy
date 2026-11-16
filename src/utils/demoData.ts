@@ -8,6 +8,7 @@
 import type { Requirement, UseCase, TestCase, Information, Risk } from '../types';
 import type { LinkType } from './linkTypes';
 import type { CustomAttributeDefinition, CustomAttributeValue } from '../types/customAttributes';
+import type { ArtifactKindId } from '../domain/artifactKinds';
 
 // Placeholder IDs will be replaced with real generated IDs
 export interface DemoArtifacts {
@@ -18,9 +19,9 @@ export interface DemoArtifacts {
   risks: Omit<Risk, 'id' | 'lastModified'>[];
   links: {
     sourceIndex: number;
-    sourceType: 'req' | 'uc' | 'tc' | 'info' | 'risk';
+    sourceType: ArtifactKindId;
     targetIndex: number;
-    targetType: 'req' | 'uc' | 'tc' | 'info' | 'risk';
+    targetType: ArtifactKindId;
     type: LinkType;
   }[];
 }
@@ -715,65 +716,65 @@ Most Requirement Management Tools (RMTs) use a single monolithic database. This 
   links: [
     {
       sourceIndex: 0,
-      sourceType: 'tc',
+      sourceType: 'testCase',
       targetIndex: 0,
-      targetType: 'req',
+      targetType: 'requirement',
       type: 'verifies',
     }, // Verify Atomic Save -> Atomic Storage
     {
       sourceIndex: 1,
-      sourceType: 'tc',
+      sourceType: 'testCase',
       targetIndex: 7,
-      targetType: 'req',
+      targetType: 'requirement',
       type: 'verifies',
     }, // Test Link Integrity -> Universal Linking
     {
       sourceIndex: 2,
-      sourceType: 'tc',
+      sourceType: 'testCase',
       targetIndex: 3,
-      targetType: 'req',
+      targetType: 'requirement',
       type: 'verifies',
     }, // Verify Privacy -> Data Privacy
     {
       sourceIndex: 3,
-      sourceType: 'tc',
+      sourceType: 'testCase',
       targetIndex: 11,
-      targetType: 'req',
+      targetType: 'requirement',
       type: 'verifies',
     }, // Check PDF -> PDF Generation
     {
       sourceIndex: 0,
-      sourceType: 'uc',
+      sourceType: 'useCase',
       targetIndex: 0,
-      targetType: 'req',
+      targetType: 'requirement',
       type: 'satisfies',
     }, // Create Artifact -> Atomic Storage
     {
       sourceIndex: 1,
-      sourceType: 'uc',
+      sourceType: 'useCase',
       targetIndex: 7,
-      targetType: 'req',
+      targetType: 'requirement',
       type: 'satisfies',
     }, // Establish Link -> Universal Linking
     {
       sourceIndex: 2,
-      sourceType: 'uc',
+      sourceType: 'useCase',
       targetIndex: 13,
-      targetType: 'req',
+      targetType: 'requirement',
       type: 'satisfies',
     }, // Run Analysis -> Dependency Traversal
     {
       sourceIndex: 0,
       sourceType: 'risk',
       targetIndex: 2,
-      targetType: 'req',
+      targetType: 'requirement',
       type: 'related_to',
     }, // Browser Compatibility -> Local-First Indexing
     {
       sourceIndex: 1,
       sourceType: 'risk',
       targetIndex: 15,
-      targetType: 'req',
+      targetType: 'requirement',
       type: 'related_to',
     }, // Performance Scale -> Full-Text Search
   ],
