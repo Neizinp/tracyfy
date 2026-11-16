@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RequirementList } from '../RequirementList';
-import type { Requirement, ColumnVisibility, Project } from '../../types';
-import { useProject, useCustomAttributes } from '../../app/providers';
+import type { Requirement, ColumnVisibility } from '../../types';
+import { useCustomAttributes } from '../../app/providers';
 
 // Mock ReactMarkdown to avoid ESM issues and simplify testing
 vi.mock('react-markdown', () => ({
@@ -14,9 +14,6 @@ vi.mock('rehype-raw', () => ({ default: () => {} }));
 
 // Mock hooks
 vi.mock('../../app/providers', () => ({
-  useProject: vi.fn(() => ({
-    projects: [],
-  })),
   useCustomAttributes: vi.fn(() => ({
     definitions: [],
   })),
@@ -107,17 +104,6 @@ describe('RequirementList', () => {
 
   beforeEach(() => {
     mockOnEdit.mockClear();
-    vi.mocked(useProject).mockReturnValue({
-      projects: [],
-      currentProjectId: '',
-      currentProject: null,
-      isLoading: false,
-      switchProject: vi.fn(),
-      createProject: vi.fn(),
-      updateProject: vi.fn(),
-      deleteProject: vi.fn(),
-      addToProject: vi.fn(),
-    });
     vi.mocked(useCustomAttributes).mockReturnValue({
       definitions: [],
       loading: false,
@@ -193,46 +179,5 @@ describe('RequirementList', () => {
     );
 
     expect(screen.getByText('No requirements found.')).toBeInTheDocument();
-  });
-
-  it('renders project column when enabled', () => {
-    const mockProjects: Project[] = [
-      {
-        id: 'proj-1',
-        name: 'Project A',
-        description: '',
-        requirementIds: ['REQ-001'],
-        useCaseIds: [],
-        testCaseIds: [],
-        informationIds: [],
-        riskIds: [],
-        lastModified: Date.now(),
-      },
-    ];
-
-    vi.mocked(useProject).mockReturnValue({
-      projects: mockProjects,
-      currentProjectId: '',
-      currentProject: null,
-      isLoading: false,
-      switchProject: vi.fn(),
-      createProject: vi.fn(),
-      updateProject: vi.fn(),
-      deleteProject: vi.fn(),
-      addToProject: vi.fn(),
-    });
-
-    render(
-      <RequirementList
-        requirements={mockRequirements}
-        onEdit={mockOnEdit}
-        visibleColumns={defaultColumns}
-        sortConfig={{ key: 'idTitle', direction: 'asc' }}
-        onSortChange={vi.fn()}
-      />
-    );
-
-    expect(screen.getByText('Project(s)')).toBeInTheDocument();
-    expect(screen.getByText('Project A')).toBeInTheDocument();
   });
 });

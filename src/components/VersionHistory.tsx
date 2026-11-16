@@ -16,7 +16,6 @@ import { CommitCard, CommitFilters, CreateBaselineForm, BaselineCard } from './v
 interface VersionHistoryProps {
   isOpen: boolean;
   baselines: ProjectBaseline[];
-  projectName: string | null;
   onClose: () => void;
   onCreateBaseline: (name: string, message: string) => void;
   onSelectArtifact?: (artifactId: string, artifactType: string) => void;
@@ -25,7 +24,6 @@ interface VersionHistoryProps {
 export const VersionHistory: React.FC<VersionHistoryProps> = ({
   isOpen,
   baselines,
-  projectName,
   onClose,
   onCreateBaseline,
   onSelectArtifact,
@@ -42,13 +40,9 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     setBaselineMessage,
     handleStartCreating,
     handleCreateBaselineSubmit,
-    projectBaselines,
-    getVersionFromTag,
     commits,
-    globalCommits,
-    filteredGlobalCommits,
+    filteredCommits,
     isLoadingCommits,
-    isLoadingGlobalCommits,
     commitFiles,
     baselineCommitHashes,
     tagToCommitHash,
@@ -61,7 +55,6 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   } = useVersionHistory({
     isOpen,
     baselines,
-    projectName,
     onCreateBaseline,
   });
 
@@ -151,11 +144,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
           </button>
           <button onClick={() => setActiveTab('commits')} style={tabStyle(activeTab === 'commits')}>
             <GitCommit size={16} />
-            {projectName ? `${projectName} Commits` : 'Project Commits'}
-          </button>
-          <button onClick={() => setActiveTab('global')} style={tabStyle(activeTab === 'global')}>
-            <GitCommit size={16} />
-            All Commits
+            Commits
           </button>
         </div>
 
@@ -190,7 +179,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
         {/* Content */}
         <div style={{ flex: 1, overflow: 'auto', padding: 'var(--spacing-md)' }}>
           {activeTab === 'baselines' &&
-            (projectBaselines.length === 0 ? (
+            (baselines.length === 0 ? (
               <div
                 style={{
                   textAlign: 'center',
@@ -199,21 +188,21 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                 }}
               >
                 <Tag size={48} style={{ opacity: 1, marginBottom: '12px' }} />
-                <p>No baselines found for this project.</p>
+                <p>No baselines yet.</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {projectBaselines.map((baseline) => (
+                {baselines.map((baseline) => (
                   <BaselineCard
                     key={baseline.id}
                     baseline={baseline}
-                    versionLabel={getVersionFromTag(baseline.name)}
+                    versionLabel={baseline.name}
                     onView={() => {
                       const commitFromTag = tagToCommitHash.get(baseline.name);
                       const fallbackCommit = Object.keys(baseline.artifactCommits)[0] || '';
                       setViewingSnapshot({
                         commitHash: commitFromTag || fallbackCommit,
-                        name: getVersionFromTag(baseline.name),
+                        name: baseline.name,
                         timestamp: baseline.timestamp,
                       });
                     }}
@@ -242,41 +231,6 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                 }}
               >
                 <GitCommit size={48} style={{ opacity: 0.5, marginBottom: '12px' }} />
-                <p>No commits yet.</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {commits.map((commit, index) => (
-                  <CommitCard
-                    key={commit.hash}
-                    commit={commit}
-                    isFirst={index === 0}
-                    baselineTags={baselineCommitHashes.get(commit.hash) || []}
-                  />
-                ))}
-              </div>
-            ))}
-
-          {activeTab === 'global' &&
-            (isLoadingGlobalCommits ? (
-              <div
-                style={{
-                  textAlign: 'center',
-                  padding: 'var(--spacing-xl)',
-                  color: 'var(--color-text-muted)',
-                }}
-              >
-                <p>Loading all commits...</p>
-              </div>
-            ) : globalCommits.length === 0 ? (
-              <div
-                style={{
-                  textAlign: 'center',
-                  padding: 'var(--spacing-xl)',
-                  color: 'var(--color-text-muted)',
-                }}
-              >
-                <GitCommit size={48} style={{ opacity: 0.5, marginBottom: '12px' }} />
                 <p>No commits in repository.</p>
               </div>
             ) : (
@@ -287,7 +241,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                   onSelectAll={handleSelectAll}
                   onDeselectAll={handleDeselectAll}
                 />
-                {filteredGlobalCommits.length === 0 ? (
+                {filteredCommits.length === 0 ? (
                   <div
                     style={{
                       textAlign: 'center',
@@ -299,7 +253,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {filteredGlobalCommits.map((commit, index) => (
+                    {filteredCommits.map((commit, index) => (
                       <CommitCard
                         key={commit.hash}
                         commit={commit}
@@ -327,9 +281,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
         >
           {activeTab === 'baselines'
             ? '💡 Tip: Create baselines to save named snapshots of your project (e.g., "v1.0 Release").'
-            : activeTab === 'commits'
-              ? '💡 Tip: Shows commits to the project file only (project metadata changes).'
-              : '💡 Tip: Use the filter buttons to show commits for specific artifact types.'}
+            : '💡 Tip: Use the filter buttons to show commits for specific artifact types.'}
         </div>
       </div>
 

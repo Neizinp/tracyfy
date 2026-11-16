@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { EditLinkModal } from '../EditLinkModal';
-import type { Link, Project } from '../../types';
+import type { Link } from '../../types';
 
 describe('EditLinkModal', () => {
   const mockLink: Link = {
@@ -15,52 +15,14 @@ describe('EditLinkModal', () => {
     sourceId: 'REQ-001',
     targetId: 'UC-001',
     type: 'satisfies',
-    projectIds: [],
     dateCreated: 1700000000000,
     lastModified: 1700000100000,
     revision: '01',
   };
 
-  const mockProjectScopedLink: Link = {
-    id: 'LINK-002',
-    sourceId: 'REQ-002',
-    targetId: 'TC-001',
-    type: 'verifies',
-    projectIds: ['PRJ-001'],
-    dateCreated: 1700000000000,
-    lastModified: 1700000000000,
-    revision: '01',
-  };
-
-  const mockProjects: Project[] = [
-    {
-      id: 'PRJ-001',
-      name: 'Project Alpha',
-      description: '',
-      lastModified: 1700000000000,
-      requirementIds: [],
-      useCaseIds: [],
-      testCaseIds: [],
-      informationIds: [],
-      riskIds: [],
-    },
-    {
-      id: 'PRJ-002',
-      name: 'Project Beta',
-      description: '',
-      lastModified: 1700000000000,
-      requirementIds: [],
-      useCaseIds: [],
-      testCaseIds: [],
-      informationIds: [],
-      riskIds: [],
-    },
-  ];
-
   const defaultProps = {
     isOpen: true,
     link: mockLink,
-    projects: mockProjects,
     onClose: vi.fn(),
     onSave: vi.fn().mockResolvedValue(undefined),
     onDelete: vi.fn().mockResolvedValue(undefined),
@@ -129,27 +91,6 @@ describe('EditLinkModal', () => {
     });
   });
 
-  describe('Project scope', () => {
-    it('should show Global button for global links', () => {
-      render(<EditLinkModal {...defaultProps} />);
-
-      expect(screen.getByText('Global')).toBeInTheDocument();
-    });
-
-    it('should show Project-Specific button', () => {
-      render(<EditLinkModal {...defaultProps} />);
-
-      expect(screen.getByText('Project-Specific')).toBeInTheDocument();
-    });
-
-    it('should show project name for project-scoped links', () => {
-      render(<EditLinkModal {...defaultProps} link={mockProjectScopedLink} />);
-
-      // After clicking Project-Specific or if already project-scoped
-      expect(screen.getByText('Project Alpha')).toBeInTheDocument();
-    });
-  });
-
   describe('Actions', () => {
     it('should have a Cancel button', () => {
       render(<EditLinkModal {...defaultProps} />);
@@ -183,10 +124,7 @@ describe('EditLinkModal', () => {
       fireEvent.click(screen.getByRole('button', { name: /Save/i }));
 
       await waitFor(() => {
-        expect(defaultProps.onSave).toHaveBeenCalledWith('LINK-001', {
-          type: 'satisfies',
-          projectIds: [],
-        });
+        expect(defaultProps.onSave).toHaveBeenCalledWith('LINK-001', { type: 'satisfies' });
       });
     });
   });

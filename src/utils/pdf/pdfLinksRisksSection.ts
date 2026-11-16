@@ -46,12 +46,11 @@ export function addLinksSection(
     link.sourceId,
     LINK_TYPE_LABELS[link.type] || link.type,
     link.targetId,
-    link.projectIds.length === 0 ? 'Global' : 'Project',
   ]);
 
   autoTable(doc, {
     startY: 30,
-    head: [['Link ID', 'Source', 'Type', 'Target', 'Scope']],
+    head: [['Link ID', 'Source', 'Type', 'Target']],
     body: tableData,
     styles: {
       fontSize: 8,
@@ -66,7 +65,6 @@ export function addLinksSection(
       1: { cellWidth: 30 },
       2: { cellWidth: 40 },
       3: { cellWidth: 30 },
-      4: { cellWidth: 25 },
     },
     didDrawPage: () => {
       page++;

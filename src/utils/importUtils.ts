@@ -241,10 +241,7 @@ export function validateImportedLinks(rows: unknown, skipped: SkippedImportRow[]
       return;
     }
     seen.add(l.id);
-    valid.push({
-      ...(l as unknown as Link),
-      projectIds: Array.isArray(l.projectIds) ? (l.projectIds as string[]) : [],
-    });
+    valid.push(l as unknown as Link);
   });
   return valid;
 }

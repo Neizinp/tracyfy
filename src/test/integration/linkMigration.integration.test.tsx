@@ -17,7 +17,6 @@ describe('integration: legacy embedded links', () => {
 
   it('are migrated to committed link files on load and shown as links', async () => {
     h = await startApp();
-    const projectId = h.app().project.currentProjectId;
 
     // What an older version left on disk: REQ-001 embeds a link to REQ-002
     const write = (id: string, title: string, linkedArtifacts = [] as never[]) =>
@@ -36,13 +35,6 @@ describe('integration: legacy embedded links', () => {
     fs.mkdirSync(path.join(h.dir, 'requirements'), { recursive: true });
     write('REQ-001', 'Login', [{ targetId: 'REQ-002', type: 'satisfies' }] as never[]);
     write('REQ-002', 'Logout');
-    const projectFile = path.join(h.dir, 'projects', `${projectId}.md`);
-    fs.writeFileSync(
-      projectFile,
-      fs
-        .readFileSync(projectFile, 'utf8')
-        .replace(/requirementIds: \[\]/, 'requirementIds:\n  - "REQ-001"\n  - "REQ-002"')
-    );
     await git.add({ fs, dir: h.dir, filepath: '.' });
     await git.commit({
       fs,
@@ -63,7 +55,7 @@ describe('integration: legacy embedded links', () => {
     expect(await h.dirtyPaths()).toEqual([]);
 
     // Shown in the requirement's Relationships tab
-    const req = h.app().globalState.globalRequirements.find((r) => r.id === 'REQ-001')!;
+    const req = h.app().globalState.requirements.find((r) => r.id === 'REQ-001')!;
     await act(async () => h.app().requirements.handleEdit(req));
     fireEvent.click(await screen.findByRole('button', { name: 'Relationships' }));
     expect(within(await screen.findByRole('dialog')).getByText('REQ-002')).toBeInTheDocument();

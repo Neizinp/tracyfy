@@ -2,46 +2,44 @@ import React, { useMemo, useState } from 'react';
 import { debug } from '../utils/debug';
 import { useParams, Navigate } from 'react-router-dom';
 import { BaselineRevisionHistory } from '../components';
-import { useBaselines, useProject } from '../app/providers';
+import { useBaselines, useProject, useGlobalState } from '../app/providers';
+import { activeIds } from '../utils/activeArtifacts';
 import type { ProjectBaseline } from '../types';
 
 export const BaselineHistoryPage: React.FC = () => {
   const { baselines } = useBaselines();
-  const { currentProject } = useProject();
+  const { project } = useProject();
+  const { requirements, useCases, testCases, information } = useGlobalState();
   const { baselineId } = useParams<{ baselineId: string }>();
   const [compareToCurrent, setCompareToCurrent] = useState(false);
+  // When this page was opened: the time of the "current state" pseudo-baseline
+  const [openedAt] = useState(() => Date.now());
 
   // Generate a pseudo-baseline for the current state
   // Moved before conditional returns to avoid conditional hook call
-  const currentStateBaseline: ProjectBaseline | null = useMemo(() => {
-    if (!currentProject) return null;
+  const currentStateBaseline: ProjectBaseline = useMemo(() => {
     const artifactCommits: ProjectBaseline['artifactCommits'] = {};
-    // Build artifactCommits for all artifacts in the project
-    currentProject.requirementIds.forEach((id) => {
-      artifactCommits[id] = { commitHash: '', type: 'requirement' };
-    });
-    currentProject.useCaseIds.forEach((id) => {
-      artifactCommits[id] = { commitHash: '', type: 'usecase' };
-    });
-    currentProject.testCaseIds.forEach((id) => {
-      artifactCommits[id] = { commitHash: '', type: 'testcase' };
-    });
-    currentProject.informationIds.forEach((id) => {
-      artifactCommits[id] = { commitHash: '', type: 'information' };
-    });
+    // Every artifact in the project folder
+    const add = (ids: string[], type: ProjectBaseline['artifactCommits'][string]['type']) =>
+      ids.forEach((id) => {
+        artifactCommits[id] = { commitHash: '', type };
+      });
+    add(activeIds(requirements), 'requirement');
+    add(activeIds(useCases), 'usecase');
+    add(activeIds(testCases), 'testcase');
+    add(activeIds(information), 'information');
     // We'll fill commit hashes in BaselineRevisionHistory (it already fetches history)
     return {
       id: 'current-state',
-      projectId: currentProject.id,
       version: 'Current',
       name: 'Current State',
       description: 'Current project state',
-      timestamp: Date.now(),
+      timestamp: openedAt,
       artifactCommits,
       addedArtifacts: [],
       removedArtifacts: [],
     };
-  }, [currentProject]);
+  }, [requirements, useCases, testCases, information, openedAt]);
 
   if (!baselineId) {
     return <Navigate to="/baselines" replace />;
@@ -84,8 +82,8 @@ export const BaselineHistoryPage: React.FC = () => {
         </button>
       </div>
       <BaselineRevisionHistory
-        projectName={currentProject?.name || 'Unknown'}
-        currentBaseline={compareToCurrent ? currentStateBaseline! : selectedBaseline}
+        projectName={project.name}
+        currentBaseline={compareToCurrent ? currentStateBaseline : selectedBaseline}
         previousBaseline={
           compareToCurrent
             ? selectedBaseline

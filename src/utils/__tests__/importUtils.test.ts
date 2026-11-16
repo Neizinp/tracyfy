@@ -134,7 +134,6 @@ describe('parseJsonImport links', () => {
       })
     );
     expect(bundle.links.map((l) => l.id)).toEqual(['LINK-001']);
-    expect(bundle.links[0].projectIds).toEqual([]);
     expect(bundle.skipped).toHaveLength(3);
     expect(countImported(bundle)).toBe(1);
   });

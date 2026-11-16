@@ -24,11 +24,8 @@ function sortByIdNumber<T extends { id: string }>(artifacts: T[]): T[] {
 
 export interface ExportData {
   project: {
-    id: string;
     name: string;
     description: string;
-    currentBaseline: string | null;
-    lastModified: number;
   };
   requirements: Requirement[];
   useCases: UseCase[];
@@ -71,30 +68,20 @@ export async function exportProjectToJSON(
     globalState.information.filter((i) => projectInformationIds.includes(i.id) && !i.isDeleted)
   );
 
-  // Fetch links visible to this project (global + project-specific)
-  const links = sortByIdNumber(await diskLinkService.getLinksForProject(project.id));
+  const links = sortByIdNumber(await diskLinkService.getAllLinks());
 
-  // Filter risks for this project
+  // Filter risks
   const risks = sortByIdNumber(
     (globalState.risks || []).filter((r) => projectRiskIds.includes(r.id) && !r.isDeleted)
   );
 
-  // Filter documents for this project
+  // Filter documents
   const documents = sortByIdNumber(
-    // Documents belong to a project via projectId (documentIds is an older/optional list)
-    (globalState.documents || []).filter(
-      (d) => (d.projectId === project.id || projectDocumentIds.includes(d.id)) && !d.isDeleted
-    )
+    (globalState.documents || []).filter((d) => projectDocumentIds.includes(d.id) && !d.isDeleted)
   );
 
   const dataToExport: ExportData = {
-    project: {
-      id: project.id,
-      name: project.name,
-      description: project.description,
-      currentBaseline: project.currentBaseline || null,
-      lastModified: project.lastModified,
-    },
+    project: { name: project.name, description: project.description },
     requirements,
     useCases,
     testCases,
@@ -108,11 +95,7 @@ export async function exportProjectToJSON(
   const jsonString = JSON.stringify(dataToExport, null, 2);
 
   // Filename generation
-  let filename = `${project.name.replace(/[^a-z0-9]/gi, '_')}`;
-  if (project.currentBaseline) {
-    filename += `_${project.currentBaseline.replace(/[^a-z0-9]/gi, '_')}`;
-  }
-  filename += '.json';
+  const filename = `${project.name.replace(/[^a-z0-9]/gi, '_')}.json`;
 
   // Try to use File System Access API if available (for "Save As")
   try {

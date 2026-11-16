@@ -30,10 +30,6 @@ vi.mock('../../../hooks/useUIState', () => ({
     setIsEditTestCaseModalOpen: vi.fn(),
     isInformationModalOpen: false,
     setIsInformationModalOpen: vi.fn(),
-    isLibraryPanelOpen: false,
-    setIsLibraryPanelOpen: vi.fn(),
-    isGlobalLibraryModalOpen: false,
-    setIsGlobalLibraryModalOpen: vi.fn(),
     isUserSettingsModalOpen: false,
     setIsUserSettingsModalOpen: vi.fn(),
 
@@ -52,10 +48,6 @@ vi.mock('../../../hooks/useUIState', () => ({
     setProjectToEdit: vi.fn(),
 
     // Library state
-    activeLibraryTab: 'requirements' as const,
-    setActiveLibraryTab: vi.fn(),
-    globalLibrarySelection: new Set<string>(),
-    setGlobalLibrarySelection: vi.fn(),
 
     // Column visibility
     columnVisibility: {
@@ -97,8 +89,6 @@ vi.mock('../../../hooks/useUIState', () => ({
     setLinkSourceType: vi.fn(),
 
     // Helper functions
-    handleGlobalLibrarySelect: vi.fn(),
-    handleOpenLibrary: vi.fn(),
   })),
 }));
 
@@ -146,18 +136,6 @@ describe('UIProvider', () => {
       expect(typeof result.current.setSelectedRequirementId).toBe('function');
       expect(result.current.editingRequirement).toBeNull();
       expect(result.current.editingUseCase).toBeNull();
-    });
-
-    it('should provide library state', () => {
-      const wrapper = ({ children }: { children: React.ReactNode }) => (
-        <UIProvider>{children}</UIProvider>
-      );
-
-      const { result } = renderHook(() => useUI(), { wrapper });
-
-      expect(result.current.activeLibraryTab).toBe('requirements');
-      expect(result.current.globalLibrarySelection).toBeInstanceOf(Set);
-      expect(typeof result.current.handleOpenLibrary).toBe('function');
     });
 
     it('should provide column visibility', () => {

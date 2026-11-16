@@ -16,7 +16,6 @@ interface TypeCase {
   folder: string;
   all: (app: AppHooks) => { id: string; title: string; revision: string }[];
   /** Is the artifact a member of the current project? */
-  inProject: (app: AppHooks, id: string) => boolean;
 }
 
 const TYPES: TypeCase[] = [
@@ -26,8 +25,7 @@ const TYPES: TypeCase[] = [
     createLabel: /create requirement/i,
     route: '/requirements',
     folder: 'requirements',
-    all: (a) => a.globalState.globalRequirements,
-    inProject: (a, id) => !!a.project.currentProject?.requirementIds.includes(id),
+    all: (a) => a.globalState.requirements,
   },
   {
     name: 'use case',
@@ -35,8 +33,7 @@ const TYPES: TypeCase[] = [
     createLabel: /create use case/i,
     route: '/use-cases',
     folder: 'usecases',
-    all: (a) => a.globalState.globalUseCases,
-    inProject: (a, id) => !!a.project.currentProject?.useCaseIds.includes(id),
+    all: (a) => a.globalState.useCases,
   },
   {
     name: 'test case',
@@ -44,8 +41,7 @@ const TYPES: TypeCase[] = [
     createLabel: /create test case/i,
     route: '/test-cases',
     folder: 'testcases',
-    all: (a) => a.globalState.globalTestCases,
-    inProject: (a, id) => !!a.project.currentProject?.testCaseIds.includes(id),
+    all: (a) => a.globalState.testCases,
   },
   {
     name: 'information',
@@ -53,8 +49,7 @@ const TYPES: TypeCase[] = [
     createLabel: /create information/i,
     route: '/information',
     folder: 'information',
-    all: (a) => a.globalState.globalInformation,
-    inProject: (a, id) => !!a.project.currentProject?.informationIds.includes(id),
+    all: (a) => a.globalState.information,
   },
   {
     name: 'risk',
@@ -62,8 +57,7 @@ const TYPES: TypeCase[] = [
     createLabel: /create risk/i,
     route: '/risks',
     folder: 'risks',
-    all: (a) => a.globalState.globalRisks,
-    inProject: (a, id) => !!a.project.currentProject?.riskIds.includes(id),
+    all: (a) => a.globalState.risks,
   },
   {
     name: 'document',
@@ -71,12 +65,7 @@ const TYPES: TypeCase[] = [
     createLabel: /create document/i,
     route: '/documents',
     folder: 'documents',
-    all: (a) => a.globalState.globalDocuments,
-    inProject: (a, id) => {
-      const p = a.project.currentProject;
-      const doc = a.globalState.globalDocuments.find((d) => d.id === id);
-      return !!p && (doc?.projectId === p.id || !!p.documentIds?.includes(id));
-    },
+    all: (a) => a.globalState.documents,
   },
 ];
 
@@ -107,7 +96,6 @@ describe.each(TYPES)('integration: $name lifecycle via the UI', (t) => {
     expect(created, 'artifact created in app state').toBeDefined();
     const id = created!.id;
     expect(h.exists(`${t.folder}/${id}.md`), 'artifact file on disk').toBe(true);
-    expect(t.inProject(h.app(), id), 'artifact belongs to the current project').toBe(true);
 
     // Commit everything so later changes are visible on their own
     for (const p of await h.dirtyPaths()) {
@@ -142,9 +130,8 @@ describe.each(TYPES)('integration: $name lifecycle via the UI', (t) => {
     expect(t.all(h.app()).find((a) => a.id === id)?.revision).toBe('02');
     expect(await h.dirtyPaths()).toEqual([]);
 
-    // Restart → still there, still in the project
+    // Restart → still there
     await h.restart();
     expect(t.all(h.app()).find((a) => a.id === id)?.title).toBe(`My ${t.name} v2`);
-    expect(t.inProject(h.app(), id)).toBe(true);
   }, 90_000);
 });

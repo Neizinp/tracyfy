@@ -15,7 +15,6 @@ import type {
   Risk,
   ArtifactDocument,
   Link,
-  Project,
 } from '../types';
 import {
   TYPE_COLORS,
@@ -36,8 +35,7 @@ type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
 // Separate component for Links tab to access useUI hook
 const LinksTabContent: React.FC<{
   onSelectArtifact?: (artifactId: string) => void;
-  projects: Project[];
-}> = ({ onSelectArtifact, projects }) => {
+}> = ({ onSelectArtifact }) => {
   const { setIsLinkModalOpen } = useUI();
 
   return (
@@ -45,7 +43,6 @@ const LinksTabContent: React.FC<{
       onNavigateToArtifact={(id) => {
         if (onSelectArtifact) onSelectArtifact(id);
       }}
-      projects={projects}
       onAdd={() => setIsLinkModalOpen(true)}
     />
   );
@@ -59,7 +56,6 @@ interface TraceabilityDashboardProps {
   risks?: Risk[];
   documents?: ArtifactDocument[];
   standaloneLinks?: Link[];
-  projects?: Project[];
   initialTab?: TabType;
   onSelectArtifact?: (artifactId: string) => void;
   onAddLink?: (artifactId: string, artifactType: string) => void;
@@ -74,7 +70,6 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   risks = [],
   documents = [],
   standaloneLinks = [],
-  projects = [],
   initialTab = 'overview',
   onSelectArtifact,
   onAddLink,
@@ -378,9 +373,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
       )}
 
       {/* Links Tab */}
-      {activeTab === 'links' && (
-        <LinksTabContent onSelectArtifact={onSelectArtifact} projects={projects} />
-      )}
+      {activeTab === 'links' && <LinksTabContent onSelectArtifact={onSelectArtifact} />}
 
       {/* Impact Tab */}
       {activeTab === 'impact' && (

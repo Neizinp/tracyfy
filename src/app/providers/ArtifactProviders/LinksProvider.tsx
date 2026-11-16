@@ -21,7 +21,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Li
   useFS: (fs) => ({
     save: fs.saveLink,
     delete: fs.deleteLink,
-    fsItems: fs.links,
     isReady: fs.isReady,
   }),
   useUIHelpers: (_ui) => ({

@@ -41,7 +41,7 @@ vi.mock('../../services/diskCustomAttributeService', () => ({
 // Mock diskLinkService
 vi.mock('../../services/diskLinkService', () => ({
   diskLinkService: {
-    getLinksForProject: vi.fn().mockResolvedValue([]),
+    getAllLinks: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -68,16 +68,8 @@ describe('excelExportUtils', () => {
   });
 
   const mockProject: Project = {
-    id: 'p1',
     name: 'Test Project',
     description: 'Test Description',
-    requirementIds: ['r1'],
-    useCaseIds: ['u1'],
-    testCaseIds: ['t1'],
-    informationIds: ['i1'],
-    riskIds: [],
-    lastModified: 0,
-    currentBaseline: 'Baseline 1.0',
   };
 
   const mockReq: Requirement = {
@@ -238,9 +230,6 @@ describe('excelExportUtils', () => {
 
     await exportProjectToExcel(mockProject, globalState, ['r1'], [], [], [], [], defaultOptions);
 
-    expect(mockWriteFile).toHaveBeenCalledWith(
-      expect.anything(),
-      'Test_Project_Baseline_1_0-export.xlsx'
-    );
+    expect(mockWriteFile).toHaveBeenCalledWith(expect.anything(), 'Test_Project-export.xlsx');
   });
 });

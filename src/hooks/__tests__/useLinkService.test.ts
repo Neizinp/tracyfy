@@ -15,7 +15,6 @@ import type { Link } from '../../types';
 vi.mock('../../services/diskLinkService', () => ({
   diskLinkService: {
     getAllLinks: vi.fn(),
-    getLinksForProject: vi.fn(),
     getOutgoingLinks: vi.fn(),
     getIncomingLinks: vi.fn(),
     getOutgoingLinksForProject: vi.fn(),
@@ -33,7 +32,6 @@ const mockLinks: Link[] = [
     sourceId: 'REQ-001',
     targetId: 'UC-001',
     type: 'satisfies',
-    projectIds: [],
     dateCreated: 1700000000000,
     lastModified: 1700000000000,
     revision: '01',
@@ -43,7 +41,6 @@ const mockLinks: Link[] = [
     sourceId: 'REQ-001',
     targetId: 'TC-001',
     type: 'verifies',
-    projectIds: [],
     dateCreated: 1700000000000,
     lastModified: 1700000000000,
     revision: '01',
@@ -53,7 +50,6 @@ const mockLinks: Link[] = [
     sourceId: 'UC-001',
     targetId: 'REQ-001',
     type: 'derived_from',
-    projectIds: ['PRJ-001'],
     dateCreated: 1700000000000,
     lastModified: 1700000000000,
     revision: '01',
@@ -114,22 +110,6 @@ describe('useLinkService', () => {
     });
   });
 
-  describe('Project filtering', () => {
-    it('should include links with no projectIds (global links)', () => {
-      const { result } = renderHook(() => useLinkService({ projectId: 'PRJ-001' }));
-
-      // Should include global links (empty projectIds) and project-specific links
-      expect(result.current.allLinks.length).toBeGreaterThan(0);
-    });
-
-    it('should include links for the specified project', () => {
-      const { result } = renderHook(() => useLinkService({ projectId: 'PRJ-001' }));
-
-      const projectLink = result.current.allLinks.find((l) => l.id === 'LINK-003');
-      expect(projectLink).toBeDefined();
-    });
-  });
-
   describe('createLink', () => {
     it('should create links through the FileSystemProvider', async () => {
       const newLink: Link = {
@@ -137,7 +117,6 @@ describe('useLinkService', () => {
         sourceId: 'REQ-002',
         targetId: 'UC-002',
         type: 'depends_on',
-        projectIds: [],
         dateCreated: Date.now(),
         lastModified: Date.now(),
         revision: '01',
@@ -153,29 +132,7 @@ describe('useLinkService', () => {
 
       expect(created).toEqual(newLink);
       expect(diskLinkService.createLink).not.toHaveBeenCalled();
-      expect(mockCreateLink).toHaveBeenCalledWith('REQ-002', 'UC-002', 'depends_on', []);
-    });
-
-    it('should pass project IDs when creating', async () => {
-      const newLink: Link = {
-        id: 'LINK-004',
-        sourceId: 'REQ-002',
-        targetId: 'UC-002',
-        type: 'depends_on',
-        projectIds: ['PRJ-001'],
-        dateCreated: Date.now(),
-        lastModified: Date.now(),
-        revision: '01',
-      };
-      mockCreateLink.mockResolvedValue(newLink);
-
-      const { result } = renderHook(() => useLinkService());
-
-      await act(async () => {
-        await result.current.createLink('REQ-002', 'UC-002', 'depends_on', ['PRJ-001']);
-      });
-
-      expect(mockCreateLink).toHaveBeenCalledWith('REQ-002', 'UC-002', 'depends_on', ['PRJ-001']);
+      expect(mockCreateLink).toHaveBeenCalledWith('REQ-002', 'UC-002', 'depends_on');
     });
 
     it('should throw when create fails', async () => {

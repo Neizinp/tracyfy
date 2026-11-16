@@ -1,12 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { UseCaseList } from '../UseCaseList';
-import type { UseCase, Project } from '../../types';
-import { useProject, useCustomAttributes } from '../../app/providers';
+import type { UseCase } from '../../types';
+import { useCustomAttributes } from '../../app/providers';
 
 // Mock hooks
 vi.mock('../../app/providers', () => ({
-  useProject: vi.fn(),
   useCustomAttributes: vi.fn(),
 }));
 
@@ -84,17 +83,6 @@ describe('UseCaseList', () => {
 
   beforeEach(() => {
     mockOnEdit.mockClear();
-    vi.mocked(useProject).mockReturnValue({
-      projects: [],
-      currentProjectId: '',
-      currentProject: null,
-      isLoading: false,
-      switchProject: vi.fn(),
-      createProject: vi.fn(),
-      updateProject: vi.fn(),
-      deleteProject: vi.fn(),
-      addToProject: vi.fn(),
-    });
     vi.mocked(useCustomAttributes).mockReturnValue({
       definitions: [],
       loading: false,
@@ -133,46 +121,6 @@ describe('UseCaseList', () => {
 
     fireEvent.click(screen.getByText('Login'));
     expect(mockOnEdit).toHaveBeenCalledWith(mockUseCases[0]);
-  });
-
-  it('renders project names', () => {
-    const mockProjects: Project[] = [
-      {
-        id: 'proj-1',
-        name: 'Project A',
-        description: '',
-        useCaseIds: ['UC-001'],
-        requirementIds: [],
-        testCaseIds: [],
-        informationIds: [],
-        riskIds: [],
-        lastModified: Date.now(),
-      },
-    ];
-
-    vi.mocked(useProject).mockReturnValue({
-      projects: mockProjects,
-      currentProjectId: '',
-      currentProject: null,
-      isLoading: false,
-      switchProject: vi.fn(),
-      createProject: vi.fn(),
-      updateProject: vi.fn(),
-      deleteProject: vi.fn(),
-      addToProject: vi.fn(),
-    });
-
-    render(
-      <UseCaseList
-        useCases={mockUseCases}
-        onEdit={mockOnEdit}
-        visibleColumns={visibleColumns}
-        sortConfig={{ key: 'idTitle', direction: 'asc' }}
-        onSortChange={vi.fn()}
-      />
-    );
-
-    expect(screen.getByText('Project A')).toBeInTheDocument();
   });
 
   it('renders empty state', () => {

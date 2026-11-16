@@ -173,15 +173,6 @@ describe('HeaderBar', () => {
 
       expect(screen.getByText('Import Excel')).toBeInTheDocument();
     });
-
-    it('should show Import from Project when onOpenGlobalLibrary is provided', () => {
-      const onOpenGlobalLibrary = vi.fn();
-      render(<HeaderBar {...defaultProps} onOpenGlobalLibrary={onOpenGlobalLibrary} />);
-
-      fireEvent.click(screen.getByText('Import'));
-
-      expect(screen.getByText('Import from Project')).toBeInTheDocument();
-    });
   });
 
   describe('Export dropdown', () => {
@@ -217,7 +208,6 @@ describe('HeaderBar', () => {
       const baselines: ProjectBaseline[] = [
         {
           id: 'baseline-1',
-          projectId: 'proj-001',
           name: 'Release 1.0',
           version: '1.0',
           description: 'Release baseline',
@@ -240,7 +230,6 @@ describe('HeaderBar', () => {
       const baselines: ProjectBaseline[] = [
         {
           id: 'baseline-1',
-          projectId: 'proj-001',
           name: 'Release 1.0',
           version: '1.0',
           description: 'Release baseline',

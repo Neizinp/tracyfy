@@ -7,6 +7,8 @@ interface FormFieldProps {
   children: React.ReactNode;
   fullWidth?: boolean;
   description?: string;
+  /** id of the input this label belongs to */
+  htmlFor?: string;
 }
 
 export const FormField: React.FC<FormFieldProps> = ({
@@ -16,6 +18,7 @@ export const FormField: React.FC<FormFieldProps> = ({
   children,
   fullWidth = false,
   description,
+  htmlFor,
 }) => (
   <div
     style={{
@@ -26,6 +29,7 @@ export const FormField: React.FC<FormFieldProps> = ({
     }}
   >
     <label
+      htmlFor={htmlFor}
       style={{
         display: 'flex',
         alignItems: 'center',

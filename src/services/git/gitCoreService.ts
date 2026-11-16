@@ -211,7 +211,7 @@ class GitCoreService {
         markdown = documentToMarkdown(artifact as ArtifactDocument);
         break;
       default:
-        // For types like projects, users, baselines that might use different serialization or are handled elsewhere
+        // For types like users and baselines that might use different serialization or are handled elsewhere
         // But we should support them if they are passed here
         markdown = JSON.stringify(artifact, null, 2);
     }
@@ -303,7 +303,6 @@ class GitCoreService {
         'workflows',
         'custom-attributes',
         'documents',
-        'projects',
         'assets',
       ];
       const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.tiff'];

@@ -54,12 +54,6 @@ export const ARTIFACT_CONFIG: Record<string, ArtifactTypeConfig> = {
     label: 'Workflow',
     type: 'workflow',
   },
-  projects: {
-    idPrefix: 'PROJ',
-    folder: 'projects',
-    label: 'Project',
-    type: 'project',
-  },
   customAttributes: {
     idPrefix: 'ATTR',
     folder: 'custom-attributes',

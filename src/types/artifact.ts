@@ -31,7 +31,6 @@ export interface DocumentEntry {
 export interface ArtifactDocument extends BaseArtifact {
   title: string;
   description?: string;
-  projectId: string;
   structure: DocumentEntry[];
   dateCreated: number;
   author?: string;

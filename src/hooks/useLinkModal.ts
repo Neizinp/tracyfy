@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { ArtifactLink, Project } from '../types';
+import type { ArtifactLink } from '../types';
 import {
   LINKABLE_TYPES,
   type ArtifactsByType,
@@ -18,15 +18,12 @@ export interface LinkModalResult {
   sourceId?: string;
   targetId: string;
   type: ArtifactLink['type'];
-  projectIds: string[];
 }
 
 interface UseLinkModalOptions {
   isOpen: boolean;
   sourceArtifactId: string | null;
   sourceArtifactType: LinkableType;
-  projects: Project[];
-  currentProjectId: string;
   /** Every linkable artifact, grouped by type */
   artifactsByType: ArtifactsByType;
   onClose: () => void;
@@ -36,8 +33,6 @@ interface UseLinkModalOptions {
 export function useLinkModal({
   isOpen,
   sourceArtifactId,
-  projects,
-  currentProjectId,
   artifactsByType,
   onClose,
   onAddLink,
@@ -46,7 +41,6 @@ export function useLinkModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
   const [linkType, setLinkType] = useState<ArtifactLink['type']>('related_to');
-  const [linkScope, setLinkScope] = useState<'global' | 'project'>('project');
   // Source chosen inside the modal when none was preset (e.g. opened from the Links page)
   const [chosenSourceId, setChosenSourceId] = useState('');
 
@@ -61,25 +55,8 @@ export function useLinkModal({
       setSearchQuery('');
       setSelectedTargetId('');
       setLinkType('related_to');
-      setLinkScope('project');
     }
   }, [isOpen]);
-
-  // Helper to find which project an artifact belongs to
-  const findProjectForArtifact = useCallback(
-    (id: string): Project | undefined => {
-      return projects.find(
-        (p) =>
-          p.requirementIds.includes(id) ||
-          p.useCaseIds.includes(id) ||
-          p.testCaseIds.includes(id) ||
-          p.informationIds.includes(id) ||
-          (p.riskIds ?? []).includes(id) ||
-          (p.documentIds ?? []).includes(id)
-      );
-    },
-    [projects]
-  );
 
   // Artifacts of the selected type, minus deleted ones and the source itself
   const filteredArtifacts = useMemo(() => {
@@ -115,12 +92,11 @@ export function useLinkModal({
           sourceId: effectiveSourceId,
           targetId: selectedTargetId,
           type: linkType,
-          projectIds: linkScope === 'global' ? [] : [currentProjectId],
         });
         onClose();
       }
     },
-    [selectedTargetId, effectiveSourceId, linkType, linkScope, currentProjectId, onAddLink, onClose]
+    [selectedTargetId, effectiveSourceId, linkType, onAddLink, onClose]
   );
 
   const selectTargetType = useCallback((type: LinkableType) => {
@@ -138,13 +114,9 @@ export function useLinkModal({
     setSelectedTargetId,
     linkType,
     setLinkType,
-    linkScope,
-    setLinkScope,
 
     // Computed
     filteredArtifacts,
-    findProjectForArtifact,
-    currentProjectId,
 
     // Actions
     handleSubmit,

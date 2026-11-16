@@ -7,7 +7,6 @@ import {
   useTestCases,
   useInformation,
   useUI,
-  useProject,
   useRisks,
   useDocuments,
 } from '../app/providers';
@@ -33,7 +32,6 @@ export const TraceabilityDashboardPage: React.FC = () => {
   const { documents } = useDocuments();
   const { searchQuery, setLinkSourceId, setLinkSourceType, setIsLinkModalOpen } = useUI();
   const { allLinks: standaloneLinks, deleteLink } = useLinkService({});
-  const { projects } = useProject();
 
   const filteredRequirements = useMemo(() => {
     const query = searchQuery.toLowerCase();
@@ -150,7 +148,6 @@ export const TraceabilityDashboardPage: React.FC = () => {
       risks={filteredRisks}
       documents={filteredDocuments}
       standaloneLinks={standaloneLinks}
-      projects={projects}
       initialTab={initialTab}
       onAddLink={handleAddLink}
       onRemoveLink={handleRemoveLink}

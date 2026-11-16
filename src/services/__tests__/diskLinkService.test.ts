@@ -187,7 +187,6 @@ lastModified: 1700000000000
       expect(link.sourceId).toBe('REQ-001');
       expect(link.targetId).toBe('UC-001');
       expect(link.type).toBe('satisfies');
-      expect(link.projectIds).toEqual([]);
       expect(fileSystemService.writeFile).toHaveBeenCalledWith(
         'links/LINK-001.md',
         expect.any(String)
@@ -270,17 +269,6 @@ lastModified: 1700000000000
       );
     });
 
-    it('should update project IDs', async () => {
-      vi.mocked(fileSystemService.readFile).mockResolvedValue(sampleLinkMarkdown);
-      vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
-
-      const updated = await diskLinkService.updateLink('LINK-001', {
-        projectIds: ['PRJ-001'],
-      });
-
-      expect(updated!.projectIds).toEqual(['PRJ-001']);
-    });
-
     it('should update lastModified timestamp', async () => {
       vi.mocked(fileSystemService.readFile).mockResolvedValue(sampleLinkMarkdown);
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
@@ -330,42 +318,6 @@ lastModified: 1700000000000
 
       expect(existsSatisfies).toBe(true);
       expect(existsDependsOn).toBe(false);
-    });
-  });
-
-  describe('getLinksForProject', () => {
-    it('should return global links and project-specific links', async () => {
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue(['LINK-001.md', 'LINK-002.md']);
-      vi.mocked(fileSystemService.readFile)
-        .mockResolvedValueOnce(sampleLinkMarkdown) // Global link
-        .mockResolvedValueOnce(projectScopedLinkMarkdown); // PRJ-001, PRJ-002
-
-      const links = await diskLinkService.getLinksForProject('PRJ-001');
-
-      expect(links).toHaveLength(2);
-    });
-
-    it('should filter out links for other projects', async () => {
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue(['LINK-002.md']);
-      vi.mocked(fileSystemService.readFile).mockResolvedValue(projectScopedLinkMarkdown);
-
-      const links = await diskLinkService.getLinksForProject('PRJ-999');
-
-      expect(links).toHaveLength(0);
-    });
-  });
-
-  describe('getGlobalLinks', () => {
-    it('should return only links with empty projectIds', async () => {
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue(['LINK-001.md', 'LINK-002.md']);
-      vi.mocked(fileSystemService.readFile)
-        .mockResolvedValueOnce(sampleLinkMarkdown) // Global link
-        .mockResolvedValueOnce(projectScopedLinkMarkdown); // Project-scoped
-
-      const links = await diskLinkService.getGlobalLinks();
-
-      expect(links).toHaveLength(1);
-      expect(links[0].id).toBe('LINK-001');
     });
   });
 });

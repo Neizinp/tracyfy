@@ -158,7 +158,6 @@ const document: ArtifactDocument = {
   id: 'DOC-002',
   title: 'Spec',
   description: TRICKY,
-  projectId: 'PROJ-001',
   structure: [
     { type: 'heading', title: 'Intro: overview', level: 1 },
     { type: 'artifact', id: 'REQ-042', artifactType: 'requirements' },
@@ -170,19 +169,8 @@ const document: ArtifactDocument = {
 };
 
 const project: Project = {
-  id: 'PROJ-001',
   name: 'Project: Alpha',
   description: TRICKY,
-  requirementIds: ['REQ-001', 'REQ-042'],
-  useCaseIds: ['UC-007'],
-  testCaseIds: ['TC-003'],
-  informationIds: ['INFO-009'],
-  riskIds: ['RISK-005'],
-  documentIds: ['DOC-002'],
-  baselines: ['BASE-001'],
-  currentBaseline: 'BASE-001',
-  isDeleted: true,
-  lastModified: T0,
 };
 
 const user: User = { id: 'USER-003', name: 'Ada: Lovelace', dateCreated: T0, lastModified: T0 + 1 };
@@ -192,7 +180,6 @@ const link: Link = {
   sourceId: 'REQ-042',
   targetId: 'UC-007',
   type: 'satisfies',
-  projectIds: ['PROJ-001', 'PROJ-002'],
   dateCreated: T0,
   lastModified: T0 + 1,
   revision: '02',
@@ -308,12 +295,6 @@ describe('files written by earlier versions still load', () => {
 
     const proj =
       '---\nid: "PROJ-001"\nname: "Alpha"\nrequirementIds:\n  - "REQ-001"\n---\n\n# Alpha\n\nThe project.';
-    expect(markdownToProject(proj)).toMatchObject({
-      name: 'Alpha',
-      description: 'The project.',
-      requirementIds: ['REQ-001'],
-      documentIds: [],
-      baselines: [],
-    });
+    expect(markdownToProject(proj)).toEqual({ name: 'Alpha', description: 'The project.' });
   });
 });

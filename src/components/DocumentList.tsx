@@ -1,9 +1,9 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import type { ArtifactDocument } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { BaseArtifactTable, type ColumnDef } from './BaseArtifactTable';
 import type { SortConfig } from './SortableHeader';
-import { useProject, useCustomAttributes } from '../app/providers';
+import { useCustomAttributes } from '../app/providers';
 import type { DocumentColumnVisibility } from '../types/ui';
 
 interface DocumentListProps {
@@ -21,16 +21,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   sortConfig,
   onSortChange,
 }) => {
-  const { projects } = useProject();
   const { definitions } = useCustomAttributes();
-
-  // NOTE: ArtifactDocument has projectId field directly.
-  const getDocProjectName = useCallback(
-    (projectId: string) => {
-      return projects.find((p) => p.id === projectId)?.name || '-';
-    },
-    [projects]
-  );
 
   const columns = useMemo<ColumnDef<ArtifactDocument>[]>(
     () => [
@@ -46,26 +37,6 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             </div>
             <div style={{ color: 'var(--color-text-primary)' }}>{doc.title}</div>
           </>
-        ),
-      },
-      {
-        key: 'projects',
-        label: 'Project(s)',
-        width: '150px',
-        visible: visibleColumns.projects,
-        render: (doc) => (
-          <span
-            style={{
-              fontSize: 'var(--font-size-xs)',
-              padding: '2px 6px',
-              borderRadius: 'var(--radius-xs)',
-              background: 'var(--color-bg-tertiary)',
-              color: 'var(--color-text-secondary)',
-              border: '1px solid var(--color-border)',
-            }}
-          >
-            {getDocProjectName(doc.projectId)}
-          </span>
         ),
       },
       {
@@ -187,7 +158,6 @@ export const DocumentList: React.FC<DocumentListProps> = ({
               'structure',
               'created',
               'revision',
-              'projects',
               'status',
               'author',
             ].includes(key) && visibleColumns[key]
@@ -204,7 +174,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
           };
         }),
     ],
-    [visibleColumns, getDocProjectName, definitions]
+    [visibleColumns, definitions]
   );
 
   return (

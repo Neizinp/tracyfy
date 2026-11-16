@@ -1,8 +1,10 @@
+import { activeIds } from '../utils/activeArtifacts';
 import type {
   Requirement,
   UseCase,
   TestCase,
   Information,
+  Risk,
   Project,
   ArtifactDocument,
 } from '../types';
@@ -21,12 +23,12 @@ export type ImportNotify = (
 ) => void;
 
 interface UseImportExportProps {
-  currentProjectId: string;
-  projects: Project[];
+  project: Project;
   requirements: Requirement[];
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
+  risks: Risk[];
   documents: ArtifactDocument[];
   /** Persist validated imported artifacts (merge by ID, never wipe existing data) */
   applyImport: (bundle: ImportBundle) => Promise<void>;
@@ -35,23 +37,17 @@ interface UseImportExportProps {
 }
 
 export function useImportExport({
-  currentProjectId,
-  projects,
+  project,
   requirements,
   useCases,
   testCases,
   information,
+  risks,
   documents,
   applyImport,
   notify,
 }: UseImportExportProps) {
   const handleExport = async () => {
-    const project = projects.find((p) => p.id === currentProjectId);
-    if (!project) {
-      notify('No project selected', 'warning');
-      return;
-    }
-
     try {
       await exportProjectToJSON(
         project,
@@ -62,12 +58,12 @@ export function useImportExport({
           information,
           documents,
         },
-        project.requirementIds,
-        project.useCaseIds,
-        project.testCaseIds,
-        project.informationIds,
-        project.riskIds || [],
-        project.documentIds || []
+        activeIds(requirements),
+        activeIds(useCases),
+        activeIds(testCases),
+        activeIds(information),
+        activeIds(risks),
+        activeIds(documents)
       );
     } catch (error) {
       console.error('Failed to export project:', error);

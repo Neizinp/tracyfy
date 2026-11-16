@@ -10,13 +10,12 @@ import type { Link } from '../../types';
 
 describe('linkMarkdownUtils', () => {
   describe('linkToMarkdown', () => {
-    it('should convert a global link to markdown with YAML frontmatter', () => {
+    it('should convert a link to markdown with YAML frontmatter', () => {
       const link: Link = {
         id: 'LINK-001',
         sourceId: 'REQ-001',
         targetId: 'UC-001',
         type: 'satisfies',
-        projectIds: [],
         dateCreated: 1700000000000,
         lastModified: 1700000100000,
         revision: '01',
@@ -29,28 +28,11 @@ describe('linkMarkdownUtils', () => {
       expect(markdown).toContain('sourceId: "REQ-001"');
       expect(markdown).toContain('targetId: "UC-001"');
       expect(markdown).toContain('type: "satisfies"');
-      expect(markdown).toContain('projectIds: []');
+      // Links have no project scope: one folder is one project
+      expect(markdown).not.toContain('projectIds');
+      expect(markdown).not.toContain('Scope');
       expect(markdown).toContain('dateCreated: 1700000000000');
       expect(markdown).toContain('lastModified: 1700000100000');
-    });
-
-    it('should include project IDs for project-scoped links', () => {
-      const link: Link = {
-        id: 'LINK-002',
-        sourceId: 'REQ-001',
-        targetId: 'TC-001',
-        type: 'verifies',
-        projectIds: ['PRJ-001', 'PRJ-002'],
-        dateCreated: 1700000000000,
-        lastModified: 1700000000000,
-        revision: '01',
-      };
-
-      const markdown = linkToMarkdown(link);
-
-      expect(markdown).toContain('projectIds:');
-      expect(markdown).toContain('  - "PRJ-001"');
-      expect(markdown).toContain('  - "PRJ-002"');
     });
 
     it('should include human-readable content in body', () => {
@@ -59,7 +41,6 @@ describe('linkMarkdownUtils', () => {
         sourceId: 'REQ-001',
         targetId: 'UC-001',
         type: 'satisfies',
-        projectIds: [],
         dateCreated: 1700000000000,
         lastModified: 1700000000000,
         revision: '01',
@@ -72,40 +53,6 @@ describe('linkMarkdownUtils', () => {
       expect(markdown).toContain('**UC-001**');
       expect(markdown).toContain('satisfies');
     });
-
-    it('should indicate global scope in body for global links', () => {
-      const link: Link = {
-        id: 'LINK-001',
-        sourceId: 'REQ-001',
-        targetId: 'UC-001',
-        type: 'satisfies',
-        projectIds: [],
-        dateCreated: 1700000000000,
-        lastModified: 1700000000000,
-        revision: '01',
-      };
-
-      const markdown = linkToMarkdown(link);
-
-      expect(markdown).toContain('Global (all projects)');
-    });
-
-    it('should list project scope in body for project-scoped links', () => {
-      const link: Link = {
-        id: 'LINK-001',
-        sourceId: 'REQ-001',
-        targetId: 'UC-001',
-        type: 'satisfies',
-        projectIds: ['PRJ-001'],
-        dateCreated: 1700000000000,
-        lastModified: 1700000000000,
-        revision: '01',
-      };
-
-      const markdown = linkToMarkdown(link);
-
-      expect(markdown).toContain('**Scope:** PRJ-001');
-    });
   });
 
   describe('parseMarkdownLink', () => {
@@ -115,7 +62,6 @@ id: "LINK-001"
 sourceId: "REQ-001"
 targetId: "UC-001"
 type: "satisfies"
-projectIds: []
 dateCreated: 1700000000000
 lastModified: 1700000100000
 ---
@@ -132,29 +78,8 @@ Links **REQ-001** to **UC-001** (satisfies)
       expect(link!.sourceId).toBe('REQ-001');
       expect(link!.targetId).toBe('UC-001');
       expect(link!.type).toBe('satisfies');
-      expect(link!.projectIds).toEqual([]);
       expect(link!.dateCreated).toBe(1700000000000);
       expect(link!.lastModified).toBe(1700000100000);
-    });
-
-    it('should parse project-scoped links correctly', () => {
-      const content = `---
-id: "LINK-002"
-sourceId: "REQ-002"
-targetId: "TC-001"
-type: "verifies"
-projectIds: PRJ-001, PRJ-002
-dateCreated: 1700000000000
-lastModified: 1700000000000
----
-
-# LINK-002
-`;
-
-      const link = parseMarkdownLink(content);
-
-      expect(link).not.toBeNull();
-      expect(link!.projectIds).toEqual(['PRJ-001', 'PRJ-002']);
     });
 
     it('should return null for content without frontmatter', () => {
@@ -185,7 +110,6 @@ id: "LINK-001"
 sourceId: "REQ-001"
 targetId: "UC-001"
 type: "satisfies"
-projectIds: []
 ---
 
 # LINK-001
@@ -218,7 +142,6 @@ id: "LINK-001"
 sourceId: "REQ-001"
 targetId: "UC-001"
 type: "${type}"
-projectIds: []
 dateCreated: 1700000000000
 lastModified: 1700000000000
 ---
@@ -228,23 +151,6 @@ lastModified: 1700000000000
         expect(link).not.toBeNull();
         expect(link!.type).toBe(type);
       });
-    });
-
-    it('should trim whitespace from project IDs', () => {
-      const content = `---
-id: "LINK-001"
-sourceId: "REQ-001"
-targetId: "UC-001"
-type: "satisfies"
-projectIds:   PRJ-001  ,  PRJ-002  
-dateCreated: 1700000000000
-lastModified: 1700000000000
----
-`;
-
-      const link = parseMarkdownLink(content);
-
-      expect(link!.projectIds).toEqual(['PRJ-001', 'PRJ-002']);
     });
   });
 
@@ -286,7 +192,6 @@ lastModified: 1700000000000
         sourceId: 'REQ-123',
         targetId: 'TC-456',
         type: 'verifies',
-        projectIds: ['PRJ-001', 'PRJ-002'],
         dateCreated: 1700000000000,
         lastModified: 1700000100000,
         revision: '01',
@@ -300,27 +205,8 @@ lastModified: 1700000000000
       expect(parsed!.sourceId).toBe(original.sourceId);
       expect(parsed!.targetId).toBe(original.targetId);
       expect(parsed!.type).toBe(original.type);
-      expect(parsed!.projectIds).toEqual(original.projectIds);
       expect(parsed!.dateCreated).toBe(original.dateCreated);
       expect(parsed!.lastModified).toBe(original.lastModified);
-    });
-
-    it('should preserve global links through round-trip', () => {
-      const original: Link = {
-        id: 'LINK-001',
-        sourceId: 'REQ-001',
-        targetId: 'UC-001',
-        type: 'satisfies',
-        projectIds: [],
-        dateCreated: 1700000000000,
-        lastModified: 1700000000000,
-        revision: '01',
-      };
-
-      const markdown = linkToMarkdown(original);
-      const parsed = parseMarkdownLink(markdown);
-
-      expect(parsed!.projectIds).toEqual([]);
     });
   });
 });

@@ -47,7 +47,6 @@ export interface SyncStatus {
 
 export interface ProjectBaseline {
   id: string;
-  projectId: string;
   version: string; // e.g., "01", "02", "03"
   name: string;
   description: string;

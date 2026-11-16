@@ -36,8 +36,8 @@ interface ImportExportContextValue {
 const ImportExportContext = createContext<ImportExportContextValue | undefined>(undefined);
 
 export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { currentProjectId, projects, addToProject } = useProject();
-  const { requirements, useCases, testCases, information } = useGlobalState();
+  const { project } = useProject();
+  const { requirements, useCases, testCases, information, risks } = useGlobalState();
   const { startTask, endTask } = useBackgroundTaskActions();
   const { showToast } = useToast();
   const fileSystem = useFileSystem();
@@ -83,30 +83,8 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
         for (const t of bundle.testCases) await fileSystem.saveTestCase(t);
         for (const i of bundle.information) await fileSystem.saveInformation(i);
         for (const r of bundle.risks) await fileSystem.saveRisk(r);
-        // Documents and project-scoped links belong to the project they're imported into
-        for (const d of bundle.documents) {
-          await fileSystem.saveDocument(
-            currentProjectId ? { ...d, projectId: currentProjectId } : d
-          );
-        }
-        for (const l of bundle.links) {
-          await fileSystem.saveLink(
-            currentProjectId && l.projectIds.length > 0
-              ? { ...l, projectIds: [currentProjectId] }
-              : l
-          );
-        }
-
-        // Make imported artifacts visible in the current project
-        if (currentProjectId) {
-          await addToProject({
-            requirements: bundle.requirements.map((a) => a.id),
-            useCases: bundle.useCases.map((a) => a.id),
-            testCases: bundle.testCases.map((a) => a.id),
-            information: bundle.information.map((a) => a.id),
-            risks: bundle.risks.map((a) => a.id),
-          });
-        }
+        for (const d of bundle.documents) await fileSystem.saveDocument(d);
+        for (const l of bundle.links) await fileSystem.saveLink(l);
 
         // Bump ID counters past imported IDs so new artifacts don't collide with them
         for (const kind of IMPORT_KINDS) {
@@ -141,16 +119,16 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
         endTask(taskId);
       }
     },
-    [fileSystem, currentProjectId, addToProject, showToast, startTask, endTask]
+    [fileSystem, showToast, startTask, endTask]
   );
 
   const importExportHook = useImportExportHook({
-    currentProjectId,
-    projects,
+    project,
     requirements,
     useCases,
     testCases,
     information,
+    risks,
     documents,
     applyImport,
     notify: showToast,

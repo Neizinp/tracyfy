@@ -12,8 +12,7 @@ import type { ModalType, SelectedArtifact } from '../types';
 export function useArtifactDeepLink() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { openModal, activeModal, selectedArtifact } = useUI();
-  const { globalRequirements, globalUseCases, globalTestCases, globalInformation, globalRisks } =
-    useGlobalState();
+  const { requirements, useCases, testCases, information, risks } = useGlobalState();
 
   // Track the last processed ID to avoid re-opening if it was manually closed
   const lastProcessedIdRef = useRef<string | null>(null);
@@ -63,19 +62,19 @@ export function useArtifactDeepLink() {
     let artifactData: unknown = null;
     switch (modalType) {
       case 'requirement':
-        artifactData = globalRequirements.find((r) => r.id === id);
+        artifactData = requirements.find((r) => r.id === id);
         break;
       case 'usecase':
-        artifactData = globalUseCases.find((u) => u.id === id);
+        artifactData = useCases.find((u) => u.id === id);
         break;
       case 'testcase':
-        artifactData = globalTestCases.find((t) => t.id === id);
+        artifactData = testCases.find((t) => t.id === id);
         break;
       case 'information':
-        artifactData = globalInformation.find((i) => i.id === id);
+        artifactData = information.find((i) => i.id === id);
         break;
       case 'risk':
-        artifactData = globalRisks.find((r) => r.id === id);
+        artifactData = risks.find((r) => r.id === id);
         break;
       default:
         return;
@@ -93,11 +92,11 @@ export function useArtifactDeepLink() {
     searchParams,
     openModal,
     activeModal.type,
-    globalRequirements,
-    globalUseCases,
-    globalTestCases,
-    globalInformation,
-    globalRisks,
+    requirements,
+    useCases,
+    testCases,
+    information,
+    risks,
   ]);
 
   // Sync modal state back to URL parameters

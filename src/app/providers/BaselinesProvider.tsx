@@ -9,7 +9,6 @@ import React, {
 } from 'react';
 import type { ReactNode } from 'react';
 import { diskBaselineService } from '../../services/diskBaselineService';
-import { useProject } from './ProjectProvider';
 import { useFileSystem } from './FileSystemProvider';
 import { useToast } from './ToastProvider';
 import { useRisks } from './ArtifactProviders';
@@ -32,7 +31,6 @@ const BaselinesContext = createContext<BaselinesContextValue | undefined>(undefi
 export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [baselines, setBaselines] = useState<ProjectBaseline[]>([]);
   const [loading, setLoading] = useState(false);
-  const { currentProject } = useProject();
   const { isReady, requirements, useCases, testCases, information, getArtifactHistory } =
     useFileSystem();
   const { risks, getRiskHistory } = useRisks();
@@ -44,14 +42,14 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     setLoading(true);
     try {
-      const loadedBaselines = await diskBaselineService.loadBaselines(currentProject?.id);
+      const loadedBaselines = await diskBaselineService.loadBaselines();
       setBaselines(loadedBaselines);
     } catch (err) {
       console.error('Failed to load baselines:', err);
     } finally {
       setLoading(false);
     }
-  }, [isReady, currentProject?.id]);
+  }, [isReady]);
 
   useEffect(() => {
     if (isReady && !hasLoadedInitial.current) {
@@ -62,10 +60,8 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const createBaseline = useCallback(
     async (name: string, description: string, version: string) => {
-      if (!currentProject) return null;
-
       try {
-        // 1. Get latest commit hash for all artifacts in project
+        // 1. Get latest commit hash for every artifact
         const artifactCommits: {
           [artifactId: string]: {
             commitHash: string;
@@ -116,7 +112,6 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
 
         const newBaseline: ProjectBaseline = {
           id: `bl-${Date.now()}`,
-          projectId: currentProject.id,
           name,
           description,
           version,
@@ -135,7 +130,6 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
       }
     },
     [
-      currentProject,
       requirements,
       useCases,
       testCases,

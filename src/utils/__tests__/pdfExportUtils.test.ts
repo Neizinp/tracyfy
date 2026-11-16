@@ -161,7 +161,7 @@ vi.mock('../../services/realGitService', () => ({
 // Mock diskLinkService
 vi.mock('../../services/diskLinkService', () => ({
   diskLinkService: {
-    getLinksForProject: vi.fn().mockResolvedValue([]),
+    getAllLinks: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -171,15 +171,8 @@ describe('pdfExportUtils', () => {
   });
 
   const mockProject: Project = {
-    id: 'p1',
     name: 'Test Project',
     description: 'Test Description',
-    requirementIds: ['r1'],
-    useCaseIds: ['u1'],
-    testCaseIds: ['t1'],
-    informationIds: ['i1'],
-    riskIds: [],
-    lastModified: 0,
   };
 
   const globalState = {
@@ -200,10 +193,10 @@ describe('pdfExportUtils', () => {
     await exportProjectToPDF(
       mockProject,
       globalState,
-      mockProject.requirementIds,
-      mockProject.useCaseIds,
-      mockProject.testCaseIds,
-      mockProject.informationIds,
+      [mockReq.id],
+      [mockUseCase.id],
+      [mockTestCase.id],
+      [mockInfo.id],
       [],
       null
     );
@@ -229,10 +222,10 @@ describe('pdfExportUtils', () => {
     await exportProjectToPDF(
       mockProject,
       globalState,
-      mockProject.requirementIds,
-      mockProject.useCaseIds,
-      mockProject.testCaseIds,
-      mockProject.informationIds,
+      [mockReq.id],
+      [mockUseCase.id],
+      [mockTestCase.id],
+      [mockInfo.id],
       [],
       mockBaseline
     );
@@ -982,13 +975,12 @@ describe('pdfExportUtils', () => {
         });
 
       // Mock diskLinkService to return links
-      vi.mocked(diskLinkService.getLinksForProject).mockResolvedValue([
+      vi.mocked(diskLinkService.getAllLinks).mockResolvedValue([
         {
           id: 'LINK-001',
           sourceId: 'REQ-001',
           targetId: 'UC-001',
           type: 'derived_from',
-          projectIds: ['p1'],
           dateCreated: Date.now(),
           lastModified: Date.now(),
           revision: '01',
@@ -1026,7 +1018,7 @@ describe('pdfExportUtils', () => {
         });
 
       // Mock diskLinkService to return empty array
-      vi.mocked(diskLinkService.getLinksForProject).mockResolvedValue([]);
+      vi.mocked(diskLinkService.getAllLinks).mockResolvedValue([]);
 
       await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], null);
 
@@ -1058,7 +1050,6 @@ describe('pdfExportUtils', () => {
 
     const projectWithRisks: Project = {
       ...mockProject,
-      riskIds: ['RISK-001'],
     };
 
     const globalStateWithRisks = {

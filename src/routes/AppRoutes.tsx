@@ -19,9 +19,6 @@ const InformationPage = lazy(() =>
   import('../pages/InformationPage').then((m) => ({ default: m.InformationPage }))
 );
 const RisksPage = lazy(() => import('../pages/RisksPage').then((m) => ({ default: m.RisksPage })));
-const GlobalLibraryPage = lazy(() =>
-  import('../pages/GlobalLibraryPage').then((m) => ({ default: m.GlobalLibraryPage }))
-);
 const CustomAttributesPage = lazy(() =>
   import('../pages/CustomAttributesPage').then((m) => ({ default: m.CustomAttributesPage }))
 );
@@ -58,8 +55,6 @@ export function AppRoutes() {
         <Route path="test-cases" element={<TestCasesPage />} />
         <Route path="information" element={<InformationPage />} />
         <Route path="risks" element={<RisksPage />} />
-
-        <Route path="library/:type" element={<GlobalLibraryPage />} />
 
         <Route path="custom-attributes" element={<CustomAttributesPage />} />
         <Route path="help">

@@ -47,7 +47,6 @@ describe('BaselineRevisionHistory', () => {
     id: 'baseline-1',
     name: 'Version 1.0',
     description: 'Initial release',
-    projectId: 'PROJ-001',
     timestamp: Date.now(),
     version: '01',
     artifactCommits: {
@@ -62,7 +61,6 @@ describe('BaselineRevisionHistory', () => {
     id: 'baseline-0',
     name: 'Initial Baseline',
     description: 'First baseline',
-    projectId: 'PROJ-001',
     timestamp: Date.now() - 86400000,
     version: '00',
     artifactCommits: {

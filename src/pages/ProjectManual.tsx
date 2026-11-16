@@ -174,10 +174,6 @@ export const ProjectManual: React.FC = () => {
           description="Click 'Create New' in the header to add requirements. You can define details like priority, status, and rich descriptions."
         />
         <FeatureCard
-          title="The Global Library"
-          description="Import existing artifacts from other projects using the Global Library. This allows for content reuse across your entire workspace."
-        />
-        <FeatureCard
           title="Custom Attributes"
           description="Define your own fields for any artifact type to match your specific engineering process."
         />

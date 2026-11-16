@@ -107,9 +107,7 @@ export async function exportProjectToPDF(
     projectTestCaseIds.length > 0 ||
     projectInformationIds.length > 0;
   const estimatedLinksCount = hasArtifacts ? 30 : 0;
-  const estimatedRisksCount = (globalState.risks || []).filter(
-    (r: Risk) => project.riskIds?.includes(r.id) && !r.isDeleted
-  ).length;
+  const estimatedRisksCount = (globalState.risks || []).filter((r: Risk) => !r.isDeleted).length;
 
   const estimatedTocEntries =
     (projectRequirementIds.length > 0 ? 1 + projectRequirementIds.length : 0) +
@@ -334,9 +332,7 @@ export async function exportProjectToPDF(
   }
 
   // 9. Risks Section
-  const projectRisks = sortByIdNumber(
-    (globalState.risks || []).filter((r: Risk) => project.riskIds?.includes(r.id) && !r.isDeleted)
-  );
+  const projectRisks = sortByIdNumber((globalState.risks || []).filter((r: Risk) => !r.isDeleted));
   if (projectRisks.length > 0) {
     doc.addPage();
     sectionNumber++;
@@ -364,7 +360,7 @@ export async function exportProjectToPDF(
   }
 
   // 11. Links Section
-  const projectLinks = await diskLinkService.getLinksForProject(project.id);
+  const projectLinks = await diskLinkService.getAllLinks();
   if (projectLinks.length > 0) {
     doc.addPage();
     sectionNumber++;

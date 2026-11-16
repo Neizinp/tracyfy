@@ -75,7 +75,6 @@ describe('integration: traceability dashboard', () => {
     const doc = (await act(() =>
       h.app().documents.handleAddDocument({
         title: 'Login spec',
-        projectId: h.app().project.currentProjectId,
         structure: [],
         dateCreated: Date.now(),
       } as never)

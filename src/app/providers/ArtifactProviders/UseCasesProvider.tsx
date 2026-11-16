@@ -25,7 +25,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Us
   useFS: (fs) => ({
     save: fs.saveUseCase,
     delete: fs.deleteUseCase,
-    fsItems: fs.useCases,
     isReady: fs.isReady,
   }),
   useUIHelpers: (ui) => ({

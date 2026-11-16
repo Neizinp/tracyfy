@@ -41,7 +41,6 @@ async function populate(h: Harness) {
     app().documents.handleAddDocument({
       ...base,
       title: 'Spec',
-      projectId: app().project.currentProjectId,
       structure: [],
     } as never)
   );
@@ -135,8 +134,8 @@ describe('integration: export', () => {
     const exported = await exportVia(/json data/i);
     h.cleanup();
 
-    // A fresh folder, new user/project
-    h = await startApp({ userName: 'Other User', projectName: 'Imported' });
+    // A fresh folder and a new user
+    h = await startApp({ userName: 'Other User' });
     // The OS file picker: capture the hidden <input type=file> the app clicks
     const pickers: HTMLInputElement[] = [];
     vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(function (
@@ -158,12 +157,12 @@ describe('integration: export', () => {
     await h.settle();
 
     const g = h.app().globalState;
-    await waitFor(() => expect(g.globalRequirements.map((r) => r.id)).toContain(a.req.id));
-    expect(h.app().globalState.globalUseCases.map((r) => r.id)).toContain(a.uc.id);
-    expect(h.app().globalState.globalTestCases.map((r) => r.id)).toContain(a.tc.id);
-    expect(h.app().globalState.globalInformation.map((r) => r.id)).toContain(a.info.id);
-    expect(h.app().globalState.globalRisks.map((r) => r.id)).toContain(a.risk.id);
-    expect(h.app().globalState.globalDocuments.map((r) => r.id)).toContain(a.doc.id);
+    await waitFor(() => expect(g.requirements.map((r) => r.id)).toContain(a.req.id));
+    expect(h.app().globalState.useCases.map((r) => r.id)).toContain(a.uc.id);
+    expect(h.app().globalState.testCases.map((r) => r.id)).toContain(a.tc.id);
+    expect(h.app().globalState.information.map((r) => r.id)).toContain(a.info.id);
+    expect(h.app().globalState.risks.map((r) => r.id)).toContain(a.risk.id);
+    expect(h.app().globalState.documents.map((r) => r.id)).toContain(a.doc.id);
     expect(h.app().fileSystem.links).toEqual([
       expect.objectContaining({ sourceId: a.req.id, targetId: a.uc.id, type: 'satisfies' }),
     ]);

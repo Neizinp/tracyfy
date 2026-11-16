@@ -25,21 +25,13 @@ export type ArtifactType =
 
 export interface CRUDOptions<T> {
   type: ArtifactType;
-  /** Items shown in the current view (may be filtered to the current project) */
+  /** Every item of this type */
   items: T[];
-  /**
-   * Every item of this type (source of truth). Used to find the artifact being
-   * updated/deleted, so artifacts outside the current project (e.g. opened from
-   * the Global Library) can be edited. Defaults to `items`.
-   */
-  allItems?: T[];
   saveFn: (item: T) => Promise<void>;
   deleteFn: (id: string) => Promise<void>;
   onBeforeUpdate?: (item: T) => void;
   onAfterUpdate?: (item: T) => void;
   onBeforeAdd?: (data: Omit<T, 'id' | 'lastModified' | 'revision'>) => void;
-  /** Called after a new item was saved (e.g. to add it to the current project) */
-  onAfterAdd?: (item: T) => Promise<void> | void;
 }
 
 /**
@@ -71,15 +63,12 @@ export function hasArtifactChanges<T extends object>(existing: T, updates: Parti
 export function useArtifactCRUD<T extends BaseArtifact>({
   type,
   items,
-  allItems,
   saveFn,
   deleteFn,
   onBeforeUpdate,
   onAfterUpdate,
   onBeforeAdd,
-  onAfterAdd,
 }: CRUDOptions<T>) {
-  const lookupItems = allItems ?? items;
   const { getNextId } = useFileSystem();
   const { currentUser } = useUser();
   const { showToast } = useToast();
@@ -111,7 +100,6 @@ export function useArtifactCRUD<T extends BaseArtifact>({
         // State is updated by saveFn after the write succeeds, so the UI never
         // shows data that isn't on disk
         await saveFn(newItem);
-        if (onAfterAdd) await onAfterAdd(newItem);
         showToast(
           `${type.charAt(0).toUpperCase() + type.slice(1, -1)} ${newId} created`,
           'success'
@@ -123,12 +111,12 @@ export function useArtifactCRUD<T extends BaseArtifact>({
         return null;
       }
     },
-    [currentUser, getNextId, saveFn, showToast, type, onBeforeAdd, onAfterAdd]
+    [currentUser, getNextId, saveFn, showToast, type, onBeforeAdd]
   );
 
   const handleUpdate = useCallback(
     async (id: string, updatedData: Partial<T>) => {
-      const existing = lookupItems.find((item) => item.id === id);
+      const existing = items.find((item) => item.id === id);
       if (!existing) return;
 
       // Saving without changes must not bump the revision or rewrite the file,
@@ -157,12 +145,12 @@ export function useArtifactCRUD<T extends BaseArtifact>({
         endTask(taskId);
       }
     },
-    [lookupItems, saveFn, type, showToast, onBeforeUpdate, onAfterUpdate, startTask, endTask]
+    [items, saveFn, type, showToast, onBeforeUpdate, onAfterUpdate, startTask, endTask]
   );
 
   const handleDelete = useCallback(
     (id: string) => {
-      const existing = lookupItems.find((item) => item.id === id);
+      const existing = items.find((item) => item.id === id);
       if (!existing) return;
 
       const deletedItem: T = {
@@ -173,12 +161,12 @@ export function useArtifactCRUD<T extends BaseArtifact>({
 
       saveFn(deletedItem).catch((err) => notifyError(`Could not delete ${id}`, err));
     },
-    [lookupItems, saveFn]
+    [items, saveFn]
   );
 
   const handleRestore = useCallback(
     (id: string) => {
-      const existing = lookupItems.find((item) => item.id === id);
+      const existing = items.find((item) => item.id === id);
       if (!existing) return;
 
       const restoredItem: T = {
@@ -190,7 +178,7 @@ export function useArtifactCRUD<T extends BaseArtifact>({
 
       saveFn(restoredItem).catch((err) => notifyError(`Could not restore ${id}`, err));
     },
-    [lookupItems, saveFn]
+    [items, saveFn]
   );
 
   const handlePermanentDelete = useCallback(

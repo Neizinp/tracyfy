@@ -122,11 +122,7 @@ export async function exportProjectToExcel(
   // The File System Access API requires a recent user gesture to show the file picker.
   // If we do async work first, the user activation expires and the picker won't show.
   let fileHandle: FileSystemFileHandle | null = null;
-  let defaultFilename = `${project.name.replace(/[^a-z0-9]/gi, '_')}`;
-  if (project.currentBaseline) {
-    defaultFilename += `_${project.currentBaseline.replace(/[^a-z0-9]/gi, '_')}`;
-  }
-  defaultFilename += '-export.xlsx';
+  const defaultFilename = `${project.name.replace(/[^a-z0-9]/gi, '_')}-export.xlsx`;
 
   try {
     if ('showSaveFilePicker' in window) {
@@ -177,14 +173,12 @@ export async function exportProjectToExcel(
   const projectInformation = sortByIdNumber(
     globalState.information.filter((i) => projectInformationIds.includes(i.id) && !i.isDeleted)
   );
-  const projectRisks = sortByIdNumber(
-    (globalState.risks || []).filter((r) => project.riskIds?.includes(r.id) && !r.isDeleted)
-  );
+  const projectRisks = sortByIdNumber((globalState.risks || []).filter((r) => !r.isDeleted));
 
   // Pre-fetch links and build artifact ID list if needed for Matrices or Links sheet
   const projectLinks =
     includeLinks || includeTraceability || includeVerificationMatrix
-      ? await diskLinkService.getLinksForProject(project.id)
+      ? await diskLinkService.getAllLinks()
       : [];
 
   const allArtifactIds = includeTraceability
@@ -449,7 +443,6 @@ export async function exportProjectToExcel(
       Source: link.sourceId,
       Type: LINK_TYPE_LABELS[link.type] || link.type,
       Target: link.targetId,
-      Scope: link.projectIds.length === 0 ? 'Global' : 'Project',
       Created: formatDate(link.dateCreated),
       'Last Modified': formatDate(link.lastModified),
     }));

@@ -76,64 +76,15 @@ class DiskLinkService extends BaseArtifactService<Link> {
   }
 
   /**
-   * Get links visible to a specific project
-   * Returns links that are global (empty projectIds) OR include the given project ID
-   */
-  async getLinksForProject(projectId: string): Promise<Link[]> {
-    const allLinks = await this.getAllLinks();
-    return allLinks.filter(
-      (link) =>
-        !link.projectIds || link.projectIds.length === 0 || link.projectIds.includes(projectId)
-    );
-  }
-
-  /**
-   * Get global links only (visible to all projects)
-   */
-  async getGlobalLinks(): Promise<Link[]> {
-    const allLinks = await this.getAllLinks();
-    return allLinks.filter((link) => !link.projectIds || link.projectIds.length === 0);
-  }
-
-  /**
-   * Get outgoing links FROM an artifact, filtered by project visibility
-   */
-  async getOutgoingLinksForProject(artifactId: string, projectId: string): Promise<Link[]> {
-    const allLinks = await this.getLinksForProject(projectId);
-    return allLinks.filter((link) => link.sourceId === artifactId);
-  }
-
-  /**
-   * Get incoming links TO an artifact, filtered by project visibility
-   */
-  async getIncomingLinksForProject(artifactId: string, projectId: string): Promise<IncomingLink[]> {
-    const allLinks = await this.getLinksForProject(projectId);
-    return allLinks
-      .filter((link) => link.targetId === artifactId)
-      .map((link) => ({
-        linkId: link.id,
-        sourceId: link.sourceId,
-        sourceType: getTypeFromId(link.sourceId),
-        linkType: getInverseType(link.type),
-      }));
-  }
-
-  /**
    * Create a new link
    */
-  async createLink(
-    sourceId: string,
-    targetId: string,
-    type: LinkType,
-    projectIds: string[] = []
-  ): Promise<Link> {
+  async createLink(sourceId: string, targetId: string, type: LinkType): Promise<Link> {
     const nextId = await idService.getNextIdWithSync('links');
     const link: Link = {
       id: nextId,
       sourceId,
       targetId,
       type,
-      projectIds,
       dateCreated: Date.now(),
       lastModified: Date.now(),
       revision: '01',

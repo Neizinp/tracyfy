@@ -13,9 +13,9 @@ export class DiskBaselineService extends BaseDiskService {
   }
 
   /**
-   * Load all baselines for a project or all projects
+   * Load all baselines
    */
-  async loadBaselines(projectId?: string): Promise<ProjectBaseline[]> {
+  async loadBaselines(): Promise<ProjectBaseline[]> {
     try {
       const files = await this.listFiles(BASELINES_DIR);
       const baselines: ProjectBaseline[] = [];
@@ -24,11 +24,7 @@ export class DiskBaselineService extends BaseDiskService {
         if (!file.endsWith('.json') && !file.endsWith('.md')) continue;
 
         const baseline = await this.readJsonFile<ProjectBaseline>(`${BASELINES_DIR}/${file}`);
-        if (baseline) {
-          if (!projectId || baseline.projectId === projectId) {
-            baselines.push(baseline);
-          }
-        }
+        if (baseline) baselines.push(baseline);
       }
 
       return baselines.sort((a, b) => b.timestamp - a.timestamp);

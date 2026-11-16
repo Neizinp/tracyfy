@@ -7,7 +7,6 @@ import type {
   Information,
   Risk,
   ArtifactDocument,
-  Project,
   ColumnVisibility,
   UseCaseColumnVisibility,
   TestCaseColumnVisibility,
@@ -46,8 +45,6 @@ export interface UIContextValue {
   setIsVersionHistoryOpen: (isOpen: boolean) => void;
   isProjectSettingsOpen: boolean;
   setIsProjectSettingsOpen: (isOpen: boolean) => void;
-  isCreateProjectModalOpen: boolean;
-  setIsCreateProjectModalOpen: (isOpen: boolean) => void;
   isNewTestCaseModalOpen: boolean;
   setIsNewTestCaseModalOpen: (isOpen: boolean) => void;
   isEditTestCaseModalOpen: boolean;
@@ -56,10 +53,6 @@ export interface UIContextValue {
   setIsInformationModalOpen: (isOpen: boolean) => void;
   isRiskModalOpen: boolean;
   setIsRiskModalOpen: (isOpen: boolean) => void;
-  isLibraryPanelOpen: boolean;
-  setIsLibraryPanelOpen: (isOpen: boolean) => void;
-  isGlobalLibraryModalOpen: boolean;
-  setIsGlobalLibraryModalOpen: (isOpen: boolean) => void;
   isUserSettingsModalOpen: boolean;
   setIsUserSettingsModalOpen: (isOpen: boolean) => void;
   isExportModalOpen: boolean;
@@ -88,23 +81,11 @@ export interface UIContextValue {
   setEditingRisk: (risk: Risk | null) => void;
   editingUseCase: UseCase | null;
   setEditingUseCase: (uc: UseCase | null) => void;
-  projectToEdit: Project | null;
-  setProjectToEdit: (project: Project | null) => void;
   isDocumentsModalOpen: boolean;
   isEditDocumentModalOpen: boolean;
   setIsEditDocumentModalOpen: (isOpen: boolean) => void;
   editingDocument: ArtifactDocument | null;
   setEditingDocument: (doc: ArtifactDocument | null) => void;
-
-  // Library state
-  activeLibraryTab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks';
-  setActiveLibraryTab: (
-    tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
-  ) => void;
-  globalLibrarySelection: Set<string>;
-  setGlobalLibrarySelection: (
-    selection: Set<string> | ((prev: Set<string>) => Set<string>)
-  ) => void;
 
   // Column visibility - Requirements
   columnVisibility: ColumnVisibility;
@@ -134,10 +115,6 @@ export interface UIContextValue {
   setLinkSourceType: (type: LinkableType | null) => void;
 
   // Helper functions
-  handleGlobalLibrarySelect: (id: string) => void;
-  handleOpenLibrary: (
-    tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
-  ) => void;
 }
 
 const UIContext = createContext<UIContextValue | undefined>(undefined);

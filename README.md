@@ -6,11 +6,9 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 
 ### Project Management
 
-- **Multi-Project Support** - Manage multiple independent projects in a single workspace
-- **Repository Selection** - Select local Git repositories as project storage
-- **Global Artifact Library** - Reuse artifacts (requirements, use cases, test cases, information) across projects
-- **Project Switching** - Seamlessly switch between projects with independent artifact sets
-- **Demo Project** - Pre-populated example project for quick exploration
+- **One Folder, One Project** - A project is a folder (a Git repository); everything in it belongs to the project. Copy the folder to start a new project from an existing one
+- **Repository Selection** - Select a local Git repository as project storage
+- **Demo Data** - Fill an empty project with example artifacts for quick exploration
 
 ### Core Functionality
 
@@ -62,7 +60,6 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 - **Test Cases View** - Test management and requirement traceability
 - **Information View** - Notes and documentation management
 - **Baselines View** - Baseline creation and history viewing
-- **Global Library** - Browse and add artifacts from any project
 
 ### Artifact Fields
 
@@ -373,7 +370,6 @@ npx playwright test  # Run E2E tests
 
 ### November 2024
 
-- ✅ **Multi-project support** with global artifact library
 - ✅ **Comprehensive PDF export** with granular table of contents
 - ✅ **Revision tracking** with automatic numbering (01, 02, 03...)
 - ✅ **Baseline management** as Git tags

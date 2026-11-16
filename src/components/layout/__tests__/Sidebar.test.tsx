@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { Sidebar } from '../Sidebar';
-import type { Project } from '../../../types';
 
 // Mock PendingChangesPanel since it has complex dependencies
 vi.mock('../../PendingChangesPanel', () => ({
@@ -33,36 +32,8 @@ const renderWithRouter = (component: React.ReactElement) => {
 };
 
 describe('Sidebar', () => {
-  const mockProjects: Project[] = [
-    {
-      id: 'proj-001',
-      name: 'Project One',
-      description: 'First project',
-      requirementIds: [],
-      useCaseIds: [],
-      testCaseIds: [],
-      informationIds: [],
-      riskIds: [],
-      lastModified: 1000000,
-    },
-    {
-      id: 'proj-002',
-      name: 'Project Two',
-      description: 'Second project',
-      requirementIds: [],
-      useCaseIds: [],
-      testCaseIds: [],
-      informationIds: [],
-      riskIds: [],
-      lastModified: 2000000,
-    },
-  ];
-
   const defaultProps = {
-    projects: mockProjects,
-    currentProjectId: 'proj-001',
-    onSwitchProject: vi.fn(),
-    onCreateProject: vi.fn(),
+    projectName: 'Door Controller',
     onOpenProjectSettings: vi.fn(),
   };
 
@@ -77,17 +48,12 @@ describe('Sidebar', () => {
       expect(screen.getByText('Tracyfy')).toBeInTheDocument();
     });
 
-    it('should render Projects section header', () => {
-      renderWithRouter(<Sidebar {...defaultProps} />);
+    it('shows the project name and opens its settings', () => {
+      const onOpenProjectSettings = vi.fn();
+      renderWithRouter(<Sidebar {...defaultProps} onOpenProjectSettings={onOpenProjectSettings} />);
 
-      expect(screen.getByText('Projects')).toBeInTheDocument();
-    });
-
-    it('should render all projects', () => {
-      renderWithRouter(<Sidebar {...defaultProps} />);
-
-      expect(screen.getByText('Project One')).toBeInTheDocument();
-      expect(screen.getByText('Project Two')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Project settings: Door Controller' }));
+      expect(onOpenProjectSettings).toHaveBeenCalled();
     });
 
     it('should render Pending Changes section', () => {
@@ -102,7 +68,6 @@ describe('Sidebar', () => {
 
       expect(screen.getByText('Views')).toBeInTheDocument();
       expect(screen.getByText('Traceability Dashboard')).toBeInTheDocument();
-      // Requirements appears in both Views and Repository, so use getAllByText
       expect(screen.getAllByText('Requirements').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Use Cases').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Test Cases').length).toBeGreaterThanOrEqual(1);
@@ -110,101 +75,36 @@ describe('Sidebar', () => {
       expect(screen.getAllByText('Risks').length).toBeGreaterThanOrEqual(1);
     });
 
-    it('should render all artifact types in both Views and Repository sections', () => {
+    it('links each artifact type to its page exactly once', () => {
       renderWithRouter(<Sidebar {...defaultProps} />);
 
-      // Define all artifact types that should be present
-      const artifactTypes = ['Requirements', 'Use Cases', 'Test Cases', 'Information', 'Risks'];
-
-      // Each artifact type should appear at least twice (once in Views, once in Repository)
-      artifactTypes.forEach((artifactType) => {
-        const elements = screen.getAllByText(artifactType);
-        expect(elements.length).toBeGreaterThanOrEqual(2);
+      const pages: [string, string][] = [
+        ['Requirements', '/requirements'],
+        ['Use Cases', '/use-cases'],
+        ['Test Cases', '/test-cases'],
+        ['Information', '/information'],
+        ['Risks', '/risks'],
+      ];
+      pages.forEach(([name, href]) => {
+        const links = screen.getAllByRole('link', { name });
+        expect(links).toHaveLength(1);
+        expect(links[0]).toHaveAttribute('href', href);
       });
     });
+  });
 
-    it('should render Repository section', () => {
+  describe('demo data', () => {
+    it('offers demo data only when the parent passes a handler (empty project)', () => {
+      const onLoadDemoData = vi.fn();
+      const { unmount } = renderWithRouter(
+        <Sidebar {...defaultProps} onLoadDemoData={onLoadDemoData} />
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Load demo data' }));
+      expect(onLoadDemoData).toHaveBeenCalled();
+      unmount();
+
       renderWithRouter(<Sidebar {...defaultProps} />);
-
-      expect(screen.getByText('Repository')).toBeInTheDocument();
-    });
-  });
-
-  describe('project interactions', () => {
-    it('should call onCreateProject when + button is clicked', () => {
-      const onCreateProject = vi.fn();
-      renderWithRouter(<Sidebar {...defaultProps} onCreateProject={onCreateProject} />);
-
-      const addButton = screen.getByTitle('New Project');
-      fireEvent.click(addButton);
-
-      expect(onCreateProject).toHaveBeenCalled();
-    });
-  });
-
-  describe('repository tabs', () => {
-    it('should call onOpenLibraryTab with requirements when Requirements is clicked', () => {
-      const onOpenLibraryTab = vi.fn();
-      renderWithRouter(<Sidebar {...defaultProps} onOpenLibraryTab={onOpenLibraryTab} />);
-
-      // Find the Repository section and click Requirements
-      const repoButtons = screen.getAllByText('Requirements');
-      // Repository section has its own Requirements button
-      fireEvent.click(repoButtons[repoButtons.length - 1]);
-
-      expect(onOpenLibraryTab).toHaveBeenCalledWith('requirements');
-    });
-
-    it('should call onOpenLibraryTab with usecases when Use Cases is clicked', () => {
-      const onOpenLibraryTab = vi.fn();
-      renderWithRouter(<Sidebar {...defaultProps} onOpenLibraryTab={onOpenLibraryTab} />);
-
-      // Find all "Use Cases" buttons - views section has one and repository has one
-      const useCaseButtons = screen.getAllByText('Use Cases');
-      // Click the one in Repository section (last one)
-      fireEvent.click(useCaseButtons[useCaseButtons.length - 1]);
-
-      expect(onOpenLibraryTab).toHaveBeenCalledWith('usecases');
-    });
-
-    it('should call onOpenLibraryTab with testcases when Test Cases is clicked', () => {
-      const onOpenLibraryTab = vi.fn();
-      renderWithRouter(<Sidebar {...defaultProps} onOpenLibraryTab={onOpenLibraryTab} />);
-
-      const testCaseButtons = screen.getAllByText('Test Cases');
-      fireEvent.click(testCaseButtons[testCaseButtons.length - 1]);
-
-      expect(onOpenLibraryTab).toHaveBeenCalledWith('testcases');
-    });
-
-    it('should call onOpenLibraryTab with information when Information is clicked', () => {
-      const onOpenLibraryTab = vi.fn();
-      renderWithRouter(<Sidebar {...defaultProps} onOpenLibraryTab={onOpenLibraryTab} />);
-
-      const infoButtons = screen.getAllByText('Information');
-      fireEvent.click(infoButtons[infoButtons.length - 1]);
-
-      expect(onOpenLibraryTab).toHaveBeenCalledWith('information');
-    });
-
-    it('should call onOpenLibraryTab with risks when Risks is clicked', () => {
-      const onOpenLibraryTab = vi.fn();
-      renderWithRouter(<Sidebar {...defaultProps} onOpenLibraryTab={onOpenLibraryTab} />);
-
-      const riskButtons = screen.getAllByText('Risks');
-      fireEvent.click(riskButtons[riskButtons.length - 1]);
-
-      expect(onOpenLibraryTab).toHaveBeenCalledWith('risks');
-    });
-  });
-
-  describe('empty state', () => {
-    it('should render without projects', () => {
-      renderWithRouter(<Sidebar {...defaultProps} projects={[]} />);
-
-      expect(screen.getByText('Projects')).toBeInTheDocument();
-      // No project names should be present
-      expect(screen.queryByText('Project One')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Load demo data' })).not.toBeInTheDocument();
     });
   });
 });

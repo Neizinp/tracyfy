@@ -52,7 +52,6 @@ interface HeaderBarProps {
   onNewDocument?: () => void;
   onImport?: () => void;
   onImportExcel?: () => void;
-  onOpenGlobalLibrary?: () => void;
   onOpenExportModal?: () => void;
   onExport?: () => void;
   onExportPDF?: (selectedBaseline: ProjectBaseline | null) => void;
@@ -78,7 +77,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onNewCustomAttribute,
   onImport,
   onImportExcel,
-  onOpenGlobalLibrary,
   onOpenExportModal,
   onExport,
   onExportPDF,
@@ -375,17 +373,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   icon={FileSpreadsheet}
                   label="Import Excel"
                   showBorder={!!onImport}
-                />
-              )}
-              {onOpenGlobalLibrary && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    onOpenGlobalLibrary();
-                    setIsImportMenuOpen(false);
-                  }}
-                  icon={FolderOpen}
-                  label="Import from Project"
-                  showBorder={!!(onImport || onImportExcel)}
                 />
               )}
             </div>

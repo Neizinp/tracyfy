@@ -1,7 +1,7 @@
 /**
  * Demo Data Service
  *
- * Creates a fully-populated demo project with sample artifacts.
+ * Fills an empty project with sample artifacts.
  */
 
 import { diskProjectService } from './diskProjectService';
@@ -33,12 +33,12 @@ interface CreatedArtifactIds {
 }
 
 /**
- * Create a demo project with all sample artifacts and links.
- * Returns the created project.
+ * Fill the (empty) project folder with sample artifacts and links, and name
+ * the project after the demo. Returns the project.
  *
  * Performance optimized: Uses batch ID allocation and parallel saves.
  */
-export async function createDemoProject(): Promise<Project> {
+export async function loadDemoData(): Promise<Project> {
   const now = Date.now();
   const createdIds: CreatedArtifactIds = {
     requirements: [],
@@ -48,7 +48,6 @@ export async function createDemoProject(): Promise<Project> {
     risks: [],
   };
 
-  // Use the simple demo project name
   const projectName = DEMO_PROJECT.name;
 
   // 0. Ensure a demo user exists and is selected
@@ -90,8 +89,9 @@ export async function createDemoProject(): Promise<Project> {
   const { requirementValues, useCaseValues, testCaseValues } =
     createDemoAttributeValues(createdAttrIds);
 
-  // 1. Create the project
-  const project = await diskProjectService.createProject(projectName, DEMO_PROJECT.description);
+  // 1. Name the project
+  const project: Project = { name: projectName, description: DEMO_PROJECT.description };
+  await diskProjectService.saveProject(project);
 
   // 2. Batch allocate all IDs at once (single disk write per type)
   const [reqIds, ucIds, tcIds, infoIds, riskIds] = await Promise.all([
@@ -151,16 +151,7 @@ export async function createDemoProject(): Promise<Project> {
     ...risks.map((r) => riskService.save(r)),
   ]);
 
-  // 5. Update project with artifact IDs
-  project.requirementIds = createdIds.requirements;
-  project.useCaseIds = createdIds.useCases;
-  project.testCaseIds = createdIds.testCases;
-  project.informationIds = createdIds.information;
-  project.riskIds = createdIds.risks;
-  project.lastModified = now;
-  await diskProjectService.updateProject(project);
-
-  // 6. Create links between artifacts SEQUENTIALLY to avoid race condition on counter file
+  // 5. Create links between artifacts SEQUENTIALLY to avoid race condition on counter file
   // Note: Promise.all() was causing all links to get the same ID because getNextId()
   // reads/writes a counter file, and parallel calls all read the same counter value.
   for (const linkDef of DEMO_ARTIFACTS.links) {
@@ -168,9 +159,7 @@ export async function createDemoProject(): Promise<Project> {
     const targetId = getArtifactId(linkDef.targetType, linkDef.targetIndex, createdIds);
 
     if (sourceId && targetId) {
-      // Global links have empty projectIds, project links include this project's ID
-      const projectIds = linkDef.scope === 'global' ? [] : [project.id];
-      await diskLinkService.createLink(sourceId, targetId, linkDef.type, projectIds);
+      await diskLinkService.createLink(sourceId, targetId, linkDef.type);
     }
   }
 

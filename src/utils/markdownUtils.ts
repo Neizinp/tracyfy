@@ -340,64 +340,21 @@ export function markdownToUser(markdown: string): User {
 }
 
 /**
- * Convert a Project to Markdown with YAML frontmatter
+ * project.md: the project's name (frontmatter) and description (body)
  */
 export function projectToMarkdown(project: Project): string {
-  const frontmatter = {
-    id: project.id,
-    name: project.name,
-    description: project.description,
-    lastModified: project.lastModified,
-    requirementIds: project.requirementIds,
-    useCaseIds: project.useCaseIds,
-    testCaseIds: project.testCaseIds,
-    informationIds: project.informationIds,
-    riskIds: project.riskIds || [],
-    documentIds: project.documentIds || [],
-    baselines: project.baselines || [],
-    currentBaseline: project.currentBaseline,
-    isDeleted: project.isDeleted || false,
-  };
-
-  const yaml = objectToYaml(frontmatter);
-
-  const body = `# ${project.name}
-
-${esc(project.description)}
-`.trim();
-
-  return `${yaml}\n\n${body}`;
+  const yaml = objectToYaml({ name: project.name });
+  return `${yaml}\n\n# ${project.name}\n\n${esc(project.description)}`.trim() + '\n';
 }
 
 /**
- * Parse Markdown content into a Project object
+ * Parse project.md, or null if it has no project name
  */
 export function markdownToProject(markdown: string): Project | null {
   const { frontmatter, body } = parseYamlFrontmatter(markdown);
-
-  if (!frontmatter.id) {
-    return null;
-  }
-
-  // Description is the body after the "# Name" line (frontmatter copy as fallback)
-  const description =
-    unescapeBodyText(bodyWithoutTitle(body)) || (frontmatter.description as string) || '';
-
-  return {
-    id: frontmatter.id as string,
-    name: (frontmatter.name as string) || '',
-    description: description,
-    requirementIds: ensureArray<string>(frontmatter.requirementIds),
-    useCaseIds: ensureArray<string>(frontmatter.useCaseIds),
-    testCaseIds: ensureArray<string>(frontmatter.testCaseIds),
-    informationIds: ensureArray<string>(frontmatter.informationIds),
-    riskIds: ensureArray<string>(frontmatter.riskIds),
-    documentIds: ensureArray<string>(frontmatter.documentIds),
-    baselines: ensureArray<string>(frontmatter.baselines),
-    currentBaseline: (frontmatter.currentBaseline as string) || undefined,
-    lastModified: (frontmatter.lastModified as number) || Date.now(),
-    isDeleted: (frontmatter.isDeleted as boolean) || false,
-  };
+  const name = typeof frontmatter.name === 'string' ? frontmatter.name : '';
+  if (!name) return null;
+  return { name, description: unescapeBodyText(bodyWithoutTitle(body)) };
 }
 
 /**
@@ -526,7 +483,6 @@ export function documentToMarkdown(document: ArtifactDocument): string {
   const frontmatter = {
     id: document.id,
     title: document.title,
-    projectId: document.projectId,
     author: document.author || '',
     status: document.status,
     revision: document.revision,
@@ -562,7 +518,6 @@ export function markdownToDocument(markdown: string): ArtifactDocument {
     id: (frontmatter.id as string) || '',
     title: (frontmatter.title as string) || '',
     description: description,
-    projectId: (frontmatter.projectId as string) || '',
     structure: ensureArray<DocumentEntry>(frontmatter.structure),
     author: (frontmatter.author as string) || undefined,
     status: (frontmatter.status as string) || undefined,

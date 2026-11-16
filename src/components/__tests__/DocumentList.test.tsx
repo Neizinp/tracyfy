@@ -2,11 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DocumentList } from '../DocumentList';
 import type { ArtifactDocument, DocumentColumnVisibility } from '../../types';
-import { useProject, useCustomAttributes } from '../../app/providers';
+import { useCustomAttributes } from '../../app/providers';
 
 // Mock hooks
 vi.mock('../../app/providers', () => ({
-  useProject: vi.fn(),
   useCustomAttributes: vi.fn(),
 }));
 
@@ -60,7 +59,6 @@ describe('DocumentList', () => {
       id: 'DOC-001',
       title: 'Project Roadmap',
       description: 'The strategy for the next 6 months',
-      projectId: 'PROJ-1',
       status: 'approved',
       author: 'John Doe',
       structure: [{ type: 'heading', title: 'Phase 1', level: 1 }],
@@ -74,41 +72,6 @@ describe('DocumentList', () => {
 
   beforeEach(() => {
     mockOnEdit.mockClear();
-    vi.mocked(useProject).mockReturnValue({
-      projects: [
-        {
-          id: 'PROJ-1',
-          name: 'Main Project',
-          description: '',
-          requirementIds: [],
-          useCaseIds: [],
-          testCaseIds: [],
-          informationIds: [],
-          riskIds: [],
-          documentIds: [],
-          lastModified: Date.now(),
-        },
-      ],
-      currentProjectId: 'PROJ-1',
-      currentProject: {
-        id: 'PROJ-1',
-        name: 'Main Project',
-        description: '',
-        requirementIds: [],
-        useCaseIds: [],
-        testCaseIds: [],
-        informationIds: [],
-        riskIds: [],
-        documentIds: [],
-        lastModified: Date.now(),
-      },
-      isLoading: false,
-      switchProject: vi.fn(),
-      createProject: vi.fn(),
-      updateProject: vi.fn(),
-      deleteProject: vi.fn(),
-      addToProject: vi.fn(),
-    });
     vi.mocked(useCustomAttributes).mockReturnValue({
       definitions: [],
       loading: false,

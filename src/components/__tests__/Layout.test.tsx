@@ -14,10 +14,7 @@ describe('Layout', () => {
       <AppProviders>
         <BrowserRouter>
           <Layout
-            projects={[]}
-            currentProjectId=""
-            onCreateProject={vi.fn()}
-            onSwitchProject={vi.fn()}
+            projectName="Door Controller"
             onOpenProjectSettings={vi.fn()}
             onNewRequirement={vi.fn()}
           >

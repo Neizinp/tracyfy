@@ -13,7 +13,6 @@ describe('impactAnalysisService', () => {
     sourceId,
     targetId,
     type: type as Link['type'],
-    projectIds: [],
     dateCreated: Date.now(),
     lastModified: Date.now(),
     revision: '01',

@@ -1,7 +1,7 @@
 import React, { Suspense, useCallback, useRef, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import { Layout, GlobalLibraryPanel, ModalManager } from '../components';
+import { Layout, ModalManager } from '../components';
 import { GenericColumnSelector } from '../components/GenericColumnSelector';
 import {
   useProject,
@@ -13,12 +13,11 @@ import {
   useBackgroundTaskActions,
   useToast,
   useBaselines,
-  useRisks,
   useCustomAttributes,
 } from '../app/providers';
-import { createDemoProject } from '../services/demoDataService';
+import { loadDemoData } from '../services/demoDataService';
+import { activeIds } from '../utils/activeArtifacts';
 import type {
-  Project,
   ColumnVisibility,
   UseCaseColumnVisibility,
   TestCaseColumnVisibility,
@@ -40,7 +39,7 @@ const PageLoadingFallback: React.FC = () => (
 );
 
 export const ProjectLayout: React.FC = () => {
-  const { projects, currentProjectId, currentProject, switchProject, addToProject } = useProject();
+  const { project } = useProject();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -48,17 +47,13 @@ export const ProjectLayout: React.FC = () => {
   const ui = useUI();
 
   // Global state
-  const { globalRequirements, globalUseCases, globalTestCases, globalInformation, documents } =
-    useGlobalState();
+  const { requirements, useCases, testCases, information, documents } = useGlobalState();
 
   // FileSystem context
   const { reloadData, refreshStatus, changeDirectory } = useFileSystem();
 
   // Baselines context
   const { baselines } = useBaselines();
-
-  // Risks context
-  const { risks } = useRisks();
 
   // Custom Attributes context
   const { getDefinitionsForType } = useCustomAttributes();
@@ -78,7 +73,6 @@ export const ProjectLayout: React.FC = () => {
       { key: 'comments', label: 'Comments' },
       { key: 'created', label: 'Created' },
       { key: 'approved', label: 'Approved' },
-      { key: 'projects', label: 'Project(s)' },
     ];
 
     const custom = customDefs.map((def) => ({
@@ -102,7 +96,6 @@ export const ProjectLayout: React.FC = () => {
       { key: 'mainFlow', label: 'Main Flow' },
       { key: 'alternativeFlows', label: 'Alternative Flows' },
       { key: 'postconditions', label: 'Postconditions' },
-      { key: 'projects', label: 'Project(s)' },
     ];
 
     const custom = customDefs.map((def) => ({
@@ -124,7 +117,6 @@ export const ProjectLayout: React.FC = () => {
       { key: 'status', label: 'Status' },
       { key: 'lastRun', label: 'Last Run' },
       { key: 'created', label: 'Created' },
-      { key: 'projects', label: 'Project(s)' },
     ];
 
     const custom = customDefs.map((def) => ({
@@ -143,7 +135,6 @@ export const ProjectLayout: React.FC = () => {
       { key: 'type', label: 'Type' },
       { key: 'text', label: 'Content' },
       { key: 'created', label: 'Created' },
-      { key: 'projects', label: 'Project(s)' },
     ];
 
     const custom = customDefs.map((def) => ({
@@ -168,7 +159,6 @@ export const ProjectLayout: React.FC = () => {
       { key: 'mitigation', label: 'Mitigation' },
       { key: 'contingency', label: 'Contingency' },
       { key: 'created', label: 'Created' },
-      { key: 'projects', label: 'Project(s)' },
     ];
 
     const custom = customDefs.map((def) => ({
@@ -189,7 +179,6 @@ export const ProjectLayout: React.FC = () => {
       { key: 'structure', label: 'Items' },
       { key: 'created', label: 'Created' },
       { key: 'description', label: 'Description' },
-      { key: 'projects', label: 'Project(s)' },
     ];
 
     const custom = customDefs.map((def) => ({
@@ -209,28 +198,17 @@ export const ProjectLayout: React.FC = () => {
   // Background tasks
   const { startTask, endTask } = useBackgroundTaskActions();
 
-  // Project action handlers
-  const handleCreateProject = useCallback(() => {
-    ui.setIsCreateProjectModalOpen(true);
-  }, [ui]);
-
-  const handleOpenProjectSettings = useCallback(
-    (project: Project) => {
-      ui.setProjectToEdit(project);
-      ui.setIsProjectSettingsOpen(true);
-    },
-    [ui]
-  );
-  // Demo project creation with double-click confirmation
+  const handleOpenProjectSettings = useCallback(() => ui.setIsProjectSettingsOpen(true), [ui]);
+  // Demo data (empty folders only), with double-click confirmation
   const { showToast } = useToast();
   const demoConfirmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const demoConfirmedRef = useRef(false);
 
-  const handleCreateDemoProject = useCallback(async () => {
+  const handleLoadDemoData = useCallback(async () => {
     // If not confirmed yet, show toast and wait for second click
     if (!demoConfirmedRef.current) {
       demoConfirmedRef.current = true;
-      showToast('Click again to confirm creating a demo project.', 'info');
+      showToast('Click again to fill this project with demo data.', 'info');
 
       // Reset after 3 seconds
       if (demoConfirmTimeoutRef.current) {
@@ -248,21 +226,25 @@ export const ProjectLayout: React.FC = () => {
     }
     demoConfirmedRef.current = false;
 
-    const taskId = startTask('Creating demo project...');
+    const taskId = startTask('Loading demo data...');
     try {
-      const demoProject = await createDemoProject();
+      await loadDemoData();
       await reloadData();
       await refreshStatus(); // Refresh git status so pending changes show up
-      switchProject(demoProject.id);
-      showToast('Demo project created successfully!', 'success');
+      showToast('Demo data loaded', 'success');
     } catch (error) {
-      console.error('Failed to create demo project:', error);
+      console.error('Failed to load demo data:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      showToast(`Failed to create demo project: ${errorMessage}`, 'error');
+      showToast(`Failed to load demo data: ${errorMessage}`, 'error');
     } finally {
       endTask(taskId);
     }
-  }, [reloadData, refreshStatus, switchProject, startTask, endTask, showToast]);
+  }, [reloadData, refreshStatus, startTask, endTask, showToast]);
+
+  // Demo data only goes into a project that has nothing in it yet
+  const isEmptyProject = [requirements, useCases, testCases, information, documents].every(
+    (items) => items.length === 0
+  );
 
   // Get page title from current route
   const getPageTitle = () => {
@@ -275,39 +257,14 @@ export const ProjectLayout: React.FC = () => {
     if (location.pathname.includes('/risks')) return 'Risks';
     if (location.pathname.includes('/workflows')) return 'Workflows';
     if (location.pathname.includes('/custom-attributes')) return 'Custom Attributes';
-    if (location.pathname.includes('/library/requirements')) return 'Requirements';
-    if (location.pathname.includes('/library/use-cases')) return 'Use Cases';
-    if (location.pathname.includes('/library/test-cases')) return 'Test Cases';
-    if (location.pathname.includes('/library/information')) return 'Information';
     return '';
-  };
-
-  // Handle adding selected items from library to project
-  const handleAddFromLibrary = async (ids: string[]) => {
-    // Categorize selected IDs by type
-    const reqIds = ids.filter((id) => globalRequirements.some((r) => r.id === id));
-    const ucIds = ids.filter((id) => globalUseCases.some((u) => u.id === id));
-    const tcIds = ids.filter((id) => globalTestCases.some((t) => t.id === id));
-    const infoIds = ids.filter((id) => globalInformation.some((i) => i.id === id));
-    const riskIds = ids.filter((id) => risks.some((r) => r.id === id));
-
-    await addToProject({
-      requirements: reqIds,
-      useCases: ucIds,
-      testCases: tcIds,
-      information: infoIds,
-      risks: riskIds,
-    });
   };
 
   return (
     <Layout
-      projects={projects}
-      currentProjectId={currentProjectId}
-      onSwitchProject={switchProject}
-      onCreateProject={handleCreateProject}
-      onCreateDemoProject={handleCreateDemoProject}
+      projectName={project.name}
       onOpenProjectSettings={handleOpenProjectSettings}
+      onLoadDemoData={isEmptyProject ? handleLoadDemoData : undefined}
       onNewRequirement={() => ui.setIsNewRequirementModalOpen(true)}
       onNewUseCase={() => ui.setIsUseCaseModalOpen(true)}
       onNewTestCase={() => ui.setIsNewTestCaseModalOpen(true)}
@@ -320,8 +277,6 @@ export const ProjectLayout: React.FC = () => {
       onExport={importExport.handleExport}
       onImport={importExport.handleImport}
       onImportExcel={importExport.handleImportExcel}
-      onOpenGlobalLibrary={() => ui.setIsLibraryPanelOpen(true)}
-      onOpenLibraryTab={ui.handleOpenLibrary}
       onOpenExportModal={() => ui.setIsExportModalOpen(true)}
       onOpenAdvancedSearch={() => ui.setIsAdvancedSearchOpen(true)}
       onViewHistory={() => ui.setIsVersionHistoryOpen(true)}
@@ -331,26 +286,21 @@ export const ProjectLayout: React.FC = () => {
       currentUserName={currentUser?.name}
       baselines={baselines}
       onExportPDF={async (selectedBaseline) => {
-        if (!currentProject) {
-          alert('No project selected');
-          return;
-        }
-
         const taskId = startTask('Exporting PDF...');
         try {
           const { exportProjectToPDF } = await import('../utils/pdfExportUtils');
           await exportProjectToPDF(
-            currentProject,
+            project,
             {
-              requirements: globalRequirements,
-              useCases: globalUseCases,
-              testCases: globalTestCases,
-              information: globalInformation,
+              requirements: requirements,
+              useCases: useCases,
+              testCases: testCases,
+              information: information,
             },
-            currentProject.requirementIds,
-            currentProject.useCaseIds,
-            currentProject.testCaseIds,
-            currentProject.informationIds,
+            activeIds(requirements),
+            activeIds(useCases),
+            activeIds(testCases),
+            activeIds(information),
             baselines,
             selectedBaseline, // selectedBaseline: ProjectBaseline | null
             currentUser?.name,
@@ -362,26 +312,21 @@ export const ProjectLayout: React.FC = () => {
         }
       }}
       onExportExcel={async () => {
-        if (!currentProject) {
-          alert('No project selected');
-          return;
-        }
-
         const taskId = startTask('Exporting Excel...');
         try {
           const { exportProjectToExcel } = await import('../utils/excelExportUtils');
           await exportProjectToExcel(
-            currentProject,
+            project,
             {
-              requirements: globalRequirements,
-              useCases: globalUseCases,
-              testCases: globalTestCases,
-              information: globalInformation,
+              requirements: requirements,
+              useCases: useCases,
+              testCases: testCases,
+              information: information,
             },
-            currentProject.requirementIds,
-            currentProject.useCaseIds,
-            currentProject.testCaseIds,
-            currentProject.informationIds,
+            activeIds(requirements),
+            activeIds(useCases),
+            activeIds(testCases),
+            activeIds(information),
             baselines,
             {
               format: 'excel',
@@ -403,34 +348,6 @@ export const ProjectLayout: React.FC = () => {
         }
       }}
       onSearch={ui.setSearchQuery}
-      rightPanel={
-        ui.isLibraryPanelOpen ? (
-          <GlobalLibraryPanel
-            isOpen={true}
-            onClose={() => {
-              ui.setGlobalLibrarySelection(new Set());
-              ui.setIsLibraryPanelOpen(false);
-            }}
-            requirements={globalRequirements}
-            useCases={globalUseCases}
-            testCases={globalTestCases}
-            information={globalInformation}
-            risks={risks}
-            projects={projects}
-            selectedItems={ui.globalLibrarySelection}
-            onToggleSelect={ui.handleGlobalLibrarySelect}
-            onSelectAll={(ids) => ui.setGlobalLibrarySelection(new Set(ids))}
-            onDeselectAll={() => ui.setGlobalLibrarySelection(new Set())}
-            activeTab={ui.activeLibraryTab}
-            onTabChange={(tab) =>
-              ui.setActiveLibraryTab(
-                tab as 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
-              )
-            }
-            onAddToProject={handleAddFromLibrary}
-          />
-        ) : undefined
-      }
     >
       <div style={{ marginBottom: 'var(--spacing-md)' }}>
         <div
@@ -479,10 +396,7 @@ export const ProjectLayout: React.FC = () => {
                   onColumnVisibilityChange={(columns) => {
                     ui.setColumnVisibility(columns as ColumnVisibility);
                     try {
-                      localStorage.setItem(
-                        `column-visibility-${currentProjectId}`,
-                        JSON.stringify(columns)
-                      );
+                      localStorage.setItem('column-visibility', JSON.stringify(columns));
                     } catch (error) {
                       console.error('Failed to save column visibility:', error);
                     }

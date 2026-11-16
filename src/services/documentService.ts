@@ -11,14 +11,6 @@ export class DocumentService extends BaseArtifactService<ArtifactDocument> {
   constructor() {
     super('documents', documentSerializer);
   }
-
-  /**
-   * Get all documents for a specific project
-   */
-  async getByProject(projectId: string): Promise<ArtifactDocument[]> {
-    const all = await this.loadAll();
-    return all.filter((doc) => doc.projectId === projectId);
-  }
 }
 
 export const documentService = new DocumentService();

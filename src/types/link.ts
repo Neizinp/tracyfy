@@ -25,7 +25,6 @@ export interface Link {
   sourceId: string; // The artifact creating the link (e.g., REQ-001)
   targetId: string; // The artifact being linked to (e.g., UC-003)
   type: LinkType; // Link relationship type
-  projectIds: string[]; // Empty = global (all projects), populated = project-specific
   dateCreated: number;
   lastModified: number;
   revision: string; // Satisfies BaseArtifact

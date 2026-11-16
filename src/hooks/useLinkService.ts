@@ -23,28 +23,21 @@ interface UseLinkServiceReturn {
   error: string | null;
 
   // Operations
-  createLink: (
-    sourceId: string,
-    targetId: string,
-    type: LinkType,
-    projectIds?: string[]
-  ) => Promise<Link>;
+  createLink: (sourceId: string, targetId: string, type: LinkType) => Promise<Link>;
   deleteLink: (linkId: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
 interface UseLinkServiceOptions {
   artifactId?: string;
-  projectId?: string; // Filter links by project visibility
 }
 
 /**
  * Hook for managing links for a specific artifact
  * @param options.artifactId - Optional artifact ID to get links for
- * @param options.projectId - Optional project ID to filter links by project visibility
  */
 export function useLinkService(options: UseLinkServiceOptions = {}): UseLinkServiceReturn {
-  const { artifactId, projectId } = options;
+  const { artifactId } = options;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,14 +49,7 @@ export function useLinkService(options: UseLinkServiceOptions = {}): UseLinkServ
     deleteLink: deleteLinkInProvider,
   } = useFileSystem();
 
-  // Derive allLinks from provider state, filtering by project if needed
-  const allLinks = useMemo(() => {
-    if (!allLinksFromProvider) return [];
-    if (!projectId) return allLinksFromProvider;
-    return allLinksFromProvider.filter(
-      (link) => link.projectIds.length === 0 || link.projectIds.includes(projectId)
-    );
-  }, [allLinksFromProvider, projectId]);
+  const allLinks = useMemo(() => allLinksFromProvider ?? [], [allLinksFromProvider]);
 
   // Derive outgoing and incoming links from allLinks
   const outgoingLinks = useMemo(() => {
@@ -99,15 +85,10 @@ export function useLinkService(options: UseLinkServiceOptions = {}): UseLinkServ
 
   // Create a new link
   const createLink = useCallback(
-    async (
-      sourceId: string,
-      targetId: string,
-      type: LinkType,
-      projectIds: string[] = []
-    ): Promise<Link> => {
+    async (sourceId: string, targetId: string, type: LinkType): Promise<Link> => {
       try {
         // Goes through the provider so link state (and every view) updates immediately
-        return await createLinkInProvider(sourceId, targetId, type, projectIds);
+        return await createLinkInProvider(sourceId, targetId, type);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to create link');
         throw err;

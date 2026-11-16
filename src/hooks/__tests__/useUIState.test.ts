@@ -13,12 +13,9 @@ describe('useUIState', () => {
       expect(result.current.isUseCaseModalOpen).toBe(false);
       expect(result.current.isVersionHistoryOpen).toBe(false);
       expect(result.current.isProjectSettingsOpen).toBe(false);
-      expect(result.current.isCreateProjectModalOpen).toBe(false);
       expect(result.current.isNewTestCaseModalOpen).toBe(false);
       expect(result.current.isEditTestCaseModalOpen).toBe(false);
       expect(result.current.isInformationModalOpen).toBe(false);
-      expect(result.current.isLibraryPanelOpen).toBe(false);
-      expect(result.current.isGlobalLibraryModalOpen).toBe(false);
       expect(result.current.isUserSettingsModalOpen).toBe(false);
     });
 
@@ -30,25 +27,12 @@ describe('useUIState', () => {
       expect(result.current.selectedInformation).toBeNull();
       expect(result.current.editingRequirement).toBeNull();
       expect(result.current.editingUseCase).toBeNull();
-      expect(result.current.projectToEdit).toBeNull();
     });
 
     it('should have empty search query initially', () => {
       const { result } = renderHook(() => useUIState());
 
       expect(result.current.searchQuery).toBe('');
-    });
-
-    it('should have requirements as default library tab', () => {
-      const { result } = renderHook(() => useUIState());
-
-      expect(result.current.activeLibraryTab).toBe('requirements');
-    });
-
-    it('should have empty global library selection', () => {
-      const { result } = renderHook(() => useUIState());
-
-      expect(result.current.globalLibrarySelection.size).toBe(0);
     });
   });
 
@@ -97,35 +81,6 @@ describe('useUIState', () => {
       });
 
       expect(result.current.columnVisibility.description).toBe(false);
-    });
-  });
-
-  describe('library functions', () => {
-    it('should toggle global library selection', () => {
-      const { result } = renderHook(() => useUIState());
-
-      act(() => {
-        result.current.handleGlobalLibrarySelect('REQ-001');
-      });
-
-      expect(result.current.globalLibrarySelection.has('REQ-001')).toBe(true);
-
-      act(() => {
-        result.current.handleGlobalLibrarySelect('REQ-001');
-      });
-
-      expect(result.current.globalLibrarySelection.has('REQ-001')).toBe(false);
-    });
-
-    it('should open library panel with specified tab', () => {
-      const { result } = renderHook(() => useUIState());
-
-      act(() => {
-        result.current.handleOpenLibrary('testcases');
-      });
-
-      expect(result.current.activeLibraryTab).toBe('testcases');
-      expect(result.current.isLibraryPanelOpen).toBe(true);
     });
   });
 

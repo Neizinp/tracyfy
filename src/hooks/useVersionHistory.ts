@@ -10,7 +10,7 @@ import { debug } from '../utils/debug';
 import type { ProjectBaseline, CommitInfo } from '../types';
 import { realGitService } from '../services/realGitService';
 
-export type TabType = 'baselines' | 'commits' | 'global';
+export type TabType = 'baselines' | 'commits';
 
 // Configuration for artifact type filters
 export const ARTIFACT_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
@@ -19,7 +19,7 @@ export const ARTIFACT_TYPE_CONFIG: Record<string, { label: string; color: string
   testcases: { label: 'TC', color: 'var(--color-success)' },
   information: { label: 'INFO', color: 'var(--color-warning)' },
   risks: { label: 'RISK', color: 'var(--color-error)' },
-  projects: { label: 'PROJ', color: 'var(--color-text-muted)' },
+  project: { label: 'PROJ', color: 'var(--color-text-muted)' },
   links: { label: 'LINK', color: 'var(--color-text-secondary)' },
   workflows: { label: 'WF', color: 'var(--color-info-light)' },
   users: { label: 'USER', color: 'var(--color-accent)' },
@@ -34,7 +34,7 @@ const FOLDER_TO_TYPE: Record<string, string> = {
   testcases: 'testcases',
   information: 'information',
   risks: 'risks',
-  projects: 'projects',
+  'project.md': 'project',
   links: 'links',
   workflows: 'workflows',
   users: 'users',
@@ -54,7 +54,7 @@ const DEFAULT_SELECTED_TYPES = new Set([
   'testcases',
   'information',
   'risks',
-  'projects',
+  'project',
   'links',
   'workflows',
   'users',
@@ -65,14 +65,12 @@ const DEFAULT_SELECTED_TYPES = new Set([
 interface UseVersionHistoryOptions {
   isOpen: boolean;
   baselines: ProjectBaseline[];
-  projectName: string | null;
   onCreateBaseline: (name: string, message: string) => void;
 }
 
 export function useVersionHistory({
   isOpen,
   baselines,
-  projectName,
   onCreateBaseline,
 }: UseVersionHistoryOptions) {
   // Tab state
@@ -85,9 +83,7 @@ export function useVersionHistory({
 
   // Commits state
   const [commits, setCommits] = useState<CommitInfo[]>([]);
-  const [globalCommits, setGlobalCommits] = useState<CommitInfo[]>([]);
   const [isLoadingCommits, setIsLoadingCommits] = useState(false);
-  const [isLoadingGlobalCommits, setIsLoadingGlobalCommits] = useState(false);
 
   // Tag/baseline mapping state
   const [baselineCommitHashes, setBaselineCommitHashes] = useState<Map<string, string[]>>(
@@ -105,25 +101,6 @@ export function useVersionHistory({
     name: string;
     timestamp: number;
   } | null>(null);
-
-  // Project-specific baseline helpers
-  const projectPrefix = projectName ? `[${projectName}] ` : '';
-  const isProjectBaseline = useCallback(
-    (tagName: string) => projectName && tagName.startsWith(projectPrefix),
-    [projectName, projectPrefix]
-  );
-
-  // Filter baselines for current project
-  const projectBaselines = useMemo(
-    () => baselines.filter((b) => isProjectBaseline(b.name)),
-    [baselines, isProjectBaseline]
-  );
-
-  const getVersionFromTag = useCallback(
-    (tagName: string) =>
-      tagName.startsWith(projectPrefix) ? tagName.slice(projectPrefix.length) : tagName,
-    [projectPrefix]
-  );
 
   // Load tags
   const loadTags = useCallback(async () => {
@@ -148,28 +125,12 @@ export function useVersionHistory({
     }
   }, []);
 
-  // Load project-specific commits
+  // Load all commits
   const loadCommits = useCallback(async () => {
-    if (!projectName) return;
-
     setIsLoadingCommits(true);
     try {
-      const projectFilePath = `projects/${projectName}.md`;
-      const history = await realGitService.getHistory(projectFilePath);
-      setCommits(history);
-    } catch (error) {
-      console.error('Failed to load commits:', error);
-    } finally {
-      setIsLoadingCommits(false);
-    }
-  }, [projectName]);
-
-  // Load global commits
-  const loadGlobalCommits = useCallback(async () => {
-    setIsLoadingGlobalCommits(true);
-    try {
       const history = await realGitService.getHistory();
-      setGlobalCommits(history);
+      setCommits(history);
 
       const filesMap = new Map<string, string[]>();
       await Promise.all(
@@ -180,9 +141,9 @@ export function useVersionHistory({
       );
       setCommitFiles(filesMap);
     } catch (error) {
-      console.error('Failed to load global commits:', error);
+      console.error('Failed to load commits:', error);
     } finally {
-      setIsLoadingGlobalCommits(false);
+      setIsLoadingCommits(false);
     }
   }, []);
 
@@ -199,13 +160,6 @@ export function useVersionHistory({
       loadCommits();
     }
   }, [isOpen, activeTab, loadCommits]);
-
-  // Load global commits when tab is active
-  useEffect(() => {
-    if (isOpen && activeTab === 'global') {
-      loadGlobalCommits();
-    }
-  }, [isOpen, activeTab, loadGlobalCommits]);
 
   // Toggle artifact type filter
   const handleToggleType = useCallback((type: string) => {
@@ -230,9 +184,9 @@ export function useVersionHistory({
     setSelectedTypes(new Set());
   }, []);
 
-  // Filter global commits based on selected types
-  const filteredGlobalCommits = useMemo(() => {
-    return globalCommits.filter((commit) => {
+  // Filter commits based on selected types
+  const filteredCommits = useMemo(() => {
+    return commits.filter((commit) => {
       const files = commitFiles.get(commit.hash) || [];
       if (files.length === 0) return true;
 
@@ -241,31 +195,28 @@ export function useVersionHistory({
         return selectedTypes.has(artifactType);
       });
     });
-  }, [globalCommits, commitFiles, selectedTypes]);
+  }, [commits, commitFiles, selectedTypes]);
 
   // Start creating baseline
   const handleStartCreating = useCallback(() => {
-    setBaselineName(`${projectBaselines.length + 1}.0`);
+    setBaselineName(`${baselines.length + 1}.0`);
     setBaselineMessage('');
     setIsCreatingBaseline(true);
-  }, [projectBaselines.length]);
+  }, [baselines.length]);
 
   // Submit baseline creation
   const handleCreateBaselineSubmit = useCallback(
     (e?: React.FormEvent) => {
       if (e) e.preventDefault();
-      if (baselineName.trim() && projectName) {
-        const fullTagName = `${projectPrefix}${baselineName.trim()}`;
-        onCreateBaseline(
-          fullTagName,
-          baselineMessage.trim() || `Baseline ${baselineName.trim()} for ${projectName}`
-        );
+      const name = baselineName.trim();
+      if (name) {
+        onCreateBaseline(name, baselineMessage.trim() || `Baseline ${name}`);
         setBaselineName('');
         setBaselineMessage('');
         setIsCreatingBaseline(false);
       }
     },
-    [baselineName, baselineMessage, projectName, projectPrefix, onCreateBaseline]
+    [baselineName, baselineMessage, onCreateBaseline]
   );
 
   return {
@@ -283,17 +234,10 @@ export function useVersionHistory({
     handleStartCreating,
     handleCreateBaselineSubmit,
 
-    // Project baselines
-    projectBaselines,
-    projectPrefix,
-    getVersionFromTag,
-
     // Commits
     commits,
-    globalCommits,
-    filteredGlobalCommits,
+    filteredCommits,
     isLoadingCommits,
-    isLoadingGlobalCommits,
     commitFiles,
 
     // Tag mappings

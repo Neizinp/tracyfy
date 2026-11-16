@@ -15,7 +15,6 @@ const mockLinks: Link[] = [
     sourceId: 'REQ-001',
     targetId: 'TC-001',
     type: 'verifies',
-    projectIds: [],
     dateCreated: 1700000000000,
     lastModified: 1700000000000,
     revision: '01',
@@ -25,7 +24,6 @@ const mockLinks: Link[] = [
     sourceId: 'UC-001',
     targetId: 'REQ-002',
     type: 'satisfies',
-    projectIds: [],
     dateCreated: 1700000000000,
     lastModified: 1700000000000,
     revision: '01',
@@ -144,30 +142,6 @@ describe('useLinkService', () => {
       const { result } = renderHook(() => useLinkService());
 
       expect(result.current.allLinks.length).toBe(2);
-    });
-
-    it('should filter by projectId when provided', () => {
-      // Add a link with projectIds for this test
-      const linksWithProjects = [
-        ...mockLinks,
-        {
-          id: 'LINK-003',
-          sourceId: 'REQ-003',
-          targetId: 'TC-003',
-          type: 'verifies' as const,
-          projectIds: ['PRJ-001'],
-          dateCreated: 1700000000000,
-          lastModified: 1700000000000,
-          revision: '01',
-        },
-      ];
-
-      mockFileSystemContext.links = linksWithProjects;
-
-      const { result } = renderHook(() => useLinkService({ projectId: 'PRJ-001' }));
-
-      // Should include global links (projectIds: []) and project-specific links
-      expect(result.current.allLinks.length).toBe(3);
     });
   });
 });

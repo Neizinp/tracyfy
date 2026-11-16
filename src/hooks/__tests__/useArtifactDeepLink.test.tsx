@@ -30,11 +30,11 @@ describe('useArtifactDeepLink', () => {
       selectedArtifact: null,
     } as unknown as UIContextValue);
     mockedUseGlobalState.mockReturnValue({
-      globalRequirements: [{ id: 'REQ-001', title: 'Test Req' }],
-      globalUseCases: [],
-      globalTestCases: [],
-      globalInformation: [],
-      globalRisks: [],
+      requirements: [{ id: 'REQ-001', title: 'Test Req' }],
+      useCases: [],
+      testCases: [],
+      information: [],
+      risks: [],
     } as unknown as GlobalStateContextValue);
   });
 

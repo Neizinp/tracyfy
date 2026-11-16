@@ -104,7 +104,7 @@ export const CustomAttributesPage: React.FC = () => {
           marginBottom: 'var(--spacing-lg)',
         }}
       >
-        Define custom fields that can be added to artifacts across all projects.
+        Define custom fields that can be added to the artifacts in this project.
       </p>
 
       {/* Search Bar */}

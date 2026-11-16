@@ -13,7 +13,7 @@ export function PendingChangesPanel() {
     statusError,
     commitFile,
     revertFile,
-    projects,
+    project,
     getArtifactHistory,
     refreshStatus,
   } = useFileSystem();
@@ -58,12 +58,11 @@ export function PendingChangesPanel() {
 
         const status = fs.status === 'new' ? 'new' : 'modified';
 
-        // For projects, use the project name instead of ID
+        // For the project file, show the project name
         // For assets, use the filename (which is a UUID)
         let title = id;
         if (type === 'project') {
-          const project = projects.find((p) => p.id === id);
-          title = project?.name || id;
+          title = `Project: ${project.name}`;
         } else if (type === 'asset') {
           // For assets, show a friendlier name
           title = `Image: ${filename}`;
@@ -107,9 +106,10 @@ export function PendingChangesPanel() {
           document: 'documents',
         };
 
-        // For projects, always use "Update Project" since project folder uses different structure
+        // The project file has no per-artifact history to base a message on
         if (change.type === 'project') {
-          defaults[change.id] = change.status === 'new' ? 'First commit' : '';
+          defaults[change.id] =
+            change.status === 'new' ? 'Set project name and description' : 'Update project details';
           processedDefaultsRef.current.add(change.id);
           continue;
         }
@@ -174,7 +174,8 @@ export function PendingChangesPanel() {
           processedDefaultsRef.current.add(change.id);
         } catch {
           // On error, fall back to status-based message
-          defaults[change.id] = change.status === 'new' ? 'First commit' : '';
+          defaults[change.id] =
+            change.status === 'new' ? 'Set project name and description' : 'Update project details';
           processedDefaultsRef.current.add(change.id);
         }
       }
@@ -196,7 +197,7 @@ export function PendingChangesPanel() {
     setDefaults();
     setParsedChanges(filteredChanges);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingChanges, projects, getArtifactHistory]);
+  }, [pendingChanges, project, getArtifactHistory]);
 
   const handleCommitMessageChange = (id: string, message: string) => {
     setCommitMessages((prev) => ({ ...prev, [id]: message }));
@@ -337,7 +338,7 @@ export function PendingChangesPanel() {
           : change.type === 'testcase'
             ? 'Test Cases'
             : change.type === 'project'
-              ? 'Projects'
+              ? 'Project'
               : change.type === 'asset'
                 ? 'Assets'
                 : change.type === 'risk'

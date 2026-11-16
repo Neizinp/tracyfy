@@ -9,7 +9,6 @@ export interface ColumnVisibility {
   category: boolean;
   created: boolean;
   revision: boolean;
-  projects: boolean;
   author: boolean;
   [key: string]: boolean | undefined;
 }
@@ -22,7 +21,6 @@ export interface UseCaseColumnVisibility {
   status: boolean;
   created: boolean;
   revision: boolean;
-  projects: boolean;
   author: boolean;
   [key: string]: boolean | undefined;
 }
@@ -35,7 +33,6 @@ export interface TestCaseColumnVisibility {
   requirements: boolean;
   created: boolean;
   revision: boolean;
-  projects: boolean;
   author: boolean;
   [key: string]: boolean | undefined;
 }
@@ -48,7 +45,6 @@ export interface InformationColumnVisibility {
   author: boolean;
   created: boolean;
   revision: boolean;
-  projects: boolean;
   [key: string]: boolean | undefined;
 }
 
@@ -64,7 +60,6 @@ export interface RiskColumnVisibility {
   contingency: boolean;
   created: boolean;
   revision: boolean;
-  projects: boolean;
   author: boolean;
   [key: string]: boolean | undefined;
 }
@@ -75,7 +70,6 @@ export interface DocumentColumnVisibility {
   structure: boolean;
   created: boolean;
   revision: boolean;
-  projects: boolean;
   author: boolean;
   status: boolean;
   [key: string]: boolean | undefined;
@@ -90,12 +84,7 @@ export type ViewType =
   | 'information'
   | 'risks'
   | 'baselines'
-  | 'baseline-history'
-  | 'library-requirements'
-  | 'library-usecases'
-  | 'library-testcases'
-  | 'library-information'
-  | 'library-risks';
+  | 'baseline-history';
 
 export type ModalType =
   | 'requirement'
@@ -103,7 +92,6 @@ export type ModalType =
   | 'testcase'
   | 'information'
   | 'risk'
-  | 'project'
   | 'project-settings'
   | 'user-settings'
   | 'onboarding'
@@ -113,7 +101,6 @@ export type ModalType =
   | 'search'
   | 'custom-attribute'
   | 'workflow'
-  | 'global-library'
   | 'documents'
   | null;
 
@@ -124,15 +111,7 @@ export interface ActiveModal {
 
 export interface SelectedArtifact {
   id: string;
-  type:
-    | 'requirement'
-    | 'usecase'
-    | 'testcase'
-    | 'information'
-    | 'risk'
-    | 'project'
-    | 'user'
-    | 'documents';
+  type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk' | 'user' | 'documents';
   data?: Record<string, unknown>;
 }
 
