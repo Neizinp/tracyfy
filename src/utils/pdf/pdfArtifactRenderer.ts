@@ -510,7 +510,9 @@ export async function renderTestCase(
   testCase: TestCase,
   yPos: number,
   page: number,
-  customAttributeDefinitions: CustomAttributeDefinition[]
+  customAttributeDefinitions: CustomAttributeDefinition[],
+  /** From the link files: the requirements this test case verifies */
+  verifiedRequirementIds: string[]
 ): Promise<RenderResult> {
   const boxLeft = 15;
   const boxWidth = 180;
@@ -589,7 +591,7 @@ export async function renderTestCase(
   }
 
   // Tests Requirements
-  if (testCase.requirementIds && testCase.requirementIds.length > 0) {
+  if (verifiedRequirementIds.length > 0) {
     if (currentY > 260) {
       doc.rect(boxLeft, boxTop, boxWidth, currentY - boxTop);
       doc.addPage();
@@ -603,7 +605,7 @@ export async function renderTestCase(
     currentY += 4;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text(testCase.requirementIds.join(', '), contentLeft, currentY);
+    doc.text(verifiedRequirementIds.join(', '), contentLeft, currentY);
     currentY += 7;
   }
 
