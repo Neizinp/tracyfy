@@ -13,7 +13,7 @@ interface LinksContextValue {
 }
 
 const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Link>({
-  type: 'links',
+  type: 'link',
   displayName: 'Links',
   useData: (state) => ({
     items: state.links,

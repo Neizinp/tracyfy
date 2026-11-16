@@ -18,7 +18,7 @@ interface VersionHistoryProps {
   baselines: ProjectBaseline[];
   onClose: () => void;
   onCreateBaseline: (name: string, message: string) => void;
-  onSelectArtifact?: (artifactId: string, artifactType: string) => void;
+  onSelectArtifact?: (artifactId: string) => void;
 }
 
 export const VersionHistory: React.FC<VersionHistoryProps> = ({
@@ -94,6 +94,9 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="History"
         style={{
           backgroundColor: 'var(--color-bg-card)',
           borderRadius: 'var(--radius-md)',

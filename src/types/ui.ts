@@ -76,17 +76,6 @@ export interface DocumentColumnVisibility {
   [key: string]: boolean | undefined;
 }
 
-export type ViewType =
-  | 'tree'
-  | 'detailed'
-  | 'matrix'
-  | 'usecases'
-  | 'testcases'
-  | 'information'
-  | 'risks'
-  | 'baselines'
-  | 'baseline-history';
-
 export type ModalType =
   | ArtifactKindId
   | 'project-settings'

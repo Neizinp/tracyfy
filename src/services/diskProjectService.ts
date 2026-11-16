@@ -16,7 +16,7 @@
 
 import { BaseDiskService } from './baseDiskService';
 import { idService } from './idService';
-import { ARTIFACT_CONFIG } from '../constants/artifactConfig';
+import { STORED_TYPES, STORED_TYPE_IDS, type StoredType } from './storedTypes';
 import type {
   Link,
   Project,
@@ -51,7 +51,7 @@ class DiskProjectService extends BaseDiskService {
    */
   async initialize(): Promise<void> {
     // Services handle directory creation on save, but we can ensure they exist
-    for (const config of Object.values(ARTIFACT_CONFIG)) {
+    for (const config of Object.values(STORED_TYPES)) {
       await this.ensureDirectory(config.folder);
     }
     await this.ensureDirectory('counters');
@@ -76,29 +76,22 @@ class DiskProjectService extends BaseDiskService {
   /**
    * Get next artifact ID and increment counter
    */
-  async getNextId(type: string): Promise<string> {
-    // Standardize key name if legacy camelCase is used
-    const standardizedType =
-      type === 'useCases' ? 'usecases' : type === 'testCases' ? 'testcases' : type;
-    return idService.getNextId(standardizedType);
+  async getNextId(type: StoredType): Promise<string> {
+    return idService.getNextId(type);
   }
 
   /**
    * Get multiple artifact IDs at once (batch allocation)
    */
-  async getNextIds(type: string, count: number): Promise<string[]> {
-    const standardizedType =
-      type === 'useCases' ? 'usecases' : type === 'testCases' ? 'testcases' : type;
-    return idService.getNextIds(standardizedType, count);
+  async getNextIds(type: StoredType, count: number): Promise<string[]> {
+    return idService.getNextIds(type, count);
   }
 
   /**
    * Get next artifact ID with remote sync (for collaboration)
    */
-  async getNextIdWithSync(type: string): Promise<string> {
-    const standardizedType =
-      type === 'useCases' ? 'usecases' : type === 'testCases' ? 'testcases' : type;
-    return idService.getNextIdWithSync(standardizedType);
+  async getNextIdWithSync(type: StoredType): Promise<string> {
+    return idService.getNextIdWithSync(type);
   }
 
   // ============ PROJECT ============
@@ -184,11 +177,9 @@ class DiskProjectService extends BaseDiskService {
     // Only ever RAISE counters to cover existing IDs. Lowering them (e.g. after a
     // permanent delete, or when a collaborator's counter is ahead) would hand out
     // IDs again. Sequential so the resulting commits don't run concurrently.
-    for (const [key, service] of Object.entries(ALL_ARTIFACT_SERVICES)) {
-      const config = ARTIFACT_CONFIG[key];
-      if (!config || !config.idPrefix) continue;
-
-      const items = await service.loadAll(true);
+    for (const key of STORED_TYPE_IDS) {
+      const config = STORED_TYPES[key];
+      const items = await ALL_ARTIFACT_SERVICES[key].loadAll(true);
       const idRegex = new RegExp(`^${config.idPrefix}-(\\d+)$`);
       let maxId = 0;
       for (const item of items) {

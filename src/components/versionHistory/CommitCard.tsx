@@ -9,14 +9,13 @@ import React from 'react';
 import { Tag, GitCommit } from 'lucide-react';
 import type { CommitInfo } from '../../services/realGitService';
 import { formatDateTime } from '../../utils/dateUtils';
-import { getArtifactTypeFromPath } from '../../hooks/useVersionHistory';
 
 interface CommitCardProps {
   commit: CommitInfo;
   isFirst: boolean;
   baselineTags?: string[];
   commitFiles?: string[];
-  onSelectArtifact?: (artifactId: string, artifactType: string) => void;
+  onSelectArtifact?: (artifactId: string) => void;
   onClose?: () => void;
 }
 
@@ -122,14 +121,14 @@ export const CommitCard: React.FC<CommitCardProps> = ({
                     return <span style={{ color: 'var(--color-text-muted)' }}>—</span>;
                   }
                   const fileName = filePath.split('/').pop()?.replace('.md', '') || '';
-                  const artifactType = getArtifactTypeFromPath(filePath);
                   return (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         if (onSelectArtifact) {
-                          onSelectArtifact(fileName, artifactType);
+                          // Close first: closing clears the active modal, which would close the artifact's
                           onClose?.();
+                          onSelectArtifact(fileName);
                         }
                       }}
                       style={{

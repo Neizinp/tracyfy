@@ -6,7 +6,7 @@ import { idService } from './idService';
 
 class DiskWorkflowService extends BaseArtifactService<Workflow> {
   constructor() {
-    super('workflows', {
+    super('workflow', {
       serialize: workflowToMarkdown,
       deserialize: parseMarkdownWorkflow,
     });
@@ -125,7 +125,7 @@ class DiskWorkflowService extends BaseArtifactService<Workflow> {
   async createWorkflow(
     workflow: Omit<Workflow, 'id' | 'dateCreated' | 'lastModified' | 'status'>
   ): Promise<Workflow> {
-    const nextId = await idService.getNextIdWithSync('workflows');
+    const nextId = await idService.getNextIdWithSync('workflow');
     const newWorkflow: Workflow = {
       ...workflow,
       id: nextId,

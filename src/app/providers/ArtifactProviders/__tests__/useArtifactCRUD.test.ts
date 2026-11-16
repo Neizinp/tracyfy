@@ -53,7 +53,7 @@ describe('useArtifactCRUD.handleUpdate', () => {
   const setup = () =>
     renderHook(() =>
       useArtifactCRUD<Item>({
-        type: 'requirements',
+        type: 'requirement',
         items: [existing],
         saveFn,
         deleteFn: vi.fn(),

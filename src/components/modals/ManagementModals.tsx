@@ -23,14 +23,7 @@ import {
 } from '../../app/providers';
 import { diskCustomAttributeService } from '../../services/diskCustomAttributeService';
 import { exportProjectToJSON } from '../../utils/jsonExportUtils';
-import type {
-  LinkType,
-  ExportOptions,
-  Requirement,
-  UseCase,
-  TestCase,
-  Information,
-} from '../../types';
+import type { LinkType, ExportOptions } from '../../types';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import type { LinkModalResult } from '../LinkModal';
 import { useLinkableArtifacts } from '../../hooks/useLinkableArtifacts';
@@ -182,46 +175,6 @@ export const ManagementModals: React.FC = () => {
     [ui, links, createLink, showToast]
   );
 
-  const handleSelectArtifact = useCallback(
-    (artifactId: string, artifactType: string) => {
-      switch (artifactType) {
-        case 'requirements': {
-          const req = requirements.find((r: Requirement) => r.id === artifactId);
-          if (req) {
-            ui.setEditingRequirement(req);
-            ui.setIsEditRequirementModalOpen(true);
-          }
-          break;
-        }
-        case 'usecases': {
-          const uc = useCases.find((u: UseCase) => u.id === artifactId);
-          if (uc) {
-            ui.setEditingUseCase(uc);
-            ui.setIsUseCaseModalOpen(true);
-          }
-          break;
-        }
-        case 'testcases': {
-          const tc = testCases.find((t: TestCase) => t.id === artifactId);
-          if (tc) {
-            ui.setSelectedTestCaseId(tc.id);
-            ui.setIsEditTestCaseModalOpen(true);
-          }
-          break;
-        }
-        case 'information': {
-          const info = information.find((i: Information) => i.id === artifactId);
-          if (info) {
-            ui.setSelectedInformation(info);
-            ui.setIsInformationModalOpen(true);
-          }
-          break;
-        }
-      }
-    },
-    [ui, requirements, useCases, testCases, information]
-  );
-
   const handleCreateBaselineWrapper = useCallback(
     async (name: string, message: string) => {
       await createBaseline(name, message, name);
@@ -246,7 +199,7 @@ export const ManagementModals: React.FC = () => {
         baselines={baselines}
         onClose={ui.closeModal}
         onCreateBaseline={handleCreateBaselineWrapper}
-        onSelectArtifact={handleSelectArtifact}
+        onSelectArtifact={openArtifact}
       />
 
       <UserSettingsModal isOpen={ui.activeModal.type === 'user-settings'} onClose={ui.closeModal} />

@@ -49,6 +49,7 @@ import type {
   ArtifactDocument,
 } from '../../types';
 import { kind, type ArtifactKindId } from '../../domain/artifactKinds';
+import { STORED_TYPES, type StoredType } from '../../services/storedTypes';
 
 interface FileSystemContextValue {
   isReady: boolean;
@@ -95,19 +96,7 @@ interface FileSystemContextValue {
   /** Create (and auto-commit) a link; updates provider state so the UI reflects it immediately */
   createLink: (sourceId: string, targetId: string, type: LinkType) => Promise<Link>;
   updateLink: (id: string, updates: Partial<Link>) => Promise<Link | null>;
-  getNextId: (
-    type:
-      | 'requirements'
-      | 'useCases'
-      | 'testCases'
-      | 'information'
-      | 'risks'
-      | 'links'
-      | 'customAttributes'
-      | 'workflows'
-      | 'documents'
-      | 'links'
-  ) => Promise<string>;
+  getNextId: (type: StoredType) => Promise<string>;
   // Reload from disk
   reloadData: () => Promise<void>;
   // Git operations
@@ -172,17 +161,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [preloadedCurrentUserId, setPreloadedCurrentUserId] = useState<string>('');
 
   // Counter for E2E mode to generate unique IDs
-  const [e2eCounters, setE2eCounters] = useState({
-    req: 0,
-    uc: 0,
-    tc: 0,
-    info: 0,
-    risk: 0,
-    doc: 0,
-    link: 0,
-    attr: 0,
-    wf: 0,
-  });
+  const [e2eCounters, setE2eCounters] = useState<Partial<Record<StoredType, number>>>({});
 
   // Background tasks for status bar
   const { startTask, endTask } = useBackgroundTaskActions();
@@ -669,45 +648,12 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Get next ID
   const getNextId = useCallback(
-    async (
-      type:
-        | 'requirements'
-        | 'useCases'
-        | 'testCases'
-        | 'information'
-        | 'risks'
-        | 'links'
-        | 'customAttributes'
-        | 'workflows'
-        | 'documents'
-    ): Promise<string> => {
+    async (type: StoredType): Promise<string> => {
       if (isE2EMode()) {
         // In E2E mode, use local counter
-        const prefix = {
-          requirements: 'REQ',
-          useCases: 'UC',
-          testCases: 'TC',
-          information: 'INFO',
-          risks: 'RISK',
-          links: 'LINK',
-          customAttributes: 'ATTR',
-          workflows: 'WF',
-          documents: 'DOC',
-        }[type];
-        const counterKey = {
-          requirements: 'req',
-          useCases: 'uc',
-          testCases: 'tc',
-          information: 'info',
-          risks: 'risk',
-          links: 'link',
-          customAttributes: 'attr',
-          workflows: 'wf',
-          documents: 'doc',
-        }[type] as keyof typeof e2eCounters;
-        const nextNum = e2eCounters[counterKey] + 1;
-        setE2eCounters((prev) => ({ ...prev, [counterKey]: nextNum }));
-        return `${prefix}-${String(nextNum).padStart(3, '0')}`;
+        const nextNum = (e2eCounters[type] ?? 0) + 1;
+        setE2eCounters((prev) => ({ ...prev, [type]: nextNum }));
+        return `${STORED_TYPES[type].idPrefix}-${String(nextNum).padStart(3, '0')}`;
       }
       return await diskProjectService.getNextIdWithSync(type);
     },

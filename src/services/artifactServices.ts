@@ -5,6 +5,7 @@
  */
 
 import { BaseArtifactService, type ArtifactSerializer } from './baseArtifactService';
+import type { StoredType } from './storedTypes';
 import type { Requirement, UseCase, TestCase, Information, Risk, User } from '../types';
 import {
   requirementToMarkdown,
@@ -27,7 +28,7 @@ const requirementSerializer: ArtifactSerializer<Requirement> = {
   deserialize: markdownToRequirement,
 };
 export const requirementService = new BaseArtifactService<Requirement>(
-  'requirements',
+  'requirement',
   requirementSerializer
 );
 
@@ -36,14 +37,14 @@ const useCaseSerializer: ArtifactSerializer<UseCase> = {
   serialize: convertUseCaseToMarkdown,
   deserialize: markdownToUseCase,
 };
-export const useCaseService = new BaseArtifactService<UseCase>('usecases', useCaseSerializer);
+export const useCaseService = new BaseArtifactService<UseCase>('useCase', useCaseSerializer);
 
 // Test Cases Service
 const testCaseSerializer: ArtifactSerializer<TestCase> = {
   serialize: testCaseToMarkdown,
   deserialize: markdownToTestCase,
 };
-export const testCaseService = new BaseArtifactService<TestCase>('testcases', testCaseSerializer);
+export const testCaseService = new BaseArtifactService<TestCase>('testCase', testCaseSerializer);
 
 // Information Service
 const informationSerializer: ArtifactSerializer<Information> = {
@@ -60,14 +61,14 @@ const riskSerializer: ArtifactSerializer<Risk> = {
   serialize: riskToMarkdown,
   deserialize: markdownToRisk,
 };
-export const riskService = new BaseArtifactService<Risk>('risks', riskSerializer);
+export const riskService = new BaseArtifactService<Risk>('risk', riskSerializer);
 
 // Users Service
 const userSerializer: ArtifactSerializer<User> = {
   serialize: userToMarkdown,
   deserialize: markdownToUser,
 };
-export const userService = new BaseArtifactService<User>('users', userSerializer);
+export const userService = new BaseArtifactService<User>('user', userSerializer);
 
 // Registry of all artifact services for generic iteration
 import { diskLinkService } from './diskLinkService';
@@ -77,15 +78,15 @@ import { documentService } from './documentService';
 export { documentService };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const ALL_ARTIFACT_SERVICES: Record<string, BaseArtifactService<any>> = {
-  requirements: requirementService,
-  usecases: useCaseService,
-  testcases: testCaseService,
+export const ALL_ARTIFACT_SERVICES: Record<StoredType, BaseArtifactService<any>> = {
+  requirement: requirementService,
+  useCase: useCaseService,
+  testCase: testCaseService,
   information: informationService,
-  risks: riskService,
-  users: userService,
-  links: diskLinkService,
-  workflows: diskWorkflowService,
-  customAttributes: diskCustomAttributeService,
-  documents: documentService,
+  risk: riskService,
+  user: userService,
+  link: diskLinkService,
+  workflow: diskWorkflowService,
+  customAttribute: diskCustomAttributeService,
+  document: documentService,
 };

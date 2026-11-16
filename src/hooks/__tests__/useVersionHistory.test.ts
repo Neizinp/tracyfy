@@ -57,7 +57,7 @@ describe('useVersionHistory filters', () => {
 
   it('should handleToggleType correctly', () => {
     const { result } = renderHook(() => useVersionHistory(defaultOptions));
-    const type = 'requirements';
+    const type = 'requirement';
 
     // Deselect one
     act(() => {

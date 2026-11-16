@@ -17,7 +17,7 @@ interface UseCasesContextValue {
 }
 
 const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<UseCase>({
-  type: 'useCases',
+  type: 'useCase',
   displayName: 'UseCases',
   useData: (state) => ({
     items: state.useCases,

@@ -42,7 +42,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const counter = users.length + 1;
         id = `USR-${String(counter).padStart(3, '0')}`;
       } else {
-        id = await idService.getNextId('users');
+        id = await idService.getNextId('user');
       }
 
       const now = Date.now();

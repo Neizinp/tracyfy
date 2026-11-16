@@ -17,7 +17,7 @@ interface DocumentsContextValue {
 }
 
 const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<ArtifactDocument>({
-  type: 'documents',
+  type: 'document',
   displayName: 'Documents',
   useData: (state) => ({
     items: state.documents,

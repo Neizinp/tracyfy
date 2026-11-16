@@ -39,7 +39,7 @@ describe('BaseArtifactService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new BaseArtifactService<TestItem>('requirements', mockSerializer);
+    service = new BaseArtifactService<TestItem>('requirement', mockSerializer);
   });
 
   describe('save', () => {

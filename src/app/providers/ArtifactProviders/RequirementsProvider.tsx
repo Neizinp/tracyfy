@@ -18,7 +18,7 @@ interface RequirementsContextValue {
 }
 
 const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Requirement>({
-  type: 'requirements',
+  type: 'requirement',
   displayName: 'Requirements',
   useData: (state) => ({
     items: state.requirements,

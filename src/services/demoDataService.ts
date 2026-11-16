@@ -54,7 +54,7 @@ export async function loadDemoData(): Promise<Project> {
   const existingUsers = await userService.loadAll();
   let demoUser = existingUsers.find((u) => u.name === 'Demo User');
   if (!demoUser) {
-    const userId = await idService.getNextId('users');
+    const userId = await idService.getNextId('user');
     demoUser = {
       id: userId,
       name: 'Demo User',
@@ -95,11 +95,11 @@ export async function loadDemoData(): Promise<Project> {
 
   // 2. Batch allocate all IDs at once (single disk write per type)
   const [reqIds, ucIds, tcIds, infoIds, riskIds] = await Promise.all([
-    idService.getNextIds('requirements', DEMO_ARTIFACTS.requirements.length),
-    idService.getNextIds('usecases', DEMO_ARTIFACTS.useCases.length),
-    idService.getNextIds('testcases', DEMO_ARTIFACTS.testCases.length),
+    idService.getNextIds('requirement', DEMO_ARTIFACTS.requirements.length),
+    idService.getNextIds('useCase', DEMO_ARTIFACTS.useCases.length),
+    idService.getNextIds('testCase', DEMO_ARTIFACTS.testCases.length),
     idService.getNextIds('information', DEMO_ARTIFACTS.information.length),
-    idService.getNextIds('risks', DEMO_ARTIFACTS.risks.length),
+    idService.getNextIds('risk', DEMO_ARTIFACTS.risks.length),
   ]);
 
   createdIds.requirements = reqIds;

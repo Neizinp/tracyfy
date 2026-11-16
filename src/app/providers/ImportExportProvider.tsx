@@ -8,24 +8,26 @@ import { useDocuments } from './ArtifactProviders';
 import { useFileSystem } from './FileSystemProvider';
 import { useToast } from './ToastProvider';
 import { idService } from '../../services/idService';
-import { ARTIFACT_CONFIG } from '../../constants/artifactConfig';
+import { STORED_TYPES } from '../../services/storedTypes';
+import type { ArtifactKindId } from '../../domain/artifactKinds';
 import {
   IMPORT_KINDS,
   maxIdNumber,
   countImported,
   type ImportBundle,
+  type ImportKind,
 } from '../../utils/importUtils';
 import { debug } from '../../utils/debug';
 
-/** Maps import kinds to IdService counter types */
-const COUNTER_TYPES = {
-  requirements: 'requirements',
-  useCases: 'usecases',
-  testCases: 'testcases',
+/** The artifact kind of each collection in an import */
+const KIND_OF_IMPORT: Record<ImportKind, ArtifactKindId> = {
+  requirements: 'requirement',
+  useCases: 'useCase',
+  testCases: 'testCase',
   information: 'information',
-  risks: 'risks',
-  documents: 'documents',
-} as const;
+  risks: 'risk',
+  documents: 'document',
+};
 
 interface ImportExportContextValue {
   handleExport: () => void;
@@ -88,10 +90,10 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
 
         // Bump ID counters past imported IDs so new artifacts don't collide with them
         for (const kind of IMPORT_KINDS) {
-          const type = COUNTER_TYPES[kind];
+          const type = KIND_OF_IMPORT[kind];
           const highest = maxIdNumber(
             bundle[kind].map((a) => a.id),
-            ARTIFACT_CONFIG[type].idPrefix
+            STORED_TYPES[type].idPrefix
           );
           if (highest > 0) {
             try {
@@ -104,11 +106,11 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
 
         const highestLink = maxIdNumber(
           bundle.links.map((l) => l.id),
-          ARTIFACT_CONFIG.links.idPrefix
+          STORED_TYPES.link.idPrefix
         );
         if (highestLink > 0) {
           try {
-            await idService.ensureCounterAtLeast('links', highestLink);
+            await idService.ensureCounterAtLeast('link', highestLink);
           } catch (err) {
             debug.warn('[import] Failed to bump links counter:', err);
           }

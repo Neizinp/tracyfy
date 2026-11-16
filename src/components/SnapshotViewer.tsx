@@ -3,6 +3,7 @@ import { X, FileText, BookOpen, CheckSquare, Info, Loader } from 'lucide-react';
 import { realGitService } from '../services/realGitService';
 import type { Requirement, UseCase, TestCase, Information } from '../types';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { kind } from '../domain/artifactKinds';
 
 interface SnapshotViewerProps {
   isOpen: boolean;
@@ -12,7 +13,14 @@ interface SnapshotViewerProps {
   timestamp: number;
 }
 
-type Tab = 'requirements' | 'usecases' | 'testcases' | 'information';
+type Tab = 'requirement' | 'useCase' | 'testCase' | 'information';
+
+const TABS: { id: Tab; icon: typeof FileText }[] = [
+  { id: 'requirement', icon: FileText },
+  { id: 'useCase', icon: BookOpen },
+  { id: 'testCase', icon: CheckSquare },
+  { id: 'information', icon: Info },
+];
 
 export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
   isOpen,
@@ -21,7 +29,7 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
   baselineName,
   timestamp,
 }) => {
-  const [activeTab, setActiveTab] = useState<Tab>('requirements');
+  const [activeTab, setActiveTab] = useState<Tab>('requirement');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<{
     requirements: Requirement[];
@@ -58,6 +66,17 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
 
   if (!isOpen) return null;
 
+  const itemsOf = (tab: Tab): (Requirement | UseCase | TestCase | Information)[] => {
+    if (!data) return [];
+    const byKind = {
+      requirement: data.requirements,
+      useCase: data.useCases,
+      testCase: data.testCases,
+      information: data.information,
+    };
+    return byKind[tab];
+  };
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -92,25 +111,12 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
     if (!data)
       return <div style={{ padding: '20px', textAlign: 'center' }}>Failed to load data</div>;
 
-    const getDataForTab = () => {
-      switch (activeTab) {
-        case 'requirements':
-          return data.requirements;
-        case 'usecases':
-          return data.useCases;
-        case 'testcases':
-          return data.testCases;
-        case 'information':
-          return data.information;
-      }
-    };
-
-    const items = getDataForTab() || [];
+    const items = itemsOf(activeTab);
 
     if (items.length === 0) {
       return (
         <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-          No {activeTab} found in this snapshot.
+          No {kind(activeTab).label.plural.toLowerCase()} found in this snapshot.
         </div>
       );
     }
@@ -255,15 +261,10 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
             backgroundColor: 'var(--color-bg-card)',
           }}
         >
-          {[
-            { id: 'requirements', icon: FileText, label: 'Requirements' },
-            { id: 'usecases', icon: BookOpen, label: 'Use Cases' },
-            { id: 'testcases', icon: CheckSquare, label: 'Test Cases' },
-            { id: 'information', icon: Info, label: 'Information' },
-          ].map((tab) => (
+          {TABS.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as Tab)}
+              onClick={() => setActiveTab(tab.id)}
               style={{
                 flex: 1,
                 padding: '12px 16px',
@@ -282,7 +283,7 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
               }}
             >
               <tab.icon size={18} />
-              {tab.label}
+              {kind(tab.id).label.plural}
               {data && (
                 <span
                   style={{
@@ -296,20 +297,7 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
                     textAlign: 'center',
                   }}
                 >
-                  {(() => {
-                    switch (tab.id) {
-                      case 'requirements':
-                        return data.requirements.length;
-                      case 'usecases':
-                        return data.useCases.length;
-                      case 'testcases':
-                        return data.testCases.length;
-                      case 'information':
-                        return data.information.length;
-                      default:
-                        return 0;
-                    }
-                  })()}
+                  {itemsOf(tab.id).length}
                 </span>
               )}
             </button>

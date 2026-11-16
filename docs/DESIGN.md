@@ -277,6 +277,11 @@ Things noticed while doing a step that belong to a later one:
   Search should iterate the registry and the field defs in step 6.
 - **PDF and Excel export miss kinds**: revision history in the PDF only covers requirements,
   use cases, test cases and information. This gets fixed by the rewrite in step 8.
+- **Left after step 2**: the storage layer still names folders by hand
+  (`gitCoreService.loadAllArtifacts`, `gitHistoryService.loadProjectSnapshot`, `ArtifactFolder`),
+  and `STORED_TYPES` still carries users, workflows and custom-attribute files. The JSON
+  import/export keys its collections by state name (`useCases`). All of this belongs to the
+  repository in step 4 and the export rewrite in step 8.
 
 ## 8. Open questions
 

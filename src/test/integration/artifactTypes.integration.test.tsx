@@ -221,6 +221,9 @@ describe.each(TYPES)('integration: opening a $name from elsewhere', (t) => {
     await h.settle();
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     const target = t.all(h.app()).find((a) => a.title === `My ${t.name}`)!;
+    expect(
+      await screen.findByText(`${kind(t.kind).label.singular} ${target.id} created`)
+    ).toBeInTheDocument();
 
     await act(() =>
       h.app().fileSystem.createLink((source as { id: string }).id, target.id, 'related_to')
@@ -229,6 +232,17 @@ describe.each(TYPES)('integration: opening a $name from elsewhere', (t) => {
 
     // Links page: click the target's ID
     fireEvent.click(await within(await screen.findByRole('table')).findByText(target.id));
+    dialog = await expectDialogFor(`My ${t.name}`);
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    // History: click the artifact on its commit
+    await act(() => h.app().fileSystem.commitFile(`${t.folder}/${target.id}.md`, 'Add it'));
+    await h.settle();
+    await act(async () => h.app().ui.setIsVersionHistoryOpen(true));
+    const history = await screen.findByRole('dialog', { name: 'History' });
+    fireEvent.click(within(history).getByRole('button', { name: 'Commits' }));
+    fireEvent.click(await within(history).findByRole('button', { name: target.id }));
     dialog = await expectDialogFor(`My ${t.name}`);
     fireEvent.keyDown(dialog, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());

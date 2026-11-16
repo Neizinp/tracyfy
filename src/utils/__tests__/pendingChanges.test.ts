@@ -5,11 +5,11 @@
  * (workflows/ was neither, until this check existed.)
  */
 import { describe, it, expect } from 'vitest';
-import { ARTIFACT_CONFIG } from '../../constants/artifactConfig';
+import { STORED_TYPES } from '../../services/storedTypes';
 import { classifyPendingPath, AUTO_COMMITTED_FOLDERS } from '../pendingChanges';
 
 const DATA_FOLDERS = [
-  ...Object.values(ARTIFACT_CONFIG).map((c) => c.folder),
+  ...Object.values(STORED_TYPES).map((c) => c.folder),
   'counters',
   'assets',
   'saved-filters',
