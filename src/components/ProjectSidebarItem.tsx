@@ -32,7 +32,7 @@ export const ProjectSidebarItem: React.FC<ProjectSidebarItemProps> = ({
         gap: 'var(--spacing-sm)',
         padding: 'var(--spacing-sm)',
         backgroundColor: isActive ? 'var(--color-bg-hover)' : 'transparent',
-        borderRadius: '6px',
+        borderRadius: 'var(--radius-sm)',
         cursor: 'pointer',
         position: 'relative',
         border: '2px solid transparent',

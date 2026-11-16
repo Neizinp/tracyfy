@@ -31,9 +31,10 @@ export function StatusBar() {
         bottom: 0,
         left: 0,
         right: 0,
-        height: '28px',
-        backgroundColor: 'var(--color-accent)',
-        color: 'white',
+        height: '26px',
+        backgroundColor: 'var(--color-bg-sidebar)',
+        borderTop: '1px solid var(--color-border)',
+        color: 'var(--color-text-secondary)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -41,13 +42,14 @@ export function StatusBar() {
         fontSize: 'var(--font-size-xs)',
         fontWeight: 500,
         zIndex: 9999,
-        boxShadow: '0 -2px 8px rgba(0,0,0,0.15)',
+        boxShadow: 'var(--shadow-popover)',
       }}
     >
       <Loader2
         size={14}
         style={{
           animation: 'spin 1s linear infinite',
+          color: 'var(--color-accent)',
         }}
       />
       {message}

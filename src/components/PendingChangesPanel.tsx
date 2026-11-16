@@ -389,7 +389,7 @@ export function PendingChangesPanel() {
                 key={change.id}
                 style={{
                   backgroundColor: 'var(--color-bg-card)',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   padding: 'var(--spacing-sm)',
                   border: '1px solid var(--color-border)',
                 }}
@@ -446,7 +446,7 @@ export function PendingChangesPanel() {
                     fontSize: 'var(--font-size-xs)',
                     backgroundColor: 'var(--color-bg-app)',
                     border: '1px solid var(--color-border)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-xs)',
                     color: 'var(--color-text-primary)',
                     marginBottom: 'var(--spacing-sm)',
                     outline: 'none',
@@ -466,10 +466,10 @@ export function PendingChangesPanel() {
                       padding: '6px 12px',
                       fontSize: 'var(--font-size-xs)',
                       fontWeight: 500,
-                      color: 'white',
+                      color: 'var(--color-on-accent)',
                       backgroundColor: 'var(--color-accent)',
                       border: 'none',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                       cursor:
                         !commitMessages[change.id]?.trim() || committingIds.has(change.id)
                           ? 'not-allowed'
@@ -518,7 +518,7 @@ export function PendingChangesPanel() {
                       color: 'var(--color-error)',
                       backgroundColor: 'transparent',
                       border: '1px solid var(--color-error)',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                       cursor: committingIds.has(change.id) ? 'not-allowed' : 'pointer',
                       opacity: committingIds.has(change.id) ? 0.5 : 1,
                     }}
@@ -539,7 +539,7 @@ export function PendingChangesPanel() {
           gap: 'var(--spacing-sm)',
           padding: 'var(--spacing-sm)',
           backgroundColor: 'var(--color-bg-secondary)',
-          borderRadius: '6px',
+          borderRadius: 'var(--radius-sm)',
           fontSize: 'var(--font-size-xs)',
           color: 'var(--color-text-muted)',
         }}

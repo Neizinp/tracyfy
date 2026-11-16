@@ -19,9 +19,9 @@ const Section: React.FC<{ title: string; icon: React.ReactNode; children: React.
       <div
         style={{
           padding: '8px',
-          borderRadius: '8px',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-          color: '#10b981',
+          borderRadius: 'var(--radius-md)',
+          backgroundColor: 'var(--color-success-bg)',
+          color: 'var(--color-success)',
         }}
       >
         {icon}
@@ -31,10 +31,10 @@ const Section: React.FC<{ title: string; icon: React.ReactNode; children: React.
     <div
       style={{
         backgroundColor: 'var(--color-bg-card)',
-        borderRadius: '12px',
+        borderRadius: 'var(--radius-lg)',
         border: '1px solid var(--color-border)',
         padding: 'var(--spacing-lg)',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        boxShadow: 'var(--shadow-popover)',
       }}
     >
       {children}
@@ -59,7 +59,7 @@ const PrincipleCard: React.FC<{ title: string; description: string; tip?: string
         gap: '8px',
       }}
     >
-      <CheckCircle2 size={18} style={{ color: '#10b981' }} />
+      <CheckCircle2 size={18} style={{ color: 'var(--color-success)' }} />
       {title}
     </h3>
     <p
@@ -76,7 +76,7 @@ const PrincipleCard: React.FC<{ title: string; description: string; tip?: string
       <div
         style={{
           padding: '8px 12px',
-          borderRadius: '6px',
+          borderRadius: 'var(--radius-sm)',
           backgroundColor: 'var(--color-bg-secondary)',
           borderLeft: '4px solid #10b981',
           fontSize: 'var(--font-size-sm)',
@@ -110,7 +110,7 @@ export const EngineeringGuide: React.FC = () => {
           gap: '8px',
           background: 'none',
           border: 'none',
-          color: '#10b981',
+          color: 'var(--color-success)',
           cursor: 'pointer',
           fontSize: 'var(--font-size-sm)',
           fontWeight: 500,

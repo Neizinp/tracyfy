@@ -110,10 +110,10 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
                 }}
                 style={{
                   padding: '4px 12px',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-xs)',
                   border: 'none',
                   backgroundColor: 'var(--color-status-error)',
-                  color: '#fff',
+                  color: 'var(--color-on-accent)',
                   cursor: 'pointer',
                   fontSize: 'var(--font-size-xs)',
                   fontWeight: 600,
@@ -126,7 +126,7 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
                 onClick={() => setShowDeleteConfirm(false)}
                 style={{
                   padding: '4px 12px',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-xs)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'transparent',
                   color: 'var(--color-text-secondary)',
@@ -147,7 +147,7 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
                 alignItems: 'center',
                 gap: '6px',
                 padding: '8px 12px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-status-error)',
                 backgroundColor: 'transparent',
                 color: 'var(--color-status-error)',
@@ -169,7 +169,7 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
           style={{
             padding: '12px',
             backgroundColor: 'var(--color-bg-secondary)',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--color-border)',
             display: 'flex',
             alignItems: 'center',
@@ -192,7 +192,7 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
             style={{
               width: '100%',
               padding: '8px 12px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-app)',
               color: 'var(--color-text-primary)',
@@ -214,7 +214,7 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
             style={{
               display: 'flex',
               backgroundColor: 'var(--color-bg-secondary)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               padding: '4px',
               border: '1px solid var(--color-border)',
               gap: '4px',
@@ -226,7 +226,7 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
               style={{
                 flex: 1,
                 padding: '8px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 border: 'none',
                 fontSize: 'var(--font-size-sm)',
                 fontWeight: 500,
@@ -236,7 +236,10 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
                 justifyContent: 'center',
                 gap: '8px',
                 backgroundColor: linkScope === 'project' ? 'var(--color-accent)' : 'transparent',
-                color: linkScope === 'project' ? '#fff' : 'var(--color-text-secondary)',
+                color:
+                  linkScope === 'project'
+                    ? 'var(--color-on-accent)'
+                    : 'var(--color-text-secondary)',
                 transition: 'all 0.2s',
               }}
             >
@@ -249,7 +252,7 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
               style={{
                 flex: 1,
                 padding: '8px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 border: 'none',
                 fontSize: 'var(--font-size-sm)',
                 fontWeight: 500,
@@ -259,7 +262,8 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
                 justifyContent: 'center',
                 gap: '8px',
                 backgroundColor: linkScope === 'global' ? 'var(--color-accent)' : 'transparent',
-                color: linkScope === 'global' ? '#fff' : 'var(--color-text-secondary)',
+                color:
+                  linkScope === 'global' ? 'var(--color-on-accent)' : 'var(--color-text-secondary)',
                 transition: 'all 0.2s',
               }}
             >
@@ -276,7 +280,7 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
                   maxHeight: '150px',
                   overflowY: 'auto',
                   border: '1px solid var(--color-border)',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   backgroundColor: 'var(--color-bg-secondary)',
                 }}
               >

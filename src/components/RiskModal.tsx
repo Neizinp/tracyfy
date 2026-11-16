@@ -150,9 +150,9 @@ export const RiskModal: React.FC<RiskModalProps> = ({
             <span
               style={{
                 padding: '4px 8px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 backgroundColor: riskColor,
-                color: 'white',
+                color: 'var(--color-on-accent)',
                 fontSize: 'var(--font-size-xs)',
                 fontWeight: 600,
                 textTransform: 'uppercase',
@@ -183,9 +183,9 @@ export const RiskModal: React.FC<RiskModalProps> = ({
             style={{
               padding: '8px 16px',
               backgroundColor: 'transparent',
-              border: '1px solid var(--color-error)',
+              border: '1px solid transparent',
               color: 'var(--color-error)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
               fontWeight: 600,
             }}
@@ -223,7 +223,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--color-border)',
                     backgroundColor: 'var(--color-bg-app)',
                     color: 'var(--color-text-primary)',
@@ -243,7 +243,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--color-border)',
                     backgroundColor: 'var(--color-bg-app)',
                     color: 'var(--color-text-primary)',
@@ -267,7 +267,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-app)',
                   color: 'var(--color-text-primary)',

@@ -32,13 +32,13 @@ interface MatrixViewProps {
 const MAX_MATRIX_SIZE = 20;
 
 const LINK_SYMBOLS: Record<string, { symbol: string; color: string }> = {
-  parent: { symbol: '↑', color: '#3b82f6' },
-  child: { symbol: '↓', color: '#3b82f6' },
-  depends_on: { symbol: '◆', color: '#f59e0b' },
-  dependency_of: { symbol: '◇', color: '#f59e0b' },
-  related_to: { symbol: '↔', color: '#8b5cf6' },
-  satisfies: { symbol: '✓', color: '#22c55e' },
-  satisfied_by: { symbol: '✓', color: '#22c55e' },
+  parent: { symbol: '↑', color: 'var(--color-info)' },
+  child: { symbol: '↓', color: 'var(--color-info)' },
+  depends_on: { symbol: '◆', color: 'var(--color-warning)' },
+  dependency_of: { symbol: '◇', color: 'var(--color-warning)' },
+  related_to: { symbol: '↔', color: 'var(--color-accent-light)' },
+  satisfies: { symbol: '✓', color: 'var(--color-success)' },
+  satisfied_by: { symbol: '✓', color: 'var(--color-success)' },
   verifies: { symbol: '✔', color: '#10b981' },
   verified_by: { symbol: '✔', color: '#10b981' },
   implements: { symbol: '▸', color: '#06b6d4' },
@@ -104,7 +104,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
     <div
       style={{
         backgroundColor: 'var(--color-bg-card)',
-        borderRadius: '8px',
+        borderRadius: 'var(--radius-md)',
         border: '1px solid var(--color-border)',
         padding: 'var(--spacing-md)',
       }}
@@ -147,7 +147,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
               onClick={() => toggleType(type)}
               style={{
                 padding: '4px 8px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 border: selectedTypes.has(type)
                   ? `2px solid ${color}`
                   : '2px solid var(--color-border)',
@@ -181,8 +181,8 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
             <div
               style={{
                 padding: '8px 12px',
-                backgroundColor: 'rgba(234, 179, 8, 0.1)',
-                borderRadius: '6px',
+                backgroundColor: 'var(--color-warning-bg)',
+                borderRadius: 'var(--radius-sm)',
                 marginBottom: 'var(--spacing-md)',
                 fontSize: 'var(--font-size-sm)',
                 color: 'var(--color-warning-light)',
@@ -296,7 +296,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
               marginTop: 'var(--spacing-md)',
               padding: 'var(--spacing-sm)',
               backgroundColor: 'var(--color-bg-tertiary)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               fontSize: 'var(--font-size-xs)',
               display: 'flex',
               flexWrap: 'wrap',
@@ -305,19 +305,19 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
           >
             <span style={{ fontWeight: 600, color: 'var(--color-text-secondary)' }}>Legend:</span>
             <span>
-              <span style={{ color: '#3b82f6' }}>↑↓</span> parent/child
+              <span style={{ color: 'var(--color-info)' }}>↑↓</span> parent/child
             </span>
             <span>
-              <span style={{ color: '#22c55e' }}>✓</span> satisfies
+              <span style={{ color: 'var(--color-success)' }}>✓</span> satisfies
             </span>
             <span>
               <span style={{ color: '#10b981' }}>✔</span> verifies
             </span>
             <span>
-              <span style={{ color: '#8b5cf6' }}>↔</span> related
+              <span style={{ color: 'var(--color-accent-light)' }}>↔</span> related
             </span>
             <span>
-              <span style={{ color: '#f59e0b' }}>◆</span> depends
+              <span style={{ color: 'var(--color-warning)' }}>◆</span> depends
             </span>
             <span>
               <span style={{ color: '#6366f1' }}>→←</span> references

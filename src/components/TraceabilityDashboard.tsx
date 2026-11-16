@@ -98,7 +98,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
     backgroundColor: isActive ? 'var(--color-accent)' : 'transparent',
     color: isActive ? 'white' : 'var(--color-text-secondary)',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: 'var(--radius-sm)',
     cursor: 'pointer',
     fontWeight: isActive ? 600 : 400,
     fontSize: 'var(--font-size-sm)',
@@ -115,7 +115,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
             gap: '4px',
             backgroundColor: 'var(--color-bg-tertiary)',
             padding: '4px',
-            borderRadius: '8px',
+            borderRadius: 'var(--radius-md)',
           }}
         >
           <button
@@ -173,7 +173,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
               gap: 'var(--spacing-lg)',
               padding: 'var(--spacing-lg)',
               backgroundColor: 'var(--color-bg-card)',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md)',
               border: '1px solid var(--color-border)',
             }}
           >
@@ -296,7 +296,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
             style={{
               padding: 'var(--spacing-md)',
               backgroundColor: 'var(--color-bg-tertiary)',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md)',
               fontSize: 'var(--font-size-sm)',
               color: 'var(--color-text-secondary)',
             }}
@@ -320,7 +320,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
         <div
           style={{
             backgroundColor: 'var(--color-bg-card)',
-            borderRadius: '8px',
+            borderRadius: 'var(--radius-md)',
             border: '1px solid var(--color-border)',
             padding: 'var(--spacing-md)',
           }}
@@ -363,7 +363,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                   onClick={() => toggleType(type)}
                   style={{
                     padding: '4px 8px',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-xs)',
                     border: selectedTypes.has(type)
                       ? `2px solid ${color}`
                       : '2px solid var(--color-border)',

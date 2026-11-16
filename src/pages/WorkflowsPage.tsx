@@ -74,11 +74,11 @@ export const WorkflowsPage: React.FC = () => {
   const getStatusColor = (status: Workflow['status']): string => {
     switch (status) {
       case 'pending':
-        return 'rgba(234, 179, 8, 0.2)';
+        return 'var(--color-warning-bg)';
       case 'approved':
-        return 'rgba(34, 197, 94, 0.2)';
+        return 'var(--color-success-bg)';
       case 'rejected':
-        return 'rgba(239, 68, 68, 0.2)';
+        return 'var(--color-error-bg)';
       default:
         return 'var(--color-bg-secondary)';
     }
@@ -87,11 +87,11 @@ export const WorkflowsPage: React.FC = () => {
   const getStatusTextColor = (status: Workflow['status']): string => {
     switch (status) {
       case 'pending':
-        return 'rgb(234, 179, 8)';
+        return 'var(--color-warning)';
       case 'approved':
-        return 'rgb(34, 197, 94)';
+        return 'var(--color-success)';
       case 'rejected':
-        return 'rgb(239, 68, 68)';
+        return 'var(--color-error)';
       default:
         return 'var(--color-text-secondary)';
     }
@@ -127,7 +127,7 @@ export const WorkflowsPage: React.FC = () => {
           alignItems: 'center',
           gap: '4px',
           padding: '2px 8px',
-          borderRadius: '4px',
+          borderRadius: 'var(--radius-xs)',
           backgroundColor: getStatusColor(wf.status),
           color: getStatusTextColor(wf.status),
           fontSize: 'var(--font-size-xs)',
@@ -220,7 +220,12 @@ export const WorkflowsPage: React.FC = () => {
       render: (wf) =>
         wf.status === 'approved' && wf.approvedBy ? (
           <span
-            style={{ color: 'rgb(34, 197, 94)', display: 'flex', alignItems: 'center', gap: '4px' }}
+            style={{
+              color: 'var(--color-success)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
           >
             <CheckCircle2 size={12} /> Approved by {getUserName(wf.approvedBy)}
           </span>
@@ -280,15 +285,15 @@ export const WorkflowsPage: React.FC = () => {
                 fontWeight: 600,
               }}
             >
-              <Clock size={18} style={{ color: 'rgb(234, 179, 8)' }} />
+              <Clock size={18} style={{ color: 'var(--color-warning)' }} />
               Waiting for Me
               {waitingForMe.length > 0 && (
                 <span
                   style={{
-                    backgroundColor: 'rgba(234, 179, 8, 0.2)',
-                    color: 'rgb(234, 179, 8)',
+                    backgroundColor: 'var(--color-warning-bg)',
+                    color: 'var(--color-warning)',
                     padding: '2px 8px',
-                    borderRadius: '12px',
+                    borderRadius: 'var(--radius-lg)',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
                   }}

@@ -1,6 +1,6 @@
 import React from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { dropdownItemStyle, dropdownItemWithBorderStyle, hoverHandlers } from './layoutStyles';
+import { dropdownItemStyle, dropdownItemWithBorderStyle } from './layoutStyles';
 
 interface DropdownMenuItemProps {
   onClick: () => void;
@@ -28,9 +28,9 @@ export const DropdownMenuItem: React.FC<DropdownMenuItemProps> = ({
       onClick={onClick}
       style={showBorder ? dropdownItemWithBorderStyle : dropdownItemStyle}
       data-testid={testId}
-      {...hoverHandlers}
+      className="tf-menu-item"
     >
-      <Icon size={16} />
+      <Icon size={15} style={{ color: 'var(--color-text-muted)' }} />
       {label}
     </button>
   );

@@ -70,7 +70,7 @@ export const AssetImage: React.FC<AssetImageProps> = ({ src, alt, style }) => {
           display: 'inline-block',
           padding: '8px 12px',
           backgroundColor: 'var(--color-bg-secondary)',
-          borderRadius: '4px',
+          borderRadius: 'var(--radius-xs)',
           color: 'var(--color-text-muted)',
           fontSize: 'var(--font-size-xs)',
         }}
@@ -87,7 +87,7 @@ export const AssetImage: React.FC<AssetImageProps> = ({ src, alt, style }) => {
           display: 'inline-block',
           padding: '8px 12px',
           backgroundColor: 'var(--color-bg-secondary)',
-          borderRadius: '4px',
+          borderRadius: 'var(--radius-xs)',
           color: 'var(--color-status-rejected)',
           fontSize: 'var(--font-size-xs)',
         }}
@@ -104,7 +104,7 @@ export const AssetImage: React.FC<AssetImageProps> = ({ src, alt, style }) => {
       style={{
         maxWidth: '100%',
         height: 'auto',
-        borderRadius: '4px',
+        borderRadius: 'var(--radius-xs)',
         margin: '8px 0',
         ...style,
       }}

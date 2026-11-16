@@ -15,7 +15,7 @@ const HubCard: React.FC<{
       onClick={() => navigate(path)}
       style={{
         backgroundColor: 'var(--color-bg-card)',
-        borderRadius: '16px',
+        borderRadius: 'var(--radius-xl)',
         border: '1px solid var(--color-border)',
         padding: 'var(--spacing-xl)',
         cursor: 'pointer',
@@ -25,7 +25,7 @@ const HubCard: React.FC<{
         gap: 'var(--spacing-md)',
         position: 'relative',
         overflow: 'hidden',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        boxShadow: 'var(--shadow-popover)',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-4px)';
@@ -43,7 +43,7 @@ const HubCard: React.FC<{
         style={{
           width: '48px',
           height: '48px',
-          borderRadius: '12px',
+          borderRadius: 'var(--radius-lg)',
           backgroundColor: `${color}15`,
           color: color,
           display: 'flex',

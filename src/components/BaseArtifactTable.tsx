@@ -36,10 +36,9 @@ export function BaseArtifactTable<T extends { id: string }>({
     return (
       <div
         style={{
-          background: 'var(--color-bg-primary)',
-          borderRadius: '8px',
-          border: '1px solid var(--color-border)',
-          padding: '32px',
+          border: '1px dashed var(--color-border-light)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '40px 32px',
           textAlign: 'center',
           color: 'var(--color-text-muted)',
         }}
@@ -50,20 +49,20 @@ export function BaseArtifactTable<T extends { id: string }>({
   }
 
   const thStyle: React.CSSProperties = {
-    padding: '12px 16px',
+    height: '34px',
+    padding: '0 12px',
     textAlign: 'left',
-    fontWeight: 600,
-    color: 'var(--color-text-secondary)',
-    fontSize: 'var(--font-size-sm)',
-    backgroundColor: 'var(--color-bg-secondary)',
+    fontWeight: 500,
+    color: 'var(--color-text-muted)',
+    fontSize: 'var(--font-size-xs)',
+    whiteSpace: 'nowrap',
+    backgroundColor: 'var(--color-bg-app)',
+    borderBottom: '1px solid var(--color-border)',
   };
 
   return (
     <div
       style={{
-        background: 'var(--color-bg-primary)',
-        borderRadius: '8px',
-        border: '1px solid var(--color-border)',
         overflow: 'hidden',
         height: '100%',
         display: 'flex',
@@ -75,12 +74,7 @@ export function BaseArtifactTable<T extends { id: string }>({
         data={data}
         overscan={5}
         fixedHeaderContent={() => (
-          <tr
-            style={{
-              background: 'var(--color-bg-secondary)',
-              borderBottom: '1px solid var(--color-border)',
-            }}
-          >
+          <tr style={{ background: 'var(--color-bg-app)' }}>
             {visibleColumns.map((col) => {
               if (col.sortable !== false) {
                 return (
@@ -120,10 +114,11 @@ export function BaseArtifactTable<T extends { id: string }>({
               <td
                 key={col.key}
                 style={{
-                  padding: '12px 16px',
+                  padding: '9px 12px',
                   verticalAlign: 'top',
                   fontSize: 'var(--font-size-sm)',
                   textAlign: col.align || 'left',
+                  borderBottom: '1px solid var(--color-border)',
                 }}
               >
                 {col.render ? col.render(item) : (item[col.key as keyof T] as unknown as string)}
@@ -138,7 +133,8 @@ export function BaseArtifactTable<T extends { id: string }>({
               style={{
                 ...style,
                 width: '100%',
-                borderCollapse: 'collapse',
+                borderCollapse: 'separate',
+                borderSpacing: 0,
                 fontSize: 'var(--font-size-sm)',
               }}
             />
@@ -157,18 +153,8 @@ export function BaseArtifactTable<T extends { id: string }>({
             <tr
               {...props}
               onClick={() => onRowClick?.(item)}
-              style={{
-                borderBottom: '1px solid var(--color-border)',
-                cursor: onRowClick ? 'pointer' : 'default',
-                transition: 'background-color 0.2s',
-                backgroundColor: 'var(--color-bg-card)',
-              }}
-              onMouseEnter={(e) => {
-                if (onRowClick) e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
-              }}
-              onMouseLeave={(e) => {
-                if (onRowClick) e.currentTarget.style.backgroundColor = 'var(--color-bg-card)';
-              }}
+              className={onRowClick ? 'tf-row tf-row-clickable' : 'tf-row'}
+              style={{ cursor: onRowClick ? 'pointer' : 'default' }}
             />
           ),
         }}

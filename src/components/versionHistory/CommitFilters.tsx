@@ -42,10 +42,10 @@ export const CommitFilters: React.FC<CommitFiltersProps> = ({
             fontWeight: 600,
             cursor: 'pointer',
             padding: '2px 4px',
-            borderRadius: '4px',
+            borderRadius: 'var(--radius-xs)',
             transition: 'background-color 0.2s',
           }}
-          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(52, 152, 219, 0.1)')}
+          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-info-bg)')}
           onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
           Select All
@@ -61,10 +61,10 @@ export const CommitFilters: React.FC<CommitFiltersProps> = ({
             fontWeight: 600,
             cursor: 'pointer',
             padding: '2px 4px',
-            borderRadius: '4px',
+            borderRadius: 'var(--radius-xs)',
             transition: 'background-color 0.2s',
           }}
-          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(155, 155, 155, 0.1)')}
+          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')}
           onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
           Deselect All

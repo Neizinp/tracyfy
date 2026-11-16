@@ -111,7 +111,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                 width: '100%',
                 padding: '10px 12px',
                 backgroundColor: 'var(--color-bg-secondary)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-border)',
                 color: 'var(--color-text-primary)',
                 fontSize: 'var(--font-size-sm)',
@@ -141,7 +141,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
               style={{
                 padding: '10px 12px',
                 backgroundColor: 'var(--color-bg-secondary)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-border)',
                 display: 'flex',
                 alignItems: 'center',
@@ -153,9 +153,9 @@ export const LinkModal: React.FC<LinkModalProps> = ({
               <span
                 style={{
                   fontSize: '10px',
-                  color: '#fff',
+                  color: 'var(--color-on-accent)',
                   padding: '2px 6px',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-xs)',
                   textTransform: 'uppercase',
                   fontWeight: 700,
                   backgroundColor:
@@ -189,7 +189,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
               style={{
                 display: 'flex',
                 backgroundColor: 'var(--color-bg-secondary)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 padding: '4px',
                 border: '1px solid var(--color-border)',
                 gap: '4px',
@@ -204,13 +204,16 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                     style={{
                       flex: 1,
                       padding: '6px',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                       border: 'none',
                       fontSize: 'var(--font-size-xs)',
                       fontWeight: 600,
                       cursor: 'pointer',
                       backgroundColor: targetType === type ? 'var(--color-accent)' : 'transparent',
-                      color: targetType === type ? '#fff' : 'var(--color-text-secondary)',
+                      color:
+                        targetType === type
+                          ? 'var(--color-on-accent)'
+                          : 'var(--color-text-secondary)',
                       transition: 'all 0.2s',
                     }}
                   >
@@ -246,7 +249,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                 style={{
                   width: '100%',
                   padding: '8px 12px 8px 32px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-app)',
                   color: 'var(--color-text-primary)',
@@ -260,7 +263,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
             <div
               style={{
                 border: '1px solid var(--color-border)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 backgroundColor: 'var(--color-bg-secondary)',
                 maxHeight: '180px',
                 overflowY: 'auto',
@@ -295,7 +298,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                        backgroundColor: isSelected ? 'var(--color-info-bg)' : 'transparent',
                         transition: 'background-color 0.15s',
                       }}
                       onMouseEnter={(e) =>
@@ -343,18 +346,18 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                           style={{
                             fontSize: '10px',
                             padding: '2px 8px',
-                            borderRadius: '10px',
+                            borderRadius: 'var(--radius-lg)',
                             whiteSpace: 'nowrap',
                             backgroundColor: isCurrentProject
                               ? 'var(--color-bg-card)'
-                              : 'rgba(99, 102, 241, 0.15)',
+                              : 'var(--color-accent-bg)',
                             color: isCurrentProject
                               ? 'var(--color-text-muted)'
                               : 'var(--color-accent)',
                             fontWeight: 500,
                             border: isCurrentProject
                               ? '1px solid var(--color-border)'
-                              : '1px solid rgba(99, 102, 241, 0.3)',
+                              : '1px solid var(--color-accent-ring)',
                           }}
                         >
                           {isCurrentProject ? 'Local' : project.name}
@@ -376,7 +379,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
             style={{
               width: '100%',
               padding: '8px 12px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-app)',
               color: 'var(--color-text-primary)',
@@ -409,7 +412,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
             style={{
               display: 'flex',
               backgroundColor: 'var(--color-bg-secondary)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               padding: '4px',
               border: '1px solid var(--color-border)',
               gap: '4px',
@@ -421,7 +424,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
               style={{
                 flex: 1,
                 padding: '8px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 border: 'none',
                 fontSize: 'var(--font-size-sm)',
                 fontWeight: 500,
@@ -431,7 +434,10 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                 justifyContent: 'center',
                 gap: '8px',
                 backgroundColor: linkScope === 'project' ? 'var(--color-accent)' : 'transparent',
-                color: linkScope === 'project' ? '#fff' : 'var(--color-text-secondary)',
+                color:
+                  linkScope === 'project'
+                    ? 'var(--color-on-accent)'
+                    : 'var(--color-text-secondary)',
                 transition: 'all 0.2s',
               }}
             >
@@ -444,7 +450,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
               style={{
                 flex: 1,
                 padding: '8px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 border: 'none',
                 fontSize: 'var(--font-size-sm)',
                 fontWeight: 500,
@@ -454,7 +460,8 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                 justifyContent: 'center',
                 gap: '8px',
                 backgroundColor: linkScope === 'global' ? 'var(--color-accent)' : 'transparent',
-                color: linkScope === 'global' ? '#fff' : 'var(--color-text-secondary)',
+                color:
+                  linkScope === 'global' ? 'var(--color-on-accent)' : 'var(--color-text-secondary)',
                 transition: 'all 0.2s',
               }}
             >

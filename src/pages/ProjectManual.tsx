@@ -33,7 +33,7 @@ const Section: React.FC<{ title: string; icon: React.ReactNode; children: React.
       <div
         style={{
           padding: '8px',
-          borderRadius: '8px',
+          borderRadius: 'var(--radius-md)',
           backgroundColor: 'var(--color-bg-secondary)',
           color: 'var(--color-accent)',
         }}
@@ -45,10 +45,10 @@ const Section: React.FC<{ title: string; icon: React.ReactNode; children: React.
     <div
       style={{
         backgroundColor: 'var(--color-bg-card)',
-        borderRadius: '12px',
+        borderRadius: 'var(--radius-lg)',
         border: '1px solid var(--color-border)',
         padding: 'var(--spacing-lg)',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        boxShadow: 'var(--shadow-popover)',
       }}
     >
       {children}
@@ -263,7 +263,7 @@ export const ProjectManual: React.FC = () => {
           <div
             style={{
               padding: '12px',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-secondary)',
             }}
@@ -273,7 +273,7 @@ export const ProjectManual: React.FC = () => {
                 fontSize: 'var(--font-size-xs)',
                 fontWeight: 700,
                 padding: '2px 6px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 backgroundColor: 'var(--color-bg-app)',
                 border: '1px solid var(--color-border)',
                 marginRight: '8px',
@@ -286,7 +286,7 @@ export const ProjectManual: React.FC = () => {
           <div
             style={{
               padding: '12px',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-secondary)',
             }}
@@ -296,7 +296,7 @@ export const ProjectManual: React.FC = () => {
                 fontSize: 'var(--font-size-xs)',
                 fontWeight: 700,
                 padding: '2px 6px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 backgroundColor: 'var(--color-bg-app)',
                 border: '1px solid var(--color-border)',
                 marginRight: '8px',
@@ -309,7 +309,7 @@ export const ProjectManual: React.FC = () => {
           <div
             style={{
               padding: '12px',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-secondary)',
             }}
@@ -319,7 +319,7 @@ export const ProjectManual: React.FC = () => {
                 fontSize: 'var(--font-size-xs)',
                 fontWeight: 700,
                 padding: '2px 6px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 backgroundColor: 'var(--color-bg-app)',
                 border: '1px solid var(--color-border)',
                 marginRight: '8px',
@@ -332,7 +332,7 @@ export const ProjectManual: React.FC = () => {
           <div
             style={{
               padding: '12px',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-secondary)',
             }}
@@ -342,7 +342,7 @@ export const ProjectManual: React.FC = () => {
                 fontSize: 'var(--font-size-xs)',
                 fontWeight: 700,
                 padding: '2px 6px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-xs)',
                 backgroundColor: 'var(--color-bg-app)',
                 border: '1px solid var(--color-border)',
                 marginRight: '8px',

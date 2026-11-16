@@ -131,7 +131,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
                 backgroundColor: 'transparent',
                 border: '1px solid var(--color-primary)',
                 color: 'var(--color-primary)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 cursor: 'pointer',
                 fontWeight: 600,
               }}
@@ -149,7 +149,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
                 backgroundColor: 'transparent',
                 border: '1px solid var(--color-error)',
                 color: 'var(--color-error)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 cursor: 'pointer',
                 fontWeight: 600,
               }}

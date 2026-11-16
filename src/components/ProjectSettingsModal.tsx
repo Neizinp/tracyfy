@@ -84,14 +84,14 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       <div
         style={{
           backgroundColor: 'var(--color-bg-card)',
-          borderRadius: '8px',
+          borderRadius: 'var(--radius-md)',
           border: '1px solid var(--color-border)',
           width: '500px',
           maxWidth: '90%',
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          boxShadow: 'var(--shadow-popover)',
         }}
       >
         <div
@@ -145,7 +145,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
               style={{
                 width: '100%',
                 padding: '8px 12px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'var(--color-bg-app)',
                 color: 'var(--color-text-primary)',
@@ -172,7 +172,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
               style={{
                 width: '100%',
                 padding: '8px 12px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'var(--color-bg-app)',
                 color: 'var(--color-text-primary)',
@@ -189,7 +189,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                 padding: 'var(--spacing-sm)',
                 backgroundColor: 'var(--color-error-bg)',
                 color: 'var(--color-error)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-error-light)',
                 fontSize: 'var(--font-size-sm)',
               }}
@@ -204,7 +204,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                 marginBottom: 'var(--spacing-md)',
                 padding: 'var(--spacing-md)',
                 backgroundColor: 'var(--color-warning-bg, #fef3cd)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-warning-border, #ffc107)',
               }}
             >
@@ -224,7 +224,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                   style={{
                     flex: 1,
                     padding: '6px 12px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--color-border)',
                     backgroundColor: 'var(--color-bg-card)',
                     color: 'var(--color-text-secondary)',
@@ -241,10 +241,10 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                   style={{
                     flex: 1,
                     padding: '6px 12px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: 'none',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
@@ -270,7 +270,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                 onClick={onClose}
                 style={{
                   padding: '8px 16px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-card)',
                   color: 'var(--color-text-primary)',
@@ -284,12 +284,12 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                 disabled={isSubmitting}
                 style={{
                   padding: '8px 16px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: 'none',
                   backgroundColor: isSubmitting
                     ? 'var(--color-bg-disabled)'
                     : 'var(--color-accent)',
-                  color: 'white',
+                  color: 'var(--color-on-accent)',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   fontWeight: 500,
                   opacity: isSubmitting ? 0.7 : 1,
@@ -315,7 +315,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                     style={{
                       width: '100%',
                       padding: '8px 16px',
-                      borderRadius: '6px',
+                      borderRadius: 'var(--radius-sm)',
                       border: '1px solid var(--color-border)',
                       backgroundColor: 'var(--color-bg-card)',
                       color: 'var(--color-text-primary)',
@@ -334,7 +334,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                     style={{
                       padding: 'var(--spacing-md)',
                       backgroundColor: 'var(--color-bg-secondary)',
-                      borderRadius: '6px',
+                      borderRadius: 'var(--radius-sm)',
                       border: '1px solid var(--color-border)',
                     }}
                   >
@@ -374,7 +374,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                         style={{
                           width: '100%',
                           padding: '8px 12px',
-                          borderRadius: '6px',
+                          borderRadius: 'var(--radius-sm)',
                           border: '1px solid var(--color-border)',
                           backgroundColor: 'var(--color-bg-app)',
                           color: 'var(--color-text-primary)',
@@ -400,7 +400,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                         style={{
                           width: '100%',
                           padding: '8px 12px',
-                          borderRadius: '6px',
+                          borderRadius: 'var(--radius-sm)',
                           border: '1px solid var(--color-border)',
                           backgroundColor: 'var(--color-bg-app)',
                           color: 'var(--color-text-primary)',
@@ -416,7 +416,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                         style={{
                           flex: 1,
                           padding: '8px 16px',
-                          borderRadius: '6px',
+                          borderRadius: 'var(--radius-sm)',
                           border: '1px solid var(--color-border)',
                           backgroundColor: 'var(--color-bg-card)',
                           color: 'var(--color-text-primary)',
@@ -432,12 +432,12 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                         style={{
                           flex: 1,
                           padding: '8px 16px',
-                          borderRadius: '6px',
+                          borderRadius: 'var(--radius-sm)',
                           border: 'none',
                           backgroundColor: isSubmitting
                             ? 'var(--color-bg-disabled)'
                             : 'var(--color-accent)',
-                          color: 'white',
+                          color: 'var(--color-on-accent)',
                           cursor: isSubmitting ? 'not-allowed' : 'pointer',
                           fontWeight: 500,
                         }}
@@ -465,7 +465,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                   style={{
                     width: '100%',
                     padding: '8px 16px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--color-error-light)',
                     backgroundColor: 'var(--color-bg-card)',
                     color: 'var(--color-error)',
@@ -497,7 +497,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                   style={{
                     backgroundColor: 'var(--color-error-bg)',
                     padding: 'var(--spacing-md)',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--color-error-light)',
                   }}
                 >
@@ -517,7 +517,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                       style={{
                         flex: 1,
                         padding: '6px 12px',
-                        borderRadius: '6px',
+                        borderRadius: 'var(--radius-sm)',
                         border: '1px solid var(--color-border)',
                         backgroundColor: 'var(--color-bg-card)',
                         color: 'var(--color-text-secondary)',
@@ -534,10 +534,10 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                       style={{
                         flex: 1,
                         padding: '6px 12px',
-                        borderRadius: '6px',
+                        borderRadius: 'var(--radius-sm)',
                         border: 'none',
                         backgroundColor: 'var(--color-error)',
-                        color: 'white',
+                        color: 'var(--color-on-accent)',
                         cursor: 'pointer',
                         fontSize: 'var(--font-size-sm)',
                         fontWeight: 500,

@@ -80,15 +80,15 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
     >
       <div
         style={{
-          backgroundColor: '#222',
-          borderRadius: '8px',
-          border: '1px solid var(--color-border)',
+          backgroundColor: 'var(--color-bg-raised)',
+          borderRadius: 'var(--radius-xl)',
+          border: '1px solid var(--color-border-light)',
           width: '500px',
           maxWidth: '90%',
           maxHeight: '80vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          boxShadow: 'var(--shadow-popover)',
         }}
       >
         {/* Header */}
@@ -131,7 +131,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
               style={{
                 backgroundColor: 'var(--color-bg-card)',
                 border: '1px solid var(--color-accent)',
-                borderRadius: '8px',
+                borderRadius: 'var(--radius-md)',
                 padding: 'var(--spacing-md)',
                 marginBottom: 'var(--spacing-lg)',
               }}
@@ -167,10 +167,10 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                   onClick={() => setIsAdding(true)}
                   style={{
                     padding: '4px 12px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: 'none',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
@@ -200,7 +200,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                   style={{
                     flex: 1,
                     padding: '8px 12px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--color-border)',
                     backgroundColor: 'var(--color-bg-app)',
                     color: 'var(--color-text-primary)',
@@ -211,10 +211,10 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                   onClick={handleAddUser}
                   style={{
                     padding: '8px 16px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: 'none',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     cursor: 'pointer',
                     fontWeight: 500,
                   }}
@@ -228,7 +228,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                   }}
                   style={{
                     padding: '8px 16px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--color-border)',
                     backgroundColor: 'transparent',
                     color: 'var(--color-text-muted)',
@@ -270,7 +270,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                         user.id === currentUserId
                           ? '1px solid var(--color-accent)'
                           : '1px solid var(--color-border)',
-                      borderRadius: '6px',
+                      borderRadius: 'var(--radius-sm)',
                     }}
                   >
                     {editingUser?.id === user.id ? (
@@ -284,7 +284,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                           style={{
                             flex: 1,
                             padding: '4px 8px',
-                            borderRadius: '4px',
+                            borderRadius: 'var(--radius-xs)',
                             border: '1px solid var(--color-border)',
                             backgroundColor: 'var(--color-bg-app)',
                             color: 'var(--color-text-primary)',
@@ -295,10 +295,10 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                           onClick={handleSaveEdit}
                           style={{
                             padding: '4px 12px',
-                            borderRadius: '4px',
+                            borderRadius: 'var(--radius-xs)',
                             border: 'none',
                             backgroundColor: 'var(--color-accent)',
-                            color: 'white',
+                            color: 'var(--color-on-accent)',
                             cursor: 'pointer',
                             fontSize: 'var(--font-size-xs)',
                           }}
@@ -309,7 +309,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                           onClick={() => setEditingUser(null)}
                           style={{
                             padding: '4px 12px',
-                            borderRadius: '4px',
+                            borderRadius: 'var(--radius-xs)',
                             border: '1px solid var(--color-border)',
                             backgroundColor: 'transparent',
                             color: 'var(--color-text-muted)',
@@ -343,7 +343,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                               title="Switch to this user"
                               style={{
                                 padding: '4px 8px',
-                                borderRadius: '4px',
+                                borderRadius: 'var(--radius-xs)',
                                 border: '1px solid var(--color-border)',
                                 backgroundColor: 'transparent',
                                 color: 'var(--color-text-secondary)',
@@ -359,7 +359,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                             title="Edit user"
                             style={{
                               padding: '4px 8px',
-                              borderRadius: '4px',
+                              borderRadius: 'var(--radius-xs)',
                               border: '1px solid var(--color-border)',
                               backgroundColor: 'transparent',
                               color: 'var(--color-text-secondary)',
@@ -375,10 +375,10 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                                 onClick={() => handleDeleteUser(user.id)}
                                 style={{
                                   padding: '4px 8px',
-                                  borderRadius: '4px',
+                                  borderRadius: 'var(--radius-xs)',
                                   border: 'none',
                                   backgroundColor: 'var(--color-error)',
-                                  color: 'white',
+                                  color: 'var(--color-on-accent)',
                                   cursor: 'pointer',
                                   fontSize: 'var(--font-size-xs)',
                                 }}
@@ -389,7 +389,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                                 onClick={() => setShowDeleteConfirm(null)}
                                 style={{
                                   padding: '4px 8px',
-                                  borderRadius: '4px',
+                                  borderRadius: 'var(--radius-xs)',
                                   border: '1px solid var(--color-border)',
                                   backgroundColor: 'transparent',
                                   color: 'var(--color-text-muted)',
@@ -406,7 +406,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                               title="Delete user"
                               style={{
                                 padding: '4px 8px',
-                                borderRadius: '4px',
+                                borderRadius: 'var(--radius-xs)',
                                 border: '1px solid var(--color-error-light)',
                                 backgroundColor: 'var(--color-bg-card)',
                                 color: 'var(--color-error)',
@@ -447,7 +447,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
               style={{
                 backgroundColor: 'var(--color-bg-card)',
                 border: '1px solid var(--color-border)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 padding: 'var(--spacing-md)',
               }}
             >
@@ -484,7 +484,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
                 }}
                 style={{
                   padding: '8px 16px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-secondary)',
                   color: 'var(--color-text-primary)',
@@ -523,10 +523,10 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, on
             onClick={onClose}
             style={{
               padding: '8px 16px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               border: 'none',
               backgroundColor: 'var(--color-accent)',
-              color: 'white',
+              color: 'var(--color-on-accent)',
               cursor: 'pointer',
               fontWeight: 500,
             }}

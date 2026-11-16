@@ -2,61 +2,41 @@ import React from 'react';
 import { X, AlertTriangle, Info, CheckCircle, XCircle } from 'lucide-react';
 import { useToast, useToasts } from '../app/providers/ToastProvider';
 
-const getToastStyles = (type: 'info' | 'warning' | 'error' | 'success') => {
-  const baseStyles = {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '12px',
-    padding: '16px',
-    borderRadius: '8px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-    minWidth: '320px',
-    maxWidth: '450px',
-    opacity: 1, // Explicitly prevent any transparency
-  };
-
-  switch (type) {
-    case 'warning':
-      return {
-        ...baseStyles,
-        backgroundColor: '#433422', // Solid opaque background
-        border: '1px solid #f59e0b',
-        color: '#f59e0b',
-      };
-    case 'error':
-      return {
-        ...baseStyles,
-        backgroundColor: '#422222', // Solid opaque background
-        border: '1px solid #ef4444',
-        color: '#ef4444',
-      };
-    case 'success':
-      return {
-        ...baseStyles,
-        backgroundColor: '#224422', // Solid opaque background
-        border: '1px solid #22c55e',
-        color: '#22c55e',
-      };
-    default:
-      return {
-        ...baseStyles,
-        backgroundColor: '#2a2a2a', // Solid opaque background
-        border: '1px solid #6366f1',
-        color: '#6366f1',
-      };
-  }
+/** Icon color per toast type; the toast itself is a neutral raised surface */
+const TOAST_ACCENT: Record<'info' | 'warning' | 'error' | 'success', string> = {
+  info: '#74a6ff',
+  warning: '#f1b54b',
+  error: '#ff6b6b',
+  success: '#4ad295',
 };
+
+const getToastStyles = (type: 'info' | 'warning' | 'error' | 'success') => ({
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: '10px',
+  padding: '12px 14px',
+  borderRadius: 'var(--radius-lg)',
+  // Solid, opaque surface in both themes so toasts stay readable over any content
+  backgroundColor: '#26282d',
+  border: '1px solid #3a3c42',
+  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
+  color: TOAST_ACCENT[type],
+  minWidth: '300px',
+  maxWidth: '440px',
+  fontSize: 'var(--font-size-sm)',
+  opacity: 1,
+});
 
 const getIcon = (type: 'info' | 'warning' | 'error' | 'success') => {
   switch (type) {
     case 'warning':
-      return <AlertTriangle size={20} />;
+      return <AlertTriangle size={18} />;
     case 'error':
-      return <XCircle size={20} />;
+      return <XCircle size={18} />;
     case 'success':
-      return <CheckCircle size={20} />;
+      return <CheckCircle size={18} />;
     default:
-      return <Info size={20} />;
+      return <Info size={18} />;
   }
 };
 
@@ -87,11 +67,7 @@ export const ToastContainer: React.FC = () => {
           }}
         >
           <div style={{ flexShrink: 0, marginTop: '2px' }}>{getIcon(toast.type)}</div>
-          <div
-            style={{ flex: 1, color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}
-          >
-            {toast.message}
-          </div>
+          <div style={{ flex: 1, color: '#e8e9ed', lineHeight: 1.45 }}>{toast.message}</div>
           <button
             onClick={() => removeToast(toast.id)}
             style={{

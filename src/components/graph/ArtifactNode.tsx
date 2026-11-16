@@ -42,7 +42,7 @@ export const ArtifactNode: React.FC<NodeProps<ArtifactNodeData>> = ({ data, sele
     <div
       style={{
         padding: '12px 16px',
-        borderRadius: '8px',
+        borderRadius: 'var(--radius-md)',
         border: `2px solid ${getBorderColor()}`,
         backgroundColor: getBackgroundColor(),
         minWidth: '200px',
@@ -100,7 +100,7 @@ export const ArtifactNode: React.FC<NodeProps<ArtifactNodeData>> = ({ data, sele
               alignItems: 'center',
               gap: '4px',
               padding: '2px 6px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               backgroundColor: 'var(--color-bg-tertiary)',
               fontSize: 'var(--font-size-xs)',
               color: 'var(--color-text-secondary)',

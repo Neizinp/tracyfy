@@ -154,9 +154,9 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
             style={{
               padding: '8px 16px',
               backgroundColor: 'transparent',
-              border: '1px solid var(--color-status-error)',
-              color: 'var(--color-status-error)',
-              borderRadius: '6px',
+              border: '1px solid transparent',
+              color: 'var(--color-error)',
+              borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
               fontWeight: 600,
             }}
@@ -197,7 +197,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-app)',
                   color: 'var(--color-text-primary)',

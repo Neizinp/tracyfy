@@ -53,19 +53,21 @@ export function GenericColumnSelector<T extends string>({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
-          padding: '8px 12px',
-          backgroundColor: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
-          borderRadius: '6px',
+          gap: '7px',
+          height: '32px',
+          padding: '0 10px',
+          backgroundColor: 'transparent',
+          border: '1px solid var(--color-border-light)',
+          borderRadius: 'var(--radius-sm)',
           color: 'var(--color-text-primary)',
           cursor: 'pointer',
           fontSize: 'var(--font-size-sm)',
           fontWeight: 500,
           transition: 'background-color 0.2s',
         }}
+        className="tf-btn"
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)')}
+        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         title="Toggle column visibility"
       >
         <Columns size={16} />
@@ -81,8 +83,8 @@ export function GenericColumnSelector<T extends string>({
             marginTop: '8px',
             backgroundColor: 'var(--color-bg-card)',
             border: '2px solid var(--color-border)',
-            borderRadius: '8px',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-popover)',
             zIndex: 100,
             minWidth: '220px',
             overflow: 'hidden',

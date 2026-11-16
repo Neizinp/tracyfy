@@ -209,7 +209,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               backgroundColor: 'var(--color-bg-secondary)',
               color: isUploading ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
               border: '1px solid var(--color-border)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               cursor: isUploading ? 'wait' : 'pointer',
               transition: 'all 0.2s',
               opacity: isUploading ? 0.7 : 1,
@@ -244,7 +244,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               backgroundColor: 'var(--color-bg-secondary)',
               color: 'var(--color-text-secondary)',
               border: '1px solid var(--color-border)',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
               transition: 'all 0.2s',
             }}
@@ -305,7 +305,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             maxHeight: `${height + 100}px`,
             overflowY: 'auto',
             border: '1px solid var(--color-border)',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-sm)',
             padding: '12px',
             backgroundColor: 'var(--color-bg-app)',
             fontSize: 'var(--font-size-sm)',
@@ -420,7 +420,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                       style={{
                         backgroundColor: 'var(--color-bg-secondary)',
                         padding: '2px 6px',
-                        borderRadius: '3px',
+                        borderRadius: 'var(--radius-xs)',
                         fontSize: 'var(--font-size-sm)',
                         color: 'var(--color-accent-light)',
                       }}
@@ -434,7 +434,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                         display: 'block',
                         backgroundColor: 'var(--color-bg-secondary)',
                         padding: '8px 12px',
-                        borderRadius: '4px',
+                        borderRadius: 'var(--radius-xs)',
                         fontSize: 'var(--font-size-sm)',
                         overflowX: 'auto',
                         margin: '8px 0',
@@ -451,7 +451,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                     style={{
                       backgroundColor: 'var(--color-bg-secondary)',
                       padding: '8px 12px',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                       marginBottom: '8px',
                       overflowX: 'auto',
                     }}

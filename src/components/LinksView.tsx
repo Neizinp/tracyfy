@@ -163,7 +163,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
             alignItems: 'center',
             gap: '6px',
             padding: '4px 8px',
-            borderRadius: '4px',
+            borderRadius: 'var(--radius-xs)',
             backgroundColor: 'var(--color-bg-secondary)',
             fontSize: 'var(--font-size-xs)',
             fontFamily: 'monospace',
@@ -206,12 +206,10 @@ export const LinksView: React.FC<LinksViewProps> = ({
             alignItems: 'center',
             gap: '4px',
             padding: '2px 8px',
-            borderRadius: '10px',
+            borderRadius: 'var(--radius-lg)',
             fontSize: 'var(--font-size-xs)',
             backgroundColor:
-              link.projectIds.length === 0
-                ? 'rgba(59, 130, 246, 0.2)'
-                : 'var(--color-bg-secondary)',
+              link.projectIds.length === 0 ? 'var(--color-info-bg)' : 'var(--color-bg-secondary)',
             color:
               link.projectIds.length === 0 ? 'var(--color-accent)' : 'var(--color-text-secondary)',
           }}
@@ -259,9 +257,9 @@ export const LinksView: React.FC<LinksViewProps> = ({
                 gap: '6px',
                 padding: '8px 12px',
                 backgroundColor: 'var(--color-accent)',
-                color: 'white',
+                color: 'var(--color-on-accent)',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 cursor: 'pointer',
                 fontSize: 'var(--font-size-sm)',
                 fontWeight: 600,
@@ -278,7 +276,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
               alignItems: 'center',
               gap: '6px',
               padding: '6px 12px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-card)',
               color: 'var(--color-text-primary)',
@@ -303,7 +301,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
             flex: 1,
             minWidth: '200px',
             padding: '8px 12px',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--color-border)',
             backgroundColor: 'var(--color-bg-app)',
             color: 'var(--color-text-primary)',
@@ -315,7 +313,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
           onChange={(e) => setTypeFilter(e.target.value)}
           style={{
             padding: '8px 12px',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--color-border)',
             backgroundColor: 'var(--color-bg-app)',
             color: 'var(--color-text-primary)',
@@ -334,7 +332,7 @@ export const LinksView: React.FC<LinksViewProps> = ({
           onChange={(e) => setScopeFilter(e.target.value as 'all' | 'global' | 'project')}
           style={{
             padding: '8px 12px',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--color-border)',
             backgroundColor: 'var(--color-bg-app)',
             color: 'var(--color-text-primary)',

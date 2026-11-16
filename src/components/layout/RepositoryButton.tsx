@@ -1,6 +1,6 @@
 import React from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { sidebarButtonStyle, sidebarHoverHandlers } from './layoutStyles';
+import { sidebarButtonStyle } from './layoutStyles';
 
 interface RepositoryButtonProps {
   onClick: () => void;
@@ -18,8 +18,8 @@ export const RepositoryButton: React.FC<RepositoryButtonProps> = ({
   label,
 }) => {
   return (
-    <button onClick={onClick} style={sidebarButtonStyle} {...sidebarHoverHandlers}>
-      <Icon size={18} />
+    <button onClick={onClick} style={sidebarButtonStyle} className="tf-nav">
+      <Icon size={16} style={{ color: 'var(--color-text-muted)' }} />
       {label}
     </button>
   );

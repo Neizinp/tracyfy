@@ -127,7 +127,7 @@ export const CustomAttributesPage: React.FC = () => {
           style={{
             width: '100%',
             padding: '10px 12px 10px 40px',
-            borderRadius: '8px',
+            borderRadius: 'var(--radius-md)',
             border: '1px solid var(--color-border)',
             backgroundColor: 'var(--color-bg-card)',
             color: 'var(--color-text-primary)',
@@ -143,7 +143,7 @@ export const CustomAttributesPage: React.FC = () => {
             textAlign: 'center',
             padding: 'var(--spacing-xl)',
             backgroundColor: 'var(--color-bg-card)',
-            borderRadius: '8px',
+            borderRadius: 'var(--radius-md)',
             border: '1px solid var(--color-border)',
           }}
         >
@@ -170,7 +170,7 @@ export const CustomAttributesPage: React.FC = () => {
                 justifyContent: 'space-between',
                 padding: 'var(--spacing-md)',
                 backgroundColor: 'var(--color-bg-card)',
-                borderRadius: '8px',
+                borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--color-border)',
                 transition: 'border-color 0.15s, background-color 0.15s',
                 cursor: 'pointer',
@@ -193,7 +193,7 @@ export const CustomAttributesPage: React.FC = () => {
                       color: 'var(--color-text-muted)',
                       backgroundColor: 'var(--color-bg-secondary)',
                       padding: '2px 6px',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                     }}
                   >
                     {def.id}
@@ -203,9 +203,9 @@ export const CustomAttributesPage: React.FC = () => {
                     style={{
                       fontSize: 'var(--font-size-xs)',
                       padding: '2px 8px',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-xs)',
                       backgroundColor: TYPE_COLORS[def.type],
-                      color: 'white',
+                      color: 'var(--color-on-accent)',
                       textTransform: 'uppercase',
                     }}
                   >
@@ -248,7 +248,7 @@ export const CustomAttributesPage: React.FC = () => {
                       style={{
                         fontSize: 'var(--font-size-xs)',
                         padding: '2px 6px',
-                        borderRadius: '4px',
+                        borderRadius: 'var(--radius-xs)',
                         backgroundColor: 'var(--color-bg-secondary)',
                         color: 'var(--color-text-secondary)',
                       }}

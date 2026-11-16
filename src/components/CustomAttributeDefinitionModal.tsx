@@ -91,14 +91,14 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
       <div
         style={{
           backgroundColor: 'var(--color-bg-card)',
-          borderRadius: '8px',
+          borderRadius: 'var(--radius-md)',
           border: '1px solid var(--color-border)',
           width: '600px',
           maxWidth: '95%',
           maxHeight: '85vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          boxShadow: 'var(--shadow-popover)',
         }}
         role="dialog"
         aria-modal="true"
@@ -161,7 +161,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
               style={{
                 width: '100%',
                 padding: '8px 12px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'var(--color-bg-app)',
                 color: 'var(--color-text-primary)',
@@ -188,7 +188,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
               style={{
                 width: '100%',
                 padding: '8px 12px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'var(--color-bg-app)',
                 color: 'var(--color-text-primary)',
@@ -231,7 +231,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
                   style={{
                     flex: 1,
                     padding: '8px 12px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--color-border)',
                     backgroundColor: 'var(--color-bg-app)',
                     color: 'var(--color-text-primary)',
@@ -243,7 +243,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
                   onClick={handleAddOption}
                   style={{
                     padding: '8px 12px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--color-accent)',
                     backgroundColor: 'transparent',
                     color: 'var(--color-accent)',
@@ -265,7 +265,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
                     gap: '6px',
                     padding: '8px',
                     backgroundColor: 'var(--color-bg-secondary)',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                   }}
                 >
                   {options.map((option, index) => (
@@ -277,7 +277,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
                         gap: '4px',
                         padding: '4px 8px',
                         backgroundColor: 'var(--color-bg-card)',
-                        borderRadius: '4px',
+                        borderRadius: 'var(--radius-xs)',
                         border: '1px solid var(--color-border)',
                         fontSize: 'var(--font-size-sm)',
                       }}
@@ -325,7 +325,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
               style={{
                 width: '100%',
                 padding: '8px 12px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'var(--color-bg-app)',
                 color: 'var(--color-text-primary)',
@@ -376,7 +376,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--color-border)',
                     backgroundColor: 'var(--color-bg-app)',
                     color: 'var(--color-text-primary)',
@@ -398,7 +398,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--color-border)',
                     backgroundColor: 'var(--color-bg-app)',
                     color: 'var(--color-text-primary)',
@@ -416,7 +416,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--color-border)',
                     backgroundColor: 'var(--color-bg-app)',
                     color: 'var(--color-text-primary)',
@@ -454,7 +454,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
                     alignItems: 'center',
                     gap: '6px',
                     padding: '6px 12px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     border: `1px solid ${appliesTo.includes(at.value) ? 'var(--color-accent)' : 'var(--color-border)'}`,
                     backgroundColor: appliesTo.includes(at.value)
                       ? 'var(--color-accent-bg)'
@@ -484,7 +484,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
                 padding: 'var(--spacing-sm)',
                 backgroundColor: 'var(--color-error-bg)',
                 color: 'var(--color-error)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-error-light)',
                 fontSize: 'var(--font-size-sm)',
               }}
@@ -507,7 +507,7 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
               onClick={onClose}
               style={{
                 padding: '8px 16px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'var(--color-bg-card)',
                 color: 'var(--color-text-primary)',
@@ -521,10 +521,10 @@ export const CustomAttributeDefinitionModal: React.FC<CustomAttributeDefinitionM
               disabled={isSubmitting}
               style={{
                 padding: '8px 16px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 border: 'none',
                 backgroundColor: isSubmitting ? 'var(--color-bg-disabled)' : 'var(--color-accent)',
-                color: 'white',
+                color: 'var(--color-on-accent)',
                 cursor: isSubmitting ? 'not-allowed' : 'pointer',
                 fontWeight: 500,
               }}

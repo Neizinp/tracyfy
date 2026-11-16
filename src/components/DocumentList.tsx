@@ -37,10 +37,11 @@ export const DocumentList: React.FC<DocumentListProps> = ({
       {
         key: 'idTitle',
         label: 'ID / Title',
-        width: '250px',
+        width: '280px',
+        minWidth: '240px',
         render: (doc: ArtifactDocument) => (
           <>
-            <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '2px' }}>
+            <div className="tf-mono" style={{ color: 'var(--color-accent)', marginBottom: '2px' }}>
               {doc.id}
             </div>
             <div style={{ color: 'var(--color-text-primary)' }}>{doc.title}</div>
@@ -57,7 +58,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             style={{
               fontSize: 'var(--font-size-xs)',
               padding: '2px 6px',
-              borderRadius: '4px',
+              borderRadius: 'var(--radius-xs)',
               background: 'var(--color-bg-tertiary)',
               color: 'var(--color-text-secondary)',
               border: '1px solid var(--color-border)',
@@ -77,7 +78,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             style={{
               fontSize: 'var(--font-size-xs)',
               padding: '2px 6px',
-              borderRadius: '4px',
+              borderRadius: 'var(--radius-xs)',
               backgroundColor: 'var(--color-bg-tertiary)',
               color: 'var(--color-text-secondary)',
               border: '1px solid var(--color-border)',
@@ -97,13 +98,13 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             style={{
               fontSize: 'var(--font-size-xs)',
               padding: '2px 8px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               backgroundColor:
                 doc.status === 'approved'
-                  ? 'rgba(16, 185, 129, 0.1)'
+                  ? 'var(--color-success-bg)'
                   : doc.status === 'review'
-                    ? 'rgba(245, 158, 11, 0.1)'
-                    : 'rgba(107, 114, 128, 0.1)',
+                    ? 'var(--color-warning-bg)'
+                    : 'var(--color-bg-hover)',
               color:
                 doc.status === 'approved'
                   ? 'var(--color-success)'
@@ -112,10 +113,10 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                     : 'var(--color-text-secondary)',
               border: `1px solid ${
                 doc.status === 'approved'
-                  ? 'rgba(16, 185, 129, 0.2)'
+                  ? 'var(--color-success-bg)'
                   : doc.status === 'review'
-                    ? 'rgba(245, 158, 11, 0.2)'
-                    : 'rgba(107, 114, 128, 0.2)'
+                    ? 'var(--color-warning-bg)'
+                    : 'var(--color-bg-tertiary)'
               }`,
               textTransform: 'capitalize',
             }}

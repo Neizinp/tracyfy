@@ -40,10 +40,11 @@ export const RiskList: React.FC<RiskListProps> = ({
       {
         key: 'idTitle',
         label: 'ID / Title',
-        width: '250px',
+        width: '280px',
+        minWidth: '240px',
         render: (risk: Risk) => (
           <>
-            <div style={{ fontWeight: 500, color: 'var(--color-accent)', marginBottom: '2px' }}>
+            <div className="tf-mono" style={{ color: 'var(--color-accent)', marginBottom: '2px' }}>
               {risk.id}
             </div>
             <div style={{ color: 'var(--color-text-primary)' }}>{risk.title}</div>
@@ -68,7 +69,7 @@ export const RiskList: React.FC<RiskListProps> = ({
                       style={{
                         fontSize: 'var(--font-size-xs)',
                         padding: '2px 6px',
-                        borderRadius: '4px',
+                        borderRadius: 'var(--radius-xs)',
                         background: 'var(--color-bg-tertiary)',
                         color: 'var(--color-text-secondary)',
                         border: '1px solid var(--color-border)',
@@ -90,10 +91,10 @@ export const RiskList: React.FC<RiskListProps> = ({
           <span
             style={{
               padding: '2px 8px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
-              background: 'rgba(59, 130, 246, 0.1)',
+              background: 'var(--color-info-bg)',
               color: 'var(--color-info)',
             }}
           >
@@ -140,15 +141,15 @@ export const RiskList: React.FC<RiskListProps> = ({
             <span
               style={{
                 padding: '2px 8px',
-                borderRadius: '12px',
+                borderRadius: 'var(--radius-lg)',
                 fontSize: 'var(--font-size-xs)',
                 fontWeight: 600,
                 background:
                   sev >= 15
-                    ? 'rgba(239, 68, 68, 0.1)'
+                    ? 'var(--color-error-bg)'
                     : sev >= 8
-                      ? 'rgba(245, 158, 11, 0.1)'
-                      : 'rgba(16, 185, 129, 0.1)',
+                      ? 'var(--color-warning-bg)'
+                      : 'var(--color-success-bg)',
                 color:
                   sev >= 15
                     ? 'var(--color-error)'
@@ -171,15 +172,15 @@ export const RiskList: React.FC<RiskListProps> = ({
           <span
             style={{
               padding: '2px 8px',
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-lg)',
               fontSize: 'var(--font-size-xs)',
               fontWeight: 500,
               background:
                 risk.status === 'mitigated'
-                  ? 'rgba(16, 185, 129, 0.1)'
+                  ? 'var(--color-success-bg)'
                   : risk.status === 'open'
-                    ? 'rgba(239, 68, 68, 0.1)'
-                    : 'rgba(107, 114, 128, 0.1)',
+                    ? 'var(--color-error-bg)'
+                    : 'var(--color-bg-hover)',
               color:
                 risk.status === 'mitigated'
                   ? 'var(--color-success)'

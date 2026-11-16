@@ -442,7 +442,11 @@ export const ProjectLayout: React.FC = () => {
           }}
         >
           <div>
-            <h2 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 600 }}>{getPageTitle()}</h2>
+            <h2
+              style={{ fontSize: 'var(--font-size-xl)', fontWeight: 600, letterSpacing: '-0.02em' }}
+            >
+              {getPageTitle()}
+            </h2>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             {(location.pathname === '/requirements' ||
@@ -450,15 +454,17 @@ export const ProjectLayout: React.FC = () => {
               <>
                 <button
                   onClick={() => ui.setIsNewRequirementModalOpen(true)}
+                  className="tf-btn-primary"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '8px 12px',
+                    height: '32px',
+                    padding: '0 12px',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
@@ -491,15 +497,17 @@ export const ProjectLayout: React.FC = () => {
                     ui.setEditingUseCase(null);
                     ui.setIsUseCaseModalOpen(true);
                   }}
+                  className="tf-btn-primary"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '8px 12px',
+                    height: '32px',
+                    padding: '0 12px',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
@@ -521,15 +529,17 @@ export const ProjectLayout: React.FC = () => {
               <>
                 <button
                   onClick={() => ui.setIsNewTestCaseModalOpen(true)}
+                  className="tf-btn-primary"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '8px 12px',
+                    height: '32px',
+                    padding: '0 12px',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
@@ -554,15 +564,17 @@ export const ProjectLayout: React.FC = () => {
                     ui.setSelectedInformation(null);
                     ui.setIsInformationModalOpen(true);
                   }}
+                  className="tf-btn-primary"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '8px 12px',
+                    height: '32px',
+                    padding: '0 12px',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
@@ -584,15 +596,17 @@ export const ProjectLayout: React.FC = () => {
               <>
                 <button
                   onClick={() => ui.setIsRiskModalOpen(true)}
+                  className="tf-btn-primary"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '8px 12px',
+                    height: '32px',
+                    padding: '0 12px',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
@@ -617,15 +631,17 @@ export const ProjectLayout: React.FC = () => {
                     ui.setEditingDocument(null);
                     ui.setIsEditDocumentModalOpen(true);
                   }}
+                  className="tf-btn-primary"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '8px 12px',
+                    height: '32px',
+                    padding: '0 12px',
                     backgroundColor: 'var(--color-accent)',
-                    color: 'white',
+                    color: 'var(--color-on-accent)',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 500,
@@ -654,11 +670,12 @@ export const ProjectLayout: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '8px 12px',
+                  height: '32px',
+                  padding: '0 12px',
                   backgroundColor: 'var(--color-accent)',
-                  color: 'white',
+                  color: 'var(--color-on-accent)',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   cursor: 'pointer',
                   fontSize: 'var(--font-size-sm)',
                   fontWeight: 500,
@@ -675,11 +692,12 @@ export const ProjectLayout: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '8px 12px',
+                  height: '32px',
+                  padding: '0 12px',
                   backgroundColor: 'var(--color-accent)',
-                  color: 'white',
+                  color: 'var(--color-on-accent)',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   cursor: 'pointer',
                   fontSize: 'var(--font-size-sm)',
                   fontWeight: 500,
@@ -696,11 +714,12 @@ export const ProjectLayout: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '8px 12px',
+                  height: '32px',
+                  padding: '0 12px',
                   backgroundColor: 'var(--color-accent)',
-                  color: 'white',
+                  color: 'var(--color-on-accent)',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-sm)',
                   cursor: 'pointer',
                   fontSize: 'var(--font-size-sm)',
                   fontWeight: 500,

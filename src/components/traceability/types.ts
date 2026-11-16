@@ -27,12 +27,20 @@ export interface LinkInfo {
 
 export const TYPE_COLORS: Record<ArtifactType, { bg: string; border: string; text: string }> = {
   requirement: {
-    bg: 'rgba(59, 130, 246, 0.1)',
+    bg: 'var(--color-info-bg)',
     border: 'rgba(59, 130, 246, 0.5)',
-    text: '#3b82f6',
+    text: 'var(--color-info)',
   },
-  useCase: { bg: 'rgba(139, 92, 246, 0.1)', border: 'rgba(139, 92, 246, 0.5)', text: '#8b5cf6' },
-  testCase: { bg: 'rgba(34, 197, 94, 0.1)', border: 'rgba(34, 197, 94, 0.5)', text: '#22c55e' },
+  useCase: {
+    bg: 'rgba(139, 92, 246, 0.1)',
+    border: 'rgba(139, 92, 246, 0.5)',
+    text: 'var(--color-accent-light)',
+  },
+  testCase: {
+    bg: 'rgba(34, 197, 94, 0.1)',
+    border: 'rgba(34, 197, 94, 0.5)',
+    text: 'var(--color-success)',
+  },
   information: { bg: 'rgba(234, 179, 8, 0.1)', border: 'rgba(234, 179, 8, 0.5)', text: '#eab308' },
 };
 

@@ -34,9 +34,9 @@ export const CreateBaselineForm: React.FC<CreateBaselineFormProps> = ({
         onClick={onStartCreating}
         style={{
           padding: '6px 12px',
-          borderRadius: '6px',
+          borderRadius: 'var(--radius-sm)',
           backgroundColor: 'var(--color-info)',
-          color: 'white',
+          color: 'var(--color-on-accent)',
           border: 'none',
           cursor: 'pointer',
           fontSize: 'var(--font-size-sm)',
@@ -62,7 +62,7 @@ export const CreateBaselineForm: React.FC<CreateBaselineFormProps> = ({
         autoFocus
         style={{
           padding: '6px 12px',
-          borderRadius: '6px',
+          borderRadius: 'var(--radius-sm)',
           border: '1px solid var(--color-border)',
           backgroundColor: 'var(--color-bg-app)',
           color: 'var(--color-text-primary)',
@@ -77,7 +77,7 @@ export const CreateBaselineForm: React.FC<CreateBaselineFormProps> = ({
         placeholder="Description (optional)"
         style={{
           padding: '6px 12px',
-          borderRadius: '6px',
+          borderRadius: 'var(--radius-sm)',
           border: '1px solid var(--color-border)',
           backgroundColor: 'var(--color-bg-app)',
           color: 'var(--color-text-primary)',
@@ -90,9 +90,9 @@ export const CreateBaselineForm: React.FC<CreateBaselineFormProps> = ({
         disabled={!baselineName.trim()}
         style={{
           padding: '6px 12px',
-          borderRadius: '6px',
+          borderRadius: 'var(--radius-sm)',
           backgroundColor: 'var(--color-info)',
-          color: 'white',
+          color: 'var(--color-on-accent)',
           border: 'none',
           cursor: 'pointer',
           fontSize: 'var(--font-size-sm)',
@@ -106,7 +106,7 @@ export const CreateBaselineForm: React.FC<CreateBaselineFormProps> = ({
         onClick={onCancel}
         style={{
           padding: '6px 12px',
-          borderRadius: '6px',
+          borderRadius: 'var(--radius-sm)',
           border: '1px solid var(--color-border)',
           backgroundColor: 'var(--color-bg-card)',
           color: 'var(--color-text-primary)',

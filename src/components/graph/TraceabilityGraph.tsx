@@ -140,7 +140,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
     <div
       style={{
         backgroundColor: 'var(--color-bg-card)',
-        borderRadius: '8px',
+        borderRadius: 'var(--radius-md)',
         border: '1px solid var(--color-border)',
         overflow: 'hidden',
         position: 'relative',
@@ -183,7 +183,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
             onChange={(e) => handleLayoutChange(e.target.value as LayoutAlgorithm)}
             style={{
               padding: '6px 10px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-tertiary)',
               color: 'var(--color-text-primary)',
@@ -204,7 +204,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
               alignItems: 'center',
               gap: '6px',
               padding: '6px 12px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-bg-tertiary)',
               color: 'var(--color-text-primary)',
@@ -246,7 +246,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
                   onClick={() => onToggleType(type)}
                   style={{
                     padding: '4px 8px',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-xs)',
                     border: selectedTypes.has(type)
                       ? `2px solid ${color}`
                       : '2px solid var(--color-border)',
@@ -322,7 +322,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
                 flexDirection: 'column',
                 backgroundColor: 'var(--color-bg-card)',
                 border: '1px solid var(--color-border)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
               }}
             />
             <MiniMap
@@ -333,7 +333,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
               style={{
                 backgroundColor: 'var(--color-bg-card)',
                 border: '1px solid var(--color-border)',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
               }}
               maskColor="rgba(0, 0, 0, 0.1)"
             />
@@ -367,7 +367,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
                 style={{
                   width: '12px',
                   height: '12px',
-                  borderRadius: '2px',
+                  borderRadius: 'var(--radius-xs)',
                   backgroundColor: colors.bg,
                   border: `2px solid ${colors.border}`,
                 }}

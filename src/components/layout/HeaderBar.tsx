@@ -135,20 +135,18 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   return (
     <header
       style={{
-        height: '60px',
+        height: '52px',
         borderBottom: '1px solid var(--color-border)',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 var(--spacing-lg)',
+        gap: '8px',
+        padding: '0 16px',
         backgroundColor: 'var(--color-bg-app)',
       }}
     >
-      <div />
-
       {/* Unified Search Bar */}
       {onSearch && (
-        <div style={searchContainerStyle}>
+        <div style={searchContainerStyle} className="tf-search">
           <Search size={16} style={searchIconStyle} />
           <input
             ref={searchInputRef}
@@ -177,10 +175,16 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ flex: 1 }} />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
         {/* Create New Dropdown */}
         <div style={{ position: 'relative' }} ref={createMenuRef}>
-          <button onClick={() => setIsCreateMenuOpen(!isCreateMenuOpen)} style={primaryButtonStyle}>
+          <button
+            onClick={() => setIsCreateMenuOpen(!isCreateMenuOpen)}
+            style={primaryButtonStyle}
+            className="tf-btn-primary"
+          >
             <Plus size={18} />
             Create New
             <ChevronDown size={14} />
@@ -300,6 +304,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               }
             }}
             style={headerButtonStyle}
+            className="tf-btn"
             title="Change Working Folder"
           >
             <FolderOpen size={18} />
@@ -309,7 +314,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
         {/* History Button */}
         {onViewHistory && (
-          <button onClick={onViewHistory} style={headerButtonStyle}>
+          <button onClick={onViewHistory} style={headerButtonStyle} className="tf-btn">
             <Clock size={18} />
             History
           </button>
@@ -317,7 +322,12 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
         {/* User Settings Button */}
         {onOpenUserSettings && (
-          <button onClick={onOpenUserSettings} style={headerButtonStyle} title="User Settings">
+          <button
+            onClick={onOpenUserSettings}
+            style={headerButtonStyle}
+            className="tf-btn"
+            title="User Settings"
+          >
             <User size={18} />
             {currentUserName || 'User'}
           </button>
@@ -325,7 +335,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
         {/* Help Button */}
         {onHelp && (
-          <button onClick={onHelp} style={headerButtonStyle} title="Help (F1)">
+          <button onClick={onHelp} style={headerButtonStyle} className="tf-btn" title="Help (F1)">
             <HelpCircle size={18} />
             Help
           </button>
@@ -336,6 +346,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           <button
             onClick={() => setIsImportMenuOpen(!isImportMenuOpen)}
             style={headerButtonStyle}
+            className="tf-btn"
             data-testid="import-button"
           >
             <Upload size={18} />
@@ -383,7 +394,12 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
         {/* Export Button */}
         {onOpenExportModal && (
-          <button onClick={onOpenExportModal} style={headerButtonStyle} data-testid="export-button">
+          <button
+            onClick={onOpenExportModal}
+            style={headerButtonStyle}
+            className="tf-btn"
+            data-testid="export-button"
+          >
             <Download size={18} />
             Export
           </button>
@@ -395,6 +411,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             <button
               onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
               style={headerButtonStyle}
+              className="tf-btn"
               data-testid="export-button-legacy"
             >
               <Download size={18} />

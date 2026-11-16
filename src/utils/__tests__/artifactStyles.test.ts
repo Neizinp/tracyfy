@@ -105,7 +105,7 @@ describe('artifactStyles', () => {
   describe('style constants', () => {
     it('should export badgeStyle with correct properties', () => {
       expect(badgeStyle.padding).toBe('2px 8px');
-      expect(badgeStyle.borderRadius).toBe('4px');
+      expect(badgeStyle.borderRadius).toBe('var(--radius-xs)');
       expect(badgeStyle.fontSize).toBe('var(--font-size-xs)');
       expect(badgeStyle.textTransform).toBe('capitalize');
       expect(badgeStyle.fontWeight).toBe(500);
@@ -119,7 +119,7 @@ describe('artifactStyles', () => {
 
     it('should export revisionBadgeStyle with correct properties', () => {
       expect(revisionBadgeStyle.fontSize).toBe('var(--font-size-xs)');
-      expect(revisionBadgeStyle.borderRadius).toBe('3px');
+      expect(revisionBadgeStyle.borderRadius).toBe('var(--radius-xs)');
     });
   });
 });
