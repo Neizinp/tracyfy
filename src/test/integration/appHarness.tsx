@@ -206,8 +206,30 @@ export async function startApp(
     restart: async () => {
       rendered.unmount();
       latest.current = null;
-      rendered = render(tree);
-      await waitFor(() => expect(app().fileSystem.isReady).toBe(true), { timeout: READY_TIMEOUT });
+      // Record errors during startup so a failed restart explains itself
+      const errors: string[] = [];
+      const originalError = console.error;
+      console.error = (...args: unknown[]) => {
+        errors.push(args.map((a) => (a instanceof Error ? a.stack : String(a))).join(' '));
+        originalError(...args);
+      };
+      try {
+        rendered = render(tree);
+        await waitFor(
+          () => {
+            const fsState = latest.current?.fileSystem;
+            if (!fsState?.isReady) {
+              throw new Error(
+                `App not ready after restart: isLoading=${fsState?.isLoading} ` +
+                  `error=${fsState?.error}\nconsole.error during restart:\n${errors.join('\n')}`
+              );
+            }
+          },
+          { timeout: READY_TIMEOUT }
+        );
+      } finally {
+        console.error = originalError;
+      }
       await settle();
     },
     cleanup: () => {
