@@ -1,40 +1,67 @@
-/* Dark Theme - Default theme with Slate/Zinc inspired colors */
+/* Dark theme (default): layered graphite surfaces, one azure accent */
 :root {
-  /* Base Colors */
-  --color-bg-app: #0f172a;
-  --color-bg-sidebar: #1e293b;
-  --color-bg-card: #1e293b;
-  --color-bg-secondary: #283548;
-  --color-bg-hover: #334155;
+  color-scheme: dark;
 
-  /* Text Colors */
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
+  /* Surfaces, darkest to lightest: sidebar < app < card < raised controls */
+  --color-bg-sidebar: #18191c;
+  --color-bg-app: #1d1e22;
+  --color-bg-primary: #1d1e22;
+  --color-bg-card: #212226;
+  --color-bg-secondary: #26282d;
+  --color-bg-tertiary: #2c2e33;
+  --color-bg-raised: #26282d;
+  --color-bg-hover: rgba(255, 255, 255, 0.05);
+  --color-bg-subtle: rgba(255, 255, 255, 0.03);
+  --color-bg-disabled: rgba(255, 255, 255, 0.03);
+  --color-bg-overlay: rgba(10, 11, 14, 0.55);
 
-  /* Accent Colors - Indigo/Violet */
-  --color-accent: #6366f1;
-  --color-accent-hover: #4f46e5;
-  --color-accent-light: #818cf8;
+  /* Text */
+  --color-text-primary: #e8e9ed;
+  --color-text: #e8e9ed;
+  --color-text-secondary: #b9bbc3;
+  --color-text-muted: #8a8d97;
+  --color-text-muted-rgb: 138, 141, 151;
 
-  /* Semantic Colors */
-  --color-success: #10b981;
-  --color-success-light: #6ee7b7;
-  --color-success-bg: rgba(16, 185, 129, 0.2);
+  /* Accent */
+  --color-accent: #4f8cff;
+  --color-primary: #4f8cff;
+  --color-accent-hover: #3b7bff;
+  --color-accent-light: #74a6ff;
+  --color-accent-rgb: 79, 140, 255;
+  --color-accent-bg: rgba(79, 140, 255, 0.16);
+  --color-accent-ring: rgba(79, 140, 255, 0.35);
+  --color-on-accent: #ffffff;
 
-  --color-warning: #f59e0b;
-  --color-warning-light: #fcd34d;
-  --color-warning-bg: rgba(251, 191, 36, 0.2);
+  /* Semantic */
+  --color-success: #4ad295;
+  --color-success-light: #7ee2b4;
+  --color-success-bg: rgba(74, 210, 149, 0.13);
 
-  --color-error: #ef4444;
-  --color-error-light: #fca5a5;
-  --color-error-bg: rgba(239, 68, 68, 0.2);
+  --color-warning: #f1b54b;
+  --color-warning-light: #f6cd7d;
+  --color-warning-bg: rgba(241, 181, 75, 0.13);
+  --color-warning-text: #f6cd7d;
+  --color-warning-border: rgba(241, 181, 75, 0.35);
 
-  --color-info: #3b82f6;
-  --color-info-light: #93c5fd;
-  --color-info-bg: rgba(59, 130, 246, 0.2);
+  --color-error: #ff6b6b;
+  --color-error-light: #ff9a9a;
+  --color-error-bg: rgba(255, 107, 107, 0.13);
+  --color-danger: #ff6b6b;
+  --color-text-danger: #ff8a8a;
+  --color-status-error: #ff6b6b;
+  --color-status-rejected: #ff6b6b;
 
-  /* Borders */
-  --color-border: #334155;
-  --color-border-light: #475569;
+  --color-info: #74a6ff;
+  --color-info-light: #9cc0ff;
+  --color-info-bg: rgba(79, 140, 255, 0.15);
+  --color-info-border: rgba(79, 140, 255, 0.35);
+
+  /* Borders: translucent so they read on every surface */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-light: rgba(255, 255, 255, 0.13);
+  --color-border-hover: rgba(255, 255, 255, 0.16);
+
+  /* Elevation (dialogs and menus only) */
+  --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-dialog: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 16px 40px rgba(0, 0, 0, 0.45);
 }

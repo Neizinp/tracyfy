@@ -25,6 +25,8 @@
     "electron:start": "npm run build && electron ."
   },
   "dependencies": {
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
     "@uiw/react-md-editor": "^4.0.8",
     "buffer": "^6.0.3",
     "isomorphic-git": "^1.35.1",

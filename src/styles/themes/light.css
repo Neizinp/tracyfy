@@ -1,40 +1,61 @@
-/* Light Theme - Clean, professional light palette */
+/* Light theme: same structure as dark, chosen via the theme toggle */
 [data-theme='light'] {
-  /* Base Colors */
-  --color-bg-app: #f8fafc;
-  --color-bg-sidebar: #ffffff;
+  color-scheme: light;
+
+  --color-bg-sidebar: #f6f6f8;
+  --color-bg-app: #ffffff;
+  --color-bg-primary: #ffffff;
   --color-bg-card: #ffffff;
-  --color-bg-secondary: #f1f5f9;
-  --color-bg-hover: #e2e8f0;
+  --color-bg-secondary: #f3f4f6;
+  --color-bg-tertiary: #ebecf0;
+  --color-bg-raised: #ffffff;
+  --color-bg-hover: rgba(15, 18, 30, 0.045);
+  --color-bg-subtle: rgba(15, 18, 30, 0.025);
+  --color-bg-disabled: rgba(15, 18, 30, 0.03);
+  --color-bg-overlay: rgba(20, 22, 30, 0.3);
 
-  /* Text Colors */
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted: #64748b;
+  --color-text-primary: #1b1c1f;
+  --color-text: #1b1c1f;
+  --color-text-secondary: #44464d;
+  --color-text-muted: #747782;
+  --color-text-muted-rgb: 116, 119, 130;
 
-  /* Accent Colors - Slightly adjusted for light mode visibility */
-  --color-accent: #4f46e5;
-  --color-accent-hover: #4338ca;
-  --color-accent-light: #6366f1;
+  --color-accent: #2f6fed;
+  --color-primary: #2f6fed;
+  --color-accent-hover: #245fd6;
+  --color-accent-light: #2f6fed;
+  --color-accent-rgb: 47, 111, 237;
+  --color-accent-bg: rgba(47, 111, 237, 0.1);
+  --color-accent-ring: rgba(47, 111, 237, 0.3);
+  --color-on-accent: #ffffff;
 
-  /* Semantic Colors - Slightly darker for light backgrounds */
-  --color-success: #059669;
-  --color-success-light: #10b981;
-  --color-success-bg: rgba(16, 185, 129, 0.15);
+  --color-success: #17885a;
+  --color-success-light: #17885a;
+  --color-success-bg: rgba(23, 136, 90, 0.1);
 
-  --color-warning: #d97706;
-  --color-warning-light: #f59e0b;
-  --color-warning-bg: rgba(251, 191, 36, 0.15);
+  --color-warning: #a86a00;
+  --color-warning-light: #a86a00;
+  --color-warning-bg: rgba(214, 140, 0, 0.12);
+  --color-warning-text: #8a5700;
+  --color-warning-border: rgba(214, 140, 0, 0.35);
 
-  --color-error: #dc2626;
-  --color-error-light: #ef4444;
-  --color-error-bg: rgba(239, 68, 68, 0.15);
+  --color-error: #d93b3b;
+  --color-error-light: #d93b3b;
+  --color-error-bg: rgba(217, 59, 59, 0.1);
+  --color-danger: #d93b3b;
+  --color-text-danger: #c42b2b;
+  --color-status-error: #d93b3b;
+  --color-status-rejected: #d93b3b;
 
-  --color-info: #2563eb;
-  --color-info-light: #3b82f6;
-  --color-info-bg: rgba(59, 130, 246, 0.15);
+  --color-info: #2f6fed;
+  --color-info-light: #2f6fed;
+  --color-info-bg: rgba(47, 111, 237, 0.1);
+  --color-info-border: rgba(47, 111, 237, 0.3);
 
-  /* Borders */
-  --color-border: #e2e8f0;
-  --color-border-light: #cbd5e1;
+  --color-border: rgba(15, 18, 30, 0.09);
+  --color-border-light: rgba(15, 18, 30, 0.15);
+  --color-border-hover: rgba(15, 18, 30, 0.2);
+
+  --shadow-popover: 0 8px 24px rgba(20, 22, 40, 0.14), 0 0 0 1px rgba(15, 18, 30, 0.06);
+  --shadow-dialog: 0 16px 40px rgba(20, 22, 40, 0.18), 0 2px 6px rgba(20, 22, 40, 0.06);
 }
