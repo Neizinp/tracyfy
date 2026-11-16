@@ -6,6 +6,7 @@ import { LINK_TYPE_LABELS } from '../utils/linkTypes';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { BaseArtifactModal } from './BaseArtifactModal';
 import { FormField } from './forms/FormField';
+import { notifyError } from '../app/providers/ToastProvider';
 
 interface EditLinkModalProps {
   isOpen: boolean;
@@ -58,7 +59,7 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
         });
         onClose();
       } catch (error) {
-        console.error('Failed to update link:', error);
+        notifyError('Could not update link', error);
       } finally {
         setSaving(false);
       }

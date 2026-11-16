@@ -36,6 +36,7 @@ import type {
 } from '../../types';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import type { LinkModalResult } from '../LinkModal';
+import { notifyError } from '../../app/providers/ToastProvider';
 
 export const ManagementModals: React.FC = () => {
   const ui = useUI();
@@ -146,7 +147,7 @@ export const ManagementModals: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('Export failed:', error);
+        notifyError('Export failed', error);
       }
     },
     [

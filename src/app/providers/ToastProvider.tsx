@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 interface Toast {
@@ -16,6 +16,19 @@ interface ToastActions {
 // The toast list and the actions are separate contexts so that the many
 // components calling showToast don't re-render whenever a toast appears/disappears.
 const ToastActionsContext = createContext<ToastActions | undefined>(undefined);
+
+/** Set by the mounted ToastProvider so non-React code can report errors */
+let activeShowToast: ToastActions['showToast'] | null = null;
+
+/**
+ * Report a failure of something the user did: logs it and shows an error
+ * toast ("<message>: <reason>"). Usable from components, hooks and services.
+ */
+export function notifyError(message: string, error?: unknown): void {
+  console.error(message, error);
+  const reason = error instanceof Error ? error.message : error ? String(error) : '';
+  activeShowToast?.(reason ? `${message}: ${reason}` : message, 'error', 8000);
+}
 const ToastListContext = createContext<Toast[] | undefined>(undefined);
 
 export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -43,6 +56,13 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   const actions = useMemo(() => ({ showToast, removeToast }), [showToast, removeToast]);
+
+  useEffect(() => {
+    activeShowToast = showToast;
+    return () => {
+      if (activeShowToast === showToast) activeShowToast = null;
+    };
+  }, [showToast]);
 
   return (
     <ToastActionsContext.Provider value={actions}>

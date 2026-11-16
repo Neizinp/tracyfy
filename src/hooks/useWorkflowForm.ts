@@ -16,6 +16,7 @@ import {
   useRisks,
 } from '../app/providers';
 import { diskWorkflowService } from '../services/diskWorkflowService';
+import { notifyError } from '../app/providers/ToastProvider';
 
 interface UseWorkflowFormOptions {
   isOpen: boolean;
@@ -171,7 +172,7 @@ export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWor
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error('Failed to save workflow:', error);
+      notifyError('Could not save workflow', error);
     } finally {
       setIsSubmitting(false);
     }

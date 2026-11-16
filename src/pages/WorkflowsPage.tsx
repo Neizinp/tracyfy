@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { GitBranch, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { diskWorkflowService } from '../services/diskWorkflowService';
+import { notifyError } from '../app/providers/ToastProvider';
 import { useUser } from '../app/providers';
 import type { Workflow } from '../types';
 import { WorkflowDetailPanel } from '../components/WorkflowDetailPanel';
@@ -23,7 +24,7 @@ export const WorkflowsPage: React.FC = () => {
       const all = await diskWorkflowService.getAllWorkflows();
       setWorkflows(all);
     } catch (error) {
-      console.error('Failed to load workflows:', error);
+      notifyError('Could not load workflows', error);
     } finally {
       setLoading(false);
     }

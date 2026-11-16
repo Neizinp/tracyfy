@@ -304,7 +304,11 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           }
         }
       } catch (err) {
+        // Shown by the folder selector instead of silently asking to pick a folder again
         console.error('Failed to restore directory:', err);
+        setError(
+          `Could not open the project folder: ${err instanceof Error ? err.message : String(err)}`
+        );
       }
 
       setIsLoading(false);

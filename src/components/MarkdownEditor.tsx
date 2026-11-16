@@ -7,6 +7,7 @@ import { Eye, Edit2, ImagePlus } from 'lucide-react';
 import { assetService } from '../services/assetService';
 import { AssetImage } from './AssetImage';
 import { FileSystemContext } from '../app/providers/FileSystemProvider';
+import { notifyError } from '../app/providers/ToastProvider';
 
 // The editor (with its syntax highlighting deps) is large and only needed in edit mode
 const MDEditor = lazy(() => import('@uiw/react-md-editor'));
@@ -50,7 +51,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         // Refresh git status so the new asset appears in pending changes
         await refreshStatus?.();
       } catch (error) {
-        console.error('Failed to upload image:', error);
+        notifyError('Could not add image', error);
       } finally {
         setIsUploading(false);
       }
@@ -90,7 +91,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               // Refresh git status so the new asset appears in pending changes
               await refreshStatus?.();
             } catch (error) {
-              console.error('Failed to paste image:', error);
+              notifyError('Could not paste image', error);
             } finally {
               setIsUploading(false);
             }

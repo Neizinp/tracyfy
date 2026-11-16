@@ -9,6 +9,7 @@ import type {
 } from '../types/customAttributes';
 import { CustomAttributeDefinitionModal } from '../components/CustomAttributeDefinitionModal';
 import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
+import { notifyError } from '../app/providers/ToastProvider';
 
 const ARTIFACT_TYPE_LABELS: Record<ApplicableArtifactType, string> = {
   requirement: 'Requirements',
@@ -67,7 +68,7 @@ export const CustomAttributesPage: React.FC = () => {
       await loadDefinitions();
       handleModalClose();
     } catch (error) {
-      console.error('Failed to save attribute:', error);
+      notifyError('Could not save custom attribute', error);
     }
   };
 
