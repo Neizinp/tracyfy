@@ -1,7 +1,8 @@
 import React from 'react';
 import { XCircle, Plus, Trash2 } from 'lucide-react';
 import type { GapInfo } from './types';
-import { TYPE_COLORS, ISSUE_LABELS } from './types';
+import { ISSUE_LABELS } from './types';
+import { kind } from '../../domain/artifactKinds';
 
 interface GapItemProps {
   gap: GapInfo;
@@ -11,7 +12,7 @@ interface GapItemProps {
 }
 
 export const GapItem: React.FC<GapItemProps> = ({ gap, onClick, onAddLink, onRemoveOrphan }) => {
-  const colors = TYPE_COLORS[gap.artifact.type];
+  const colors = kind(gap.artifact.type).color;
   const issueInfo = ISSUE_LABELS[gap.issueType];
 
   return (

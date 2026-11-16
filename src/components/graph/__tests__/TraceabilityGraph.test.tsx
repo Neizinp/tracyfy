@@ -7,7 +7,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TraceabilityGraph } from '../TraceabilityGraph';
-import type { UnifiedArtifact, ArtifactType } from '../../traceability';
+import type { UnifiedArtifact } from '../../traceability';
+import type { ArtifactKindId } from '../../../domain/artifactKinds';
 
 // Mock ReactFlow to avoid canvas/DOM issues in tests
 vi.mock('reactflow', () => ({
@@ -31,7 +32,7 @@ describe('TraceabilityGraph', () => {
   // Helper to create test artifacts with proper types
   const createArtifact = (
     id: string,
-    type: ArtifactType,
+    type: ArtifactKindId,
     title: string = 'Test',
     linkedArtifacts: { targetId: string; type: 'satisfies' | 'related_to' | 'verifies' }[] = []
   ): UnifiedArtifact => ({
@@ -57,22 +58,22 @@ describe('TraceabilityGraph', () => {
       sourceId: 'REQ-001',
       targetId: 'UC-001',
       type: 'satisfies',
-      sourceType: 'requirement' as ArtifactType,
-      targetType: 'useCase' as ArtifactType,
+      sourceType: 'requirement' as ArtifactKindId,
+      targetType: 'useCase' as ArtifactKindId,
     },
     {
       sourceId: 'UC-001',
       targetId: 'TC-001',
       type: 'related_to',
-      sourceType: 'useCase' as ArtifactType,
-      targetType: 'testCase' as ArtifactType,
+      sourceType: 'useCase' as ArtifactKindId,
+      targetType: 'testCase' as ArtifactKindId,
     },
   ];
 
   const defaultProps = {
     artifacts: mockArtifacts,
     links: mockLinks,
-    selectedTypes: new Set<ArtifactType>(['requirement', 'useCase', 'testCase', 'information']),
+    selectedTypes: new Set<ArtifactKindId>(['requirement', 'useCase', 'testCase', 'information']),
     onToggleType: vi.fn(),
   };
 
@@ -120,7 +121,7 @@ describe('TraceabilityGraph', () => {
 
   describe('Filtering by artifact type', () => {
     it('should filter out artifacts not in selectedTypes', () => {
-      const selectedTypes = new Set<ArtifactType>(['requirement', 'useCase']);
+      const selectedTypes = new Set<ArtifactKindId>(['requirement', 'useCase']);
 
       render(<TraceabilityGraph {...defaultProps} selectedTypes={selectedTypes} />);
 
@@ -167,7 +168,7 @@ describe('TraceabilityGraph', () => {
 
   describe('Empty state', () => {
     it('should show empty state when no artifacts match filters', () => {
-      const selectedTypes = new Set<ArtifactType>();
+      const selectedTypes = new Set<ArtifactKindId>();
 
       render(<TraceabilityGraph {...defaultProps} selectedTypes={selectedTypes} />);
 
@@ -188,7 +189,7 @@ describe('TraceabilityGraph', () => {
   describe('Edge filtering', () => {
     it('should filter edges based on visible nodes', () => {
       // When only requirements are shown, edges to non-requirements should be filtered
-      const selectedTypes = new Set<ArtifactType>(['requirement']);
+      const selectedTypes = new Set<ArtifactKindId>(['requirement']);
 
       render(<TraceabilityGraph {...defaultProps} selectedTypes={selectedTypes} />);
 
@@ -198,7 +199,7 @@ describe('TraceabilityGraph', () => {
     });
 
     it('should show edges when both source and target are visible', () => {
-      const selectedTypes = new Set<ArtifactType>(['requirement', 'useCase']);
+      const selectedTypes = new Set<ArtifactKindId>(['requirement', 'useCase']);
 
       render(<TraceabilityGraph {...defaultProps} selectedTypes={selectedTypes} />);
 

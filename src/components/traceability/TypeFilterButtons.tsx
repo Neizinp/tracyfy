@@ -1,9 +1,9 @@
 import React from 'react';
-import { TRACE_TYPES, TYPE_COLORS, type ArtifactType } from './types';
+import { ARTIFACT_KINDS, kind, type ArtifactKindId } from '../../domain/artifactKinds';
 
 interface TypeFilterButtonsProps {
-  selectedTypes: Set<ArtifactType>;
-  onToggle: (type: ArtifactType) => void;
+  selectedTypes: Set<ArtifactKindId>;
+  onToggle: (type: ArtifactKindId) => void;
 }
 
 /** One toggle per artifact type (UC, REQ, TC, INFO, RISK, DOC) */
@@ -12,8 +12,8 @@ export const TypeFilterButtons: React.FC<TypeFilterButtonsProps> = ({
   onToggle,
 }) => (
   <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-    {TRACE_TYPES.map(({ type, short, label }) => {
-      const color = TYPE_COLORS[type].text;
+    {ARTIFACT_KINDS.map(({ id: type, prefix: short, label: { plural: label } }) => {
+      const color = kind(type).color.text;
       const active = selectedTypes.has(type);
       return (
         <button

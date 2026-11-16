@@ -269,7 +269,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
           loading={linksLoading}
           onAddLink={() => {
             setLinkSourceId(useCase.id);
-            setLinkSourceType('usecase');
+            setLinkSourceType('useCase');
             setIsLinkModalOpen(true);
           }}
           onRemoveLink={(linkId) =>

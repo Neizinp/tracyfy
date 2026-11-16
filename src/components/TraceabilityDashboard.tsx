@@ -17,8 +17,6 @@ import type {
   Link,
 } from '../types';
 import {
-  TYPE_COLORS,
-  TRACE_TYPES,
   TypeFilterButtons,
   SummaryCard,
   GapItem,
@@ -27,6 +25,7 @@ import {
   MatrixView,
 } from './traceability';
 import { TraceabilityGraph } from './graph/TraceabilityGraph';
+import { ARTIFACT_KINDS, kind } from '../domain/artifactKinds';
 import { LinksView } from './LinksView';
 import { useUI } from '../app/providers';
 
@@ -256,14 +255,14 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
 
           {/* Summary Cards */}
           <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap' }}>
-            {TRACE_TYPES.map(({ type, label }) => (
+            {ARTIFACT_KINDS.map(({ id: type, label: { plural: label } }) => (
               <SummaryCard
                 key={type}
                 title={label}
                 total={stats[type].total}
                 linked={stats[type].linked}
                 gaps={stats[type].gaps}
-                color={TYPE_COLORS[type]}
+                color={kind(type).color}
                 onViewGaps={() => {
                   setSelectedTypes(new Set([type]));
                   setActiveTab('gaps');

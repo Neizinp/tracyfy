@@ -14,26 +14,13 @@ import {
   CONDITIONS,
   type SearchResult,
 } from '../hooks/useAdvancedSearch';
+import { kind } from '../domain/artifactKinds';
 
 interface AdvancedSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigateToArtifact: (type: string, id: string) => void;
 }
-
-type ArtifactType = 'requirement' | 'useCase' | 'testCase' | 'information' | 'risk';
-
-const TYPE_CONFIG: Record<ArtifactType, { label: string; color: string; bgColor: string }> = {
-  requirement: { label: 'REQ', color: 'var(--color-info)', bgColor: 'var(--color-info-bg)' },
-  useCase: { label: 'UC', color: 'var(--color-success)', bgColor: 'var(--color-success-bg)' },
-  testCase: { label: 'TC', color: 'var(--color-warning)', bgColor: 'var(--color-warning-bg)' },
-  information: {
-    label: 'INF',
-    color: 'var(--color-accent-light)',
-    bgColor: 'var(--color-accent-bg)',
-  },
-  risk: { label: 'RSK', color: 'var(--color-error)', bgColor: 'var(--color-error-bg)' },
-};
 
 const selectStyle: React.CSSProperties = {
   padding: '8px 12px',
@@ -436,7 +423,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
               </div>
             ) : (
               results.slice(0, 100).map((result) => {
-                const typeConfig = TYPE_CONFIG[result.type as ArtifactType];
+                const typeColors = kind(result.type).color;
                 return (
                   <div
                     key={`${result.type}-${result.id}`}
@@ -466,8 +453,8 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                           fontWeight: 700,
                           padding: '3px 8px',
                           borderRadius: 'var(--radius-xs)',
-                          backgroundColor: typeConfig?.bgColor || 'var(--color-bg-hover)',
-                          color: typeConfig?.color || 'var(--color-text-muted)',
+                          backgroundColor: typeColors.bg,
+                          color: typeColors.text,
                         }}
                       >
                         {result.id}

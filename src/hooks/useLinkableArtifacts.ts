@@ -1,18 +1,28 @@
 import { useMemo } from 'react';
 import { useGlobalState } from '../app/providers';
-import type { ArtifactsByType } from '../constants/linkableArtifacts';
+import type { ArtifactKindId } from '../domain/artifactKinds';
+
+/** What the link dialog and Links page need to know about an artifact */
+export interface LinkableArtifact {
+  id: string;
+  title: string;
+  description?: string;
+  isDeleted?: boolean;
+}
+
+export type ArtifactsByKind = Record<ArtifactKindId, LinkableArtifact[]>;
 
 const excerpt = (text: string | undefined, max = 100) =>
   !text ? '' : text.length > max ? `${text.substring(0, max)}...` : text;
 
-/** All linkable artifacts (every project), grouped by type */
-export function useLinkableArtifacts(): ArtifactsByType {
+/** Every artifact in the project, grouped by kind */
+export function useLinkableArtifacts(): ArtifactsByKind {
   const g = useGlobalState();
   return useMemo(
     () => ({
       requirement: g.requirements,
-      usecase: g.useCases,
-      testcase: g.testCases,
+      useCase: g.useCases,
+      testCase: g.testCases,
       information: g.information.map((i) => ({
         id: i.id,
         title: i.title,

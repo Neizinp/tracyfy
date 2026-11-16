@@ -237,7 +237,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
           onAddLink={() => {
             if (testCase) {
               setLinkSourceId(testCase.id);
-              setLinkSourceType('testcase');
+              setLinkSourceType('testCase');
               setIsLinkModalOpen(true);
             }
           }}

@@ -1,14 +1,13 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
-import type { ArtifactType } from './types';
-import { TYPE_COLORS } from './types';
+import { kind, type ArtifactKindId } from '../../domain/artifactKinds';
 
 interface LinkRowProps {
   sourceId: string;
   targetId: string;
   linkType: string;
-  sourceType: ArtifactType;
-  targetType: ArtifactType;
+  sourceType: ArtifactKindId;
+  targetType: ArtifactKindId;
   onClickSource?: () => void;
   onClickTarget?: () => void;
   onDelete?: () => void;
@@ -24,8 +23,8 @@ export const LinkRow: React.FC<LinkRowProps> = ({
   onClickTarget,
   onDelete,
 }) => {
-  const sourceColors = TYPE_COLORS[sourceType];
-  const targetColors = TYPE_COLORS[targetType];
+  const sourceColors = kind(sourceType).color;
+  const targetColors = kind(targetType).color;
 
   return (
     <tr style={{ borderBottom: '1px solid var(--color-border)' }}>

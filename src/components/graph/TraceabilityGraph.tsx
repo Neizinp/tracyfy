@@ -9,8 +9,9 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Maximize2, RotateCw } from 'lucide-react';
-import type { UnifiedArtifact, ArtifactType } from '../traceability';
-import { TRACE_TYPES, ALL_TRACE_TYPES, TypeFilterButtons } from '../traceability';
+import type { UnifiedArtifact } from '../traceability';
+import { TypeFilterButtons } from '../traceability';
+import { ARTIFACT_KINDS, KIND_IDS, type ArtifactKindId } from '../../domain/artifactKinds';
 import {
   transformArtifactsToNodes,
   transformLinksToEdges,
@@ -25,12 +26,12 @@ interface TraceabilityGraphProps {
     sourceId: string;
     targetId: string;
     type: string;
-    sourceType: ArtifactType;
-    targetType: ArtifactType;
+    sourceType: ArtifactKindId;
+    targetType: ArtifactKindId;
   }[];
-  selectedTypes: Set<ArtifactType>;
+  selectedTypes: Set<ArtifactKindId>;
   onSelectArtifact?: (artifactId: string) => void;
-  onToggleType?: (type: ArtifactType) => void;
+  onToggleType?: (type: ArtifactKindId) => void;
 }
 
 const nodeTypes = {
@@ -51,7 +52,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
 
   // Filter artifacts by selected types
   const filteredArtifacts = useMemo(() => {
-    if (selectedTypes.size === ALL_TRACE_TYPES.length) return artifacts;
+    if (selectedTypes.size === KIND_IDS.length) return artifacts;
     return artifacts.filter((a) => selectedTypes.has(a.type));
   }, [artifacts, selectedTypes]);
 
@@ -293,7 +294,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
             />
             <MiniMap
               nodeColor={(node) => {
-                const data = node.data as { artifactType: ArtifactType };
+                const data = node.data as { artifactType: ArtifactKindId };
                 return getNodeColor(data.artifactType).border;
               }}
               style={{
@@ -320,7 +321,7 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
           fontSize: 'var(--font-size-xs)',
         }}
       >
-        {TRACE_TYPES.map(({ type, label }) => {
+        {ARTIFACT_KINDS.map(({ id: type, label: { plural: label } }) => {
           const colors = getNodeColor(type);
           return (
             <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

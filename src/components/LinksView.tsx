@@ -3,7 +3,7 @@ import { Link as LinkIcon, ArrowRight, RefreshCw, Plus } from 'lucide-react';
 import { useLinkService } from '../hooks/useLinkService';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
-import { linkableTypeInfo, linkableTypeOf } from '../constants/linkableArtifacts';
+import { kind, kindOfId } from '../domain/artifactKinds';
 import type { Link } from '../types';
 import type { LinkType } from '../utils/linkTypes';
 import { EditLinkModal } from './EditLinkModal';
@@ -52,11 +52,11 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
   };
 
   // Helpers
-  const getArtifactType = (id: string): string => linkableTypeOf(id) ?? 'unknown';
+  const getArtifactType = (id: string): string => kindOfId(id) ?? 'unknown';
 
   const getTypeColor = (id: string): string => {
-    const type = linkableTypeOf(id);
-    return type ? linkableTypeInfo(type).color : 'var(--color-text-muted)';
+    const type = kindOfId(id);
+    return type ? kind(type).color.text : 'var(--color-text-muted)';
   };
 
   // Unique link types for filter

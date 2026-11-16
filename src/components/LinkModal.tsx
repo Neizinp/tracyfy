@@ -1,12 +1,8 @@
 import React, { useCallback } from 'react';
 import { Search, Link as LinkIcon } from 'lucide-react';
 import type { ArtifactLink } from '../types';
-import {
-  LINKABLE_TYPES,
-  linkableTypeInfo,
-  type ArtifactsByType,
-  type LinkableType,
-} from '../constants/linkableArtifacts';
+import { ARTIFACT_KINDS, kind, type ArtifactKindId } from '../domain/artifactKinds';
+import type { ArtifactsByKind } from '../hooks/useLinkableArtifacts';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useLinkModal, type LinkModalResult } from '../hooks/useLinkModal';
 import { BaseArtifactModal } from './BaseArtifactModal';
@@ -17,9 +13,9 @@ export type { LinkModalResult };
 interface LinkModalProps {
   isOpen: boolean;
   sourceArtifactId: string | null;
-  sourceArtifactType: LinkableType;
+  sourceArtifactType: ArtifactKindId;
   /** Every linkable artifact, grouped by type */
-  artifactsByType: ArtifactsByType;
+  artifactsByType: ArtifactsByKind;
   onClose: () => void;
   onAddLink: (link: LinkModalResult) => void;
 }
@@ -145,10 +141,10 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                   borderRadius: 'var(--radius-xs)',
                   textTransform: 'uppercase',
                   fontWeight: 700,
-                  backgroundColor: linkableTypeInfo(sourceArtifactType).color,
+                  backgroundColor: kind(sourceArtifactType).color.text,
                 }}
               >
-                {linkableTypeInfo(sourceArtifactType).short}
+                {kind(sourceArtifactType).prefix}
               </span>
               <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>
                 {sourceArtifactId}
@@ -175,7 +171,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                 gap: '4px',
               }}
             >
-              {LINKABLE_TYPES.map(({ type, short, label }) => (
+              {ARTIFACT_KINDS.map(({ id: type, prefix: short, label: { plural: label } }) => (
                 <button
                   key={type}
                   type="button"

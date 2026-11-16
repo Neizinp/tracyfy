@@ -7,13 +7,14 @@
 
 import { describe, it, expect } from 'vitest';
 import { transformArtifactsToNodes, transformLinksToEdges, getNodeColor } from '../graphUtils';
-import type { UnifiedArtifact, ArtifactType } from '../../components/traceability';
+import type { UnifiedArtifact } from '../../components/traceability';
+import type { ArtifactKindId } from '../../domain/artifactKinds';
 
 describe('graphUtils', () => {
   // Common test data
   const createArtifact = (
     id: string,
-    type: ArtifactType,
+    type: ArtifactKindId,
     title: string = 'Test',
     linkedArtifacts: string[] = []
   ): UnifiedArtifact => ({
@@ -115,8 +116,8 @@ describe('graphUtils', () => {
           sourceId: 'REQ-001',
           targetId: 'UC-001',
           type: 'satisfies',
-          sourceType: 'requirement' as ArtifactType,
-          targetType: 'useCase' as ArtifactType,
+          sourceType: 'requirement' as ArtifactKindId,
+          targetType: 'useCase' as ArtifactKindId,
         },
       ];
 
@@ -135,15 +136,15 @@ describe('graphUtils', () => {
           sourceId: 'REQ-001',
           targetId: 'UC-001',
           type: 'satisfies',
-          sourceType: 'requirement' as ArtifactType,
-          targetType: 'useCase' as ArtifactType,
+          sourceType: 'requirement' as ArtifactKindId,
+          targetType: 'useCase' as ArtifactKindId,
         },
         {
           sourceId: 'REQ-002',
           targetId: 'UC-002',
           type: 'related_to',
-          sourceType: 'requirement' as ArtifactType,
-          targetType: 'useCase' as ArtifactType,
+          sourceType: 'requirement' as ArtifactKindId,
+          targetType: 'useCase' as ArtifactKindId,
         },
       ];
 
@@ -159,8 +160,8 @@ describe('graphUtils', () => {
           sourceId: 'REQ-001',
           targetId: 'UC-001',
           type: 'satisfies',
-          sourceType: 'requirement' as ArtifactType,
-          targetType: 'useCase' as ArtifactType,
+          sourceType: 'requirement' as ArtifactKindId,
+          targetType: 'useCase' as ArtifactKindId,
         },
       ];
 
@@ -175,8 +176,8 @@ describe('graphUtils', () => {
           sourceId: 'REQ-002',
           targetId: 'UC-002',
           type: 'related_to',
-          sourceType: 'requirement' as ArtifactType,
-          targetType: 'useCase' as ArtifactType,
+          sourceType: 'requirement' as ArtifactKindId,
+          targetType: 'useCase' as ArtifactKindId,
         },
       ];
 
@@ -191,8 +192,8 @@ describe('graphUtils', () => {
           sourceId: 'REQ-001',
           targetId: 'UC-001',
           type: 'satisfies',
-          sourceType: 'requirement' as ArtifactType,
-          targetType: 'useCase' as ArtifactType,
+          sourceType: 'requirement' as ArtifactKindId,
+          targetType: 'useCase' as ArtifactKindId,
         },
       ];
 
@@ -212,15 +213,15 @@ describe('graphUtils', () => {
           sourceId: 'REQ-001',
           targetId: 'UC-001',
           type: 'satisfies',
-          sourceType: 'requirement' as ArtifactType,
-          targetType: 'useCase' as ArtifactType,
+          sourceType: 'requirement' as ArtifactKindId,
+          targetType: 'useCase' as ArtifactKindId,
         },
         {
           sourceId: 'REQ-001',
           targetId: 'UC-001',
           type: 'depends_on',
-          sourceType: 'requirement' as ArtifactType,
-          targetType: 'useCase' as ArtifactType,
+          sourceType: 'requirement' as ArtifactKindId,
+          targetType: 'useCase' as ArtifactKindId,
         },
       ];
 

@@ -12,7 +12,7 @@ import {
   type ImpactChain,
   type ImpactNode,
 } from '../../services/impactAnalysisService';
-import { TYPE_COLORS } from './types';
+import { kind } from '../../domain/artifactKinds';
 import type { Link } from '../../types';
 import type { UnifiedArtifact } from '../traceability';
 
@@ -53,7 +53,7 @@ export const ImpactAnalysisPanel: React.FC<ImpactAnalysisPanelProps> = ({
   }, [impactChain]);
 
   const selectedArtifact = artifacts.find((a) => a.id === selectedArtifactId);
-  const selectedColors = selectedArtifact ? TYPE_COLORS[selectedArtifact.type] : null;
+  const selectedColors = selectedArtifact ? kind(selectedArtifact.type).color : null;
 
   // Build tree structure for display
   const renderImpactTree = (chain: ImpactChain) => {
@@ -78,7 +78,7 @@ export const ImpactAnalysisPanel: React.FC<ImpactAnalysisPanelProps> = ({
               {chain.byLevel.get(level)?.map((node: ImpactNode) => {
                 const artifact = artifacts.find((a) => a.id === node.artifactId);
                 if (!artifact) return null;
-                const colors = TYPE_COLORS[artifact.type];
+                const colors = kind(artifact.type).color;
 
                 return (
                   <div
