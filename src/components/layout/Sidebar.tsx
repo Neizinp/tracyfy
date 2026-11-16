@@ -11,7 +11,6 @@ import {
   Plus,
   GitBranch,
   FileText,
-  BookOpen,
   FlaskConical,
   Link2,
   ShieldAlert,
@@ -29,7 +28,6 @@ import type { Project } from '../../types';
 import { ProjectSidebarItem } from '../ProjectSidebarItem';
 import { PendingChangesPanel } from '../PendingChangesPanel';
 import { NavLink } from './NavLink';
-import { RepositoryButton } from './RepositoryButton';
 import { sectionHeaderStyle } from './layoutStyles';
 import { RemoteSettingsModal } from '../RemoteSettingsModal';
 import { useSidebar } from './useSidebar';
@@ -45,9 +43,6 @@ export interface SidebarProps {
   onCreateProject: () => void;
   onCreateDemoProject?: () => void;
   onOpenProjectSettings: (project: Project) => void;
-  onOpenLibraryTab?: (
-    tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
-  ) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -57,7 +52,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCreateProject,
   onCreateDemoProject,
   onOpenProjectSettings,
-  onOpenLibraryTab,
 }) => {
   // Use the extracted hook for all sidebar state and handlers
   const {
@@ -675,60 +669,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <NavLink to="/risks" icon={ShieldAlert} label="Risks" />
               <NavLink to="/traceability?tab=links" icon={Link2} label="Links" />
               <NavLink to="/custom-attributes" icon={Settings2} label="Custom Attributes" />
-            </div>
-          )}
-        </div>
-
-        {/* Repository Navigation */}
-        <div style={{ marginBottom: 'var(--spacing-md)' }}>
-          <h2
-            onClick={() => toggleSection('repository')}
-            style={{
-              ...sectionHeaderStyle,
-              margin:
-                '0 0 ' + (collapsedSections.has('repository') ? '0' : 'var(--spacing-sm)') + ' 0',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              cursor: 'pointer',
-            }}
-          >
-            <ChevronRight
-              size={12}
-              style={{
-                transform: collapsedSections.has('repository') ? 'rotate(0deg)' : 'rotate(90deg)',
-                transition: 'transform 0.15s',
-              }}
-            />
-            Repository
-          </h2>
-          {!collapsedSections.has('repository') && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <RepositoryButton
-                onClick={() => onOpenLibraryTab?.('requirements')}
-                icon={BookOpen}
-                label="Requirements"
-              />
-              <RepositoryButton
-                onClick={() => onOpenLibraryTab?.('usecases')}
-                icon={BookOpen}
-                label="Use Cases"
-              />
-              <RepositoryButton
-                onClick={() => onOpenLibraryTab?.('testcases')}
-                icon={BookOpen}
-                label="Test Cases"
-              />
-              <RepositoryButton
-                onClick={() => onOpenLibraryTab?.('information')}
-                icon={BookOpen}
-                label="Information"
-              />
-              <RepositoryButton
-                onClick={() => onOpenLibraryTab?.('risks')}
-                icon={BookOpen}
-                label="Risks"
-              />
             </div>
           )}
         </div>

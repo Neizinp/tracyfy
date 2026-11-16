@@ -32,7 +32,6 @@ const MODAL_FILES = {
   EditLinkModal: () => import('../EditLinkModal.tsx?raw'),
   CreateProjectModal: () => import('../CreateProjectModal.tsx?raw'),
   ProjectSettingsModal: () => import('../ProjectSettingsModal.tsx?raw'),
-  GlobalLibraryModal: () => import('../GlobalLibraryModal.tsx?raw'),
   UserSettingsModal: () => import('../UserSettingsModal.tsx?raw'),
   RemoteSettingsModal: () => import('../RemoteSettingsModal.tsx?raw'),
   ExportModal: () => import('../ExportModal.tsx?raw'),

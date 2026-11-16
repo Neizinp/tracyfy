@@ -173,15 +173,6 @@ describe('HeaderBar', () => {
 
       expect(screen.getByText('Import Excel')).toBeInTheDocument();
     });
-
-    it('should show Import from Project when onOpenGlobalLibrary is provided', () => {
-      const onOpenGlobalLibrary = vi.fn();
-      render(<HeaderBar {...defaultProps} onOpenGlobalLibrary={onOpenGlobalLibrary} />);
-
-      fireEvent.click(screen.getByText('Import'));
-
-      expect(screen.getByText('Import from Project')).toBeInTheDocument();
-    });
   });
 
   describe('Export dropdown', () => {

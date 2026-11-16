@@ -45,13 +45,6 @@ export function useUIState() {
   const [linkSourceId, setLinkSourceId] = useState<string | null>(null);
   const [linkSourceType, setLinkSourceType] = useState<LinkableType | null>(null);
 
-  // Library States
-  const [isLibraryPanelOpen, setIsLibraryPanelOpen] = useState(false);
-  const [activeLibraryTab, setActiveLibraryTab] = useState<
-    'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
-  >('requirements');
-  const [globalLibrarySelection, setGlobalLibrarySelection] = useState<Set<string>>(new Set());
-
   // Search
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -190,7 +183,6 @@ export function useUIState() {
   const isAdvancedSearchOpen = activeModal.type === 'search';
   const isCustomAttributeModalOpen = activeModal.type === 'custom-attribute';
   const isWorkflowModalOpen = activeModal.type === 'workflow';
-  const isGlobalLibraryModalOpen = activeModal.type === 'global-library';
   const isDocumentsModalOpen = activeModal.type === 'documents';
   const isEditDocumentModalOpen = activeModal.type === 'documents' && !!activeModal.isEdit;
 
@@ -271,9 +263,6 @@ export function useUIState() {
         val ? openModal('custom-attribute') : closeModal(),
       isWorkflowModalOpen,
       setIsWorkflowModalOpen: (val: boolean) => (val ? openModal('workflow') : closeModal()),
-      isGlobalLibraryModalOpen,
-      setIsGlobalLibraryModalOpen: (val: boolean) =>
-        val ? openModal('global-library') : closeModal(),
       isNewLinkModalOpen: activeModal.type === 'link',
       setIsNewLinkModalOpen: (val: boolean) => (val ? openModal('link') : closeModal()),
       isLinkModalOpen,
@@ -328,12 +317,6 @@ export function useUIState() {
         val ? openModal('documents', true) : closeModal(),
 
       // Still standalone for now
-      isLibraryPanelOpen,
-      setIsLibraryPanelOpen,
-      activeLibraryTab,
-      setActiveLibraryTab,
-      globalLibrarySelection,
-      setGlobalLibrarySelection,
       linkSourceId,
       setLinkSourceId,
       linkSourceType,
@@ -358,27 +341,9 @@ export function useUIState() {
       setDocumentColumnVisibility,
 
       // Helpers
-      handleGlobalLibrarySelect: (id: string) => {
-        setGlobalLibrarySelection((prev) => {
-          const newSelection = new Set(prev);
-          if (newSelection.has(id)) {
-            newSelection.delete(id);
-          } else {
-            newSelection.add(id);
-          }
-          return newSelection;
-        });
-      },
-      handleOpenLibrary: (
-        tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
-      ) => {
-        setActiveLibraryTab(tab);
-        setIsLibraryPanelOpen(true);
-      },
       getDefaultColumnVisibility,
     }),
     [
-      activeLibraryTab,
       activeModal,
       clearNavigationStack,
       closeModal,
@@ -388,7 +353,6 @@ export function useUIState() {
       editingRequirement,
       editingRisk,
       editingUseCase,
-      globalLibrarySelection,
       informationColumnVisibility,
       isAdvancedSearchOpen,
       isCreateProjectModalOpen,
@@ -398,9 +362,7 @@ export function useUIState() {
       isEditRequirementModalOpen,
       isEditTestCaseModalOpen,
       isExportModalOpen,
-      isGlobalLibraryModalOpen,
       isInformationModalOpen,
-      isLibraryPanelOpen,
       isLinkModalOpen,
       isNewRequirementModalOpen,
       isNewTestCaseModalOpen,
@@ -424,13 +386,10 @@ export function useUIState() {
       selectedRequirementId,
       selectedTestCaseId,
       selectedUseCaseId,
-      setActiveLibraryTab,
       setActiveModal,
       setColumnVisibility,
       setDocumentColumnVisibility,
-      setGlobalLibrarySelection,
       setInformationColumnVisibility,
-      setIsLibraryPanelOpen,
       setLinkSourceId,
       setLinkSourceType,
       setRiskColumnVisibility,

@@ -19,10 +19,6 @@ export interface LayoutProps {
   onExportPDF?: (selectedBaseline: ProjectBaseline | null) => void;
   onExportExcel?: () => void;
   onImportExcel?: () => void;
-  onOpenGlobalLibrary?: () => void;
-  onOpenLibraryTab?: (
-    tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
-  ) => void;
   onOpenExportModal?: () => void;
   onSearch?: (query: string) => void;
   onNewInformation?: () => void;
@@ -32,7 +28,6 @@ export interface LayoutProps {
   onNewCustomAttribute?: () => void;
   onNewDocument?: () => void;
   baselines?: ProjectBaseline[];
-  rightPanel?: React.ReactNode;
   onOpenUserSettings?: () => void;
   currentUserName?: string;
   onOpenAdvancedSearch?: () => void;
@@ -61,8 +56,6 @@ export const Layout: React.FC<LayoutProps> = ({
   onExportPDF,
   onExportExcel,
   onImportExcel,
-  onOpenGlobalLibrary,
-  onOpenLibraryTab,
   onOpenExportModal,
   onSearch,
   onNewInformation,
@@ -72,7 +65,6 @@ export const Layout: React.FC<LayoutProps> = ({
   onNewCustomAttribute,
   onNewDocument,
   baselines = [],
-  rightPanel,
   onOpenUserSettings,
   currentUserName,
   onOpenAdvancedSearch,
@@ -88,7 +80,6 @@ export const Layout: React.FC<LayoutProps> = ({
         onCreateProject={onCreateProject}
         onCreateDemoProject={onCreateDemoProject}
         onOpenProjectSettings={onOpenProjectSettings}
-        onOpenLibraryTab={onOpenLibraryTab}
       />
 
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -106,7 +97,6 @@ export const Layout: React.FC<LayoutProps> = ({
           onNewDocument={onNewDocument}
           onImport={onImport}
           onImportExcel={onImportExcel}
-          onOpenGlobalLibrary={onOpenGlobalLibrary}
           onOpenExportModal={onOpenExportModal}
           onExport={onExport}
           onExportPDF={onExportPDF}
@@ -131,19 +121,6 @@ export const Layout: React.FC<LayoutProps> = ({
           >
             {children}
           </div>
-          {rightPanel && (
-            <div
-              style={{
-                width: '350px',
-                borderLeft: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-bg-secondary)',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              {rightPanel}
-            </div>
-          )}
         </div>
       </main>
     </div>

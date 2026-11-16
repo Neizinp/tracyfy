@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   LinkModal,
   VersionHistory,
-  GlobalLibraryModal,
   UserSettingsModal,
   ExportModal,
   AdvancedSearchModal,
@@ -41,7 +40,7 @@ import { notifyError } from '../../app/providers/ToastProvider';
 
 export const ManagementModals: React.FC = () => {
   const ui = useUI();
-  const { projects, currentProjectId, currentProject, addToProject } = useProject();
+  const { projects, currentProjectId, currentProject } = useProject();
 
   const { globalRequirements, globalUseCases, globalTestCases, globalInformation } =
     useGlobalState();
@@ -273,18 +272,6 @@ export const ManagementModals: React.FC = () => {
         onClose={ui.closeModal}
         onCreateBaseline={handleCreateBaselineWrapper}
         onSelectArtifact={handleSelectArtifact}
-      />
-
-      <GlobalLibraryModal
-        isOpen={ui.activeModal.type === 'global-library'}
-        onClose={ui.closeModal}
-        projects={projects}
-        currentProjectId={currentProjectId}
-        globalRequirements={globalRequirements}
-        globalUseCases={globalUseCases}
-        globalTestCases={globalTestCases}
-        globalInformation={globalInformation}
-        onAddToProject={addToProject}
       />
 
       <UserSettingsModal isOpen={ui.activeModal.type === 'user-settings'} onClose={ui.closeModal} />

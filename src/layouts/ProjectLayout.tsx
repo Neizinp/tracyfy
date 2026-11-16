@@ -1,7 +1,7 @@
 import React, { Suspense, useCallback, useRef, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import { Layout, GlobalLibraryPanel, ModalManager } from '../components';
+import { Layout, ModalManager } from '../components';
 import { GenericColumnSelector } from '../components/GenericColumnSelector';
 import {
   useProject,
@@ -13,7 +13,6 @@ import {
   useBackgroundTaskActions,
   useToast,
   useBaselines,
-  useRisks,
   useCustomAttributes,
 } from '../app/providers';
 import { createDemoProject } from '../services/demoDataService';
@@ -40,7 +39,7 @@ const PageLoadingFallback: React.FC = () => (
 );
 
 export const ProjectLayout: React.FC = () => {
-  const { projects, currentProjectId, currentProject, switchProject, addToProject } = useProject();
+  const { projects, currentProjectId, currentProject, switchProject } = useProject();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -56,9 +55,6 @@ export const ProjectLayout: React.FC = () => {
 
   // Baselines context
   const { baselines } = useBaselines();
-
-  // Risks context
-  const { risks } = useRisks();
 
   // Custom Attributes context
   const { getDefinitionsForType } = useCustomAttributes();
@@ -275,29 +271,7 @@ export const ProjectLayout: React.FC = () => {
     if (location.pathname.includes('/risks')) return 'Risks';
     if (location.pathname.includes('/workflows')) return 'Workflows';
     if (location.pathname.includes('/custom-attributes')) return 'Custom Attributes';
-    if (location.pathname.includes('/library/requirements')) return 'Requirements';
-    if (location.pathname.includes('/library/use-cases')) return 'Use Cases';
-    if (location.pathname.includes('/library/test-cases')) return 'Test Cases';
-    if (location.pathname.includes('/library/information')) return 'Information';
     return '';
-  };
-
-  // Handle adding selected items from library to project
-  const handleAddFromLibrary = async (ids: string[]) => {
-    // Categorize selected IDs by type
-    const reqIds = ids.filter((id) => globalRequirements.some((r) => r.id === id));
-    const ucIds = ids.filter((id) => globalUseCases.some((u) => u.id === id));
-    const tcIds = ids.filter((id) => globalTestCases.some((t) => t.id === id));
-    const infoIds = ids.filter((id) => globalInformation.some((i) => i.id === id));
-    const riskIds = ids.filter((id) => risks.some((r) => r.id === id));
-
-    await addToProject({
-      requirements: reqIds,
-      useCases: ucIds,
-      testCases: tcIds,
-      information: infoIds,
-      risks: riskIds,
-    });
   };
 
   return (
@@ -320,8 +294,6 @@ export const ProjectLayout: React.FC = () => {
       onExport={importExport.handleExport}
       onImport={importExport.handleImport}
       onImportExcel={importExport.handleImportExcel}
-      onOpenGlobalLibrary={() => ui.setIsLibraryPanelOpen(true)}
-      onOpenLibraryTab={ui.handleOpenLibrary}
       onOpenExportModal={() => ui.setIsExportModalOpen(true)}
       onOpenAdvancedSearch={() => ui.setIsAdvancedSearchOpen(true)}
       onViewHistory={() => ui.setIsVersionHistoryOpen(true)}
@@ -403,34 +375,6 @@ export const ProjectLayout: React.FC = () => {
         }
       }}
       onSearch={ui.setSearchQuery}
-      rightPanel={
-        ui.isLibraryPanelOpen ? (
-          <GlobalLibraryPanel
-            isOpen={true}
-            onClose={() => {
-              ui.setGlobalLibrarySelection(new Set());
-              ui.setIsLibraryPanelOpen(false);
-            }}
-            requirements={globalRequirements}
-            useCases={globalUseCases}
-            testCases={globalTestCases}
-            information={globalInformation}
-            risks={risks}
-            projects={projects}
-            selectedItems={ui.globalLibrarySelection}
-            onToggleSelect={ui.handleGlobalLibrarySelect}
-            onSelectAll={(ids) => ui.setGlobalLibrarySelection(new Set(ids))}
-            onDeselectAll={() => ui.setGlobalLibrarySelection(new Set())}
-            activeTab={ui.activeLibraryTab}
-            onTabChange={(tab) =>
-              ui.setActiveLibraryTab(
-                tab as 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
-              )
-            }
-            onAddToProject={handleAddFromLibrary}
-          />
-        ) : undefined
-      }
     >
       <div style={{ marginBottom: 'var(--spacing-md)' }}>
         <div

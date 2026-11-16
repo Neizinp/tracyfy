@@ -102,7 +102,6 @@ describe('Sidebar', () => {
 
       expect(screen.getByText('Views')).toBeInTheDocument();
       expect(screen.getByText('Traceability Dashboard')).toBeInTheDocument();
-      // Requirements appears in both Views and Repository, so use getAllByText
       expect(screen.getAllByText('Requirements').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Use Cases').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Test Cases').length).toBeGreaterThanOrEqual(1);
@@ -110,23 +109,21 @@ describe('Sidebar', () => {
       expect(screen.getAllByText('Risks').length).toBeGreaterThanOrEqual(1);
     });
 
-    it('should render all artifact types in both Views and Repository sections', () => {
+    it('links each artifact type to its page exactly once', () => {
       renderWithRouter(<Sidebar {...defaultProps} />);
 
-      // Define all artifact types that should be present
-      const artifactTypes = ['Requirements', 'Use Cases', 'Test Cases', 'Information', 'Risks'];
-
-      // Each artifact type should appear at least twice (once in Views, once in Repository)
-      artifactTypes.forEach((artifactType) => {
-        const elements = screen.getAllByText(artifactType);
-        expect(elements.length).toBeGreaterThanOrEqual(2);
+      const pages: [string, string][] = [
+        ['Requirements', '/requirements'],
+        ['Use Cases', '/use-cases'],
+        ['Test Cases', '/test-cases'],
+        ['Information', '/information'],
+        ['Risks', '/risks'],
+      ];
+      pages.forEach(([name, href]) => {
+        const links = screen.getAllByRole('link', { name });
+        expect(links).toHaveLength(1);
+        expect(links[0]).toHaveAttribute('href', href);
       });
-    });
-
-    it('should render Repository section', () => {
-      renderWithRouter(<Sidebar {...defaultProps} />);
-
-      expect(screen.getByText('Repository')).toBeInTheDocument();
     });
   });
 
@@ -139,62 +136,6 @@ describe('Sidebar', () => {
       fireEvent.click(addButton);
 
       expect(onCreateProject).toHaveBeenCalled();
-    });
-  });
-
-  describe('repository tabs', () => {
-    it('should call onOpenLibraryTab with requirements when Requirements is clicked', () => {
-      const onOpenLibraryTab = vi.fn();
-      renderWithRouter(<Sidebar {...defaultProps} onOpenLibraryTab={onOpenLibraryTab} />);
-
-      // Find the Repository section and click Requirements
-      const repoButtons = screen.getAllByText('Requirements');
-      // Repository section has its own Requirements button
-      fireEvent.click(repoButtons[repoButtons.length - 1]);
-
-      expect(onOpenLibraryTab).toHaveBeenCalledWith('requirements');
-    });
-
-    it('should call onOpenLibraryTab with usecases when Use Cases is clicked', () => {
-      const onOpenLibraryTab = vi.fn();
-      renderWithRouter(<Sidebar {...defaultProps} onOpenLibraryTab={onOpenLibraryTab} />);
-
-      // Find all "Use Cases" buttons - views section has one and repository has one
-      const useCaseButtons = screen.getAllByText('Use Cases');
-      // Click the one in Repository section (last one)
-      fireEvent.click(useCaseButtons[useCaseButtons.length - 1]);
-
-      expect(onOpenLibraryTab).toHaveBeenCalledWith('usecases');
-    });
-
-    it('should call onOpenLibraryTab with testcases when Test Cases is clicked', () => {
-      const onOpenLibraryTab = vi.fn();
-      renderWithRouter(<Sidebar {...defaultProps} onOpenLibraryTab={onOpenLibraryTab} />);
-
-      const testCaseButtons = screen.getAllByText('Test Cases');
-      fireEvent.click(testCaseButtons[testCaseButtons.length - 1]);
-
-      expect(onOpenLibraryTab).toHaveBeenCalledWith('testcases');
-    });
-
-    it('should call onOpenLibraryTab with information when Information is clicked', () => {
-      const onOpenLibraryTab = vi.fn();
-      renderWithRouter(<Sidebar {...defaultProps} onOpenLibraryTab={onOpenLibraryTab} />);
-
-      const infoButtons = screen.getAllByText('Information');
-      fireEvent.click(infoButtons[infoButtons.length - 1]);
-
-      expect(onOpenLibraryTab).toHaveBeenCalledWith('information');
-    });
-
-    it('should call onOpenLibraryTab with risks when Risks is clicked', () => {
-      const onOpenLibraryTab = vi.fn();
-      renderWithRouter(<Sidebar {...defaultProps} onOpenLibraryTab={onOpenLibraryTab} />);
-
-      const riskButtons = screen.getAllByText('Risks');
-      fireEvent.click(riskButtons[riskButtons.length - 1]);
-
-      expect(onOpenLibraryTab).toHaveBeenCalledWith('risks');
     });
   });
 

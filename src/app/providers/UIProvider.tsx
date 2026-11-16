@@ -56,10 +56,6 @@ export interface UIContextValue {
   setIsInformationModalOpen: (isOpen: boolean) => void;
   isRiskModalOpen: boolean;
   setIsRiskModalOpen: (isOpen: boolean) => void;
-  isLibraryPanelOpen: boolean;
-  setIsLibraryPanelOpen: (isOpen: boolean) => void;
-  isGlobalLibraryModalOpen: boolean;
-  setIsGlobalLibraryModalOpen: (isOpen: boolean) => void;
   isUserSettingsModalOpen: boolean;
   setIsUserSettingsModalOpen: (isOpen: boolean) => void;
   isExportModalOpen: boolean;
@@ -96,16 +92,6 @@ export interface UIContextValue {
   editingDocument: ArtifactDocument | null;
   setEditingDocument: (doc: ArtifactDocument | null) => void;
 
-  // Library state
-  activeLibraryTab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks';
-  setActiveLibraryTab: (
-    tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
-  ) => void;
-  globalLibrarySelection: Set<string>;
-  setGlobalLibrarySelection: (
-    selection: Set<string> | ((prev: Set<string>) => Set<string>)
-  ) => void;
-
   // Column visibility - Requirements
   columnVisibility: ColumnVisibility;
   setColumnVisibility: (cols: ColumnVisibility) => void;
@@ -134,10 +120,6 @@ export interface UIContextValue {
   setLinkSourceType: (type: LinkableType | null) => void;
 
   // Helper functions
-  handleGlobalLibrarySelect: (id: string) => void;
-  handleOpenLibrary: (
-    tab: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks'
-  ) => void;
 }
 
 const UIContext = createContext<UIContextValue | undefined>(undefined);

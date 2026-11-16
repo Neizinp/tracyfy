@@ -90,12 +90,7 @@ export type ViewType =
   | 'information'
   | 'risks'
   | 'baselines'
-  | 'baseline-history'
-  | 'library-requirements'
-  | 'library-usecases'
-  | 'library-testcases'
-  | 'library-information'
-  | 'library-risks';
+  | 'baseline-history';
 
 export type ModalType =
   | 'requirement'
@@ -113,7 +108,6 @@ export type ModalType =
   | 'search'
   | 'custom-attribute'
   | 'workflow'
-  | 'global-library'
   | 'documents'
   | null;
 

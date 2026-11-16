@@ -8,7 +8,6 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 
 - **Multi-Project Support** - Manage multiple independent projects in a single workspace
 - **Repository Selection** - Select local Git repositories as project storage
-- **Global Artifact Library** - Reuse artifacts (requirements, use cases, test cases, information) across projects
 - **Project Switching** - Seamlessly switch between projects with independent artifact sets
 - **Demo Project** - Pre-populated example project for quick exploration
 
@@ -62,7 +61,6 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 - **Test Cases View** - Test management and requirement traceability
 - **Information View** - Notes and documentation management
 - **Baselines View** - Baseline creation and history viewing
-- **Global Library** - Browse and add artifacts from any project
 
 ### Artifact Fields
 
