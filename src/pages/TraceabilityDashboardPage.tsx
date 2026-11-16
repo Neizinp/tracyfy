@@ -11,6 +11,7 @@ import {
 } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
 import { notifyError } from '../app/providers/ToastProvider';
+import type { LinkableType } from '../constants/linkableArtifacts';
 
 type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
 
@@ -86,11 +87,13 @@ export const TraceabilityDashboardPage: React.FC = () => {
   // Handler to open LinkModal for adding a link
   const handleAddLink = useCallback(
     (artifactId: string, artifactType: string) => {
-      const typeMap: Record<string, 'requirement' | 'usecase' | 'testcase' | 'information'> = {
+      const typeMap: Record<string, LinkableType> = {
         requirement: 'requirement',
         useCase: 'usecase',
         testCase: 'testcase',
         information: 'information',
+        risk: 'risk',
+        document: 'document',
       };
       setLinkSourceId(artifactId);
       setLinkSourceType(typeMap[artifactType] || 'requirement');

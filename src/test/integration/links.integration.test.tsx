@@ -222,4 +222,65 @@ describe('integration: links', () => {
       expect.objectContaining({ sourceId: risk.id, targetId: req.id })
     );
   }, 60_000);
+
+  it('every artifact type can be a link target and a link source', async () => {
+    h = await startApp({ initialRoute: '/links' });
+    const base = { description: '', status: 'draft', priority: 'medium', dateCreated: Date.now() };
+    const req = await addRequirement(h, 'Login');
+    const targets = {
+      REQ: await addRequirement(h, 'Logout'),
+      UC: await act(() =>
+        h.app().useCases.handleAddUseCase({ ...base, title: 'Sign in' } as never)
+      ),
+      TC: await act(() =>
+        h.app().testCases.handleAddTestCase({ ...base, title: 'Login works' } as never)
+      ),
+      INFO: await act(() =>
+        h.app().information.handleAddInformation({ ...base, title: 'Glossary' } as never)
+      ),
+      RISK: await act(() =>
+        h.app().risks.handleAddRisk({ ...base, title: 'Lockout', mitigation: 'x' } as never)
+      ),
+      DOC: await act(() =>
+        h.app().documents.handleAddDocument({
+          ...base,
+          title: 'Login spec',
+          projectId: h.app().project.currentProjectId,
+          structure: [],
+        } as never)
+      ),
+    };
+    await h.settle();
+
+    for (const [short, target] of Object.entries(targets)) {
+      await openRelationships(h, req);
+      fireEvent.click(screen.getByRole('button', { name: /\+ add link/i }));
+      const dialog = await screen.findByRole('dialog', { name: /create link/i });
+      fireEvent.click(within(dialog).getByRole('button', { name: short }));
+      fireEvent.click(within(dialog).getByText(target!.title));
+      fireEvent.click(submitButton(/create link/i));
+      await h.settle();
+      await waitFor(() =>
+        expect(h.app().fileSystem.links).toContainEqual(
+          expect.objectContaining({ sourceId: req.id, targetId: target!.id })
+        )
+      );
+    }
+
+    // A document as the source, chosen on the Links page
+    fireEvent.click((await screen.findAllByRole('button', { name: /^add$/i }))[0]);
+    const dialog = await screen.findByRole('dialog', { name: /create link/i });
+    fireEvent.change(within(dialog).getByLabelText('Source Artifact'), {
+      target: { value: targets.DOC!.id },
+    });
+    fireEvent.click(within(dialog).getByText('Login'));
+    fireEvent.click(submitButton(/create link/i));
+    await h.settle();
+    await waitFor(() =>
+      expect(h.app().fileSystem.links).toContainEqual(
+        expect.objectContaining({ sourceId: targets.DOC!.id, targetId: req.id })
+      )
+    );
+    expect(await h.invisibleDirtyPaths()).toEqual([]);
+  }, 120_000);
 });

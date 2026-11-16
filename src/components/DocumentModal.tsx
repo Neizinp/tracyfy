@@ -201,7 +201,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
           onAddLink={() => {
             if (document) {
               setLinkSourceId(document.id);
-              setLinkSourceType('document' as any);
+              setLinkSourceType('document');
               setIsLinkModalOpen(true);
             }
           }}

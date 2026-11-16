@@ -1,14 +1,12 @@
 import React, { useCallback } from 'react';
 import { Search, Link as LinkIcon, Globe, Folder } from 'lucide-react';
-import type {
-  Requirement,
-  ArtifactLink,
-  Project,
-  UseCase,
-  TestCase,
-  Information,
-  Risk,
-} from '../types';
+import type { ArtifactLink, Project } from '../types';
+import {
+  LINKABLE_TYPES,
+  linkableTypeInfo,
+  type ArtifactsByType,
+  type LinkableType,
+} from '../constants/linkableArtifacts';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useLinkModal, type LinkModalResult } from '../hooks/useLinkModal';
 import { BaseArtifactModal } from './BaseArtifactModal';
@@ -19,19 +17,14 @@ export type { LinkModalResult };
 interface LinkModalProps {
   isOpen: boolean;
   sourceArtifactId: string | null;
-  sourceArtifactType: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
+  sourceArtifactType: LinkableType;
   projects: Project[];
   currentProjectId: string;
-  globalRequirements: Requirement[];
-  globalUseCases: UseCase[];
-  globalTestCases: TestCase[];
-  globalInformation: Information[];
-  globalRisks?: Risk[];
+  /** Every linkable artifact, grouped by type */
+  artifactsByType: ArtifactsByType;
   onClose: () => void;
   onAddLink: (link: LinkModalResult) => void;
 }
-
-type ArtifactType = 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
 
 export const LinkModal: React.FC<LinkModalProps> = ({
   isOpen,
@@ -39,11 +32,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
   sourceArtifactType,
   projects,
   currentProjectId,
-  globalRequirements,
-  globalUseCases,
-  globalTestCases,
-  globalInformation,
-  globalRisks,
+  artifactsByType,
   onClose,
   onAddLink,
 }) => {
@@ -72,11 +61,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     sourceArtifactType,
     projects,
     currentProjectId,
-    globalRequirements,
-    globalUseCases,
-    globalTestCases,
-    globalInformation,
-    globalRisks,
+    artifactsByType,
     onClose,
     onAddLink,
   });
@@ -169,17 +154,10 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                   borderRadius: 'var(--radius-xs)',
                   textTransform: 'uppercase',
                   fontWeight: 700,
-                  backgroundColor:
-                    sourceArtifactType === 'requirement'
-                      ? 'var(--color-info)'
-                      : sourceArtifactType === 'usecase'
-                        ? 'var(--color-accent)'
-                        : sourceArtifactType === 'testcase'
-                          ? 'var(--color-success)'
-                          : 'var(--color-warning)',
+                  backgroundColor: linkableTypeInfo(sourceArtifactType).color,
                 }}
               >
-                {sourceArtifactType.substring(0, 3)}
+                {linkableTypeInfo(sourceArtifactType).short}
               </span>
               <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>
                 {sourceArtifactId}
@@ -206,13 +184,13 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                 gap: '4px',
               }}
             >
-              {(
-                ['requirement', 'usecase', 'testcase', 'information', 'risk'] as ArtifactType[]
-              ).map((type) => (
+              {LINKABLE_TYPES.map(({ type, short, label }) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => selectTargetType(type)}
+                  title={label}
+                  aria-pressed={targetType === type}
                   style={{
                     flex: 1,
                     padding: '6px',
@@ -229,15 +207,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                     transition: 'all 0.2s',
                   }}
                 >
-                  {type === 'requirement'
-                    ? 'REQ'
-                    : type === 'usecase'
-                      ? 'UC'
-                      : type === 'testcase'
-                        ? 'TC'
-                        : type === 'risk'
-                          ? 'RISK'
-                          : 'INFO'}
+                  {short}
                 </button>
               ))}
             </div>

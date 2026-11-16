@@ -36,6 +36,7 @@ import type {
 } from '../../types';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import type { LinkModalResult } from '../LinkModal';
+import { useLinkableArtifacts } from '../../hooks/useLinkableArtifacts';
 import { notifyError } from '../../app/providers/ToastProvider';
 
 export const ManagementModals: React.FC = () => {
@@ -51,6 +52,7 @@ export const ManagementModals: React.FC = () => {
   const { currentUser } = useUser();
   const { startTask, endTask } = useBackgroundTaskActions();
   const { links, createLink } = useFileSystem();
+  const linkableArtifacts = useLinkableArtifacts();
   const { showToast } = useToast();
 
   const [projectLinks, setProjectLinks] = useState<Link[]>([]);
@@ -259,11 +261,7 @@ export const ManagementModals: React.FC = () => {
         sourceArtifactType={ui.linkSourceType || 'requirement'}
         projects={projects}
         currentProjectId={currentProjectId}
-        globalRequirements={globalRequirements}
-        globalUseCases={globalUseCases}
-        globalTestCases={globalTestCases}
-        globalInformation={globalInformation}
-        globalRisks={risks}
+        artifactsByType={linkableArtifacts}
         onClose={ui.closeModal}
         onAddLink={handleAddArtifactLink}
       />

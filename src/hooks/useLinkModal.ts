@@ -6,15 +6,12 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type {
-  Requirement,
-  ArtifactLink,
-  Project,
-  UseCase,
-  TestCase,
-  Information,
-  Risk,
-} from '../types';
+import type { ArtifactLink, Project } from '../types';
+import {
+  LINKABLE_TYPES,
+  type ArtifactsByType,
+  type LinkableType,
+} from '../constants/linkableArtifacts';
 
 export interface LinkModalResult {
   /** Set when the source was chosen in the modal (e.g. from the Links page) */
@@ -24,19 +21,14 @@ export interface LinkModalResult {
   projectIds: string[];
 }
 
-type ArtifactType = 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
-
 interface UseLinkModalOptions {
   isOpen: boolean;
   sourceArtifactId: string | null;
-  sourceArtifactType: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
+  sourceArtifactType: LinkableType;
   projects: Project[];
   currentProjectId: string;
-  globalRequirements: Requirement[];
-  globalUseCases: UseCase[];
-  globalTestCases: TestCase[];
-  globalInformation: Information[];
-  globalRisks?: Risk[];
+  /** Every linkable artifact, grouped by type */
+  artifactsByType: ArtifactsByType;
   onClose: () => void;
   onAddLink: (link: LinkModalResult) => void;
 }
@@ -46,15 +38,11 @@ export function useLinkModal({
   sourceArtifactId,
   projects,
   currentProjectId,
-  globalRequirements,
-  globalUseCases,
-  globalTestCases,
-  globalInformation,
-  globalRisks = [],
+  artifactsByType,
   onClose,
   onAddLink,
 }: UseLinkModalOptions) {
-  const [targetType, setTargetType] = useState<ArtifactType>('requirement');
+  const [targetType, setTargetType] = useState<LinkableType>('requirement');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
   const [linkType, setLinkType] = useState<ArtifactLink['type']>('related_to');
@@ -86,33 +74,18 @@ export function useLinkModal({
           p.useCaseIds.includes(id) ||
           p.testCaseIds.includes(id) ||
           p.informationIds.includes(id) ||
-          (p.riskIds ?? []).includes(id)
+          (p.riskIds ?? []).includes(id) ||
+          (p.documentIds ?? []).includes(id)
       );
     },
     [projects]
   );
 
-  // Filter artifacts based on type and search
+  // Artifacts of the selected type, minus deleted ones and the source itself
   const filteredArtifacts = useMemo(() => {
-    let artifacts: { id: string; title: string; description?: string }[] = [];
-
-    if (targetType === 'requirement') artifacts = globalRequirements;
-    else if (targetType === 'usecase') artifacts = globalUseCases;
-    else if (targetType === 'testcase') artifacts = globalTestCases;
-    else if (targetType === 'risk') artifacts = globalRisks;
-    else if (targetType === 'information')
-      artifacts = globalInformation.map((i) => ({
-        id: i.id,
-        title: i.title,
-        description:
-          (i.content || i.text || '').length > 100
-            ? (i.content || i.text || '').substring(0, 100) + '...'
-            : i.content || i.text || '',
-      }));
-
-    // Filter out source artifact (can't link to self)
-    artifacts = artifacts.filter((a) => a.id !== effectiveSourceId);
-
+    let artifacts = artifactsByType[targetType].filter(
+      (a) => !a.isDeleted && a.id !== effectiveSourceId
+    );
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       artifacts = artifacts.filter(
@@ -122,32 +95,16 @@ export function useLinkModal({
           (a.description && a.description.toLowerCase().includes(query))
       );
     }
-
     return artifacts;
-  }, [
-    targetType,
-    globalRequirements,
-    globalUseCases,
-    globalTestCases,
-    globalInformation,
-    globalRisks,
-    effectiveSourceId,
-    searchQuery,
-  ]);
+  }, [artifactsByType, targetType, effectiveSourceId, searchQuery]);
 
   /** All artifacts that can act as a link source (used when no source is preset) */
   const sourceOptions = useMemo(
     () =>
-      [
-        ...globalRequirements,
-        ...globalUseCases,
-        ...globalTestCases,
-        ...globalInformation,
-        ...globalRisks,
-      ]
+      LINKABLE_TYPES.flatMap(({ type }) => artifactsByType[type])
         .filter((a) => !a.isDeleted)
         .map((a) => ({ id: a.id, title: a.title })),
-    [globalRequirements, globalUseCases, globalTestCases, globalInformation, globalRisks]
+    [artifactsByType]
   );
 
   const handleSubmit = useCallback(
@@ -166,7 +123,7 @@ export function useLinkModal({
     [selectedTargetId, effectiveSourceId, linkType, linkScope, currentProjectId, onAddLink, onClose]
   );
 
-  const selectTargetType = useCallback((type: ArtifactType) => {
+  const selectTargetType = useCallback((type: LinkableType) => {
     setTargetType(type);
     setSelectedTargetId('');
   }, []);

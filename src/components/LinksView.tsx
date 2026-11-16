@@ -3,6 +3,7 @@ import { Link as LinkIcon, ArrowRight, RefreshCw, Globe, Folder, Plus } from 'lu
 import { useLinkService } from '../hooks/useLinkService';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { LINK_TYPE_LABELS } from '../utils/linkTypes';
+import { linkableTypeInfo, linkableTypeOf } from '../constants/linkableArtifacts';
 import type { Link, Project } from '../types';
 import type { LinkType } from '../utils/linkTypes';
 import { EditLinkModal } from './EditLinkModal';
@@ -60,22 +61,11 @@ export const LinksView: React.FC<LinksViewProps> = ({
   };
 
   // Helpers
-  const getArtifactType = (id: string): string => {
-    if (id.startsWith('REQ-')) return 'requirement';
-    if (id.startsWith('UC-')) return 'usecase';
-    if (id.startsWith('TC-')) return 'testcase';
-    if (id.startsWith('INFO-')) return 'information';
-    if (id.startsWith('RISK-')) return 'risk';
-    return 'unknown';
-  };
+  const getArtifactType = (id: string): string => linkableTypeOf(id) ?? 'unknown';
 
   const getTypeColor = (id: string): string => {
-    if (id.startsWith('REQ-')) return 'var(--color-info)';
-    if (id.startsWith('UC-')) return 'var(--color-accent)';
-    if (id.startsWith('TC-')) return 'var(--color-success)';
-    if (id.startsWith('INFO-')) return 'var(--color-warning)';
-    if (id.startsWith('RISK-')) return 'var(--color-status-error)';
-    return 'var(--color-text-muted)';
+    const type = linkableTypeOf(id);
+    return type ? linkableTypeInfo(type).color : 'var(--color-text-muted)';
   };
 
   const getProjectNames = (projectIds: string[]): string => {

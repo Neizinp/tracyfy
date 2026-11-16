@@ -16,6 +16,7 @@ import type {
   SelectedArtifact,
   ModalType,
 } from '../types';
+import type { LinkableType } from '../constants/linkableArtifacts';
 
 /** Pure factory for the default column visibility (module-level so it's referentially stable) */
 const getDefaultColumnVisibility = (): ColumnVisibility => ({
@@ -42,9 +43,7 @@ export function useUIState() {
 
   // Legacy compatibility states (to be removed once all components are migrated)
   const [linkSourceId, setLinkSourceId] = useState<string | null>(null);
-  const [linkSourceType, setLinkSourceType] = useState<
-    'requirement' | 'usecase' | 'testcase' | 'information' | 'risk' | null
-  >(null);
+  const [linkSourceType, setLinkSourceType] = useState<LinkableType | null>(null);
 
   // Library States
   const [isLibraryPanelOpen, setIsLibraryPanelOpen] = useState(false);

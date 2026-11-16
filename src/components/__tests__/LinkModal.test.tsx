@@ -94,10 +94,14 @@ describe('LinkModal', () => {
     sourceArtifactType: 'requirement' as const,
     projects: [mockProject],
     currentProjectId: 'PROJ-001',
-    globalRequirements: [mockReq1, mockReq2],
-    globalUseCases: [mockUseCase],
-    globalTestCases: [mockTestCase],
-    globalInformation: [mockInformation],
+    artifactsByType: {
+      requirement: [mockReq1, mockReq2],
+      usecase: [mockUseCase],
+      testcase: [mockTestCase],
+      information: [mockInformation],
+      risk: [],
+      document: [],
+    },
     onClose: mockOnClose,
     onAddLink: mockOnAddLink,
   };
