@@ -167,7 +167,7 @@ export const ManagementModals: React.FC = () => {
 
   const handleAddArtifactLink = useCallback(
     async (newLink: LinkModalResult) => {
-      const sourceId = newLink.sourceId || ui.linkSourceId || ui.selectedRequirementId;
+      const sourceId = newLink.sourceId || ui.linkSourceId;
       if (!sourceId) {
         showToast('Select a source artifact for the link', 'warning');
         return;
@@ -254,7 +254,8 @@ export const ManagementModals: React.FC = () => {
     <>
       <LinkModal
         isOpen={ui.activeModal.type === 'link'}
-        sourceArtifactId={ui.linkSourceId || ui.selectedRequirementId}
+        // Only an explicitly chosen source; never whatever artifact happens to be selected
+        sourceArtifactId={ui.linkSourceId}
         sourceArtifactType={ui.linkSourceType || 'requirement'}
         projects={projects}
         currentProjectId={currentProjectId}
@@ -262,6 +263,7 @@ export const ManagementModals: React.FC = () => {
         globalUseCases={globalUseCases}
         globalTestCases={globalTestCases}
         globalInformation={globalInformation}
+        globalRisks={risks}
         onClose={ui.closeModal}
         onAddLink={handleAddArtifactLink}
       />

@@ -6,7 +6,15 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Requirement, ArtifactLink, Project, UseCase, TestCase, Information } from '../types';
+import type {
+  Requirement,
+  ArtifactLink,
+  Project,
+  UseCase,
+  TestCase,
+  Information,
+  Risk,
+} from '../types';
 
 export interface LinkModalResult {
   /** Set when the source was chosen in the modal (e.g. from the Links page) */
@@ -16,7 +24,7 @@ export interface LinkModalResult {
   projectIds: string[];
 }
 
-type ArtifactType = 'requirement' | 'usecase' | 'testcase' | 'information';
+type ArtifactType = 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
 
 interface UseLinkModalOptions {
   isOpen: boolean;
@@ -28,6 +36,7 @@ interface UseLinkModalOptions {
   globalUseCases: UseCase[];
   globalTestCases: TestCase[];
   globalInformation: Information[];
+  globalRisks?: Risk[];
   onClose: () => void;
   onAddLink: (link: LinkModalResult) => void;
 }
@@ -41,6 +50,7 @@ export function useLinkModal({
   globalUseCases,
   globalTestCases,
   globalInformation,
+  globalRisks = [],
   onClose,
   onAddLink,
 }: UseLinkModalOptions) {
@@ -75,7 +85,8 @@ export function useLinkModal({
           p.requirementIds.includes(id) ||
           p.useCaseIds.includes(id) ||
           p.testCaseIds.includes(id) ||
-          p.informationIds.includes(id)
+          p.informationIds.includes(id) ||
+          (p.riskIds ?? []).includes(id)
       );
     },
     [projects]
@@ -88,6 +99,7 @@ export function useLinkModal({
     if (targetType === 'requirement') artifacts = globalRequirements;
     else if (targetType === 'usecase') artifacts = globalUseCases;
     else if (targetType === 'testcase') artifacts = globalTestCases;
+    else if (targetType === 'risk') artifacts = globalRisks;
     else if (targetType === 'information')
       artifacts = globalInformation.map((i) => ({
         id: i.id,
@@ -118,6 +130,7 @@ export function useLinkModal({
     globalUseCases,
     globalTestCases,
     globalInformation,
+    globalRisks,
     effectiveSourceId,
     searchQuery,
   ]);
@@ -125,10 +138,16 @@ export function useLinkModal({
   /** All artifacts that can act as a link source (used when no source is preset) */
   const sourceOptions = useMemo(
     () =>
-      [...globalRequirements, ...globalUseCases, ...globalTestCases, ...globalInformation]
+      [
+        ...globalRequirements,
+        ...globalUseCases,
+        ...globalTestCases,
+        ...globalInformation,
+        ...globalRisks,
+      ]
         .filter((a) => !a.isDeleted)
         .map((a) => ({ id: a.id, title: a.title })),
-    [globalRequirements, globalUseCases, globalTestCases, globalInformation]
+    [globalRequirements, globalUseCases, globalTestCases, globalInformation, globalRisks]
   );
 
   const handleSubmit = useCallback(

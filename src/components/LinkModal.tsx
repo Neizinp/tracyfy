@@ -1,6 +1,14 @@
 import React, { useCallback } from 'react';
 import { Search, Link as LinkIcon, Globe, Folder } from 'lucide-react';
-import type { Requirement, ArtifactLink, Project, UseCase, TestCase, Information } from '../types';
+import type {
+  Requirement,
+  ArtifactLink,
+  Project,
+  UseCase,
+  TestCase,
+  Information,
+  Risk,
+} from '../types';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useLinkModal, type LinkModalResult } from '../hooks/useLinkModal';
 import { BaseArtifactModal } from './BaseArtifactModal';
@@ -18,11 +26,12 @@ interface LinkModalProps {
   globalUseCases: UseCase[];
   globalTestCases: TestCase[];
   globalInformation: Information[];
+  globalRisks?: Risk[];
   onClose: () => void;
   onAddLink: (link: LinkModalResult) => void;
 }
 
-type ArtifactType = 'requirement' | 'usecase' | 'testcase' | 'information';
+type ArtifactType = 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk';
 
 export const LinkModal: React.FC<LinkModalProps> = ({
   isOpen,
@@ -34,6 +43,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
   globalUseCases,
   globalTestCases,
   globalInformation,
+  globalRisks,
   onClose,
   onAddLink,
 }) => {
@@ -66,6 +76,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     globalUseCases,
     globalTestCases,
     globalInformation,
+    globalRisks,
     onClose,
     onAddLink,
   });
@@ -195,38 +206,40 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                 gap: '4px',
               }}
             >
-              {(['requirement', 'usecase', 'testcase', 'information'] as ArtifactType[]).map(
-                (type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => selectTargetType(type)}
-                    style={{
-                      flex: 1,
-                      padding: '6px',
-                      borderRadius: 'var(--radius-xs)',
-                      border: 'none',
-                      fontSize: 'var(--font-size-xs)',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      backgroundColor: targetType === type ? 'var(--color-accent)' : 'transparent',
-                      color:
-                        targetType === type
-                          ? 'var(--color-on-accent)'
-                          : 'var(--color-text-secondary)',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    {type === 'requirement'
-                      ? 'REQ'
-                      : type === 'usecase'
-                        ? 'UC'
-                        : type === 'testcase'
-                          ? 'TC'
+              {(
+                ['requirement', 'usecase', 'testcase', 'information', 'risk'] as ArtifactType[]
+              ).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => selectTargetType(type)}
+                  style={{
+                    flex: 1,
+                    padding: '6px',
+                    borderRadius: 'var(--radius-xs)',
+                    border: 'none',
+                    fontSize: 'var(--font-size-xs)',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    backgroundColor: targetType === type ? 'var(--color-accent)' : 'transparent',
+                    color:
+                      targetType === type
+                        ? 'var(--color-on-accent)'
+                        : 'var(--color-text-secondary)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {type === 'requirement'
+                    ? 'REQ'
+                    : type === 'usecase'
+                      ? 'UC'
+                      : type === 'testcase'
+                        ? 'TC'
+                        : type === 'risk'
+                          ? 'RISK'
                           : 'INFO'}
-                  </button>
-                )
-              )}
+                </button>
+              ))}
             </div>
 
             {/* Search */}

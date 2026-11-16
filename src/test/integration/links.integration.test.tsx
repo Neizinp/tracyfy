@@ -179,4 +179,47 @@ describe('integration: links', () => {
 
     expect(await h.dirtyPaths()).toEqual([]);
   }, 60_000);
+
+  it('a requirement can be linked to a risk, and a risk can be a link source', async () => {
+    h = await startApp({ initialRoute: '/links' });
+    const req = await addRequirement(h, 'Login');
+    const risk = (await act(() =>
+      h.app().risks.handleAddRisk({
+        title: 'Credential stuffing',
+        description: '',
+        mitigation: 'Rate limiting',
+        status: 'identified',
+        dateCreated: Date.now(),
+      } as never)
+    ))!;
+    await h.settle();
+
+    // Requirement dialog -> Add Link -> target type Risk
+    await openRelationships(h, req);
+    fireEvent.click(screen.getByRole('button', { name: /\+ add link/i }));
+    let dialog = await screen.findByRole('dialog', { name: /create link/i });
+    fireEvent.click(within(dialog).getByRole('button', { name: /^risk$/i }));
+    fireEvent.click(within(dialog).getByText('Credential stuffing'));
+    fireEvent.click(submitButton(/create link/i));
+    await h.settle();
+    await waitFor(() =>
+      expect(h.app().fileSystem.links).toEqual([
+        expect.objectContaining({ sourceId: req.id, targetId: risk.id }),
+      ])
+    );
+
+    // Links page -> Add -> the risk as source
+    fireEvent.click((await screen.findAllByRole('button', { name: /^add$/i }))[0]);
+    dialog = await screen.findByRole('dialog', { name: /create link/i });
+    fireEvent.change(within(dialog).getByLabelText('Source Artifact'), {
+      target: { value: risk.id },
+    });
+    fireEvent.click(within(dialog).getByText('Login'));
+    fireEvent.click(submitButton(/create link/i));
+    await h.settle();
+    await waitFor(() => expect(h.app().fileSystem.links).toHaveLength(2));
+    expect(h.app().fileSystem.links).toContainEqual(
+      expect.objectContaining({ sourceId: risk.id, targetId: req.id })
+    );
+  }, 60_000);
 });
