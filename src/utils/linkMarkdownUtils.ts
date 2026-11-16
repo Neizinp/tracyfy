@@ -5,7 +5,7 @@
  */
 
 import type { Link } from '../types';
-import type { LinkType } from './linkTypes';
+import type { LinkType } from '../domain/linkTypes';
 import {
   objectToYaml,
   parseYamlFrontmatter,

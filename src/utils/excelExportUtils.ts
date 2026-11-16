@@ -14,7 +14,7 @@ import { formatDate } from './dateUtils';
 import { realGitService } from '../services/realGitService';
 import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
 import { diskLinkService } from '../services/diskLinkService';
-import { LINK_TYPE_LABELS } from './linkTypes';
+import { LINK_TYPE_LABELS } from '../domain/linkTypes';
 import { kind, type ArtifactKindId } from '../domain/artifactKinds';
 
 // Helper to sanitize text for Excel (remove newlines if needed, or keep them)

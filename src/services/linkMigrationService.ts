@@ -8,7 +8,7 @@
  * committed. Running it again is a no-op.
  */
 import type { ArtifactLink, Link } from '../types';
-import type { LinkType } from '../utils/linkTypes';
+import type { LinkType } from '../domain/linkTypes';
 import { diskLinkService } from './diskLinkService';
 import {
   requirementService,

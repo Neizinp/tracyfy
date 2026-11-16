@@ -8,7 +8,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Link, Risk } from '../../types';
 import type { TOCEntry } from './types';
-import { LINK_TYPE_LABELS } from '../linkTypes';
+import { LINK_TYPE_LABELS } from '../../domain/linkTypes';
 import { renderRisk } from './pdfArtifactRenderer';
 
 /**

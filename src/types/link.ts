@@ -1,5 +1,5 @@
 import type { CustomAttributeValue } from './customAttributes';
-import type { LinkType } from '../utils/linkTypes';
+import type { LinkType } from '../domain/linkTypes';
 
 // Link stored within an artifact (DEPRECATED - use Link instead)
 export interface ArtifactLink {

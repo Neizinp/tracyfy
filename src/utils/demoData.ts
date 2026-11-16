@@ -6,7 +6,7 @@
  */
 
 import type { Requirement, UseCase, TestCase, Information, Risk } from '../types';
-import type { LinkType } from './linkTypes';
+import type { LinkType } from '../domain/linkTypes';
 import type { CustomAttributeDefinition, CustomAttributeValue } from '../types/customAttributes';
 import type { ArtifactKindId } from '../domain/artifactKinds';
 

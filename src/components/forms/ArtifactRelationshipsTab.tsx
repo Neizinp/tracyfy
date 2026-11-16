@@ -2,7 +2,7 @@ import React from 'react';
 import { Trash2 } from 'lucide-react';
 import type { Link } from '../../types';
 import type { IncomingLink } from '../../services/diskLinkService';
-import { LINK_TYPE_LABELS } from '../../utils/linkTypes';
+import { LINK_TYPE_LABELS } from '../../domain/linkTypes';
 import { kind, kindOfId } from '../../domain/artifactKinds';
 
 const kindLabel = (id: string) => {
