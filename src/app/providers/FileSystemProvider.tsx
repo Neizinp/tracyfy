@@ -21,7 +21,6 @@ import {
   useCaseService,
   testCaseService,
   informationService,
-  projectService,
   riskService,
   documentService,
 } from '../../services/artifactServices';
@@ -59,8 +58,8 @@ interface FileSystemContextValue {
   selectDirectory: () => Promise<void>;
   changeDirectory: () => Promise<void>;
   // Loaded data from disk
-  projects: Project[];
-  currentProjectId: string;
+  /** The project in this folder (its name and description) */
+  project: Project;
   requirements: Requirement[];
   useCases: UseCase[];
   testCases: TestCase[];
@@ -90,14 +89,11 @@ interface FileSystemContextValue {
   deleteRisk: (id: string) => Promise<void>;
   deleteDocument: (id: string) => Promise<void>;
   saveProject: (project: Project) => Promise<void>;
-  deleteProject: (id: string) => Promise<void>;
   saveLink: (link: Link) => Promise<void>;
   deleteLink: (id: string) => Promise<void>;
   /** Create (and auto-commit) a link; updates provider state so the UI reflects it immediately */
   createLink: (sourceId: string, targetId: string, type: LinkType) => Promise<Link>;
   updateLink: (id: string, updates: Partial<Link>) => Promise<Link | null>;
-  createProject: (name: string, description: string) => Promise<Project>;
-  setCurrentProject: (projectId: string) => Promise<void>;
   getNextId: (
     type:
       | 'requirements'
@@ -139,6 +135,9 @@ const isE2EMode = () =>
 // Check E2E mode once at module load time for initial state
 const initialE2EMode = isE2EMode() || false;
 
+/** Before a folder is opened */
+const NO_PROJECT: Project = { name: '', description: '' };
+
 export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isReady, setIsReady] = useState(initialE2EMode);
   const [isLoading, setIsLoading] = useState(!initialE2EMode);
@@ -165,8 +164,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [links, setLinks] = useState<Link[]>([]);
 
   // All data from disk
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [currentProjectId, setCurrentProjectIdState] = useState<string>('');
+  const [project, setProject] = useState<Project>(NO_PROJECT);
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [useCases, setUseCases] = useState<UseCase[]>([]);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
@@ -223,8 +221,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     try {
       debug.log('[reloadData] Loading all data from disk...');
       const data = await diskProjectService.loadAll();
-      setProjects(data.projects);
-      setCurrentProjectIdState(data.currentProjectId);
+      setProject(data.project);
       setRequirements(data.requirements);
       setUseCases(data.useCases);
       setTestCases(data.testCases);
@@ -240,7 +237,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // Recalculate counters to make sure they're in sync
       await diskProjectService.recalculateCounters();
       debug.log('[reloadData] Data loaded:', {
-        projects: data.projects.length,
         requirements: data.requirements.length,
         useCases: data.useCases.length,
         testCases: data.testCases.length,
@@ -279,8 +275,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           debug.log('[FileSystemProvider] E2E test mode enabled');
           setDirectoryName('E2E Test Directory');
           // Initialize with empty data for E2E tests
-          setProjects([]);
-          setCurrentProjectIdState('');
+          setProject({ name: 'E2E Test Directory', description: '' });
           setRequirements([]);
           setUseCases([]);
           setTestCases([]);
@@ -585,75 +580,17 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [isReady, refreshStatus]
   );
 
-  // CRUD operations - Projects
+  // Project (project.md)
   const saveProject = useCallback(
-    async (project: Project) => {
+    async (updated: Project) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await projectService.save(project);
+        await diskProjectService.saveProject(updated);
       }
-      setProjects((prev) => {
-        const idx = prev.findIndex((p) => p.id === project.id);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = project;
-          return updated;
-        }
-        return [...prev, project];
-      });
+      setProject(updated);
       if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
-  );
-
-  const createProject = useCallback(
-    async (name: string, description: string): Promise<Project> => {
-      if (!isReady) throw new Error('Filesystem not ready');
-
-      let project: Project;
-      if (isE2EMode()) {
-        // In E2E mode, create project in memory
-        project = {
-          id: `project-${Date.now()}`,
-          name,
-          description,
-          lastModified: Date.now(),
-        };
-      } else {
-        project = await diskProjectService.createProject(name, description);
-      }
-      setProjects((prev) => [...prev, project]);
-      setCurrentProjectIdState(project.id);
-      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
-      return project;
-    },
-    [isReady, refreshStatus]
-  );
-
-  const deleteProject = useCallback(
-    async (id: string) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await diskProjectService.deleteProject(id);
-      }
-      // Soft-delete: update isDeleted flag instead of removing from array
-      setProjects((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, isDeleted: true, lastModified: Date.now() } : p))
-      );
-      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
-    },
-    [isReady, refreshStatus]
-  );
-
-  const setCurrentProject = useCallback(
-    async (projectId: string) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await diskProjectService.setCurrentProjectId(projectId);
-      }
-      setCurrentProjectIdState(projectId);
-    },
-    [isReady]
   );
 
   // CRUD operations - Links
@@ -864,8 +801,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setDirectoryName(null);
     setError(null);
     setPendingChanges([]);
-    setProjects([]);
-    setCurrentProjectIdState('');
+    setProject(NO_PROJECT);
     setRequirements([]);
     setUseCases([]);
     setTestCases([]);
@@ -890,8 +826,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       selectDirectory,
       changeDirectory,
       // Data
-      projects,
-      currentProjectId,
+      project,
       requirements,
       useCases,
       testCases,
@@ -919,13 +854,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       deleteRisk,
       deleteDocument,
       saveProject,
-      createProject,
-      deleteProject,
       saveLink,
       deleteLink,
       createLink,
       updateLink,
-      setCurrentProject,
       getNextId,
       reloadData,
       // Git operations
@@ -941,13 +873,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       updateLink,
       changeDirectory,
       commitFile,
-      createProject,
-      currentProjectId,
       deleteDocument,
       deleteInformation,
       createLink,
       deleteLink,
-      deleteProject,
       deleteRequirement,
       deleteRisk,
       deleteTestCase,
@@ -967,7 +896,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       statusError,
       preloadedCurrentUserId,
       preloadedUsers,
-      projects,
+      project,
       pull,
       push,
       readFileAtCommit,
@@ -985,7 +914,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       saveTestCase,
       saveUseCase,
       selectDirectory,
-      setCurrentProject,
       testCases,
       useCases,
     ]

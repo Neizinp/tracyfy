@@ -52,14 +52,6 @@ describe('DiskProjectService - User Operations', () => {
       expect(userId).toBe('USER-001');
     });
 
-    it('should fall back to the legacy current-user.md in the project folder', async () => {
-      vi.mocked(fileSystemService.readFile).mockImplementation(async (p: string) =>
-        p === 'current-user.md' ? 'USER-007' : null
-      );
-
-      expect(await diskProjectService.getCurrentUserId()).toBe('USER-007');
-    });
-
     it('should return empty string when file does not exist', async () => {
       vi.mocked(fileSystemService.readFile).mockResolvedValue(null);
 
@@ -84,13 +76,16 @@ describe('DiskProjectService - User Operations', () => {
     it('should load everything from disk', async () => {
       // Mock all the loadAll calls
       vi.mocked(fileSystemService.listFiles).mockResolvedValue([]);
-      vi.mocked(fileSystemService.readFile).mockResolvedValue('proj-123');
+      vi.mocked(fileSystemService.readFile).mockImplementation(async (path) =>
+        path === 'project.md'
+          ? '---\nname: "Door Controller"\n---\n\n# Door Controller\n\nLobby'
+          : null
+      );
 
       const data = await diskProjectService.loadAll();
 
-      expect(data).toHaveProperty('projects');
+      expect(data.project).toEqual({ name: 'Door Controller', description: 'Lobby' });
       expect(data).toHaveProperty('requirements');
-      expect(data.currentProjectId).toBe('proj-123');
     });
   });
 

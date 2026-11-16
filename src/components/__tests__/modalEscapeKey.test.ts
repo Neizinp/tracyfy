@@ -30,7 +30,6 @@ const MODAL_FILES = {
   RiskModal: () => import('../RiskModal.tsx?raw'),
   LinkModal: () => import('../LinkModal.tsx?raw'),
   EditLinkModal: () => import('../EditLinkModal.tsx?raw'),
-  CreateProjectModal: () => import('../CreateProjectModal.tsx?raw'),
   ProjectSettingsModal: () => import('../ProjectSettingsModal.tsx?raw'),
   UserSettingsModal: () => import('../UserSettingsModal.tsx?raw'),
   RemoteSettingsModal: () => import('../RemoteSettingsModal.tsx?raw'),

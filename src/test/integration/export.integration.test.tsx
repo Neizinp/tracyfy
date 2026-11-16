@@ -41,7 +41,6 @@ async function populate(h: Harness) {
     app().documents.handleAddDocument({
       ...base,
       title: 'Spec',
-      projectId: app().project.currentProjectId,
       structure: [],
     } as never)
   );
@@ -135,8 +134,8 @@ describe('integration: export', () => {
     const exported = await exportVia(/json data/i);
     h.cleanup();
 
-    // A fresh folder, new user/project
-    h = await startApp({ userName: 'Other User', projectName: 'Imported' });
+    // A fresh folder and a new user
+    h = await startApp({ userName: 'Other User' });
     // The OS file picker: capture the hidden <input type=file> the app clicks
     const pickers: HTMLInputElement[] = [];
     vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(function (

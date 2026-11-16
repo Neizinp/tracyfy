@@ -7,7 +7,6 @@ import type {
   Information,
   Risk,
   ArtifactDocument,
-  Project,
   ColumnVisibility,
   UseCaseColumnVisibility,
   TestCaseColumnVisibility,
@@ -46,8 +45,6 @@ export interface UIContextValue {
   setIsVersionHistoryOpen: (isOpen: boolean) => void;
   isProjectSettingsOpen: boolean;
   setIsProjectSettingsOpen: (isOpen: boolean) => void;
-  isCreateProjectModalOpen: boolean;
-  setIsCreateProjectModalOpen: (isOpen: boolean) => void;
   isNewTestCaseModalOpen: boolean;
   setIsNewTestCaseModalOpen: (isOpen: boolean) => void;
   isEditTestCaseModalOpen: boolean;
@@ -84,8 +81,6 @@ export interface UIContextValue {
   setEditingRisk: (risk: Risk | null) => void;
   editingUseCase: UseCase | null;
   setEditingUseCase: (uc: UseCase | null) => void;
-  projectToEdit: Project | null;
-  setProjectToEdit: (project: Project | null) => void;
   isDocumentsModalOpen: boolean;
   isEditDocumentModalOpen: boolean;
   setIsEditDocumentModalOpen: (isOpen: boolean) => void;

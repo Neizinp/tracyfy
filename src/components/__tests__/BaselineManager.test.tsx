@@ -28,7 +28,6 @@ describe('BaselineManager', () => {
   const mockBaselines: ProjectBaseline[] = [
     {
       id: 'b1',
-      projectId: 'p1',
       name: 'v1.0',
       version: 'v1.0',
       description: 'Initial Release',
@@ -39,7 +38,6 @@ describe('BaselineManager', () => {
     },
     {
       id: 'b2',
-      projectId: 'p1',
       name: 'v1.1',
       version: 'v1.1',
       description: 'Patch',

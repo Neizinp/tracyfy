@@ -24,11 +24,8 @@ function sortByIdNumber<T extends { id: string }>(artifacts: T[]): T[] {
 
 export interface ExportData {
   project: {
-    id: string;
     name: string;
     description: string;
-    currentBaseline: string | null;
-    lastModified: number;
   };
   requirements: Requirement[];
   useCases: UseCase[];
@@ -84,13 +81,7 @@ export async function exportProjectToJSON(
   );
 
   const dataToExport: ExportData = {
-    project: {
-      id: project.id,
-      name: project.name,
-      description: project.description,
-      currentBaseline: project.currentBaseline || null,
-      lastModified: project.lastModified,
-    },
+    project: { name: project.name, description: project.description },
     requirements,
     useCases,
     testCases,
@@ -104,11 +95,7 @@ export async function exportProjectToJSON(
   const jsonString = JSON.stringify(dataToExport, null, 2);
 
   // Filename generation
-  let filename = `${project.name.replace(/[^a-z0-9]/gi, '_')}`;
-  if (project.currentBaseline) {
-    filename += `_${project.currentBaseline.replace(/[^a-z0-9]/gi, '_')}`;
-  }
-  filename += '.json';
+  const filename = `${project.name.replace(/[^a-z0-9]/gi, '_')}.json`;
 
   // Try to use File System Access API if available (for "Save As")
   try {

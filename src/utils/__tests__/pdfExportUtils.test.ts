@@ -171,10 +171,8 @@ describe('pdfExportUtils', () => {
   });
 
   const mockProject: Project = {
-    id: 'p1',
     name: 'Test Project',
     description: 'Test Description',
-    lastModified: 0,
   };
 
   const globalState = {

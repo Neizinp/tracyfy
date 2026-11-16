@@ -27,7 +27,7 @@ import {
   projectToMarkdown,
   markdownToProject,
 } from '../markdownUtils';
-import type { Requirement, UseCase, TestCase, Information, User, Project } from '../../types';
+import type { Requirement, UseCase, TestCase, Information, User } from '../../types';
 
 describe('Requirement Markdown Conversion', () => {
   describe('requirementToMarkdown', () => {
@@ -939,129 +939,25 @@ name: "John"
   });
 });
 
-describe('Project Markdown Conversion', () => {
-  describe('projectToMarkdown', () => {
-    it('should serialize all project fields', () => {
-      const project: Project = {
-        id: 'proj-123',
-        name: 'Test Project',
-        description: 'A test project description',
-        lastModified: 1700000000000,
-      };
-
-      const markdown = projectToMarkdown(project);
-
-      expect(markdown).toContain('id: "proj-123"');
-      expect(markdown).toContain('name: "Test Project"');
-      expect(markdown).toContain('description: "A test project description"');
-      expect(markdown).toContain('lastModified: 1700000000000');
-    });
-
-    it('should include project name and description in body', () => {
-      const project: Project = {
-        id: 'proj-123',
-        name: 'My Project',
-        description: 'This is the description',
-        lastModified: 1700000000000,
-      };
-
-      const markdown = projectToMarkdown(project);
-
-      expect(markdown).toContain('# My Project');
-      expect(markdown).toContain('This is the description');
-    });
+describe('Project Markdown Conversion (project.md)', () => {
+  it('writes the name in frontmatter and title, the description as the body', () => {
+    const markdown = projectToMarkdown({ name: 'Door Controller', description: 'Lobby doors' });
+    expect(markdown).toContain('name: "Door Controller"');
+    expect(markdown).toContain('# Door Controller');
+    expect(markdown).toContain('Lobby doors');
+    // Nothing about other projects or which artifacts belong to it
+    expect(markdown).not.toMatch(/Ids:|id:/);
   });
 
-  describe('markdownToProject', () => {
-    it('should parse valid project markdown', () => {
-      const markdown = `---
-id: "proj-123"
-name: "Test Project"
-description: "A test project"
-lastModified: 1700000000000
-requirementIds:
-  - "REQ-001"
-  - "REQ-002"
-useCaseIds:
-  - "UC-001"
-testCaseIds: []
-informationIds: []
----
+  it('round-trips names with quotes and colons, and multi-line descriptions', () => {
+    const original = {
+      name: 'Project with "quotes" and: colons',
+      description: 'Line one\n# not a heading\nLine three',
+    };
+    expect(markdownToProject(projectToMarkdown(original))).toEqual(original);
+  });
 
-# Test Project
-
-A test project
-`;
-
-      const project = markdownToProject(markdown);
-
-      expect(project).not.toBeNull();
-      expect(project?.id).toBe('proj-123');
-      expect(project?.name).toBe('Test Project');
-      expect(project?.description).toBe('A test project');
-    });
-
-    it('should return null for missing id field', () => {
-      const markdown = `---
-name: "No ID Project"
----
-
-# No ID Project
-`;
-
-      const project = markdownToProject(markdown);
-
-      expect(project).toBeNull();
-    });
-
-    it('should handle missing optional fields with defaults', () => {
-      const markdown = `---
-id: "proj-123"
-name: "Minimal Project"
----
-
-# Minimal Project
-`;
-
-      const project = markdownToProject(markdown);
-
-      expect(project).not.toBeNull();
-      expect(project?.id).toBe('proj-123');
-      expect(project?.name).toBe('Minimal Project');
-      expect(project?.description).toBe('');
-    });
-
-    it('should round-trip without data loss', () => {
-      const original: Project = {
-        id: 'proj-test',
-        name: 'Round Trip Project',
-        description: 'Testing round trip functionality',
-        lastModified: 1700000000000,
-      };
-
-      const markdown = projectToMarkdown(original);
-      const parsed = markdownToProject(markdown);
-
-      expect(parsed).not.toBeNull();
-      expect(parsed?.id).toBe(original.id);
-      expect(parsed?.name).toBe(original.name);
-      expect(parsed?.description).toBe(original.description);
-      expect(parsed?.lastModified).toBe(original.lastModified);
-    });
-
-    it('should handle special characters in project name and description', () => {
-      const original: Project = {
-        id: 'proj-special',
-        name: 'Project with "quotes" and: colons',
-        description: 'Description with special chars @ # $ %',
-        lastModified: 1700000000000,
-      };
-
-      const markdown = projectToMarkdown(original);
-      const parsed = markdownToProject(markdown);
-
-      expect(parsed).not.toBeNull();
-      expect(parsed?.name).toBe(original.name);
-    });
+  it('returns null when there is no name', () => {
+    expect(markdownToProject('---\n---\n\nJust text')).toBeNull();
   });
 });

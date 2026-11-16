@@ -1,557 +1,119 @@
 /**
  * ProjectSettingsModal Component
  *
- * Modal for editing project settings, copying, and deleting projects.
- * Uses useProjectSettingsForm hook for form state management.
+ * Edit the project's name and description (saved to project.md).
+ * One folder is one project, so there is nothing to create, switch or delete.
  */
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FolderOpen } from 'lucide-react';
 import type { Project } from '../types';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import { useProjectSettingsForm } from '../hooks/useProjectSettingsForm';
+import { BaseArtifactModal } from './BaseArtifactModal';
+import { FormField } from './forms/FormField';
 
 interface ProjectSettingsModalProps {
   project: Project;
   isOpen: boolean;
   onClose: () => void;
-  onUpdate: (projectId: string, name: string, description: string) => Promise<void>;
-  onDelete: (projectId: string) => void;
-  onCopy?: (originalProject: Project, newName: string, newDescription: string) => Promise<void>;
+  onSave: (project: Project) => Promise<void>;
 }
+
+const fieldStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '8px 12px',
+  borderRadius: 'var(--radius-sm)',
+  border: '1px solid var(--color-border)',
+  backgroundColor: 'var(--color-bg-app)',
+  color: 'var(--color-text-primary)',
+};
 
 export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   project,
   isOpen,
   onClose,
-  onUpdate,
-  onDelete,
-  onCopy,
+  onSave,
 }) => {
-  const {
-    name,
-    setName,
-    description,
-    setDescription,
-    copyName,
-    setCopyName,
-    copyDescription,
-    setCopyDescription,
-    showCopyMode,
-    startCopyMode,
-    cancelCopyMode,
-    showDeleteConfirm,
-    startDeleteConfirm,
-    cancelDeleteConfirm,
-    showRenameConfirm,
-    cancelRenameConfirm,
-    error,
-    isSubmitting,
-    handleSubmit,
-    handleCopyProject,
-    handleDelete,
-    doSave,
-  } = useProjectSettingsForm({
-    isOpen,
-    project,
-    onClose,
-    onUpdate,
-    onDelete,
-    onCopy,
-  });
+  const [name, setName] = useState(project.name);
+  const [description, setDescription] = useState(project.description);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useKeyboardShortcuts({
-    onSave: handleSubmit,
-    onClose: onClose,
-  });
+  useEffect(() => {
+    if (isOpen) {
+      setName(project.name);
+      setDescription(project.description);
+      setError(null);
+    }
+  }, [isOpen, project]);
+
+  const handleSubmit = useCallback(
+    async (e?: React.FormEvent) => {
+      if (e) e.preventDefault();
+      setIsSubmitting(true);
+      setError(null);
+      try {
+        await onSave({ name, description });
+        onClose();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [name, description, onSave, onClose]
+  );
+
+  useKeyboardShortcuts({ onSave: handleSubmit, onClose });
 
   if (!isOpen) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'var(--color-bg-overlay, #222)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-      }}
+    <BaseArtifactModal
+      isOpen={isOpen}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title="Project Settings"
+      icon={<FolderOpen size={20} style={{ color: 'var(--color-accent)' }} />}
+      submitLabel="Save"
+      isSubmitting={isSubmitting}
+      isSubmitDisabled={!name.trim()}
+      width="500px"
     >
-      <div
-        style={{
-          backgroundColor: 'var(--color-bg-card)',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--color-border)',
-          width: '500px',
-          maxWidth: '90%',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: 'var(--shadow-popover)',
-        }}
-      >
-        <div
-          style={{
-            padding: 'var(--spacing-md)',
-            borderBottom: '1px solid var(--color-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+        <FormField label="Project Name" required fullWidth htmlFor="project-name">
+          <input
+            id="project-name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+            style={fieldStyle}
+          />
+        </FormField>
+        <FormField
+          label="Description"
+          fullWidth
+          htmlFor="project-description"
+          description="Shown on the cover of exported documents."
         >
-          <h3 style={{ fontWeight: 600 }}>Project Settings</h3>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--color-text-muted)',
-              cursor: 'pointer',
-            }}
-          >
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ padding: 'var(--spacing-lg)', overflowY: 'auto' }}>
-          <div style={{ marginBottom: 'var(--spacing-md)' }}>
-            <label
-              htmlFor="project-name"
-              style={{
-                display: 'block',
-                marginBottom: 'var(--spacing-xs)',
-                fontSize: 'var(--font-size-sm)',
-              }}
-            >
-              Project Name
-            </label>
-            <input
-              type="text"
-              id="project-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-bg-app)',
-                color: 'var(--color-text-primary)',
-                outline: 'none',
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: 'var(--spacing-md)' }}>
-            <label
-              htmlFor="project-description"
-              style={{
-                display: 'block',
-                marginBottom: 'var(--spacing-xs)',
-                fontSize: 'var(--font-size-sm)',
-              }}
-            >
-              Description
-            </label>
-            <textarea
-              id="project-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-bg-app)',
-                color: 'var(--color-text-primary)',
-                outline: 'none',
-                resize: 'vertical',
-              }}
-            />
-          </div>
-
-          {error && (
-            <div
-              style={{
-                marginBottom: 'var(--spacing-md)',
-                padding: 'var(--spacing-sm)',
-                backgroundColor: 'var(--color-error-bg)',
-                color: 'var(--color-error)',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--color-error-light)',
-                fontSize: 'var(--font-size-sm)',
-              }}
-            >
-              {error}
-            </div>
-          )}
-
-          {showRenameConfirm && (
-            <div
-              style={{
-                marginBottom: 'var(--spacing-md)',
-                padding: 'var(--spacing-md)',
-                backgroundColor: 'var(--color-warning-bg, #fef3cd)',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--color-warning-border, #ffc107)',
-              }}
-            >
-              <p
-                style={{
-                  fontSize: 'var(--font-size-sm)',
-                  color: 'var(--color-warning-text, #856404)',
-                  marginBottom: 'var(--spacing-sm)',
-                }}
-              >
-                Renaming the project will create an automatic commit. Continue?
-              </p>
-              <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                <button
-                  type="button"
-                  onClick={cancelRenameConfirm}
-                  style={{
-                    flex: 1,
-                    padding: '6px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-card)',
-                    color: 'var(--color-text-secondary)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: 500,
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={doSave}
-                  style={{
-                    flex: 1,
-                    padding: '6px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: 'none',
-                    backgroundColor: 'var(--color-accent)',
-                    color: 'var(--color-on-accent)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: 500,
-                  }}
-                >
-                  Confirm Rename
-                </button>
-              </div>
-            </div>
-          )}
-
+          <textarea
+            id="project-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            style={{ ...fieldStyle, resize: 'vertical' }}
+          />
+        </FormField>
+        {error && (
           <div
-            style={{
-              marginTop: 'var(--spacing-lg)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--spacing-md)',
-            }}
+            role="alert"
+            style={{ color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}
           >
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-sm)' }}>
-              <button
-                type="button"
-                onClick={onClose}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--color-bg-card)',
-                  color: 'var(--color-text-primary)',
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: 'none',
-                  backgroundColor: isSubmitting
-                    ? 'var(--color-bg-disabled)'
-                    : 'var(--color-accent)',
-                  color: 'var(--color-on-accent)',
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  fontWeight: 500,
-                  opacity: isSubmitting ? 0.7 : 1,
-                }}
-              >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-
-            {/* Copy Project Section */}
-            {onCopy && (
-              <div
-                style={{
-                  borderTop: '1px solid var(--color-border)',
-                  paddingTop: 'var(--spacing-md)',
-                  marginTop: 'var(--spacing-sm)',
-                }}
-              >
-                {!showCopyMode ? (
-                  <button
-                    type="button"
-                    onClick={startCopyMode}
-                    style={{
-                      width: '100%',
-                      padding: '8px 16px',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--color-border)',
-                      backgroundColor: 'var(--color-bg-card)',
-                      color: 'var(--color-text-primary)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      fontSize: 'var(--font-size-sm)',
-                      fontWeight: 500,
-                    }}
-                  >
-                    Copy Project
-                  </button>
-                ) : (
-                  <div
-                    style={{
-                      padding: 'var(--spacing-md)',
-                      backgroundColor: 'var(--color-bg-secondary)',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--color-border)',
-                    }}
-                  >
-                    <p
-                      style={{
-                        margin: '0 0 var(--spacing-sm) 0',
-                        fontSize: 'var(--font-size-sm)',
-                        fontWeight: 500,
-                      }}
-                    >
-                      Copy Project
-                    </p>
-                    <p
-                      style={{
-                        margin: '0 0 var(--spacing-md) 0',
-                        fontSize: 'var(--font-size-xs)',
-                        color: 'var(--color-text-secondary)',
-                      }}
-                    >
-                      Create a copy of this project with all its artifacts.
-                    </p>
-                    <div style={{ marginBottom: 'var(--spacing-sm)' }}>
-                      <label
-                        style={{
-                          display: 'block',
-                          marginBottom: 'var(--spacing-xs)',
-                          fontSize: 'var(--font-size-sm)',
-                          fontWeight: 500,
-                        }}
-                      >
-                        New Project Name
-                      </label>
-                      <input
-                        type="text"
-                        value={copyName}
-                        onChange={(e) => setCopyName(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          borderRadius: 'var(--radius-sm)',
-                          border: '1px solid var(--color-border)',
-                          backgroundColor: 'var(--color-bg-app)',
-                          color: 'var(--color-text-primary)',
-                          outline: 'none',
-                        }}
-                      />
-                    </div>
-                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                      <label
-                        style={{
-                          display: 'block',
-                          marginBottom: 'var(--spacing-xs)',
-                          fontSize: 'var(--font-size-sm)',
-                          fontWeight: 500,
-                        }}
-                      >
-                        Description
-                      </label>
-                      <textarea
-                        value={copyDescription}
-                        onChange={(e) => setCopyDescription(e.target.value)}
-                        rows={3}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          borderRadius: 'var(--radius-sm)',
-                          border: '1px solid var(--color-border)',
-                          backgroundColor: 'var(--color-bg-app)',
-                          color: 'var(--color-text-primary)',
-                          outline: 'none',
-                          resize: 'vertical',
-                        }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                      <button
-                        type="button"
-                        onClick={cancelCopyMode}
-                        style={{
-                          flex: 1,
-                          padding: '8px 16px',
-                          borderRadius: 'var(--radius-sm)',
-                          border: '1px solid var(--color-border)',
-                          backgroundColor: 'var(--color-bg-card)',
-                          color: 'var(--color-text-primary)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleCopyProject}
-                        disabled={isSubmitting}
-                        style={{
-                          flex: 1,
-                          padding: '8px 16px',
-                          borderRadius: 'var(--radius-sm)',
-                          border: 'none',
-                          backgroundColor: isSubmitting
-                            ? 'var(--color-bg-disabled)'
-                            : 'var(--color-accent)',
-                          color: 'var(--color-on-accent)',
-                          cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                          fontWeight: 500,
-                        }}
-                      >
-                        {isSubmitting ? 'Copying...' : 'Create Copy'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Move to Trash Section */}
-            <div
-              style={{
-                borderTop: '1px solid var(--color-border)',
-                paddingTop: 'var(--spacing-md)',
-                marginTop: 'var(--spacing-sm)',
-              }}
-            >
-              {!showDeleteConfirm ? (
-                <button
-                  type="button"
-                  onClick={startDeleteConfirm}
-                  style={{
-                    width: '100%',
-                    padding: '8px 16px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--color-error-light)',
-                    backgroundColor: 'var(--color-bg-card)',
-                    color: 'var(--color-error)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: 500,
-                  }}
-                >
-                  <svg
-                    style={{ height: '1rem', width: '1rem', marginRight: '0.5rem' }}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                  Delete Project
-                </button>
-              ) : (
-                <div
-                  style={{
-                    backgroundColor: 'var(--color-error-bg)',
-                    padding: 'var(--spacing-md)',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--color-error-light)',
-                  }}
-                >
-                  <p
-                    style={{
-                      fontSize: 'var(--font-size-sm)',
-                      color: 'var(--color-error)',
-                      marginBottom: 'var(--spacing-sm)',
-                    }}
-                  >
-                    Delete <strong>{project.name}</strong>? This action cannot be undone.
-                  </p>
-                  <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                    <button
-                      type="button"
-                      onClick={cancelDeleteConfirm}
-                      style={{
-                        flex: 1,
-                        padding: '6px 12px',
-                        borderRadius: 'var(--radius-sm)',
-                        border: '1px solid var(--color-border)',
-                        backgroundColor: 'var(--color-bg-card)',
-                        color: 'var(--color-text-secondary)',
-                        cursor: 'pointer',
-                        fontSize: 'var(--font-size-sm)',
-                        fontWeight: 500,
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDelete}
-                      style={{
-                        flex: 1,
-                        padding: '6px 12px',
-                        borderRadius: 'var(--radius-sm)',
-                        border: 'none',
-                        backgroundColor: 'var(--color-error)',
-                        color: 'var(--color-on-accent)',
-                        cursor: 'pointer',
-                        fontSize: 'var(--font-size-sm)',
-                        fontWeight: 500,
-                      }}
-                    >
-                      Delete Project
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            {error}
           </div>
-        </form>
+        )}
       </div>
-    </div>
+    </BaseArtifactModal>
   );
 };

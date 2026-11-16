@@ -1,14 +1,14 @@
 /**
  * Sidebar Component
  *
- * Contains app logo, projects list, pending changes panel, views navigation,
- * and repository section. Uses useSidebar hook for state management.
+ * Contains app logo, the project, pending changes panel, views navigation
+ * and sync. Uses useSidebar hook for state management.
  */
 
 import React from 'react';
 import {
   LayoutGrid,
-  Plus,
+  FolderOpen,
   GitBranch,
   FileText,
   FlaskConical,
@@ -24,8 +24,6 @@ import {
   AlertCircle,
   RefreshCw,
 } from 'lucide-react';
-import type { Project } from '../../types';
-import { ProjectSidebarItem } from '../ProjectSidebarItem';
 import { PendingChangesPanel } from '../PendingChangesPanel';
 import { NavLink } from './NavLink';
 import { sectionHeaderStyle } from './layoutStyles';
@@ -37,21 +35,17 @@ const MIN_WIDTH = 180;
 const MAX_WIDTH = 400;
 
 export interface SidebarProps {
-  projects: Project[];
-  currentProjectId: string;
-  onSwitchProject: (projectId: string) => void;
-  onCreateProject: () => void;
-  onCreateDemoProject?: () => void;
-  onOpenProjectSettings: (project: Project) => void;
+  /** Name of the project in the open folder */
+  projectName: string;
+  onOpenProjectSettings: () => void;
+  /** Fill an empty folder with demo data (omitted when there is data already) */
+  onLoadDemoData?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
-  projects,
-  currentProjectId,
-  onSwitchProject,
-  onCreateProject,
-  onCreateDemoProject,
+  projectName,
   onOpenProjectSettings,
+  onLoadDemoData,
 }) => {
   // Use the extracted hook for all sidebar state and handlers
   const {
@@ -121,92 +115,63 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       <nav style={{ flex: 1, padding: '4px 8px 12px', overflowY: 'auto' }}>
-        {/* Projects Section */}
-        <div style={{ marginBottom: 'var(--spacing-md)' }}>
-          <div
+        {/* Project */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '2px',
+            marginBottom: 'var(--spacing-md)',
+          }}
+        >
+          <button
+            type="button"
+            className="tf-nav"
+            onClick={onOpenProjectSettings}
+            title="Project settings"
+            aria-label={`Project settings: ${projectName}`}
             style={{
+              flex: 1,
+              minWidth: 0,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: collapsedSections.has('projects') ? 0 : 'var(--spacing-sm)',
+              gap: '10px',
+              height: '30px',
+              padding: '0 8px',
+              border: 'none',
+              borderRadius: 'var(--radius-sm)',
+              background: 'transparent',
+              color: 'var(--color-text-primary)',
+              fontWeight: 600,
+              fontSize: 'var(--font-size-sm)',
               cursor: 'pointer',
+              textAlign: 'left',
             }}
-            onClick={() => toggleSection('projects')}
           >
-            <h2
-              style={{ ...sectionHeaderStyle, display: 'flex', alignItems: 'center', gap: '4px' }}
+            <FolderOpen size={16} style={{ flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {projectName}
+            </span>
+          </button>
+          {onLoadDemoData && (
+            <button
+              type="button"
+              className="tf-nav"
+              onClick={onLoadDemoData}
+              title="Load demo data into this empty project"
+              aria-label="Load demo data"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--color-text-muted)',
+                padding: '6px',
+                borderRadius: 'var(--radius-xs)',
+                display: 'flex',
+              }}
             >
-              <ChevronRight
-                size={12}
-                style={{
-                  transform: collapsedSections.has('projects') ? 'rotate(0deg)' : 'rotate(90deg)',
-                  transition: 'transform 0.15s',
-                }}
-              />
-              Projects
-            </h2>
-            <div style={{ display: 'flex', gap: '2px' }} onClick={(e) => e.stopPropagation()}>
-              {onCreateDemoProject && (
-                <button
-                  onClick={onCreateDemoProject}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'var(--color-text-muted)',
-                    padding: '4px',
-                    borderRadius: 'var(--radius-xs)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  title="Create Demo Project"
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
-                  }
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                >
-                  <FlaskConical size={14} />
-                </button>
-              )}
-              <button
-                onClick={onCreateProject}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--color-text-muted)',
-                  padding: '4px',
-                  borderRadius: 'var(--radius-xs)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                title="New Project"
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
-                }
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <Plus size={14} />
-              </button>
-            </div>
-          </div>
-
-          {!collapsedSections.has('projects') && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
-              {projects
-                .filter((p) => !p.isDeleted)
-                .map((project) => (
-                  <ProjectSidebarItem
-                    key={project.id}
-                    project={project}
-                    isActive={project.id === currentProjectId}
-                    onSwitchProject={onSwitchProject}
-                    onOpenProjectSettings={onOpenProjectSettings}
-                  />
-                ))}
-            </div>
+              <FlaskConical size={14} />
+            </button>
           )}
         </div>
 

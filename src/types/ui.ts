@@ -92,7 +92,6 @@ export type ModalType =
   | 'testcase'
   | 'information'
   | 'risk'
-  | 'project'
   | 'project-settings'
   | 'user-settings'
   | 'onboarding'
@@ -112,15 +111,7 @@ export interface ActiveModal {
 
 export interface SelectedArtifact {
   id: string;
-  type:
-    | 'requirement'
-    | 'usecase'
-    | 'testcase'
-    | 'information'
-    | 'risk'
-    | 'project'
-    | 'user'
-    | 'documents';
+  type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk' | 'user' | 'documents';
   data?: Record<string, unknown>;
 }
 

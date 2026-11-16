@@ -5,7 +5,6 @@ import type {
   Information,
   Risk,
   ArtifactDocument,
-  Project,
   ColumnVisibility,
   UseCaseColumnVisibility,
   TestCaseColumnVisibility,
@@ -168,7 +167,6 @@ export function useUIState() {
   const isInformationModalOpen = activeModal.type === 'information';
   const isRiskModalOpen = activeModal.type === 'risk';
   const isProjectSettingsOpen = activeModal.type === 'project-settings';
-  const isCreateProjectModalOpen = activeModal.type === 'project';
   const isUserSettingsModalOpen = activeModal.type === 'user-settings';
   const isLinkModalOpen = activeModal.type === 'link';
   const isExportModalOpen = activeModal.type === 'export';
@@ -196,8 +194,6 @@ export function useUIState() {
       : null;
   const editingRisk =
     selectedArtifact?.type === 'risk' ? (selectedArtifact.data as unknown as Risk) : null;
-  const projectToEdit =
-    selectedArtifact?.type === 'project' ? (selectedArtifact.data as unknown as Project) : null;
   const editingDocument =
     selectedArtifact?.type === 'documents'
       ? (selectedArtifact.data as unknown as ArtifactDocument)
@@ -240,8 +236,6 @@ export function useUIState() {
       isProjectSettingsOpen,
       setIsProjectSettingsOpen: (val: boolean) =>
         val ? openModal('project-settings') : closeModal(),
-      isCreateProjectModalOpen,
-      setIsCreateProjectModalOpen: (val: boolean) => (val ? openModal('project') : closeModal()),
       isUserSettingsModalOpen,
       setIsUserSettingsModalOpen: (val: boolean) =>
         val ? openModal('user-settings') : closeModal(),
@@ -288,13 +282,6 @@ export function useUIState() {
         setSelectedArtifact(
           risk
             ? { id: risk.id, type: 'risk', data: risk as unknown as Record<string, unknown> }
-            : null
-        ),
-      projectToEdit,
-      setProjectToEdit: (proj: Project | null) =>
-        setSelectedArtifact(
-          proj
-            ? { id: proj.id, type: 'project', data: proj as unknown as Record<string, unknown> }
             : null
         ),
       editingDocument,
@@ -348,7 +335,6 @@ export function useUIState() {
       editingUseCase,
       informationColumnVisibility,
       isAdvancedSearchOpen,
-      isCreateProjectModalOpen,
       isCustomAttributeModalOpen,
       isDocumentsModalOpen,
       isEditDocumentModalOpen,
@@ -370,7 +356,6 @@ export function useUIState() {
       navigationStack,
       openModal,
       popNavigationStack,
-      projectToEdit,
       pushNavigationStack,
       riskColumnVisibility,
       searchQuery,

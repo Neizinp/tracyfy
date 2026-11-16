@@ -8,7 +8,7 @@ import type { ProjectBaseline } from '../types';
 
 export const BaselineHistoryPage: React.FC = () => {
   const { baselines } = useBaselines();
-  const { currentProject } = useProject();
+  const { project } = useProject();
   const { requirements, useCases, testCases, information } = useGlobalState();
   const { baselineId } = useParams<{ baselineId: string }>();
   const [compareToCurrent, setCompareToCurrent] = useState(false);
@@ -17,8 +17,7 @@ export const BaselineHistoryPage: React.FC = () => {
 
   // Generate a pseudo-baseline for the current state
   // Moved before conditional returns to avoid conditional hook call
-  const currentStateBaseline: ProjectBaseline | null = useMemo(() => {
-    if (!currentProject) return null;
+  const currentStateBaseline: ProjectBaseline = useMemo(() => {
     const artifactCommits: ProjectBaseline['artifactCommits'] = {};
     // Every artifact in the project folder
     const add = (ids: string[], type: ProjectBaseline['artifactCommits'][string]['type']) =>
@@ -32,7 +31,6 @@ export const BaselineHistoryPage: React.FC = () => {
     // We'll fill commit hashes in BaselineRevisionHistory (it already fetches history)
     return {
       id: 'current-state',
-      projectId: currentProject.id,
       version: 'Current',
       name: 'Current State',
       description: 'Current project state',
@@ -41,7 +39,7 @@ export const BaselineHistoryPage: React.FC = () => {
       addedArtifacts: [],
       removedArtifacts: [],
     };
-  }, [currentProject, requirements, useCases, testCases, information, openedAt]);
+  }, [requirements, useCases, testCases, information, openedAt]);
 
   if (!baselineId) {
     return <Navigate to="/baselines" replace />;
@@ -84,8 +82,8 @@ export const BaselineHistoryPage: React.FC = () => {
         </button>
       </div>
       <BaselineRevisionHistory
-        projectName={currentProject?.name || 'Unknown'}
-        currentBaseline={compareToCurrent ? currentStateBaseline! : selectedBaseline}
+        projectName={project.name}
+        currentBaseline={compareToCurrent ? currentStateBaseline : selectedBaseline}
         previousBaseline={
           compareToCurrent
             ? selectedBaseline

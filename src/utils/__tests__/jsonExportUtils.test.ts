@@ -60,11 +60,8 @@ describe('jsonExportUtils', () => {
   });
 
   const mockProject: Project = {
-    id: 'p1',
     name: 'Test Project',
     description: 'Test Description',
-    lastModified: 0,
-    currentBaseline: 'Baseline 1.0',
   };
 
   const mockReq: Requirement = {
@@ -148,7 +145,7 @@ describe('jsonExportUtils', () => {
 
     const data = JSON.parse(text);
 
-    expect(data.project.id).toBe('p1');
+    expect(data.project).toEqual({ name: 'Test Project', description: 'Test Description' });
     expect(data.requirements).toHaveLength(1);
     expect(data.requirements[0].id).toBe('r1');
     // Links are now in each artifact's linkedArtifacts, not a separate array
@@ -163,7 +160,7 @@ describe('jsonExportUtils', () => {
     await exportProjectToJSON(mockProject, globalState, ['r1'], [], [], [], [], []);
 
     expect(mockShowSaveFilePicker).toHaveBeenCalledWith({
-      suggestedName: 'Test_Project_Baseline_1_0.json',
+      suggestedName: 'Test_Project.json',
       types: [
         {
           description: 'JSON File',

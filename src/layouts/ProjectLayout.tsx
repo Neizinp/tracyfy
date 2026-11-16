@@ -15,10 +15,9 @@ import {
   useBaselines,
   useCustomAttributes,
 } from '../app/providers';
-import { createDemoProject } from '../services/demoDataService';
+import { loadDemoData } from '../services/demoDataService';
 import { activeIds } from '../utils/activeArtifacts';
 import type {
-  Project,
   ColumnVisibility,
   UseCaseColumnVisibility,
   TestCaseColumnVisibility,
@@ -40,7 +39,7 @@ const PageLoadingFallback: React.FC = () => (
 );
 
 export const ProjectLayout: React.FC = () => {
-  const { projects, currentProjectId, currentProject, switchProject } = useProject();
+  const { project } = useProject();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -199,28 +198,17 @@ export const ProjectLayout: React.FC = () => {
   // Background tasks
   const { startTask, endTask } = useBackgroundTaskActions();
 
-  // Project action handlers
-  const handleCreateProject = useCallback(() => {
-    ui.setIsCreateProjectModalOpen(true);
-  }, [ui]);
-
-  const handleOpenProjectSettings = useCallback(
-    (project: Project) => {
-      ui.setProjectToEdit(project);
-      ui.setIsProjectSettingsOpen(true);
-    },
-    [ui]
-  );
-  // Demo project creation with double-click confirmation
+  const handleOpenProjectSettings = useCallback(() => ui.setIsProjectSettingsOpen(true), [ui]);
+  // Demo data (empty folders only), with double-click confirmation
   const { showToast } = useToast();
   const demoConfirmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const demoConfirmedRef = useRef(false);
 
-  const handleCreateDemoProject = useCallback(async () => {
+  const handleLoadDemoData = useCallback(async () => {
     // If not confirmed yet, show toast and wait for second click
     if (!demoConfirmedRef.current) {
       demoConfirmedRef.current = true;
-      showToast('Click again to confirm creating a demo project.', 'info');
+      showToast('Click again to fill this project with demo data.', 'info');
 
       // Reset after 3 seconds
       if (demoConfirmTimeoutRef.current) {
@@ -238,21 +226,25 @@ export const ProjectLayout: React.FC = () => {
     }
     demoConfirmedRef.current = false;
 
-    const taskId = startTask('Creating demo project...');
+    const taskId = startTask('Loading demo data...');
     try {
-      const demoProject = await createDemoProject();
+      await loadDemoData();
       await reloadData();
       await refreshStatus(); // Refresh git status so pending changes show up
-      switchProject(demoProject.id);
-      showToast('Demo project created successfully!', 'success');
+      showToast('Demo data loaded', 'success');
     } catch (error) {
-      console.error('Failed to create demo project:', error);
+      console.error('Failed to load demo data:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      showToast(`Failed to create demo project: ${errorMessage}`, 'error');
+      showToast(`Failed to load demo data: ${errorMessage}`, 'error');
     } finally {
       endTask(taskId);
     }
-  }, [reloadData, refreshStatus, switchProject, startTask, endTask, showToast]);
+  }, [reloadData, refreshStatus, startTask, endTask, showToast]);
+
+  // Demo data only goes into a project that has nothing in it yet
+  const isEmptyProject = [requirements, useCases, testCases, information, documents].every(
+    (items) => items.length === 0
+  );
 
   // Get page title from current route
   const getPageTitle = () => {
@@ -270,12 +262,9 @@ export const ProjectLayout: React.FC = () => {
 
   return (
     <Layout
-      projects={projects}
-      currentProjectId={currentProjectId}
-      onSwitchProject={switchProject}
-      onCreateProject={handleCreateProject}
-      onCreateDemoProject={handleCreateDemoProject}
+      projectName={project.name}
       onOpenProjectSettings={handleOpenProjectSettings}
+      onLoadDemoData={isEmptyProject ? handleLoadDemoData : undefined}
       onNewRequirement={() => ui.setIsNewRequirementModalOpen(true)}
       onNewUseCase={() => ui.setIsUseCaseModalOpen(true)}
       onNewTestCase={() => ui.setIsNewTestCaseModalOpen(true)}
@@ -297,16 +286,11 @@ export const ProjectLayout: React.FC = () => {
       currentUserName={currentUser?.name}
       baselines={baselines}
       onExportPDF={async (selectedBaseline) => {
-        if (!currentProject) {
-          alert('No project selected');
-          return;
-        }
-
         const taskId = startTask('Exporting PDF...');
         try {
           const { exportProjectToPDF } = await import('../utils/pdfExportUtils');
           await exportProjectToPDF(
-            currentProject,
+            project,
             {
               requirements: requirements,
               useCases: useCases,
@@ -328,16 +312,11 @@ export const ProjectLayout: React.FC = () => {
         }
       }}
       onExportExcel={async () => {
-        if (!currentProject) {
-          alert('No project selected');
-          return;
-        }
-
         const taskId = startTask('Exporting Excel...');
         try {
           const { exportProjectToExcel } = await import('../utils/excelExportUtils');
           await exportProjectToExcel(
-            currentProject,
+            project,
             {
               requirements: requirements,
               useCases: useCases,
@@ -417,10 +396,7 @@ export const ProjectLayout: React.FC = () => {
                   onColumnVisibilityChange={(columns) => {
                     ui.setColumnVisibility(columns as ColumnVisibility);
                     try {
-                      localStorage.setItem(
-                        `column-visibility-${currentProjectId}`,
-                        JSON.stringify(columns)
-                      );
+                      localStorage.setItem('column-visibility', JSON.stringify(columns));
                     } catch (error) {
                       console.error('Failed to save column visibility:', error);
                     }

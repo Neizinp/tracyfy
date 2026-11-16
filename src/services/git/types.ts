@@ -24,7 +24,6 @@ export type ArtifactFolder =
   | 'workflows'
   | 'custom-attributes'
   | 'documents'
-  | 'projects'
   | 'users'
   | 'baselines';
 

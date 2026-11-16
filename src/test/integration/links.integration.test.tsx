@@ -245,7 +245,6 @@ describe('integration: links', () => {
         h.app().documents.handleAddDocument({
           ...base,
           title: 'Login spec',
-          projectId: h.app().project.currentProjectId,
           structure: [],
         } as never)
       ),

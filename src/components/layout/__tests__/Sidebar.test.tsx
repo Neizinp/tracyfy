@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { Sidebar } from '../Sidebar';
-import type { Project } from '../../../types';
 
 // Mock PendingChangesPanel since it has complex dependencies
 vi.mock('../../PendingChangesPanel', () => ({
@@ -33,26 +32,8 @@ const renderWithRouter = (component: React.ReactElement) => {
 };
 
 describe('Sidebar', () => {
-  const mockProjects: Project[] = [
-    {
-      id: 'proj-001',
-      name: 'Project One',
-      description: 'First project',
-      lastModified: 1000000,
-    },
-    {
-      id: 'proj-002',
-      name: 'Project Two',
-      description: 'Second project',
-      lastModified: 2000000,
-    },
-  ];
-
   const defaultProps = {
-    projects: mockProjects,
-    currentProjectId: 'proj-001',
-    onSwitchProject: vi.fn(),
-    onCreateProject: vi.fn(),
+    projectName: 'Door Controller',
     onOpenProjectSettings: vi.fn(),
   };
 
@@ -67,17 +48,12 @@ describe('Sidebar', () => {
       expect(screen.getByText('Tracyfy')).toBeInTheDocument();
     });
 
-    it('should render Projects section header', () => {
-      renderWithRouter(<Sidebar {...defaultProps} />);
+    it('shows the project name and opens its settings', () => {
+      const onOpenProjectSettings = vi.fn();
+      renderWithRouter(<Sidebar {...defaultProps} onOpenProjectSettings={onOpenProjectSettings} />);
 
-      expect(screen.getByText('Projects')).toBeInTheDocument();
-    });
-
-    it('should render all projects', () => {
-      renderWithRouter(<Sidebar {...defaultProps} />);
-
-      expect(screen.getByText('Project One')).toBeInTheDocument();
-      expect(screen.getByText('Project Two')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Project settings: Door Controller' }));
+      expect(onOpenProjectSettings).toHaveBeenCalled();
     });
 
     it('should render Pending Changes section', () => {
@@ -117,25 +93,18 @@ describe('Sidebar', () => {
     });
   });
 
-  describe('project interactions', () => {
-    it('should call onCreateProject when + button is clicked', () => {
-      const onCreateProject = vi.fn();
-      renderWithRouter(<Sidebar {...defaultProps} onCreateProject={onCreateProject} />);
+  describe('demo data', () => {
+    it('offers demo data only when the parent passes a handler (empty project)', () => {
+      const onLoadDemoData = vi.fn();
+      const { unmount } = renderWithRouter(
+        <Sidebar {...defaultProps} onLoadDemoData={onLoadDemoData} />
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Load demo data' }));
+      expect(onLoadDemoData).toHaveBeenCalled();
+      unmount();
 
-      const addButton = screen.getByTitle('New Project');
-      fireEvent.click(addButton);
-
-      expect(onCreateProject).toHaveBeenCalled();
-    });
-  });
-
-  describe('empty state', () => {
-    it('should render without projects', () => {
-      renderWithRouter(<Sidebar {...defaultProps} projects={[]} />);
-
-      expect(screen.getByText('Projects')).toBeInTheDocument();
-      // No project names should be present
-      expect(screen.queryByText('Project One')).not.toBeInTheDocument();
+      renderWithRouter(<Sidebar {...defaultProps} />);
+      expect(screen.queryByRole('button', { name: 'Load demo data' })).not.toBeInTheDocument();
     });
   });
 });

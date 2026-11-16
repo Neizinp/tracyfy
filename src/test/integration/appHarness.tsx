@@ -100,11 +100,11 @@ function installElectronApi(projectDir: string, userDataDir: string): ElectronIp
 }
 
 /**
- * Start the app on a fresh, empty project folder with a user and a project
- * created - the state a real user is in right after onboarding.
+ * Start the app on a fresh, empty project folder (named "project") with a
+ * user created - the state a real user is in right after onboarding.
  */
 export async function startApp(
-  options: { userName?: string; projectName?: string; initialRoute?: string } = {}
+  options: { userName?: string; initialRoute?: string } = {}
 ): Promise<Harness> {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'tracyfy-it-'));
   const dir = path.join(root, 'project');
@@ -171,14 +171,6 @@ export async function startApp(
   fireEvent.change(nameInput, { target: { value: options.userName ?? 'Test User' } });
   fireEvent.submit(nameInput.closest('form')!);
   await waitFor(() => expect(app().user.currentUser?.name).toBe(options.userName ?? 'Test User'));
-
-  if (!app().project.currentProject) {
-    const project = await act(() =>
-      app().project.createProject(options.projectName ?? 'Test Project', '')
-    );
-    await act(() => app().project.switchProject(project.id));
-    await waitFor(() => expect(app().project.currentProjectId).toBe(project.id));
-  }
 
   const settle = async () => {
     // refreshStatus is debounced (300 ms) and runs async git status

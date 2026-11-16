@@ -177,10 +177,10 @@ export const EngineeringGuide: React.FC = () => {
         />
       </Section>
 
-      <Section title="Content Reuse & Global Library" icon={<Zap size={20} />}>
+      <Section title="Content Reuse" icon={<Zap size={20} />}>
         <PrincipleCard
-          title="Standardize, Don't Replicate"
-          description="Use the Global Library for common requirements like 'Compliance with ISO-26262' or 'Standard Login Behavior'. This ensures consistency across all your engineering projects."
+          title="One Folder, One Project"
+          description="A project is a folder (a git repository). To start a new project from an existing one, copy the folder: you get its requirements, links and history, and the two then evolve independently."
         />
       </Section>
 

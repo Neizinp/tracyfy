@@ -74,10 +74,8 @@ const mockFsInformation: Information[] = [
 ];
 
 const mockCurrentProject: Project = {
-  id: 'proj-001',
   name: 'Test Project',
   description: 'Test',
-  lastModified: 1000000,
 };
 
 vi.mock('../FileSystemProvider', () => ({

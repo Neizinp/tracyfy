@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RequirementList } from '../RequirementList';
 import type { Requirement, ColumnVisibility } from '../../types';
-import { useProject, useCustomAttributes } from '../../app/providers';
+import { useCustomAttributes } from '../../app/providers';
 
 // Mock ReactMarkdown to avoid ESM issues and simplify testing
 vi.mock('react-markdown', () => ({
@@ -14,9 +14,6 @@ vi.mock('rehype-raw', () => ({ default: () => {} }));
 
 // Mock hooks
 vi.mock('../../app/providers', () => ({
-  useProject: vi.fn(() => ({
-    projects: [],
-  })),
   useCustomAttributes: vi.fn(() => ({
     definitions: [],
   })),
@@ -107,16 +104,6 @@ describe('RequirementList', () => {
 
   beforeEach(() => {
     mockOnEdit.mockClear();
-    vi.mocked(useProject).mockReturnValue({
-      projects: [],
-      currentProjectId: '',
-      currentProject: null,
-      isLoading: false,
-      switchProject: vi.fn(),
-      createProject: vi.fn(),
-      updateProject: vi.fn(),
-      deleteProject: vi.fn(),
-    });
     vi.mocked(useCustomAttributes).mockReturnValue({
       definitions: [],
       loading: false,

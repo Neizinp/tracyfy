@@ -8,10 +8,8 @@ describe('LinkModal', () => {
   const mockOnAddLink = vi.fn();
 
   const mockProject: Project = {
-    id: 'PROJ-001',
     name: 'Test Project',
     description: '',
-    lastModified: 1000000,
   };
 
   const mockReq1: Requirement = {

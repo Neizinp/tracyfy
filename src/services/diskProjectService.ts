@@ -1,34 +1,20 @@
 /**
  * Disk-based Project Service
  *
- * All data is stored on disk, nothing in localStorage.
- * Artifacts are GLOBAL, projects just reference them by ID.
+ * One folder (git repository) is one project. Everything in it belongs to it.
  *
  * Directory structure:
- * /requirements/
- *   REQ-001.md
- *   REQ-002.md
- * /usecases/
- *   UC-001.md
- * /testcases/
- *   TC-001.md
- * /information/
- *   INFO-001.md
- * /projects/
- *   ProjectA.md        # YAML frontmatter + markdown
- *   ProjectB.md
- * /users/
- *   USER-001.md
- * /counters/
- *   requirements.md    # just the number
- *   usecases.md
- *   ...
- * .git/tracyfy-current-project  # selected project ID (local, not versioned)
- * .git/tracyfy-current-user     # selected user ID (local, not versioned)
+ * /project.md          # project name and description
+ * /requirements/REQ-001.md
+ * /usecases/UC-001.md
+ * /testcases/TC-001.md
+ * /information/INFO-001.md
+ * /users/USER-001.md
+ * /counters/requirements.md    # just the number
+ * .git/tracyfy-current-user    # selected user ID (local, not versioned)
  */
 
 import { BaseDiskService } from './baseDiskService';
-import { debug } from '../utils/debug';
 import { idService } from './idService';
 import { ARTIFACT_CONFIG } from '../constants/artifactConfig';
 import type {
@@ -48,18 +34,16 @@ import {
   testCaseService,
   informationService,
   riskService,
-  projectService,
   documentService,
 } from './artifactServices';
 import { diskLinkService } from './diskLinkService';
+import { fileSystemService } from './fileSystemService';
+import { projectToMarkdown, markdownToProject } from '../utils/markdownUtils';
+import { PROJECT_FILE } from '../utils/pendingChanges';
 
-// Which project/user is selected is local to this clone (each collaborator has
-// their own), so it lives inside .git and is never committed or pushed.
-const CURRENT_PROJECT_FILE = '.git/tracyfy-current-project';
+// Which user is selected is local to this clone (each collaborator has their
+// own), so it lives inside .git and is never committed or pushed.
 const CURRENT_USER_FILE = '.git/tracyfy-current-user';
-// Older versions stored these in the shared project folder
-const LEGACY_CURRENT_PROJECT_FILE = 'current-project.md';
-const LEGACY_CURRENT_USER_FILE = 'current-user.md';
 
 class DiskProjectService extends BaseDiskService {
   /**
@@ -76,29 +60,10 @@ class DiskProjectService extends BaseDiskService {
   // ============ COUNTER OPERATIONS (Delegated to IdService) ============
 
   /**
-   * Get current project ID
-   */
-  async getCurrentProjectId(): Promise<string> {
-    return (
-      (await this.readTextFile(CURRENT_PROJECT_FILE)) ||
-      this.readTextFile(LEGACY_CURRENT_PROJECT_FILE)
-    );
-  }
-
-  /**
-   * Set current project ID
-   */
-  async setCurrentProjectId(projectId: string): Promise<void> {
-    await this.writeTextFile(CURRENT_PROJECT_FILE, projectId);
-  }
-
-  /**
    * Get current user ID
    */
   async getCurrentUserId(): Promise<string> {
-    return (
-      (await this.readTextFile(CURRENT_USER_FILE)) || this.readTextFile(LEGACY_CURRENT_USER_FILE)
-    );
+    return this.readTextFile(CURRENT_USER_FILE);
   }
 
   /**
@@ -136,117 +101,33 @@ class DiskProjectService extends BaseDiskService {
     return idService.getNextIdWithSync(standardizedType);
   }
 
-  // ============ PROJECT OPERATIONS ============
+  // ============ PROJECT ============
 
   /**
-   * Load a single project
+   * The project in this folder. Without a project.md the folder name is used.
    */
-  async loadProject(projectId: string): Promise<Project | null> {
-    return projectService.load(projectId);
-  }
-
-  /**
-   * Helper: Check if project name exists
-   */
-  private async checkProjectNameExists(name: string, excludeId?: string): Promise<boolean> {
-    const allProjects = await projectService.loadAll();
-    return allProjects.some(
-      (p) => p.name.toLowerCase() === name.toLowerCase() && p.id !== excludeId
+  async loadProject(): Promise<Project> {
+    const content = await this.readTextFile(PROJECT_FILE);
+    return (
+      (content && markdownToProject(content)) || {
+        name: fileSystemService.getDirectoryName() || 'Untitled project',
+        description: '',
+      }
     );
   }
 
   /**
-   * Create a new project
+   * Save the project's name and description (shows up in Pending Changes)
    */
-  async createProject(name: string, description: string): Promise<Project> {
-    if (await this.checkProjectNameExists(name)) {
-      throw new Error(`Project with name "${name}" already exists`);
-    }
-
-    const id = `proj-${Date.now()}`;
-
-    const project: Project = {
-      id,
-      name,
-      description,
-      lastModified: Date.now(),
-    };
-
-    await projectService.save(project);
-
-    // Set as current project if none set
-    const currentId = await this.getCurrentProjectId();
-    if (!currentId) {
-      await this.setCurrentProjectId(id);
-    }
-
-    return project;
-  }
-
-  /**
-   * Update project metadata
-   */
-  async updateProject(project: Project): Promise<void> {
-    if (await this.checkProjectNameExists(project.name, project.id)) {
-      throw new Error(`Project with name "${project.name}" already exists`);
-    }
-
-    const updatedProject: Project = {
-      ...project,
-      lastModified: Date.now(),
-    };
-
-    await projectService.save(updatedProject);
-  }
-
-  /**
-   * Soft-delete a project (sets isDeleted flag, does not remove file)
-   */
-  async deleteProject(projectId: string): Promise<void> {
-    const project = await this.loadProject(projectId);
-    if (project) {
-      project.isDeleted = true;
-      project.lastModified = Date.now();
-      await this.updateProject(project);
-    } else {
-      debug.warn(`Could not find project ${projectId} to delete`);
-    }
-  }
-
-  /**
-   * Restore a soft-deleted project
-   */
-  async restoreProject(projectId: string): Promise<void> {
-    const project = await this.loadProject(projectId);
-    if (project) {
-      project.isDeleted = false;
-      project.lastModified = Date.now();
-      await this.updateProject(project);
-    } else {
-      debug.warn(`Could not find project ${projectId} to restore`);
-    }
-  }
-
-  /**
-   * Permanently delete a project (removes file, auto-commits)
-   */
-  async permanentDeleteProject(projectId: string): Promise<void> {
-    await projectService.delete(projectId, `Project deleted: ${projectId}`);
-  }
-
-  /**
-   * Load all projects (global)
-   */
-  async loadAllProjects(): Promise<Project[]> {
-    return projectService.loadAll();
+  async saveProject(project: Project): Promise<void> {
+    await this.writeTextFile(PROJECT_FILE, projectToMarkdown(project));
   }
 
   /**
    * Load everything from disk
    */
   async loadAll(): Promise<{
-    projects: Project[];
-    currentProjectId: string;
+    project: Project;
     requirements: Requirement[];
     useCases: UseCase[];
     testCases: TestCase[];
@@ -258,7 +139,7 @@ class DiskProjectService extends BaseDiskService {
     currentUserId: string;
   }> {
     const [
-      projects,
+      project,
       requirements,
       useCases,
       testCases,
@@ -267,10 +148,9 @@ class DiskProjectService extends BaseDiskService {
       documents,
       links,
       users,
-      currentProjectId,
       currentUserId,
     ] = await Promise.all([
-      this.loadAllProjects(),
+      this.loadProject(),
       requirementService.loadAll(),
       useCaseService.loadAll(),
       testCaseService.loadAll(),
@@ -279,13 +159,11 @@ class DiskProjectService extends BaseDiskService {
       documentService.loadAll(),
       diskLinkService.getAllLinks(),
       (await import('./artifactServices')).userService.loadAll(),
-      this.getCurrentProjectId(),
       this.getCurrentUserId(),
     ]);
 
     return {
-      projects,
-      currentProjectId,
+      project,
       requirements,
       useCases,
       testCases,
@@ -320,39 +198,6 @@ class DiskProjectService extends BaseDiskService {
 
       // Writes (and commits) only when the counter actually has to move
       await idService.ensureCounterAtLeast(key, maxId);
-    }
-  }
-
-  /**
-   * Migrate legacy project files (Name-based) to ID-based filenames.
-   * This is part of the refactoring to ensure all artifacts use ID as filename.
-   */
-  async migrateLegacyProjectFiles(): Promise<void> {
-    try {
-      const files = await this.listFiles('projects');
-      for (const file of files) {
-        if (!file.endsWith('.md')) continue;
-
-        // If the filename starts with 'proj-', it's already using ID
-        if (file.startsWith('proj-')) continue;
-
-        const content = await this.readTextFile(`projects/${file}`);
-        if (content) {
-          const project = projectService.deserialize(content);
-          if (project && project.id) {
-            const newPath = `projects/${project.id}.md`;
-            const oldPath = `projects/${file}`;
-
-            if (newPath !== oldPath) {
-              await this.writeTextFile(newPath, content);
-              await this.deleteFile(oldPath);
-              debug.log(`[Migration] Migrated project ${file} to ${project.id}.md`);
-            }
-          }
-        }
-      }
-    } catch (err) {
-      debug.log('[Migration] Failed to migrate project files:', err);
     }
   }
 }

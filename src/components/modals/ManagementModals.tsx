@@ -39,7 +39,7 @@ import { notifyError } from '../../app/providers/ToastProvider';
 
 export const ManagementModals: React.FC = () => {
   const ui = useUI();
-  const { currentProject } = useProject();
+  const { project } = useProject();
 
   const { requirements, useCases, testCases, information } = useGlobalState();
 
@@ -54,8 +54,6 @@ export const ManagementModals: React.FC = () => {
 
   const handleExport = useCallback(
     async (options: ExportOptions) => {
-      if (!currentProject) return;
-
       const reqIds = options.includeRequirements ? activeIds(requirements) : [];
       const ucIds = options.includeUseCases ? activeIds(useCases) : [];
       const tcIds = options.includeTestCases ? activeIds(testCases) : [];
@@ -77,7 +75,7 @@ export const ManagementModals: React.FC = () => {
             try {
               const { exportProjectToPDF } = await import('../../utils/pdfExportUtils');
               await exportProjectToPDF(
-                currentProject,
+                project,
                 globalState,
                 reqIds,
                 ucIds,
@@ -99,7 +97,7 @@ export const ManagementModals: React.FC = () => {
             try {
               const { exportProjectToExcel } = await import('../../utils/excelExportUtils');
               await exportProjectToExcel(
-                currentProject,
+                project,
                 globalState,
                 reqIds,
                 ucIds,
@@ -117,7 +115,7 @@ export const ManagementModals: React.FC = () => {
             const taskId = startTask('Exporting JSON...');
             try {
               await exportProjectToJSON(
-                currentProject,
+                project,
                 globalState,
                 reqIds,
                 ucIds,
@@ -137,7 +135,7 @@ export const ManagementModals: React.FC = () => {
       }
     },
     [
-      currentProject,
+      project,
       requirements,
       useCases,
       testCases,
@@ -225,8 +223,7 @@ export const ManagementModals: React.FC = () => {
 
   const handleCreateBaselineWrapper = useCallback(
     async (name: string, message: string) => {
-      const version = name.includes(']') ? name.split(']').pop()?.trim() || name : name;
-      await createBaseline(name, message, version);
+      await createBaseline(name, message, name);
     },
     [createBaseline]
   );
@@ -246,7 +243,6 @@ export const ManagementModals: React.FC = () => {
       <VersionHistory
         isOpen={ui.activeModal.type === 'history'}
         baselines={baselines}
-        projectName={currentProject?.name ?? null}
         onClose={ui.closeModal}
         onCreateBaseline={handleCreateBaselineWrapper}
         onSelectArtifact={handleSelectArtifact}

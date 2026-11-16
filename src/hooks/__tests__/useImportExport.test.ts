@@ -17,7 +17,7 @@ vi.mock('xlsx', () => ({
 }));
 
 describe('useImportExport', () => {
-  let mockProjects: Project[];
+  let mockProject: Project;
   let mockRequirements: Requirement[];
   let mockUseCases: UseCase[];
   let mockTestCases: TestCase[];
@@ -28,14 +28,7 @@ describe('useImportExport', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockProjects = [
-      {
-        id: 'proj-001',
-        name: 'Test Project',
-        description: 'Test Description',
-        lastModified: 1000000,
-      },
-    ];
+    mockProject = { name: 'Test Project', description: 'Test Description' };
 
     mockRequirements = [
       {
@@ -108,10 +101,9 @@ describe('useImportExport', () => {
     mockNotify = vi.fn<ImportNotify>();
   });
 
-  const useTestHook = (currentProjectId = 'proj-001') =>
+  const useTestHook = () =>
     useImportExport({
-      currentProjectId,
-      projects: mockProjects,
+      project: mockProject,
       requirements: mockRequirements,
       useCases: mockUseCases,
       testCases: mockTestCases,
@@ -130,7 +122,7 @@ describe('useImportExport', () => {
       await hook.handleExport();
 
       expect(exportProjectToJSON).toHaveBeenCalledWith(
-        mockProjects[0],
+        mockProject,
         {
           requirements: mockRequirements,
           useCases: mockUseCases,
@@ -145,14 +137,6 @@ describe('useImportExport', () => {
         [],
         []
       );
-    });
-
-    it('should notify if no project is selected', async () => {
-      const hook = useTestHook('non-existent-project');
-
-      await hook.handleExport();
-
-      expect(mockNotify).toHaveBeenCalledWith('No project selected', 'warning');
     });
 
     it('should handle export errors gracefully', async () => {

@@ -1,15 +1,12 @@
-import type { Project, ProjectBaseline } from '../types';
+import type { ProjectBaseline } from '../types';
 import { Sidebar } from './layout/Sidebar';
 import { HeaderBar } from './layout/HeaderBar';
 
 export interface LayoutProps {
   children: React.ReactNode;
-  projects: Project[];
-  currentProjectId: string;
-  onSwitchProject: (projectId: string) => void;
-  onCreateProject: () => void;
-  onCreateDemoProject?: () => void;
-  onOpenProjectSettings: (project: Project) => void;
+  projectName: string;
+  onOpenProjectSettings: () => void;
+  onLoadDemoData?: () => void;
   onNewRequirement: () => void;
   onNewUseCase?: () => void;
   onNewTestCase?: () => void;
@@ -41,12 +38,9 @@ export interface LayoutProps {
  */
 export const Layout: React.FC<LayoutProps> = ({
   children,
-  projects,
-  currentProjectId,
-  onSwitchProject,
-  onCreateProject,
-  onCreateDemoProject,
+  projectName,
   onOpenProjectSettings,
+  onLoadDemoData,
   onNewRequirement,
   onNewUseCase,
   onNewTestCase,
@@ -74,12 +68,9 @@ export const Layout: React.FC<LayoutProps> = ({
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <Sidebar
-        projects={projects}
-        currentProjectId={currentProjectId}
-        onSwitchProject={onSwitchProject}
-        onCreateProject={onCreateProject}
-        onCreateDemoProject={onCreateDemoProject}
+        projectName={projectName}
         onOpenProjectSettings={onOpenProjectSettings}
+        onLoadDemoData={onLoadDemoData}
       />
 
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>

@@ -1,7 +1,7 @@
 /**
  * Demo Data Service
  *
- * Creates a fully-populated demo project with sample artifacts.
+ * Fills an empty project with sample artifacts.
  */
 
 import { diskProjectService } from './diskProjectService';
@@ -33,12 +33,12 @@ interface CreatedArtifactIds {
 }
 
 /**
- * Create a demo project with all sample artifacts and links.
- * Returns the created project.
+ * Fill the (empty) project folder with sample artifacts and links, and name
+ * the project after the demo. Returns the project.
  *
  * Performance optimized: Uses batch ID allocation and parallel saves.
  */
-export async function createDemoProject(): Promise<Project> {
+export async function loadDemoData(): Promise<Project> {
   const now = Date.now();
   const createdIds: CreatedArtifactIds = {
     requirements: [],
@@ -48,7 +48,6 @@ export async function createDemoProject(): Promise<Project> {
     risks: [],
   };
 
-  // Use the simple demo project name
   const projectName = DEMO_PROJECT.name;
 
   // 0. Ensure a demo user exists and is selected
@@ -90,8 +89,9 @@ export async function createDemoProject(): Promise<Project> {
   const { requirementValues, useCaseValues, testCaseValues } =
     createDemoAttributeValues(createdAttrIds);
 
-  // 1. Create the project
-  const project = await diskProjectService.createProject(projectName, DEMO_PROJECT.description);
+  // 1. Name the project
+  const project: Project = { name: projectName, description: DEMO_PROJECT.description };
+  await diskProjectService.saveProject(project);
 
   // 2. Batch allocate all IDs at once (single disk write per type)
   const [reqIds, ucIds, tcIds, infoIds, riskIds] = await Promise.all([

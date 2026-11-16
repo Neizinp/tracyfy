@@ -1,9 +1,8 @@
+/**
+ * The project is the folder it lives in: one folder (git repository) holds
+ * exactly one project. Stored in project.md at the folder root.
+ */
 export interface Project {
-  id: string;
   name: string;
   description: string;
-  baselines?: string[]; // IDs of baselines for this project
-  currentBaseline?: string; // ID of current baseline
-  isDeleted?: boolean; // Soft delete flag
-  lastModified: number;
 }

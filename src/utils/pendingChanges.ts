@@ -8,6 +8,9 @@
  */
 import type { ArtifactChange } from '../types';
 
+/** The project's name and description, at the folder root */
+export const PROJECT_FILE = 'project.md';
+
 export const AUTO_COMMITTED_FOLDERS = ['counters', 'links', 'custom-attributes'] as const;
 
 const FOLDER_TO_TYPE: Record<string, ArtifactChange['type']> = {
@@ -16,7 +19,6 @@ const FOLDER_TO_TYPE: Record<string, ArtifactChange['type']> = {
   testcases: 'testcase',
   information: 'information',
   risks: 'risk',
-  projects: 'project',
   assets: 'asset',
   users: 'user',
   'saved-filters': 'saved-filter',
@@ -31,6 +33,7 @@ const FOLDER_TO_TYPE: Record<string, ArtifactChange['type']> = {
 export function classifyPendingPath(
   path: string
 ): { type: ArtifactChange['type']; id: string; filename: string } | null {
+  if (path === PROJECT_FILE) return { type: 'project', id: 'project', filename: PROJECT_FILE };
   const parts = path.split('/');
   if (parts.length < 2) return null;
   const [folder, filename] = parts;

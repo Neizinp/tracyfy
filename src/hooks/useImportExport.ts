@@ -23,8 +23,7 @@ export type ImportNotify = (
 ) => void;
 
 interface UseImportExportProps {
-  currentProjectId: string;
-  projects: Project[];
+  project: Project;
   requirements: Requirement[];
   useCases: UseCase[];
   testCases: TestCase[];
@@ -38,8 +37,7 @@ interface UseImportExportProps {
 }
 
 export function useImportExport({
-  currentProjectId,
-  projects,
+  project,
   requirements,
   useCases,
   testCases,
@@ -50,12 +48,6 @@ export function useImportExport({
   notify,
 }: UseImportExportProps) {
   const handleExport = async () => {
-    const project = projects.find((p) => p.id === currentProjectId);
-    if (!project) {
-      notify('No project selected', 'warning');
-      return;
-    }
-
     try {
       await exportProjectToJSON(
         project,

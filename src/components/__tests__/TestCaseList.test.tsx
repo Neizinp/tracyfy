@@ -2,11 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TestCaseList } from '../TestCaseList';
 import type { TestCase, TestCaseColumnVisibility } from '../../types';
-import { useProject, useCustomAttributes } from '../../app/providers';
+import { useCustomAttributes } from '../../app/providers';
 
 // Mock hooks
 vi.mock('../../app/providers', () => ({
-  useProject: vi.fn(),
   useCustomAttributes: vi.fn(),
 }));
 
@@ -78,16 +77,6 @@ describe('TestCaseList', () => {
 
   beforeEach(() => {
     mockOnEdit.mockClear();
-    vi.mocked(useProject).mockReturnValue({
-      projects: [],
-      currentProjectId: '',
-      currentProject: null,
-      isLoading: false,
-      switchProject: vi.fn(),
-      createProject: vi.fn(),
-      updateProject: vi.fn(),
-      deleteProject: vi.fn(),
-    });
     vi.mocked(useCustomAttributes).mockReturnValue({
       definitions: [],
       loading: false,

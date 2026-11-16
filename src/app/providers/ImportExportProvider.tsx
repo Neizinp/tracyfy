@@ -36,7 +36,7 @@ interface ImportExportContextValue {
 const ImportExportContext = createContext<ImportExportContextValue | undefined>(undefined);
 
 export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { currentProjectId, projects } = useProject();
+  const { project } = useProject();
   const { requirements, useCases, testCases, information, risks } = useGlobalState();
   const { startTask, endTask } = useBackgroundTaskActions();
   const { showToast } = useToast();
@@ -119,12 +119,11 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
         endTask(taskId);
       }
     },
-    [fileSystem, currentProjectId, showToast, startTask, endTask]
+    [fileSystem, showToast, startTask, endTask]
   );
 
   const importExportHook = useImportExportHook({
-    currentProjectId,
-    projects,
+    project,
     requirements,
     useCases,
     testCases,

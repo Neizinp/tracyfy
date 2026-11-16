@@ -240,7 +240,7 @@ Rules:
 Each step is a few commits, ships with all tests green, and leaves the app working. The
 order is chosen so that each step makes the next one smaller.
 
-1. **Delete multi-project and the library** (D1, D2). Pure removal, so it is the biggest
+1. ✅ **Delete multi-project and the library** (D1, D2) - done. Pure removal, so it is the biggest
    simplification for the least risk. Project membership lists, project switching, the library,
    link scope and `projectIds` all go.
 2. **Domain registry + one vocabulary** (§3.1). Replace the four type vocabularies and the
@@ -262,6 +262,17 @@ Styling moves to classes continuously, whenever a component is touched in steps 
 
 Steps 1–6 are refactoring: behavior stays the same, except where D1, D2 and D4 remove
 features on purpose. Step 7 is new functionality, and only becomes cheap after 1–6.
+
+### Found along the way
+
+Things noticed while doing a step that belong to a later one:
+
+- **Baselines exist twice**: as git tags (history view) and as JSON files in `baselines/`
+  (BaselinesProvider). §3.5 says a baseline is a git tag, so the JSON files go in step 4.
+- **Project info lives in `project.md`** for now (name in frontmatter, description as body);
+  it moves into `tracyfy.yaml` in step 4.
+- The requirements column selector writes `column-visibility` to localStorage, but nothing
+  reads it back. Column visibility should be stored once, for all kinds, in step 6.
 
 ## 8. Open questions
 

@@ -13,7 +13,6 @@ describe('useUIState', () => {
       expect(result.current.isUseCaseModalOpen).toBe(false);
       expect(result.current.isVersionHistoryOpen).toBe(false);
       expect(result.current.isProjectSettingsOpen).toBe(false);
-      expect(result.current.isCreateProjectModalOpen).toBe(false);
       expect(result.current.isNewTestCaseModalOpen).toBe(false);
       expect(result.current.isEditTestCaseModalOpen).toBe(false);
       expect(result.current.isInformationModalOpen).toBe(false);
@@ -28,7 +27,6 @@ describe('useUIState', () => {
       expect(result.current.selectedInformation).toBeNull();
       expect(result.current.editingRequirement).toBeNull();
       expect(result.current.editingUseCase).toBeNull();
-      expect(result.current.projectToEdit).toBeNull();
     });
 
     it('should have empty search query initially', () => {

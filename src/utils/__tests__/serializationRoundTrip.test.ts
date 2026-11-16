@@ -169,13 +169,8 @@ const document: ArtifactDocument = {
 };
 
 const project: Project = {
-  id: 'PROJ-001',
   name: 'Project: Alpha',
   description: TRICKY,
-  baselines: ['BASE-001'],
-  currentBaseline: 'BASE-001',
-  isDeleted: true,
-  lastModified: T0,
 };
 
 const user: User = { id: 'USER-003', name: 'Ada: Lovelace', dateCreated: T0, lastModified: T0 + 1 };
@@ -300,10 +295,6 @@ describe('files written by earlier versions still load', () => {
 
     const proj =
       '---\nid: "PROJ-001"\nname: "Alpha"\nrequirementIds:\n  - "REQ-001"\n---\n\n# Alpha\n\nThe project.';
-    expect(markdownToProject(proj)).toMatchObject({
-      name: 'Alpha',
-      description: 'The project.',
-      baselines: [],
-    });
+    expect(markdownToProject(proj)).toEqual({ name: 'Alpha', description: 'The project.' });
   });
 });

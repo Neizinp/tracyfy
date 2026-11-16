@@ -5,7 +5,7 @@
  */
 
 import { BaseArtifactService, type ArtifactSerializer } from './baseArtifactService';
-import type { Requirement, UseCase, TestCase, Information, Risk, Project, User } from '../types';
+import type { Requirement, UseCase, TestCase, Information, Risk, User } from '../types';
 import {
   requirementToMarkdown,
   markdownToRequirement,
@@ -17,8 +17,6 @@ import {
   markdownToInformation,
   riskToMarkdown,
   markdownToRisk,
-  projectToMarkdown,
-  markdownToProject,
   userToMarkdown,
   markdownToUser,
 } from '../utils/markdownUtils';
@@ -64,13 +62,6 @@ const riskSerializer: ArtifactSerializer<Risk> = {
 };
 export const riskService = new BaseArtifactService<Risk>('risks', riskSerializer);
 
-// Projects Service
-const projectSerializer: ArtifactSerializer<Project> = {
-  serialize: projectToMarkdown,
-  deserialize: (content) => markdownToProject(content) as Project | null,
-};
-export const projectService = new BaseArtifactService<Project>('projects', projectSerializer);
-
 // Users Service
 const userSerializer: ArtifactSerializer<User> = {
   serialize: userToMarkdown,
@@ -93,7 +84,6 @@ export const ALL_ARTIFACT_SERVICES: Record<string, BaseArtifactService<any>> = {
   information: informationService,
   risks: riskService,
   users: userService,
-  projects: projectService,
   links: diskLinkService,
   workflows: diskWorkflowService,
   customAttributes: diskCustomAttributeService,

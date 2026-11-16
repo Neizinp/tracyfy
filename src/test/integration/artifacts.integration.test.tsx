@@ -55,32 +55,4 @@ describe('integration: requirements via the UI', () => {
     expect(await screen.findByText('From a colleague')).toBeInTheDocument();
     expect(screen.getByText('Created here')).toBeInTheDocument();
   }, 60_000);
-
-  it('a requirement outside the current project can still be edited (e.g. from the Global Library)', async () => {
-    h = await startApp();
-    // Lives on disk / in the library, but not in the current project
-    const project = h.app().project.currentProject!;
-    await act(() => h.app().project.createProject('Other', ''));
-    const other = h.app().project.projects.find((p) => p.name === 'Other')!;
-    await act(() => h.app().project.switchProject(other.id));
-    const req = (await act(() =>
-      h.app().requirements.handleAddRequirement({
-        title: 'Shared',
-        description: '',
-        text: '',
-        rationale: '',
-        status: 'draft',
-        priority: 'medium',
-        dateCreated: Date.now(),
-      } as never)
-    ))!;
-    await act(() => h.app().project.switchProject(project.id));
-    await h.settle();
-
-    await act(() => h.app().requirements.handleUpdateRequirement(req.id, { title: 'Shared v2' }));
-    await h.settle();
-
-    expect(h.app().globalState.requirements.find((r) => r.id === req.id)?.title).toBe('Shared v2');
-    expect(h.readFile(`requirements/${req.id}.md`)).toContain('Shared v2');
-  }, 60_000);
 });

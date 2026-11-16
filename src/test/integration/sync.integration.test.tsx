@@ -38,7 +38,6 @@ describe('integration: remote sync', () => {
   it('after Pull, a collaborator’s new requirement shows up in the app', async () => {
     h = await startApp();
     await connectRemote(h);
-    const projectId = h.app().project.currentProjectId;
 
     // The "remote" merges a collaborator's commit into the working tree
     h.stubGitOp('pull', async () => {
@@ -54,14 +53,6 @@ describe('integration: remote sync', () => {
           dateCreated: 1,
           lastModified: 1,
         })
-      );
-      // ...and adds it to the shared project file, as the colleague's app would
-      const projectFile = path.join(h.dir, 'projects', `${projectId}.md`);
-      fs.writeFileSync(
-        projectFile,
-        fs
-          .readFileSync(projectFile, 'utf8')
-          .replace(/requirementIds: \[\]/, 'requirementIds:\n  - "REQ-050"')
       );
       await git.add({ fs, dir: h.dir, filepath: '.' });
       await git.commit({

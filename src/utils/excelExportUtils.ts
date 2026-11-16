@@ -122,11 +122,7 @@ export async function exportProjectToExcel(
   // The File System Access API requires a recent user gesture to show the file picker.
   // If we do async work first, the user activation expires and the picker won't show.
   let fileHandle: FileSystemFileHandle | null = null;
-  let defaultFilename = `${project.name.replace(/[^a-z0-9]/gi, '_')}`;
-  if (project.currentBaseline) {
-    defaultFilename += `_${project.currentBaseline.replace(/[^a-z0-9]/gi, '_')}`;
-  }
-  defaultFilename += '-export.xlsx';
+  const defaultFilename = `${project.name.replace(/[^a-z0-9]/gi, '_')}-export.xlsx`;
 
   try {
     if ('showSaveFilePicker' in window) {

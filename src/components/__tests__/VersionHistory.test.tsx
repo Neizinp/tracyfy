@@ -28,7 +28,6 @@ describe('VersionHistory', () => {
     isOpen: true,
     onClose: mockOnClose,
     baselines: [] as ProjectBaseline[],
-    projectName: 'TestProject',
     onCreateBaseline: mockOnCreateBaseline,
   };
 
@@ -49,31 +48,20 @@ describe('VersionHistory', () => {
   });
 
   describe('Tabs', () => {
-    it('should render all three tabs', () => {
+    it('has a Baselines and a Commits tab', () => {
       render(<VersionHistory {...defaultProps} />);
 
       expect(screen.getByText('Baselines')).toBeInTheDocument();
-      expect(screen.getByText('TestProject Commits')).toBeInTheDocument();
-      expect(screen.getByText('All Commits')).toBeInTheDocument();
+      expect(screen.getByText('Commits')).toBeInTheDocument();
     });
 
-    it('should switch to Project Commits tab when clicked', () => {
+    it('should switch to the Commits tab when clicked', () => {
       render(<VersionHistory {...defaultProps} />);
 
-      const commitsTab = screen.getByText('TestProject Commits');
+      const commitsTab = screen.getByText('Commits');
       fireEvent.click(commitsTab);
 
-      // The tab should be active (has different styling)
       expect(commitsTab).toHaveStyle({ color: 'var(--color-info)' });
-    });
-
-    it('should switch to All Commits tab when clicked', () => {
-      render(<VersionHistory {...defaultProps} />);
-
-      const globalTab = screen.getByText('All Commits');
-      fireEvent.click(globalTab);
-
-      expect(globalTab).toHaveStyle({ color: 'var(--color-info)' });
     });
   });
 
@@ -89,17 +77,17 @@ describe('VersionHistory', () => {
     it('should show no baselines message when empty', () => {
       render(<VersionHistory {...defaultProps} />);
 
-      expect(screen.getByText(/No baselines found/i)).toBeInTheDocument();
+      expect(screen.getByText(/No baselines yet/i)).toBeInTheDocument();
     });
 
     it('should not show no baselines message on other tabs', () => {
       render(<VersionHistory {...defaultProps} />);
 
       // Switch to commits tab
-      fireEvent.click(screen.getByText('TestProject Commits'));
+      fireEvent.click(screen.getByText('Commits'));
 
       // Baselines message should not be visible
-      expect(screen.queryByText(/No baselines found/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/No baselines yet/i)).not.toBeInTheDocument();
     });
   });
 
@@ -124,15 +112,12 @@ describe('VersionHistory', () => {
   });
 
   describe('Baseline View Button', () => {
-    it('should look up commit hash using baseline.name (full tag name)', async () => {
-      // This test prevents regression: baseline.name contains full tag like "[ProjectName] 1.0"
-      // but baseline.version might only contain "1.0"
+    it('opens the snapshot of the commit the baseline tag points to', async () => {
       const mockBaselines: ProjectBaseline[] = [
         {
           id: 'baseline-1',
-          projectId: 'proj-001',
-          name: '[TestProject] 1.0', // Full tag name with project prefix
-          version: '1.0', // Stripped version (should NOT be used for lookup)
+          name: '1.0',
+          version: '1.0',
           description: 'First baseline',
           timestamp: Date.now(),
           artifactCommits: {},
@@ -143,7 +128,7 @@ describe('VersionHistory', () => {
       const { realGitService } = await import('../../services/realGitService');
       vi.mocked(realGitService.getTagsWithDetails).mockResolvedValue([
         {
-          name: '[TestProject] 1.0',
+          name: '1.0',
           message: 'First baseline',
           timestamp: Date.now(),
           commit: 'abc123def',
@@ -166,7 +151,7 @@ describe('VersionHistory', () => {
   });
 
   describe('Artifact Type Filters', () => {
-    it('should show filter buttons on All Commits tab', async () => {
+    it('should show filter buttons on the Commits tab', async () => {
       const { realGitService } = await import('../../services/realGitService');
       vi.mocked(realGitService.getHistory).mockResolvedValue([
         {
@@ -180,8 +165,7 @@ describe('VersionHistory', () => {
 
       render(<VersionHistory {...defaultProps} />);
 
-      // Switch to All Commits tab
-      fireEvent.click(screen.getByText('All Commits'));
+      fireEvent.click(screen.getByText('Commits'));
 
       // Wait for commits to load
       await new Promise((resolve) => setTimeout(resolve, 150));
@@ -214,8 +198,7 @@ describe('VersionHistory', () => {
 
       render(<VersionHistory {...defaultProps} />);
 
-      // Switch to All Commits tab
-      fireEvent.click(screen.getByText('All Commits'));
+      fireEvent.click(screen.getByText('Commits'));
 
       // Wait for commits to load
       await new Promise((resolve) => setTimeout(resolve, 150));
@@ -255,8 +238,7 @@ describe('VersionHistory', () => {
 
       render(<VersionHistory {...defaultProps} />);
 
-      // Switch to All Commits tab
-      fireEvent.click(screen.getByText('All Commits'));
+      fireEvent.click(screen.getByText('Commits'));
 
       // Wait for commits to load
       await new Promise((resolve) => setTimeout(resolve, 200));
@@ -290,8 +272,7 @@ describe('VersionHistory', () => {
 
       render(<VersionHistory {...defaultProps} />);
 
-      // Switch to All Commits tab
-      fireEvent.click(screen.getByText('All Commits'));
+      fireEvent.click(screen.getByText('Commits'));
 
       // Wait for commits to load
       await new Promise((resolve) => setTimeout(resolve, 150));
@@ -306,14 +287,13 @@ describe('VersionHistory', () => {
       expect(screen.getByText(/No commits match the selected filters/i)).toBeInTheDocument();
     });
 
-    it('should show updated tip text about filters on All Commits tab', async () => {
+    it('should show the tip about filters on the Commits tab', async () => {
       const { realGitService } = await import('../../services/realGitService');
       vi.mocked(realGitService.getHistory).mockResolvedValue([]);
 
       render(<VersionHistory {...defaultProps} />);
 
-      // Switch to All Commits tab
-      fireEvent.click(screen.getByText('All Commits'));
+      fireEvent.click(screen.getByText('Commits'));
 
       // Wait for load
       await new Promise((resolve) => setTimeout(resolve, 100));

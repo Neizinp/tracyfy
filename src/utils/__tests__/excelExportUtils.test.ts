@@ -68,11 +68,8 @@ describe('excelExportUtils', () => {
   });
 
   const mockProject: Project = {
-    id: 'p1',
     name: 'Test Project',
     description: 'Test Description',
-    lastModified: 0,
-    currentBaseline: 'Baseline 1.0',
   };
 
   const mockReq: Requirement = {
@@ -233,9 +230,6 @@ describe('excelExportUtils', () => {
 
     await exportProjectToExcel(mockProject, globalState, ['r1'], [], [], [], [], defaultOptions);
 
-    expect(mockWriteFile).toHaveBeenCalledWith(
-      expect.anything(),
-      'Test_Project_Baseline_1_0-export.xlsx'
-    );
+    expect(mockWriteFile).toHaveBeenCalledWith(expect.anything(), 'Test_Project-export.xlsx');
   });
 });
