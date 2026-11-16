@@ -17,7 +17,7 @@ import { requirementToMarkdown } from '../../utils/markdownUtils';
 /** Configure a remote the way a user does: Remote Settings → URL + token → Add Remote → close */
 async function connectRemote(h: Harness) {
   // Never touch the real network
-  h.ipc.handlers.set('git:fetch', async () => ({ ok: true }));
+  h.stubGitOp('fetch', async () => undefined);
   fireEvent.click(screen.getByTitle('Remote Settings'));
   fireEvent.change(await screen.findByPlaceholderText('https://github.com/username/repo.git'), {
     target: { value: 'https://example.invalid/team/repo.git' },
@@ -41,7 +41,7 @@ describe('integration: remote sync', () => {
     const projectId = h.app().project.currentProjectId;
 
     // The "remote" merges a collaborator's commit into the working tree
-    h.ipc.handlers.set('git:pull', async () => {
+    h.stubGitOp('pull', async () => {
       const file = path.join(h.dir, 'requirements', 'REQ-050.md');
       fs.mkdirSync(path.dirname(file), { recursive: true });
       fs.writeFileSync(
@@ -85,7 +85,7 @@ describe('integration: remote sync', () => {
   it('merge conflicts on Pull are shown to the user', async () => {
     h = await startApp();
     await connectRemote(h);
-    h.ipc.handlers.set('git:pull', async () => ({
+    h.stubGitOp('pull', async () => ({
       ok: false,
       conflicts: ['requirements/REQ-001.md'],
     }));
@@ -102,7 +102,9 @@ describe('integration: remote sync', () => {
     await connectRemote(h);
     localStorage.setItem('tracyfy-auto-sync', 'true');
     window.dispatchEvent(new CustomEvent('auto-sync-changed', { detail: { enabled: true } }));
-    h.ipc.handlers.set('git:push', async () => ({ error: 'remote rejected: permission denied' }));
+    h.stubGitOp('push', async () => {
+      throw new Error('remote rejected: permission denied');
+    });
 
     // Commit something → auto-sync pushes
     await act(() =>

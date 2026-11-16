@@ -50,80 +50,13 @@ declare global {
   interface Window {
     electronAPI?: {
       isElectron: boolean;
+      /** See shared/gitOps.js; errors come back as { error, name } */
       git: {
-        status: (dir: string, filepath: string) => Promise<string>;
-        statusMatrix: (dir: string) => Promise<[string, number, number, number][]>;
-        add: (dir: string, filepath: string) => Promise<{ ok?: boolean; error?: string }>;
-        remove: (dir: string, filepath: string) => Promise<{ ok?: boolean; error?: string }>;
-        commit: (
+        call: (
+          op: string,
           dir: string,
-          message: string,
-          author?: { name: string; email: string }
-        ) => Promise<{ oid?: string; error?: string }>;
-        log: (
-          dir: string,
-          depth?: number,
-          filepath?: string,
-          ref?: string
-        ) => Promise<CommitInfo[]>;
-        listFiles: (dir: string, ref?: string) => Promise<string[]>;
-        readBlob: (
-          dir: string,
-          oid: string,
-          filepath: string
-        ) => Promise<{ blob?: Uint8Array; error?: string }>;
-        resolveRef: (dir: string, ref: string) => Promise<string>;
-        isDescendent: (
-          dir: string,
-          oid: string,
-          ancestor: string,
-          depth?: number
-        ) => Promise<boolean | { error: string }>;
-        currentBranch: (dir: string) => Promise<string | null>;
-        init: (dir: string) => Promise<{ ok?: boolean; error?: string }>;
-        annotatedTag: (
-          dir: string,
-          ref: string,
-          message: string,
-          tagger?: { name: string; email: string }
-        ) => Promise<{ ok?: boolean; error?: string }>;
-        listTags: (dir: string) => Promise<string[]>;
-        readTag: (
-          dir: string,
-          oid: string
-        ) => Promise<{ message: string; timestamp: number; object: string }>;
-        // Remote operations
-        addRemote: (
-          dir: string,
-          name: string,
-          url: string
-        ) => Promise<{ ok?: boolean; error?: string }>;
-        removeRemote: (dir: string, name: string) => Promise<{ ok?: boolean; error?: string }>;
-        listRemotes: (dir: string) => Promise<{ name: string; url: string }[] | { error: string }>;
-        fetch: (
-          dir: string,
-          remote: string,
-          branch?: string,
-          token?: string
-        ) => Promise<{ ok?: boolean; error?: string }>;
-        push: (
-          dir: string,
-          remote: string,
-          branch: string,
-          token?: string
-        ) => Promise<{ ok?: boolean; error?: string }>;
-        pull: (
-          dir: string,
-          remote: string,
-          branch: string,
-          token?: string,
-          author?: { name: string; email: string }
-        ) => Promise<{ ok?: boolean; conflicts?: string[]; error?: string }>;
-        checkout: (
-          dir: string,
-          filepath: string,
-          force: boolean
-        ) => Promise<{ ok?: boolean; error?: string }>;
+          ...args: unknown[]
+        ) => Promise<{ ok?: true; value?: unknown; error?: string; name?: string }>;
       };
       secure: {
         setToken: (token: string) => Promise<{ ok?: boolean; error?: string }>;

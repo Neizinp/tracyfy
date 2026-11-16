@@ -5,21 +5,9 @@ import { debug } from '../../utils/debug';
  * Handles tag/baseline operations: creating, listing, and getting details of tags.
  */
 
-import git from 'isomorphic-git';
-import { fileSystemService } from '../fileSystemService';
-import { fsAdapter } from '../fsAdapter';
-import { isElectronEnv, type TagDetails } from './types';
-
-/**
- * Get the root directory path (Electron uses absolute path, browser uses '.')
- */
-function getRootDir(): string {
-  if (isElectronEnv()) {
-    const rootPath = fileSystemService.getRootPath();
-    return rootPath || '.';
-  }
-  return '.';
-}
+import { DEFAULT_AUTHOR } from '../../../shared/gitOps';
+import { gitBackend, getRootDir } from './gitBackend';
+import type { TagDetails } from './types';
 
 class GitBaselineService {
   private initialized = false;
@@ -36,25 +24,7 @@ class GitBaselineService {
       throw new Error('Git service not initialized');
     }
 
-    const author = { name: 'Tracyfy User', email: 'user@tracyfy.local' };
-
-    if (isElectronEnv()) {
-      const result = await window.electronAPI!.git.annotatedTag(
-        getRootDir(),
-        tagName,
-        message,
-        author
-      );
-      if (result.error) throw new Error(result.error);
-    } else {
-      await git.annotatedTag({
-        fs: fsAdapter,
-        dir: getRootDir(),
-        ref: tagName,
-        message,
-        tagger: author,
-      });
-    }
+    await gitBackend().annotatedTag(getRootDir(), tagName, message, DEFAULT_AUTHOR);
   }
 
   /**
@@ -66,11 +36,7 @@ class GitBaselineService {
     }
 
     try {
-      if (isElectronEnv()) {
-        return await window.electronAPI!.git.listTags(getRootDir());
-      } else {
-        return await git.listTags({ fs: fsAdapter, dir: getRootDir() });
-      }
+      return await gitBackend().listTags(getRootDir());
     } catch {
       return [];
     }
@@ -83,47 +49,20 @@ class GitBaselineService {
     if (!this.initialized) return [];
 
     try {
-      const tagNames = isElectronEnv()
-        ? await window.electronAPI!.git.listTags(getRootDir())
-        : await git.listTags({ fs: fsAdapter, dir: getRootDir() });
+      const backend = gitBackend();
+      const dir = getRootDir();
       const tags: TagDetails[] = [];
 
-      for (const name of tagNames) {
+      for (const name of await backend.listTags(dir)) {
         try {
-          if (isElectronEnv()) {
-            const oid = await window.electronAPI!.git.resolveRef(getRootDir(), name);
-            const read = await window.electronAPI!.git.readTag(getRootDir(), oid);
-            tags.push({
-              name,
-              message: read.message,
-              timestamp: read.timestamp * 1000,
-              commit: read.object,
-            });
-          } else {
-            const oid = await git.resolveRef({ fs: fsAdapter, dir: getRootDir(), ref: name });
-            try {
-              const tagObject = await git.readTag({ fs: fsAdapter, dir: getRootDir(), oid });
-              tags.push({
-                name,
-                message: tagObject.tag.message,
-                timestamp: tagObject.tag.tagger.timestamp * 1000,
-                commit: tagObject.tag.object,
-              });
-            } catch {
-              // Lightweight tag - get commit info
-              const [log] = await git.log({
-                fs: fsAdapter,
-                dir: getRootDir(),
-                ref: oid,
-                depth: 1,
-              });
-              tags.push({
-                name,
-                message: log.commit.message,
-                timestamp: log.commit.committer.timestamp * 1000,
-                commit: oid,
-              });
-            }
+          const oid = await backend.resolveRef(dir, name);
+          try {
+            const tag = await backend.readTag(dir, oid);
+            tags.push({ name, message: tag.message, timestamp: tag.timestamp, commit: tag.object });
+          } catch {
+            // Lightweight tag: it points straight at a commit
+            const [commit] = await backend.log(dir, { depth: 1, ref: oid });
+            tags.push({ name, message: commit.message, timestamp: commit.timestamp, commit: oid });
           }
         } catch (e) {
           debug.warn(`Failed to read tag ${name}:`, e);

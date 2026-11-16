@@ -52,7 +52,7 @@ describe('preload ↔ main contract', () => {
         });
       }
     }
-    expect(exposed.length).toBeGreaterThan(30);
+    expect(exposed.length).toBeGreaterThan(10);
     expect(ipc.invoked.every((channel) => ipc.handlers.has(channel))).toBe(true);
   });
 
@@ -115,48 +115,56 @@ describe('path access control', () => {
   });
 });
 
-describe('git:commit', () => {
+describe('git over IPC (shared/gitOps.js in the main process)', () => {
+  const call = (op: string, ...args: unknown[]) =>
+    api.git.call(op, ...args) as Promise<{
+      ok?: true;
+      value?: unknown;
+      error?: string;
+      name?: string;
+    }>;
   const commitFile = async (name: string, content: string) => {
     await api.fs.writeFile(path.join(dir, name), content);
-    await api.git.add(dir, name);
-    return (await api.git.commit(dir, `add ${name}`)) as { oid?: string; error?: string };
+    return call('commitPaths', dir, { add: [name] }, `add ${name}`);
   };
 
   beforeEach(async () => {
-    await api.git.init(dir);
+    expect(await call('init', dir)).toEqual({ ok: true, value: undefined });
   });
 
-  it('uses the same default author as browser mode', async () => {
-    await commitFile('a.md', 'a');
+  it('commits with the shared default author', async () => {
+    const result = await commitFile('a.md', 'a');
+    expect(result.ok).toBe(true);
     const [head] = await git.log({ fs, dir, depth: 1 });
+    expect(head.oid).toBe(result.value);
     expect(head.commit.author).toMatchObject({ name: 'Tracyfy User', email: 'user@tracyfy.local' });
   });
 
-  it('reattaches a detached HEAD to main when it is a fast-forward', async () => {
-    const first = (await commitFile('a.md', 'a')).oid!;
-    const second = (await commitFile('b.md', 'b')).oid!;
-    // main lags behind a detached HEAD
-    await git.writeRef({ fs, dir, ref: 'refs/heads/main', value: first, force: true });
-    fs.writeFileSync(path.join(dir, '.git', 'HEAD'), `${second}\n`);
-
-    const third = await commitFile('c.md', 'c');
-
-    expect(third.error).toBeUndefined();
-    expect(fs.readFileSync(path.join(dir, '.git', 'HEAD'), 'utf8').trim()).toBe(
-      'ref: refs/heads/main'
-    );
-    expect(await git.resolveRef({ fs, dir, ref: 'main' })).toBe(third.oid);
-  });
-
-  it('refuses to commit when HEAD is detached on an older commit (would drop main history)', async () => {
-    const first = (await commitFile('a.md', 'a')).oid!;
-    const second = (await commitFile('b.md', 'b')).oid!;
+  it('keeps the error type across IPC (DetachedHeadError)', async () => {
+    const first = (await commitFile('a.md', 'a')).value as string;
+    const second = (await commitFile('b.md', 'b')).value as string;
     fs.writeFileSync(path.join(dir, '.git', 'HEAD'), `${first}\n`);
 
     const result = await commitFile('c.md', 'c');
 
-    expect(result.error).toMatch(/detached/i);
+    expect(result).toMatchObject({
+      name: 'DetachedHeadError',
+      error: expect.stringMatching(/detached/i),
+    });
     expect(await git.resolveRef({ fs, dir, ref: 'refs/heads/main' })).toBe(second);
+  });
+
+  it('rejects operations that are not in the allowlist', async () => {
+    expect(await call('writeRef', dir, { ref: 'refs/heads/main', value: 'x' })).toMatchObject({
+      error: expect.stringMatching(/unknown git operation/i),
+    });
+  });
+
+  it('denies git operations on repositories outside the picked folder', async () => {
+    const outside = path.join(root, 'other-repo');
+    fs.mkdirSync(outside);
+    expect(await call('init', outside)).toMatchObject({ error: expect.stringMatching(/denied/i) });
+    expect(fs.existsSync(path.join(outside, '.git'))).toBe(false);
   });
 });
 

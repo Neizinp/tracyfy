@@ -66,6 +66,11 @@ export interface Harness {
    * git:push, git:pull) to simulate a remote; everything else stays real.
    */
   ipc: ElectronIpc;
+  /**
+   * Replace one git operation (e.g. 'pull') in the main process - typically
+   * to stand in for the network. All other operations stay real.
+   */
+  stubGitOp: (op: string, impl: (dir: string, ...args: unknown[]) => unknown) => void;
   /** Latest hook values - read after act()/waitFor() */
   app: () => AppHooks;
   /** Read a project file from disk, or null if missing */
@@ -181,9 +186,25 @@ export async function startApp(
     await act(() => new Promise((r) => setTimeout(r, 50)));
   };
 
+  const stubs = new Map<string, (dir: string, ...args: unknown[]) => unknown>();
+  const realGitCall = ipc.handlers.get('git:call')!;
+  ipc.handlers.set('git:call', async (event: unknown, ...callArgs: unknown[]) => {
+    const [op, opDir, ...rest] = callArgs as [string, string, ...unknown[]];
+    const stub = stubs.get(op);
+    if (!stub) return realGitCall(event, ...callArgs);
+    try {
+      return { ok: true, value: await stub(opDir, ...rest) };
+    } catch (error) {
+      return { error: (error as Error).message, name: (error as Error).name };
+    }
+  });
+
   const harness: Harness = {
     dir,
     ipc,
+    stubGitOp: (op, impl) => {
+      stubs.set(op, impl);
+    },
     app,
     readFile: (rel) => {
       const p = path.join(dir, rel);

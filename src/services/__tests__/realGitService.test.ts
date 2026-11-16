@@ -112,6 +112,9 @@ import { realGitService } from '../realGitService';
 describe('RealGitService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Behave like a normal repository: HEAD on main, clean status
+    vi.mocked(git.currentBranch).mockResolvedValue('main');
+    vi.mocked(git.statusMatrix).mockResolvedValue([]);
   });
 
   afterEach(() => {

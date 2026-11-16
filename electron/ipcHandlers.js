@@ -8,6 +8,7 @@
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import git from 'isomorphic-git';
+import { createGitOps, GIT_OP_NAMES } from '../shared/gitOps.js';
 
 /**
  * @param {object} deps
@@ -87,247 +88,31 @@ export function registerIpcHandlers({
     return token || (await readStoredToken());
   }
 
-  // Git IPC handlers - run in Node context with real fs
-  ipcMain.handle('git:status', async (_event, dir, filepath) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      return await git.status({ fs, dir, filepath });
-    } catch (error) {
-      return { error: error.message };
-    }
+  // ========== GIT ==========
+  // All git logic lives in shared/gitOps.js and is shared with browser mode;
+  // here it runs with Node's fs. One channel, restricted to the known ops.
+  const gitOps = createGitOps({
+    fs,
+    git,
+    getHttp: () => import('isomorphic-git/http/node').then((m) => m.default),
   });
+  const REMOTE_OPS = new Set(['fetch', 'push', 'pull']);
 
-  ipcMain.handle('git:statusMatrix', async (_event, dir) => {
+  ipcMain.handle('git:call', async (_event, op, dir, ...args) => {
     try {
+      if (!GIT_OP_NAMES.includes(op)) throw new Error(`Unknown git operation: ${op}`);
       dir = await assertAllowedPath(dir);
-      return await git.statusMatrix({ fs, dir });
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  log('[Main] Registering git:checkout handler');
-  ipcMain.handle('git:checkout', async (_event, dir, filepath, force) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      log(`[Main] git:checkout ${filepath} in ${dir} (force: ${force})`);
-      await git.checkout({
-        fs,
-        dir,
-        ref: 'HEAD',
-        filepaths: [filepath],
-        force: !!force,
-      });
-      log(`[Main] git:checkout ${filepath} success`);
-      return { ok: true };
-    } catch (error) {
-      console.error(`[Main] git:checkout ${filepath} failed:`, error);
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:add', async (_event, dir, filepath) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      await git.add({ fs, dir, filepath });
-      return { ok: true };
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:remove', async (_event, dir, filepath) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      await git.remove({ fs, dir, filepath });
-      return { ok: true };
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:commit', async (_event, dir, message, author) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      // Ensure HEAD is attached to main branch (not detached)
-      // If HEAD contains a raw SHA, commits won't update the branch pointer
-      const headPath = path.join(dir, '.git', 'HEAD');
-      try {
-        const headContent = await fs.readFile(headPath, 'utf8');
-        const trimmedHead = headContent.trim();
-
-        if (!trimmedHead.startsWith('ref: ')) {
-          log(
-            `[Main] git:commit - HEAD is detached (contains: "${trimmedHead.substring(0, 20)}..."). Repairing...`
-          );
-
-          // If HEAD is a valid SHA, move refs/heads/main to it - but only when that
-          // can't lose history: main doesn't exist yet, already points there, or the
-          // detached commit is a descendant of main (fast-forward).
-          if (trimmedHead.match(/^[0-9a-f]{40}$/i)) {
-            let mainOid = null;
-            try {
-              mainOid = await git.resolveRef({ fs, dir, ref: 'refs/heads/main' });
-            } catch {
-              // main doesn't exist yet
-            }
-
-            const isFastForward =
-              !mainOid ||
-              mainOid === trimmedHead ||
-              (await git.isDescendent({ fs, dir, oid: trimmedHead, ancestor: mainOid, depth: -1 }));
-
-            if (!isFastForward) {
-              return {
-                error:
-                  'HEAD is detached at a commit that is not on the main branch. ' +
-                  'Committing would discard commits on main; check out main before committing.',
-              };
-            }
-
-            const mainRefPath = path.join(dir, '.git', 'refs', 'heads', 'main');
-            await fs.mkdir(path.dirname(mainRefPath), { recursive: true });
-            await fs.writeFile(mainRefPath, trimmedHead + '\n', 'utf8');
-            log(`[Main] Updated refs/heads/main to ${trimmedHead}`);
-          }
-
-          // Attach HEAD to main
-          await fs.writeFile(headPath, 'ref: refs/heads/main\n', 'utf8');
-          log('[Main] HEAD is now attached to refs/heads/main');
-        }
-      } catch (headError) {
-        console.error('[Main] Failed to check/repair HEAD:', headError.message);
+      if (REMOTE_OPS.has(op)) {
+        // The token never comes from the renderer in Electron: use the stored one
+        const options = { ...(args[0] || {}) };
+        options.token = await resolveToken(options.token);
+        args[0] = options;
       }
-
-      log(`[Main] git:commit starting for ${dir}, message: "${message}"`);
-      const oid = await git.commit({
-        fs,
-        dir,
-        message,
-        author: author || { name: 'Tracyfy User', email: 'user@tracyfy.local' },
-      });
-      log(`[Main] git:commit success, OID: ${oid}`);
-      return { oid };
+      log(`[Main] git:${op} in ${dir}`);
+      const value = await gitOps[op](dir, ...args);
+      return { ok: true, value };
     } catch (error) {
-      console.error('[Main] git:commit failed:', error.message);
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:log', async (_event, dir, depth, filepath, ref) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      const commits = await git.log({
-        fs,
-        dir,
-        depth: depth || 100,
-        filepath,
-        ref: ref || 'HEAD',
-      });
-      return commits.map((c) => ({
-        hash: c.oid,
-        message: c.commit.message,
-        author: c.commit.author.name,
-        timestamp: c.commit.author.timestamp * 1000,
-        parent: c.commit.parent,
-      }));
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:listFiles', async (_event, dir, ref) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      return await git.listFiles({ fs, dir, ref });
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:readBlob', async (_event, dir, oid, filepath) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      const { blob } = await git.readBlob({ fs, dir, oid, filepath });
-      return { blob: new Uint8Array(blob) };
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:resolveRef', async (_event, dir, ref) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      return await git.resolveRef({ fs, dir, ref });
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:isDescendent', async (_event, dir, oid, ancestor, depth) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      return await git.isDescendent({ fs, dir, oid, ancestor, depth });
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:currentBranch', async (_event, dir) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      return await git.currentBranch({ fs, dir });
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:init', async (_event, dir) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      await git.init({ fs, dir, defaultBranch: 'main' });
-      return { ok: true };
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:annotatedTag', async (_event, dir, ref, message, tagger) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      await git.annotatedTag({
-        fs,
-        dir,
-        ref,
-        message,
-        tagger: tagger || { name: 'Tracyfy User', email: 'user@tracyfy.local' },
-      });
-      return { ok: true };
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:listTags', async (_event, dir) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      return await git.listTags({ fs, dir });
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:readTag', async (_event, dir, oid) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      const tag = await git.readTag({ fs, dir, oid });
-      return {
-        message: tag.tag.message,
-        timestamp: tag.tag.tagger.timestamp * 1000,
-        object: tag.tag.object,
-      };
-    } catch (error) {
-      return { error: error.message };
+      return { error: error.message, name: error.name };
     }
   });
 
@@ -453,100 +238,6 @@ export function registerIpcHandlers({
       await fs.mkdir(dirPath, { recursive: true });
       return { ok: true };
     } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  // ========== REMOTE GIT OPERATIONS ==========
-
-  ipcMain.handle('git:addRemote', async (_event, dir, name, url) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      await git.addRemote({ fs, dir, remote: name, url });
-      return { ok: true };
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:removeRemote', async (_event, dir, name) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      await git.deleteRemote({ fs, dir, remote: name });
-      return { ok: true };
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:listRemotes', async (_event, dir) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      const remotes = await git.listRemotes({ fs, dir });
-      return remotes.map((r) => ({ name: r.remote, url: r.url }));
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:fetch', async (_event, dir, remote, branch, token) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      const http = await import('isomorphic-git/http/node').then((m) => m.default);
-      const authToken = await resolveToken(token);
-      await git.fetch({
-        fs,
-        http,
-        dir,
-        remote: remote || 'origin',
-        ref: branch,
-        singleBranch: !!branch,
-        onAuth: authToken ? () => ({ username: 'x-access-token', password: authToken }) : undefined,
-      });
-      return { ok: true };
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:push', async (_event, dir, remote, branch, token) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      const http = await import('isomorphic-git/http/node').then((m) => m.default);
-      const authToken = await resolveToken(token);
-      await git.push({
-        fs,
-        http,
-        dir,
-        remote: remote || 'origin',
-        ref: branch || 'main',
-        onAuth: authToken ? () => ({ username: 'x-access-token', password: authToken }) : undefined,
-      });
-      return { ok: true };
-    } catch (error) {
-      return { error: error.message };
-    }
-  });
-
-  ipcMain.handle('git:pull', async (_event, dir, remote, branch, token, author) => {
-    try {
-      dir = await assertAllowedPath(dir);
-      const http = await import('isomorphic-git/http/node').then((m) => m.default);
-      const authToken = await resolveToken(token);
-      await git.pull({
-        fs,
-        http,
-        dir,
-        remote: remote || 'origin',
-        ref: branch || 'main',
-        author: author || { name: 'Tracyfy User', email: 'user@tracyfy.local' },
-        onAuth: authToken ? () => ({ username: 'x-access-token', password: authToken }) : undefined,
-      });
-      return { ok: true, conflicts: [] };
-    } catch (error) {
-      if (error.code === 'MergeConflictError' || error.code === 'CheckoutConflictError') {
-        return { ok: false, conflicts: error.data?.filepaths || [] };
-      }
       return { error: error.message };
     }
   });
