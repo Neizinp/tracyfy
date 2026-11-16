@@ -5,7 +5,16 @@
  */
 
 import type { Workflow } from '../types';
-import { objectToYaml, parseYamlFrontmatter, ensureArray } from './markdownBase';
+import {
+  objectToYaml,
+  parseYamlFrontmatter,
+  ensureArray,
+  filterValidCustomAttributes,
+  escapeBodyText as esc,
+  unescapeBodyText,
+} from './markdownBase';
+import type { ArtifactLink, WorkflowAction } from '../types';
+import type { CustomAttributeValue } from '../types/customAttributes';
 
 /**
  * Convert a Workflow object to Markdown with YAML frontmatter
@@ -14,6 +23,7 @@ export function workflowToMarkdown(workflow: Workflow): string {
   const frontmatter = {
     id: workflow.id,
     title: workflow.title,
+    type: workflow.type,
     createdBy: workflow.createdBy,
     assignedTo: workflow.assignedTo,
     status: workflow.status,
@@ -26,6 +36,9 @@ export function workflowToMarkdown(workflow: Workflow): string {
     approverComment: workflow.approverComment || null,
     isDeleted: workflow.isDeleted || false,
     deletedAt: workflow.deletedAt || null,
+    history: workflow.history || [],
+    linkedArtifacts: workflow.linkedArtifacts || [],
+    customAttributes: filterValidCustomAttributes(workflow.customAttributes),
   };
 
   const yaml = objectToYaml(frontmatter);
@@ -40,17 +53,17 @@ export function workflowToMarkdown(workflow: Workflow): string {
     statusText = `**Approved** by ${workflow.approvedBy} on ${new Date(
       workflow.approvalDate!
     ).toISOString()}${
-      workflow.approverComment ? `\n\n**Comment:**\n${workflow.approverComment}` : ''
+      workflow.approverComment ? `\n\n**Comment:**\n${esc(workflow.approverComment)}` : ''
     }`;
   } else if (workflow.status === 'rejected') {
     statusText = `**Rejected** by ${workflow.approvedBy}${
-      workflow.approverComment ? `\n\n**Reason:**\n${workflow.approverComment}` : ''
+      workflow.approverComment ? `\n\n**Reason:**\n${esc(workflow.approverComment)}` : ''
     }`;
   }
 
   const body = `# ${workflow.title}
 
-${workflow.description || ''}
+${esc(workflow.description)}
 
 ## Artifacts for Approval
 ${artifactsList}
@@ -79,14 +92,17 @@ export function parseMarkdownWorkflow(content: string): Workflow | null {
   }
 
   // Description is everything before the first H2 section
-  const description = body
-    .split('\n## ')[0]
-    .replace(/^# [^\n]+\n+/, '')
-    .trim();
+  const description = unescapeBodyText(
+    body
+      .split('\n## ')[0]
+      .replace(/^# [^\n]+(\n+|$)/, '')
+      .trim()
+  );
 
   return {
     id: (frontmatter.id as string) || '',
     title: (frontmatter.title as string) || '',
+    type: (frontmatter.type as string) || undefined,
     description,
     createdBy: (frontmatter.createdBy as string) || '',
     assignedTo: (frontmatter.assignedTo as string) || '',
@@ -100,5 +116,8 @@ export function parseMarkdownWorkflow(content: string): Workflow | null {
     isDeleted: (frontmatter.isDeleted as boolean) || false,
     deletedAt: (frontmatter.deletedAt as number) || undefined,
     revision: (frontmatter.revision as string) || '1',
+    history: ensureArray<WorkflowAction>(frontmatter.history),
+    linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
+    customAttributes: ensureArray<CustomAttributeValue>(frontmatter.customAttributes),
   };
 }
