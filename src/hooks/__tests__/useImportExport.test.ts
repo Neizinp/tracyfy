@@ -43,7 +43,6 @@ describe('useImportExport', () => {
 
         dateCreated: 1000000,
         lastModified: 1000000,
-        linkedArtifacts: [],
         isDeleted: false,
       },
     ];
@@ -62,7 +61,6 @@ describe('useImportExport', () => {
         priority: 'medium',
         revision: '01',
         lastModified: 1000000,
-        linkedArtifacts: [],
         isDeleted: false,
       },
     ];
@@ -77,7 +75,6 @@ describe('useImportExport', () => {
         revision: '01',
         dateCreated: 1000000,
         lastModified: 1000000,
-        requirementIds: [],
         author: '',
         isDeleted: false,
       },
@@ -92,7 +89,6 @@ describe('useImportExport', () => {
         revision: '01',
         dateCreated: 1000000,
         lastModified: 1000000,
-        linkedArtifacts: [],
         isDeleted: false,
       },
     ];

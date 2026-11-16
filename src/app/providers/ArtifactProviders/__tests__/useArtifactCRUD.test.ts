@@ -33,7 +33,6 @@ describe('hasArtifactChanges', () => {
     expect(hasArtifactChanges(existing, { description: '' })).toBe(false);
     expect(
       hasArtifactChanges(existing, {
-        linkedArtifacts: [],
         customAttributes: {},
       } as Partial<Item>)
     ).toBe(false);

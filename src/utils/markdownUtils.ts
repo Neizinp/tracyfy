@@ -6,7 +6,6 @@ import type {
   User,
   Project,
   Risk,
-  ArtifactLink,
   ArtifactDocument,
   DocumentEntry,
   BaseArtifact,
@@ -42,9 +41,6 @@ export function requirementToMarkdown(requirement: Requirement): string {
     revision: requirement.revision,
     dateCreated: requirement.dateCreated,
     lastModified: requirement.lastModified,
-
-    useCaseIds: requirement.useCaseIds || [],
-    linkedArtifacts: requirement.linkedArtifacts || [],
     author: requirement.author || '',
     verificationMethod: requirement.verificationMethod || '',
     approvalDate: requirement.approvalDate || null,
@@ -87,8 +83,6 @@ export function markdownToRequirement(markdown: string): Requirement {
     rationale: sections['Rationale'] || '',
 
     category: (frontmatter.category as string) || 'technical',
-    useCaseIds: ensureArray<string>(frontmatter.useCaseIds),
-    linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
     status: (frontmatter.status as string) || 'draft',
     priority: (frontmatter.priority as string) || 'medium',
     author: (frontmatter.author as string) || undefined,
@@ -118,8 +112,6 @@ export function convertUseCaseToMarkdown(useCase: UseCase): string {
     lastModified: useCase.lastModified,
     actor: useCase.actor,
     author: useCase.author || '',
-    useCaseIds: useCase.useCaseIds || [],
-    linkedArtifacts: useCase.linkedArtifacts || [],
     isDeleted: useCase.isDeleted || false,
     deletedAt: useCase.deletedAt || null,
     customAttributes: filterValidCustomAttributes(useCase.customAttributes),
@@ -173,8 +165,6 @@ export function markdownToUseCase(markdown: string): UseCase {
     lastModified: (frontmatter.lastModified as number) || Date.now(),
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
     author: (frontmatter.author as string) || undefined,
-    useCaseIds: ensureArray<string>(frontmatter.useCaseIds),
-    linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
     isDeleted: (frontmatter.isDeleted as boolean) || false,
     deletedAt: (frontmatter.deletedAt as number) || undefined,
     revision: (frontmatter.revision as string) || '01',
@@ -194,10 +184,8 @@ export function testCaseToMarkdown(testCase: TestCase): string {
     revision: testCase.revision,
     dateCreated: testCase.dateCreated,
     lastModified: testCase.lastModified,
-    requirementIds: testCase.requirementIds || [],
     author: testCase.author || '',
     lastRun: testCase.lastRun || null,
-    linkedArtifacts: testCase.linkedArtifacts || [],
     isDeleted: testCase.isDeleted || false,
     deletedAt: testCase.deletedAt || null,
     customAttributes: filterValidCustomAttributes(testCase.customAttributes),
@@ -215,9 +203,6 @@ ${esc(testCase.steps)}
 
 ## Expected Result
 ${esc(testCase.expectedResult)}
-
-## Requirements Covered
-${(testCase.requirementIds || []).map((id) => `- ${id}`).join('\n')}
 `.trim();
 
   return `${yaml}\n\n${body}`;
@@ -236,14 +221,12 @@ export function markdownToTestCase(markdown: string): TestCase {
     description: sections['Description'] || '',
     steps: sections['Steps'] || '',
     expectedResult: sections['Expected Result'] || '',
-    requirementIds: ensureArray<string>(frontmatter.requirementIds),
     status: (frontmatter.status as string) || 'draft',
     priority: (frontmatter.priority as string) || 'medium',
     author: (frontmatter.author as string) || undefined,
     lastRun: (frontmatter.lastRun as number) || undefined,
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
     lastModified: (frontmatter.lastModified as number) || Date.now(),
-    linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
     isDeleted: (frontmatter.isDeleted as boolean) || false,
     deletedAt: (frontmatter.deletedAt as number) || undefined,
     revision: (frontmatter.revision as string) || '01',
@@ -265,7 +248,6 @@ export function informationToMarkdown(information: Information): string {
     revision: information.revision,
     dateCreated: information.dateCreated,
     lastModified: information.lastModified,
-    linkedArtifacts: information.linkedArtifacts || [],
     isDeleted: information.isDeleted || false,
     deletedAt: information.deletedAt || null,
     customAttributes: filterValidCustomAttributes(information.customAttributes),
@@ -301,7 +283,6 @@ export function markdownToInformation(markdown: string): Information {
     author: (frontmatter.author as string) || undefined,
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
     lastModified: (frontmatter.lastModified as number) || Date.now(),
-    linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
     isDeleted: (frontmatter.isDeleted as boolean) || false,
     deletedAt: (frontmatter.deletedAt as number) || undefined,
     revision: (frontmatter.revision as string) || '01',
@@ -375,7 +356,6 @@ export function riskToMarkdown(risk: Risk): string {
     revision: risk.revision,
     dateCreated: risk.dateCreated,
     lastModified: risk.lastModified,
-    linkedArtifacts: risk.linkedArtifacts || [],
     isDeleted: risk.isDeleted || false,
     deletedAt: risk.deletedAt || null,
     customAttributes: filterValidCustomAttributes(risk.customAttributes),
@@ -419,7 +399,6 @@ export function markdownToRisk(markdown: string): Risk {
     author: (frontmatter.author as string) || undefined,
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
     lastModified: (frontmatter.lastModified as number) || Date.now(),
-    linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
     isDeleted: (frontmatter.isDeleted as boolean) || false,
     deletedAt: (frontmatter.deletedAt as number) || undefined,
     revision: (frontmatter.revision as string) || '01',
@@ -493,7 +472,6 @@ export function documentToMarkdown(document: ArtifactDocument): string {
     isDeleted: document.isDeleted || false,
     deletedAt: document.deletedAt || null,
     structure: document.structure || [],
-    linkedArtifacts: document.linkedArtifacts || [],
     customAttributes: filterValidCustomAttributes(document.customAttributes),
   };
 
@@ -523,7 +501,6 @@ export function markdownToDocument(markdown: string): ArtifactDocument {
     structure: ensureArray<DocumentEntry>(frontmatter.structure),
     author: (frontmatter.author as string) || undefined,
     status: (frontmatter.status as string) || undefined,
-    linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
     dateCreated: (frontmatter.dateCreated as number) || Date.now(),
     lastModified: (frontmatter.lastModified as number) || Date.now(),
     isDeleted: (frontmatter.isDeleted as boolean) || false,

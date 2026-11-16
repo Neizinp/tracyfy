@@ -13,7 +13,7 @@ import {
   escapeBodyText as esc,
   unescapeBodyText,
 } from './markdownBase';
-import type { ArtifactLink, WorkflowAction } from '../types';
+import type { WorkflowAction } from '../types';
 import type { CustomAttributeValue } from '../types/customAttributes';
 
 /**
@@ -37,7 +37,6 @@ export function workflowToMarkdown(workflow: Workflow): string {
     isDeleted: workflow.isDeleted || false,
     deletedAt: workflow.deletedAt || null,
     history: workflow.history || [],
-    linkedArtifacts: workflow.linkedArtifacts || [],
     customAttributes: filterValidCustomAttributes(workflow.customAttributes),
   };
 
@@ -117,7 +116,6 @@ export function parseMarkdownWorkflow(content: string): Workflow | null {
     deletedAt: (frontmatter.deletedAt as number) || undefined,
     revision: (frontmatter.revision as string) || '1',
     history: ensureArray<WorkflowAction>(frontmatter.history),
-    linkedArtifacts: ensureArray<ArtifactLink>(frontmatter.linkedArtifacts),
     customAttributes: ensureArray<CustomAttributeValue>(frontmatter.customAttributes),
   };
 }

@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { ArtifactLink } from '../types';
+import type { LinkType } from '../types';
 import { KIND_IDS, type ArtifactKindId } from '../domain/artifactKinds';
 import type { ArtifactsByKind } from './useLinkableArtifacts';
 
@@ -14,7 +14,7 @@ export interface LinkModalResult {
   /** Set when the source was chosen in the modal (e.g. from the Links page) */
   sourceId?: string;
   targetId: string;
-  type: ArtifactLink['type'];
+  type: LinkType;
 }
 
 interface UseLinkModalOptions {
@@ -37,7 +37,7 @@ export function useLinkModal({
   const [targetType, setTargetType] = useState<ArtifactKindId>('requirement');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
-  const [linkType, setLinkType] = useState<ArtifactLink['type']>('related_to');
+  const [linkType, setLinkType] = useState<LinkType>('related_to');
   // Source chosen inside the modal when none was preset (e.g. opened from the Links page)
   const [chosenSourceId, setChosenSourceId] = useState('');
 

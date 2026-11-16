@@ -76,11 +76,6 @@ describe('jsonExportUtils', () => {
     lastModified: 0,
     revision: '01',
     dateCreated: 0,
-    // Links are now stored in linkedArtifacts
-    linkedArtifacts: [
-      { targetId: 'u1', type: 'related_to' },
-      { targetId: 'external-id', type: 'depends_on' },
-    ],
   };
 
   const mockUseCase: UseCase = {
@@ -106,7 +101,6 @@ describe('jsonExportUtils', () => {
     lastModified: 0,
     revision: '01',
     dateCreated: 0,
-    requirementIds: [],
   };
 
   const mockInfo: Information = {
@@ -120,11 +114,10 @@ describe('jsonExportUtils', () => {
   };
 
   const globalState = {
-    requirements: [mockReq, { ...mockReq, id: 'r2', linkedArtifacts: [] }], // r2 not in project
+    requirements: [mockReq, { ...mockReq, id: 'r2' }], // r2 not in project
     useCases: [mockUseCase],
     testCases: [mockTestCase],
     information: [mockInfo],
-    // Note: links are no longer a separate array, they're in each artifact's linkedArtifacts
   };
 
   it('should export filtered data correctly', async () => {
@@ -148,10 +141,7 @@ describe('jsonExportUtils', () => {
     expect(data.project).toEqual({ name: 'Test Project', description: 'Test Description' });
     expect(data.requirements).toHaveLength(1);
     expect(data.requirements[0].id).toBe('r1');
-    // Links are now in each artifact's linkedArtifacts, not a separate array
-    expect(data.requirements[0].linkedArtifacts).toHaveLength(2);
-    expect(data.requirements[0].linkedArtifacts[0].targetId).toBe('u1');
-    // Links are now exported as a separate array from diskLinkService
+    // Links are exported as their own array (from the link files)
     expect(data.links).toBeDefined();
     expect(Array.isArray(data.links)).toBe(true);
   });

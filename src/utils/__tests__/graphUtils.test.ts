@@ -15,14 +15,8 @@ describe('graphUtils', () => {
   const createArtifact = (
     id: string,
     type: ArtifactKindId,
-    title: string = 'Test',
-    linkedArtifacts: string[] = []
-  ): UnifiedArtifact => ({
-    id,
-    type,
-    title,
-    linkedArtifacts: linkedArtifacts.map((targetId) => ({ targetId, type: 'related_to' })),
-  });
+    title: string = 'Test'
+  ): UnifiedArtifact => ({ id, type, title });
 
   describe('transformArtifactsToNodes', () => {
     it('should transform artifacts into React Flow nodes', () => {

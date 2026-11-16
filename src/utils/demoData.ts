@@ -597,7 +597,6 @@ Steps:
 4. Verify that 'requirements/REQ-TRAC-001.md' exists.
 5. Inspect Git status to see the new file staged.
 Expected Results: File exists on disk with correct content and is tracked by Git.`,
-      requirementIds: [],
       status: 'approved',
       priority: 'high',
       author: 'Backend QA',
@@ -615,7 +614,6 @@ Steps:
 4. Verify the link appears in the Traceability Graph.
 5. Check the Traceability Matrix for an 'X' at the intersection.
 Expected Results: Link is persisted and correctly visualized across all dashboard views.`,
-      requirementIds: [],
       status: 'approved',
       priority: 'high',
       author: 'Frontend QA',
@@ -632,7 +630,6 @@ Steps:
 3. Monitor network traffic for any unrecognized outbound requests.
 4. Verify that only authorized Git/Localhost requests occur.
 Expected Results: No engineering data is leaked to external endpoints.`,
-      requirementIds: [],
       status: 'approved',
       priority: 'high',
       author: 'Privacy Officer',
@@ -650,7 +647,6 @@ Steps:
 4. Download and open the PDF.
 5. Verify page breaks, numbering, and table formatting.
 Expected Results: PDF is readable, professional, and contains all requested sections.`,
-      requirementIds: [],
       status: 'approved',
       priority: 'medium',
       author: 'UX Designer',

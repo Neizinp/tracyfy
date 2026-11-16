@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { Search, Link as LinkIcon } from 'lucide-react';
-import type { ArtifactLink } from '../types';
+import type { LinkType } from '../types';
 import { ARTIFACT_KINDS, kind, type ArtifactKindId } from '../domain/artifactKinds';
 import type { ArtifactsByKind } from '../hooks/useLinkableArtifacts';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -321,7 +321,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
         <FormField label="Relation Type" fullWidth>
           <select
             value={linkType}
-            onChange={(e) => setLinkType(e.target.value as ArtifactLink['type'])}
+            onChange={(e) => setLinkType(e.target.value as LinkType)}
             style={{
               width: '100%',
               padding: '8px 12px',

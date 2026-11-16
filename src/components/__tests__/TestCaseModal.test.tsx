@@ -104,7 +104,6 @@ describe('TestCaseModal', () => {
     description: 'Test user login functionality',
     status: 'draft',
     priority: 'high',
-    requirementIds: ['REQ-001'],
     dateCreated: Date.now(),
     lastModified: Date.now(),
     revision: '01',

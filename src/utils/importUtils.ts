@@ -162,7 +162,6 @@ export function parseExcelImport(
       dateCreated: now,
       lastModified: now,
       revision: '01',
-      linkedArtifacts: [],
     }));
     requirements = validateImportedArtifacts<Requirement>(mapped, 'requirements', skipped);
   }
@@ -183,7 +182,6 @@ export function parseExcelImport(
       status: cell(row['Status']) || 'draft',
       lastModified: now,
       revision: '01',
-      linkedArtifacts: [],
     }));
     useCases = validateImportedArtifacts<UseCase>(mapped, 'useCases', skipped);
   }

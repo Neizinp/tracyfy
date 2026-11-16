@@ -39,7 +39,6 @@ describe('Requirement Markdown Conversion', () => {
         text: 'The system shall do something',
         rationale: 'Because it is needed',
 
-        useCaseIds: ['UC-001', 'UC-002'],
         status: 'draft',
         priority: 'high',
         dateCreated: 1700000000000,
@@ -79,8 +78,7 @@ describe('Requirement Markdown Conversion', () => {
 
       const markdown = requirementToMarkdown(requirement);
 
-      expect(markdown).toContain('');
-      expect(markdown).toContain('useCaseIds: []');
+      expect(markdown).toContain('id: "REQ-001"');
     });
 
     it('should escape special characters in YAML', () => {
@@ -125,31 +123,6 @@ describe('Requirement Markdown Conversion', () => {
       expect(markdown).toContain('Line 1\nLine 2\nLine 3');
     });
 
-    it('should preserve array fields', () => {
-      const requirement: Requirement = {
-        id: 'REQ-001',
-        title: 'Test',
-        description: 'Desc',
-        text: 'Text',
-        rationale: 'Rationale',
-        useCaseIds: ['UC-001', 'UC-002', 'UC-003'],
-        status: 'draft',
-        priority: 'medium',
-        dateCreated: 1700000000000,
-        lastModified: 1700000000000,
-        revision: '01',
-      };
-
-      const markdown = requirementToMarkdown(requirement);
-
-      expect(markdown).toContain('useCaseIds:');
-      expect(markdown).toContain('- "UC-001"');
-      expect(markdown).toContain('- "UC-002"');
-      expect(markdown).toContain('- "UC-003"');
-    });
-  });
-
-  describe('markdownToRequirement', () => {
     it('should parse valid requirement markdown', () => {
       const markdown = `---
 id: "REQ-001"
@@ -160,7 +133,6 @@ revision: "01"
 dateCreated: 1700000000000
 lastModified: 1700000000000
 
-useCaseIds: []
 ---
 
 # Test Requirement
@@ -251,7 +223,6 @@ Test
         text: 'The system shall do something',
         rationale: 'Because it is needed',
 
-        useCaseIds: ['UC-001'],
         status: 'approved',
         priority: 'high',
         author: 'Test Author',
@@ -270,43 +241,32 @@ Test
       expect(parsed.description).toBe(original.description);
       expect(parsed.text).toBe(original.text);
       expect(parsed.rationale).toBe(original.rationale);
-      expect(parsed.useCaseIds).toEqual(original.useCaseIds);
       expect(parsed.status).toBe(original.status);
       expect(parsed.priority).toBe(original.priority);
       expect(parsed.revision).toBe(original.revision);
     });
 
-    it('should handle array parsing in YAML list format', () => {
-      // The parser now supports both YAML list format and JSON array format
+    it('drops relation fields that older versions stored in the file', () => {
+      // Relations are links (links/), not fields of the artifact
       const markdown = `---
 id: "REQ-001"
 title: "Test"
-status: "draft"
-priority: "high"
-revision: "01"
-dateCreated: 1700000000000
-lastModified: 1700000000000
-  - "REQ-000"
-  - "REQ-001"
 useCaseIds:
   - "UC-001"
+linkedArtifacts:
+  - targetId: "REQ-002"
+    type: "satisfies"
 ---
 
 # Test
-
-## Description
-Desc
-
-## Requirement Text
-Text
-
-## Rationale
-Rationale
 `;
 
       const requirement = markdownToRequirement(markdown);
 
-      expect(requirement.useCaseIds).toEqual(['UC-001']);
+      expect(requirement.title).toBe('Test');
+      expect(requirement).not.toHaveProperty('useCaseIds');
+      expect(requirement).not.toHaveProperty('linkedArtifacts');
+      expect(requirementToMarkdown(requirement)).not.toMatch(/useCaseIds|linkedArtifacts/);
     });
   });
 });
@@ -416,12 +376,11 @@ User is logged in
 
 describe('TestCase Markdown Conversion', () => {
   describe('testCaseToMarkdown', () => {
-    it('should serialize all fields including requirementIds', () => {
+    it('does not store the requirements it covers (those are links)', () => {
       const testCase: TestCase = {
         id: 'TC-001',
         title: 'Login Test',
         description: 'Tests login functionality',
-        requirementIds: ['REQ-001', 'REQ-002'],
         status: 'passed',
         priority: 'high',
         author: 'Test Author',
@@ -433,9 +392,8 @@ describe('TestCase Markdown Conversion', () => {
       const markdown = testCaseToMarkdown(testCase);
 
       expect(markdown).toContain('id: "TC-001"');
-      expect(markdown).toContain('requirementIds:');
-      expect(markdown).toContain('- "REQ-001"');
-      expect(markdown).toContain('- "REQ-002"');
+      expect(markdown).not.toContain('requirementIds');
+      expect(markdown).not.toContain('Requirements Covered');
     });
   });
 
@@ -450,7 +408,6 @@ priority: "high"
 revision: "01"
 dateCreated: 1700000000000
 lastModified: 1700000000000
-requirementIds: ["REQ-001", "REQ-002"]
 author: "Test Author"
 ---
 
@@ -468,7 +425,6 @@ Tests login functionality
 
       expect(testCase.id).toBe('TC-001');
       expect(testCase.title).toBe('Login Test');
-      expect(testCase.requirementIds).toEqual(['REQ-001', 'REQ-002']);
       expect(testCase.status).toBe('passed');
     });
 
@@ -477,7 +433,6 @@ Tests login functionality
         id: 'TC-001',
         title: 'Test Case',
         description: 'Description',
-        requirementIds: ['REQ-001', 'REQ-002'],
         status: 'draft',
         priority: 'high',
         dateCreated: 1700000000000,
@@ -486,11 +441,11 @@ Tests login functionality
       };
 
       const markdown = testCaseToMarkdown(original);
-      console.log('Generated markdown:', markdown);
       const parsed = markdownToTestCase(markdown);
 
       expect(parsed.id).toBe(original.id);
-      expect(parsed.requirementIds).toEqual(original.requirementIds);
+      expect(parsed.title).toBe(original.title);
+      expect(parsed.description).toBe(original.description);
     });
   });
 });

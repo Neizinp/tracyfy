@@ -33,22 +33,12 @@ describe('TraceabilityGraph', () => {
   const createArtifact = (
     id: string,
     type: ArtifactKindId,
-    title: string = 'Test',
-    linkedArtifacts: { targetId: string; type: 'satisfies' | 'related_to' | 'verifies' }[] = []
-  ): UnifiedArtifact => ({
-    id,
-    type,
-    title,
-    linkedArtifacts,
-  });
+    title: string = 'Test'
+  ): UnifiedArtifact => ({ id, type, title });
 
   const mockArtifacts: UnifiedArtifact[] = [
-    createArtifact('REQ-001', 'requirement', 'First Requirement', [
-      { targetId: 'UC-001', type: 'satisfies' },
-    ]),
-    createArtifact('UC-001', 'useCase', 'First Use Case', [
-      { targetId: 'TC-001', type: 'related_to' },
-    ]),
+    createArtifact('REQ-001', 'requirement', 'First Requirement'),
+    createArtifact('UC-001', 'useCase', 'First Use Case'),
     createArtifact('TC-001', 'testCase', 'First Test Case'),
     createArtifact('INFO-001', 'information', 'Documentation'),
   ];

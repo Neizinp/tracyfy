@@ -50,7 +50,6 @@ const mockTestCase: TestCase = {
   lastModified: 0,
   revision: '01',
   dateCreated: 0,
-  requirementIds: [],
   isDeleted: false,
 };
 

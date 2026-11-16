@@ -48,7 +48,6 @@ export function useRiskForm({ isOpen, risk, onClose, onSubmit }: UseRiskFormOpti
     confirmDelete,
     cancelDelete,
     showDeleteConfirm,
-    handleRemoveLink,
   } = useArtifactForm<Risk, Tab>({
     isOpen,
     artifact: risk,
@@ -154,7 +153,6 @@ export function useRiskForm({ isOpen, risk, onClose, onSubmit }: UseRiskFormOpti
     confirmDelete,
     cancelDelete,
     showDeleteConfirm,
-    handleRemoveLink,
     handleNavigateToArtifact,
   };
 }

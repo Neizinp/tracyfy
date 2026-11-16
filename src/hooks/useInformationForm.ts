@@ -51,7 +51,6 @@ export function useInformationForm({
     confirmDelete,
     cancelDelete,
     showDeleteConfirm,
-    handleRemoveLink,
   } = useArtifactForm<Information, Tab>({
     isOpen,
     artifact: information,
@@ -114,7 +113,6 @@ export function useInformationForm({
     confirmDelete,
     cancelDelete,
     showDeleteConfirm,
-    handleRemoveLink,
     handleNavigateToArtifact,
   };
 }

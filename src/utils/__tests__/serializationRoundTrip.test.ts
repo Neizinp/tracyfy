@@ -68,7 +68,6 @@ const common = {
     { attributeId: 'ATTR-003', value: true },
     { attributeId: 'ATTR-004', value: null },
   ],
-  linkedArtifacts: [{ targetId: 'UC-002', type: 'satisfies' as const }],
 };
 
 const requirement: Requirement = {
@@ -86,7 +85,6 @@ const requirement: Requirement = {
   verificationMethod: 'test',
   approvalDate: T0 + 3,
   author: 'Ada',
-  useCaseIds: ['UC-001', 'UC-002'],
 };
 
 const useCase: UseCase = {
@@ -105,7 +103,6 @@ const useCase: UseCase = {
   mainFlow: TRICKY,
   alternativeFlows: TRICKY,
   dateCreated: T0,
-  useCaseIds: ['UC-001'],
   author: 'Ada',
 };
 
@@ -121,7 +118,6 @@ const testCase: TestCase = {
   dateCreated: T0,
   lastRun: T0 + 4,
   author: 'Ada',
-  requirementIds: ['REQ-001', 'REQ-042'],
 };
 
 const information: Information = {

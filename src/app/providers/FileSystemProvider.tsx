@@ -25,17 +25,6 @@ import {
   documentService,
 } from '../../services/artifactServices';
 import { diskLinkService } from '../../services/diskLinkService';
-import { migrateEmbeddedLinks } from '../../services/linkMigrationService';
-import { notifyError } from './ToastProvider';
-
-/** Convert links embedded by older versions into link files (no-op once done) */
-async function migrateLegacyLinks(): Promise<void> {
-  try {
-    await migrateEmbeddedLinks();
-  } catch (err) {
-    notifyError('Could not migrate links from an older version of the project', err);
-  }
-}
 import { useBackgroundTaskActions } from './BackgroundTasksProvider';
 import type {
   Requirement,
@@ -276,7 +265,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
               // Initialize disk project service directories
               await diskProjectService.initialize();
-              await migrateLegacyLinks();
 
               // Load data and git status in parallel (they're independent)
               const [, status] = await Promise.all([reloadData(), loadStatus()]);
@@ -343,7 +331,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       // Initialize disk project service directories
       await diskProjectService.initialize();
-      await migrateLegacyLinks();
 
       // Load data and git status in parallel (they're independent)
       const [, status] = await Promise.all([reloadData(), loadStatus()]);

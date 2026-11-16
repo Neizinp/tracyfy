@@ -115,7 +115,6 @@ describe('RiskModal', () => {
     lastModified: Date.now(),
     dateCreated: Date.now(),
     revision: '01',
-    linkedArtifacts: [],
   };
 
   const defaultProps = {

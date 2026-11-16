@@ -46,6 +46,27 @@ describe('integration: one link model', () => {
     } as unknown as typeof ResizeObserver;
   });
 
+  it('artifact files hold no relations, and linking changes neither artifact', async () => {
+    h = await startApp();
+    const req = await addRequirement(h, 'Login');
+    const tc = await addTestCase(h, 'Log in');
+    await h.settle();
+    const files = [`requirements/${req.id}.md`, `testcases/${tc.id}.md`];
+    const before = files.map((f) => h.readFile(f));
+    const dirtyBefore = await h.dirtyPaths(); // new artifacts wait for the user's commit
+
+    for (const content of before) {
+      expect(content).not.toMatch(/requirementIds|useCaseIds|linkedArtifacts/);
+    }
+
+    const link = await act(() => h.app().fileSystem.createLink(tc.id, req.id, 'verifies'));
+    await act(() => h.app().fileSystem.deleteLink(link.id));
+    await h.settle();
+
+    expect(files.map((f) => h.readFile(f))).toEqual(before);
+    expect(await h.dirtyPaths()).toEqual(dirtyBefore);
+  }, 60_000);
+
   it('the test case list shows the requirements a test case verifies', async () => {
     h = await startApp({ initialRoute: '/test-cases' });
     const login = await addRequirement(h, 'Login');
