@@ -155,10 +155,6 @@ export function parseExcelImport(
       description: cell(row['Description']),
       text: cell(row['Requirement Text']),
       rationale: cell(row['Rationale']),
-      parentIds: cell(row['Parents'])
-        .split(',')
-        .map((id) => id.trim())
-        .filter(isValidArtifactId),
       dateCreated: now,
       lastModified: now,
       revision: '01',
