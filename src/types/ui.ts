@@ -9,7 +9,6 @@ export interface ColumnVisibility {
   category: boolean;
   created: boolean;
   revision: boolean;
-  projects: boolean;
   author: boolean;
   [key: string]: boolean | undefined;
 }
@@ -22,7 +21,6 @@ export interface UseCaseColumnVisibility {
   status: boolean;
   created: boolean;
   revision: boolean;
-  projects: boolean;
   author: boolean;
   [key: string]: boolean | undefined;
 }
@@ -35,7 +33,6 @@ export interface TestCaseColumnVisibility {
   requirements: boolean;
   created: boolean;
   revision: boolean;
-  projects: boolean;
   author: boolean;
   [key: string]: boolean | undefined;
 }
@@ -48,7 +45,6 @@ export interface InformationColumnVisibility {
   author: boolean;
   created: boolean;
   revision: boolean;
-  projects: boolean;
   [key: string]: boolean | undefined;
 }
 
@@ -64,7 +60,6 @@ export interface RiskColumnVisibility {
   contingency: boolean;
   created: boolean;
   revision: boolean;
-  projects: boolean;
   author: boolean;
   [key: string]: boolean | undefined;
 }
@@ -75,7 +70,6 @@ export interface DocumentColumnVisibility {
   structure: boolean;
   created: boolean;
   revision: boolean;
-  projects: boolean;
   author: boolean;
   status: boolean;
   [key: string]: boolean | undefined;

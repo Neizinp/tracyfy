@@ -1,7 +1,7 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import type { Requirement, ColumnVisibility } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
-import { useProject, useCustomAttributes } from '../app/providers';
+import { useCustomAttributes } from '../app/providers';
 import { BaseArtifactTable, type ColumnDef } from './BaseArtifactTable';
 import { MarkdownCell } from './index';
 import type { SortConfig } from './SortableHeader';
@@ -14,22 +14,14 @@ interface RequirementListProps {
   onSortChange: (key: string) => void;
 }
 
-export const RequirementList: React.FC<
-  Omit<RequirementListProps, 'showProjectColumn' | 'projects'>
-> = ({ requirements, onEdit, visibleColumns, sortConfig, onSortChange }) => {
-  const { projects } = useProject();
+export const RequirementList: React.FC<RequirementListProps> = ({
+  requirements,
+  onEdit,
+  visibleColumns,
+  sortConfig,
+  onSortChange,
+}) => {
   const { definitions } = useCustomAttributes();
-
-  const getProjectNames = useCallback(
-    (reqId: string) => {
-      if (!projects) return '';
-      return projects
-        .filter((p) => p.requirementIds.includes(reqId))
-        .map((p) => p.name)
-        .join(', ');
-    },
-    [projects]
-  );
 
   const columns = useMemo<ColumnDef<Requirement>[]>(
     () => [
@@ -64,37 +56,6 @@ export const RequirementList: React.FC<
           >
             {req.revision || '01'}
           </span>
-        ),
-      },
-      {
-        key: 'projects',
-        label: 'Project(s)',
-        width: '150px',
-        visible: visibleColumns.projects,
-        sortable: false,
-        render: (req) => (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-            {getProjectNames(req.id)
-              .split(', ')
-              .map(
-                (name: string, i: number) =>
-                  name && (
-                    <span
-                      key={i}
-                      style={{
-                        fontSize: 'var(--font-size-xs)',
-                        padding: '2px 6px',
-                        borderRadius: 'var(--radius-xs)',
-                        background: 'var(--color-bg-tertiary)',
-                        color: 'var(--color-text-secondary)',
-                        border: '1px solid var(--color-border)',
-                      }}
-                    >
-                      {name}
-                    </span>
-                  )
-              )}
-          </div>
         ),
       },
       {
@@ -252,7 +213,6 @@ export const RequirementList: React.FC<
               'comments',
               'created',
               'approved',
-              'projects',
             ].includes(key) && visibleColumns[key]
         )
         .map((key) => {
@@ -267,7 +227,7 @@ export const RequirementList: React.FC<
           };
         }),
     ],
-    [visibleColumns, getProjectNames, definitions]
+    [visibleColumns, definitions]
   );
 
   return (

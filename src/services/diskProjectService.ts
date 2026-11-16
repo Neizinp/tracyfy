@@ -169,11 +169,6 @@ class DiskProjectService extends BaseDiskService {
       id,
       name,
       description,
-      requirementIds: [],
-      useCaseIds: [],
-      testCaseIds: [],
-      informationIds: [],
-      riskIds: [],
       lastModified: Date.now(),
     };
 
@@ -237,38 +232,6 @@ class DiskProjectService extends BaseDiskService {
    */
   async permanentDeleteProject(projectId: string): Promise<void> {
     await projectService.delete(projectId, `Project deleted: ${projectId}`);
-  }
-
-  /**
-   * Copy a project with a new name and description
-   */
-  async copyProject(
-    originalProject: Project,
-    newName: string,
-    newDescription: string
-  ): Promise<Project> {
-    // Check if name already exists
-    const nameExists = await this.checkProjectNameExists(newName);
-    if (nameExists) {
-      throw new Error(`A project named "${newName}" already exists`);
-    }
-
-    const newId = `proj-${Date.now()}`;
-
-    const newProject: Project = {
-      id: newId,
-      name: newName,
-      description: newDescription,
-      lastModified: Date.now(),
-      requirementIds: [...originalProject.requirementIds],
-      useCaseIds: [...originalProject.useCaseIds],
-      testCaseIds: [...originalProject.testCaseIds],
-      informationIds: [...originalProject.informationIds],
-      riskIds: [...(originalProject.riskIds || [])],
-    };
-
-    await projectService.save(newProject);
-    return newProject;
   }
 
   /**

@@ -22,8 +22,7 @@ interface DocumentEditorProps {
 }
 
 export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onChange }) => {
-  const { globalRequirements, globalUseCases, globalTestCases, globalInformation, globalRisks } =
-    useGlobalState();
+  const { requirements, useCases, testCases, information, risks } = useGlobalState();
   const [isAddingArtifact, setIsAddingArtifact] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<ArtifactType>('requirements');
@@ -78,46 +77,38 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
   const filteredArtifacts = useMemo(() => {
     let list: { id: string; title: string; type: ArtifactType }[] = [];
     if (selectedType === 'requirements')
-      list = globalRequirements.map((a) => ({
+      list = requirements.map((a) => ({
         id: a.id,
         title: a.title,
         type: 'requirements' as ArtifactType,
       }));
     else if (selectedType === 'useCases')
-      list = globalUseCases.map((a) => ({
+      list = useCases.map((a) => ({
         id: a.id,
         title: a.title,
         type: 'useCases' as ArtifactType,
       }));
     else if (selectedType === 'testCases')
-      list = globalTestCases.map((a) => ({
+      list = testCases.map((a) => ({
         id: a.id,
         title: a.title,
         type: 'testCases' as ArtifactType,
       }));
     else if (selectedType === 'information')
-      list = globalInformation.map((a) => ({
+      list = information.map((a) => ({
         id: a.id,
         title: a.title,
         type: 'information' as ArtifactType,
       }));
     else if (selectedType === 'risks')
-      list = globalRisks.map((a) => ({ id: a.id, title: a.title, type: 'risks' as ArtifactType }));
+      list = risks.map((a) => ({ id: a.id, title: a.title, type: 'risks' as ArtifactType }));
 
     if (!searchQuery) return list;
     const query = searchQuery.toLowerCase();
     return list.filter(
       (a) => a.id.toLowerCase().includes(query) || a.title.toLowerCase().includes(query)
     );
-  }, [
-    selectedType,
-    searchQuery,
-    globalRequirements,
-    globalUseCases,
-    globalTestCases,
-    globalInformation,
-    globalRisks,
-  ]);
+  }, [selectedType, searchQuery, requirements, useCases, testCases, information, risks]);
 
   const getIcon = (type: ArtifactType) => {
     switch (type) {

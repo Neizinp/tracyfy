@@ -151,16 +151,7 @@ export async function createDemoProject(): Promise<Project> {
     ...risks.map((r) => riskService.save(r)),
   ]);
 
-  // 5. Update project with artifact IDs
-  project.requirementIds = createdIds.requirements;
-  project.useCaseIds = createdIds.useCases;
-  project.testCaseIds = createdIds.testCases;
-  project.informationIds = createdIds.information;
-  project.riskIds = createdIds.risks;
-  project.lastModified = now;
-  await diskProjectService.updateProject(project);
-
-  // 6. Create links between artifacts SEQUENTIALLY to avoid race condition on counter file
+  // 5. Create links between artifacts SEQUENTIALLY to avoid race condition on counter file
   // Note: Promise.all() was causing all links to get the same ID because getNextId()
   // reads/writes a counter file, and parallel calls all read the same counter value.
   for (const linkDef of DEMO_ARTIFACTS.links) {

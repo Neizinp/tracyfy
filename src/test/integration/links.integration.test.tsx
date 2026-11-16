@@ -12,7 +12,7 @@ import { startApp, type Harness } from './appHarness';
 import type { Requirement } from '../../types';
 
 async function addRequirement(h: Harness, title: string): Promise<Requirement> {
-  const before = new Set(h.app().globalState.globalRequirements.map((r) => r.id));
+  const before = new Set(h.app().globalState.requirements.map((r) => r.id));
   await act(() =>
     h.app().requirements.handleAddRequirement({
       title,
@@ -26,7 +26,7 @@ async function addRequirement(h: Harness, title: string): Promise<Requirement> {
   );
   let created: Requirement | undefined;
   await waitFor(() => {
-    created = h.app().globalState.globalRequirements.find((r) => !before.has(r.id));
+    created = h.app().globalState.requirements.find((r) => !before.has(r.id));
     expect(created).toBeDefined();
   });
   return created!;
@@ -160,7 +160,7 @@ describe('integration: links', () => {
     await h.settle();
 
     await waitFor(() =>
-      expect(h.app().globalState.globalRequirements[0]).toMatchObject({
+      expect(h.app().globalState.requirements[0]).toMatchObject({
         title: 'Login v2',
         revision: '02',
       })

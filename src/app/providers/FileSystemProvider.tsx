@@ -622,11 +622,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           id: `project-${Date.now()}`,
           name,
           description,
-          requirementIds: [],
-          useCaseIds: [],
-          testCaseIds: [],
-          informationIds: [],
-          riskIds: [],
           lastModified: Date.now(),
         };
       } else {

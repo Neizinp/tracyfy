@@ -15,16 +15,6 @@ interface ProjectContextValue {
   createProject: (name: string, description: string) => Promise<Project>;
   updateProject: (project: Project) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
-  addToProject: (
-    artifacts: {
-      requirements: string[];
-      useCases: string[];
-      testCases: string[];
-      information: string[];
-      risks?: string[];
-    },
-    targetProjectId?: string
-  ) => Promise<void>;
 }
 
 const ProjectContext = createContext<ProjectContextValue | undefined>(undefined);
@@ -83,35 +73,6 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     [fsDeleteProject, currentProjectId, projects, setCurrentProject]
   );
 
-  const addToProject = useCallback(
-    async (
-      artifacts: {
-        requirements: string[];
-        useCases: string[];
-        testCases: string[];
-        information: string[];
-        risks?: string[];
-      },
-      targetProjectId: string = currentProjectId
-    ) => {
-      const project = projects.find((p) => p.id === targetProjectId);
-      if (!project) return;
-
-      const updatedProject: Project = {
-        ...project,
-        requirementIds: Array.from(new Set([...project.requirementIds, ...artifacts.requirements])),
-        useCaseIds: Array.from(new Set([...project.useCaseIds, ...artifacts.useCases])),
-        testCaseIds: Array.from(new Set([...project.testCaseIds, ...artifacts.testCases])),
-        informationIds: Array.from(new Set([...project.informationIds, ...artifacts.information])),
-        riskIds: Array.from(new Set([...project.riskIds, ...(artifacts.risks || [])])),
-        lastModified: Date.now(),
-      };
-
-      await saveProject(updatedProject);
-    },
-    [currentProjectId, projects, saveProject]
-  );
-
   const value: ProjectContextValue = useMemo(
     () => ({
       projects,
@@ -122,10 +83,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       createProject,
       updateProject,
       deleteProject,
-      addToProject,
     }),
     [
-      addToProject,
       createProject,
       currentProject,
       currentProjectId,

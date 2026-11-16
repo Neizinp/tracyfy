@@ -11,22 +11,12 @@ const mockProjects: Project[] = [
     id: 'proj-001',
     name: 'Test Project 1',
     description: 'Test Description 1',
-    requirementIds: ['REQ-001'],
-    useCaseIds: ['UC-001'],
-    testCaseIds: ['TC-001'],
-    informationIds: ['INFO-001'],
-    riskIds: [],
     lastModified: 1000000,
   },
   {
     id: 'proj-002',
     name: 'Test Project 2',
     description: 'Test Description 2',
-    requirementIds: [],
-    useCaseIds: [],
-    testCaseIds: [],
-    informationIds: [],
-    riskIds: [],
     lastModified: 2000000,
   },
 ];
@@ -39,11 +29,6 @@ const mockFsCreateProject = vi
       id: `proj-${Date.now()}`,
       name,
       description,
-      requirementIds: [],
-      useCaseIds: [],
-      testCaseIds: [],
-      informationIds: [],
-      riskIds: [],
       lastModified: Date.now(),
     };
     return newProject;
@@ -194,32 +179,6 @@ describe('ProjectProvider', () => {
       });
 
       expect(mockFsDeleteProject).toHaveBeenCalledWith('proj-002');
-    });
-
-    it('should add artifacts to project', async () => {
-      const wrapper = ({ children }: { children: React.ReactNode }) => (
-        <ProjectProvider>{children}</ProjectProvider>
-      );
-
-      const { result } = renderHook(() => useProject(), { wrapper });
-
-      await act(async () => {
-        await result.current.addToProject({
-          requirements: ['REQ-002'],
-          useCases: ['UC-002'],
-          testCases: ['TC-002'],
-          information: ['INFO-002'],
-        });
-      });
-
-      expect(mockSaveProject).toHaveBeenCalledWith(
-        expect.objectContaining({
-          requirementIds: expect.arrayContaining(['REQ-001', 'REQ-002']),
-          useCaseIds: expect.arrayContaining(['UC-001', 'UC-002']),
-          testCaseIds: expect.arrayContaining(['TC-001', 'TC-002']),
-          informationIds: expect.arrayContaining(['INFO-001', 'INFO-002']),
-        })
-      );
     });
 
     it('should throw error when used outside provider', () => {

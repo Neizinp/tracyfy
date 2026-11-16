@@ -63,7 +63,7 @@ describe('integration: legacy embedded links', () => {
     expect(await h.dirtyPaths()).toEqual([]);
 
     // Shown in the requirement's Relationships tab
-    const req = h.app().globalState.globalRequirements.find((r) => r.id === 'REQ-001')!;
+    const req = h.app().globalState.requirements.find((r) => r.id === 'REQ-001')!;
     await act(async () => h.app().requirements.handleEdit(req));
     fireEvent.click(await screen.findByRole('button', { name: 'Relationships' }));
     expect(within(await screen.findByRole('dialog')).getByText('REQ-002')).toBeInTheDocument();

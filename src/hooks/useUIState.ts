@@ -32,7 +32,6 @@ const getDefaultColumnVisibility = (): ColumnVisibility => ({
   comments: true,
   created: true,
   revision: true,
-  projects: true,
 });
 
 export function useUIState() {
@@ -63,7 +62,6 @@ export function useUIState() {
     comments: false,
     created: false,
     revision: false,
-    projects: false,
   });
 
   // Column Visibility - Other artifact types
@@ -75,7 +73,6 @@ export function useUIState() {
     status: true,
     created: true,
     revision: false,
-    projects: false,
     author: true,
   });
 
@@ -89,7 +86,6 @@ export function useUIState() {
       author: true,
       created: true,
       revision: false,
-      projects: false,
     });
 
   const [informationColumnVisibility, setInformationColumnVisibility] =
@@ -101,7 +97,6 @@ export function useUIState() {
       author: true,
       created: true,
       revision: false,
-      projects: false,
     });
 
   const [riskColumnVisibility, setRiskColumnVisibility] = useState<RiskColumnVisibility>({
@@ -116,7 +111,6 @@ export function useUIState() {
     contingency: false,
     created: true,
     revision: false,
-    projects: false,
     author: true,
   });
 
@@ -127,7 +121,6 @@ export function useUIState() {
       structure: true,
       created: true,
       revision: false,
-      projects: false,
       author: true,
       status: true,
     });

@@ -1,8 +1,7 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import type { ReactNode } from 'react';
 import type { ArtifactDocument } from '../../../types';
 import { createArtifactProvider } from './BaseArtifactProvider';
-import { useProject } from '../ProjectProvider';
 
 // Define the interface to match existing usage
 interface DocumentsContextValue {
@@ -26,7 +25,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Ar
   useFS: (fs) => ({
     save: fs.saveDocument,
     delete: fs.deleteDocument,
-    fsItems: fs.documents,
     isReady: fs.isReady,
   }),
   useUIHelpers: (ui) => ({
@@ -41,22 +39,9 @@ export const DocumentsProvider: React.FC<{ children: ReactNode }> = ({ children 
 
 export const useDocuments = (): DocumentsContextValue => {
   const context = useProviderContext();
-  const { currentProjectId } = useProject();
-
-  const handleAddDocument = useCallback(
-    async (doc: Omit<ArtifactDocument, 'id' | 'lastModified' | 'revision'>) => {
-      const nextId = await context.handleAdd({
-        ...doc,
-        projectId: doc.projectId || currentProjectId,
-      } as unknown as Omit<ArtifactDocument, 'id' | 'lastModified' | 'revision'>);
-      return nextId;
-    },
-    [context, currentProjectId]
-  );
-
   return {
     documents: context.items,
-    handleAddDocument,
+    handleAddDocument: context.handleAdd,
     handleUpdateDocument: context.handleUpdate,
     handleDeleteDocument: context.handleDelete,
     handleRestoreDocument: context.handleRestore,

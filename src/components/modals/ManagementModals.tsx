@@ -1,3 +1,4 @@
+import { activeIds } from '../../utils/activeArtifacts';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   LinkModal,
@@ -40,10 +41,9 @@ import { notifyError } from '../../app/providers/ToastProvider';
 
 export const ManagementModals: React.FC = () => {
   const ui = useUI();
-  const { projects, currentProjectId, currentProject } = useProject();
+  const { currentProjectId, currentProject } = useProject();
 
-  const { globalRequirements, globalUseCases, globalTestCases, globalInformation } =
-    useGlobalState();
+  const { requirements, useCases, testCases, information } = useGlobalState();
 
   const { baselines, createBaseline } = useBaselines();
   const { risks } = useRisks();
@@ -66,16 +66,16 @@ export const ManagementModals: React.FC = () => {
     async (options: ExportOptions) => {
       if (!currentProject) return;
 
-      const reqIds = options.includeRequirements ? currentProject.requirementIds : [];
-      const ucIds = options.includeUseCases ? currentProject.useCaseIds : [];
-      const tcIds = options.includeTestCases ? currentProject.testCaseIds : [];
-      const infoIds = options.includeInformation ? currentProject.informationIds : [];
+      const reqIds = options.includeRequirements ? activeIds(requirements) : [];
+      const ucIds = options.includeUseCases ? activeIds(useCases) : [];
+      const tcIds = options.includeTestCases ? activeIds(testCases) : [];
+      const infoIds = options.includeInformation ? activeIds(information) : [];
 
       const globalState = {
-        requirements: globalRequirements,
-        useCases: globalUseCases,
-        testCases: globalTestCases,
-        information: globalInformation,
+        requirements: requirements,
+        useCases: useCases,
+        testCases: testCases,
+        information: information,
         risks: risks,
         documents: documents,
       };
@@ -97,12 +97,7 @@ export const ManagementModals: React.FC = () => {
                 options.baseline,
                 currentUser?.name,
                 options.includeDocuments,
-                documents.filter(
-                  (d) =>
-                    !d.isDeleted &&
-                    (d.projectId === currentProject.id ||
-                      currentProject.documentIds?.includes(d.id))
-                )
+                documents.filter((d) => !d.isDeleted)
               );
             } finally {
               endTask(taskId);
@@ -116,10 +111,10 @@ export const ManagementModals: React.FC = () => {
               await exportProjectToExcel(
                 currentProject,
                 globalState,
-                options.includeRequirements ? currentProject.requirementIds : [],
-                options.includeUseCases ? currentProject.useCaseIds : [],
-                options.includeTestCases ? currentProject.testCaseIds : [],
-                options.includeInformation ? currentProject.informationIds : [],
+                reqIds,
+                ucIds,
+                tcIds,
+                infoIds,
                 baselines,
                 options
               );
@@ -138,8 +133,8 @@ export const ManagementModals: React.FC = () => {
                 ucIds,
                 tcIds,
                 infoIds,
-                currentProject.riskIds || [],
-                currentProject.documentIds || []
+                activeIds(risks),
+                activeIds(documents)
               );
             } finally {
               endTask(taskId);
@@ -153,10 +148,10 @@ export const ManagementModals: React.FC = () => {
     },
     [
       currentProject,
-      globalRequirements,
-      globalUseCases,
-      globalTestCases,
-      globalInformation,
+      requirements,
+      useCases,
+      testCases,
+      information,
       risks,
       baselines,
       currentUser,
@@ -207,7 +202,7 @@ export const ManagementModals: React.FC = () => {
     (artifactId: string, artifactType: string) => {
       switch (artifactType) {
         case 'requirements': {
-          const req = globalRequirements.find((r: Requirement) => r.id === artifactId);
+          const req = requirements.find((r: Requirement) => r.id === artifactId);
           if (req) {
             ui.setEditingRequirement(req);
             ui.setIsEditRequirementModalOpen(true);
@@ -215,7 +210,7 @@ export const ManagementModals: React.FC = () => {
           break;
         }
         case 'usecases': {
-          const uc = globalUseCases.find((u: UseCase) => u.id === artifactId);
+          const uc = useCases.find((u: UseCase) => u.id === artifactId);
           if (uc) {
             ui.setEditingUseCase(uc);
             ui.setIsUseCaseModalOpen(true);
@@ -223,7 +218,7 @@ export const ManagementModals: React.FC = () => {
           break;
         }
         case 'testcases': {
-          const tc = globalTestCases.find((t: TestCase) => t.id === artifactId);
+          const tc = testCases.find((t: TestCase) => t.id === artifactId);
           if (tc) {
             ui.setSelectedTestCaseId(tc.id);
             ui.setIsEditTestCaseModalOpen(true);
@@ -231,7 +226,7 @@ export const ManagementModals: React.FC = () => {
           break;
         }
         case 'information': {
-          const info = globalInformation.find((i: Information) => i.id === artifactId);
+          const info = information.find((i: Information) => i.id === artifactId);
           if (info) {
             ui.setSelectedInformation(info);
             ui.setIsInformationModalOpen(true);
@@ -240,7 +235,7 @@ export const ManagementModals: React.FC = () => {
         }
       }
     },
-    [ui, globalRequirements, globalUseCases, globalTestCases, globalInformation]
+    [ui, requirements, useCases, testCases, information]
   );
 
   const handleCreateBaselineWrapper = useCallback(
@@ -258,7 +253,6 @@ export const ManagementModals: React.FC = () => {
         // Only an explicitly chosen source; never whatever artifact happens to be selected
         sourceArtifactId={ui.linkSourceId}
         sourceArtifactType={ui.linkSourceType || 'requirement'}
-        projects={projects}
         currentProjectId={currentProjectId}
         artifactsByType={linkableArtifacts}
         onClose={ui.closeModal}
@@ -282,25 +276,12 @@ export const ManagementModals: React.FC = () => {
         baselines={baselines}
         onExport={handleExport}
         artifactCounts={{
-          requirements: globalRequirements.filter(
-            (r: Requirement) => !r.isDeleted && currentProject?.requirementIds.includes(r.id)
-          ).length,
-          useCases: globalUseCases.filter(
-            (u: UseCase) => !u.isDeleted && currentProject?.useCaseIds.includes(u.id)
-          ).length,
-          testCases: globalTestCases.filter(
-            (t: TestCase) => !t.isDeleted && currentProject?.testCaseIds.includes(t.id)
-          ).length,
-          information: globalInformation.filter(
-            (i: Information) => !i.isDeleted && currentProject?.informationIds.includes(i.id)
-          ).length,
-          risks: risks.filter((r: Risk) => !r.isDeleted && currentProject?.riskIds.includes(r.id))
-            .length,
-          documents: documents.filter(
-            (d) =>
-              !d.isDeleted &&
-              (d.projectId === currentProject?.id || currentProject?.documentIds?.includes(d.id))
-          ).length,
+          requirements: activeIds(requirements).length,
+          useCases: activeIds(useCases).length,
+          testCases: activeIds(testCases).length,
+          information: activeIds(information).length,
+          risks: activeIds(risks).length,
+          documents: activeIds(documents).length,
           links: projectLinks.length,
         }}
       />
@@ -311,7 +292,7 @@ export const ManagementModals: React.FC = () => {
         onNavigateToArtifact={(type: string, id: string) => {
           switch (type) {
             case 'requirement': {
-              const req = globalRequirements.find((r: Requirement) => r.id === id);
+              const req = requirements.find((r: Requirement) => r.id === id);
               if (req) {
                 ui.openModal('requirement', true, {
                   id,
@@ -322,7 +303,7 @@ export const ManagementModals: React.FC = () => {
               break;
             }
             case 'usecase': {
-              const uc = globalUseCases.find((u: UseCase) => u.id === id);
+              const uc = useCases.find((u: UseCase) => u.id === id);
               if (uc) {
                 ui.openModal('usecase', true, {
                   id,
@@ -333,14 +314,14 @@ export const ManagementModals: React.FC = () => {
               break;
             }
             case 'testcase': {
-              const tc = globalTestCases.find((t: TestCase) => t.id === id);
+              const tc = testCases.find((t: TestCase) => t.id === id);
               if (tc) {
                 ui.openModal('testcase', true, { id, type: 'testcase' });
               }
               break;
             }
             case 'information': {
-              const info = globalInformation.find((i: Information) => i.id === id);
+              const info = information.find((i: Information) => i.id === id);
               if (info) {
                 ui.openModal('information', true, {
                   id,

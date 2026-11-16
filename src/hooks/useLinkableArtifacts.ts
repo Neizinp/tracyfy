@@ -10,25 +10,18 @@ export function useLinkableArtifacts(): ArtifactsByType {
   const g = useGlobalState();
   return useMemo(
     () => ({
-      requirement: g.globalRequirements,
-      usecase: g.globalUseCases,
-      testcase: g.globalTestCases,
-      information: g.globalInformation.map((i) => ({
+      requirement: g.requirements,
+      usecase: g.useCases,
+      testcase: g.testCases,
+      information: g.information.map((i) => ({
         id: i.id,
         title: i.title,
         description: excerpt(i.content || i.text),
         isDeleted: i.isDeleted,
       })),
-      risk: g.globalRisks,
-      document: g.globalDocuments,
+      risk: g.risks,
+      document: g.documents,
     }),
-    [
-      g.globalRequirements,
-      g.globalUseCases,
-      g.globalTestCases,
-      g.globalInformation,
-      g.globalRisks,
-      g.globalDocuments,
-    ]
+    [g.requirements, g.useCases, g.testCases, g.information, g.risks, g.documents]
   );
 }

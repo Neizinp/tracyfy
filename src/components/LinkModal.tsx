@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { Search, Link as LinkIcon, Globe, Folder } from 'lucide-react';
-import type { ArtifactLink, Project } from '../types';
+import type { ArtifactLink } from '../types';
 import {
   LINKABLE_TYPES,
   linkableTypeInfo,
@@ -18,7 +18,6 @@ interface LinkModalProps {
   isOpen: boolean;
   sourceArtifactId: string | null;
   sourceArtifactType: LinkableType;
-  projects: Project[];
   currentProjectId: string;
   /** Every linkable artifact, grouped by type */
   artifactsByType: ArtifactsByType;
@@ -30,7 +29,6 @@ export const LinkModal: React.FC<LinkModalProps> = ({
   isOpen,
   sourceArtifactId,
   sourceArtifactType,
-  projects,
   currentProjectId,
   artifactsByType,
   onClose,
@@ -48,7 +46,6 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     linkScope,
     setLinkScope,
     filteredArtifacts,
-    findProjectForArtifact,
     handleSubmit,
     needsSourceSelection,
     chosenSourceId,
@@ -59,7 +56,6 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     isOpen,
     sourceArtifactId,
     sourceArtifactType,
-    projects,
     currentProjectId,
     artifactsByType,
     onClose,
@@ -266,8 +262,6 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                 </div>
               ) : (
                 filteredArtifacts.map((artifact) => {
-                  const project = findProjectForArtifact(artifact.id);
-                  const isCurrentProject = project?.id === currentProjectId;
                   const isSelected = selectedTargetId === artifact.id;
 
                   return (
@@ -324,28 +318,6 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                           </span>
                         </div>
                       </div>
-                      {project && (
-                        <span
-                          style={{
-                            fontSize: '10px',
-                            padding: '2px 8px',
-                            borderRadius: 'var(--radius-lg)',
-                            whiteSpace: 'nowrap',
-                            backgroundColor: isCurrentProject
-                              ? 'var(--color-bg-card)'
-                              : 'var(--color-accent-bg)',
-                            color: isCurrentProject
-                              ? 'var(--color-text-muted)'
-                              : 'var(--color-accent)',
-                            fontWeight: 500,
-                            border: isCurrentProject
-                              ? '1px solid var(--color-border)'
-                              : '1px solid var(--color-accent-ring)',
-                          }}
-                        >
-                          {isCurrentProject ? 'Local' : project.name}
-                        </span>
-                      )}
                     </div>
                   );
                 })

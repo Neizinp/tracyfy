@@ -38,22 +38,12 @@ describe('EditLinkModal', () => {
       name: 'Project Alpha',
       description: '',
       lastModified: 1700000000000,
-      requirementIds: [],
-      useCaseIds: [],
-      testCaseIds: [],
-      informationIds: [],
-      riskIds: [],
     },
     {
       id: 'PRJ-002',
       name: 'Project Beta',
       description: '',
       lastModified: 1700000000000,
-      requirementIds: [],
-      useCaseIds: [],
-      testCaseIds: [],
-      informationIds: [],
-      riskIds: [],
     },
   ];
 

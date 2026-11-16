@@ -71,11 +71,6 @@ describe('excelExportUtils', () => {
     id: 'p1',
     name: 'Test Project',
     description: 'Test Description',
-    requirementIds: ['r1'],
-    useCaseIds: ['u1'],
-    testCaseIds: ['t1'],
-    informationIds: ['i1'],
-    riskIds: [],
     lastModified: 0,
     currentBaseline: 'Baseline 1.0',
   };

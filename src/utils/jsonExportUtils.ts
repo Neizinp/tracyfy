@@ -74,17 +74,14 @@ export async function exportProjectToJSON(
   // Fetch links visible to this project (global + project-specific)
   const links = sortByIdNumber(await diskLinkService.getLinksForProject(project.id));
 
-  // Filter risks for this project
+  // Filter risks
   const risks = sortByIdNumber(
     (globalState.risks || []).filter((r) => projectRiskIds.includes(r.id) && !r.isDeleted)
   );
 
-  // Filter documents for this project
+  // Filter documents
   const documents = sortByIdNumber(
-    // Documents belong to a project via projectId (documentIds is an older/optional list)
-    (globalState.documents || []).filter(
-      (d) => (d.projectId === project.id || projectDocumentIds.includes(d.id)) && !d.isDeleted
-    )
+    (globalState.documents || []).filter((d) => projectDocumentIds.includes(d.id) && !d.isDeleted)
   );
 
   const dataToExport: ExportData = {

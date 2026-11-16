@@ -1,8 +1,10 @@
+import { activeIds } from '../utils/activeArtifacts';
 import type {
   Requirement,
   UseCase,
   TestCase,
   Information,
+  Risk,
   Project,
   ArtifactDocument,
 } from '../types';
@@ -27,6 +29,7 @@ interface UseImportExportProps {
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
+  risks: Risk[];
   documents: ArtifactDocument[];
   /** Persist validated imported artifacts (merge by ID, never wipe existing data) */
   applyImport: (bundle: ImportBundle) => Promise<void>;
@@ -41,6 +44,7 @@ export function useImportExport({
   useCases,
   testCases,
   information,
+  risks,
   documents,
   applyImport,
   notify,
@@ -62,12 +66,12 @@ export function useImportExport({
           information,
           documents,
         },
-        project.requirementIds,
-        project.useCaseIds,
-        project.testCaseIds,
-        project.informationIds,
-        project.riskIds || [],
-        project.documentIds || []
+        activeIds(requirements),
+        activeIds(useCases),
+        activeIds(testCases),
+        activeIds(information),
+        activeIds(risks),
+        activeIds(documents)
       );
     } catch (error) {
       console.error('Failed to export project:', error);

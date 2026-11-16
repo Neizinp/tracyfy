@@ -16,6 +16,7 @@ import {
   useCustomAttributes,
 } from '../app/providers';
 import { createDemoProject } from '../services/demoDataService';
+import { activeIds } from '../utils/activeArtifacts';
 import type {
   Project,
   ColumnVisibility,
@@ -47,8 +48,7 @@ export const ProjectLayout: React.FC = () => {
   const ui = useUI();
 
   // Global state
-  const { globalRequirements, globalUseCases, globalTestCases, globalInformation, documents } =
-    useGlobalState();
+  const { requirements, useCases, testCases, information, documents } = useGlobalState();
 
   // FileSystem context
   const { reloadData, refreshStatus, changeDirectory } = useFileSystem();
@@ -74,7 +74,6 @@ export const ProjectLayout: React.FC = () => {
       { key: 'comments', label: 'Comments' },
       { key: 'created', label: 'Created' },
       { key: 'approved', label: 'Approved' },
-      { key: 'projects', label: 'Project(s)' },
     ];
 
     const custom = customDefs.map((def) => ({
@@ -98,7 +97,6 @@ export const ProjectLayout: React.FC = () => {
       { key: 'mainFlow', label: 'Main Flow' },
       { key: 'alternativeFlows', label: 'Alternative Flows' },
       { key: 'postconditions', label: 'Postconditions' },
-      { key: 'projects', label: 'Project(s)' },
     ];
 
     const custom = customDefs.map((def) => ({
@@ -120,7 +118,6 @@ export const ProjectLayout: React.FC = () => {
       { key: 'status', label: 'Status' },
       { key: 'lastRun', label: 'Last Run' },
       { key: 'created', label: 'Created' },
-      { key: 'projects', label: 'Project(s)' },
     ];
 
     const custom = customDefs.map((def) => ({
@@ -139,7 +136,6 @@ export const ProjectLayout: React.FC = () => {
       { key: 'type', label: 'Type' },
       { key: 'text', label: 'Content' },
       { key: 'created', label: 'Created' },
-      { key: 'projects', label: 'Project(s)' },
     ];
 
     const custom = customDefs.map((def) => ({
@@ -164,7 +160,6 @@ export const ProjectLayout: React.FC = () => {
       { key: 'mitigation', label: 'Mitigation' },
       { key: 'contingency', label: 'Contingency' },
       { key: 'created', label: 'Created' },
-      { key: 'projects', label: 'Project(s)' },
     ];
 
     const custom = customDefs.map((def) => ({
@@ -185,7 +180,6 @@ export const ProjectLayout: React.FC = () => {
       { key: 'structure', label: 'Items' },
       { key: 'created', label: 'Created' },
       { key: 'description', label: 'Description' },
-      { key: 'projects', label: 'Project(s)' },
     ];
 
     const custom = customDefs.map((def) => ({
@@ -314,15 +308,15 @@ export const ProjectLayout: React.FC = () => {
           await exportProjectToPDF(
             currentProject,
             {
-              requirements: globalRequirements,
-              useCases: globalUseCases,
-              testCases: globalTestCases,
-              information: globalInformation,
+              requirements: requirements,
+              useCases: useCases,
+              testCases: testCases,
+              information: information,
             },
-            currentProject.requirementIds,
-            currentProject.useCaseIds,
-            currentProject.testCaseIds,
-            currentProject.informationIds,
+            activeIds(requirements),
+            activeIds(useCases),
+            activeIds(testCases),
+            activeIds(information),
             baselines,
             selectedBaseline, // selectedBaseline: ProjectBaseline | null
             currentUser?.name,
@@ -345,15 +339,15 @@ export const ProjectLayout: React.FC = () => {
           await exportProjectToExcel(
             currentProject,
             {
-              requirements: globalRequirements,
-              useCases: globalUseCases,
-              testCases: globalTestCases,
-              information: globalInformation,
+              requirements: requirements,
+              useCases: useCases,
+              testCases: testCases,
+              information: information,
             },
-            currentProject.requirementIds,
-            currentProject.useCaseIds,
-            currentProject.testCaseIds,
-            currentProject.informationIds,
+            activeIds(requirements),
+            activeIds(useCases),
+            activeIds(testCases),
+            activeIds(information),
             baselines,
             {
               format: 'excel',

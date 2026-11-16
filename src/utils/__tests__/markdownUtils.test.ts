@@ -946,11 +946,6 @@ describe('Project Markdown Conversion', () => {
         id: 'proj-123',
         name: 'Test Project',
         description: 'A test project description',
-        requirementIds: ['REQ-001', 'REQ-002'],
-        useCaseIds: ['UC-001'],
-        testCaseIds: ['TC-001', 'TC-002'],
-        informationIds: [],
-        riskIds: [],
         lastModified: 1700000000000,
       };
 
@@ -960,35 +955,6 @@ describe('Project Markdown Conversion', () => {
       expect(markdown).toContain('name: "Test Project"');
       expect(markdown).toContain('description: "A test project description"');
       expect(markdown).toContain('lastModified: 1700000000000');
-      expect(markdown).toContain('requirementIds:');
-      expect(markdown).toContain('- "REQ-001"');
-      expect(markdown).toContain('- "REQ-002"');
-      expect(markdown).toContain('useCaseIds:');
-      expect(markdown).toContain('- "UC-001"');
-      expect(markdown).toContain('testCaseIds:');
-      expect(markdown).toContain('- "TC-001"');
-      expect(markdown).toContain('informationIds: []');
-    });
-
-    it('should handle empty arrays', () => {
-      const project: Project = {
-        id: 'proj-123',
-        name: 'Empty Project',
-        description: '',
-        requirementIds: [],
-        useCaseIds: [],
-        testCaseIds: [],
-        informationIds: [],
-        riskIds: [],
-        lastModified: 1700000000000,
-      };
-
-      const markdown = projectToMarkdown(project);
-
-      expect(markdown).toContain('requirementIds: []');
-      expect(markdown).toContain('useCaseIds: []');
-      expect(markdown).toContain('testCaseIds: []');
-      expect(markdown).toContain('informationIds: []');
     });
 
     it('should include project name and description in body', () => {
@@ -996,11 +962,6 @@ describe('Project Markdown Conversion', () => {
         id: 'proj-123',
         name: 'My Project',
         description: 'This is the description',
-        requirementIds: [],
-        useCaseIds: [],
-        testCaseIds: [],
-        informationIds: [],
-        riskIds: [],
         lastModified: 1700000000000,
       };
 
@@ -1038,10 +999,6 @@ A test project
       expect(project?.id).toBe('proj-123');
       expect(project?.name).toBe('Test Project');
       expect(project?.description).toBe('A test project');
-      expect(project?.requirementIds).toEqual(['REQ-001', 'REQ-002']);
-      expect(project?.useCaseIds).toEqual(['UC-001']);
-      expect(project?.testCaseIds).toEqual([]);
-      expect(project?.informationIds).toEqual([]);
     });
 
     it('should return null for missing id field', () => {
@@ -1072,10 +1029,6 @@ name: "Minimal Project"
       expect(project?.id).toBe('proj-123');
       expect(project?.name).toBe('Minimal Project');
       expect(project?.description).toBe('');
-      expect(project?.requirementIds).toEqual([]);
-      expect(project?.useCaseIds).toEqual([]);
-      expect(project?.testCaseIds).toEqual([]);
-      expect(project?.informationIds).toEqual([]);
     });
 
     it('should round-trip without data loss', () => {
@@ -1083,11 +1036,6 @@ name: "Minimal Project"
         id: 'proj-test',
         name: 'Round Trip Project',
         description: 'Testing round trip functionality',
-        requirementIds: ['REQ-001', 'REQ-002', 'REQ-003'],
-        useCaseIds: ['UC-001'],
-        testCaseIds: ['TC-001', 'TC-002'],
-        informationIds: ['INF-001'],
-        riskIds: [],
         lastModified: 1700000000000,
       };
 
@@ -1098,10 +1046,6 @@ name: "Minimal Project"
       expect(parsed?.id).toBe(original.id);
       expect(parsed?.name).toBe(original.name);
       expect(parsed?.description).toBe(original.description);
-      expect(parsed?.requirementIds).toEqual(original.requirementIds);
-      expect(parsed?.useCaseIds).toEqual(original.useCaseIds);
-      expect(parsed?.testCaseIds).toEqual(original.testCaseIds);
-      expect(parsed?.informationIds).toEqual(original.informationIds);
       expect(parsed?.lastModified).toBe(original.lastModified);
     });
 
@@ -1110,11 +1054,6 @@ name: "Minimal Project"
         id: 'proj-special',
         name: 'Project with "quotes" and: colons',
         description: 'Description with special chars @ # $ %',
-        requirementIds: [],
-        useCaseIds: [],
-        testCaseIds: [],
-        informationIds: [],
-        riskIds: [],
         lastModified: 1700000000000,
       };
 

@@ -1,7 +1,7 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import type { TestCase, TestCaseColumnVisibility } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
-import { useProject, useCustomAttributes } from '../app/providers';
+import { useCustomAttributes } from '../app/providers';
 import { BaseArtifactTable, MarkdownCell } from './index';
 import type { ColumnDef } from './BaseArtifactTable';
 import type { SortConfig } from './SortableHeader';
@@ -21,19 +21,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
   sortConfig,
   onSortChange,
 }) => {
-  const { projects } = useProject();
   const { definitions } = useCustomAttributes();
-
-  const getProjectNames = useCallback(
-    (tcId: string) => {
-      if (!projects) return '';
-      return projects
-        .filter((p) => p.testCaseIds?.includes(tcId))
-        .map((p) => p.name)
-        .join(', ');
-    },
-    [projects]
-  );
 
   const columns = useMemo<ColumnDef<TestCase>[]>(
     () => [
@@ -49,37 +37,6 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
             </div>
             <div style={{ color: 'var(--color-text-primary)' }}>{tc.title}</div>
           </>
-        ),
-      },
-      {
-        key: 'projects',
-        label: 'Project(s)',
-        width: '150px',
-        visible: visibleColumns.projects,
-        sortable: false,
-        render: (tc) => (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-            {getProjectNames(tc.id)
-              .split(', ')
-              .map(
-                (name, i) =>
-                  name && (
-                    <span
-                      key={i}
-                      style={{
-                        fontSize: 'var(--font-size-xs)',
-                        padding: '2px 6px',
-                        borderRadius: 'var(--radius-xs)',
-                        background: 'var(--color-bg-tertiary)',
-                        color: 'var(--color-text-secondary)',
-                        border: '1px solid var(--color-border)',
-                      }}
-                    >
-                      {name}
-                    </span>
-                  )
-              )}
-          </div>
         ),
       },
       {
@@ -223,7 +180,6 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
               'status',
               'lastRun',
               'created',
-              'projects',
             ].includes(key) && visibleColumns[key]
         )
         .map((key) => {
@@ -238,7 +194,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
           };
         }),
     ],
-    [visibleColumns, getProjectNames, definitions]
+    [visibleColumns, definitions]
   );
 
   return (

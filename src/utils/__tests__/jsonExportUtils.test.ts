@@ -63,13 +63,8 @@ describe('jsonExportUtils', () => {
     id: 'p1',
     name: 'Test Project',
     description: 'Test Description',
-    requirementIds: ['r1'],
-    useCaseIds: ['u1'],
-    testCaseIds: ['t1'],
-    informationIds: ['i1'],
     lastModified: 0,
     currentBaseline: 'Baseline 1.0',
-    riskIds: [],
   };
 
   const mockReq: Requirement = {

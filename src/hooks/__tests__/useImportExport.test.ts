@@ -33,11 +33,6 @@ describe('useImportExport', () => {
         id: 'proj-001',
         name: 'Test Project',
         description: 'Test Description',
-        requirementIds: ['REQ-001'],
-        useCaseIds: ['UC-001'],
-        testCaseIds: ['TC-001'],
-        informationIds: ['INFO-001'],
-        riskIds: [],
         lastModified: 1000000,
       },
     ];
@@ -121,6 +116,7 @@ describe('useImportExport', () => {
       useCases: mockUseCases,
       testCases: mockTestCases,
       information: mockInformation,
+      risks: [],
       documents: [],
       applyImport: mockApplyImport,
       notify: mockNotify,
@@ -142,11 +138,11 @@ describe('useImportExport', () => {
           information: mockInformation,
           documents: [],
         },
-        mockProjects[0].requirementIds,
-        mockProjects[0].useCaseIds,
-        mockProjects[0].testCaseIds,
-        mockProjects[0].informationIds,
-        mockProjects[0].riskIds,
+        mockRequirements.map((r) => r.id),
+        mockUseCases.map((u) => u.id),
+        mockTestCases.map((t) => t.id),
+        mockInformation.map((i) => i.id),
+        [],
         []
       );
     });

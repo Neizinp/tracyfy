@@ -158,7 +158,6 @@ const document: ArtifactDocument = {
   id: 'DOC-002',
   title: 'Spec',
   description: TRICKY,
-  projectId: 'PROJ-001',
   structure: [
     { type: 'heading', title: 'Intro: overview', level: 1 },
     { type: 'artifact', id: 'REQ-042', artifactType: 'requirements' },
@@ -173,12 +172,6 @@ const project: Project = {
   id: 'PROJ-001',
   name: 'Project: Alpha',
   description: TRICKY,
-  requirementIds: ['REQ-001', 'REQ-042'],
-  useCaseIds: ['UC-007'],
-  testCaseIds: ['TC-003'],
-  informationIds: ['INFO-009'],
-  riskIds: ['RISK-005'],
-  documentIds: ['DOC-002'],
   baselines: ['BASE-001'],
   currentBaseline: 'BASE-001',
   isDeleted: true,
@@ -311,8 +304,6 @@ describe('files written by earlier versions still load', () => {
     expect(markdownToProject(proj)).toMatchObject({
       name: 'Alpha',
       description: 'The project.',
-      requirementIds: ['REQ-001'],
-      documentIds: [],
       baselines: [],
     });
   });

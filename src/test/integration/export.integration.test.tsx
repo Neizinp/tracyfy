@@ -158,12 +158,12 @@ describe('integration: export', () => {
     await h.settle();
 
     const g = h.app().globalState;
-    await waitFor(() => expect(g.globalRequirements.map((r) => r.id)).toContain(a.req.id));
-    expect(h.app().globalState.globalUseCases.map((r) => r.id)).toContain(a.uc.id);
-    expect(h.app().globalState.globalTestCases.map((r) => r.id)).toContain(a.tc.id);
-    expect(h.app().globalState.globalInformation.map((r) => r.id)).toContain(a.info.id);
-    expect(h.app().globalState.globalRisks.map((r) => r.id)).toContain(a.risk.id);
-    expect(h.app().globalState.globalDocuments.map((r) => r.id)).toContain(a.doc.id);
+    await waitFor(() => expect(g.requirements.map((r) => r.id)).toContain(a.req.id));
+    expect(h.app().globalState.useCases.map((r) => r.id)).toContain(a.uc.id);
+    expect(h.app().globalState.testCases.map((r) => r.id)).toContain(a.tc.id);
+    expect(h.app().globalState.information.map((r) => r.id)).toContain(a.info.id);
+    expect(h.app().globalState.risks.map((r) => r.id)).toContain(a.risk.id);
+    expect(h.app().globalState.documents.map((r) => r.id)).toContain(a.doc.id);
     expect(h.app().fileSystem.links).toEqual([
       expect.objectContaining({ sourceId: a.req.id, targetId: a.uc.id, type: 'satisfies' }),
     ]);

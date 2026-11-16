@@ -11,11 +11,6 @@ describe('LinkModal', () => {
     id: 'PROJ-001',
     name: 'Test Project',
     description: '',
-    requirementIds: ['REQ-001', 'REQ-002'],
-    useCaseIds: ['UC-001'],
-    testCaseIds: ['TC-001'],
-    informationIds: [],
-    riskIds: [],
     lastModified: 1000000,
   };
 

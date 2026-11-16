@@ -1,11 +1,10 @@
 import React from 'react';
 import { ProjectSettingsModal, CreateProjectModal } from '../';
-import { useUI, useProject, useFileSystem } from '../../app/providers';
+import { useUI, useProject } from '../../app/providers';
 
 export const ProjectModals: React.FC = () => {
   const ui = useUI();
   const { projects, updateProject, deleteProject, createProject } = useProject();
-  const { reloadData } = useFileSystem();
 
   return (
     <>
@@ -21,11 +20,6 @@ export const ProjectModals: React.FC = () => {
             }
           }}
           onDelete={deleteProject}
-          onCopy={async (originalProject, newName, newDescription) => {
-            const { diskProjectService } = await import('../../services/diskProjectService');
-            await diskProjectService.copyProject(originalProject, newName, newDescription);
-            await reloadData();
-          }}
         />
       )}
 

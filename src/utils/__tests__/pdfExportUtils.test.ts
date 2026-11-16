@@ -174,11 +174,6 @@ describe('pdfExportUtils', () => {
     id: 'p1',
     name: 'Test Project',
     description: 'Test Description',
-    requirementIds: ['r1'],
-    useCaseIds: ['u1'],
-    testCaseIds: ['t1'],
-    informationIds: ['i1'],
-    riskIds: [],
     lastModified: 0,
   };
 
@@ -200,10 +195,10 @@ describe('pdfExportUtils', () => {
     await exportProjectToPDF(
       mockProject,
       globalState,
-      mockProject.requirementIds,
-      mockProject.useCaseIds,
-      mockProject.testCaseIds,
-      mockProject.informationIds,
+      [mockReq.id],
+      [mockUseCase.id],
+      [mockTestCase.id],
+      [mockInfo.id],
       [],
       null
     );
@@ -229,10 +224,10 @@ describe('pdfExportUtils', () => {
     await exportProjectToPDF(
       mockProject,
       globalState,
-      mockProject.requirementIds,
-      mockProject.useCaseIds,
-      mockProject.testCaseIds,
-      mockProject.informationIds,
+      [mockReq.id],
+      [mockUseCase.id],
+      [mockTestCase.id],
+      [mockInfo.id],
       [],
       mockBaseline
     );
@@ -1058,7 +1053,6 @@ describe('pdfExportUtils', () => {
 
     const projectWithRisks: Project = {
       ...mockProject,
-      riskIds: ['RISK-001'],
     };
 
     const globalStateWithRisks = {

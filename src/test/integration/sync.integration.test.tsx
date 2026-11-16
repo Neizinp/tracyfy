@@ -77,7 +77,7 @@ describe('integration: remote sync', () => {
     await h.settle();
 
     await waitFor(() =>
-      expect(h.app().globalState.globalRequirements.map((r) => r.id)).toContain('REQ-050')
+      expect(h.app().globalState.requirements.map((r) => r.id)).toContain('REQ-050')
     );
     expect(h.app().requirements.requirements.map((r) => r.title)).toContain('From a colleague');
   }, 60_000);

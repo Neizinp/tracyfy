@@ -83,7 +83,7 @@ describe('integration: errors are shown, not swallowed', () => {
         (e: Error) => e.message
       );
       expect(outcome).toBe('ready');
-      expect(h.app().globalState.globalRequirements.map((r) => r.title)).toContain('Logout');
+      expect(h.app().globalState.requirements.map((r) => r.title)).toContain('Logout');
     } finally {
       fs.chmodSync(broken, 0o644);
     }

@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { ArtifactLink, Project } from '../types';
+import type { ArtifactLink } from '../types';
 import {
   LINKABLE_TYPES,
   type ArtifactsByType,
@@ -25,7 +25,6 @@ interface UseLinkModalOptions {
   isOpen: boolean;
   sourceArtifactId: string | null;
   sourceArtifactType: LinkableType;
-  projects: Project[];
   currentProjectId: string;
   /** Every linkable artifact, grouped by type */
   artifactsByType: ArtifactsByType;
@@ -36,7 +35,6 @@ interface UseLinkModalOptions {
 export function useLinkModal({
   isOpen,
   sourceArtifactId,
-  projects,
   currentProjectId,
   artifactsByType,
   onClose,
@@ -64,22 +62,6 @@ export function useLinkModal({
       setLinkScope('project');
     }
   }, [isOpen]);
-
-  // Helper to find which project an artifact belongs to
-  const findProjectForArtifact = useCallback(
-    (id: string): Project | undefined => {
-      return projects.find(
-        (p) =>
-          p.requirementIds.includes(id) ||
-          p.useCaseIds.includes(id) ||
-          p.testCaseIds.includes(id) ||
-          p.informationIds.includes(id) ||
-          (p.riskIds ?? []).includes(id) ||
-          (p.documentIds ?? []).includes(id)
-      );
-    },
-    [projects]
-  );
 
   // Artifacts of the selected type, minus deleted ones and the source itself
   const filteredArtifacts = useMemo(() => {
@@ -143,7 +125,6 @@ export function useLinkModal({
 
     // Computed
     filteredArtifacts,
-    findProjectForArtifact,
     currentProjectId,
 
     // Actions

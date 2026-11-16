@@ -11,11 +11,6 @@ describe('ProjectSidebarItem', () => {
     id: 'PROJ-001',
     name: 'Test Project',
     description: 'Test Description',
-    requirementIds: [],
-    useCaseIds: [],
-    testCaseIds: [],
-    informationIds: [],
-    riskIds: [],
     lastModified: 1000000,
   };
 

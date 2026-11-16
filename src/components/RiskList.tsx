@@ -1,6 +1,6 @@
-import React, { useMemo, useCallback } from 'react';
-import type { Risk, Project, RiskColumnVisibility } from '../types';
-import { useProject, useCustomAttributes } from '../app/providers';
+import React, { useMemo } from 'react';
+import type { Risk, RiskColumnVisibility } from '../types';
+import { useCustomAttributes } from '../app/providers';
 import { formatDateTime } from '../utils/dateUtils';
 import { BaseArtifactTable, MarkdownCell } from './index';
 import type { ColumnDef } from './BaseArtifactTable';
@@ -21,19 +21,7 @@ export const RiskList: React.FC<RiskListProps> = ({
   sortConfig,
   onSortChange,
 }) => {
-  const { projects } = useProject();
   const { definitions } = useCustomAttributes();
-
-  const getProjectNames = useCallback(
-    (riskId: string) => {
-      if (!projects) return '';
-      return projects
-        .filter((p: Project) => p.riskIds?.includes(riskId))
-        .map((p: Project) => p.name)
-        .join(', ');
-    },
-    [projects]
-  );
 
   const columns = useMemo<ColumnDef<Risk>[]>(
     () => [
@@ -49,37 +37,6 @@ export const RiskList: React.FC<RiskListProps> = ({
             </div>
             <div style={{ color: 'var(--color-text-primary)' }}>{risk.title}</div>
           </>
-        ),
-      },
-      {
-        key: 'projects',
-        label: 'Project(s)',
-        width: '150px',
-        visible: visibleColumns.projects,
-        sortable: false,
-        render: (risk) => (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-            {getProjectNames(risk.id)
-              .split(', ')
-              .map(
-                (name, i) =>
-                  name && (
-                    <span
-                      key={i}
-                      style={{
-                        fontSize: 'var(--font-size-xs)',
-                        padding: '2px 6px',
-                        borderRadius: 'var(--radius-xs)',
-                        background: 'var(--color-bg-tertiary)',
-                        color: 'var(--color-text-secondary)',
-                        border: '1px solid var(--color-border)',
-                      }}
-                    >
-                      {name}
-                    </span>
-                  )
-              )}
-          </div>
         ),
       },
       {
@@ -243,7 +200,6 @@ export const RiskList: React.FC<RiskListProps> = ({
               'mitigation',
               'contingency',
               'created',
-              'projects',
               'author',
               'revision',
             ].includes(key) && visibleColumns[key]
@@ -260,7 +216,7 @@ export const RiskList: React.FC<RiskListProps> = ({
           };
         }),
     ],
-    [visibleColumns, getProjectNames, definitions]
+    [visibleColumns, definitions]
   );
 
   return (

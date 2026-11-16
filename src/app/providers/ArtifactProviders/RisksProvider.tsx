@@ -28,7 +28,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Ri
   useFS: (fs) => ({
     save: fs.saveRisk,
     delete: fs.deleteRisk,
-    fsItems: fs.risks,
     isReady: fs.isReady,
   }),
   useUIHelpers: (ui) => ({

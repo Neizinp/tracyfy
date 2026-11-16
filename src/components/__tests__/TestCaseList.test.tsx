@@ -87,7 +87,6 @@ describe('TestCaseList', () => {
       createProject: vi.fn(),
       updateProject: vi.fn(),
       deleteProject: vi.fn(),
-      addToProject: vi.fn(),
     });
     vi.mocked(useCustomAttributes).mockReturnValue({
       definitions: [],

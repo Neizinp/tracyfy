@@ -177,9 +177,7 @@ export async function exportProjectToExcel(
   const projectInformation = sortByIdNumber(
     globalState.information.filter((i) => projectInformationIds.includes(i.id) && !i.isDeleted)
   );
-  const projectRisks = sortByIdNumber(
-    (globalState.risks || []).filter((r) => project.riskIds?.includes(r.id) && !r.isDeleted)
-  );
+  const projectRisks = sortByIdNumber((globalState.risks || []).filter((r) => !r.isDeleted));
 
   // Pre-fetch links and build artifact ID list if needed for Matrices or Links sheet
   const projectLinks =

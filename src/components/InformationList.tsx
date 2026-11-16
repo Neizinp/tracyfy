@@ -1,7 +1,7 @@
-import React, { useMemo, useCallback } from 'react';
-import type { Information, Project, InformationColumnVisibility } from '../types';
+import React, { useMemo } from 'react';
+import type { Information, InformationColumnVisibility } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
-import { useProject, useCustomAttributes } from '../app/providers';
+import { useCustomAttributes } from '../app/providers';
 import { BaseArtifactTable, MarkdownCell } from './index';
 import type { ColumnDef } from './BaseArtifactTable';
 import type { SortConfig } from './SortableHeader';
@@ -21,19 +21,7 @@ export const InformationList: React.FC<InformationListProps> = ({
   sortConfig,
   onSortChange,
 }) => {
-  const { projects } = useProject();
   const { definitions } = useCustomAttributes();
-
-  const getProjectNames = useCallback(
-    (infoId: string) => {
-      if (!projects) return '';
-      return projects
-        .filter((p: Project) => p.informationIds?.includes(infoId))
-        .map((p: Project) => p.name)
-        .join(', ');
-    },
-    [projects]
-  );
 
   const columns = useMemo<ColumnDef<Information>[]>(
     () => [
@@ -49,37 +37,6 @@ export const InformationList: React.FC<InformationListProps> = ({
             </div>
             <div style={{ color: 'var(--color-text-primary)' }}>{info.title}</div>
           </>
-        ),
-      },
-      {
-        key: 'projects',
-        label: 'Project(s)',
-        width: '150px',
-        visible: visibleColumns.projects,
-        sortable: false,
-        render: (info) => (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-            {getProjectNames(info.id)
-              .split(', ')
-              .map(
-                (name, i) =>
-                  name && (
-                    <span
-                      key={i}
-                      style={{
-                        fontSize: 'var(--font-size-xs)',
-                        padding: '2px 6px',
-                        borderRadius: 'var(--radius-xs)',
-                        background: 'var(--color-bg-tertiary)',
-                        color: 'var(--color-text-secondary)',
-                        border: '1px solid var(--color-border)',
-                      }}
-                    >
-                      {name}
-                    </span>
-                  )
-              )}
-          </div>
         ),
       },
       {
@@ -179,7 +136,6 @@ export const InformationList: React.FC<InformationListProps> = ({
               'type',
               'text',
               'created',
-              'projects',
               'author',
               'status',
               'revision',
@@ -198,7 +154,7 @@ export const InformationList: React.FC<InformationListProps> = ({
           };
         }),
     ],
-    [visibleColumns, getProjectNames, definitions]
+    [visibleColumns, definitions]
   );
 
   return (

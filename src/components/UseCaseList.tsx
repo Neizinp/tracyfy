@@ -1,6 +1,6 @@
-import React, { useMemo, useCallback } from 'react';
-import type { UseCase, Project, UseCaseColumnVisibility } from '../types';
-import { useProject, useCustomAttributes } from '../app/providers';
+import React, { useMemo } from 'react';
+import type { UseCase, UseCaseColumnVisibility } from '../types';
+import { useCustomAttributes } from '../app/providers';
 import { BaseArtifactTable, MarkdownCell } from './index';
 import type { ColumnDef } from './BaseArtifactTable';
 import type { SortConfig } from './SortableHeader';
@@ -20,19 +20,7 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
   sortConfig,
   onSortChange,
 }) => {
-  const { projects } = useProject();
   const { definitions } = useCustomAttributes();
-
-  const getProjectNames = useCallback(
-    (ucId: string) => {
-      if (!projects) return '';
-      return projects
-        .filter((p: Project) => p.useCaseIds?.includes(ucId))
-        .map((p: Project) => p.name)
-        .join(', ');
-    },
-    [projects]
-  );
 
   const columns = useMemo<ColumnDef<UseCase>[]>(
     () => [
@@ -48,37 +36,6 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
             </div>
             <div style={{ color: 'var(--color-text-primary)' }}>{uc.title}</div>
           </>
-        ),
-      },
-      {
-        key: 'projects',
-        label: 'Project(s)',
-        width: '150px',
-        visible: visibleColumns.projects,
-        sortable: false,
-        render: (uc) => (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-            {getProjectNames(uc.id)
-              .split(', ')
-              .map(
-                (name, i) =>
-                  name && (
-                    <span
-                      key={i}
-                      style={{
-                        fontSize: 'var(--font-size-xs)',
-                        padding: '2px 6px',
-                        borderRadius: 'var(--radius-xs)',
-                        background: 'var(--color-bg-tertiary)',
-                        color: 'var(--color-text-secondary)',
-                        border: '1px solid var(--color-border)',
-                      }}
-                    >
-                      {name}
-                    </span>
-                  )
-              )}
-          </div>
         ),
       },
       {
@@ -231,7 +188,6 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
               'mainFlow',
               'alternativeFlows',
               'postconditions',
-              'projects',
               'author',
               'created',
             ].includes(key) && visibleColumns[key]
@@ -248,7 +204,7 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
           };
         }),
     ],
-    [visibleColumns, getProjectNames, definitions]
+    [visibleColumns, definitions]
   );
 
   return (

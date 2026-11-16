@@ -77,11 +77,6 @@ const mockCurrentProject: Project = {
   id: 'proj-001',
   name: 'Test Project',
   description: 'Test',
-  requirementIds: ['REQ-001'],
-  useCaseIds: ['UC-001'],
-  testCaseIds: ['TC-001'],
-  informationIds: ['INFO-001'],
-  riskIds: [],
   lastModified: 1000000,
 };
 
@@ -129,10 +124,10 @@ describe('GlobalStateProvider', () => {
 
       const { result } = renderHook(() => useGlobalState(), { wrapper });
 
-      expect(result.current.globalRequirements).toEqual(mockFsRequirements);
-      expect(result.current.globalUseCases).toEqual(mockFsUseCases);
-      expect(result.current.globalTestCases).toEqual(mockFsTestCases);
-      expect(result.current.globalInformation).toEqual(mockFsInformation);
+      expect(result.current.requirements).toEqual(mockFsRequirements);
+      expect(result.current.useCases).toEqual(mockFsUseCases);
+      expect(result.current.testCases).toEqual(mockFsTestCases);
+      expect(result.current.information).toEqual(mockFsInformation);
     });
 
     it('should provide filtered artifacts for current project', () => {
@@ -159,7 +154,7 @@ describe('GlobalStateProvider', () => {
       const { result } = renderHook(() => useGlobalState(), { wrapper });
 
       // Same array instance: there is no second state that could drift from disk
-      expect(result.current.globalRequirements).toBe(useFileSystem().requirements);
+      expect(result.current.requirements).toBe(useFileSystem().requirements);
     });
 
     it('should throw error when used outside provider', () => {

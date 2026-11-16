@@ -103,11 +103,6 @@ describe('LinksView', () => {
       name: 'Test Project',
       description: '',
       lastModified: 1700000000000,
-      requirementIds: [],
-      useCaseIds: [],
-      testCaseIds: [],
-      informationIds: [],
-      riskIds: [],
     },
   ];
 
