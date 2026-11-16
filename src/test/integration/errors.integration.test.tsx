@@ -88,4 +88,37 @@ describe('integration: errors are shown, not swallowed', () => {
       fs.chmodSync(broken, 0o644);
     }
   }, 90_000);
+
+  it('a failed save does not show the unsaved edit as if it were saved', async () => {
+    h = await startApp();
+    const req = (await act(() =>
+      h.app().requirements.handleAddRequirement({
+        title: 'Login',
+        description: '',
+        text: '',
+        status: 'draft',
+        priority: 'medium',
+        dateCreated: Date.now(),
+      } as never)
+    ))!;
+    await h.settle();
+    const file = path.join(h.dir, 'requirements', `${req.id}.md`);
+    fs.chmodSync(file, 0o444); // the save will really fail
+    try {
+      fireEvent.click(await screen.findByText('Login'));
+      const dialog = await screen.findByRole('dialog');
+      fireEvent.change(within(dialog).getByDisplayValue('Login'), {
+        target: { value: 'Login v2' },
+      });
+      fireEvent.click(within(dialog).getByRole('button', { name: /save changes/i }));
+      await h.settle();
+
+      expect(await screen.findByText(/failed to update/i)).toBeInTheDocument();
+      // What the app shows must match what is on disk
+      expect(h.readFile(`requirements/${req.id}.md`)).not.toContain('Login v2');
+      expect(h.app().requirements.requirements.find((r) => r.id === req.id)?.title).toBe('Login');
+    } finally {
+      fs.chmodSync(file, 0o644);
+    }
+  }, 60_000);
 });

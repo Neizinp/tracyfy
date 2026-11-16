@@ -21,7 +21,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Us
   displayName: 'UseCases',
   useData: (state) => ({
     items: state.useCases,
-    setItems: state.setUseCases,
   }),
   useFS: (fs) => ({
     save: fs.saveUseCase,

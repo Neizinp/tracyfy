@@ -91,6 +91,9 @@ vi.mock('../FileSystemProvider', () => ({
     useCases: mockFsUseCases,
     testCases: mockFsTestCases,
     information: mockFsInformation,
+    risks: [],
+    documents: [],
+    links: [],
   })),
 }));
 
@@ -147,28 +150,16 @@ describe('GlobalStateProvider', () => {
       expect(result.current.information).toHaveLength(1);
     });
 
-    it('should provide setter functions', () => {
+    it('exposes FileSystemProvider data directly, without a separate copy', async () => {
+      const { useFileSystem } = await import('../FileSystemProvider');
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <GlobalStateProvider>{children}</GlobalStateProvider>
       );
 
       const { result } = renderHook(() => useGlobalState(), { wrapper });
 
-      expect(typeof result.current.setRequirements).toBe('function');
-      expect(typeof result.current.setUseCases).toBe('function');
-      expect(typeof result.current.setTestCases).toBe('function');
-      expect(typeof result.current.setInformation).toBe('function');
-    });
-
-    it('should provide isResetting ref', () => {
-      const wrapper = ({ children }: { children: React.ReactNode }) => (
-        <GlobalStateProvider>{children}</GlobalStateProvider>
-      );
-
-      const { result } = renderHook(() => useGlobalState(), { wrapper });
-
-      expect(result.current.isResetting).toBeDefined();
-      expect(result.current.isResetting.current).toBe(false);
+      // Same array instance: there is no second state that could drift from disk
+      expect(result.current.globalRequirements).toBe(useFileSystem().requirements);
     });
 
     it('should throw error when used outside provider', () => {

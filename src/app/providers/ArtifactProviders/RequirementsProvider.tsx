@@ -6,7 +6,6 @@ import { createArtifactProvider } from './BaseArtifactProvider';
 // Define the interface to match existing usage
 interface RequirementsContextValue {
   requirements: Requirement[];
-  setRequirements: (reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])) => void;
   handleAddRequirement: (
     req: Omit<Requirement, 'id' | 'lastModified'>
   ) => Promise<Requirement | null>;
@@ -23,7 +22,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Re
   displayName: 'Requirements',
   useData: (state) => ({
     items: state.requirements,
-    setItems: state.setRequirements,
   }),
   useFS: (fs) => ({
     save: fs.saveRequirement,
@@ -48,7 +46,6 @@ export const useRequirements = (): RequirementsContextValue => {
 
   return {
     requirements: context.items,
-    setRequirements: context.setItems,
     handleAddRequirement: context.handleAdd,
     handleUpdateRequirement: context.handleUpdate,
     handleDeleteRequirement: context.handleDelete,

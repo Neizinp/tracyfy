@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useFileSystem } from '../FileSystemProvider';
 import { useUser } from '../UserProvider';
-import { useToast } from '../ToastProvider';
+import { useToast, notifyError } from '../ToastProvider';
 import { useBackgroundTaskActions } from '../BackgroundTasksProvider';
 import { incrementRevision } from '../../../utils/revisionUtils';
 
@@ -33,7 +33,6 @@ export interface CRUDOptions<T> {
    * the Global Library) can be edited. Defaults to `items`.
    */
   allItems?: T[];
-  setItems: (items: T[] | ((prev: T[]) => T[])) => void;
   saveFn: (item: T) => Promise<void>;
   deleteFn: (id: string) => Promise<void>;
   onBeforeUpdate?: (item: T) => void;
@@ -73,7 +72,6 @@ export function useArtifactCRUD<T extends BaseArtifact>({
   type,
   items,
   allItems,
-  setItems,
   saveFn,
   deleteFn,
   onBeforeUpdate,
@@ -110,7 +108,8 @@ export function useArtifactCRUD<T extends BaseArtifact>({
           revision: '01',
         } as T;
 
-        setItems((prev) => [...prev, newItem]);
+        // State is updated by saveFn after the write succeeds, so the UI never
+        // shows data that isn't on disk
         await saveFn(newItem);
         if (onAfterAdd) await onAfterAdd(newItem);
         showToast(
@@ -124,7 +123,7 @@ export function useArtifactCRUD<T extends BaseArtifact>({
         return null;
       }
     },
-    [currentUser, getNextId, saveFn, setItems, showToast, type, onBeforeAdd, onAfterAdd]
+    [currentUser, getNextId, saveFn, showToast, type, onBeforeAdd, onAfterAdd]
   );
 
   const handleUpdate = useCallback(
@@ -146,9 +145,6 @@ export function useArtifactCRUD<T extends BaseArtifact>({
         lastModified: Date.now(),
       };
 
-      // Update state immediately for responsive UI
-      setItems((prev) => prev.map((item) => (item.id === id ? finalItem : item)));
-
       // Save to disk with task message
       const taskId = startTask(`Saving ${id}...`);
       try {
@@ -161,17 +157,7 @@ export function useArtifactCRUD<T extends BaseArtifact>({
         endTask(taskId);
       }
     },
-    [
-      lookupItems,
-      saveFn,
-      setItems,
-      type,
-      showToast,
-      onBeforeUpdate,
-      onAfterUpdate,
-      startTask,
-      endTask,
-    ]
+    [lookupItems, saveFn, type, showToast, onBeforeUpdate, onAfterUpdate, startTask, endTask]
   );
 
   const handleDelete = useCallback(
@@ -185,10 +171,9 @@ export function useArtifactCRUD<T extends BaseArtifact>({
         deletedAt: Date.now(),
       };
 
-      setItems((prev) => prev.map((item) => (item.id === id ? deletedItem : item)));
-      saveFn(deletedItem).catch((err) => console.error(`Failed to soft-delete ${type}:`, err));
+      saveFn(deletedItem).catch((err) => notifyError(`Could not delete ${id}`, err));
     },
-    [lookupItems, saveFn, setItems, type]
+    [lookupItems, saveFn]
   );
 
   const handleRestore = useCallback(
@@ -203,18 +188,16 @@ export function useArtifactCRUD<T extends BaseArtifact>({
         lastModified: Date.now(),
       };
 
-      setItems((prev) => prev.map((item) => (item.id === id ? restoredItem : item)));
-      saveFn(restoredItem).catch((err) => console.error(`Failed to restore ${type}:`, err));
+      saveFn(restoredItem).catch((err) => notifyError(`Could not restore ${id}`, err));
     },
-    [lookupItems, saveFn, setItems, type]
+    [lookupItems, saveFn]
   );
 
   const handlePermanentDelete = useCallback(
     (id: string) => {
-      setItems((prev) => prev.filter((item) => item.id !== id));
-      deleteFn(id).catch((err) => console.error(`Failed to permanently delete ${type}:`, err));
+      deleteFn(id).catch((err) => notifyError(`Could not permanently delete ${id}`, err));
     },
-    [deleteFn, setItems, type]
+    [deleteFn]
   );
 
   return useMemo(

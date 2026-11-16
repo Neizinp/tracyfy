@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useEffect, useRef, useMemo } from 'react';
+import React, { createContext, useContext, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
@@ -6,13 +6,11 @@ import { useFileSystem } from '../FileSystemProvider';
 import { useUser } from '../UserProvider';
 import { useToast } from '../ToastProvider';
 import { useProject } from '../ProjectProvider';
-import { debug } from '../../../utils/debug';
 import { useArtifactCRUD } from './useArtifactCRUD';
 import type { ArtifactType, BaseArtifact } from './useArtifactCRUD';
 
 export interface BaseArtifactContextValue<T extends BaseArtifact> {
   items: T[];
-  setItems: (items: T[] | ((prev: T[]) => T[])) => void;
   handleAdd: (
     item: Omit<T, 'id' | 'lastModified' | 'revision'> & { dateCreated?: number }
   ) => Promise<T | null>;
@@ -27,9 +25,9 @@ export interface BaseArtifactContextValue<T extends BaseArtifact> {
 export interface CreateProviderOptions<T extends BaseArtifact> {
   type: ArtifactType;
   displayName: string;
+  /** Items for the current view (read-only; FileSystemProvider owns the data) */
   useData: (state: ReturnType<typeof useGlobalState>) => {
     items: T[];
-    setItems: (items: T[] | ((prev: T[]) => T[])) => void;
   };
   useFS: (fs: ReturnType<typeof useFileSystem>) => {
     save: (item: T) => Promise<void>;
@@ -61,31 +59,17 @@ export function createArtifactProvider<T extends BaseArtifact>(options: CreatePr
 
   const Provider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const globalState = useGlobalState();
-    const { items, setItems } = options.useData(globalState);
+    const { items } = options.useData(globalState);
 
     const ui = useUI();
     const { setEditingItem, setIsModalOpen, setLinkSourceId, setIsLinkModalOpen } =
       options.useUIHelpers(ui);
 
     const fs = useFileSystem();
-    const { save, delete: fsDelete, fsItems, isReady } = options.useFS(fs);
+    const { save, delete: fsDelete, fsItems } = options.useFS(fs);
 
     const { currentUser } = useUser();
     const { showToast } = useToast();
-    const hasSyncedInitial = useRef(false);
-
-    // Initial sync from filesystem
-    useEffect(() => {
-      if (isReady && fsItems.length > 0 && !hasSyncedInitial.current) {
-        debug.log(
-          `[${options.displayName}Provider] Syncing from filesystem:`,
-          fsItems.length,
-          options.type
-        );
-        setItems(fsItems);
-        hasSyncedInitial.current = true;
-      }
-    }, [isReady, fsItems, setItems]);
 
     // New artifacts belong to the project the user is working in
     const { currentProjectId, addToProject } = useProject();
@@ -110,7 +94,6 @@ export function createArtifactProvider<T extends BaseArtifact>(options: CreatePr
       items,
       allItems: fsItems,
       onAfterAdd,
-      setItems,
       saveFn: save,
       deleteFn: fsDelete,
       onAfterUpdate: () => {
@@ -148,12 +131,11 @@ export function createArtifactProvider<T extends BaseArtifact>(options: CreatePr
     const value = useMemo<BaseArtifactContextValue<T>>(
       () => ({
         items,
-        setItems,
         ...crud,
         handleEdit,
         handleLink: hasLinking ? handleLink : undefined,
       }),
-      [items, setItems, crud, handleEdit, hasLinking, handleLink]
+      [items, crud, handleEdit, hasLinking, handleLink]
     );
 
     return <Context.Provider value={value}>{children}</Context.Provider>;

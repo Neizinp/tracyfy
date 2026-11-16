@@ -47,7 +47,6 @@ describe('hasArtifactChanges', () => {
 
 describe('useArtifactCRUD.handleUpdate', () => {
   const saveFn = vi.fn(() => Promise.resolve());
-  const setItems = vi.fn();
 
   beforeEach(() => vi.clearAllMocks());
 
@@ -56,7 +55,6 @@ describe('useArtifactCRUD.handleUpdate', () => {
       useArtifactCRUD<Item>({
         type: 'requirements',
         items: [existing],
-        setItems,
         saveFn,
         deleteFn: vi.fn(),
       })
@@ -66,7 +64,6 @@ describe('useArtifactCRUD.handleUpdate', () => {
     const result = setup();
     await act(() => result.current.handleUpdate('REQ-001', { title: 'Login', tags: ['a'] }));
     expect(saveFn).not.toHaveBeenCalled();
-    expect(setItems).not.toHaveBeenCalled();
   });
 
   it('saves with an incremented revision when something changed', async () => {

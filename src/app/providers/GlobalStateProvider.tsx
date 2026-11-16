@@ -1,12 +1,14 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  useMemo,
-} from 'react';
+/**
+ * Global State Provider
+ *
+ * Read-only view over FileSystemProvider's data (the single source of truth):
+ * - global*: every artifact, as loaded from / saved to disk
+ * - requirements, useCases, ...: the same, filtered to the current project
+ *
+ * Nothing here is stored separately, so the UI can never show data that
+ * differs from what FileSystemProvider has written to disk.
+ */
+import React, { createContext, useContext, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useFileSystem } from './FileSystemProvider';
 import { useProject } from './ProjectProvider';
@@ -30,240 +32,70 @@ export interface GlobalStateContextValue {
   globalDocuments: ArtifactDocument[];
   globalLinks: Link[];
 
-  // Local project artifacts (filtered by current project)
+  // Current project's artifacts (all artifacts when no project is selected)
   requirements: Requirement[];
-  setRequirements: (reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])) => void;
   useCases: UseCase[];
-  setUseCases: (ucs: UseCase[] | ((prev: UseCase[]) => UseCase[])) => void;
   testCases: TestCase[];
-  setTestCases: (tcs: TestCase[] | ((prev: TestCase[]) => TestCase[])) => void;
   information: Information[];
-  setInformation: (info: Information[] | ((prev: Information[]) => Information[])) => void;
   risks: Risk[];
-  setRisks: (risks: Risk[] | ((prev: Risk[]) => Risk[])) => void;
   documents: ArtifactDocument[];
-  setDocuments: (
-    docs: ArtifactDocument[] | ((prev: ArtifactDocument[]) => ArtifactDocument[])
-  ) => void;
   links: Link[];
-  setLinks: (links: Link[] | ((prev: Link[]) => Link[])) => void;
-
-  // Internal ref
-  isResetting: React.MutableRefObject<boolean>;
 }
 
 const GlobalStateContext = createContext<GlobalStateContextValue | undefined>(undefined);
 
 export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const {
-    requirements: fsRequirements,
-    useCases: fsUseCases,
-    testCases: fsTestCases,
-    information: fsInformation,
-    risks: fsRisks,
-    documents: fsDocuments,
-    links: fsLinks,
-  } = useFileSystem();
-
+  const fs = useFileSystem();
   const { currentProject } = useProject();
 
-  // Global state mirrors filesystem state
-  const [globalRequirements, setGlobalRequirements] = useState<Requirement[]>([]);
-  const [globalUseCases, setGlobalUseCases] = useState<UseCase[]>([]);
-  const [globalTestCases, setGlobalTestCases] = useState<TestCase[]>([]);
-  const [globalInformation, setGlobalInformation] = useState<Information[]>([]);
-  const [globalRisks, setGlobalRisks] = useState<Risk[]>([]);
-  const [globalDocuments, setGlobalDocuments] = useState<ArtifactDocument[]>([]);
-  const [globalLinks, setGlobalLinks] = useState<Link[]>([]);
-
-  // Project-filtered state
-  const [requirements, setRequirementsState] = useState<Requirement[]>([]);
-  const [useCases, setUseCasesState] = useState<UseCase[]>([]);
-  const [testCases, setTestCasesState] = useState<TestCase[]>([]);
-  const [information, setInformationState] = useState<Information[]>([]);
-  const [risks, setRisksState] = useState<Risk[]>([]);
-  const [documents, setDocumentsState] = useState<ArtifactDocument[]>([]);
-  const [links, setLinksState] = useState<Link[]>([]);
-
-  const isResetting = useRef(false);
-
-  // Sync global state from filesystem
-  useEffect(() => {
-    setGlobalRequirements(fsRequirements || []);
-  }, [fsRequirements]);
-
-  useEffect(() => {
-    setGlobalUseCases(fsUseCases || []);
-  }, [fsUseCases]);
-
-  useEffect(() => {
-    setGlobalTestCases(fsTestCases || []);
-  }, [fsTestCases]);
-
-  useEffect(() => {
-    setGlobalInformation(fsInformation || []);
-  }, [fsInformation]);
-
-  useEffect(() => {
-    setGlobalRisks(fsRisks || []);
-  }, [fsRisks]);
-
-  useEffect(() => {
-    setGlobalDocuments(fsDocuments || []);
-  }, [fsDocuments]);
-
-  useEffect(() => {
-    setGlobalLinks(fsLinks || []);
-  }, [fsLinks]);
-
-  // Filter artifacts by current project
-  useEffect(() => {
-    if (currentProject) {
-      setRequirementsState(
-        globalRequirements.filter((r) => currentProject.requirementIds?.includes(r.id))
-      );
-      setUseCasesState(globalUseCases.filter((u) => currentProject.useCaseIds?.includes(u.id)));
-      setTestCasesState(globalTestCases.filter((t) => currentProject.testCaseIds?.includes(t.id)));
-      setInformationState(
-        globalInformation.filter((i) => currentProject.informationIds?.includes(i.id))
-      );
-      setRisksState(globalRisks.filter((r) => currentProject.riskIds?.includes(r.id)));
-      setDocumentsState(
-        globalDocuments.filter(
-          (d) => d.projectId === currentProject.id || currentProject.documentIds?.includes(d.id)
-        )
-      );
-      setLinksState(globalLinks); // Links are global for now, filtering can be added later if needed
-    } else {
-      // No project selected - show all artifacts
-      setRequirementsState(globalRequirements);
-      setUseCasesState(globalUseCases);
-      setTestCasesState(globalTestCases);
-      setInformationState(globalInformation);
-      setRisksState(globalRisks);
-      setDocumentsState(globalDocuments);
-      setLinksState(globalLinks);
+  const value = useMemo<GlobalStateContextValue>(() => {
+    const globalState = {
+      globalRequirements: fs.requirements,
+      globalUseCases: fs.useCases,
+      globalTestCases: fs.testCases,
+      globalInformation: fs.information,
+      globalRisks: fs.risks,
+      globalDocuments: fs.documents,
+      globalLinks: fs.links,
+    };
+    if (!currentProject) {
+      return {
+        ...globalState,
+        requirements: fs.requirements,
+        useCases: fs.useCases,
+        testCases: fs.testCases,
+        information: fs.information,
+        risks: fs.risks,
+        documents: fs.documents,
+        links: fs.links,
+      };
     }
+    const inProject = (ids: string[] | undefined) => {
+      const set = new Set(ids ?? []);
+      return <T extends { id: string }>(a: T) => set.has(a.id);
+    };
+    return {
+      ...globalState,
+      requirements: fs.requirements.filter(inProject(currentProject.requirementIds)),
+      useCases: fs.useCases.filter(inProject(currentProject.useCaseIds)),
+      testCases: fs.testCases.filter(inProject(currentProject.testCaseIds)),
+      information: fs.information.filter(inProject(currentProject.informationIds)),
+      risks: fs.risks.filter(inProject(currentProject.riskIds)),
+      documents: fs.documents.filter(
+        (d) => d.projectId === currentProject.id || !!currentProject.documentIds?.includes(d.id)
+      ),
+      links: fs.links, // Links are global; views filter by projectIds where needed
+    };
   }, [
     currentProject,
-    globalRequirements,
-    globalUseCases,
-    globalTestCases,
-    globalInformation,
-    globalRisks,
-    globalDocuments,
-    globalLinks,
+    fs.requirements,
+    fs.useCases,
+    fs.testCases,
+    fs.information,
+    fs.risks,
+    fs.documents,
+    fs.links,
   ]);
-
-  // Wrapper setters for requirements (update global state)
-  const setRequirements = useCallback(
-    (reqs: Requirement[] | ((prev: Requirement[]) => Requirement[])) => {
-      setGlobalRequirements((prev) => {
-        const newReqs = typeof reqs === 'function' ? reqs(prev) : reqs;
-        return newReqs;
-      });
-    },
-    []
-  );
-
-  const setUseCases = useCallback((ucs: UseCase[] | ((prev: UseCase[]) => UseCase[])) => {
-    setGlobalUseCases((prev) => {
-      const newUcs = typeof ucs === 'function' ? ucs(prev) : ucs;
-      return newUcs;
-    });
-  }, []);
-
-  const setTestCases = useCallback((tcs: TestCase[] | ((prev: TestCase[]) => TestCase[])) => {
-    setGlobalTestCases((prev) => {
-      const newTcs = typeof tcs === 'function' ? tcs(prev) : tcs;
-      return newTcs;
-    });
-  }, []);
-
-  const setInformation = useCallback(
-    (info: Information[] | ((prev: Information[]) => Information[])) => {
-      setGlobalInformation((prev) => {
-        const newInfo = typeof info === 'function' ? info(prev) : info;
-        return newInfo;
-      });
-    },
-    []
-  );
-
-  const setRisks = useCallback((rs: Risk[] | ((prev: Risk[]) => Risk[])) => {
-    setGlobalRisks((prev) => {
-      const newRs = typeof rs === 'function' ? rs(prev) : rs;
-      return newRs;
-    });
-  }, []);
-
-  const setDocuments = useCallback(
-    (docs: ArtifactDocument[] | ((prev: ArtifactDocument[]) => ArtifactDocument[])) => {
-      setGlobalDocuments((prev) => {
-        const newDocs = typeof docs === 'function' ? docs(prev) : docs;
-        return newDocs;
-      });
-    },
-    []
-  );
-
-  const setLinks = useCallback((linksArg: Link[] | ((prev: Link[]) => Link[])) => {
-    setGlobalLinks((prev) => {
-      const newLinks = typeof linksArg === 'function' ? linksArg(prev) : linksArg;
-      return newLinks;
-    });
-  }, []);
-
-  const value: GlobalStateContextValue = useMemo(
-    () => ({
-      globalRequirements,
-      globalUseCases,
-      globalTestCases,
-      globalInformation,
-      globalRisks,
-      globalDocuments,
-      globalLinks,
-      requirements,
-      setRequirements,
-      useCases,
-      setUseCases,
-      testCases,
-      setTestCases,
-      information,
-      setInformation,
-      risks,
-      setRisks,
-      documents,
-      setDocuments,
-      links,
-      setLinks,
-      isResetting,
-    }),
-    [
-      documents,
-      globalDocuments,
-      globalInformation,
-      globalLinks,
-      globalRequirements,
-      globalRisks,
-      globalTestCases,
-      globalUseCases,
-      information,
-      isResetting,
-      links,
-      requirements,
-      risks,
-      setDocuments,
-      setInformation,
-      setLinks,
-      setRequirements,
-      setRisks,
-      setTestCases,
-      setUseCases,
-      testCases,
-      useCases,
-    ]
-  );
 
   return <GlobalStateContext.Provider value={value}>{children}</GlobalStateContext.Provider>;
 };

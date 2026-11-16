@@ -7,9 +7,6 @@ import { useProject } from '../ProjectProvider';
 // Define the interface to match existing usage
 interface DocumentsContextValue {
   documents: ArtifactDocument[];
-  setDocuments: (
-    docs: ArtifactDocument[] | ((prev: ArtifactDocument[]) => ArtifactDocument[])
-  ) => void;
   handleAddDocument: (
     doc: Omit<ArtifactDocument, 'id' | 'lastModified' | 'revision'>
   ) => Promise<ArtifactDocument | null>;
@@ -25,7 +22,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Ar
   displayName: 'Documents',
   useData: (state) => ({
     items: state.documents,
-    setItems: state.setDocuments,
   }),
   useFS: (fs) => ({
     save: fs.saveDocument,
@@ -60,7 +56,6 @@ export const useDocuments = (): DocumentsContextValue => {
 
   return {
     documents: context.items,
-    setDocuments: context.setItems,
     handleAddDocument,
     handleUpdateDocument: context.handleUpdate,
     handleDeleteDocument: context.handleDelete,

@@ -21,7 +21,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Te
   displayName: 'TestCases',
   useData: (state) => ({
     items: state.testCases,
-    setItems: state.setTestCases,
   }),
   useFS: (fs) => ({
     save: fs.saveTestCase,
