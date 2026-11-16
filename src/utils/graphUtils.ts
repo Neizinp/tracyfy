@@ -117,7 +117,14 @@ function calculateHierarchicalLayout(artifacts: UnifiedArtifact[]): { x: number;
   const verticalSpacing = 150;
 
   // Group by artifact type for hierarchical levels
-  const typeOrder: ArtifactType[] = ['requirement', 'useCase', 'testCase', 'information'];
+  const typeOrder: ArtifactType[] = [
+    'requirement',
+    'useCase',
+    'testCase',
+    'information',
+    'risk',
+    'document',
+  ];
   const grouped = new Map<ArtifactType, UnifiedArtifact[]>();
 
   typeOrder.forEach((type) => {

@@ -6,8 +6,9 @@
  */
 
 import React from 'react';
-import type { ArtifactType } from './index';
-import { TYPE_COLORS } from './index';
+import type { ArtifactType } from './types';
+import { TYPE_COLORS, ALL_TRACE_TYPES } from './types';
+import { TypeFilterButtons } from './TypeFilterButtons';
 
 export interface MatrixArtifact {
   id: string;
@@ -52,6 +53,8 @@ const TYPE_ORDER: Record<string, number> = {
   requirement: 1,
   testCase: 2,
   information: 3,
+  risk: 4,
+  document: 5,
 };
 
 export const MatrixView: React.FC<MatrixViewProps> = ({
@@ -61,7 +64,9 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
   toggleType,
 }) => {
   const unsortedArtifacts =
-    selectedTypes.size === 4 ? allArtifacts : allArtifacts.filter((a) => selectedTypes.has(a.type));
+    selectedTypes.size === ALL_TRACE_TYPES.length
+      ? allArtifacts
+      : allArtifacts.filter((a) => selectedTypes.has(a.type));
 
   const matrixArtifacts = [...unsortedArtifacts]
     .sort((a, b) => {
@@ -126,43 +131,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
         >
           Traceability Matrix
         </h3>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          {[
-            { type: 'useCase' as ArtifactType, label: 'UC', color: TYPE_COLORS.useCase.text },
-            {
-              type: 'requirement' as ArtifactType,
-              label: 'REQ',
-              color: TYPE_COLORS.requirement.text,
-            },
-            { type: 'testCase' as ArtifactType, label: 'TC', color: TYPE_COLORS.testCase.text },
-            {
-              type: 'information' as ArtifactType,
-              label: 'INFO',
-              color: TYPE_COLORS.information.text,
-            },
-          ].map(({ type, label, color }) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => toggleType(type)}
-              style={{
-                padding: '4px 8px',
-                borderRadius: 'var(--radius-xs)',
-                border: selectedTypes.has(type)
-                  ? `2px solid ${color}`
-                  : '2px solid var(--color-border)',
-                backgroundColor: selectedTypes.has(type) ? `${color}20` : 'transparent',
-                color: selectedTypes.has(type) ? color : 'var(--color-text-muted)',
-                cursor: 'pointer',
-                fontSize: 'var(--font-size-xs)',
-                fontWeight: 600,
-                transition: 'all 0.15s',
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <TypeFilterButtons selectedTypes={selectedTypes} onToggle={toggleType} />
       </div>
 
       {matrixArtifacts.length === 0 ? (
@@ -177,21 +146,22 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
         </div>
       ) : (
         <>
-          {allArtifacts.length > MAX_MATRIX_SIZE && selectedTypes.size === 4 && (
-            <div
-              style={{
-                padding: '8px 12px',
-                backgroundColor: 'var(--color-warning-bg)',
-                borderRadius: 'var(--radius-sm)',
-                marginBottom: 'var(--spacing-md)',
-                fontSize: 'var(--font-size-sm)',
-                color: 'var(--color-warning-light)',
-              }}
-            >
-              Showing first {MAX_MATRIX_SIZE} of {allArtifacts.length} artifacts. Use the toggles to
-              narrow down.
-            </div>
-          )}
+          {allArtifacts.length > MAX_MATRIX_SIZE &&
+            selectedTypes.size === ALL_TRACE_TYPES.length && (
+              <div
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: 'var(--color-warning-bg)',
+                  borderRadius: 'var(--radius-sm)',
+                  marginBottom: 'var(--spacing-md)',
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-warning-light)',
+                }}
+              >
+                Showing first {MAX_MATRIX_SIZE} of {allArtifacts.length} artifacts. Use the toggles
+                to narrow down.
+              </div>
+            )}
 
           <div style={{ overflowX: 'auto' }}>
             <table

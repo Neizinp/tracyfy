@@ -8,6 +8,8 @@ import {
   useInformation,
   useUI,
   useProject,
+  useRisks,
+  useDocuments,
 } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
 import { notifyError } from '../app/providers/ToastProvider';
@@ -27,6 +29,8 @@ export const TraceabilityDashboardPage: React.FC = () => {
   const { useCases } = useUseCases();
   const { testCases } = useTestCases();
   const { information } = useInformation();
+  const { risks } = useRisks();
+  const { documents } = useDocuments();
   const { searchQuery, setLinkSourceId, setLinkSourceType, setIsLinkModalOpen } = useUI();
   const { allLinks: standaloneLinks, deleteLink } = useLinkService({});
   const { projects } = useProject();
@@ -84,6 +88,28 @@ export const TraceabilityDashboardPage: React.FC = () => {
     });
   }, [information, searchQuery]);
 
+  const filteredRisks = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return risks.filter((risk) => {
+      if (risk.isDeleted) return false;
+      if (!searchQuery) return true;
+      return (
+        risk.id.toLowerCase().includes(query) ||
+        risk.title.toLowerCase().includes(query) ||
+        (risk.description || '').toLowerCase().includes(query)
+      );
+    });
+  }, [risks, searchQuery]);
+
+  const filteredDocuments = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return documents.filter((doc) => {
+      if (doc.isDeleted) return false;
+      if (!searchQuery) return true;
+      return doc.id.toLowerCase().includes(query) || doc.title.toLowerCase().includes(query);
+    });
+  }, [documents, searchQuery]);
+
   // Handler to open LinkModal for adding a link
   const handleAddLink = useCallback(
     (artifactId: string, artifactType: string) => {
@@ -121,6 +147,8 @@ export const TraceabilityDashboardPage: React.FC = () => {
       useCases={filteredUseCases}
       testCases={filteredTestCases}
       information={filteredInformation}
+      risks={filteredRisks}
+      documents={filteredDocuments}
       standaloneLinks={standaloneLinks}
       projects={projects}
       initialTab={initialTab}

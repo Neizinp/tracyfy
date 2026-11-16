@@ -12,6 +12,7 @@ import {
   type ImpactChain,
   type ImpactNode,
 } from '../../services/impactAnalysisService';
+import { TYPE_COLORS } from './types';
 import type { Link } from '../../types';
 import type { UnifiedArtifact } from '../traceability';
 
@@ -20,29 +21,6 @@ interface ImpactAnalysisPanelProps {
   links: Link[];
   onSelectArtifact?: (id: string) => void;
 }
-
-const TYPE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  requirement: {
-    bg: 'var(--color-info-bg)',
-    text: 'var(--color-info)',
-    border: 'var(--color-info)',
-  },
-  useCase: {
-    bg: 'var(--color-success-bg)',
-    text: 'var(--color-success)',
-    border: 'var(--color-success)',
-  },
-  testCase: {
-    bg: 'var(--color-warning-bg)',
-    text: 'var(--color-warning)',
-    border: 'var(--color-warning)',
-  },
-  information: {
-    bg: 'var(--color-accent-bg)',
-    text: 'var(--color-accent-light)',
-    border: 'var(--color-accent-light)',
-  },
-};
 
 export const ImpactAnalysisPanel: React.FC<ImpactAnalysisPanelProps> = ({
   artifacts,

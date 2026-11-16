@@ -59,4 +59,47 @@ describe('integration: traceability dashboard', () => {
     expect(h.exists(`links/${link.id}.md`)).toBe(false);
     expect(await h.invisibleDirtyPaths()).toEqual([]);
   }, 60_000);
+
+  it('links to risks and documents count in traceability', async () => {
+    h = await startApp({ initialRoute: '/traceability' });
+    const req = await addRequirement(h, 'Login');
+    const risk = (await act(() =>
+      h.app().risks.handleAddRisk({
+        title: 'Lockout',
+        description: '',
+        mitigation: 'x',
+        status: 'identified',
+        dateCreated: Date.now(),
+      } as never)
+    ))!;
+    const doc = (await act(() =>
+      h.app().documents.handleAddDocument({
+        title: 'Login spec',
+        projectId: h.app().project.currentProjectId,
+        structure: [],
+        dateCreated: Date.now(),
+      } as never)
+    ))!;
+    const unlinkedRisk = (await act(() =>
+      h.app().risks.handleAddRisk({
+        title: 'Unmitigated supplier risk',
+        description: '',
+        mitigation: '',
+        status: 'identified',
+        dateCreated: Date.now(),
+      } as never)
+    ))!;
+    await act(() => h.app().fileSystem.createLink(req.id, risk.id, 'related_to'));
+    await act(() => h.app().fileSystem.createLink(doc.id, req.id, 'satisfies'));
+    await h.settle();
+
+    // Overview counts all four artifacts; only the unlinked risk is a gap
+    expect((await screen.findByText('Total Artifacts')).previousSibling).toHaveTextContent('4');
+    expect(screen.getByRole('button', { name: 'Gaps (1)' })).toBeInTheDocument();
+
+    // The unlinked risk is a gap; the linked risk and document are not "No links"
+    fireEvent.click(screen.getByRole('button', { name: 'Gaps (1)' }));
+    expect(await screen.findAllByText('No links')).toHaveLength(1);
+    expect(screen.getByText(unlinkedRisk.title)).toBeInTheDocument();
+  }, 60_000);
 });

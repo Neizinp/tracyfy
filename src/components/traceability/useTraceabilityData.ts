@@ -7,28 +7,41 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
-import type { Requirement, UseCase, TestCase, Information, Link } from '../../types';
+import type {
+  Requirement,
+  UseCase,
+  TestCase,
+  Information,
+  Risk,
+  ArtifactDocument,
+  Link,
+} from '../../types';
 import type { ArtifactType, UnifiedArtifact, GapInfo } from './types';
+import { ALL_TRACE_TYPES, traceTypeOf } from './types';
 
 interface UseTraceabilityDataOptions {
   requirements: Requirement[];
   useCases: UseCase[];
   testCases: TestCase[];
   information: Information[];
+  risks?: Risk[];
+  documents?: ArtifactDocument[];
   standaloneLinks: Link[];
 }
+
+const EMPTY: never[] = [];
 
 export function useTraceabilityData({
   requirements,
   useCases,
   testCases,
   information,
+  risks = EMPTY,
+  documents = EMPTY,
   standaloneLinks,
 }: UseTraceabilityDataOptions) {
   // Multi-select type toggles - all selected by default
-  const [selectedTypes, setSelectedTypes] = useState<Set<ArtifactType>>(
-    new Set(['requirement', 'useCase', 'testCase', 'information'])
-  );
+  const [selectedTypes, setSelectedTypes] = useState<Set<ArtifactType>>(new Set(ALL_TRACE_TYPES));
 
   // Toggle a type on/off
   const toggleType = useCallback((type: ArtifactType) => {
@@ -78,8 +91,14 @@ export function useTraceabilityData({
         linkedArtifacts: i.linkedArtifacts || [],
       })
     );
+    risks.forEach((r) =>
+      artifacts.push({ id: r.id, title: r.title, type: 'risk', linkedArtifacts: [] })
+    );
+    documents.forEach((d) =>
+      artifacts.push({ id: d.id, title: d.title, type: 'document', linkedArtifacts: [] })
+    );
     return artifacts;
-  }, [requirements, useCases, testCases, information]);
+  }, [requirements, useCases, testCases, information, risks, documents]);
 
   // Build all links set for bi-directional lookup
   const allLinksSet = useMemo(() => {
@@ -98,12 +117,12 @@ export function useTraceabilityData({
       return { total: artifacts.length, linked, gaps: artifacts.length - linked };
     };
 
-    return {
-      requirement: calculateStats(allArtifacts.filter((a) => a.type === 'requirement')),
-      useCase: calculateStats(allArtifacts.filter((a) => a.type === 'useCase')),
-      testCase: calculateStats(allArtifacts.filter((a) => a.type === 'testCase')),
-      information: calculateStats(allArtifacts.filter((a) => a.type === 'information')),
-    };
+    return Object.fromEntries(
+      ALL_TRACE_TYPES.map((type) => [
+        type,
+        calculateStats(allArtifacts.filter((a) => a.type === type)),
+      ])
+    ) as Record<ArtifactType, { total: number; linked: number; gaps: number }>;
   }, [allArtifacts, allLinksSet]);
 
   // Get gap artifacts with issue types, from link files (legacy embedded
@@ -161,13 +180,8 @@ export function useTraceabilityData({
     const artifactTypeMap = new Map(allArtifacts.map((a) => [a.id, a.type]));
     const artifactIds = new Set(allArtifacts.map((a) => a.id));
 
-    const getTypeFromId = (id: string): ArtifactType => {
-      if (id.startsWith('REQ-')) return 'requirement';
-      if (id.startsWith('UC-')) return 'useCase';
-      if (id.startsWith('TC-')) return 'testCase';
-      if (id.startsWith('INFO-')) return 'information';
-      return artifactTypeMap.get(id) || 'requirement';
-    };
+    const getTypeFromId = (id: string): ArtifactType =>
+      artifactTypeMap.get(id) ?? traceTypeOf(id) ?? 'requirement';
 
     standaloneLinks.forEach((link) => {
       if (artifactIds.has(link.sourceId) && artifactIds.has(link.targetId)) {
@@ -203,18 +217,13 @@ export function useTraceabilityData({
 
   // Filter gaps by selected types
   const filteredGaps = useMemo(() => {
-    if (selectedTypes.size === 4) return gapArtifacts;
+    if (selectedTypes.size === ALL_TRACE_TYPES.length) return gapArtifacts;
     return gapArtifacts.filter((gap) => selectedTypes.has(gap.artifact.type));
   }, [gapArtifacts, selectedTypes]);
 
   // Computed totals
-  const totalGaps =
-    stats.requirement.gaps + stats.useCase.gaps + stats.testCase.gaps + stats.information.gaps;
-  const totalLinked =
-    stats.requirement.linked +
-    stats.useCase.linked +
-    stats.testCase.linked +
-    stats.information.linked;
+  const totalGaps = ALL_TRACE_TYPES.reduce((sum, t) => sum + stats[t].gaps, 0);
+  const totalLinked = ALL_TRACE_TYPES.reduce((sum, t) => sum + stats[t].linked, 0);
   const totalArtifacts = allArtifacts.length;
 
   return {
