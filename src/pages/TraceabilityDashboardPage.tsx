@@ -10,6 +10,7 @@ import {
   useProject,
 } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
+import { notifyError } from '../app/providers/ToastProvider';
 
 type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
 
@@ -21,10 +22,10 @@ export const TraceabilityDashboardPage: React.FC = () => {
       ? tabParam
       : 'overview';
 
-  const { requirements, handleUpdateRequirement } = useRequirements();
-  const { useCases, handleUpdateUseCase } = useUseCases();
-  const { testCases, handleUpdateTestCase } = useTestCases();
-  const { information, handleUpdateInformation } = useInformation();
+  const { requirements } = useRequirements();
+  const { useCases } = useUseCases();
+  const { testCases } = useTestCases();
+  const { information } = useInformation();
   const { searchQuery, setLinkSourceId, setLinkSourceType, setIsLinkModalOpen } = useUI();
   const { allLinks: standaloneLinks, deleteLink } = useLinkService({});
   const { projects } = useProject();
@@ -101,53 +102,13 @@ export const TraceabilityDashboardPage: React.FC = () => {
   // Handler to remove an orphan link
   const handleRemoveLink = useCallback(
     (artifactId: string, targetId: string) => {
-      // Link files (what the app creates): delete them
       standaloneLinks
         .filter((l) => l.sourceId === artifactId && l.targetId === targetId)
         .forEach((l) => {
-          deleteLink(l.id).catch((err) => console.error('Failed to remove link:', err));
+          deleteLink(l.id).catch((err) => notifyError('Could not remove link', err));
         });
-
-      // Legacy links embedded in the artifact (unchanged artifacts are not rewritten)
-      const req = requirements.find((r) => r.id === artifactId);
-      if (req) {
-        const updatedLinks = (req.linkedArtifacts || []).filter((l) => l.targetId !== targetId);
-        handleUpdateRequirement(artifactId, { linkedArtifacts: updatedLinks });
-        return;
-      }
-
-      const uc = useCases.find((u) => u.id === artifactId);
-      if (uc) {
-        const updatedLinks = (uc.linkedArtifacts || []).filter((l) => l.targetId !== targetId);
-        handleUpdateUseCase(artifactId, { linkedArtifacts: updatedLinks });
-        return;
-      }
-
-      const tc = testCases.find((t) => t.id === artifactId);
-      if (tc) {
-        const updatedLinks = (tc.linkedArtifacts || []).filter((l) => l.targetId !== targetId);
-        handleUpdateTestCase(artifactId, { linkedArtifacts: updatedLinks });
-        return;
-      }
-
-      const info = information.find((i) => i.id === artifactId);
-      if (info) {
-        const updatedLinks = (info.linkedArtifacts || []).filter((l) => l.targetId !== targetId);
-        handleUpdateInformation(artifactId, { linkedArtifacts: updatedLinks });
-      }
     },
-    [
-      standaloneLinks,
-      deleteLink,
-      requirements,
-      useCases,
-      testCases,
-      information,
-      handleUpdateRequirement,
-      handleUpdateUseCase,
-      handleUpdateTestCase,
-      handleUpdateInformation,
-    ]
+    [standaloneLinks, deleteLink]
   );
 
   return (

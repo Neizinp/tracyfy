@@ -26,6 +26,17 @@ import {
   documentService,
 } from '../../services/artifactServices';
 import { diskLinkService } from '../../services/diskLinkService';
+import { migrateEmbeddedLinks } from '../../services/linkMigrationService';
+import { notifyError } from './ToastProvider';
+
+/** Convert links embedded by older versions into link files (no-op once done) */
+async function migrateLegacyLinks(): Promise<void> {
+  try {
+    await migrateEmbeddedLinks();
+  } catch (err) {
+    notifyError('Could not migrate links from an older version of the project', err);
+  }
+}
 import { useBackgroundTaskActions } from './BackgroundTasksProvider';
 import type {
   Requirement,
@@ -249,8 +260,14 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [startTask, endTask]);
 
-  // Try to restore previously selected directory on mount
+  // Try to restore previously selected directory on mount.
+  // Runs once per mount: React StrictMode (dev) invokes effects twice, and the
+  // effect's deps may change identity, but restoring (git init, counter
+  // recalculation, link migration) must not run concurrently or repeatedly.
+  const restoreStartedRef = useRef(false);
   useEffect(() => {
+    if (restoreStartedRef.current) return;
+    restoreStartedRef.current = true;
     const tryRestore = async () => {
       if (!fileSystemService.isSupported()) {
         setError('File System Access API is not supported. Please use Chrome, Edge, or Opera.');
@@ -292,6 +309,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
               // Initialize disk project service directories
               await diskProjectService.initialize();
+              await migrateLegacyLinks();
 
               // Load data and git status in parallel (they're independent)
               const [, status] = await Promise.all([reloadData(), loadStatus()]);
@@ -358,6 +376,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       // Initialize disk project service directories
       await diskProjectService.initialize();
+      await migrateLegacyLinks();
 
       // Load data and git status in parallel (they're independent)
       const [, status] = await Promise.all([reloadData(), loadStatus()]);

@@ -84,12 +84,6 @@ export function useTraceabilityData({
   // Build all links set for bi-directional lookup
   const allLinksSet = useMemo(() => {
     const links = new Set<string>();
-    allArtifacts.forEach((artifact) => {
-      artifact.linkedArtifacts.forEach((link) => {
-        links.add(artifact.id);
-        links.add(link.targetId);
-      });
-    });
     standaloneLinks.forEach((link) => {
       links.add(link.sourceId);
       links.add(link.targetId);
@@ -112,9 +106,8 @@ export function useTraceabilityData({
     };
   }, [allArtifacts, allLinksSet]);
 
-  // Get gap artifacts with issue types.
-  // Considers both link files (standaloneLinks, what the app creates) and the
-  // legacy links embedded in artifacts (linkedArtifacts).
+  // Get gap artifacts with issue types, from link files (legacy embedded
+  // links are migrated to link files on load - see linkMigrationService).
   const gapArtifacts = useMemo((): GapInfo[] => {
     const gaps: GapInfo[] = [];
     const artifactIds = new Set(allArtifacts.map((a) => a.id));
@@ -126,9 +119,6 @@ export function useTraceabilityData({
       list.push(targetId);
       outgoingTargets.set(sourceId, list);
     };
-    allArtifacts.forEach((artifact) =>
-      artifact.linkedArtifacts.forEach((link) => addOutgoing(artifact.id, link.targetId))
-    );
     standaloneLinks.forEach((link) => addOutgoing(link.sourceId, link.targetId));
 
     const hasIncomingLink = new Set<string>();
@@ -190,20 +180,6 @@ export function useTraceabilityData({
           targetType: getTypeFromId(link.targetId),
         });
       }
-    });
-
-    allArtifacts.forEach((artifact) => {
-      artifact.linkedArtifacts.forEach((link) => {
-        if (link.type && link.targetId && artifactIds.has(link.targetId)) {
-          links.push({
-            sourceId: artifact.id,
-            targetId: link.targetId,
-            type: link.type,
-            sourceType: artifact.type,
-            targetType: artifactTypeMap.get(link.targetId) || 'requirement',
-          });
-        }
-      });
     });
 
     testCases.forEach((tc) => {
