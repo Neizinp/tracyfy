@@ -8,6 +8,7 @@
  * Pure TypeScript: no React, no IO.
  */
 import { getInverseType, type LinkType } from './linkTypes';
+import { kindOfId } from './artifactKinds';
 
 /** The part of a link these functions read */
 export interface LinkEnds {
@@ -37,7 +38,9 @@ export function linkedIds(links: readonly LinkEnds[], id: string, type: LinkType
 }
 
 /** How many links each artifact is an end of */
-export function linkCounts(links: readonly LinkEnds[]): Map<string, number> {
+export function linkCounts(
+  links: readonly Pick<LinkEnds, 'sourceId' | 'targetId' | 'isDeleted'>[]
+): Map<string, number> {
   const counts = new Map<string, number>();
   const add = (id: string) => counts.set(id, (counts.get(id) ?? 0) + 1);
   for (const link of links) {
@@ -46,4 +49,9 @@ export function linkCounts(links: readonly LinkEnds[]): Map<string, number> {
     if (link.targetId !== link.sourceId) add(link.targetId);
   }
   return counts;
+}
+
+/** The requirements a test case verifies */
+export function verifiedRequirementIds(links: readonly LinkEnds[], testCaseId: string): string[] {
+  return linkedIds(links, testCaseId, 'verifies').filter((id) => kindOfId(id) === 'requirement');
 }

@@ -9,6 +9,10 @@ vi.mock('../../app/providers', () => ({
   useCustomAttributes: vi.fn(),
 }));
 
+vi.mock('../../app/providers/FileSystemProvider', () => ({
+  useFileSystem: () => ({ links: [] }),
+}));
+
 // Mock react-virtuoso to render all items (bypasses virtualization in tests)
 vi.mock('react-virtuoso', () => ({
   TableVirtuoso: ({
@@ -64,7 +68,6 @@ describe('TestCaseList', () => {
       id: 'TC-001',
       title: 'Verify Login',
       description: 'Check login with valid creds',
-      requirementIds: ['REQ-001'],
       priority: 'high',
       status: 'passed',
       revision: '01',

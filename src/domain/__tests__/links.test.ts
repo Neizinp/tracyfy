@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { linkedIds, linkCounts, type LinkEnds } from '../links';
+import { linkedIds, linkCounts, verifiedRequirementIds, type LinkEnds } from '../links';
 
 const link = (sourceId: string, type: LinkEnds['type'], targetId: string): LinkEnds => ({
   sourceId,
@@ -46,5 +46,17 @@ describe('linkCounts', () => {
       { ...link('TC-001', 'verifies', 'REQ-002'), isDeleted: true },
     ]);
     expect(Object.fromEntries(counts)).toEqual({ 'REQ-001': 2, 'REQ-002': 1, 'TC-001': 1 });
+  });
+});
+
+describe('verifiedRequirementIds', () => {
+  it('lists the requirements a test case verifies, from either end', () => {
+    const links = [
+      link('TC-001', 'verifies', 'REQ-002'),
+      link('REQ-001', 'verified_by', 'TC-001'),
+      link('TC-001', 'verifies', 'UC-001'), // not a requirement
+      link('TC-002', 'verifies', 'REQ-003'), // another test case
+    ];
+    expect(verifiedRequirementIds(links, 'TC-001')).toEqual(['REQ-001', 'REQ-002']);
   });
 });

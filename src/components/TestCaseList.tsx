@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import type { TestCase, TestCaseColumnVisibility } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { useCustomAttributes } from '../app/providers';
+import { useFileSystem } from '../app/providers/FileSystemProvider';
+import { verifiedRequirementIds } from '../domain/links';
 import { BaseArtifactTable, MarkdownCell } from './index';
 import type { ColumnDef } from './BaseArtifactTable';
 import type { SortConfig } from './SortableHeader';
@@ -22,6 +24,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
   onSortChange,
 }) => {
   const { definitions } = useCustomAttributes();
+  const { links } = useFileSystem();
 
   const columns = useMemo<ColumnDef<TestCase>[]>(
     () => [
@@ -46,7 +49,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
         visible: visibleColumns.requirements,
         render: (tc) => (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-            {tc.requirementIds?.map((id) => (
+            {verifiedRequirementIds(links, tc.id).map((id) => (
               <span
                 key={id}
                 style={{
@@ -194,7 +197,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
           };
         }),
     ],
-    [visibleColumns, definitions]
+    [visibleColumns, definitions, links]
   );
 
   return (
