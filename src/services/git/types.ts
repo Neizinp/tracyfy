@@ -14,16 +14,6 @@ export interface FileStatus {
   status: string;
 }
 
-export type ArtifactFolder =
-  | 'requirements'
-  | 'usecases'
-  | 'testcases'
-  | 'information'
-  | 'risks'
-  | 'links'
-  | 'workflows'
-  | 'documents';
-
 export interface Remote {
   name: string;
   url: string;

@@ -8,70 +8,41 @@
 import { BaseDiskService } from './baseDiskService';
 import type { SavedFilter, FilterState } from '../types/filters';
 import { idAllocator } from '../storage/idAllocator';
+import { escapeBodyText, joinFrontmatter, readBody, splitFrontmatter } from '../domain/frontmatter';
 
 const SAVED_FILTERS_DIR = 'saved-filters';
 
-/**
- * Convert a SavedFilter to Markdown with YAML frontmatter
- */
+/** saved-filters/FILTER-001.md; the file name is the ID */
 function savedFilterToMarkdown(filter: SavedFilter): string {
-  const lines = [
-    '---',
-    `id: "${filter.id}"`,
-    `name: "${filter.name}"`,
-    `description: "${filter.description || ''}"`,
-    `dateCreated: ${filter.dateCreated}`,
-    `lastModified: ${filter.lastModified}`,
-    `filters: ${JSON.stringify(filter.filters)}`,
-    '---',
-    '',
-    `# ${filter.name}`,
-    '',
-    filter.description || 'No description.',
-  ];
-  return lines.join('\n');
+  return joinFrontmatter(
+    {
+      name: filter.name,
+      dateCreated: filter.dateCreated,
+      lastModified: filter.lastModified,
+      filters: filter.filters,
+    },
+    `# ${filter.name}
+
+${escapeBodyText(filter.description)}`
+  );
 }
 
-/**
- * Parse Markdown content to SavedFilter
- */
-function markdownToSavedFilter(content: string): SavedFilter | null {
-  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-  if (!frontmatterMatch) return null;
-
-  const frontmatter = frontmatterMatch[1];
-  const data: Record<string, string> = {};
-
-  frontmatter.split('\n').forEach((line) => {
-    const colonIndex = line.indexOf(':');
-    if (colonIndex > 0) {
-      const key = line.slice(0, colonIndex).trim();
-      let value = line.slice(colonIndex + 1).trim();
-      // Remove quotes
-      if (value.startsWith('"') && value.endsWith('"')) {
-        value = value.slice(1, -1);
-      }
-      data[key] = value;
-    }
-  });
-
-  if (!data.id || !data.name) return null;
-
-  let filters: FilterState = {};
+function markdownToSavedFilter(id: string, content: string): SavedFilter | null {
   try {
-    filters = JSON.parse(data.filters || '{}');
+    const { data, body } = splitFrontmatter(content);
+    if (typeof data.name !== 'string' || !data.name) return null;
+    const description = readBody(body).text;
+    return {
+      id,
+      name: data.name,
+      description: description || undefined,
+      filters: (data.filters as FilterState) || {},
+      dateCreated: (data.dateCreated as number) || 0,
+      lastModified: (data.lastModified as number) || 0,
+    };
   } catch {
-    // Invalid JSON
+    return null;
   }
-
-  return {
-    id: data.id,
-    name: data.name,
-    description: data.description || undefined,
-    filters,
-    dateCreated: parseInt(data.dateCreated, 10) || Date.now(),
-    lastModified: parseInt(data.lastModified, 10) || Date.now(),
-  };
 }
 
 class DiskFilterService extends BaseDiskService {
@@ -96,7 +67,7 @@ class DiskFilterService extends BaseDiskService {
 
         const content = await this.readTextFile(`${SAVED_FILTERS_DIR}/${file}`);
         if (content) {
-          const filter = markdownToSavedFilter(content);
+          const filter = markdownToSavedFilter(file.slice(0, -'.md'.length), content);
           if (filter) {
             filters.push(filter);
           }
@@ -116,7 +87,7 @@ class DiskFilterService extends BaseDiskService {
     try {
       const content = await this.readTextFile(`${SAVED_FILTERS_DIR}/${id}.md`);
       if (content) {
-        return markdownToSavedFilter(content);
+        return markdownToSavedFilter(id, content);
       }
     } catch {
       // File doesn't exist

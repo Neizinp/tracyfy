@@ -5,10 +5,7 @@
  *
  * Directory structure:
  * /tracyfy.yaml        # project settings: name, description, custom attributes
- * /requirements/REQ-001.md
- * /usecases/UC-001.md
- * /testcases/TC-001.md
- * /information/INFO-001.md
+ * /<folder of each kind>/<ID>.md   # see domain/artifactKinds.ts
  */
 
 import { BaseDiskService } from './baseDiskService';
@@ -32,6 +29,7 @@ import {
   documentService,
 } from './artifactServices';
 import { diskLinkService } from './diskLinkService';
+import type { FileProblem } from './baseArtifactService';
 import { projectConfigStore } from '../storage/projectConfigStore';
 import { projectOf } from '../domain/projectConfig';
 
@@ -62,9 +60,7 @@ class DiskProjectService extends BaseDiskService {
     }));
   }
 
-  /**
-   * Load everything from disk
-   */
+  /** Load everything from disk, and every file that could not be read */
   async loadAll(): Promise<{
     project: Project;
     requirements: Requirement[];
@@ -74,28 +70,31 @@ class DiskProjectService extends BaseDiskService {
     risks: Risk[];
     documents: ArtifactDocument[];
     links: Link[];
+    problems: FileProblem[];
   }> {
     const [project, requirements, useCases, testCases, information, risks, documents, links] =
       await Promise.all([
         this.loadProject(),
-        requirementService.loadAll(),
-        useCaseService.loadAll(),
-        testCaseService.loadAll(),
-        informationService.loadAll(),
-        riskService.loadAll(),
-        documentService.loadAll(),
-        diskLinkService.getAllLinks(),
+        requirementService.loadAllWithProblems(),
+        useCaseService.loadAllWithProblems(),
+        testCaseService.loadAllWithProblems(),
+        informationService.loadAllWithProblems(),
+        riskService.loadAllWithProblems(),
+        documentService.loadAllWithProblems(),
+        diskLinkService.loadAllWithProblems(),
       ]);
+    const loaded = [requirements, useCases, testCases, information, risks, documents, links];
 
     return {
       project,
-      requirements,
-      useCases,
-      testCases,
-      information,
-      risks,
-      documents,
-      links,
+      requirements: requirements.items,
+      useCases: useCases.items,
+      testCases: testCases.items,
+      information: information.items,
+      risks: risks.items,
+      documents: documents.items,
+      links: links.items,
+      problems: loaded.flatMap((l) => l.problems),
     };
   }
 }

@@ -2,7 +2,7 @@ import { BaseArtifactService } from './baseArtifactService';
 import type { Link } from '../types';
 import type { LinkType } from '../domain/linkTypes';
 import { getInverseType } from '../domain/linkTypes';
-import { linkToMarkdown, parseMarkdownLink } from '../utils/linkMarkdownUtils';
+import { parseLink, serializeLink } from '../domain/artifactFormat';
 import { idAllocator } from '../storage/idAllocator';
 import { STORED_TYPES } from './storedTypes';
 
@@ -18,8 +18,8 @@ export interface IncomingLink {
 class DiskLinkService extends BaseArtifactService<Link> {
   constructor() {
     super('link', {
-      serialize: linkToMarkdown,
-      deserialize: parseMarkdownLink,
+      serialize: serializeLink,
+      deserialize: parseLink,
     });
   }
 

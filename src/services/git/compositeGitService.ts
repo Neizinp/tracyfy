@@ -1,7 +1,7 @@
 import { debug } from '../../utils/debug';
 import { fileSystemService } from '../fileSystemService';
 import { gitCoreService } from './gitCoreService';
-import { gitHistoryService } from './gitHistoryService';
+import { gitHistoryService, type ProjectSnapshot } from './gitHistoryService';
 import { gitSyncService } from './gitSyncService';
 import { gitRemoteService } from './gitRemoteService';
 import { gitBaselineService } from './gitBaselineService';
@@ -11,11 +11,9 @@ import {
   type FileStatus,
   type CommitInfo,
   type SyncStatus,
-  type ArtifactFolder,
   type TagDetails,
   type PullResult,
 } from './types';
-import type { Requirement, UseCase, TestCase, Information } from '../../types';
 
 class CompositeGitService {
   private _initialized = false;
@@ -92,22 +90,6 @@ class CompositeGitService {
     return this.initialized;
   }
 
-  async saveArtifact(type: string, id: string, artifact: object): Promise<void> {
-    return gitCoreService.saveArtifact(
-      type as ArtifactFolder,
-      id,
-      artifact as Requirement | UseCase | TestCase | Information
-    );
-  }
-
-  async deleteArtifact(type: string, id: string): Promise<void> {
-    return gitCoreService.deleteArtifact(type as ArtifactFolder, id);
-  }
-
-  async renameFile(oldP: string, newP: string, cont: string, msg?: string): Promise<void> {
-    return gitCoreService.renameFile(oldP, newP, cont, msg);
-  }
-
   async getStatus(): Promise<FileStatus[]> {
     return gitCoreService.getStatus();
   }
@@ -129,27 +111,13 @@ class CompositeGitService {
     return gitCoreService.revertFile(path);
   }
 
-  async loadAllArtifacts(): Promise<{
-    requirements: Requirement[];
-    useCases: UseCase[];
-    testCases: TestCase[];
-    information: Information[];
-  }> {
-    return gitCoreService.loadAllArtifacts();
-  }
-
   // Facade Methods (History)
 
   async listFilesAtCommit(hash: string): Promise<string[]> {
     return gitHistoryService.listFilesAtCommit(hash);
   }
 
-  async loadProjectSnapshot(hash: string): Promise<{
-    requirements: Requirement[];
-    useCases: UseCase[];
-    testCases: TestCase[];
-    information: Information[];
-  }> {
+  async loadProjectSnapshot(hash: string): Promise<ProjectSnapshot> {
     return gitHistoryService.loadProjectSnapshot(hash);
   }
 

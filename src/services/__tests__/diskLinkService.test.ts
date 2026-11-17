@@ -43,11 +43,9 @@ describe('DiskLinkService', () => {
   });
 
   const sampleLinkMarkdown = `---
-id: LINK-001
-sourceId: REQ-001
-targetId: UC-001
+source: REQ-001
 type: satisfies
-projectIds: 
+target: UC-001
 dateCreated: 1700000000000
 lastModified: 1700000100000
 ---
@@ -55,16 +53,12 @@ lastModified: 1700000100000
 # LINK-001
 
 Links **REQ-001** to **UC-001** (satisfies)
-
-**Scope:** Global (all projects)
 `;
 
   const projectScopedLinkMarkdown = `---
-id: LINK-002
-sourceId: REQ-002
-targetId: TC-001
+source: REQ-002
 type: verifies
-projectIds: PRJ-001, PRJ-002
+target: TC-001
 dateCreated: 1700000000000
 lastModified: 1700000000000
 ---
@@ -258,7 +252,7 @@ lastModified: 1700000000000
       expect(updated!.type).toBe('depends_on');
       expect(fileSystemService.writeFile).toHaveBeenCalledWith(
         'links/LINK-001.md',
-        expect.stringContaining('type: "depends_on"')
+        expect.stringContaining('type: depends_on')
       );
     });
 

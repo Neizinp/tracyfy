@@ -14,7 +14,6 @@ vi.mock('../gitCoreService', () => ({
     setAddToCacheFn: vi.fn(),
     setEnsureTokenLoadedFn: vi.fn(),
     init: vi.fn(),
-    saveArtifact: vi.fn(),
     commitFile: vi.fn(),
     getStatus: vi.fn(),
   },
@@ -88,13 +87,6 @@ describe('CompositeGitService', () => {
       expect(res).toBe(true);
       expect(gitCoreService.init).toHaveBeenCalled();
       expect(compositeGitService.initialized).toBe(true);
-    });
-
-    it('should delegate saveArtifact with type casting', async () => {
-      const artifact = { id: 'REQ-1' };
-      await compositeGitService.saveArtifact('requirements', 'REQ-1', artifact);
-
-      expect(gitCoreService.saveArtifact).toHaveBeenCalledWith('requirements', 'REQ-1', artifact);
     });
 
     it('should delegate commitFile', async () => {

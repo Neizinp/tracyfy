@@ -27,13 +27,18 @@ describe('SnapshotViewer', () => {
   };
 
   const mockData = {
-    requirements: [
-      { id: 'REQ-1', title: 'Test Req', content: 'Description 1' },
-      { id: 'REQ-2', title: 'Another Req', content: 'Description 2' },
-    ],
-    useCases: [{ id: 'UC-1', title: 'Test Use Case', description: 'UC Desc' }],
-    testCases: [],
-    information: [],
+    artifacts: {
+      requirement: [
+        { id: 'REQ-1', title: 'Test Req', content: 'Description 1' },
+        { id: 'REQ-2', title: 'Another Req', content: 'Description 2' },
+      ],
+      useCase: [{ id: 'UC-1', title: 'Test Use Case', description: 'UC Desc' }],
+      testCase: [],
+      information: [],
+      risk: [],
+      document: [],
+    },
+    links: [],
   };
 
   beforeEach(() => {

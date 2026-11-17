@@ -40,6 +40,7 @@ import type {
 import { kind, type ArtifactKindId } from '../../domain/artifactKinds';
 import { STORED_TYPES, type StoredType } from '../../services/storedTypes';
 import { idAllocator } from '../../storage/idAllocator';
+import type { FileProblem } from '../../services/baseArtifactService';
 
 interface FileSystemContextValue {
   isReady: boolean;
@@ -59,6 +60,8 @@ interface FileSystemContextValue {
   risks: Risk[];
   documents: ArtifactDocument[];
   links: Link[];
+  /** Files that could not be read (shown to the user, never silently skipped) */
+  fileProblems: FileProblem[];
   // Git-related
   pendingChanges: FileStatus[];
   /** Set when git status could not be read (shown instead of "No pending changes") */
@@ -131,6 +134,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [risks, setRisks] = useState<Risk[]>([]);
   const [documents, setDocuments] = useState<ArtifactDocument[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
+  const [fileProblems, setFileProblems] = useState<FileProblem[]>([]);
 
   // All data from disk
   const [project, setProject] = useState<Project>(NO_PROJECT);
@@ -188,6 +192,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setDocuments(data.documents);
       setLinks(data.links);
       setRisks(data.risks);
+      setFileProblems(data.problems);
 
       debug.log('[reloadData] Data loaded:', {
         requirements: data.requirements.length,
@@ -651,6 +656,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setRisks([]);
     setDocuments([]);
     setLinks([]);
+    setFileProblems([]);
   }, []);
 
   // Static capability check; no need to recompute per render
@@ -674,6 +680,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       risks,
       documents,
       links,
+      fileProblems,
       // Git
       pendingChanges,
       statusError,
@@ -718,6 +725,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       isLoading,
       isReady,
       links,
+      fileProblems,
       pendingChanges,
       statusError,
       project,

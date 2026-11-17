@@ -12,7 +12,8 @@ import path from 'node:path';
 import git from 'isomorphic-git';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { startApp, type Harness } from './appHarness';
-import { requirementToMarkdown } from '../../utils/markdownUtils';
+import { serializeArtifact } from '../../domain/artifactFormat';
+import type { Requirement } from '../../types';
 
 /** Configure a remote the way a user does: Remote Settings → URL + token → Add Remote → close */
 async function connectRemote(h: Harness) {
@@ -45,14 +46,14 @@ describe('integration: remote sync', () => {
       fs.mkdirSync(path.dirname(file), { recursive: true });
       fs.writeFileSync(
         file,
-        requirementToMarkdown({
+        serializeArtifact('requirement', {
           id: 'REQ-050',
           title: 'From a colleague',
           text: 'Pulled text',
           revision: '01',
           dateCreated: 1,
           lastModified: 1,
-        })
+        } as Requirement)
       );
       await git.add({ fs, dir: h.dir, filepath: '.' });
       await git.commit({

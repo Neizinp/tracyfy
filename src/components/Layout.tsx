@@ -1,4 +1,5 @@
 import type { ProjectBaseline } from '../types';
+import { FileProblemsNotice } from './FileProblemsNotice';
 import { Sidebar } from './layout/Sidebar';
 import { HeaderBar } from './layout/HeaderBar';
 
@@ -99,6 +100,8 @@ export const Layout: React.FC<LayoutProps> = ({
           onHelp={onHelp}
           onChangeFolder={onChangeFolder}
         />
+
+        <FileProblemsNotice />
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
           <div

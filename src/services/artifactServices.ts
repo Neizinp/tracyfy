@@ -1,80 +1,46 @@
 /**
- * Artifact Services
- *
- * Instances of BaseArtifactService for each artifact type.
+ * One file service per artifact kind, all reading and writing the format in
+ * domain/artifactFormat.ts.
  */
+import { BaseArtifactService } from './baseArtifactService';
+import type {
+  ArtifactDocument,
+  BaseArtifact,
+  Information,
+  Requirement,
+  Risk,
+  TestCase,
+  UseCase,
+} from '../types';
+import { KIND_IDS, type ArtifactKindId } from '../domain/artifactKinds';
+import { parseArtifact, serializeArtifact } from '../domain/artifactFormat';
 
-import { BaseArtifactService, type ArtifactSerializer } from './baseArtifactService';
-import type { StoredType } from './storedTypes';
-import type { Requirement, UseCase, TestCase, Information, Risk } from '../types';
-import {
-  requirementToMarkdown,
-  markdownToRequirement,
-  convertUseCaseToMarkdown,
-  markdownToUseCase,
-  testCaseToMarkdown,
-  markdownToTestCase,
-  informationToMarkdown,
-  markdownToInformation,
-  riskToMarkdown,
-  markdownToRisk,
-} from '../utils/markdownUtils';
+function serviceFor<T extends BaseArtifact>(kindId: ArtifactKindId) {
+  return new BaseArtifactService<T>(kindId, {
+    serialize: (item) => serializeArtifact(kindId, item),
+    deserialize: (id, content) => parseArtifact(kindId, id, content) as T,
+  });
+}
 
-// Requirements Service
-const requirementSerializer: ArtifactSerializer<Requirement> = {
-  serialize: requirementToMarkdown,
-  deserialize: markdownToRequirement,
-};
-export const requirementService = new BaseArtifactService<Requirement>(
-  'requirement',
-  requirementSerializer
-);
+export const requirementService = serviceFor<Requirement>('requirement');
+export const useCaseService = serviceFor<UseCase>('useCase');
+export const testCaseService = serviceFor<TestCase>('testCase');
+export const informationService = serviceFor<Information>('information');
+export const riskService = serviceFor<Risk>('risk');
+export const documentService = serviceFor<ArtifactDocument>('document');
 
-// Use Cases Service
-const useCaseSerializer: ArtifactSerializer<UseCase> = {
-  serialize: convertUseCaseToMarkdown,
-  deserialize: markdownToUseCase,
-};
-export const useCaseService = new BaseArtifactService<UseCase>('useCase', useCaseSerializer);
-
-// Test Cases Service
-const testCaseSerializer: ArtifactSerializer<TestCase> = {
-  serialize: testCaseToMarkdown,
-  deserialize: markdownToTestCase,
-};
-export const testCaseService = new BaseArtifactService<TestCase>('testCase', testCaseSerializer);
-
-// Information Service
-const informationSerializer: ArtifactSerializer<Information> = {
-  serialize: informationToMarkdown,
-  deserialize: markdownToInformation,
-};
-export const informationService = new BaseArtifactService<Information>(
-  'information',
-  informationSerializer
-);
-
-// Risks Service
-const riskSerializer: ArtifactSerializer<Risk> = {
-  serialize: riskToMarkdown,
-  deserialize: markdownToRisk,
-};
-export const riskService = new BaseArtifactService<Risk>('risk', riskSerializer);
-
-// Registry of all artifact services for generic iteration
-import { diskLinkService } from './diskLinkService';
-import { diskWorkflowService } from './diskWorkflowService';
-import { documentService } from './documentService';
-export { documentService };
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const ALL_ARTIFACT_SERVICES: Record<StoredType, BaseArtifactService<any>> = {
+const BY_KIND: Record<ArtifactKindId, BaseArtifactService<BaseArtifact>> = {
   requirement: requirementService,
   useCase: useCaseService,
   testCase: testCaseService,
   information: informationService,
   risk: riskService,
-  link: diskLinkService,
-  workflow: diskWorkflowService,
   document: documentService,
-};
+} as unknown as Record<ArtifactKindId, BaseArtifactService<BaseArtifact>>;
+
+/** The file service of a kind */
+export function artifactService(kindId: ArtifactKindId): BaseArtifactService<BaseArtifact> {
+  return BY_KIND[kindId];
+}
+
+export const ARTIFACT_SERVICES = KIND_IDS.map((k) => BY_KIND[k]);

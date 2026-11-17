@@ -55,4 +55,35 @@ describe('integration: requirements via the UI', () => {
     expect(await screen.findByText('From a colleague')).toBeInTheDocument();
     expect(screen.getByText('Created here')).toBeInTheDocument();
   }, 60_000);
+
+  it('a file that cannot be read is reported and left out, not loaded as wrong data', async () => {
+    h = await startApp();
+    const good = (await act(() =>
+      h.app().requirements.handleAddRequirement({
+        title: 'Readable',
+        description: '',
+        text: '',
+        rationale: '',
+        status: 'draft',
+        priority: 'medium',
+        dateCreated: Date.now(),
+      } as never)
+    ))!;
+    await h.settle();
+    // The file is named by the ID; the ID is not repeated inside it
+    expect(h.readFile(`requirements/${good.id}.md`)).not.toMatch(/^id:/m);
+
+    // e.g. a bad merge or a typo while editing by hand
+    fs.writeFileSync(
+      path.join(h.dir, 'requirements/REQ-077.md'),
+      '---\ntitle: [unclosed\n---\n\n# Broken\n'
+    );
+    await h.restart();
+
+    expect(await screen.findByText(/1 file could not be read/)).toBeInTheDocument();
+    expect(screen.getByText('requirements/REQ-077.md')).toBeInTheDocument();
+    expect(h.app().globalState.requirements.map((r) => r.id)).toEqual([good.id]);
+    // Left as it is for the user to fix
+    expect(h.readFile('requirements/REQ-077.md')).toContain('[unclosed');
+  }, 60_000);
 });

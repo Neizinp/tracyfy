@@ -262,3 +262,25 @@ input[type='radio'] {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Files that could not be read */
+.tf-problems {
+  margin: var(--spacing-sm) var(--spacing-lg) 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  background-color: var(--color-warning-bg);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+.tf-problems-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-weight: 600;
+  color: var(--color-warning);
+}
+.tf-problems ul {
+  margin: var(--spacing-xs) 0 0;
+  padding-left: var(--spacing-lg);
+}
