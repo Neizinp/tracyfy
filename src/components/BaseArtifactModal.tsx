@@ -126,7 +126,9 @@ export const BaseArtifactModal: React.FC<BaseArtifactModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
             {onBack && (
               <button
+                type="button"
                 onClick={onBack}
+                aria-label="Back"
                 style={{
                   background: 'none',
                   border: 'none',

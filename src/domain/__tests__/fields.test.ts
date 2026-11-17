@@ -108,3 +108,22 @@ describe('field values', () => {
     ).toBe('Yes');
   });
 });
+
+describe('kind rules', () => {
+  it('a test case records when it last ran, once per change to passed or failed', async () => {
+    const { savedByTheApp } = await import('../kindRules');
+    expect(savedByTheApp('testCase', { status: 'draft' }, { status: 'passed' }, 9)).toEqual({
+      lastRun: 9,
+    });
+    expect(savedByTheApp('testCase', undefined, { status: 'failed' }, 9)).toEqual({ lastRun: 9 });
+    expect(savedByTheApp('testCase', { status: 'passed' }, { status: 'passed' }, 9)).toEqual({});
+    expect(savedByTheApp('requirement', undefined, { status: 'passed' }, 9)).toEqual({});
+  });
+
+  it('risk level is probability times impact', async () => {
+    const { riskLevel } = await import('../kindRules');
+    expect(riskLevel('low', 'medium')).toBe('low');
+    expect(riskLevel('medium', 'medium')).toBe('medium');
+    expect(riskLevel('high', 'medium')).toBe('high');
+  });
+});
