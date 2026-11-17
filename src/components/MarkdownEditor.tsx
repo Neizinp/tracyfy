@@ -7,7 +7,7 @@ import { Eye, Edit2, ImagePlus } from 'lucide-react';
 import { assetService } from '../services/assetService';
 import { AssetImage } from './AssetImage';
 import { FileSystemContext } from '../app/providers/FileSystemProvider';
-import { notifyError } from '../app/providers/ToastProvider';
+import { notifyError } from '../state';
 
 // The editor (with its syntax highlighting deps) is large and only needed in edit mode
 const MDEditor = lazy(() => import('@uiw/react-md-editor'));

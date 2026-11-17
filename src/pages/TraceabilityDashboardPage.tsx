@@ -11,9 +11,9 @@ import {
   useDocuments,
 } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
-import { notifyError } from '../app/providers/ToastProvider';
 import { isKindId } from '../domain/artifactKinds';
 import { useOpenArtifact } from '../hooks/useOpenArtifact';
+import { notifyError } from '../state';
 
 type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
 

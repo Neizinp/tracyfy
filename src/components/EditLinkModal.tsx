@@ -6,7 +6,7 @@ import { LINK_TYPE_LABELS } from '../domain/linkTypes';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { BaseArtifactModal } from './BaseArtifactModal';
 import { FormField } from './forms/FormField';
-import { notifyError } from '../app/providers/ToastProvider';
+import { notifyError } from '../state';
 
 interface EditLinkModalProps {
   isOpen: boolean;

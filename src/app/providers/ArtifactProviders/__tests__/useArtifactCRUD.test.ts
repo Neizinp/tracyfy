@@ -1,13 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
+import { StoreProvider } from '../../../../state';
 import { useArtifactCRUD, hasArtifactChanges, type BaseArtifact } from '../useArtifactCRUD';
 
 vi.mock('../../FileSystemProvider', () => ({ useFileSystem: () => ({ getNextId: vi.fn() }) }));
 vi.mock('../../UserProvider', () => ({ useUser: () => ({ currentUser: { id: 'USER-001' } }) }));
-vi.mock('../../ToastProvider', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
-vi.mock('../../BackgroundTasksProvider', () => ({
-  useBackgroundTaskActions: () => ({ startTask: () => 'task-1', endTask: vi.fn() }),
-}));
 
 interface Item extends BaseArtifact {
   title: string;
@@ -50,12 +48,17 @@ describe('useArtifactCRUD.handleUpdate', () => {
   beforeEach(() => vi.clearAllMocks());
 
   const setup = () =>
-    renderHook(() =>
-      useArtifactCRUD<Item>({
-        type: 'requirement',
-        items: [existing],
-        saveFn,
-      })
+    renderHook(
+      () =>
+        useArtifactCRUD<Item>({
+          type: 'requirement',
+          items: [existing],
+          saveFn,
+        }),
+      {
+        wrapper: ({ children }: { children: ReactNode }) =>
+          createElement(StoreProvider, null, children),
+      }
     ).result;
 
   it('does not save or bump the revision when nothing changed', async () => {

@@ -10,8 +10,6 @@ import {
   useImportExport,
   useFileSystem,
   useUser,
-  useBackgroundTaskActions,
-  useToast,
   useBaselines,
   useCustomAttributes,
 } from '../app/providers';
@@ -26,6 +24,7 @@ import type {
   DocumentColumnVisibility,
   ExportOptions,
 } from '../types';
+import { useAppStore } from '../state';
 
 /** Shown while a lazily loaded page chunk is being fetched */
 const PageLoadingFallback: React.FC = () => (
@@ -196,11 +195,12 @@ export const ProjectLayout: React.FC = () => {
   const { currentUser } = useUser();
 
   // Background tasks
-  const { startTask, endTask } = useBackgroundTaskActions();
+  const startTask = useAppStore((s) => s.startTask);
+  const endTask = useAppStore((s) => s.endTask);
 
   const handleOpenProjectSettings = useCallback(() => ui.setIsProjectSettingsOpen(true), [ui]);
   // Demo data (empty folders only), with double-click confirmation
-  const { showToast } = useToast();
+  const showToast = useAppStore((s) => s.showToast);
   const demoConfirmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const demoConfirmedRef = useRef(false);
 

@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { FileText, GitCommit, AlertCircle } from 'lucide-react';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
-import { useBackgroundTaskActions } from '../app/providers/BackgroundTasksProvider';
 import { debug } from '../utils/debug';
 import type { ArtifactChange } from '../types';
 import { classifyPendingPath } from '../utils/pendingChanges';
 import { isKindId, kind, type ArtifactKindId } from '../domain/artifactKinds';
+import { useAppStore } from '../state';
 
 /** Group headings for pending changes that are not artifacts */
 const OTHER_CHANGE_LABELS: Record<Exclude<ArtifactChange['type'], ArtifactKindId>, string> = {
@@ -27,7 +27,8 @@ export function PendingChangesPanel() {
     getArtifactHistory,
     refreshStatus,
   } = useFileSystem();
-  const { startTask, endTask } = useBackgroundTaskActions();
+  const startTask = useAppStore((s) => s.startTask);
+  const endTask = useAppStore((s) => s.endTask);
   const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
   const [parsedChanges, setParsedChanges] = useState<ArtifactChange[]>([]);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});

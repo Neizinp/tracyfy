@@ -14,12 +14,10 @@ import {
   useProject,
   useGlobalState,
   useUser,
-  useBackgroundTaskActions,
   useBaselines,
   useRisks,
   useDocuments,
   useFileSystem,
-  useToast,
 } from '../../app/providers';
 import { diskCustomAttributeService } from '../../services/diskCustomAttributeService';
 import { exportProjectToJSON } from '../../utils/jsonExportUtils';
@@ -28,7 +26,7 @@ import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import type { LinkModalResult } from '../LinkModal';
 import { useLinkableArtifacts } from '../../hooks/useLinkableArtifacts';
 import { useOpenArtifact } from '../../hooks/useOpenArtifact';
-import { notifyError } from '../../app/providers/ToastProvider';
+import { notifyError, useAppStore } from '../../state';
 
 export const ManagementModals: React.FC = () => {
   const ui = useUI();
@@ -40,10 +38,11 @@ export const ManagementModals: React.FC = () => {
   const { risks } = useRisks();
   const { documents } = useDocuments();
   const { currentUser } = useUser();
-  const { startTask, endTask } = useBackgroundTaskActions();
+  const startTask = useAppStore((s) => s.startTask);
+  const endTask = useAppStore((s) => s.endTask);
   const { links, createLink } = useFileSystem();
   const linkableArtifacts = useLinkableArtifacts();
-  const { showToast } = useToast();
+  const showToast = useAppStore((s) => s.showToast);
   const openArtifact = useOpenArtifact();
 
   const handleExport = useCallback(

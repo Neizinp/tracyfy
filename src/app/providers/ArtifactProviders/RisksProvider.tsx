@@ -2,10 +2,10 @@ import { kind } from '../../../domain/artifactKinds';
 import React, { useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useFileSystem } from '../FileSystemProvider';
-import { useToast } from '../ToastProvider';
 import type { Risk, CommitInfo } from '../../../types';
 import { realGitService } from '../../../services/realGitService';
 import { createArtifactProvider } from './BaseArtifactProvider';
+import { useAppStore } from '../../../state';
 
 interface RisksContextValue {
   risks: Risk[];
@@ -42,7 +42,7 @@ export const RisksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 export const useRisks = (): RisksContextValue => {
   const context = useProviderContext();
   const { isReady, reloadData } = useFileSystem();
-  const { showToast } = useToast();
+  const showToast = useAppStore((s) => s.showToast);
   const [loading, setLoading] = React.useState(false);
 
   // Check if we're in E2E test mode

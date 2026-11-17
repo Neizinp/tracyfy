@@ -4,10 +4,10 @@ import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
 import { useFileSystem } from '../FileSystemProvider';
 import { useUser } from '../UserProvider';
-import { useToast } from '../ToastProvider';
 import { useArtifactCRUD } from './useArtifactCRUD';
 import type { BaseArtifact } from './useArtifactCRUD';
 import type { StoredType } from '../../../services/storedTypes';
+import { useAppStore } from '../../../state';
 
 export interface BaseArtifactContextValue<T extends BaseArtifact> {
   items: T[];
@@ -55,7 +55,7 @@ export function createArtifactProvider<T extends BaseArtifact>(options: CreatePr
     const { save } = options.useFS(fs);
 
     const { currentUser } = useUser();
-    const { showToast } = useToast();
+    const showToast = useAppStore((s) => s.showToast);
 
     const crud = useArtifactCRUD<T>({
       type: options.type,

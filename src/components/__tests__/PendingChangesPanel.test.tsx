@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithStore as render } from '../../test/renderWithStore';
 import { PendingChangesPanel } from '../PendingChangesPanel';
 
 // Mock the useFileSystem hook
@@ -12,20 +13,6 @@ vi.mock('../../app/providers/UserProvider', () => ({
   useUser: () => ({
     currentUser: { id: 'USER-001', name: 'Test User' },
     users: [],
-  }),
-}));
-
-// Mock the useBackgroundTasks hook
-vi.mock('../../app/providers/BackgroundTasksProvider', () => ({
-  useBackgroundTasks: () => ({
-    tasks: [],
-    isWorking: false,
-    startTask: vi.fn(() => 'task-1'),
-    endTask: vi.fn(),
-  }),
-  useBackgroundTaskActions: () => ({
-    startTask: vi.fn(() => 'task-1'),
-    endTask: vi.fn(),
   }),
 }));
 

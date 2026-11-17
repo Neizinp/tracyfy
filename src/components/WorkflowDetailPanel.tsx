@@ -18,8 +18,8 @@ import {
 } from '../app/providers';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { diskWorkflowService } from '../services/diskWorkflowService';
-import { useToast } from '../app/providers/ToastProvider';
 import type { TestCase } from '../types';
+import { useAppStore } from '../state';
 
 interface WorkflowDetailPanelProps {
   workflow: Workflow;
@@ -39,7 +39,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
   const { information, handleUpdateInformation } = useInformation();
   const { risks, handleUpdateRisk } = useRisks();
   const { reloadData } = useFileSystem();
-  const { showToast } = useToast();
+  const showToast = useAppStore((s) => s.showToast);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 

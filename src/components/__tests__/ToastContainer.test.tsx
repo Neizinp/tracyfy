@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ToastProvider, useToast } from '../../app/providers/ToastProvider';
+import { StoreProvider, useAppStore } from '../../state';
 import { ToastContainer } from '../ToastContainer';
 
 /** True if a CSS color is fully opaque (#rgb/#rrggbb, rgb(), or rgba(..., 1)) */
@@ -23,14 +23,14 @@ describe('ToastContainer', () => {
     '%s toasts are visible with an opaque background',
     (type) => {
       const Trigger = () => {
-        const { showToast } = useToast();
+        const showToast = useAppStore((s) => s.showToast);
         return <button onClick={() => showToast(`A ${type} message`, type, 0)}>show</button>;
       };
       render(
-        <ToastProvider>
+        <StoreProvider>
           <Trigger />
           <ToastContainer />
-        </ToastProvider>
+        </StoreProvider>
       );
 
       fireEvent.click(screen.getByRole('button', { name: 'show' }));

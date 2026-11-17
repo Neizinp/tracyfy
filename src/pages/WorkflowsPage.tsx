@@ -1,19 +1,18 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { GitBranch, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { diskWorkflowService } from '../services/diskWorkflowService';
-import { notifyError } from '../app/providers/ToastProvider';
 import { useUser } from '../app/providers';
 import type { Workflow } from '../types';
 import { WorkflowDetailPanel } from '../components/WorkflowDetailPanel';
-import { useToast } from '../app/providers/ToastProvider';
 import { BaseArtifactTable, type ColumnDef } from '../components/BaseArtifactTable';
 import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
+import { notifyError, useAppStore } from '../state';
 
 const NOTIFIED_APPROVALS_KEY = 'workflow_notified_approvals';
 
 export const WorkflowsPage: React.FC = () => {
   const { currentUser } = useUser();
-  const { showToast } = useToast();
+  const showToast = useAppStore((s) => s.showToast);
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);

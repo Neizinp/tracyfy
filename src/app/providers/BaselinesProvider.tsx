@@ -6,9 +6,9 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import type { ReactNode } from 'react';
 import { repository } from '../../storage/repository';
 import { useFileSystem } from './FileSystemProvider';
-import { useToast } from './ToastProvider';
 import type { ProjectBaseline } from '../../types';
 import { baselineNameError } from '../../domain/baselines';
+import { useAppStore } from '../../state';
 
 interface BaselinesContextValue {
   /** Newest first */
@@ -25,7 +25,7 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [baselines, setBaselines] = useState<ProjectBaseline[]>([]);
   const [loading, setLoading] = useState(false);
   const { isReady, directoryName } = useFileSystem();
-  const { showToast } = useToast();
+  const showToast = useAppStore((s) => s.showToast);
 
   const refreshBaselines = useCallback(async () => {
     if (!isReady) {

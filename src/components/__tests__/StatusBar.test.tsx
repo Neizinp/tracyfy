@@ -1,80 +1,37 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { act, screen } from '@testing-library/react';
 import { StatusBar } from '../StatusBar';
-
-// Mock the useBackgroundTasks hook
-vi.mock('../../app/providers/BackgroundTasksProvider', () => ({
-  useBackgroundTasks: vi.fn(),
-}));
-
-import { useBackgroundTasks } from '../../app/providers/BackgroundTasksProvider';
+import { renderWithStore } from '../../test/renderWithStore';
 
 describe('StatusBar', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('should not render when no tasks are active', () => {
-    vi.mocked(useBackgroundTasks).mockReturnValue({
-      tasks: [],
-      isWorking: false,
-      startTask: vi.fn(),
-      endTask: vi.fn(),
-    });
-
-    const { container } = render(<StatusBar />);
-
+  it('is hidden while nothing runs', () => {
+    const { container } = renderWithStore(<StatusBar />);
     expect(container.firstChild).toBeNull();
   });
 
-  it('should render single task message', () => {
-    vi.mocked(useBackgroundTasks).mockReturnValue({
-      tasks: [{ id: '1', message: 'Committing REQ-001...', startTime: Date.now() }],
-      isWorking: true,
-      startTask: vi.fn(),
-      endTask: vi.fn(),
+  it('shows a running task and hides when it ends', () => {
+    const { store, container } = renderWithStore(<StatusBar />);
+
+    let id = '';
+    act(() => {
+      id = store.getState().startTask('Committing REQ-001...');
     });
-
-    render(<StatusBar />);
-
     expect(screen.getByText('Committing REQ-001...')).toBeInTheDocument();
+
+    act(() => store.getState().endTask(id));
+    expect(container.firstChild).toBeNull();
   });
 
-  it('should show "operations remaining" for multiple tasks', () => {
-    vi.mocked(useBackgroundTasks).mockReturnValue({
-      tasks: [
-        { id: '1', message: 'Committing REQ-001...', startTime: Date.now() },
-        { id: '2', message: 'Committing REQ-002...', startTime: Date.now() },
-        { id: '3', message: 'Committing REQ-003...', startTime: Date.now() },
-      ],
-      isWorking: true,
-      startTask: vi.fn(),
-      endTask: vi.fn(),
+  it('shows the first task and how many more are running', () => {
+    const { store } = renderWithStore(<StatusBar />);
+
+    act(() => {
+      for (let i = 1; i <= 10; i++) {
+        store.getState().startTask(`Committing REQ-${String(i).padStart(3, '0')}...`);
+      }
     });
 
-    render(<StatusBar />);
-
-    // Should show first task message with remaining count
     expect(screen.getByText(/Committing REQ-001/)).toBeInTheDocument();
-    expect(screen.getByText(/2 operations remaining/)).toBeInTheDocument();
-  });
-
-  it('should show correct count for many tasks', () => {
-    const tasks = Array.from({ length: 10 }, (_, i) => ({
-      id: String(i),
-      message: `Committing REQ-${String(i + 1).padStart(3, '0')}...`,
-      startTime: Date.now(),
-    }));
-
-    vi.mocked(useBackgroundTasks).mockReturnValue({
-      tasks,
-      isWorking: true,
-      startTask: vi.fn(),
-      endTask: vi.fn(),
-    });
-
-    render(<StatusBar />);
-
     expect(screen.getByText(/9 operations remaining/)).toBeInTheDocument();
   });
 });

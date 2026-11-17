@@ -16,7 +16,7 @@ import {
   useRisks,
 } from '../app/providers';
 import { diskWorkflowService } from '../services/diskWorkflowService';
-import { notifyError } from '../app/providers/ToastProvider';
+import { notifyError } from '../state';
 
 interface UseWorkflowFormOptions {
   isOpen: boolean;

@@ -16,7 +16,6 @@ import {
   type PullResult,
 } from '../../services/realGitService';
 import { repository } from '../../storage/repository';
-import { useBackgroundTaskActions } from './BackgroundTasksProvider';
 import type {
   Requirement,
   UseCase,
@@ -31,6 +30,7 @@ import type {
 import type { ArtifactKindId } from '../../domain/artifactKinds';
 import { STORED_TYPES, type StoredType } from '../../services/storedTypes';
 import type { FileProblem } from '../../services/baseArtifactService';
+import { useAppStore } from '../../state';
 
 interface FileSystemContextValue {
   isReady: boolean;
@@ -136,7 +136,8 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [e2eCounters, setE2eCounters] = useState<Partial<Record<StoredType, number>>>({});
 
   // Background tasks for status bar
-  const { startTask, endTask } = useBackgroundTaskActions();
+  const startTask = useAppStore((s) => s.startTask);
+  const endTask = useAppStore((s) => s.endTask);
 
   // Debounce timer for refreshStatus to coalesce rapid calls
   const refreshStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

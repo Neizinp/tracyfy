@@ -1,10 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { useFileSystem } from '../FileSystemProvider';
 import { useUser } from '../UserProvider';
-import { useToast, notifyError } from '../ToastProvider';
-import { useBackgroundTaskActions } from '../BackgroundTasksProvider';
 import { incrementRevision } from '../../../utils/revisionUtils';
 import { storedTypeLabel, type StoredType } from '../../../services/storedTypes';
+import { notifyError, useAppStore } from '../../../state';
 
 export interface BaseArtifact {
   id: string;
@@ -60,8 +59,9 @@ export function useArtifactCRUD<T extends BaseArtifact>({
 }: CRUDOptions<T>) {
   const { getNextId } = useFileSystem();
   const { currentUser } = useUser();
-  const { showToast } = useToast();
-  const { startTask, endTask } = useBackgroundTaskActions();
+  const showToast = useAppStore((s) => s.showToast);
+  const startTask = useAppStore((s) => s.startTask);
+  const endTask = useAppStore((s) => s.endTask);
 
   const handleAdd = useCallback(
     async (data: Omit<T, 'id' | 'lastModified' | 'revision'>) => {
