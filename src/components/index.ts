@@ -15,9 +15,7 @@ export { ColumnSelector } from './ColumnSelector';
 export * from './MarkdownEditor';
 export { PendingChangesPanel } from './PendingChangesPanel';
 export { ModalManager } from './ModalManager';
-export { BaselineManager } from './BaselineManager';
 
-export { BaselineRevisionHistory } from './BaselineRevisionHistory';
 export { LoadingOverlay } from './LoadingOverlay';
 export { DirectorySelector } from './DirectorySelector';
 export { SnapshotViewer } from './SnapshotViewer';

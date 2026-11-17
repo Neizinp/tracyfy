@@ -35,20 +35,13 @@ export interface SyncStatus {
   lastFetched?: number;
 }
 
+/** A baseline is a git tag: a name for one commit of the whole project */
 export interface ProjectBaseline {
-  id: string;
-  version: string; // e.g., "01", "02", "03"
+  /** The tag name, e.g. "1.0" */
   name: string;
+  /** The tag message */
   description: string;
   timestamp: number;
-  // Snapshot of which artifacts are in the project at this baseline
-  artifactCommits: {
-    [artifactId: string]: {
-      commitHash: string;
-      type: ArtifactKindId;
-    };
-  };
-  // Track what was added/removed from project since last baseline
-  addedArtifacts?: string[];
-  removedArtifacts?: string[];
+  /** The commit the tag points at */
+  commit: string;
 }

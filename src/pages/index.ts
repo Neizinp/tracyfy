@@ -4,8 +4,6 @@ export { UseCasesPage } from './UseCasesPage';
 export { TestCasesPage } from './TestCasesPage';
 export { InformationPage } from './InformationPage';
 export { RisksPage } from './RisksPage';
-export { BaselinesPage } from './BaselinesPage';
-export { BaselineHistoryPage } from './BaselineHistoryPage';
 export { CustomAttributesPage } from './CustomAttributesPage';
 export { ProjectManual } from './ProjectManual';
 export { HelpCenter } from './HelpCenter';

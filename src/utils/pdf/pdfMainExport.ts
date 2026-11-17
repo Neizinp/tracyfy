@@ -152,7 +152,7 @@ export async function exportProjectToPDF(
   let upperBoundTimestamp: number | null = null;
 
   if (selectedBaseline) {
-    const selectedIndex = sortedBaselines.findIndex((b) => b.id === selectedBaseline.id);
+    const selectedIndex = sortedBaselines.findIndex((b) => b.name === selectedBaseline.name);
     if (selectedIndex >= 0 && selectedIndex < sortedBaselines.length - 1) {
       previousBaseline = sortedBaselines[selectedIndex + 1];
     }

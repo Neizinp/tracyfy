@@ -1,28 +1,21 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo,
-} from 'react';
+/**
+ * Baselines are git tags (docs/DESIGN.md §3.5): a named commit of the whole
+ * project. Nothing is stored in the project files; the tag is the baseline.
+ */
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { diskBaselineService } from '../../services/diskBaselineService';
+import { realGitService } from '../../services/realGitService';
 import { useFileSystem } from './FileSystemProvider';
 import { useToast } from './ToastProvider';
 import type { ProjectBaseline } from '../../types';
-import { KIND_IDS, type ArtifactKindId } from '../../domain/artifactKinds';
+import { baselineNameError } from '../../domain/baselines';
 
 interface BaselinesContextValue {
+  /** Newest first */
   baselines: ProjectBaseline[];
   loading: boolean;
-  createBaseline: (
-    name: string,
-    description: string,
-    version: string
-  ) => Promise<ProjectBaseline | null>;
-  deleteBaseline: (id: string) => Promise<void>;
+  /** Tag the current commit */
+  createBaseline: (name: string, description: string) => Promise<ProjectBaseline | null>;
   refreshBaselines: () => Promise<void>;
 }
 
@@ -31,26 +24,25 @@ const BaselinesContext = createContext<BaselinesContextValue | undefined>(undefi
 export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [baselines, setBaselines] = useState<ProjectBaseline[]>([]);
   const [loading, setLoading] = useState(false);
-  const {
-    isReady,
-    requirements,
-    useCases,
-    testCases,
-    information,
-    risks,
-    documents,
-    getArtifactHistory,
-  } = useFileSystem();
+  const { isReady, directoryName } = useFileSystem();
   const { showToast } = useToast();
-  const hasLoadedInitial = useRef(false);
 
   const refreshBaselines = useCallback(async () => {
-    if (!isReady) return;
-
+    if (!isReady) {
+      setBaselines([]);
+      return;
+    }
     setLoading(true);
     try {
-      const loadedBaselines = await diskBaselineService.loadBaselines();
-      setBaselines(loadedBaselines);
+      const tags = await realGitService.getTagsWithDetails();
+      setBaselines(
+        tags.map((t) => ({
+          name: t.name,
+          description: t.message.trim(),
+          timestamp: t.timestamp,
+          commit: t.commit,
+        }))
+      );
     } catch (err) {
       console.error('Failed to load baselines:', err);
     } finally {
@@ -59,91 +51,46 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, [isReady]);
 
   useEffect(() => {
-    if (isReady && !hasLoadedInitial.current) {
-      refreshBaselines();
-      hasLoadedInitial.current = true;
-    }
-  }, [isReady, refreshBaselines]);
+    refreshBaselines();
+  }, [refreshBaselines, directoryName]);
 
   const createBaseline = useCallback(
-    async (name: string, description: string, version: string) => {
+    async (name: string, description: string) => {
+      const problem = baselineNameError(
+        name,
+        baselines.map((b) => b.name)
+      );
+      if (problem) {
+        showToast(problem, 'error');
+        return null;
+      }
       try {
-        // 1. Get latest commit hash for every artifact
-        const artifactCommits: ProjectBaseline['artifactCommits'] = {};
-
-        const byKind: Record<ArtifactKindId, { id: string }[]> = {
-          requirement: requirements,
-          useCase: useCases,
-          testCase: testCases,
-          information,
-          risk: risks,
-          document: documents,
-        };
-        await Promise.all(
-          KIND_IDS.flatMap((kind) =>
-            byKind[kind].map(async (item) => {
-              const history = await getArtifactHistory(kind, item.id);
-              if (history.length > 0) {
-                artifactCommits[item.id] = { commitHash: history[0].hash, type: kind };
-              }
-            })
-          )
-        );
-
-        const newBaseline: ProjectBaseline = {
-          id: `bl-${Date.now()}`,
+        await realGitService.createTag(name, description || `Baseline ${name}`);
+        const [head] = await realGitService.getHistory(undefined, 1);
+        const created: ProjectBaseline = {
           name,
-          description,
-          version,
+          description: description || `Baseline ${name}`,
           timestamp: Date.now(),
-          artifactCommits,
+          commit: head?.hash ?? '',
         };
-
-        await diskBaselineService.saveBaseline(newBaseline);
-        setBaselines((prev) => [newBaseline, ...prev]);
-        showToast(`Baseline ${version} created successfully`, 'success');
-        return newBaseline;
+        await refreshBaselines();
+        showToast(`Baseline ${name} created`, 'success');
+        return created;
       } catch (err) {
         console.error('Failed to create baseline:', err);
-        showToast('Failed to create baseline', 'error');
+        showToast(
+          `Could not create baseline ${name}: ${err instanceof Error ? err.message : String(err)}`,
+          'error'
+        );
         return null;
       }
     },
-    [
-      requirements,
-      useCases,
-      testCases,
-      information,
-      risks,
-      documents,
-      getArtifactHistory,
-      showToast,
-    ]
-  );
-
-  const deleteBaseline = useCallback(
-    async (id: string) => {
-      try {
-        await diskBaselineService.deleteBaseline(id);
-        setBaselines((prev) => prev.filter((b) => b.id !== id));
-        showToast('Baseline deleted', 'success');
-      } catch (err) {
-        console.error('Failed to delete baseline:', err);
-        showToast('Failed to delete baseline', 'error');
-      }
-    },
-    [showToast]
+    [baselines, refreshBaselines, showToast]
   );
 
   const value: BaselinesContextValue = useMemo(
-    () => ({
-      baselines,
-      loading,
-      createBaseline,
-      deleteBaseline,
-      refreshBaselines,
-    }),
-    [baselines, createBaseline, deleteBaseline, loading, refreshBaselines]
+    () => ({ baselines, loading, createBaseline, refreshBaselines }),
+    [baselines, createBaseline, loading, refreshBaselines]
   );
 
   return <BaselinesContext.Provider value={value}>{children}</BaselinesContext.Provider>;

@@ -207,12 +207,10 @@ describe('HeaderBar', () => {
       const onExportPDF = vi.fn();
       const baselines: ProjectBaseline[] = [
         {
-          id: 'baseline-1',
           name: 'Release 1.0',
-          version: '1.0',
           description: 'Release baseline',
           timestamp: 1000000,
-          artifactCommits: {},
+          commit: 'abc1234def',
         },
       ];
 
@@ -222,19 +220,17 @@ describe('HeaderBar', () => {
 
       expect(screen.getByText('Export Version:')).toBeInTheDocument();
       expect(screen.getByText('Current State')).toBeInTheDocument();
-      expect(screen.getByText('Release 1.0 (1.0)')).toBeInTheDocument();
+      expect(screen.getByText('Release 1.0')).toBeInTheDocument();
     });
 
     it('should call onExportPDF with selected baseline', () => {
       const onExportPDF = vi.fn();
       const baselines: ProjectBaseline[] = [
         {
-          id: 'baseline-1',
           name: 'Release 1.0',
-          version: '1.0',
           description: 'Release baseline',
           timestamp: 1000000,
-          artifactCommits: {},
+          commit: 'abc1234def',
         },
       ];
 
@@ -244,7 +240,7 @@ describe('HeaderBar', () => {
 
       // Select a baseline
       const select = screen.getByRole('combobox');
-      fireEvent.change(select, { target: { value: 'baseline-1' } });
+      fireEvent.change(select, { target: { value: 'Release 1.0' } });
 
       fireEvent.click(screen.getByText('Export to PDF'));
 

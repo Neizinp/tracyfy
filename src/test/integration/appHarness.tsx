@@ -36,6 +36,7 @@ import {
   useDocuments,
   useGlobalState,
   useUI,
+  useBaselines,
 } from '../../app/providers';
 
 /**
@@ -56,6 +57,7 @@ export interface AppHooks {
   documents: ReturnType<typeof useDocuments>;
   globalState: ReturnType<typeof useGlobalState>;
   ui: ReturnType<typeof useUI>;
+  baselines: ReturnType<typeof useBaselines>;
 }
 
 export interface Harness {
@@ -136,6 +138,7 @@ export async function startApp(
       documents: useDocuments(),
       globalState: useGlobalState(),
       ui: useUI(),
+      baselines: useBaselines(),
     };
     // Publish after commit so tests always read the latest rendered values
     useLayoutEffect(() => {

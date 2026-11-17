@@ -45,12 +45,7 @@ export function addCoverPage(
   // Baseline or Current State info
   doc.setFont('helvetica', 'bold');
   if (selectedBaseline) {
-    doc.text(
-      `Baseline: ${selectedBaseline.name} (v${selectedBaseline.version})`,
-      pageWidth / 2,
-      155,
-      { align: 'center' }
-    );
+    doc.text(`Baseline: ${selectedBaseline.name}`, pageWidth / 2, 155, { align: 'center' });
   } else {
     doc.text('Current State', pageWidth / 2, 155, { align: 'center' });
   }

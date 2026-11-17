@@ -115,12 +115,10 @@ describe('VersionHistory', () => {
     it('opens the snapshot of the commit the baseline tag points to', async () => {
       const mockBaselines: ProjectBaseline[] = [
         {
-          id: 'baseline-1',
           name: '1.0',
-          version: '1.0',
           description: 'First baseline',
           timestamp: Date.now(),
-          artifactCommits: {},
+          commit: 'abc1234def',
         },
       ];
 

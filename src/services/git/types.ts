@@ -22,9 +22,7 @@ export type ArtifactFolder =
   | 'risks'
   | 'links'
   | 'workflows'
-  | 'documents'
-  | 'users'
-  | 'baselines';
+  | 'documents';
 
 export interface Remote {
   name: string;

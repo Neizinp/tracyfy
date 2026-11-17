@@ -45,7 +45,6 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     isLoadingCommits,
     commitFiles,
     baselineCommitHashes,
-    tagToCommitHash,
     selectedTypes,
     handleToggleType,
     handleSelectAll,
@@ -197,14 +196,12 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {baselines.map((baseline) => (
                   <BaselineCard
-                    key={baseline.id}
+                    key={baseline.name}
                     baseline={baseline}
                     versionLabel={baseline.name}
                     onView={() => {
-                      const commitFromTag = tagToCommitHash.get(baseline.name);
-                      const fallbackCommit = Object.keys(baseline.artifactCommits)[0] || '';
                       setViewingSnapshot({
-                        commitHash: commitFromTag || fallbackCommit,
+                        commitHash: baseline.commit,
                         name: baseline.name,
                         timestamp: baseline.timestamp,
                       });
