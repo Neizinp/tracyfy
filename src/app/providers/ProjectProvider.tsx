@@ -7,7 +7,7 @@ interface ProjectContextValue {
   /** The project in the open folder (one folder is one project) */
   project: Project;
   isLoading: boolean;
-  /** Rename the project or change its description (saved to project.md) */
+  /** Rename the project or change its description (saved to tracyfy.yaml) */
   updateProject: (project: Project) => Promise<void>;
 }
 

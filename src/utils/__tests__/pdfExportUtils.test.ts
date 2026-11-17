@@ -164,6 +164,13 @@ vi.mock('../../services/diskLinkService', () => ({
   },
 }));
 
+// Custom attribute definitions come from tracyfy.yaml; none here
+vi.mock('../../services/diskCustomAttributeService', () => ({
+  diskCustomAttributeService: {
+    getAllDefinitions: vi.fn().mockResolvedValue([]),
+  },
+}));
+
 describe('pdfExportUtils', () => {
   beforeEach(() => {
     vi.clearAllMocks();

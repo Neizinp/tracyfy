@@ -32,6 +32,11 @@ describe('integration: no invisible uncommitted files', () => {
 
     expect(await screen.findByText('Component')).toBeInTheDocument();
     expect(await h.invisibleDirtyPaths()).toEqual([]);
+    // Part of the project settings, committed by the user like any other change
+    expect(await h.dirtyPaths()).toEqual(['tracyfy.yaml']);
+    expect(h.readFile('tracyfy.yaml')).toContain('name: Component');
+    expect(h.exists('custom-attributes')).toBe(false);
+    expect(await h.commitMessages()).toEqual([]);
   }, 60_000);
 
   it('creating a workflow', async () => {

@@ -7,7 +7,7 @@
  */
 import { ARTIFACT_KINDS, isKindId, kind, type ArtifactKindId } from '../domain/artifactKinds';
 
-export type StoredType = ArtifactKindId | 'link' | 'workflow' | 'customAttribute';
+export type StoredType = ArtifactKindId | 'link' | 'workflow';
 
 export interface StoredTypeConfig {
   idPrefix: string;
@@ -24,7 +24,6 @@ export const STORED_TYPES: Record<StoredType, StoredTypeConfig> = {
   ) as Record<ArtifactKindId, StoredTypeConfig>),
   link: { idPrefix: 'LINK', folder: 'links', label: 'Link' },
   workflow: { idPrefix: 'WF', folder: 'workflows', label: 'Workflow' },
-  customAttribute: { idPrefix: 'ATTR', folder: 'custom-attributes', label: 'Custom attribute' },
 };
 
 export const STORED_TYPE_IDS = Object.keys(STORED_TYPES) as StoredType[];

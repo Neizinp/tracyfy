@@ -64,7 +64,6 @@ export const riskService = new BaseArtifactService<Risk>('risk', riskSerializer)
 // Registry of all artifact services for generic iteration
 import { diskLinkService } from './diskLinkService';
 import { diskWorkflowService } from './diskWorkflowService';
-import { diskCustomAttributeService } from './diskCustomAttributeService';
 import { documentService } from './documentService';
 export { documentService };
 
@@ -77,6 +76,5 @@ export const ALL_ARTIFACT_SERVICES: Record<StoredType, BaseArtifactService<any>>
   risk: riskService,
   link: diskLinkService,
   workflow: diskWorkflowService,
-  customAttribute: diskCustomAttributeService,
   document: documentService,
 };

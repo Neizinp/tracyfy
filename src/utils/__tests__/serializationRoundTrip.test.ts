@@ -20,10 +20,6 @@ import {
   markdownToRisk,
   documentToMarkdown,
   markdownToDocument,
-  projectToMarkdown,
-  markdownToProject,
-  customAttributeDefinitionToMarkdown,
-  markdownToCustomAttributeDefinition,
 } from '../markdownUtils';
 import { linkToMarkdown, parseMarkdownLink } from '../linkMarkdownUtils';
 import { workflowToMarkdown, parseMarkdownWorkflow } from '../workflowMarkdownUtils';
@@ -34,11 +30,9 @@ import type {
   Information,
   Risk,
   ArtifactDocument,
-  Project,
   Link,
   Workflow,
 } from '../../types';
-import type { CustomAttributeDefinition } from '../../types/customAttributes';
 
 /** Text that tends to break hand-written frontmatter/markdown serializers */
 const TRICKY = [
@@ -161,11 +155,6 @@ const document: ArtifactDocument = {
   status: 'draft',
 };
 
-const project: Project = {
-  name: 'Project: Alpha',
-  description: TRICKY,
-};
-
 const link: Link = {
   id: 'LINK-011',
   sourceId: 'REQ-042',
@@ -196,21 +185,6 @@ const workflow: Workflow = {
   approverComment: TRICKY,
 };
 
-const attribute: CustomAttributeDefinition = {
-  id: 'ATTR-001',
-  name: 'Component: name',
-  type: 'dropdown',
-  description: TRICKY,
-  required: true,
-  defaultValue: 'Engine',
-  options: ['Engine', 'Brakes: front', 'UI'],
-  appliesTo: ['requirement', 'testCase'],
-  dateCreated: T0,
-  lastModified: T0 + 1,
-  isDeleted: true,
-  deletedAt: T0 + 2,
-};
-
 const CASES: [string, unknown, (x: never) => string, (s: string) => unknown][] = [
   ['requirement', requirement, requirementToMarkdown, markdownToRequirement],
   ['use case', useCase, convertUseCaseToMarkdown, markdownToUseCase],
@@ -218,15 +192,8 @@ const CASES: [string, unknown, (x: never) => string, (s: string) => unknown][] =
   ['information', information, informationToMarkdown, markdownToInformation],
   ['risk', risk, riskToMarkdown, markdownToRisk],
   ['document', document, documentToMarkdown, markdownToDocument],
-  ['project', project, projectToMarkdown, markdownToProject],
   ['link', link, linkToMarkdown, parseMarkdownLink],
   ['workflow', workflow, workflowToMarkdown, parseMarkdownWorkflow],
-  [
-    'custom attribute',
-    attribute,
-    customAttributeDefinitionToMarkdown,
-    markdownToCustomAttributeDefinition,
-  ],
 ];
 
 describe.each(CASES)('%s save → load round trip', (_name, original, serialize, parse) => {
@@ -279,12 +246,8 @@ describe('files written by earlier versions still load', () => {
     });
   });
 
-  it('information and project bodies', () => {
+  it('information bodies', () => {
     const info = '---\nid: "INFO-001"\ntitle: "Arch"\n---\n\n# Arch\n\nSome notes.\nMore notes.';
     expect(markdownToInformation(info)).toMatchObject({ text: 'Some notes.\nMore notes.' });
-
-    const proj =
-      '---\nid: "PROJ-001"\nname: "Alpha"\nrequirementIds:\n  - "REQ-001"\n---\n\n# Alpha\n\nThe project.';
-    expect(markdownToProject(proj)).toEqual({ name: 'Alpha', description: 'The project.' });
   });
 });

@@ -460,7 +460,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [isReady, refreshStatus]
   );
 
-  // Project (project.md)
+  // Project (tracyfy.yaml)
   const saveProject = useCallback(
     async (updated: Project) => {
       if (!isReady) throw new Error('Filesystem not ready');

@@ -4,8 +4,6 @@
  * open it from the list → edit and save → saved and marked modified →
  * save again without changes → nothing changes → restart → still there.
  */
-import fs from 'node:fs';
-import path from 'node:path';
 import { describe, it, expect, afterEach } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { startApp, type Harness, type AppHooks } from './appHarness';
@@ -168,10 +166,7 @@ describe.each(TYPES)('integration: custom attribute on a $name', (t) => {
     await h.settle();
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
-    const [file] = fs.readdirSync(path.join(h.dir, 'custom-attributes'));
-    expect(h.readFile(`custom-attributes/${file}`)).toMatch(
-      new RegExp(`appliesTo:[\\s\\S]*${t.kind}`)
-    );
+    expect(h.readFile('tracyfy.yaml')).toMatch(new RegExp(`appliesTo:[\\s\\S]*${t.kind}`));
 
     fireEvent.click(screen.getByRole('button', { name: /create new/i }));
     fireEvent.click(await screen.findByText(t.menuItem));

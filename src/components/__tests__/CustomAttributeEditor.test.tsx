@@ -19,8 +19,6 @@ describe('CustomAttributeEditor', () => {
       options: ['v1.0', 'v1.1', 'v2.0'],
       appliesTo: ['requirement'],
       required: false,
-      dateCreated: 1700000000000,
-      lastModified: 1700000000000,
     },
     {
       id: 'ATTR-002',
@@ -29,8 +27,6 @@ describe('CustomAttributeEditor', () => {
       description: 'Is safety critical',
       appliesTo: ['requirement', 'testCase'],
       required: true,
-      dateCreated: 1700000000000,
-      lastModified: 1700000000000,
     },
     {
       id: 'ATTR-003',
@@ -39,8 +35,6 @@ describe('CustomAttributeEditor', () => {
       description: 'Numeric priority',
       appliesTo: ['requirement'],
       required: false,
-      dateCreated: 1700000000000,
-      lastModified: 1700000000000,
     },
     {
       id: 'ATTR-004',
@@ -49,8 +43,6 @@ describe('CustomAttributeEditor', () => {
       description: 'Additional notes',
       appliesTo: ['requirement'],
       required: false,
-      dateCreated: 1700000000000,
-      lastModified: 1700000000000,
     },
     {
       id: 'ATTR-005',
@@ -59,8 +51,6 @@ describe('CustomAttributeEditor', () => {
       description: 'Due date',
       appliesTo: ['requirement'],
       required: false,
-      dateCreated: 1700000000000,
-      lastModified: 1700000000000,
     },
   ];
 

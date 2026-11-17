@@ -3,18 +3,12 @@ import type {
   UseCase,
   TestCase,
   Information,
-  Project,
   Risk,
   ArtifactDocument,
   DocumentEntry,
   BaseArtifact,
 } from '../types';
-import type {
-  CustomAttributeDefinition,
-  CustomAttributeValue,
-  AttributeType,
-  ApplicableArtifactType,
-} from '../types/customAttributes';
+import type { CustomAttributeValue } from '../types/customAttributes';
 import {
   filterValidCustomAttributes,
   objectToYaml,
@@ -290,24 +284,6 @@ export function markdownToInformation(markdown: string): Information {
 }
 
 /**
- * project.md: the project's name (frontmatter) and description (body)
- */
-export function projectToMarkdown(project: Project): string {
-  const yaml = objectToYaml({ name: project.name });
-  return `${yaml}\n\n# ${project.name}\n\n${esc(project.description)}`.trim() + '\n';
-}
-
-/**
- * Parse project.md, or null if it has no project name
- */
-export function markdownToProject(markdown: string): Project | null {
-  const { frontmatter, body } = parseYamlFrontmatter(markdown);
-  const name = typeof frontmatter.name === 'string' ? frontmatter.name : '';
-  if (!name) return null;
-  return { name, description: unescapeBodyText(bodyWithoutTitle(body)) };
-}
-
-/**
  * Convert a Risk to Markdown with YAML frontmatter
  */
 export function riskToMarkdown(risk: Risk): string {
@@ -370,57 +346,6 @@ export function markdownToRisk(markdown: string): Risk {
     deletedAt: (frontmatter.deletedAt as number) || undefined,
     revision: (frontmatter.revision as string) || '01',
     customAttributes: ensureArray<CustomAttributeValue>(frontmatter.customAttributes),
-  };
-}
-
-/**
- * Convert a CustomAttributeDefinition to Markdown with YAML frontmatter
- */
-export function customAttributeDefinitionToMarkdown(def: CustomAttributeDefinition): string {
-  const frontmatter = {
-    id: def.id,
-    name: def.name,
-    type: def.type,
-    description: def.description || '',
-    required: def.required || false,
-    defaultValue: def.defaultValue ?? null,
-    options: def.options || [],
-    appliesTo: def.appliesTo,
-    dateCreated: def.dateCreated,
-    lastModified: def.lastModified,
-    isDeleted: def.isDeleted || false,
-    deletedAt: def.deletedAt || null,
-  };
-
-  const yaml = objectToYaml(frontmatter);
-
-  const body = `# ${def.name}
-
-${esc(def.description) || 'No description provided.'}
-`.trim();
-
-  return `${yaml}\n\n${body}`;
-}
-
-/**
- * Parse Markdown content into a CustomAttributeDefinition object
- */
-export function markdownToCustomAttributeDefinition(markdown: string): CustomAttributeDefinition {
-  const { frontmatter } = parseYamlFrontmatter(markdown);
-
-  return {
-    id: (frontmatter.id as string) || '',
-    name: (frontmatter.name as string) || '',
-    type: (frontmatter.type as AttributeType) || 'text',
-    description: (frontmatter.description as string) || undefined,
-    required: (frontmatter.required as boolean) || false,
-    defaultValue: frontmatter.defaultValue as string | number | boolean | undefined,
-    options: ensureArray<string>(frontmatter.options),
-    appliesTo: ensureArray<ApplicableArtifactType>(frontmatter.appliesTo),
-    dateCreated: (frontmatter.dateCreated as number) || Date.now(),
-    lastModified: (frontmatter.lastModified as number) || Date.now(),
-    isDeleted: (frontmatter.isDeleted as boolean) || false,
-    deletedAt: (frontmatter.deletedAt as number) || undefined,
   };
 }
 

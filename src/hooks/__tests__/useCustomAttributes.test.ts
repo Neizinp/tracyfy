@@ -37,8 +37,6 @@ describe('useCustomAttributes', () => {
       options: ['v1.0', 'v1.1', 'v2.0'],
       appliesTo: ['requirement', 'useCase'],
       required: false,
-      dateCreated: 1700000000000,
-      lastModified: 1700000000000,
     },
     {
       id: 'ATTR-002',
@@ -47,8 +45,6 @@ describe('useCustomAttributes', () => {
       description: '',
       appliesTo: ['requirement', 'testCase'],
       required: true,
-      dateCreated: 1700000000000,
-      lastModified: 1700000000000,
     },
     {
       id: 'ATTR-003',
@@ -57,8 +53,6 @@ describe('useCustomAttributes', () => {
       description: 'Numeric priority',
       appliesTo: ['requirement'],
       required: false,
-      dateCreated: 1700000000000,
-      lastModified: 1700000000000,
     },
   ];
 

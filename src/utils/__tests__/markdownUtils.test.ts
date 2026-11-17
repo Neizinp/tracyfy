@@ -22,8 +22,6 @@ import {
   markdownToTestCase,
   informationToMarkdown,
   markdownToInformation,
-  projectToMarkdown,
-  markdownToProject,
 } from '../markdownUtils';
 import type { Requirement, UseCase, TestCase, Information } from '../../types';
 
@@ -735,28 +733,5 @@ Desc
     const requirement = markdownToRequirement(markdown);
     // Behavior may vary - test current behavior
     expect(requirement).toBeDefined();
-  });
-});
-
-describe('Project Markdown Conversion (project.md)', () => {
-  it('writes the name in frontmatter and title, the description as the body', () => {
-    const markdown = projectToMarkdown({ name: 'Door Controller', description: 'Lobby doors' });
-    expect(markdown).toContain('name: "Door Controller"');
-    expect(markdown).toContain('# Door Controller');
-    expect(markdown).toContain('Lobby doors');
-    // Nothing about other projects or which artifacts belong to it
-    expect(markdown).not.toMatch(/Ids:|id:/);
-  });
-
-  it('round-trips names with quotes and colons, and multi-line descriptions', () => {
-    const original = {
-      name: 'Project with "quotes" and: colons',
-      description: 'Line one\n# not a heading\nLine three',
-    };
-    expect(markdownToProject(projectToMarkdown(original))).toEqual(original);
-  });
-
-  it('returns null when there is no name', () => {
-    expect(markdownToProject('---\n---\n\nJust text')).toBeNull();
   });
 });

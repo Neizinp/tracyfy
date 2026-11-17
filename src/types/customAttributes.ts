@@ -2,7 +2,7 @@
  * Custom Attributes Types
  *
  * User-defined fields that can be attached to any artifact type.
- * Definitions are stored globally in custom-attributes/ folder.
+ * Definitions are stored in tracyfy.yaml (customAttributes).
  */
 
 import type { ArtifactKindId } from '../domain/artifactKinds';
@@ -13,7 +13,7 @@ export type AttributeType = 'text' | 'number' | 'date' | 'dropdown' | 'checkbox'
 // Which artifact types an attribute can apply to
 export type ApplicableArtifactType = ArtifactKindId | 'link';
 
-// Definition of a custom attribute (stored globally in custom-attributes/)
+// Definition of a custom attribute (one entry in tracyfy.yaml)
 export interface CustomAttributeDefinition {
   id: string; // e.g., "ATTR-001"
   name: string; // Display name, e.g., "Component"
@@ -23,10 +23,6 @@ export interface CustomAttributeDefinition {
   defaultValue?: string | number | boolean; // Default for new artifacts
   options?: string[]; // For dropdown type only
   appliesTo: ApplicableArtifactType[]; // Which artifact types can use this
-  dateCreated: number;
-  lastModified: number;
-  isDeleted?: boolean; // Soft delete support
-  deletedAt?: number;
 }
 
 // Value of a custom attribute on a specific artifact

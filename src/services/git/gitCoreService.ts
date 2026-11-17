@@ -278,7 +278,6 @@ class GitCoreService {
         'risks',
         'links',
         'workflows',
-        'custom-attributes',
         'documents',
         'assets',
       ];

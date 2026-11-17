@@ -26,7 +26,7 @@ export const ARTIFACT_TYPE_CONFIG: Record<string, { label: string; color: string
 
 const FOLDER_TO_TYPE: Record<string, string> = {
   ...Object.fromEntries(ARTIFACT_KINDS.map((k) => [k.folder, k.id])),
-  'project.md': 'project',
+  'tracyfy.yaml': 'project',
   links: 'link',
   workflows: 'workflow',
 };

@@ -1,7 +1,7 @@
 /**
  * ProjectSettingsModal Component
  *
- * Edit the project's name and description (saved to project.md).
+ * Edit the project's name and description (saved to tracyfy.yaml).
  * One folder is one project, so there is nothing to create, switch or delete.
  */
 

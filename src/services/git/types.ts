@@ -22,7 +22,6 @@ export type ArtifactFolder =
   | 'risks'
   | 'links'
   | 'workflows'
-  | 'custom-attributes'
   | 'documents'
   | 'users'
   | 'baselines';

@@ -12,7 +12,6 @@ const OTHER_CHANGE_LABELS: Record<Exclude<ArtifactChange['type'], ArtifactKindId
   project: 'Project',
   asset: 'Assets',
   link: 'Links',
-  'custom-attribute': 'Custom Attributes',
   'saved-filter': 'Saved Searches',
   workflow: 'Workflows',
 };
@@ -110,7 +109,7 @@ export function PendingChangesPanel() {
         // The project file has no per-artifact history to base a message on
         if (change.type === 'project') {
           defaults[change.id] =
-            change.status === 'new' ? 'Set project name and description' : 'Update project details';
+            change.status === 'new' ? 'Set up project settings' : 'Update project settings';
           processedDefaultsRef.current.add(change.id);
           continue;
         }
@@ -142,14 +141,6 @@ export function PendingChangesPanel() {
           continue;
         }
 
-        // For custom attributes, use appropriate default
-        if (change.type === 'custom-attribute') {
-          defaults[change.id] =
-            change.status === 'new' ? 'Add custom attribute' : 'Update custom attribute';
-          processedDefaultsRef.current.add(change.id);
-          continue;
-        }
-
         if (!isKindId(change.type)) continue;
 
         try {
@@ -166,7 +157,7 @@ export function PendingChangesPanel() {
         } catch {
           // On error, fall back to status-based message
           defaults[change.id] =
-            change.status === 'new' ? 'Set project name and description' : 'Update project details';
+            change.status === 'new' ? 'Set up project settings' : 'Update project settings';
           processedDefaultsRef.current.add(change.id);
         }
       }

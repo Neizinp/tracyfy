@@ -95,6 +95,8 @@ export interface Harness {
   settle: () => Promise<void>;
   /** Unmount and remount the app on the same directory (simulates a restart) */
   restart: () => Promise<void>;
+  /** Restart, expecting the folder to fail to open; returns the error the user sees */
+  restartFailing: () => Promise<string>;
   cleanup: () => void;
 }
 
@@ -272,6 +274,26 @@ export async function startApp(
         console.error = originalError;
       }
       await settle();
+    },
+    restartFailing: async () => {
+      rendered.unmount();
+      latest.current = null;
+      const originalError = console.error;
+      console.error = () => {}; // the failure is expected
+      try {
+        rendered = render(tree);
+        let message = '';
+        await waitFor(
+          () => {
+            message = latest.current?.fileSystem.error ?? '';
+            expect(message).not.toBe('');
+          },
+          { timeout: READY_TIMEOUT }
+        );
+        return message;
+      } finally {
+        console.error = originalError;
+      }
     },
     cleanup: () => {
       rendered.unmount();

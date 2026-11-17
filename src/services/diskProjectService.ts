@@ -4,7 +4,7 @@
  * One folder (git repository) is one project. Everything in it belongs to it.
  *
  * Directory structure:
- * /project.md          # project name and description
+ * /tracyfy.yaml        # project settings: name, description, custom attributes
  * /requirements/REQ-001.md
  * /usecases/UC-001.md
  * /testcases/TC-001.md
@@ -32,9 +32,8 @@ import {
   documentService,
 } from './artifactServices';
 import { diskLinkService } from './diskLinkService';
-import { fileSystemService } from './fileSystemService';
-import { projectToMarkdown, markdownToProject } from '../utils/markdownUtils';
-import { PROJECT_FILE } from '../utils/pendingChanges';
+import { projectConfigStore } from '../storage/projectConfigStore';
+import { projectOf } from '../domain/projectConfig';
 
 class DiskProjectService extends BaseDiskService {
   /**
@@ -49,24 +48,18 @@ class DiskProjectService extends BaseDiskService {
 
   // ============ PROJECT ============
 
-  /**
-   * The project in this folder. Without a project.md the folder name is used.
-   */
+  /** The project in this folder (tracyfy.yaml; the folder name if there is none) */
   async loadProject(): Promise<Project> {
-    const content = await this.readTextFile(PROJECT_FILE);
-    return (
-      (content && markdownToProject(content)) || {
-        name: fileSystemService.getDirectoryName() || 'Untitled project',
-        description: '',
-      }
-    );
+    return projectOf(await projectConfigStore.load());
   }
 
-  /**
-   * Save the project's name and description (shows up in Pending Changes)
-   */
+  /** Save the project's name and description (shows up in Pending Changes) */
   async saveProject(project: Project): Promise<void> {
-    await this.writeTextFile(PROJECT_FILE, projectToMarkdown(project));
+    await projectConfigStore.update((config) => ({
+      ...config,
+      name: project.name,
+      description: project.description,
+    }));
   }
 
   /**
