@@ -15,16 +15,7 @@ import {
   type CommitInfo,
   type PullResult,
 } from '../../services/realGitService';
-import { diskProjectService } from '../../services/diskProjectService';
-import {
-  requirementService,
-  useCaseService,
-  testCaseService,
-  informationService,
-  riskService,
-  documentService,
-} from '../../services/artifactServices';
-import { diskLinkService } from '../../services/diskLinkService';
+import { repository } from '../../storage/repository';
 import { useBackgroundTaskActions } from './BackgroundTasksProvider';
 import type {
   Requirement,
@@ -37,9 +28,8 @@ import type {
   Risk,
   ArtifactDocument,
 } from '../../types';
-import { kind, type ArtifactKindId } from '../../domain/artifactKinds';
+import type { ArtifactKindId } from '../../domain/artifactKinds';
 import { STORED_TYPES, type StoredType } from '../../services/storedTypes';
-import { idAllocator } from '../../storage/idAllocator';
 import type { FileProblem } from '../../services/baseArtifactService';
 
 interface FileSystemContextValue {
@@ -122,7 +112,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   /** git status, recording (not throwing) a failure so the UI can show it */
   const loadStatus = useCallback(async (): Promise<FileStatus[]> => {
     try {
-      const status = await realGitService.getStatus();
+      const status = await repository.status();
       setStatusError(null);
       return status;
     } catch (err) {
@@ -178,31 +168,20 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }, REFRESH_STATUS_DEBOUNCE_MS);
   }, [startTask, endTask, loadStatus]);
 
-  // Load all data from disk using diskProjectService
+  // Load all data from disk
   const reloadData = useCallback(async () => {
     const taskId = startTask('Loading data...');
     try {
-      debug.log('[reloadData] Loading all data from disk...');
-      const data = await diskProjectService.loadAll();
+      const data = await repository.load();
       setProject(data.project);
-      setRequirements(data.requirements);
-      setUseCases(data.useCases);
-      setTestCases(data.testCases);
-      setInformation(data.information);
-      setDocuments(data.documents);
+      setRequirements(data.artifacts.requirement as Requirement[]);
+      setUseCases(data.artifacts.useCase as UseCase[]);
+      setTestCases(data.artifacts.testCase as TestCase[]);
+      setInformation(data.artifacts.information as Information[]);
+      setDocuments(data.artifacts.document as ArtifactDocument[]);
+      setRisks(data.artifacts.risk as Risk[]);
       setLinks(data.links);
-      setRisks(data.risks);
       setFileProblems(data.problems);
-
-      debug.log('[reloadData] Data loaded:', {
-        requirements: data.requirements.length,
-        useCases: data.useCases.length,
-        testCases: data.testCases.length,
-        information: data.information.length,
-        risks: data.risks.length,
-        documents: data.documents.length,
-        links: data.links.length,
-      });
     } finally {
       endTask(taskId);
     }
@@ -249,13 +228,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (result && (result.handle || result.path)) {
           const initTaskId = startTask('Loading project...');
           try {
-            // Initialize git with the restored directory (handle for browser, path for Electron)
-            const gitInitialized = await realGitService.init(result.handle);
+            // Open the git repository (handle for browser, path for Electron)
+            const gitInitialized = await repository.open(result.handle);
             if (gitInitialized) {
               setDirectoryName(fileSystemService.getDirectoryName());
-
-              // Initialize disk project service directories
-              await diskProjectService.initialize();
 
               // Load data and git status in parallel (they're independent)
               const [, status] = await Promise.all([reloadData(), loadStatus()]);
@@ -309,10 +285,8 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
       }
 
-      idAllocator.reset();
-
-      // Initialize git (handle for browser, path for Electron)
-      const gitInitialized = await realGitService.init(result.handle);
+      // Open the git repository (handle for browser, path for Electron)
+      const gitInitialized = await repository.open(result.handle);
       if (!gitInitialized) {
         setError('Git initialization was cancelled. A git repository is required.');
         setIsLoading(false);
@@ -321,9 +295,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
 
       setDirectoryName(fileSystemService.getDirectoryName());
-
-      // Initialize disk project service directories
-      await diskProjectService.initialize();
 
       // Load data and git status in parallel (they're independent)
       const [, status] = await Promise.all([reloadData(), loadStatus()]);
@@ -339,130 +310,55 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [reloadData, startTask, endTask, loadStatus]);
 
-  // CRUD operations - Requirements
+  // Save an artifact of any kind, then show it (state follows the disk)
+  const setters = useMemo(
+    () =>
+      ({
+        requirement: setRequirements,
+        useCase: setUseCases,
+        testCase: setTestCases,
+        information: setInformation,
+        risk: setRisks,
+        document: setDocuments,
+      }) as unknown as Record<
+        ArtifactKindId,
+        React.Dispatch<React.SetStateAction<{ id: string }[]>>
+      >,
+    []
+  );
+
+  const saveArtifact = useCallback(
+    async (kindId: ArtifactKindId, artifact: { id: string }) => {
+      if (!isReady) throw new Error('Filesystem not ready');
+      if (!isE2EMode()) {
+        await repository.save(kindId, artifact as never);
+      }
+      setters[kindId]((prev) => {
+        const idx = prev.findIndex((a) => a.id === artifact.id);
+        if (idx < 0) return [...prev, artifact];
+        const updated = [...prev];
+        updated[idx] = artifact;
+        return updated;
+      });
+      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
+    },
+    [isReady, refreshStatus, setters]
+  );
+
   const saveRequirement = useCallback(
-    async (requirement: Requirement) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await requirementService.save(requirement);
-      }
-      setRequirements((prev) => {
-        const idx = prev.findIndex((r) => r.id === requirement.id);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = requirement;
-          return updated;
-        }
-        return [...prev, requirement];
-      });
-      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
-    },
-    [isReady, refreshStatus]
+    (a: Requirement) => saveArtifact('requirement', a),
+    [saveArtifact]
   );
-
-  // CRUD operations - Use Cases
-  const saveUseCase = useCallback(
-    async (useCase: UseCase) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await useCaseService.save(useCase);
-      }
-      setUseCases((prev) => {
-        const idx = prev.findIndex((u) => u.id === useCase.id);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = useCase;
-          return updated;
-        }
-        return [...prev, useCase];
-      });
-      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
-    },
-    [isReady, refreshStatus]
-  );
-
-  // CRUD operations - Test Cases
-  const saveTestCase = useCallback(
-    async (testCase: TestCase) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await testCaseService.save(testCase);
-      }
-      setTestCases((prev) => {
-        const idx = prev.findIndex((t) => t.id === testCase.id);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = testCase;
-          return updated;
-        }
-        return [...prev, testCase];
-      });
-      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
-    },
-    [isReady, refreshStatus]
-  );
-
-  // CRUD operations - Information
+  const saveUseCase = useCallback((a: UseCase) => saveArtifact('useCase', a), [saveArtifact]);
+  const saveTestCase = useCallback((a: TestCase) => saveArtifact('testCase', a), [saveArtifact]);
   const saveInformation = useCallback(
-    async (info: Information) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await informationService.save(info);
-      }
-      setInformation((prev) => {
-        const idx = prev.findIndex((i) => i.id === info.id);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = info;
-          return updated;
-        }
-        return [...prev, info];
-      });
-      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
-    },
-    [isReady, refreshStatus]
+    (a: Information) => saveArtifact('information', a),
+    [saveArtifact]
   );
-
-  // CRUD operations - Risks
-  const saveRisk = useCallback(
-    async (risk: Risk) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await riskService.save(risk);
-      }
-      setRisks((prev) => {
-        const idx = prev.findIndex((r) => r.id === risk.id);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = risk;
-          return updated;
-        }
-        return [...prev, risk];
-      });
-      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
-    },
-    [isReady, refreshStatus]
-  );
-
-  // CRUD operations - Documents
+  const saveRisk = useCallback((a: Risk) => saveArtifact('risk', a), [saveArtifact]);
   const saveDocument = useCallback(
-    async (document: ArtifactDocument) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await documentService.save(document);
-      }
-      setDocuments((prev) => {
-        const idx = prev.findIndex((d) => d.id === document.id);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = document;
-          return updated;
-        }
-        return [...prev, document];
-      });
-      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
-    },
-    [isReady, refreshStatus]
+    (a: ArtifactDocument) => saveArtifact('document', a),
+    [saveArtifact]
   );
 
   // Project (tracyfy.yaml)
@@ -470,7 +366,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (updated: Project) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskProjectService.saveProject(updated);
+        await repository.saveProject(updated);
       }
       setProject(updated);
       if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
@@ -495,7 +391,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (link: Link) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskLinkService.save(link);
+        await repository.saveLink(link);
       }
       upsertLinkState(link);
       if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
@@ -521,7 +417,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           revision: '01',
         };
       } else {
-        link = await diskLinkService.createLink(sourceId, targetId, type);
+        link = await repository.createLink(sourceId, targetId, type);
       }
       upsertLinkState(link);
       if (!isE2EMode()) refreshStatus();
@@ -533,7 +429,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const updateLink = useCallback(
     async (id: string, updates: Partial<Link>) => {
       if (!isReady) throw new Error('Filesystem not ready');
-      const updated = await diskLinkService.updateLink(id, updates);
+      const updated = await repository.updateLink(id, updates);
       if (updated) upsertLinkState(updated);
       refreshStatus();
       return updated;
@@ -545,7 +441,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (id: string) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        await diskLinkService.deleteLink(id);
+        await repository.deleteLink(id);
       }
       setLinks((prev) => prev.filter((l) => l.id !== id));
       if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
@@ -562,8 +458,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setE2eCounters((prev) => ({ ...prev, [type]: nextNum }));
         return `${STORED_TYPES[type].idPrefix}-${String(nextNum).padStart(3, '0')}`;
       }
-      const { folder, idPrefix } = STORED_TYPES[type];
-      return idAllocator.next(folder, idPrefix);
+      return repository.nextId(type);
     },
     [e2eCounters]
   );
@@ -574,7 +469,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (!isReady) throw new Error('Filesystem not ready');
       if (isE2EMode()) return; // Skip git operations in E2E mode
       debug.log(`[commitFile] Committing ${filepath} with message: ${message}`);
-      await realGitService.commitFile(filepath, message);
+      await repository.commit(filepath, message);
       // Trigger sync status update
       window.dispatchEvent(new CustomEvent('git-check'));
     },
@@ -591,8 +486,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
 
       try {
-        debug.log('[revertFile] Calling realGitService.revertFile...');
-        await realGitService.revertFile(filepath);
+        await repository.revert(filepath);
         debug.log('[revertFile] Successfully reverted.');
         // Note: git-status-changed event is dispatched by revertFile which triggers refreshStatus
         // We reload data to pick up the reverted content
@@ -608,22 +502,22 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const getArtifactHistory = useCallback(
     async (kindId: ArtifactKindId, id: string) => {
       if (!isReady || isE2EMode()) return [];
-      return await realGitService.getHistory(`${kind(kindId).folder}/${id}.md`);
+      return await repository.history(kindId, id);
     },
     [isReady]
   );
 
   const readFileAtCommit = useCallback(async (path: string, hash: string) => {
     if (isE2EMode()) return null;
-    return await realGitService.readFileAtCommit(path, hash);
+    return await repository.readAt(path, hash);
   }, []);
 
   const push = useCallback(async () => {
-    return await realGitService.push();
+    return await repository.push();
   }, []);
 
   const pull = useCallback(async () => {
-    const result = await realGitService.pull();
+    const result = await repository.pull();
     if (result.success) {
       // The pull changed files on disk: reload so the app (and the next save)
       // works on the pulled data instead of stale in-memory state
@@ -634,13 +528,12 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, [reloadData, refreshStatus]);
 
   const hasRemote = useCallback(async () => {
-    return await realGitService.hasRemote();
+    return await repository.hasRemote();
   }, []);
 
   const changeDirectory = useCallback(async () => {
     // Clear the stored directory
     await fileSystemService.clearDirectory();
-    idAllocator.reset();
 
     // Reset all state
     setIsReady(false);

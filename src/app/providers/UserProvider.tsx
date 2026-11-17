@@ -6,7 +6,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import type { Person } from '../../types';
-import { realGitService } from '../../services/realGitService';
+import { repository } from '../../storage/repository';
 import { useFileSystem } from './FileSystemProvider';
 
 interface UserContextValue {
@@ -58,8 +58,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     (async () => {
       try {
         const [me, history] = await Promise.all([
-          realGitService.getAuthor(),
-          realGitService.getHistory(undefined, 500).catch(() => []),
+          repository.author(),
+          repository.commits(500).catch(() => []),
         ]);
         if (cancelled) return;
         setCurrentUser(me);
@@ -81,7 +81,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const setIdentity = useCallback(async (person: Person) => {
     const identity = { name: person.name.trim(), email: person.email.trim() };
-    if (!isE2EMode()) await realGitService.setAuthor(identity);
+    if (!isE2EMode()) await repository.setAuthor(identity);
     setCurrentUser(identity);
   }, []);
 

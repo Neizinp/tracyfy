@@ -4,7 +4,7 @@
  */
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { realGitService } from '../../services/realGitService';
+import { repository } from '../../storage/repository';
 import { useFileSystem } from './FileSystemProvider';
 import { useToast } from './ToastProvider';
 import type { ProjectBaseline } from '../../types';
@@ -34,15 +34,7 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
     setLoading(true);
     try {
-      const tags = await realGitService.getTagsWithDetails();
-      setBaselines(
-        tags.map((t) => ({
-          name: t.name,
-          description: t.message.trim(),
-          timestamp: t.timestamp,
-          commit: t.commit,
-        }))
-      );
+      setBaselines(await repository.baselines());
     } catch (err) {
       console.error('Failed to load baselines:', err);
     } finally {
@@ -65,17 +57,11 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
         return null;
       }
       try {
-        await realGitService.createTag(name, description || `Baseline ${name}`);
-        const [head] = await realGitService.getHistory(undefined, 1);
-        const created: ProjectBaseline = {
-          name,
-          description: description || `Baseline ${name}`,
-          timestamp: Date.now(),
-          commit: head?.hash ?? '',
-        };
-        await refreshBaselines();
+        await repository.createBaseline(name, description || `Baseline ${name}`);
+        const all = await repository.baselines();
+        setBaselines(all);
         showToast(`Baseline ${name} created`, 'success');
-        return created;
+        return all.find((b) => b.name === name) ?? null;
       } catch (err) {
         console.error('Failed to create baseline:', err);
         showToast(
@@ -85,7 +71,7 @@ export const BaselinesProvider: React.FC<{ children: ReactNode }> = ({ children 
         return null;
       }
     },
-    [baselines, refreshBaselines, showToast]
+    [baselines, showToast]
   );
 
   const value: BaselinesContextValue = useMemo(

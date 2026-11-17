@@ -4,18 +4,8 @@
  * Fills an empty project with sample artifacts.
  */
 
-import { diskProjectService } from './diskProjectService';
-import { diskLinkService } from './diskLinkService';
 import { diskCustomAttributeService } from './diskCustomAttributeService';
-import {
-  requirementService,
-  useCaseService,
-  testCaseService,
-  informationService,
-  riskService,
-} from './artifactServices';
-import { idAllocator } from '../storage/idAllocator';
-import { STORED_TYPES } from './storedTypes';
+import { repository } from '../storage/repository';
 import {
   DEMO_PROJECT,
   DEMO_ARTIFACTS,
@@ -76,35 +66,15 @@ export async function loadDemoData(): Promise<Project> {
 
   // 1. Name the project
   const project: Project = { name: projectName, description: DEMO_PROJECT.description };
-  await diskProjectService.saveProject(project);
+  await repository.saveProject(project);
 
   // 2. Allocate all IDs at once
   const [reqIds, ucIds, tcIds, infoIds, riskIds] = await Promise.all([
-    idAllocator.nextMany(
-      STORED_TYPES.requirement.folder,
-      STORED_TYPES.requirement.idPrefix,
-      DEMO_ARTIFACTS.requirements.length
-    ),
-    idAllocator.nextMany(
-      STORED_TYPES.useCase.folder,
-      STORED_TYPES.useCase.idPrefix,
-      DEMO_ARTIFACTS.useCases.length
-    ),
-    idAllocator.nextMany(
-      STORED_TYPES.testCase.folder,
-      STORED_TYPES.testCase.idPrefix,
-      DEMO_ARTIFACTS.testCases.length
-    ),
-    idAllocator.nextMany(
-      STORED_TYPES.information.folder,
-      STORED_TYPES.information.idPrefix,
-      DEMO_ARTIFACTS.information.length
-    ),
-    idAllocator.nextMany(
-      STORED_TYPES.risk.folder,
-      STORED_TYPES.risk.idPrefix,
-      DEMO_ARTIFACTS.risks.length
-    ),
+    repository.nextIds('requirement', DEMO_ARTIFACTS.requirements.length),
+    repository.nextIds('useCase', DEMO_ARTIFACTS.useCases.length),
+    repository.nextIds('testCase', DEMO_ARTIFACTS.testCases.length),
+    repository.nextIds('information', DEMO_ARTIFACTS.information.length),
+    repository.nextIds('risk', DEMO_ARTIFACTS.risks.length),
   ]);
 
   createdIds.requirements = reqIds;
@@ -149,11 +119,11 @@ export async function loadDemoData(): Promise<Project> {
 
   // 4. Save all artifacts in parallel
   await Promise.all([
-    ...requirements.map((r) => requirementService.save(r)),
-    ...useCases.map((u) => useCaseService.save(u)),
-    ...testCases.map((t) => testCaseService.save(t)),
-    ...informationItems.map((i) => informationService.save(i)),
-    ...risks.map((r) => riskService.save(r)),
+    ...requirements.map((r) => repository.save('requirement', r)),
+    ...useCases.map((u) => repository.save('useCase', u)),
+    ...testCases.map((t) => repository.save('testCase', t)),
+    ...informationItems.map((i) => repository.save('information', i)),
+    ...risks.map((r) => repository.save('risk', r)),
   ]);
 
   // 5. Create links between artifacts
@@ -162,7 +132,7 @@ export async function loadDemoData(): Promise<Project> {
     const targetId = getArtifactId(linkDef.targetType, linkDef.targetIndex, createdIds);
 
     if (sourceId && targetId) {
-      await diskLinkService.createLink(sourceId, targetId, linkDef.type);
+      await repository.createLink(sourceId, targetId, linkDef.type);
     }
   }
 
