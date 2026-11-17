@@ -1,6 +1,6 @@
 # Tracyfy target design
 
-Status: **draft for review** — nothing here is implemented yet.
+Status: steps 1–4 of §7 are done; the rest is the plan.
 
 This document describes where the codebase should end up, the decisions behind it, and
 the order in which to get there. The goal is a codebase where a change that concerns
@@ -182,15 +182,38 @@ my-project/                 ← one git repository = one project
   assets/…
 ```
 
-- Each artifact file is YAML frontmatter (fields) plus a markdown body (the kind's `body`
-  field). The file name is the ID.
-- Frontmatter is parsed and validated with a schema generated from the registry and custom
-  fields, using zod. Invalid files show up as validation errors in the UI. They are not
-  silently turned into wrong data.
+- Everything is plain text a person can read and edit. Each artifact file is a short
+  frontmatter block (status, priority, dates…) plus readable markdown: the title, then the
+  text fields as `## ` sections (`## Description`, `## Rationale`…). Text fields are never
+  moved into the frontmatter. The file name is the ID; the file does not repeat it.
+
+  ```
+  ---
+  title: Login timeout
+  status: approved
+  priority: high
+  revision: "02"
+  ---
+
+  # Login timeout
+
+  ## Description
+  The session ends after inactivity.
+
+  ## Requirement Text
+  The system shall log out a user after 15 minutes of inactivity.
+  ```
+
+- Frontmatter is parsed with the `yaml` package and validated with zod
+  (`src/domain/artifactFormat.ts`, one description per kind). Invalid files show up as a
+  notice in the UI (path and reason) and are left out. They are not silently turned into
+  wrong data. Validating custom attribute values against their definitions comes with the
+  field defs in step 6.
 - `tracyfy.yaml` has a `schemaVersion`. Future format changes are explicit migrations
   keyed on it.
-- Removed: `projects/`, `counters/`, `users/`, `workflows/`, `custom-attributes/` (moved
-  into `tracyfy.yaml`), `.git/tracyfy-current-*`.
+- Removed: `projects/`, `counters/`, `users/`, `baselines/`, `project.md` and
+  `custom-attributes/` (moved into `tracyfy.yaml`), `.git/tracyfy-current-*`. `workflows/`
+  goes in step 7. `saved-filters/` stays until the open question in §8 is decided.
 
 ## 5. Architecture
 
@@ -253,9 +276,14 @@ order is chosen so that each step makes the next one smaller.
    relate to" from the links, reading a link from either end (`TC verifies REQ` and
    `REQ verified_by TC` are the same fact). The test case list, graph and PDF/Excel export
    read relations from there.
-4. **Storage layer + new file format** (§4, P4, P5). Repository interface, zod schemas,
-   `tracyfy.yaml`, IDs from file names. Delete counters, users and the other auto-commit
-   special cases.
+4. ✅ **Storage layer + new file format** (§4, P4, P5) - done. IDs come from file names
+   (`src/domain/ids.ts`, `src/storage/idAllocator.ts`); the counters folder and permanent
+   delete are gone. The user is the git author (`user.name`/`user.email` in `.git/config`);
+   the users folder is gone. `tracyfy.yaml` holds name, description and custom attribute
+   definitions. Links and custom attributes are ordinary pending changes: nothing is
+   auto-committed any more except workflow approvals (step 7). A baseline is only a git tag.
+   One codec (`src/domain/artifactFormat.ts`) reads and writes every kind with zod
+   validation, and `src/storage/repository.ts` is the one storage API the app uses.
 5. **Single store** (§5). Replace the providers.
 6. **Generic UI** (§3.2). ArtifactForm, ArtifactTable and ArtifactDetail driven by field defs,
    with custom attributes folded in. Delete the per-kind modals, form hooks and lists one kind
@@ -273,21 +301,14 @@ features on purpose. Step 7 is new functionality, and only becomes cheap after 1
 
 Things noticed while doing a step that belong to a later one:
 
-- **Baselines exist twice**: as git tags (history view) and as JSON files in `baselines/`
-  (BaselinesProvider). §3.5 says a baseline is a git tag, so the JSON files go in step 4.
-- **Project info lives in `project.md`** for now (name in frontmatter, description as body);
-  it moves into `tracyfy.yaml` in step 4.
 - The requirements column selector writes `column-visibility` to localStorage, but nothing
   reads it back. Column visibility should be stored once, for all kinds, in step 6.
 - **Advanced search does not cover documents**: `useAdvancedSearch` lists kinds by hand.
   Search should iterate the registry and the field defs in step 6.
 - **PDF and Excel export miss kinds**: revision history in the PDF only covers requirements,
   use cases, test cases and information. This gets fixed by the rewrite in step 8.
-- **Left after step 2**: the storage layer still names folders by hand
-  (`gitCoreService.loadAllArtifacts`, `gitHistoryService.loadProjectSnapshot`, `ArtifactFolder`),
-  and `STORED_TYPES` still carries users, workflows and custom-attribute files. The JSON
-  import/export keys its collections by state name (`useCases`). All of this belongs to the
-  repository in step 4 and the export rewrite in step 8.
+- **Left after step 2**: the JSON import/export keys its collections by state name
+  (`useCases`). It goes with the export rewrite in step 8.
 - **Left after step 3**: `Workflow.artifactIds` still lists artifacts inside the workflow file.
   It goes with workflows in step 7 (P6). The gap analysis still counts "has any link"; the
   rule-based version is step 7 (P2).
@@ -295,6 +316,21 @@ Things noticed while doing a step that belong to a later one:
   `TC verifies REQ` gives two link files for the same fact. The link dialog should normalize
   to one direction per type pair (for example always `verifies`), which also makes the
   `allowed` rules in §3.3 simpler. This fits with the link rules in step 7.
+- **Left after step 4**:
+  - Workflows still have their own file format and auto-commit approvals; they go in step 7.
+    Workflow assignees are git author names.
+  - A removed link deletes its file, so the highest link ID can be handed out again. Link
+    files could instead be named by what they link (`TC-007.verifies.REQ-012.md`): one file
+    per fact, no ID to allocate, and two branches adding the same link merge cleanly. Worth
+    deciding with the link rules in step 7.
+  - Dates in frontmatter are epoch milliseconds (`dateCreated: 1794922552184`). ISO dates
+    would read better as plain text; git also knows when a file changed. Decide in step 6
+    together with the field defs.
+  - The Version History snapshot viewer shows four kinds by hand; it should iterate the
+    registry in step 6.
+  - `FileSystemProvider` still holds one state array per kind; the single store (step 5)
+    replaces it with `repository.load()`'s `artifacts` record.
+  - Tags are not pushed with Push; a baseline only exists in the local clone until it is.
 
 ## 8. Open questions
 
