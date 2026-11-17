@@ -32,7 +32,7 @@ describe('integration: IDs from file names', () => {
   it('creating artifacts writes no counter files and makes no counter commits', async () => {
     h = await startApp();
     await addRequirement(h, 'First');
-    await act(() => h.app().fileSystem.createLink('REQ-001', 'REQ-001', 'related_to'));
+    await act(() => h.app().createLink('REQ-001', 'REQ-001', 'related_to'));
     await h.settle();
 
     expect(h.exists('counters')).toBe(false);

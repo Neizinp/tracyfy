@@ -16,10 +16,9 @@ import {
   useInformation,
   useRisks,
   useDocuments,
-  useGlobalState,
-  useUser,
 } from '../../app/providers';
 import type { Information, Risk, UseCase, ArtifactDocument } from '../../types';
+import { useAppStore, useAppStoreApi } from '../../state';
 
 export const ArtifactModals: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -44,12 +43,23 @@ export const ArtifactModals: React.FC = () => {
     editingUseCase,
     editingDocument,
   } = ui;
-  const globalState = useGlobalState();
-  const { currentUser } = useUser();
+  const store = useAppStoreApi();
+  const currentUser = useAppStore((s) => s.currentUser);
 
   const handleDocumentExport = async (doc: ArtifactDocument) => {
     const { exportSingleDocumentToPDF } = await import('../../utils/pdf/pdfMainExport');
-    await exportSingleDocumentToPDF(doc, globalState, currentUser?.name);
+    const { artifacts } = store.getState();
+    await exportSingleDocumentToPDF(
+      doc,
+      {
+        requirements: artifacts.requirement,
+        useCases: artifacts.useCase,
+        testCases: artifacts.testCase,
+        information: artifacts.information,
+        risks: artifacts.risk,
+      },
+      currentUser?.name
+    );
   };
 
   const handleFullClose = () => {

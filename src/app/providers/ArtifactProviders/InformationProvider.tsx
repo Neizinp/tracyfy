@@ -17,13 +17,6 @@ interface InformationContextValue {
 const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Information>({
   type: 'information',
   displayName: 'Information',
-  useData: (state) => ({
-    items: state.information,
-  }),
-  useFS: (fs) => ({
-    save: fs.saveInformation,
-    isReady: fs.isReady,
-  }),
   useUIHelpers: (ui) => ({
     setEditingItem: ui.setSelectedInformation,
     setIsModalOpen: ui.setIsInformationModalOpen,

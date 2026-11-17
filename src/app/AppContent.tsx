@@ -1,20 +1,20 @@
 import { AppRoutes } from '../routes/AppRoutes';
 import { DirectorySelector, UserOnboardingModal } from '../components';
-import { useFileSystem, useUser } from './providers';
+import { useAppStore } from '../state';
+import { isE2EMode } from '../state/e2e';
 import { useArtifactDeepLink } from '../hooks/useArtifactDeepLink';
 
 export function AppContent() {
   useArtifactDeepLink();
-  const fileSystem = useFileSystem();
-  const { currentUser, isLoading: isUserLoading, setIdentity } = useUser();
+  const isReady = useAppStore((s) => s.isReady);
+  const isLoading = useAppStore((s) => s.isLoading);
+  const isUserLoading = useAppStore((s) => s.isUserLoading);
+  const hasUser = useAppStore((s) => s.currentUser !== null);
+  const setIdentity = useAppStore((s) => s.setIdentity);
 
-  const isE2E =
-    typeof window !== 'undefined' &&
-    (window as unknown as { __E2E_TEST_MODE__?: boolean }).__E2E_TEST_MODE__;
-
-  const showDirectorySelector = !fileSystem.isReady && !fileSystem.isLoading;
+  const showDirectorySelector = !isReady && !isLoading;
   // The repository has no user.name yet: ask who the user is
-  const showUserOnboarding = !isE2E && fileSystem.isReady && !isUserLoading && !currentUser;
+  const showUserOnboarding = !isE2EMode() && isReady && !isUserLoading && !hasUser;
 
   return (
     <>

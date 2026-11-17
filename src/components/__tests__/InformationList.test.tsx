@@ -77,7 +77,6 @@ describe('InformationList', () => {
     vi.mocked(useCustomAttributes).mockReturnValue({
       definitions: [],
       loading: false,
-      error: null,
       refetch: vi.fn(),
       getDefinitionsForType: vi.fn(),
     });

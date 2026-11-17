@@ -1,10 +1,12 @@
 import React from 'react';
 import { ProjectSettingsModal } from '../';
-import { useUI, useProject } from '../../app/providers';
+import { useUI } from '../../app/providers';
+import { useAppStore } from '../../state';
 
 export const ProjectModals: React.FC = () => {
   const ui = useUI();
-  const { project, updateProject } = useProject();
+  const project = useAppStore((s) => s.project);
+  const updateProject = useAppStore((s) => s.updateProject);
 
   return (
     <ProjectSettingsModal

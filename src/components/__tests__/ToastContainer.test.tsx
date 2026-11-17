@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { StoreProvider, useAppStore } from '../../state';
+import { StoreProvider, createAppStore, useAppStore } from '../../state';
 import { ToastContainer } from '../ToastContainer';
 
 /** True if a CSS color is fully opaque (#rgb/#rrggbb, rgb(), or rgba(..., 1)) */
@@ -27,7 +27,7 @@ describe('ToastContainer', () => {
         return <button onClick={() => showToast(`A ${type} message`, type, 0)}>show</button>;
       };
       render(
-        <StoreProvider>
+        <StoreProvider store={createAppStore()}>
           <Trigger />
           <ToastContainer />
         </StoreProvider>

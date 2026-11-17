@@ -1,6 +1,4 @@
 import { useCallback, useMemo } from 'react';
-import { useFileSystem } from '../FileSystemProvider';
-import { useUser } from '../UserProvider';
 import { incrementRevision } from '../../../utils/revisionUtils';
 import { storedTypeLabel, type StoredType } from '../../../services/storedTypes';
 import { notifyError, useAppStore } from '../../../state';
@@ -57,8 +55,8 @@ export function useArtifactCRUD<T extends BaseArtifact>({
   onAfterUpdate,
   onBeforeAdd,
 }: CRUDOptions<T>) {
-  const { getNextId } = useFileSystem();
-  const { currentUser } = useUser();
+  const getNextId = useAppStore((s) => s.nextId);
+  const currentUser = useAppStore((s) => s.currentUser);
   const showToast = useAppStore((s) => s.showToast);
   const startTask = useAppStore((s) => s.startTask);
   const endTask = useAppStore((s) => s.endTask);

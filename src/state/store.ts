@@ -11,16 +11,29 @@
  * read and call the others through `get()`.
  */
 import { createStore, type StoreApi } from 'zustand/vanilla';
+import { createProjectSlice, type ProjectSlice } from './slices/project';
+import { createGitSlice, type GitSlice } from './slices/git';
+import { createUserSlice, type UserSlice } from './slices/user';
+import { createBaselinesSlice, type BaselinesSlice } from './slices/baselines';
 import { createTasksSlice, type TasksSlice } from './slices/tasks';
 import { createToastsSlice, type ToastsSlice } from './slices/toasts';
 
-export type AppState = TasksSlice & ToastsSlice;
+export type AppState = ProjectSlice &
+  GitSlice &
+  UserSlice &
+  BaselinesSlice &
+  TasksSlice &
+  ToastsSlice;
 
 export type AppStore = StoreApi<AppState>;
 
 /** A new, empty store. The app makes one per mount (see StoreProvider). */
 export function createAppStore(): AppStore {
   return createStore<AppState>()((...a) => ({
+    ...createProjectSlice(...a),
+    ...createGitSlice(...a),
+    ...createUserSlice(...a),
+    ...createBaselinesSlice(...a),
     ...createTasksSlice(...a),
     ...createToastsSlice(...a),
   }));

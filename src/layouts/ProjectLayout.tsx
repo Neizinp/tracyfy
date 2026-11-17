@@ -3,16 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Layout, ModalManager } from '../components';
 import { GenericColumnSelector } from '../components/GenericColumnSelector';
-import {
-  useProject,
-  useUI,
-  useGlobalState,
-  useImportExport,
-  useFileSystem,
-  useUser,
-  useBaselines,
-  useCustomAttributes,
-} from '../app/providers';
+import { useUI, useImportExport, useCustomAttributes } from '../app/providers';
 import { loadDemoData } from '../services/demoDataService';
 import { activeIds } from '../utils/activeArtifacts';
 import type {
@@ -38,7 +29,7 @@ const PageLoadingFallback: React.FC = () => (
 );
 
 export const ProjectLayout: React.FC = () => {
-  const { project } = useProject();
+  const project = useAppStore((s) => s.project);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -46,13 +37,19 @@ export const ProjectLayout: React.FC = () => {
   const ui = useUI();
 
   // Global state
-  const { requirements, useCases, testCases, information, documents } = useGlobalState();
+  const requirements = useAppStore((s) => s.artifacts.requirement);
+  const useCases = useAppStore((s) => s.artifacts.useCase);
+  const testCases = useAppStore((s) => s.artifacts.testCase);
+  const information = useAppStore((s) => s.artifacts.information);
+  const documents = useAppStore((s) => s.artifacts.document);
 
   // FileSystem context
-  const { reloadData, refreshStatus, changeDirectory } = useFileSystem();
+  const reloadData = useAppStore((s) => s.reload);
+  const refreshStatus = useAppStore((s) => s.refreshStatus);
+  const changeDirectory = useAppStore((s) => s.closeFolder);
 
   // Baselines context
-  const { baselines } = useBaselines();
+  const baselines = useAppStore((s) => s.baselines);
 
   // Custom Attributes context
   const { getDefinitionsForType } = useCustomAttributes();
@@ -192,7 +189,7 @@ export const ProjectLayout: React.FC = () => {
   const importExport = useImportExport();
 
   // User context
-  const { currentUser } = useUser();
+  const currentUser = useAppStore((s) => s.currentUser);
 
   // Background tasks
   const startTask = useAppStore((s) => s.startTask);

@@ -28,7 +28,7 @@ const TYPES: TypeCase[] = [
     createLabel: /create requirement/i,
     route: '/requirements',
     folder: 'requirements',
-    all: (a) => a.globalState.requirements,
+    all: (a) => a.artifacts.requirement,
   },
   {
     kind: 'useCase',
@@ -37,7 +37,7 @@ const TYPES: TypeCase[] = [
     createLabel: /create use case/i,
     route: '/use-cases',
     folder: 'use-cases',
-    all: (a) => a.globalState.useCases,
+    all: (a) => a.artifacts.useCase,
   },
   {
     kind: 'testCase',
@@ -46,7 +46,7 @@ const TYPES: TypeCase[] = [
     createLabel: /create test case/i,
     route: '/test-cases',
     folder: 'test-cases',
-    all: (a) => a.globalState.testCases,
+    all: (a) => a.artifacts.testCase,
   },
   {
     kind: 'information',
@@ -55,7 +55,7 @@ const TYPES: TypeCase[] = [
     createLabel: /create information/i,
     route: '/information',
     folder: 'information',
-    all: (a) => a.globalState.information,
+    all: (a) => a.artifacts.information,
   },
   {
     kind: 'risk',
@@ -64,7 +64,7 @@ const TYPES: TypeCase[] = [
     createLabel: /create risk/i,
     route: '/risks',
     folder: 'risks',
-    all: (a) => a.globalState.risks,
+    all: (a) => a.artifacts.risk,
   },
   {
     kind: 'document',
@@ -73,7 +73,7 @@ const TYPES: TypeCase[] = [
     createLabel: /create document/i,
     route: '/documents',
     folder: 'documents',
-    all: (a) => a.globalState.documents,
+    all: (a) => a.artifacts.document,
   },
 ];
 
@@ -107,7 +107,7 @@ describe.each(TYPES)('integration: $name lifecycle via the UI', (t) => {
 
     // Commit everything so later changes are visible on their own
     for (const p of await h.dirtyPaths()) {
-      await act(() => h.app().fileSystem.commitFile(p, `Commit ${p}`));
+      await act(() => h.app().commitFile(p, `Commit ${p}`));
     }
     await h.settle();
     expect(await h.dirtyPaths()).toEqual([]);
@@ -129,7 +129,7 @@ describe.each(TYPES)('integration: $name lifecycle via the UI', (t) => {
     expect(await h.dirtyPaths()).toEqual([`${t.folder}/${id}.md`]);
 
     // Save again without changes → no new revision
-    await act(() => h.app().fileSystem.commitFile(`${t.folder}/${id}.md`, 'Commit edit'));
+    await act(() => h.app().commitFile(`${t.folder}/${id}.md`, 'Commit edit'));
     await h.settle();
     fireEvent.click(await screen.findByText(`My ${t.name} v2`));
     dialog = await screen.findByRole('dialog');
@@ -220,9 +220,7 @@ describe.each(TYPES)('integration: opening a $name from elsewhere', (t) => {
       await screen.findByText(`${kind(t.kind).label.singular} ${target.id} created`)
     ).toBeInTheDocument();
 
-    await act(() =>
-      h.app().fileSystem.createLink((source as { id: string }).id, target.id, 'related_to')
-    );
+    await act(() => h.app().createLink((source as { id: string }).id, target.id, 'related_to'));
     await h.settle();
 
     // Links page: click the target's ID
@@ -232,7 +230,7 @@ describe.each(TYPES)('integration: opening a $name from elsewhere', (t) => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
     // History: click the artifact on its commit
-    await act(() => h.app().fileSystem.commitFile(`${t.folder}/${target.id}.md`, 'Add it'));
+    await act(() => h.app().commitFile(`${t.folder}/${target.id}.md`, 'Add it'));
     await h.settle();
     await act(async () => h.app().ui.setIsVersionHistoryOpen(true));
     const history = await screen.findByRole('dialog', { name: 'History' });

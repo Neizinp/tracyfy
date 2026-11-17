@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
+import { renderWithStore as render } from '../../test/renderWithStore';
 import { TestCaseList } from '../TestCaseList';
 import type { TestCase, TestCaseColumnVisibility } from '../../types';
 import { useCustomAttributes } from '../../app/providers';
@@ -7,10 +8,6 @@ import { useCustomAttributes } from '../../app/providers';
 // Mock hooks
 vi.mock('../../app/providers', () => ({
   useCustomAttributes: vi.fn(),
-}));
-
-vi.mock('../../app/providers/FileSystemProvider', () => ({
-  useFileSystem: () => ({ links: [] }),
 }));
 
 // Mock react-virtuoso to render all items (bypasses virtualization in tests)
@@ -83,7 +80,6 @@ describe('TestCaseList', () => {
     vi.mocked(useCustomAttributes).mockReturnValue({
       definitions: [],
       loading: false,
-      error: null,
       refetch: vi.fn(),
       getDefinitionsForType: vi.fn(),
     });

@@ -44,7 +44,7 @@ async function populate(h: Harness) {
       structure: [],
     } as never)
   );
-  const link = await act(() => app().fileSystem.createLink(req!.id, uc!.id, 'satisfies'));
+  const link = await act(() => app().createLink(req!.id, uc!.id, 'satisfies'));
   await h.settle();
   return { req: req!, uc: uc!, tc: tc!, info: info!, risk: risk!, doc: doc!, link };
 }
@@ -139,8 +139,8 @@ describe('integration: export', () => {
       app().testCases.handleAddTestCase({ ...base, title: 'Log in and out' } as never)
     ))!;
     // One link stored from each end
-    await act(() => app().fileSystem.createLink(tc.id, login.id, 'verifies'));
-    await act(() => app().fileSystem.createLink(logout.id, tc.id, 'verified_by'));
+    await act(() => app().createLink(tc.id, login.id, 'verifies'));
+    await act(() => app().createLink(logout.id, tc.id, 'verified_by'));
     await h.settle();
 
     const wb = XLSX.read(await exportVia(/excel sheet/i), { type: 'array' });
@@ -183,14 +183,14 @@ describe('integration: export', () => {
     });
     await h.settle();
 
-    const g = h.app().globalState;
-    await waitFor(() => expect(g.requirements.map((r) => r.id)).toContain(a.req.id));
-    expect(h.app().globalState.useCases.map((r) => r.id)).toContain(a.uc.id);
-    expect(h.app().globalState.testCases.map((r) => r.id)).toContain(a.tc.id);
-    expect(h.app().globalState.information.map((r) => r.id)).toContain(a.info.id);
-    expect(h.app().globalState.risks.map((r) => r.id)).toContain(a.risk.id);
-    expect(h.app().globalState.documents.map((r) => r.id)).toContain(a.doc.id);
-    expect(h.app().fileSystem.links).toEqual([
+    const g = h.app().artifacts;
+    await waitFor(() => expect(g.requirement.map((r) => r.id)).toContain(a.req.id));
+    expect(h.app().artifacts.useCase.map((r) => r.id)).toContain(a.uc.id);
+    expect(h.app().artifacts.testCase.map((r) => r.id)).toContain(a.tc.id);
+    expect(h.app().artifacts.information.map((r) => r.id)).toContain(a.info.id);
+    expect(h.app().artifacts.risk.map((r) => r.id)).toContain(a.risk.id);
+    expect(h.app().artifacts.document.map((r) => r.id)).toContain(a.doc.id);
+    expect(h.app().links).toEqual([
       expect.objectContaining({ sourceId: a.req.id, targetId: a.uc.id, type: 'satisfies' }),
     ]);
     // Imported artifacts are visible in the project the user imported into

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
+import { renderWithStore } from '../../../test/renderWithStore';
 import { BrowserRouter } from 'react-router-dom';
 import { Sidebar } from '../Sidebar';
 
@@ -8,27 +9,16 @@ vi.mock('../../PendingChangesPanel', () => ({
   PendingChangesPanel: () => <div data-testid="pending-changes">Pending Changes Mock</div>,
 }));
 
-// Mock useFileSystem hook
+// Sync actions the sidebar reads from the store
 const mockPush = vi.fn();
 const mockPull = vi.fn();
 const mockHasRemote = vi.fn(() => Promise.resolve(false));
 
-vi.mock('../../../app/providers', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../app/providers')>();
-  return {
-    ...actual,
-    useFileSystem: vi.fn(() => ({
-      isReady: true,
-      push: mockPush,
-      pull: mockPull,
-      hasRemote: mockHasRemote,
-    })),
-  };
-});
-
 // Wrap component with router for NavLink
 const renderWithRouter = (component: React.ReactElement) => {
-  return render(<BrowserRouter>{component}</BrowserRouter>);
+  return renderWithStore(<BrowserRouter>{component}</BrowserRouter>, {
+    state: { isReady: true, push: mockPush, pull: mockPull, hasRemote: mockHasRemote },
+  });
 };
 
 describe('Sidebar', () => {

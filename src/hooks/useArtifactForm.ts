@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { CustomAttributeValue } from '../types/customAttributes';
-import { useUser } from '../app/providers';
 import { useBaseArtifactForm } from './useBaseArtifactForm';
+import { useAppStore } from '../state';
 
 export interface UseArtifactFormOptions<T extends { id: string }, TabType extends string> {
   isOpen: boolean;
@@ -26,7 +26,7 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
   onDelete,
   defaultTab,
 }: UseArtifactFormOptions<T, TabType>) {
-  const { currentUser } = useUser();
+  const currentUser = useAppStore((s) => s.currentUser);
 
   const {
     isEditMode,

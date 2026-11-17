@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { DocumentEntry } from '../types';
 import { KIND_IDS, kind, type ArtifactKindId } from '../domain/artifactKinds';
+import { useAppStore } from '../state';
 
 /** Kinds a document can include (not other documents) */
 type IncludableKind = Exclude<ArtifactKindId, 'document'>;
@@ -28,7 +29,6 @@ const KIND_ICONS: Record<ArtifactKindId, React.ReactNode> = {
   risk: <ShieldAlert size={14} />,
   document: <FileText size={14} />,
 };
-import { useGlobalState } from '../app/providers';
 
 interface DocumentEditorProps {
   structure: DocumentEntry[];
@@ -36,7 +36,11 @@ interface DocumentEditorProps {
 }
 
 export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onChange }) => {
-  const { requirements, useCases, testCases, information, risks } = useGlobalState();
+  const requirements = useAppStore((s) => s.artifacts.requirement);
+  const useCases = useAppStore((s) => s.artifacts.useCase);
+  const testCases = useAppStore((s) => s.artifacts.testCase);
+  const information = useAppStore((s) => s.artifacts.information);
+  const risks = useAppStore((s) => s.artifacts.risk);
   const [isAddingArtifact, setIsAddingArtifact] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<IncludableKind>('requirement');

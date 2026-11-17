@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { debug } from '../utils/debug';
-import { useFileSystem } from '../app/providers';
+import { useAppStore } from '../state';
 import type { CommitInfo } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { parseArtifact } from '../domain/artifactFormat';
@@ -18,7 +18,9 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
   const [history, setHistory] = useState<CommitInfo[]>([]);
   const [revisions, setRevisions] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const { getArtifactHistory: getFsHistory, readFileAtCommit, isReady } = useFileSystem();
+  const getFsHistory = useAppStore((s) => s.artifactHistory);
+  const readFileAtCommit = useAppStore((s) => s.readFileAtCommit);
+  const isReady = useAppStore((s) => s.isReady);
 
   useEffect(() => {
     const loadHistory = async () => {

@@ -1,14 +1,19 @@
 import React from 'react';
 import { Folder, AlertCircle, Loader2 } from 'lucide-react';
-import { useFileSystem } from '../app/providers/FileSystemProvider';
+import { useAppStore } from '../state';
+import { fileSystemService } from '../services/fileSystemService';
 
 interface DirectorySelectorProps {
   onReady?: () => void;
 }
 
 export const DirectorySelector: React.FC<DirectorySelectorProps> = ({ onReady }) => {
-  const { isReady, isLoading, error, selectDirectory, directoryName, isApiSupported } =
-    useFileSystem();
+  const isReady = useAppStore((s) => s.isReady);
+  const isLoading = useAppStore((s) => s.isLoading);
+  const error = useAppStore((s) => s.folderError);
+  const selectDirectory = useAppStore((s) => s.selectFolder);
+  const directoryName = useAppStore((s) => s.directoryName);
+  const isApiSupported = fileSystemService.isSupported();
 
   React.useEffect(() => {
     if (isReady && onReady) {

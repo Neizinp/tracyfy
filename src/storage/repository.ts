@@ -10,6 +10,7 @@
  */
 import type { BaseArtifact, CommitInfo, Link, Person, Project, ProjectBaseline } from '../types';
 import type { LinkType } from '../domain/linkTypes';
+import type { CustomAttributeDefinition } from '../types/customAttributes';
 import { ARTIFACT_KINDS, kind, type ArtifactKindId } from '../domain/artifactKinds';
 import { projectOf } from '../domain/projectConfig';
 import { artifactService } from '../services/artifactServices';
@@ -26,6 +27,8 @@ export interface LoadedProject {
   project: Project;
   artifacts: Record<ArtifactKindId, BaseArtifact[]>;
   links: Link[];
+  /** Custom attribute definitions (from tracyfy.yaml) */
+  customAttributes: CustomAttributeDefinition[];
   /** Files that could not be read; they are not in `artifacts` / `links` */
   problems: FileProblem[];
 }
@@ -85,6 +88,7 @@ class FsGitRepository implements ProjectRepository {
         ARTIFACT_KINDS.map((k, i) => [k.id, kinds[i].items])
       ) as LoadedProject['artifacts'],
       links: links.items,
+      customAttributes: config.customAttributes,
       problems: [...kinds.flatMap((k) => k.problems), ...links.problems],
     };
   }

@@ -9,14 +9,12 @@ import React, { useState } from 'react';
 import { X, CheckCircle2, XCircle, Clock, User, FileText, MessageSquare } from 'lucide-react';
 import type { Workflow } from '../types';
 import {
-  useUser,
   useRequirements,
   useUseCases,
   useTestCases,
   useInformation,
   useRisks,
 } from '../app/providers';
-import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { diskWorkflowService } from '../services/diskWorkflowService';
 import type { TestCase } from '../types';
 import { useAppStore } from '../state';
@@ -32,13 +30,13 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
   onClose,
   onUpdate,
 }) => {
-  const { currentUser } = useUser();
+  const currentUser = useAppStore((s) => s.currentUser);
   const { requirements, handleUpdateRequirement } = useRequirements();
   const { useCases, handleUpdateUseCase } = useUseCases();
   const { testCases, handleUpdateTestCase } = useTestCases();
   const { information, handleUpdateInformation } = useInformation();
   const { risks, handleUpdateRisk } = useRisks();
-  const { reloadData } = useFileSystem();
+  const reloadData = useAppStore((s) => s.reload);
   const showToast = useAppStore((s) => s.showToast);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

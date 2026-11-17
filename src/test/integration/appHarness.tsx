@@ -24,19 +24,15 @@ import { classifyPendingPath } from '../../utils/pendingChanges';
 import { AppProviders } from '../../app/AppProviders';
 import { AppContent } from '../../app/AppContent';
 import { StatusBar, ToastContainer } from '../../components';
+import { useAppStoreApi, type AppState, type AppStore } from '../../state';
 import {
-  useFileSystem,
-  useUser,
-  useProject,
   useRequirements,
   useUseCases,
   useTestCases,
   useInformation,
   useRisks,
   useDocuments,
-  useGlobalState,
   useUI,
-  useBaselines,
 } from '../../app/providers';
 
 /**
@@ -45,20 +41,18 @@ import {
  */
 const READY_TIMEOUT = 30_000;
 
-export interface AppHooks {
-  fileSystem: ReturnType<typeof useFileSystem>;
-  user: ReturnType<typeof useUser>;
-  project: ReturnType<typeof useProject>;
+/** The app's store state (read live), plus the hooks that are not in the store yet */
+export interface AppHooks extends AppState {
   requirements: ReturnType<typeof useRequirements>;
   useCases: ReturnType<typeof useUseCases>;
   testCases: ReturnType<typeof useTestCases>;
   information: ReturnType<typeof useInformation>;
   risks: ReturnType<typeof useRisks>;
   documents: ReturnType<typeof useDocuments>;
-  globalState: ReturnType<typeof useGlobalState>;
   ui: ReturnType<typeof useUI>;
-  baselines: ReturnType<typeof useBaselines>;
 }
+
+type ProbedHooks = Omit<AppHooks, keyof AppState>;
 
 export interface Harness {
   /** Project directory on disk (what the user picked) */
@@ -73,7 +67,7 @@ export interface Harness {
    * to stand in for the network. All other operations stay real.
    */
   stubGitOp: (op: string, impl: (dir: string, ...args: unknown[]) => unknown) => void;
-  /** Latest hook values - read after act()/waitFor() */
+  /** Latest state and hook values - read after act()/waitFor() */
   app: () => AppHooks;
   /** Read a project file from disk, or null if missing */
   readFile: (relPath: string) => string | null;
@@ -124,25 +118,25 @@ export async function startApp(
   localStorage.clear();
   const ipc = installElectronApi(dir, userData);
 
-  const latest: { current: AppHooks | null } = { current: null };
+  const latest: { current: ProbedHooks | null; store: AppStore | null } = {
+    current: null,
+    store: null,
+  };
   const Probe: React.FC = () => {
-    const hooks: AppHooks = {
-      fileSystem: useFileSystem(),
-      user: useUser(),
-      project: useProject(),
+    const store = useAppStoreApi();
+    const hooks: ProbedHooks = {
       requirements: useRequirements(),
       useCases: useUseCases(),
       testCases: useTestCases(),
       information: useInformation(),
       risks: useRisks(),
       documents: useDocuments(),
-      globalState: useGlobalState(),
       ui: useUI(),
-      baselines: useBaselines(),
     };
     // Publish after commit so tests always read the latest rendered values
     useLayoutEffect(() => {
       latest.current = hooks;
+      latest.store = store;
     });
     return null;
   };
@@ -162,16 +156,17 @@ export async function startApp(
   );
   let rendered = render(tree);
 
-  const app = () => {
-    if (!latest.current) throw new Error('App not rendered');
-    return latest.current;
+  const app = (): AppHooks => {
+    if (!latest.current || !latest.store) throw new Error('App not rendered');
+    return { ...latest.store.getState(), ...latest.current };
   };
+  const liveState = () => latest.store?.getState();
 
   // First run, through the real UI: pick the folder, then onboard the first user
   fireEvent.click(
     await screen.findByRole('button', { name: /choose folder/i }, { timeout: READY_TIMEOUT })
   );
-  await waitFor(() => expect(app().fileSystem.isReady).toBe(true), { timeout: READY_TIMEOUT });
+  await waitFor(() => expect(app().isReady).toBe(true), { timeout: READY_TIMEOUT });
 
   const nameInput = await screen.findByPlaceholderText(
     'Enter your name',
@@ -183,7 +178,7 @@ export async function startApp(
     target: { value: 'test@example.com' },
   });
   fireEvent.submit(nameInput.closest('form')!);
-  await waitFor(() => expect(app().user.currentUser?.name).toBe(options.userName ?? 'Test User'));
+  await waitFor(() => expect(app().currentUser?.name).toBe(options.userName ?? 'Test User'));
 
   const settle = async () => {
     // refreshStatus is debounced (300 ms) and runs async git status
@@ -252,6 +247,7 @@ export async function startApp(
     restart: async () => {
       rendered.unmount();
       latest.current = null;
+      latest.store = null;
       // Record errors during startup so a failed restart explains itself
       const errors: string[] = [];
       const originalError = console.error;
@@ -263,11 +259,11 @@ export async function startApp(
         rendered = render(tree);
         await waitFor(
           () => {
-            const fsState = latest.current?.fileSystem;
-            if (!fsState?.isReady) {
+            const state = liveState();
+            if (!state?.isReady) {
               throw new Error(
-                `App not ready after restart: isLoading=${fsState?.isLoading} ` +
-                  `error=${fsState?.error}\nconsole.error during restart:\n${errors.join('\n')}`
+                `App not ready after restart: isLoading=${state?.isLoading} ` +
+                  `error=${state?.folderError}\nconsole.error during restart:\n${errors.join('\n')}`
               );
             }
           },
@@ -281,6 +277,7 @@ export async function startApp(
     restartFailing: async () => {
       rendered.unmount();
       latest.current = null;
+      latest.store = null;
       const originalError = console.error;
       console.error = () => {}; // the failure is expected
       try {
@@ -288,7 +285,7 @@ export async function startApp(
         let message = '';
         await waitFor(
           () => {
-            message = latest.current?.fileSystem.error ?? '';
+            message = liveState()?.folderError ?? '';
             expect(message).not.toBe('');
           },
           { timeout: READY_TIMEOUT }

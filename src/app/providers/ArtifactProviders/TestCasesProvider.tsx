@@ -18,13 +18,6 @@ interface TestCasesContextValue {
 const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<TestCase>({
   type: 'testCase',
   displayName: 'TestCases',
-  useData: (state) => ({
-    items: state.testCases,
-  }),
-  useFS: (fs) => ({
-    save: fs.saveTestCase,
-    isReady: fs.isReady,
-  }),
   useUIHelpers: (ui) => ({
     setEditingItem: (tc) => ui.setSelectedTestCaseId(tc ? tc.id : null),
     setIsModalOpen: ui.setIsEditTestCaseModalOpen,

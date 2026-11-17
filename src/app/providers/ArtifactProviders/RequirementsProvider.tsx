@@ -19,13 +19,6 @@ interface RequirementsContextValue {
 const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Requirement>({
   type: 'requirement',
   displayName: 'Requirements',
-  useData: (state) => ({
-    items: state.requirements,
-  }),
-  useFS: (fs) => ({
-    save: fs.saveRequirement,
-    isReady: fs.isReady,
-  }),
   useUIHelpers: (ui) => ({
     setEditingItem: ui.setEditingRequirement,
     setIsModalOpen: ui.setIsEditRequirementModalOpen,

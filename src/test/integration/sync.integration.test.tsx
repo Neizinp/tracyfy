@@ -69,7 +69,7 @@ describe('integration: remote sync', () => {
     await h.settle();
 
     await waitFor(() =>
-      expect(h.app().globalState.requirements.map((r) => r.id)).toContain('REQ-050')
+      expect(h.app().artifacts.requirement.map((r) => r.id)).toContain('REQ-050')
     );
     expect(h.app().requirements.requirements.map((r) => r.title)).toContain('From a colleague');
   }, 60_000);
@@ -111,7 +111,7 @@ describe('integration: remote sync', () => {
     );
     await h.settle();
     for (const p of await h.dirtyPaths()) {
-      await act(() => h.app().fileSystem.commitFile(p, `Commit ${p}`));
+      await act(() => h.app().commitFile(p, `Commit ${p}`));
     }
     await h.settle();
 

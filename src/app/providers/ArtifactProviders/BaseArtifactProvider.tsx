@@ -1,12 +1,9 @@
 import React, { createContext, useContext, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { useGlobalState } from '../GlobalStateProvider';
 import { useUI } from '../UIProvider';
-import { useFileSystem } from '../FileSystemProvider';
-import { useUser } from '../UserProvider';
 import { useArtifactCRUD } from './useArtifactCRUD';
 import type { BaseArtifact } from './useArtifactCRUD';
-import type { StoredType } from '../../../services/storedTypes';
+import type { ArtifactKindId } from '../../../domain/artifactKinds';
 import { useAppStore } from '../../../state';
 
 export interface BaseArtifactContextValue<T extends BaseArtifact> {
@@ -22,16 +19,8 @@ export interface BaseArtifactContextValue<T extends BaseArtifact> {
 }
 
 export interface CreateProviderOptions<T extends BaseArtifact> {
-  type: StoredType;
+  type: ArtifactKindId;
   displayName: string;
-  /** Items for the current view (read-only; FileSystemProvider owns the data) */
-  useData: (state: ReturnType<typeof useGlobalState>) => {
-    items: T[];
-  };
-  useFS: (fs: ReturnType<typeof useFileSystem>) => {
-    save: (item: T) => Promise<void>;
-    isReady: boolean;
-  };
   useUIHelpers: (ui: ReturnType<typeof useUI>) => {
     setEditingItem: (item: T | null) => void;
     setIsModalOpen: (open: boolean) => void;
@@ -44,17 +33,19 @@ export function createArtifactProvider<T extends BaseArtifact>(options: CreatePr
   const Context = createContext<BaseArtifactContextValue<T> | undefined>(undefined);
 
   const Provider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const globalState = useGlobalState();
-    const { items } = options.useData(globalState);
+    const items = useAppStore((s) => s.artifacts[options.type]) as unknown as T[];
 
     const ui = useUI();
     const { setEditingItem, setIsModalOpen, setLinkSourceId, setIsLinkModalOpen } =
       options.useUIHelpers(ui);
 
-    const fs = useFileSystem();
-    const { save } = options.useFS(fs);
+    const saveArtifact = useAppStore((s) => s.saveArtifact);
+    const save = useCallback(
+      (item: T) => saveArtifact(options.type, item as never),
+      [saveArtifact]
+    );
 
-    const { currentUser } = useUser();
+    const currentUser = useAppStore((s) => s.currentUser);
     const showToast = useAppStore((s) => s.showToast);
 
     const crud = useArtifactCRUD<T>({

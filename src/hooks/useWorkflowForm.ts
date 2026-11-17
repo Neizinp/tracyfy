@@ -8,7 +8,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Workflow, Requirement, UseCase, TestCase, Information, Risk } from '../types';
 import {
-  useUser,
   useRequirements,
   useUseCases,
   useTestCases,
@@ -16,7 +15,7 @@ import {
   useRisks,
 } from '../app/providers';
 import { diskWorkflowService } from '../services/diskWorkflowService';
-import { notifyError } from '../state';
+import { notifyError, useAppStore } from '../state';
 
 interface UseWorkflowFormOptions {
   isOpen: boolean;
@@ -26,7 +25,8 @@ interface UseWorkflowFormOptions {
 }
 
 export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWorkflowFormOptions) {
-  const { currentUser, people } = useUser();
+  const currentUser = useAppStore((s) => s.currentUser);
+  const people = useAppStore((s) => s.people);
   const { requirements } = useRequirements();
   const { useCases } = useUseCases();
   const { testCases } = useTestCases();

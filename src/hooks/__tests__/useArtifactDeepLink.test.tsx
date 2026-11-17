@@ -1,9 +1,12 @@
+import { createElement, type ReactNode } from 'react';
 import { renderHook } from '@testing-library/react';
 import { useArtifactDeepLink } from '../useArtifactDeepLink';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useSearchParams } from 'react-router-dom';
-import { useUI, useGlobalState } from '../../app/providers';
-import type { UIContextValue, GlobalStateContextValue } from '../../app/providers';
+import { useUI } from '../../app/providers';
+import type { UIContextValue } from '../../app/providers';
+import { StoreProvider, createAppStore } from '../../state';
+import type { Requirement } from '../../types';
 
 vi.mock('react-router-dom', () => ({
   useSearchParams: vi.fn(),
@@ -11,11 +14,21 @@ vi.mock('react-router-dom', () => ({
 
 vi.mock('../../app/providers', () => ({
   useUI: vi.fn(),
-  useGlobalState: vi.fn(),
 }));
 
 const mockedUseUI = vi.mocked(useUI);
-const mockedUseGlobalState = vi.mocked(useGlobalState);
+
+/** A store holding one requirement, REQ-001 */
+const wrapper = ({ children }: { children: ReactNode }) => {
+  const store = createAppStore();
+  store.setState((s) => ({
+    artifacts: {
+      ...s.artifacts,
+      requirement: [{ id: 'REQ-001', title: 'Test Req' } as Requirement],
+    },
+  }));
+  return createElement(StoreProvider, { store, children });
+};
 const mockedUseSearchParams = vi.mocked(useSearchParams);
 
 describe('useArtifactDeepLink', () => {
@@ -29,13 +42,6 @@ describe('useArtifactDeepLink', () => {
       activeModal: { type: null },
       selectedArtifact: null,
     } as unknown as UIContextValue);
-    mockedUseGlobalState.mockReturnValue({
-      requirements: [{ id: 'REQ-001', title: 'Test Req' }],
-      useCases: [],
-      testCases: [],
-      information: [],
-      risks: [],
-    } as unknown as GlobalStateContextValue);
   });
 
   it('should open modal when id is present in search params', () => {
@@ -44,7 +50,7 @@ describe('useArtifactDeepLink', () => {
       mockSetSearchParams,
     ]);
 
-    renderHook(() => useArtifactDeepLink());
+    renderHook(() => useArtifactDeepLink(), { wrapper });
 
     expect(mockOpenModal).toHaveBeenCalledWith(
       'requirement',
@@ -62,7 +68,7 @@ describe('useArtifactDeepLink', () => {
       mockSetSearchParams,
     ]);
 
-    const { rerender } = renderHook(() => useArtifactDeepLink());
+    const { rerender } = renderHook(() => useArtifactDeepLink(), { wrapper });
     expect(mockOpenModal).toHaveBeenCalledTimes(1);
 
     rerender();
@@ -77,7 +83,7 @@ describe('useArtifactDeepLink', () => {
       selectedArtifact: { id: 'REQ-002', type: 'requirement' },
     } as unknown as UIContextValue);
 
-    renderHook(() => useArtifactDeepLink());
+    renderHook(() => useArtifactDeepLink(), { wrapper });
 
     expect(mockSetSearchParams).toHaveBeenCalled();
     const call = mockSetSearchParams.mock.calls[0][0];
@@ -95,7 +101,7 @@ describe('useArtifactDeepLink', () => {
       selectedArtifact: null,
     } as unknown as UIContextValue);
 
-    renderHook(() => useArtifactDeepLink());
+    renderHook(() => useArtifactDeepLink(), { wrapper });
 
     // First effect opens modal (if it wasn't for the mock return value)
     // Second effect removes ID because modal is null

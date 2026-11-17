@@ -12,7 +12,7 @@ import type { IncomingLink } from '../services/diskLinkService';
 import type { Link } from '../types';
 import type { LinkType } from '../domain/linkTypes';
 import { debug } from '../utils/debug';
-import { useFileSystem } from '../app/providers/FileSystemProvider';
+import { useAppStore } from '../state';
 
 interface UseLinkServiceReturn {
   // Data
@@ -42,12 +42,10 @@ export function useLinkService(options: UseLinkServiceOptions = {}): UseLinkServ
   const [error, setError] = useState<string | null>(null);
 
   // Get centralized links from FileSystemProvider
-  const {
-    isReady,
-    links: allLinksFromProvider,
-    createLink: createLinkInProvider,
-    deleteLink: deleteLinkInProvider,
-  } = useFileSystem();
+  const isReady = useAppStore((s) => s.isReady);
+  const allLinksFromProvider = useAppStore((s) => s.links);
+  const createLinkInProvider = useAppStore((s) => s.createLink);
+  const deleteLinkInProvider = useAppStore((s) => s.deleteLink);
 
   const allLinks = useMemo(() => allLinksFromProvider ?? [], [allLinksFromProvider]);
 

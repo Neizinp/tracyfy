@@ -60,7 +60,7 @@ describe('integration: the git author is the user', () => {
     await h.restart();
 
     expect(screen.queryByPlaceholderText('Enter your name')).toBeNull();
-    expect(h.app().user.currentUser).toEqual({ name: 'Ada Lovelace', email: 'test@example.com' });
+    expect(h.app().currentUser).toEqual({ name: 'Ada Lovelace', email: 'test@example.com' });
   }, 60_000);
 
   it('changing your name in User Settings changes the author of the next commit', async () => {
@@ -71,7 +71,7 @@ describe('integration: the git author is the user', () => {
       target: { value: 'Ada Lovelace' },
     });
     fireEvent.click(within(dialog).getByRole('button', { name: /^save$/i }));
-    await waitFor(() => expect(h.app().user.currentUser?.name).toBe('Ada Lovelace'));
+    await waitFor(() => expect(h.app().currentUser?.name).toBe('Ada Lovelace'));
     fireEvent.click(within(dialog).getByRole('button', { name: /close/i }));
 
     await addRequirement(h, 'Login');
@@ -84,6 +84,6 @@ describe('integration: the git author is the user', () => {
     h = await startApp({ userName: 'Ada' });
     await h.colleagueCommits('Grace');
 
-    expect(h.app().user.people.map((p) => p.name)).toEqual(['Ada', 'Grace']);
+    expect(h.app().people.map((p) => p.name)).toEqual(['Ada', 'Grace']);
   }, 60_000);
 });

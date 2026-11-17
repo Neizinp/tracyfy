@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { GitBranch, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { diskWorkflowService } from '../services/diskWorkflowService';
-import { useUser } from '../app/providers';
 import type { Workflow } from '../types';
 import { WorkflowDetailPanel } from '../components/WorkflowDetailPanel';
 import { BaseArtifactTable, type ColumnDef } from '../components/BaseArtifactTable';
@@ -11,7 +10,7 @@ import { notifyError, useAppStore } from '../state';
 const NOTIFIED_APPROVALS_KEY = 'workflow_notified_approvals';
 
 export const WorkflowsPage: React.FC = () => {
-  const { currentUser } = useUser();
+  const currentUser = useAppStore((s) => s.currentUser);
   const showToast = useAppStore((s) => s.showToast);
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);

@@ -1,8 +1,8 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { useUser, useFileSystem } from '../app/providers';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { IdentityForm } from './IdentityForm';
+import { useAppStore } from '../state';
 
 interface UserSettingsModalProps {
   isOpen: boolean;
@@ -11,8 +11,10 @@ interface UserSettingsModalProps {
 
 /** Who you are (the git author of this repository) and which folder is open */
 export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }) => {
-  const { currentUser, setIdentity } = useUser();
-  const { directoryName, changeDirectory } = useFileSystem();
+  const currentUser = useAppStore((s) => s.currentUser);
+  const setIdentity = useAppStore((s) => s.setIdentity);
+  const directoryName = useAppStore((s) => s.directoryName);
+  const changeDirectory = useAppStore((s) => s.closeFolder);
 
   useKeyboardShortcuts({ onClose });
 

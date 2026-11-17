@@ -16,7 +16,7 @@ describe('integration: errors are shown, not swallowed', () => {
     // Something the user should be told about: git can't read the repository
     fs.writeFileSync(path.join(h.dir, '.git', 'index'), 'not a git index');
 
-    await act(async () => h.app().fileSystem.refreshStatus());
+    await act(async () => h.app().refreshStatus());
     await h.settle();
 
     expect(screen.queryByText('No pending changes')).toBeNull();
@@ -82,7 +82,7 @@ describe('integration: errors are shown, not swallowed', () => {
         (e: Error) => e.message
       );
       expect(outcome).toBe('ready');
-      expect(h.app().globalState.requirements.map((r) => r.title)).toContain('Logout');
+      expect(h.app().artifacts.requirement.map((r) => r.title)).toContain('Logout');
     } finally {
       fs.chmodSync(broken, 0o644);
     }

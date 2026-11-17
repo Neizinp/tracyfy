@@ -18,13 +18,6 @@ interface DocumentsContextValue {
 const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<ArtifactDocument>({
   type: 'document',
   displayName: 'Documents',
-  useData: (state) => ({
-    items: state.documents,
-  }),
-  useFS: (fs) => ({
-    save: fs.saveDocument,
-    isReady: fs.isReady,
-  }),
   useUIHelpers: (ui) => ({
     setEditingItem: ui.setEditingDocument,
     setIsModalOpen: ui.setIsEditDocumentModalOpen,

@@ -18,13 +18,6 @@ interface UseCasesContextValue {
 const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<UseCase>({
   type: 'useCase',
   displayName: 'UseCases',
-  useData: (state) => ({
-    items: state.useCases,
-  }),
-  useFS: (fs) => ({
-    save: fs.saveUseCase,
-    isReady: fs.isReady,
-  }),
   useUIHelpers: (ui) => ({
     setEditingItem: ui.setEditingUseCase,
     setIsModalOpen: ui.setIsUseCaseModalOpen,

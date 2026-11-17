@@ -1,7 +1,6 @@
 import { kind } from '../../../domain/artifactKinds';
 import React, { useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { useFileSystem } from '../FileSystemProvider';
 import type { Risk, CommitInfo } from '../../../types';
 import { realGitService } from '../../../services/realGitService';
 import { createArtifactProvider } from './BaseArtifactProvider';
@@ -22,13 +21,6 @@ interface RisksContextValue {
 const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Risk>({
   type: 'risk',
   displayName: 'Risks',
-  useData: (state) => ({
-    items: state.risks,
-  }),
-  useFS: (fs) => ({
-    save: fs.saveRisk,
-    isReady: fs.isReady,
-  }),
   useUIHelpers: (ui) => ({
     setEditingItem: ui.setEditingRisk,
     setIsModalOpen: ui.setIsRiskModalOpen,
@@ -41,7 +33,8 @@ export const RisksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
 export const useRisks = (): RisksContextValue => {
   const context = useProviderContext();
-  const { isReady, reloadData } = useFileSystem();
+  const isReady = useAppStore((s) => s.isReady);
+  const reloadData = useAppStore((s) => s.reload);
   const showToast = useAppStore((s) => s.showToast);
   const [loading, setLoading] = React.useState(false);
 

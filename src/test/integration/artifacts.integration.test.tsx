@@ -22,7 +22,7 @@ describe('integration: requirements via the UI', () => {
     fireEvent.click(screen.getByRole('button', { name: /create requirement/i }));
     await h.settle();
 
-    const created = h.app().globalState.requirements.find((r) => r.title === 'Login');
+    const created = h.app().artifacts.requirement.find((r) => r.title === 'Login');
     expect(created).toBeDefined();
     expect(h.exists(`requirements/${created!.id}.md`)).toBe(true);
     // Visible in the project the user is working in
@@ -82,7 +82,7 @@ describe('integration: requirements via the UI', () => {
 
     expect(await screen.findByText(/1 file could not be read/)).toBeInTheDocument();
     expect(screen.getByText('requirements/REQ-077.md')).toBeInTheDocument();
-    expect(h.app().globalState.requirements.map((r) => r.id)).toEqual([good.id]);
+    expect(h.app().artifacts.requirement.map((r) => r.id)).toEqual([good.id]);
     // Left as it is for the user to fix
     expect(h.readFile('requirements/REQ-077.md')).toContain('[unclosed');
   }, 60_000);

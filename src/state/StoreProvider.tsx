@@ -7,8 +7,9 @@ import { setActiveStore } from './notify';
 const StoreContext = createContext<AppStore | null>(null);
 
 /**
- * Holds the app's store. One store per mount, so a remount (or a test that
- * restarts the app) starts from a clean state, like a reload would.
+ * Holds the app's store and starts it (reopens the last folder). One store
+ * per mount, so a remount (or a test that restarts the app) starts from a
+ * clean state, like a reload would.
  */
 export const StoreProvider: React.FC<{ children: ReactNode; store?: AppStore }> = ({
   children,
@@ -17,9 +18,16 @@ export const StoreProvider: React.FC<{ children: ReactNode; store?: AppStore }> 
   const [store] = useState(() => given ?? createAppStore());
 
   useEffect(() => setActiveStore(store), [store]);
+  // A store handed in (by a test) is used as it is
+  useEffect(() => (given ? undefined : store.getState().start()), [store, given]);
 
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;
 };
+
+/** The store, or null outside a StoreProvider (components that also render standalone) */
+export function useOptionalAppStoreApi(): AppStore | null {
+  return useContext(StoreContext);
+}
 
 /** The store itself, for reading state inside callbacks without subscribing */
 export function useAppStoreApi(): AppStore {

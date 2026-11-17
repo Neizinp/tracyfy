@@ -9,16 +9,7 @@ import {
   CustomAttributeDefinitionModal,
   WorkflowModal,
 } from '../';
-import {
-  useUI,
-  useProject,
-  useGlobalState,
-  useUser,
-  useBaselines,
-  useRisks,
-  useDocuments,
-  useFileSystem,
-} from '../../app/providers';
+import { useUI, useRisks, useDocuments } from '../../app/providers';
 import { diskCustomAttributeService } from '../../services/diskCustomAttributeService';
 import { exportProjectToJSON } from '../../utils/jsonExportUtils';
 import type { ExportOptions } from '../../types';
@@ -30,17 +21,26 @@ import { notifyError, useAppStore } from '../../state';
 
 export const ManagementModals: React.FC = () => {
   const ui = useUI();
-  const { project } = useProject();
+  const project = useAppStore((s) => s.project);
 
-  const { requirements, useCases, testCases, information } = useGlobalState();
+  const requirements = useAppStore((s) => s.artifacts.requirement);
 
-  const { baselines, createBaseline } = useBaselines();
+  const useCases = useAppStore((s) => s.artifacts.useCase);
+
+  const testCases = useAppStore((s) => s.artifacts.testCase);
+
+  const information = useAppStore((s) => s.artifacts.information);
+
+  const baselines = useAppStore((s) => s.baselines);
+
+  const createBaseline = useAppStore((s) => s.createBaseline);
   const { risks } = useRisks();
   const { documents } = useDocuments();
-  const { currentUser } = useUser();
+  const currentUser = useAppStore((s) => s.currentUser);
   const startTask = useAppStore((s) => s.startTask);
   const endTask = useAppStore((s) => s.endTask);
-  const { links, createLink } = useFileSystem();
+  const links = useAppStore((s) => s.links);
+  const createLink = useAppStore((s) => s.createLink);
   const linkableArtifacts = useLinkableArtifacts();
   const showToast = useAppStore((s) => s.showToast);
   const openArtifact = useOpenArtifact();

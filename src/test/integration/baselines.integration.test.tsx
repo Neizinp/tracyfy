@@ -21,7 +21,7 @@ async function addAndCommitRequirement(h: Harness, title: string) {
   );
   await h.settle();
   for (const p of await h.dirtyPaths()) {
-    await act(() => h.app().fileSystem.commitFile(p, `Commit ${p}`));
+    await act(() => h.app().commitFile(p, `Commit ${p}`));
   }
 }
 
@@ -50,7 +50,7 @@ describe('integration: baselines', () => {
     const before = Date.now();
     await createBaselineInUi(h, '1.0', 'First release');
 
-    await waitFor(() => expect(h.app().baselines.baselines.map((b) => b.name)).toEqual(['1.0']));
+    await waitFor(() => expect(h.app().baselines.map((b) => b.name)).toEqual(['1.0']));
     expect(await git.listTags({ fs, dir: h.dir })).toEqual(['1.0']);
     const [tag] = await realGitService.getTagsWithDetails();
     expect(tag).toMatchObject({ name: '1.0', commit: head });
@@ -85,7 +85,7 @@ describe('integration: baselines', () => {
     });
     await h.restart();
 
-    expect(h.app().baselines.baselines).toEqual([
+    expect(h.app().baselines).toEqual([
       expect.objectContaining({ name: 'v2.0', description: 'Tagged in a terminal' }),
     ]);
     await act(async () => h.app().ui.setIsVersionHistoryOpen(true));

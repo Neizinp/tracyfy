@@ -1,4 +1,9 @@
-export { StoreProvider, useAppStore, useAppStoreApi } from './StoreProvider';
+export {
+  StoreProvider,
+  useAppStore,
+  useAppStoreApi,
+  useOptionalAppStoreApi,
+} from './StoreProvider';
 export { createAppStore, type AppState, type AppStore } from './store';
 export { notifyError } from './notify';
 export { useShallow } from 'zustand/react/shallow';

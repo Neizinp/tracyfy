@@ -2,11 +2,11 @@ import React, { useMemo } from 'react';
 import type { TestCase, TestCaseColumnVisibility } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { useCustomAttributes } from '../app/providers';
-import { useFileSystem } from '../app/providers/FileSystemProvider';
 import { verifiedRequirementIds } from '../domain/links';
 import { BaseArtifactTable, MarkdownCell } from './index';
 import type { ColumnDef } from './BaseArtifactTable';
 import type { SortConfig } from './SortableHeader';
+import { useAppStore } from '../state';
 
 interface TestCaseListProps {
   testCases: TestCase[];
@@ -24,7 +24,7 @@ export const TestCaseList: React.FC<TestCaseListProps> = ({
   onSortChange,
 }) => {
   const { definitions } = useCustomAttributes();
-  const { links } = useFileSystem();
+  const links = useAppStore((s) => s.links);
 
   const columns = useMemo<ColumnDef<TestCase>[]>(
     () => [
