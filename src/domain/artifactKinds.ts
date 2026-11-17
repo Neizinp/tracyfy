@@ -59,14 +59,14 @@ export const ARTIFACT_KINDS: readonly ArtifactKind[] = [
   {
     id: 'useCase',
     prefix: 'UC',
-    folder: 'usecases',
+    folder: 'use-cases',
     label: { singular: 'Use Case', plural: 'Use Cases' },
     color: colors('--color-accent-light'),
   },
   {
     id: 'testCase',
     prefix: 'TC',
-    folder: 'testcases',
+    folder: 'test-cases',
     label: { singular: 'Test Case', plural: 'Test Cases' },
     color: colors('--color-success'),
   },
@@ -115,7 +115,7 @@ export function kindOfId(artifactId: string): ArtifactKindId | undefined {
   return BY_PREFIX.get(artifactId.slice(0, dash))?.id;
 }
 
-/** Kind whose files live in `folder`: "usecases" -> 'useCase' */
+/** Kind whose files live in `folder`: "use-cases" -> 'useCase' */
 export function kindOfFolder(folder: string): ArtifactKindId | undefined {
   return BY_FOLDER.get(folder)?.id;
 }

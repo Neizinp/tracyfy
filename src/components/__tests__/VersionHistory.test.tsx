@@ -228,7 +228,7 @@ describe('VersionHistory', () => {
       ]);
       vi.mocked(realGitService.getCommitFiles).mockImplementation(async (hash: string) => {
         if (hash === 'commit1') return ['requirements/REQ-001.md'];
-        if (hash === 'commit2') return ['usecases/UC-001.md'];
+        if (hash === 'commit2') return ['use-cases/UC-001.md'];
         return [];
       });
 

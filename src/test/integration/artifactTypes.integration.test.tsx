@@ -36,7 +36,7 @@ const TYPES: TypeCase[] = [
     menuItem: 'New Use Case',
     createLabel: /create use case/i,
     route: '/use-cases',
-    folder: 'usecases',
+    folder: 'use-cases',
     all: (a) => a.globalState.useCases,
   },
   {
@@ -45,7 +45,7 @@ const TYPES: TypeCase[] = [
     menuItem: 'New Test Case',
     createLabel: /create test case/i,
     route: '/test-cases',
-    folder: 'testcases',
+    folder: 'test-cases',
     all: (a) => a.globalState.testCases,
   },
   {

@@ -51,7 +51,7 @@ describe('integration: one link model', () => {
     const req = await addRequirement(h, 'Login');
     const tc = await addTestCase(h, 'Log in');
     await h.settle();
-    const files = [`requirements/${req.id}.md`, `testcases/${tc.id}.md`];
+    const files = [`requirements/${req.id}.md`, `test-cases/${tc.id}.md`];
     const before = files.map((f) => h.readFile(f));
     const dirtyBefore = await h.dirtyPaths(); // new artifacts wait for the user's commit
 

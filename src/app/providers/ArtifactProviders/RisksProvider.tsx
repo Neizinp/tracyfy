@@ -1,3 +1,4 @@
+import { kind } from '../../../domain/artifactKinds';
 import React, { useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useFileSystem } from '../FileSystemProvider';
@@ -67,7 +68,7 @@ export const useRisks = (): RisksContextValue => {
   const getRiskHistory = useCallback(
     async (id: string) => {
       if (!isReady || !realGitService.isInitialized()) return [];
-      return await realGitService.getHistory(`risks/${id}.md`);
+      return await realGitService.getHistory(`${kind('risk').folder}/${id}.md`);
     },
     [isReady]
   );

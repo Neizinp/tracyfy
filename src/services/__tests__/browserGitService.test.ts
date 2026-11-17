@@ -57,7 +57,7 @@ describe('browserGitService', () => {
         'projects/test/_manifest.json',
         'artifacts/requirements/REQ-001.md',
         '.git/config',
-        'artifacts/usecases/UC-001.md',
+        'artifacts/use-cases/UC-001.md',
       ];
 
       const filtered = files.filter(
@@ -70,7 +70,7 @@ describe('browserGitService', () => {
 
       expect(filtered).toHaveLength(2);
       expect(filtered).toContain('artifacts/requirements/REQ-001.md');
-      expect(filtered).toContain('artifacts/usecases/UC-001.md');
+      expect(filtered).toContain('artifacts/use-cases/UC-001.md');
     });
   });
 

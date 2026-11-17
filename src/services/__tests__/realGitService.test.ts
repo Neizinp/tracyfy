@@ -305,9 +305,9 @@ describe('RealGitService', () => {
         switch (type) {
           case 'requirements':
             return ['REQ-001.md'];
-          case 'usecases':
+          case 'use-cases':
             return ['UC-001.md'];
-          case 'testcases':
+          case 'test-cases':
             return ['TC-001.md'];
           case 'information':
             return ['INF-001.md'];
@@ -319,8 +319,8 @@ describe('RealGitService', () => {
       const result = await realGitService.getStatus();
 
       expect(result).toContainEqual({ path: 'requirements/REQ-001.md', status: 'new' });
-      expect(result).toContainEqual({ path: 'usecases/UC-001.md', status: 'new' });
-      expect(result).toContainEqual({ path: 'testcases/TC-001.md', status: 'new' });
+      expect(result).toContainEqual({ path: 'use-cases/UC-001.md', status: 'new' });
+      expect(result).toContainEqual({ path: 'test-cases/TC-001.md', status: 'new' });
       expect(result).toContainEqual({ path: 'information/INF-001.md', status: 'new' });
     });
   });
