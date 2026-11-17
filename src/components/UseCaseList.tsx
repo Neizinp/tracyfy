@@ -150,7 +150,7 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
         label: 'Preconditions',
         minWidth: '200px',
         visible: visibleColumns.preconditions,
-        render: (uc) => <MarkdownCell content={uc.preconditions || uc.precondition || '-'} />,
+        render: (uc) => <MarkdownCell content={uc.preconditions || '-'} />,
       },
       {
         key: 'mainFlow',
@@ -171,7 +171,7 @@ export const UseCaseList: React.FC<UseCaseListProps> = ({
         label: 'Postconditions',
         minWidth: '200px',
         visible: visibleColumns.postconditions,
-        render: (uc) => <MarkdownCell content={uc.postconditions || uc.postcondition || '-'} />,
+        render: (uc) => <MarkdownCell content={uc.postconditions || '-'} />,
       },
       // Dynamic Custom Attributes
       ...Object.keys(visibleColumns)

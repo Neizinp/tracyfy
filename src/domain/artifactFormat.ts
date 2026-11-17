@@ -12,15 +12,18 @@
  *   ## Description
  *   ...
  *
- * Short fields go in the frontmatter; text fields are `## ` sections (or the
- * text right after the title), so the file reads as a normal document. The
+ * The format is derived from the kind's fields in the registry: short fields
+ * go in the frontmatter, text fields are `## Label` sections (or the kind's
+ * body, right after the title), so the file reads as a normal document. Times
+ * are ISO 8601 (`2026-11-17T13:15:18.275Z`). The
  * frontmatter is validated with zod: a file that does not fit is reported,
  * never silently turned into different data.
  *
  * Pure TypeScript: no React, no IO.
  */
 import { z } from 'zod';
-import type { ArtifactKindId } from './artifactKinds';
+import { kind, type ArtifactKindId } from './artifactKinds';
+import type { FieldDef } from './fields';
 import {
   FileFormatError,
   escapeBodyText,
@@ -46,7 +49,22 @@ const LINK_TYPE_IDS = Object.keys(LINK_INVERSE) as [LinkType, ...LinkType[]];
 /** A short text field; a bare number (`title: 2024`) is read as text */
 const text = z.preprocess((v) => (typeof v === 'number' ? String(v) : v), z.string());
 const optionalText = text.optional();
-const time = z.number();
+
+/**
+ * A point in time. Files say `2026-11-17T13:15:18.275Z`; older files have
+ * epoch milliseconds, which are still read. In the app it is epoch ms.
+ */
+const time = z.union([z.number(), z.string(), z.date()]).transform((v, ctx) => {
+  const ms = typeof v === 'number' ? v : new Date(v).getTime();
+  if (Number.isNaN(ms)) {
+    ctx.addIssue({ code: 'custom', message: `not a date: ${String(v)}` });
+    return z.NEVER;
+  }
+  return ms;
+});
+
+/** How a time is written: ISO 8601 in UTC */
+const writeTime = (v: unknown) => (typeof v === 'number' ? new Date(v).toISOString() : v);
 
 const customAttributes = z
   .array(
@@ -70,117 +88,83 @@ const common = {
   customAttributes,
 };
 const COMMON_KEYS = Object.keys(common);
+const TIME_KEYS = new Set(['dateCreated', 'lastModified', 'deletedAt']);
 
-interface Section {
-  heading: string;
-  field: string;
-  /** Leave the heading out when the field is empty */
-  optional?: boolean;
+/** Frontmatter that is not a field: a document's outline */
+const EXTRA: Partial<Record<ArtifactKindId, z.ZodRawShape>> = {
+  document: {
+    structure: z
+      .array(
+        z.object({
+          type: z.enum(['heading', 'artifact']),
+          id: optionalText,
+          artifactType: optionalText,
+          title: optionalText,
+          level: z.number().optional(),
+        })
+      )
+      .optional(),
+  },
+};
+const EXTRA_DEFAULTS: Partial<Record<ArtifactKindId, Record<string, unknown>>> = {
+  document: { structure: [] },
+};
+
+function fieldSchema(field: FieldDef): z.ZodTypeAny {
+  switch (field.type) {
+    case 'number':
+      return z.number().optional();
+    case 'date':
+      return time.optional();
+    case 'boolean':
+      return z.boolean().optional();
+    default:
+      return optionalText;
+  }
 }
 
+const inSection = (field: FieldDef) =>
+  field.file === 'section' || (field.file === undefined && field.type === 'markdown');
+
 interface KindFormat {
-  /** Frontmatter: the common fields plus these */
   schema: z.ZodObject<z.ZodRawShape>;
   /** Kind-specific frontmatter keys, in file order (after title and status) */
   keys: string[];
-  /** Text fields stored as `## heading` sections, in file order */
-  sections: Section[];
-  /** Text field stored right after the title, before any section */
-  intro?: string;
+  /** Fields stored as `## Label` sections, in file order */
+  sections: FieldDef[];
+  /** Fields that are dates */
+  times: Set<string>;
   /** Values for fields a file leaves out */
   defaults: Record<string, unknown>;
 }
 
-const FORMATS: Record<ArtifactKindId, KindFormat> = {
-  requirement: {
+/** The file format of a kind, derived from its fields */
+function formatOf(kindId: ArtifactKindId): KindFormat {
+  const k = kind(kindId);
+  const fields = k.fields.filter((f) => f.id !== k.body);
+  const frontmatter = fields.filter((f) => !inSection(f));
+  const kindKeys = frontmatter.filter((f) => !COMMON_KEYS.includes(f.id));
+  const extra = EXTRA[kindId] ?? {};
+  const defaults: Record<string, unknown> = { ...EXTRA_DEFAULTS[kindId] };
+  for (const f of k.fields) if (f.default !== undefined) defaults[f.id] = f.default;
+  return {
     schema: z.object({
       ...common,
-      priority: optionalText,
-      category: optionalText,
-      verificationMethod: optionalText,
-      approvalDate: time.optional(),
+      ...Object.fromEntries(kindKeys.map((f) => [f.id, fieldSchema(f)])),
+      ...extra,
     }),
-    keys: ['priority', 'category', 'verificationMethod', 'approvalDate'],
-    sections: [
-      { heading: 'Description', field: 'description' },
-      { heading: 'Requirement Text', field: 'text' },
-      { heading: 'Rationale', field: 'rationale' },
-      { heading: 'Comments', field: 'comments', optional: true },
-    ],
-    defaults: { status: 'draft', priority: 'medium', category: 'technical' },
-  },
-  useCase: {
-    schema: z.object({ ...common, priority: optionalText }),
-    keys: ['priority'],
-    sections: [
-      { heading: 'Description', field: 'description' },
-      { heading: 'Actor', field: 'actor' },
-      { heading: 'Preconditions', field: 'preconditions' },
-      { heading: 'Main Flow', field: 'mainFlow' },
-      { heading: 'Alternative Flows', field: 'alternativeFlows', optional: true },
-      { heading: 'Postconditions', field: 'postconditions' },
-    ],
-    defaults: { status: 'draft', priority: 'medium' },
-  },
-  testCase: {
-    schema: z.object({ ...common, priority: optionalText, lastRun: time.optional() }),
-    keys: ['priority', 'lastRun'],
-    sections: [
-      { heading: 'Description', field: 'description' },
-      { heading: 'Steps', field: 'steps' },
-      { heading: 'Expected Result', field: 'expectedResult' },
-    ],
-    defaults: { status: 'draft', priority: 'medium' },
-  },
-  information: {
-    schema: z.object({ ...common, type: optionalText, description: optionalText }),
-    keys: ['type', 'description'],
-    sections: [],
-    intro: 'text',
-    defaults: { type: 'note' },
-  },
-  risk: {
-    schema: z.object({
-      ...common,
-      category: optionalText,
-      probability: optionalText,
-      impact: optionalText,
-      owner: optionalText,
-    }),
-    keys: ['category', 'probability', 'impact', 'owner'],
-    sections: [
-      { heading: 'Description', field: 'description' },
-      { heading: 'Mitigation Strategy', field: 'mitigation' },
-      { heading: 'Contingency Plan', field: 'contingency' },
-    ],
-    defaults: { status: 'identified', category: 'other', probability: 'medium', impact: 'medium' },
-  },
-  document: {
-    schema: z.object({
-      ...common,
-      structure: z
-        .array(
-          z.object({
-            type: z.enum(['heading', 'artifact']),
-            id: optionalText,
-            artifactType: optionalText,
-            title: optionalText,
-            level: z.number().optional(),
-          })
-        )
-        .optional(),
-    }),
-    keys: ['structure'],
-    sections: [],
-    intro: 'description',
-    defaults: { structure: [] },
-  },
-};
+    keys: [...kindKeys.map((f) => f.id), ...Object.keys(extra)],
+    sections: fields.filter(inSection),
+    times: new Set(kindKeys.filter((f) => f.type === 'date').map((f) => f.id)),
+    defaults,
+  };
+}
 
-/** Text fields that also go by an older name in the app's types */
-const ALIASES: Partial<Record<ArtifactKindId, Record<string, string>>> = {
-  useCase: { preconditions: 'precondition', postconditions: 'postcondition' },
-  information: { text: 'content' },
+const FORMATS = new Map<ArtifactKindId, KindFormat>();
+const format = (kindId: ArtifactKindId) => {
+  let f = FORMATS.get(kindId);
+  if (!f) FORMATS.set(kindId, (f = formatOf(kindId)));
+  return f;
 };
 
 /** The problems zod found, as one line a user can act on */
@@ -193,40 +177,42 @@ const validAttributes = (attrs: CustomAttributeValue[] | undefined) =>
 
 /** The file content of an artifact */
 export function serializeArtifact(kindId: ArtifactKindId, artifact: BaseArtifact): string {
-  const format = FORMATS[kindId];
+  const f = format(kindId);
+  const body = kind(kindId).body;
   const item = artifact as unknown as Record<string, unknown>;
-  const aliases = ALIASES[kindId] ?? {};
-  const value = (field: string) => (item[field] || item[aliases[field]] || '') as string;
+  const value = (field: string) => (item[field] || '') as string;
 
   const frontmatter: Record<string, unknown> = {
     title: item.title,
     status: item.status,
   };
-  for (const key of format.keys) frontmatter[key] = item[key];
+  for (const key of f.keys) frontmatter[key] = f.times.has(key) ? writeTime(item[key]) : item[key];
   for (const key of COMMON_KEYS) {
-    if (!(key in frontmatter)) frontmatter[key] = item[key];
+    if (!(key in frontmatter))
+      frontmatter[key] = TIME_KEYS.has(key) ? writeTime(item[key]) : item[key];
   }
   frontmatter.customAttributes = validAttributes(item.customAttributes as CustomAttributeValue[]);
 
   const parts = [`# ${item.title as string}`];
-  if (format.intro) parts.push(escapeBodyText(value(format.intro)));
-  for (const section of format.sections) {
-    const content = value(section.field);
-    if (section.optional && !content) continue;
-    parts.push(`## ${section.heading}\n${escapeBodyText(content)}`);
+  if (body) parts.push(escapeBodyText(value(body)));
+  for (const section of f.sections) {
+    const content = value(section.id);
+    if (section.omitWhenEmpty && !content) continue;
+    parts.push(`## ${section.label}\n${escapeBodyText(content)}`);
   }
   return joinFrontmatter(frontmatter, parts.filter((p) => p !== '').join('\n\n'));
 }
 
 /** Read an artifact file; the ID is the file name. Throws FileFormatError naming the problem */
 export function parseArtifact(kindId: ArtifactKindId, id: string, content: string): BaseArtifact {
-  const format = FORMATS[kindId];
-  const { data, body } = splitFrontmatter(content);
-  const result = format.schema.safeParse(data);
+  const f = format(kindId);
+  const body = kind(kindId).body;
+  const { data, body: markdown } = splitFrontmatter(content);
+  const result = f.schema.safeParse(data);
   if (!result.success) throw new FileFormatError(describeIssues(result.error));
 
-  const { text: intro, sections } = readBody(body);
-  const item: Record<string, unknown> = { ...format.defaults };
+  const { text: intro, sections } = readBody(markdown);
+  const item: Record<string, unknown> = { ...f.defaults };
   for (const [key, v] of Object.entries(result.data)) if (v !== undefined) item[key] = v;
   item.id = id;
   item.revision ??= '01';
@@ -234,12 +220,11 @@ export function parseArtifact(kindId: ArtifactKindId, id: string, content: strin
   item.lastModified ??= item.dateCreated;
   item.isDeleted ??= false;
   item.customAttributes ??= [];
-  if (format.intro) item[format.intro] = intro;
-  for (const section of format.sections) {
-    const content = sections[section.heading];
-    item[section.field] = content || (section.optional ? undefined : '');
+  if (body) item[body] = intro;
+  for (const section of f.sections) {
+    const text = sections[section.label];
+    item[section.id] = text || (section.omitWhenEmpty ? undefined : '');
   }
-  for (const [field, alias] of Object.entries(ALIASES[kindId] ?? {})) item[alias] = item[field];
   return item as unknown as BaseArtifact;
 }
 
@@ -274,8 +259,8 @@ export function serializeLink(link: Link): string {
       type: link.type,
       target: link.targetId,
       revision: link.revision,
-      dateCreated: link.dateCreated,
-      lastModified: link.lastModified,
+      dateCreated: writeTime(link.dateCreated),
+      lastModified: writeTime(link.lastModified),
       customAttributes: validAttributes(link.customAttributes),
     },
     `# ${link.id}\n\nLinks **${link.sourceId}** to **${link.targetId}** (${link.type.replaceAll('_', ' ')})`

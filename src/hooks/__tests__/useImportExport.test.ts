@@ -84,7 +84,6 @@ describe('useImportExport', () => {
       {
         id: 'INFO-001',
         title: 'Information 1',
-        content: '',
         type: 'note',
         revision: '01',
         dateCreated: 1000000,

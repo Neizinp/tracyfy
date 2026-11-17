@@ -75,7 +75,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
       return (
         info.id.toLowerCase().includes(query) ||
         info.title.toLowerCase().includes(query) ||
-        (info.content || info.text || '').toLowerCase().includes(query)
+        (info.text || '').toLowerCase().includes(query)
       );
     });
   }, [information, searchQuery]);

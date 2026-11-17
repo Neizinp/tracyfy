@@ -111,7 +111,6 @@ describe('TraceabilityDashboard', () => {
     {
       id: 'INFO-001',
       title: 'Test Info',
-      content: '',
       type: 'note',
       revision: '01',
       dateCreated: Date.now(),

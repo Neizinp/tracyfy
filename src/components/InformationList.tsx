@@ -114,7 +114,7 @@ export const InformationList: React.FC<InformationListProps> = ({
         label: 'Content',
         minWidth: '300px',
         visible: visibleColumns.text,
-        render: (info) => <MarkdownCell content={info.text || info.content || '-'} />,
+        render: (info) => <MarkdownCell content={info.text || '-'} />,
       },
       {
         key: 'created',
