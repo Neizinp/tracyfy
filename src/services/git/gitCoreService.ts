@@ -46,13 +46,6 @@ class GitCoreService {
   private addToCacheFn: (commitHash: string, files: string[]) => void = () => {};
   // Callback to ensure token is loaded
   private ensureTokenLoadedFn: () => Promise<void> = async () => {};
-  // Track recently committed files to filter stale statusMatrix results
-  // isomorphic-git's statusMatrix can return stale data immediately after commit
-  private recentlyCommittedFiles: Map<string, number> = new Map();
-  private readonly COMMIT_GRACE_PERIOD_MS = 5000; // 5 second grace period
-  // Short-term cache for getStatus to avoid repeated enumeration
-  private statusCache: { result: import('./types').FileStatus[]; timestamp: number } | null = null;
-  private readonly STATUS_CACHE_TTL_MS = 500; // 500ms cache
 
   setInitialized(value: boolean): void {
     this.initialized = value;
@@ -68,13 +61,6 @@ class GitCoreService {
 
   setEnsureTokenLoadedFn(fn: () => Promise<void>): void {
     this.ensureTokenLoadedFn = fn;
-  }
-
-  /**
-   * Invalidate the status cache (for tests or forced refresh)
-   */
-  invalidateStatusCache(): void {
-    this.statusCache = null;
   }
 
   /**
@@ -137,8 +123,6 @@ class GitCoreService {
     }
 
     this.initialized = true;
-    // Clear status cache to ensure fresh status on next getStatus call
-    this.statusCache = null;
 
     // Ensure essential git files exist
     const essentialFiles = [
@@ -272,13 +256,6 @@ class GitCoreService {
   async getStatus(): Promise<FileStatus[]> {
     if (!this.initialized) return [];
 
-    // Return cached result if fresh
-    const now = Date.now();
-    if (this.statusCache && now - this.statusCache.timestamp < this.STATUS_CACHE_TTL_MS) {
-      debug.log('[getStatus] Returning cached result');
-      return this.statusCache.result;
-    }
-
     try {
       let result: FileStatus[] = [];
       let statusMatrixFiles = new Set<string>();
@@ -334,28 +311,7 @@ class GitCoreService {
         untrackedFiles.push(...arr);
       }
 
-      // Filter out recently committed files (grace period to avoid stale statusMatrix data)
-      const now = Date.now();
-      const filteredResult = [...result, ...untrackedFiles].filter((file) => {
-        const commitTime = this.recentlyCommittedFiles.get(file.path);
-        if (commitTime && now - commitTime < this.COMMIT_GRACE_PERIOD_MS) {
-          debug.log(`[getStatus] Filtering recently committed file: ${file.path}`);
-          return false;
-        }
-        return true;
-      });
-
-      // Clean up old entries
-      for (const [path, time] of this.recentlyCommittedFiles.entries()) {
-        if (now - time > this.COMMIT_GRACE_PERIOD_MS) {
-          this.recentlyCommittedFiles.delete(path);
-        }
-      }
-
-      // Cache the result
-      this.statusCache = { result: filteredResult, timestamp: Date.now() };
-
-      return filteredResult;
+      return [...result, ...untrackedFiles];
     } catch (error) {
       // Callers must surface this; an empty list would look like "everything committed"
       console.error('Failed to get status:', error);
@@ -392,12 +348,6 @@ class GitCoreService {
         debug.log(
           `[commitFile] Successfully committed ${filepath} by ${authorNameToUse}, SHA: ${commitOid}`
         );
-
-        // Track this file as recently committed to filter stale statusMatrix results
-        this.recentlyCommittedFiles.set(filepath, Date.now());
-
-        // Invalidate status cache so next getStatus returns fresh data
-        this.statusCache = null;
 
         // Proactively cache the file for this commit
         this.addToCacheFn(commitOid, [filepath]);

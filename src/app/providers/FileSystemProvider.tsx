@@ -154,6 +154,9 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const refreshStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const REFRESH_STATUS_DEBOUNCE_MS = 300;
 
+  // A refresh that started earlier must never overwrite the result of a later one
+  const statusRequest = useRef(0);
+
   const refreshStatus = useCallback(async () => {
     // Clear any pending refresh
     if (refreshStatusTimer.current) {
@@ -166,9 +169,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (realGitService.isInitialized()) {
         const taskId = startTask('Refreshing git status...');
         try {
+          const request = ++statusRequest.current;
           const status = await loadStatus();
           debug.log(`[refreshStatus] Received ${status.length} files`);
-          setPendingChanges(status);
+          if (request === statusRequest.current) setPendingChanges(status);
         } finally {
           endTask(taskId);
         }
