@@ -3,7 +3,8 @@ import type { Link } from '../types';
 import type { LinkType } from '../domain/linkTypes';
 import { getInverseType } from '../domain/linkTypes';
 import { linkToMarkdown, parseMarkdownLink } from '../utils/linkMarkdownUtils';
-import { idService } from './idService';
+import { idAllocator } from '../storage/idAllocator';
+import { STORED_TYPES } from './storedTypes';
 
 /**
  * Incoming link representation (from target's perspective)
@@ -76,7 +77,7 @@ class DiskLinkService extends BaseArtifactService<Link> {
    * Create a new link
    */
   async createLink(sourceId: string, targetId: string, type: LinkType): Promise<Link> {
-    const nextId = await idService.getNextIdWithSync('link');
+    const nextId = await idAllocator.next(STORED_TYPES.link.folder, STORED_TYPES.link.idPrefix);
     const link: Link = {
       id: nextId,
       sourceId,

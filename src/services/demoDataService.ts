@@ -15,7 +15,8 @@ import {
   riskService,
   userService,
 } from './artifactServices';
-import { idService } from './idService';
+import { idAllocator } from '../storage/idAllocator';
+import { STORED_TYPES } from './storedTypes';
 import {
   DEMO_PROJECT,
   DEMO_ARTIFACTS,
@@ -55,7 +56,7 @@ export async function loadDemoData(): Promise<Project> {
   const existingUsers = await userService.loadAll();
   let demoUser = existingUsers.find((u) => u.name === 'Demo User');
   if (!demoUser) {
-    const userId = await idService.getNextId('user');
+    const userId = await idAllocator.next(STORED_TYPES.user.folder, STORED_TYPES.user.idPrefix);
     demoUser = {
       id: userId,
       name: 'Demo User',
@@ -94,13 +95,33 @@ export async function loadDemoData(): Promise<Project> {
   const project: Project = { name: projectName, description: DEMO_PROJECT.description };
   await diskProjectService.saveProject(project);
 
-  // 2. Batch allocate all IDs at once (single disk write per type)
+  // 2. Allocate all IDs at once
   const [reqIds, ucIds, tcIds, infoIds, riskIds] = await Promise.all([
-    idService.getNextIds('requirement', DEMO_ARTIFACTS.requirements.length),
-    idService.getNextIds('useCase', DEMO_ARTIFACTS.useCases.length),
-    idService.getNextIds('testCase', DEMO_ARTIFACTS.testCases.length),
-    idService.getNextIds('information', DEMO_ARTIFACTS.information.length),
-    idService.getNextIds('risk', DEMO_ARTIFACTS.risks.length),
+    idAllocator.nextMany(
+      STORED_TYPES.requirement.folder,
+      STORED_TYPES.requirement.idPrefix,
+      DEMO_ARTIFACTS.requirements.length
+    ),
+    idAllocator.nextMany(
+      STORED_TYPES.useCase.folder,
+      STORED_TYPES.useCase.idPrefix,
+      DEMO_ARTIFACTS.useCases.length
+    ),
+    idAllocator.nextMany(
+      STORED_TYPES.testCase.folder,
+      STORED_TYPES.testCase.idPrefix,
+      DEMO_ARTIFACTS.testCases.length
+    ),
+    idAllocator.nextMany(
+      STORED_TYPES.information.folder,
+      STORED_TYPES.information.idPrefix,
+      DEMO_ARTIFACTS.information.length
+    ),
+    idAllocator.nextMany(
+      STORED_TYPES.risk.folder,
+      STORED_TYPES.risk.idPrefix,
+      DEMO_ARTIFACTS.risks.length
+    ),
   ]);
 
   createdIds.requirements = reqIds;
@@ -152,9 +173,7 @@ export async function loadDemoData(): Promise<Project> {
     ...risks.map((r) => riskService.save(r)),
   ]);
 
-  // 5. Create links between artifacts SEQUENTIALLY to avoid race condition on counter file
-  // Note: Promise.all() was causing all links to get the same ID because getNextId()
-  // reads/writes a counter file, and parallel calls all read the same counter value.
+  // 5. Create links between artifacts
   for (const linkDef of DEMO_ARTIFACTS.links) {
     const sourceId = getArtifactId(linkDef.sourceType, linkDef.sourceIndex, createdIds);
     const targetId = getArtifactId(linkDef.targetType, linkDef.targetIndex, createdIds);

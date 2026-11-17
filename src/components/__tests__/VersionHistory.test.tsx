@@ -180,7 +180,6 @@ describe('VersionHistory', () => {
       expect(screen.getByText('LINK')).toBeInTheDocument();
       expect(screen.getByText('WF')).toBeInTheDocument();
       expect(screen.getByText('USER')).toBeInTheDocument();
-      expect(screen.getByText('CTR')).toBeInTheDocument();
       expect(screen.getByText('OTHER')).toBeInTheDocument();
     });
 

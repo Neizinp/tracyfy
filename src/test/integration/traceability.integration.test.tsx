@@ -4,6 +4,8 @@
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { act, fireEvent, screen, within } from '@testing-library/react';
+import fs from 'node:fs';
+import path from 'node:path';
 import { startApp, type Harness } from './appHarness';
 import type { Requirement } from '../../types';
 
@@ -54,13 +56,14 @@ describe('integration: traceability dashboard', () => {
     expect(within(dialog).getAllByRole('textbox')[0]).toHaveValue('Unlinked requirement');
   }, 60_000);
 
-  it('an orphan link (target permanently deleted) is shown and can be removed', async () => {
+  it('an orphan link (target file removed outside the app) is shown and can be removed', async () => {
     h = await startApp({ initialRoute: '/traceability' });
     const a = await addRequirement(h, 'Login');
     const b = await addRequirement(h, 'Logout');
     const link = await act(() => h.app().fileSystem.createLink(a.id, b.id, 'related_to'));
-    await act(async () => h.app().requirements.handlePermanentDeleteRequirement(b.id));
-    await h.settle();
+    // e.g. removed by hand or by a pull; the app itself never removes artifact files
+    fs.rmSync(path.join(h.dir, `requirements/${b.id}.md`));
+    await h.restart();
 
     fireEvent.click(await screen.findByRole('button', { name: /^gaps/i }));
     expect(await screen.findByText('Orphan link')).toBeInTheDocument();

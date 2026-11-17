@@ -7,27 +7,7 @@ import { useBackgroundTaskActions } from './BackgroundTasksProvider';
 import { useDocuments } from './ArtifactProviders';
 import { useFileSystem } from './FileSystemProvider';
 import { useToast } from './ToastProvider';
-import { idService } from '../../services/idService';
-import { STORED_TYPES } from '../../services/storedTypes';
-import type { ArtifactKindId } from '../../domain/artifactKinds';
-import {
-  IMPORT_KINDS,
-  maxIdNumber,
-  countImported,
-  type ImportBundle,
-  type ImportKind,
-} from '../../utils/importUtils';
-import { debug } from '../../utils/debug';
-
-/** The artifact kind of each collection in an import */
-const KIND_OF_IMPORT: Record<ImportKind, ArtifactKindId> = {
-  requirements: 'requirement',
-  useCases: 'useCase',
-  testCases: 'testCase',
-  information: 'information',
-  risks: 'risk',
-  documents: 'document',
-};
+import { IMPORT_KINDS, countImported, type ImportBundle } from '../../utils/importUtils';
 
 interface ImportExportContextValue {
   handleExport: () => void;
@@ -87,34 +67,6 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
         for (const r of bundle.risks) await fileSystem.saveRisk(r);
         for (const d of bundle.documents) await fileSystem.saveDocument(d);
         for (const l of bundle.links) await fileSystem.saveLink(l);
-
-        // Bump ID counters past imported IDs so new artifacts don't collide with them
-        for (const kind of IMPORT_KINDS) {
-          const type = KIND_OF_IMPORT[kind];
-          const highest = maxIdNumber(
-            bundle[kind].map((a) => a.id),
-            STORED_TYPES[type].idPrefix
-          );
-          if (highest > 0) {
-            try {
-              await idService.ensureCounterAtLeast(type, highest);
-            } catch (err) {
-              debug.warn(`[import] Failed to bump ${type} counter:`, err);
-            }
-          }
-        }
-
-        const highestLink = maxIdNumber(
-          bundle.links.map((l) => l.id),
-          STORED_TYPES.link.idPrefix
-        );
-        if (highestLink > 0) {
-          try {
-            await idService.ensureCounterAtLeast('link', highestLink);
-          } catch (err) {
-            debug.warn('[import] Failed to bump links counter:', err);
-          }
-        }
 
         showToast(`Imported ${total} artifact(s)`, 'success');
       } finally {

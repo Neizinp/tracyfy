@@ -7,10 +7,9 @@
 
 import { BaseDiskService } from './baseDiskService';
 import type { SavedFilter, FilterState } from '../types/filters';
-import { KeyedLock } from '../utils/keyedLock';
+import { idAllocator } from '../storage/idAllocator';
 
 const SAVED_FILTERS_DIR = 'saved-filters';
-const FILTER_COUNTER_FILE = 'counters/saved-filters.md';
 
 /**
  * Convert a SavedFilter to Markdown with YAML frontmatter
@@ -76,36 +75,11 @@ function markdownToSavedFilter(content: string): SavedFilter | null {
 }
 
 class DiskFilterService extends BaseDiskService {
-  private counterLock = new KeyedLock();
-
   /**
    * Initialize saved-filters directory
    */
   async initialize(): Promise<void> {
     await this.ensureDirectory(SAVED_FILTERS_DIR);
-  }
-
-  /**
-   * Get next filter ID
-   */
-  private async getNextId(): Promise<string> {
-    return this.counterLock.run('filters', () => this.allocateNextId());
-  }
-
-  private async allocateNextId(): Promise<string> {
-    let counter = 0;
-    try {
-      const content = await this.readTextFile(FILTER_COUNTER_FILE);
-      if (content) {
-        counter = parseInt(content.trim(), 10) || 0;
-      }
-    } catch {
-      // File doesn't exist
-    }
-    counter++;
-    // counters/ is hidden from the pending-changes panel, so commit it right away
-    await this.writeTextFile(FILTER_COUNTER_FILE, String(counter), 'Update saved-filters counter');
-    return `FILTER-${String(counter).padStart(3, '0')}`;
   }
 
   /**
@@ -160,7 +134,7 @@ class DiskFilterService extends BaseDiskService {
   ): Promise<SavedFilter> {
     await this.initialize();
 
-    const id = await this.getNextId();
+    const id = await idAllocator.next(SAVED_FILTERS_DIR, 'FILTER');
     const now = Date.now();
 
     const savedFilter: SavedFilter = {

@@ -12,7 +12,6 @@ interface InformationContextValue {
   handleUpdateInformation: (id: string, data: Partial<Information>) => Promise<void>;
   handleDeleteInformation: (id: string) => void;
   handleRestoreInformation: (id: string) => void;
-  handlePermanentDeleteInformation: (id: string) => void;
 }
 
 const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Information>({
@@ -23,7 +22,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<In
   }),
   useFS: (fs) => ({
     save: fs.saveInformation,
-    delete: fs.deleteInformation,
     isReady: fs.isReady,
   }),
   useUIHelpers: (ui) => ({
@@ -46,6 +44,5 @@ export const useInformation = (): InformationContextValue => {
     handleUpdateInformation: context.handleUpdate,
     handleDeleteInformation: context.handleDelete,
     handleRestoreInformation: context.handleRestore,
-    handlePermanentDeleteInformation: context.handlePermanentDelete,
   };
 };

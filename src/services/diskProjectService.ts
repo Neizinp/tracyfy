@@ -10,13 +10,11 @@
  * /testcases/TC-001.md
  * /information/INFO-001.md
  * /users/USER-001.md
- * /counters/requirements.md    # just the number
  * .git/tracyfy-current-user    # selected user ID (local, not versioned)
  */
 
 import { BaseDiskService } from './baseDiskService';
-import { idService } from './idService';
-import { STORED_TYPES, STORED_TYPE_IDS, type StoredType } from './storedTypes';
+import { STORED_TYPES } from './storedTypes';
 import type {
   Link,
   Project,
@@ -28,7 +26,6 @@ import type {
   ArtifactDocument,
 } from '../types';
 import {
-  ALL_ARTIFACT_SERVICES,
   requirementService,
   useCaseService,
   testCaseService,
@@ -54,10 +51,7 @@ class DiskProjectService extends BaseDiskService {
     for (const config of Object.values(STORED_TYPES)) {
       await this.ensureDirectory(config.folder);
     }
-    await this.ensureDirectory('counters');
   }
-
-  // ============ COUNTER OPERATIONS (Delegated to IdService) ============
 
   /**
    * Get current user ID
@@ -71,27 +65,6 @@ class DiskProjectService extends BaseDiskService {
    */
   async setCurrentUserId(userId: string): Promise<void> {
     await this.writeTextFile(CURRENT_USER_FILE, userId);
-  }
-
-  /**
-   * Get next artifact ID and increment counter
-   */
-  async getNextId(type: StoredType): Promise<string> {
-    return idService.getNextId(type);
-  }
-
-  /**
-   * Get multiple artifact IDs at once (batch allocation)
-   */
-  async getNextIds(type: StoredType, count: number): Promise<string[]> {
-    return idService.getNextIds(type, count);
-  }
-
-  /**
-   * Get next artifact ID with remote sync (for collaboration)
-   */
-  async getNextIdWithSync(type: StoredType): Promise<string> {
-    return idService.getNextIdWithSync(type);
   }
 
   // ============ PROJECT ============
@@ -167,29 +140,6 @@ class DiskProjectService extends BaseDiskService {
       users,
       currentUserId,
     };
-  }
-
-  /**
-   * Recalculate counters from existing files
-   * Call this after loading to ensure counters are in sync
-   */
-  async recalculateCounters(): Promise<void> {
-    // Only ever RAISE counters to cover existing IDs. Lowering them (e.g. after a
-    // permanent delete, or when a collaborator's counter is ahead) would hand out
-    // IDs again. Sequential so the resulting commits don't run concurrently.
-    for (const key of STORED_TYPE_IDS) {
-      const config = STORED_TYPES[key];
-      const items = await ALL_ARTIFACT_SERVICES[key].loadAll(true);
-      const idRegex = new RegExp(`^${config.idPrefix}-(\\d+)$`);
-      let maxId = 0;
-      for (const item of items) {
-        const match = item.id.match(idRegex);
-        if (match) maxId = Math.max(maxId, parseInt(match[1], 10));
-      }
-
-      // Writes (and commits) only when the counter actually has to move
-      await idService.ensureCounterAtLeast(key, maxId);
-    }
   }
 }
 

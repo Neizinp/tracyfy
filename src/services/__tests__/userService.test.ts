@@ -20,8 +20,6 @@ vi.mock('../fileSystemService', () => ({
 // Mock the realGitService
 vi.mock('../realGitService', () => ({
   realGitService: {
-    pullCounters: vi.fn(() => Promise.resolve(true)),
-    pushCounters: vi.fn(() => Promise.resolve(true)),
     hasRemote: vi.fn(() => Promise.resolve(false)),
     isInitialized: vi.fn(() => true),
     commitFile: vi.fn(() => Promise.resolve()),

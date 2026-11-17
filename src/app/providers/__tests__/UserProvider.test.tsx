@@ -12,7 +12,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import { UserProvider, useUser } from '../UserProvider';
 import { diskProjectService } from '../../../services/diskProjectService';
 import { userService } from '../../../services/artifactServices';
-import { idService } from '../../../services/idService';
+import { idAllocator } from '../../../storage/idAllocator';
 
 // Mock dependencies
 vi.mock('../../../services/diskProjectService', () => ({
@@ -30,9 +30,9 @@ vi.mock('../../../services/artifactServices', () => ({
   },
 }));
 
-vi.mock('../../../services/idService', () => ({
-  idService: {
-    getNextId: vi.fn(),
+vi.mock('../../../storage/idAllocator', () => ({
+  idAllocator: {
+    next: vi.fn(),
   },
 }));
 
@@ -112,7 +112,7 @@ describe('UserProvider', () => {
 
   describe('createUser', () => {
     it('should create a new user and add to state', async () => {
-      vi.mocked(idService.getNextId).mockResolvedValue('USER-001');
+      vi.mocked(idAllocator.next).mockResolvedValue('USER-001');
       vi.mocked(userService.save).mockResolvedValue({
         id: 'USER-001',
         name: 'New User',

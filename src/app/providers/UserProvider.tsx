@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 import type { User } from '../../types';
 import { diskProjectService } from '../../services/diskProjectService';
 import { userService } from '../../services/artifactServices';
-import { idService } from '../../services/idService';
+import { idAllocator } from '../../storage/idAllocator';
+import { STORED_TYPES } from '../../services/storedTypes';
 import { useFileSystem } from './FileSystemProvider';
 import { debug } from '../../utils/debug';
 
@@ -42,7 +43,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const counter = users.length + 1;
         id = `USR-${String(counter).padStart(3, '0')}`;
       } else {
-        id = await idService.getNextId('user');
+        id = await idAllocator.next(STORED_TYPES.user.folder, STORED_TYPES.user.idPrefix);
       }
 
       const now = Date.now();

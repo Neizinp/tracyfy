@@ -39,6 +39,7 @@ import type {
 } from '../../types';
 import { kind, type ArtifactKindId } from '../../domain/artifactKinds';
 import { STORED_TYPES, type StoredType } from '../../services/storedTypes';
+import { idAllocator } from '../../storage/idAllocator';
 
 interface FileSystemContextValue {
   isReady: boolean;
@@ -73,12 +74,6 @@ interface FileSystemContextValue {
   saveInformation: (info: Information) => Promise<void>;
   saveRisk: (risk: Risk) => Promise<void>;
   saveDocument: (document: ArtifactDocument) => Promise<void>;
-  deleteRequirement: (id: string) => Promise<void>;
-  deleteUseCase: (id: string) => Promise<void>;
-  deleteTestCase: (id: string) => Promise<void>;
-  deleteInformation: (id: string) => Promise<void>;
-  deleteRisk: (id: string) => Promise<void>;
-  deleteDocument: (id: string) => Promise<void>;
   saveProject: (project: Project) => Promise<void>;
   saveLink: (link: Link) => Promise<void>;
   deleteLink: (id: string) => Promise<void>;
@@ -200,8 +195,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setPreloadedUsers(data.users);
       setPreloadedCurrentUserId(data.currentUserId);
 
-      // Recalculate counters to make sure they're in sync
-      await diskProjectService.recalculateCounters();
       debug.log('[reloadData] Data loaded:', {
         requirements: data.requirements.length,
         useCases: data.useCases.length,
@@ -318,6 +311,8 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
       }
 
+      idAllocator.reset();
+
       // Initialize git (handle for browser, path for Electron)
       const gitInitialized = await realGitService.init(result.handle);
       if (!gitInitialized) {
@@ -367,18 +362,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [isReady, refreshStatus]
   );
 
-  const deleteRequirement = useCallback(
-    async (id: string) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await requirementService.delete(id);
-      }
-      setRequirements((prev) => prev.filter((r) => r.id !== id));
-      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
-    },
-    [isReady, refreshStatus]
-  );
-
   // CRUD operations - Use Cases
   const saveUseCase = useCallback(
     async (useCase: UseCase) => {
@@ -395,18 +378,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
         return [...prev, useCase];
       });
-      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
-    },
-    [isReady, refreshStatus]
-  );
-
-  const deleteUseCase = useCallback(
-    async (id: string) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await useCaseService.delete(id);
-      }
-      setUseCases((prev) => prev.filter((u) => u.id !== id));
       if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
@@ -433,18 +404,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [isReady, refreshStatus]
   );
 
-  const deleteTestCase = useCallback(
-    async (id: string) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await testCaseService.delete(id);
-      }
-      setTestCases((prev) => prev.filter((t) => t.id !== id));
-      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
-    },
-    [isReady, refreshStatus]
-  );
-
   // CRUD operations - Information
   const saveInformation = useCallback(
     async (info: Information) => {
@@ -461,18 +420,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
         return [...prev, info];
       });
-      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
-    },
-    [isReady, refreshStatus]
-  );
-
-  const deleteInformation = useCallback(
-    async (id: string) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await informationService.delete(id);
-      }
-      setInformation((prev) => prev.filter((i) => i.id !== id));
       if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
@@ -499,18 +446,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [isReady, refreshStatus]
   );
 
-  const deleteRisk = useCallback(
-    async (id: string) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await riskService.delete(id);
-      }
-      setRisks((prev) => prev.filter((r) => r.id !== id));
-      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
-    },
-    [isReady, refreshStatus]
-  );
-
   // CRUD operations - Documents
   const saveDocument = useCallback(
     async (document: ArtifactDocument) => {
@@ -527,18 +462,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
         return [...prev, document];
       });
-      if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
-    },
-    [isReady, refreshStatus]
-  );
-
-  const deleteDocument = useCallback(
-    async (id: string) => {
-      if (!isReady) throw new Error('Filesystem not ready');
-      if (!isE2EMode()) {
-        await documentService.delete(id);
-      }
-      setDocuments((prev) => prev.filter((d) => d.id !== id));
       if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI
     },
     [isReady, refreshStatus]
@@ -642,7 +565,8 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setE2eCounters((prev) => ({ ...prev, [type]: nextNum }));
         return `${STORED_TYPES[type].idPrefix}-${String(nextNum).padStart(3, '0')}`;
       }
-      return await diskProjectService.getNextIdWithSync(type);
+      const { folder, idPrefix } = STORED_TYPES[type];
+      return idAllocator.next(folder, idPrefix);
     },
     [e2eCounters]
   );
@@ -721,6 +645,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const changeDirectory = useCallback(async () => {
     // Clear the stored directory
     await fileSystemService.clearDirectory();
+    idAllocator.reset();
 
     // Reset all state
     setIsReady(false);
@@ -774,12 +699,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       saveInformation,
       saveRisk,
       saveDocument,
-      deleteRequirement,
-      deleteUseCase,
-      deleteTestCase,
-      deleteInformation,
-      deleteRisk,
-      deleteDocument,
       saveProject,
       saveLink,
       deleteLink,
@@ -800,14 +719,8 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       updateLink,
       changeDirectory,
       commitFile,
-      deleteDocument,
-      deleteInformation,
       createLink,
       deleteLink,
-      deleteRequirement,
-      deleteRisk,
-      deleteTestCase,
-      deleteUseCase,
       directoryName,
       documents,
       error,

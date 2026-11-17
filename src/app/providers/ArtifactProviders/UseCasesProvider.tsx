@@ -11,7 +11,6 @@ interface UseCasesContextValue {
   handleUpdateUseCase: (id: string, data: Partial<UseCase>) => Promise<void>;
   handleDeleteUseCase: (id: string) => void;
   handleRestoreUseCase: (id: string) => void;
-  handlePermanentDeleteUseCase: (id: string) => void;
   handleEditUseCase: (uc: UseCase) => void;
   handleLink: (sourceId: string) => void;
 }
@@ -24,7 +23,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Us
   }),
   useFS: (fs) => ({
     save: fs.saveUseCase,
-    delete: fs.deleteUseCase,
     isReady: fs.isReady,
   }),
   useUIHelpers: (ui) => ({
@@ -48,7 +46,6 @@ export const useUseCases = (): UseCasesContextValue => {
     handleUpdateUseCase: context.handleUpdate,
     handleDeleteUseCase: context.handleDelete,
     handleRestoreUseCase: context.handleRestore,
-    handlePermanentDeleteUseCase: context.handlePermanentDelete,
     handleEditUseCase: context.handleEdit,
     handleLink: context.handleLink!,
   };

@@ -12,7 +12,6 @@ interface DocumentsContextValue {
   handleUpdateDocument: (id: string, data: Partial<ArtifactDocument>) => Promise<void>;
   handleDeleteDocument: (id: string) => void;
   handleRestoreDocument: (id: string) => void;
-  handlePermanentDeleteDocument: (id: string) => void;
   handleEdit: (doc: ArtifactDocument) => void;
 }
 
@@ -24,7 +23,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Ar
   }),
   useFS: (fs) => ({
     save: fs.saveDocument,
-    delete: fs.deleteDocument,
     isReady: fs.isReady,
   }),
   useUIHelpers: (ui) => ({
@@ -45,7 +43,6 @@ export const useDocuments = (): DocumentsContextValue => {
     handleUpdateDocument: context.handleUpdate,
     handleDeleteDocument: context.handleDelete,
     handleRestoreDocument: context.handleRestore,
-    handlePermanentDeleteDocument: context.handlePermanentDelete,
     handleEdit: context.handleEdit,
   };
 };

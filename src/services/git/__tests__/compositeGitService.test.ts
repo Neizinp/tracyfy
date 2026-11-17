@@ -37,7 +37,6 @@ vi.mock('../gitSyncService', () => ({
     setHasRemoteFn: vi.fn(),
     setReadFileAtCommitFn: vi.fn(),
     setGetHistoryFn: vi.fn(),
-    pullCounters: vi.fn(),
   },
 }));
 
@@ -156,11 +155,6 @@ describe('CompositeGitService', () => {
   });
 
   describe('Other Modules Facade', () => {
-    it('should delegate pullCounters to sync service', async () => {
-      await compositeGitService.pullCounters('origin', 'main');
-      expect(gitSyncService.pullCounters).toHaveBeenCalledWith('origin', 'main');
-    });
-
     it('should delegate remote methods to remote service', async () => {
       await compositeGitService.getRemotes();
       expect(gitRemoteService.getRemotes).toHaveBeenCalled();

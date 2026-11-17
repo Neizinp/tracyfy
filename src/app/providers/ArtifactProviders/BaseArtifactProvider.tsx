@@ -17,7 +17,6 @@ export interface BaseArtifactContextValue<T extends BaseArtifact> {
   handleUpdate: (id: string, data: Partial<T>) => Promise<void>;
   handleDelete: (id: string) => void;
   handleRestore: (id: string) => void;
-  handlePermanentDelete: (id: string) => void;
   handleEdit: (item: T) => void;
   handleLink?: (sourceId: string) => void;
 }
@@ -31,8 +30,6 @@ export interface CreateProviderOptions<T extends BaseArtifact> {
   };
   useFS: (fs: ReturnType<typeof useFileSystem>) => {
     save: (item: T) => Promise<void>;
-    delete: (id: string) => Promise<void>;
-
     isReady: boolean;
   };
   useUIHelpers: (ui: ReturnType<typeof useUI>) => {
@@ -55,7 +52,7 @@ export function createArtifactProvider<T extends BaseArtifact>(options: CreatePr
       options.useUIHelpers(ui);
 
     const fs = useFileSystem();
-    const { save, delete: fsDelete } = options.useFS(fs);
+    const { save } = options.useFS(fs);
 
     const { currentUser } = useUser();
     const { showToast } = useToast();
@@ -64,7 +61,6 @@ export function createArtifactProvider<T extends BaseArtifact>(options: CreatePr
       type: options.type,
       items,
       saveFn: save,
-      deleteFn: fsDelete,
       onAfterUpdate: () => {
         setIsModalOpen(false);
         setEditingItem(null);

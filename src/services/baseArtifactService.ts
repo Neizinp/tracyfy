@@ -66,7 +66,6 @@ export class BaseArtifactService<T extends { id: string }> extends BaseDiskServi
 
   private getFilePath(id: string): string {
     const folder = this.config.folder;
-    // Standardize on .md for all text-based storage including counters
     return `${folder}/${id}.md`;
   }
 

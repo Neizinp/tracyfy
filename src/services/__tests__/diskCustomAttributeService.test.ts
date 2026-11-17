@@ -7,13 +7,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { diskCustomAttributeService } from '../diskCustomAttributeService';
 import { fileSystemService } from '../fileSystemService';
-import { idService } from '../idService';
+import { idAllocator } from '../../storage/idAllocator';
 import { realGitService } from '../realGitService';
 
-// Mock the idService
-vi.mock('../idService', () => ({
-  idService: {
-    getNextIdWithSync: vi.fn(),
+vi.mock('../../storage/idAllocator', () => ({
+  idAllocator: {
+    next: vi.fn(),
   },
 }));
 
@@ -160,7 +159,7 @@ Is this a safety-critical item?
 
   describe('createDefinition', () => {
     it('should create a new definition file with generated ID', async () => {
-      vi.mocked(idService.getNextIdWithSync).mockResolvedValue('ATTR-001');
+      vi.mocked(idAllocator.next).mockResolvedValue('ATTR-001');
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
       vi.mocked(fileSystemService.listFiles).mockResolvedValue([]);
       vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
@@ -190,7 +189,7 @@ Is this a safety-critical item?
     });
 
     it('should set dateCreated and lastModified', async () => {
-      vi.mocked(idService.getNextIdWithSync).mockResolvedValue('ATTR-001');
+      vi.mocked(idAllocator.next).mockResolvedValue('ATTR-001');
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
       vi.mocked(fileSystemService.listFiles).mockResolvedValue([]);
       vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(

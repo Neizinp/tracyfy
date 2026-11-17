@@ -15,7 +15,6 @@ interface RisksContextValue {
   handleUpdateRisk: (id: string, data: Partial<Risk>) => Promise<void>;
   handleDeleteRisk: (id: string) => void;
   handleRestoreRisk: (id: string) => void;
-  handlePermanentDeleteRisk: (id: string) => void;
   handleEdit: (risk: Risk) => void;
 }
 
@@ -27,7 +26,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Ri
   }),
   useFS: (fs) => ({
     save: fs.saveRisk,
-    delete: fs.deleteRisk,
     isReady: fs.isReady,
   }),
   useUIHelpers: (ui) => ({
@@ -83,7 +81,6 @@ export const useRisks = (): RisksContextValue => {
     handleUpdateRisk: context.handleUpdate,
     handleDeleteRisk: context.handleDelete,
     handleRestoreRisk: context.handleRestore,
-    handlePermanentDeleteRisk: context.handlePermanentDelete,
     handleEdit: context.handleEdit,
   };
 };

@@ -7,7 +7,6 @@ export interface ArtifactChange {
     | 'project'
     | 'asset'
     | 'user'
-    | 'counter'
     | 'link'
     | 'custom-attribute'
     | 'saved-filter'

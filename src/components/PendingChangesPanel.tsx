@@ -13,7 +13,6 @@ const OTHER_CHANGE_LABELS: Record<Exclude<ArtifactChange['type'], ArtifactKindId
   project: 'Project',
   asset: 'Assets',
   user: 'Users',
-  counter: 'Counters',
   link: 'Links',
   'custom-attribute': 'Custom Attributes',
   'saved-filter': 'Saved Searches',
@@ -132,13 +131,6 @@ export function PendingChangesPanel() {
         // For users, use appropriate default
         if (change.type === 'user') {
           defaults[change.id] = change.status === 'new' ? 'Add user' : 'Update user';
-          processedDefaultsRef.current.add(change.id);
-          continue;
-        }
-
-        // For counters, use simple default
-        if (change.type === 'counter') {
-          defaults[change.id] = 'Update counter';
           processedDefaultsRef.current.add(change.id);
           continue;
         }

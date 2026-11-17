@@ -7,13 +7,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { diskLinkService } from '../diskLinkService';
 import { fileSystemService } from '../fileSystemService';
-import { idService } from '../idService';
+import { idAllocator } from '../../storage/idAllocator';
 import { realGitService } from '../realGitService';
 
-// Mock the idService
-vi.mock('../idService', () => ({
-  idService: {
-    getNextIdWithSync: vi.fn(),
+vi.mock('../../storage/idAllocator', () => ({
+  idAllocator: {
+    next: vi.fn(),
   },
 }));
 
@@ -175,7 +174,7 @@ lastModified: 1700000000000
 
   describe('createLink', () => {
     it('should create a new link file with generated ID', async () => {
-      vi.mocked(idService.getNextIdWithSync).mockResolvedValue('LINK-001');
+      vi.mocked(idAllocator.next).mockResolvedValue('LINK-001');
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
       vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
         undefined as unknown as FileSystemDirectoryHandle
@@ -198,7 +197,7 @@ lastModified: 1700000000000
     });
 
     it('should set dateCreated and lastModified', async () => {
-      vi.mocked(idService.getNextIdWithSync).mockResolvedValue('LINK-001');
+      vi.mocked(idAllocator.next).mockResolvedValue('LINK-001');
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
       vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
         undefined as unknown as FileSystemDirectoryHandle

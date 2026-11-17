@@ -22,7 +22,6 @@ export const ARTIFACT_TYPE_CONFIG: Record<string, { label: string; color: string
   link: { label: 'LINK', color: 'var(--color-text-secondary)' },
   workflow: { label: 'WF', color: 'var(--color-info-light)' },
   user: { label: 'USER', color: 'var(--color-accent)' },
-  counter: { label: 'CTR', color: 'var(--color-text-muted)' },
   other: { label: 'OTHER', color: 'var(--color-text-muted)' },
 };
 
@@ -32,7 +31,6 @@ const FOLDER_TO_TYPE: Record<string, string> = {
   links: 'link',
   workflows: 'workflow',
   users: 'user',
-  counters: 'counter',
 };
 
 // Filter category of a file path ('other' for unrecognized folders)

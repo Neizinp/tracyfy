@@ -10,7 +10,6 @@ import { classifyPendingPath, AUTO_COMMITTED_FOLDERS } from '../pendingChanges';
 
 const DATA_FOLDERS = [
   ...Object.values(STORED_TYPES).map((c) => c.folder),
-  'counters',
   'assets',
   'saved-filters',
 ];

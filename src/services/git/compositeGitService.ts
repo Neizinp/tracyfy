@@ -40,10 +40,6 @@ class CompositeGitService {
     gitCoreService.setAddToCacheFn((hash, files) => this.addToCache(hash, files));
     gitCoreService.setEnsureTokenLoadedFn(() => this.ensureTokenLoaded());
 
-    gitSyncService.setFetchFn((remote, branch) => this.fetch(remote, branch));
-    gitSyncService.setPushFn((remote, branch) => this.push(remote, branch));
-    gitSyncService.setHasRemoteFn((name) => this.hasRemote(name));
-    gitSyncService.setReadFileAtCommitFn((path, hash) => this.readFileAtCommit(path, hash));
     gitSyncService.setGetHistoryFn((path, depth, ref) => this.getHistory(path, depth, ref));
   }
 
@@ -230,14 +226,6 @@ class CompositeGitService {
 
   async pull(remote: string = 'origin', branch: string = 'main'): Promise<PullResult> {
     return gitRemoteService.pull(remote, branch);
-  }
-
-  async pullCounters(remote: string = 'origin', branch: string = 'main'): Promise<boolean> {
-    return gitSyncService.pullCounters(remote, branch);
-  }
-
-  async pushCounters(remote: string = 'origin', branch: string = 'main'): Promise<boolean> {
-    return gitSyncService.pushCounters(remote, branch);
   }
 
   async getCurrentBranch(): Promise<string> {

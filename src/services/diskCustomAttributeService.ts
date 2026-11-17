@@ -4,7 +4,8 @@ import {
   customAttributeDefinitionToMarkdown,
   markdownToCustomAttributeDefinition,
 } from '../utils/markdownUtils';
-import { idService } from './idService';
+import { idAllocator } from '../storage/idAllocator';
+import { STORED_TYPES } from './storedTypes';
 
 class DiskCustomAttributeService extends BaseArtifactService<CustomAttributeDefinition> {
   constructor() {
@@ -61,7 +62,10 @@ class DiskCustomAttributeService extends BaseArtifactService<CustomAttributeDefi
   async createDefinition(
     def: Omit<CustomAttributeDefinition, 'id' | 'dateCreated' | 'lastModified'>
   ): Promise<CustomAttributeDefinition> {
-    const nextId = await idService.getNextIdWithSync('customAttribute');
+    const nextId = await idAllocator.next(
+      STORED_TYPES.customAttribute.folder,
+      STORED_TYPES.customAttribute.idPrefix
+    );
     const newDef: CustomAttributeDefinition = {
       ...def,
       id: nextId,
