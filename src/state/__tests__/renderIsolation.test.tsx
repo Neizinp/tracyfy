@@ -67,4 +67,48 @@ describe('store render isolation', () => {
 
     expect(actionRenders).toBe(1);
   });
+
+  it('a component reading requirements does not re-render when links or git status change', () => {
+    const store = createAppStore();
+    let renders = 0;
+    const RequirementCount = () => {
+      renders++;
+      return <span data-testid="reqs">{useAppStore((s) => s.artifacts.requirement).length}</span>;
+    };
+
+    const { getByTestId } = render(
+      <StoreProvider store={store}>
+        <RequirementCount />
+      </StoreProvider>
+    );
+    act(() => {
+      store.setState({
+        links: [
+          {
+            id: 'LINK-001',
+            sourceId: 'TC-001',
+            targetId: 'REQ-001',
+            type: 'verifies',
+            dateCreated: 0,
+            lastModified: 0,
+            revision: '01',
+          },
+        ],
+      });
+      store.setState({ pendingChanges: [{ path: 'links/LINK-001.md', status: 'new' }] });
+      store.setState((s) => ({ artifacts: { ...s.artifacts, risk: [] } }));
+    });
+    expect(renders).toBe(1);
+
+    act(() =>
+      store.setState((s) => ({
+        artifacts: {
+          ...s.artifacts,
+          requirement: [{ id: 'REQ-001' } as (typeof s.artifacts.requirement)[number]],
+        },
+      }))
+    );
+    expect(getByTestId('reqs').textContent).toBe('1');
+    expect(renders).toBe(2);
+  });
 });

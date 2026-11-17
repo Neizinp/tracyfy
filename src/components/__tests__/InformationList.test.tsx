@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { InformationList } from '../InformationList';
 import type { Information, InformationColumnVisibility } from '../../types';
-import { useCustomAttributes } from '../../app/providers';
+import { useCustomAttributes } from '../../hooks/useCustomAttributes';
 
 // Mock hooks
-vi.mock('../../app/providers', () => ({
+vi.mock('../../hooks/useCustomAttributes', () => ({
   useCustomAttributes: vi.fn(),
 }));
 

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import type { Requirement, ColumnVisibility } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
-import { useCustomAttributes } from '../app/providers';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { BaseArtifactTable, type ColumnDef } from './BaseArtifactTable';
 import { MarkdownCell } from './index';
 import type { SortConfig } from './SortableHeader';

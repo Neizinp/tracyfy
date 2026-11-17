@@ -17,7 +17,7 @@ const TYPE_COLORS: Record<AttributeType, string> = {
 };
 
 export const CustomAttributesPage: React.FC = () => {
-  // Shared with the artifact dialogs via CustomAttributeProvider (single source of truth)
+  // Shared with the artifact dialogs through the store (single source of truth)
   const { definitions, loading, refetch: loadDefinitions } = useCustomAttributes();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDefinition, setEditingDefinition] = useState<CustomAttributeDefinition | null>(

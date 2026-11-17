@@ -11,7 +11,7 @@ import type { Requirement } from '../../types';
 
 async function addRequirement(h: Harness, title: string): Promise<Requirement> {
   const created = await act(() =>
-    h.app().requirements.handleAddRequirement({
+    h.app().addArtifact('requirement', {
       title,
       description: '',
       text: '',
@@ -60,7 +60,7 @@ describe('integration: IDs from file names', () => {
     h = await startApp();
     await addRequirement(h, 'One');
     const two = await addRequirement(h, 'Two');
-    await act(async () => h.app().requirements.handleDeleteRequirement(two.id));
+    await act(async () => h.app().deleteArtifact('requirement', two.id));
     await h.settle();
     await h.restart();
 

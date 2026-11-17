@@ -43,7 +43,7 @@ describe('integration: no invisible uncommitted files', () => {
     h = await startApp({ initialRoute: '/workflows' });
     await h.colleagueCommits('Reviewer');
     await act(() =>
-      h.app().requirements.handleAddRequirement({
+      h.app().addArtifact('requirement', {
         title: 'Login',
         description: '',
         text: '',

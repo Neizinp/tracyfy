@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { BaseArtifactModal } from './BaseArtifactModal';
 import type { Requirement } from '../types';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
-import { useUI } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
 import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { CustomAttributeEditor } from './CustomAttributeEditor';
@@ -11,6 +10,7 @@ import { useRequirementForm } from '../hooks/useRequirementForm';
 import { ArtifactOverviewFields } from './forms/ArtifactOverviewFields';
 import { ArtifactRelationshipsTab } from './forms/ArtifactRelationshipsTab';
 import { ArtifactDetailsSections } from './forms/ArtifactDetailsSections';
+import { useAppStore } from '../state';
 
 interface RequirementModalProps {
   isOpen: boolean;
@@ -33,7 +33,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
   onDelete,
   onBack,
 }) => {
-  const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
+  const openLinkDialog = useAppStore((s) => s.openLinkDialog);
 
   // Use the extracted hook for form state and handlers
   const {
@@ -265,9 +265,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
           loading={linksLoading}
           onAddLink={() => {
             if (requirement) {
-              setLinkSourceId(requirement.id);
-              setLinkSourceType('requirement');
-              setIsLinkModalOpen(true);
+              openLinkDialog(requirement.id, 'requirement');
             }
           }}
           onRemoveLink={(linkId) =>

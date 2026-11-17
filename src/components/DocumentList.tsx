@@ -3,7 +3,7 @@ import type { ArtifactDocument } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { BaseArtifactTable, type ColumnDef } from './BaseArtifactTable';
 import type { SortConfig } from './SortableHeader';
-import { useCustomAttributes } from '../app/providers';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import type { DocumentColumnVisibility } from '../types/ui';
 
 interface DocumentListProps {

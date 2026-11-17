@@ -10,7 +10,7 @@ import type { Requirement, TestCase } from '../../types';
 
 async function addRequirement(h: Harness, title: string): Promise<Requirement> {
   return (await act(() =>
-    h.app().requirements.handleAddRequirement({
+    h.app().addArtifact('requirement', {
       title,
       description: '',
       text: '',
@@ -24,7 +24,7 @@ async function addRequirement(h: Harness, title: string): Promise<Requirement> {
 
 async function addTestCase(h: Harness, title: string): Promise<TestCase> {
   return (await act(() =>
-    h.app().testCases.handleAddTestCase({
+    h.app().addArtifact('testCase', {
       title,
       description: '',
       status: 'draft',

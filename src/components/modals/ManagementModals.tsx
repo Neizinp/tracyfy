@@ -9,7 +9,6 @@ import {
   CustomAttributeDefinitionModal,
   WorkflowModal,
 } from '../';
-import { useUI, useRisks, useDocuments } from '../../app/providers';
 import { diskCustomAttributeService } from '../../services/diskCustomAttributeService';
 import { exportProjectToJSON } from '../../utils/jsonExportUtils';
 import type { ExportOptions } from '../../types';
@@ -20,22 +19,20 @@ import { useOpenArtifact } from '../../hooks/useOpenArtifact';
 import { notifyError, useAppStore } from '../../state';
 
 export const ManagementModals: React.FC = () => {
-  const ui = useUI();
+  const activeModal = useAppStore((s) => s.activeModal);
+  const closeModal = useAppStore((s) => s.closeModal);
+  const linkSourceId = useAppStore((s) => s.linkSourceId);
+  const linkSourceType = useAppStore((s) => s.linkSourceType);
   const project = useAppStore((s) => s.project);
 
   const requirements = useAppStore((s) => s.artifacts.requirement);
-
   const useCases = useAppStore((s) => s.artifacts.useCase);
-
   const testCases = useAppStore((s) => s.artifacts.testCase);
-
   const information = useAppStore((s) => s.artifacts.information);
-
   const baselines = useAppStore((s) => s.baselines);
-
   const createBaseline = useAppStore((s) => s.createBaseline);
-  const { risks } = useRisks();
-  const { documents } = useDocuments();
+  const risks = useAppStore((s) => s.artifacts.risk);
+  const documents = useAppStore((s) => s.artifacts.document);
   const currentUser = useAppStore((s) => s.currentUser);
   const startTask = useAppStore((s) => s.startTask);
   const endTask = useAppStore((s) => s.endTask);
@@ -144,7 +141,7 @@ export const ManagementModals: React.FC = () => {
 
   const handleAddArtifactLink = useCallback(
     async (newLink: LinkModalResult) => {
-      const sourceId = newLink.sourceId || ui.linkSourceId;
+      const sourceId = newLink.sourceId || linkSourceId;
       if (!sourceId) {
         showToast('Select a source artifact for the link', 'warning');
         return;
@@ -155,7 +152,7 @@ export const ManagementModals: React.FC = () => {
       );
       if (duplicate) {
         showToast(`${sourceId} already has this link to ${newLink.targetId}`, 'warning');
-        ui.setIsLinkModalOpen(false);
+        closeModal();
         return;
       }
 
@@ -169,9 +166,9 @@ export const ManagementModals: React.FC = () => {
           'error'
         );
       }
-      ui.setIsLinkModalOpen(false);
+      closeModal();
     },
-    [ui, links, createLink, showToast]
+    [linkSourceId, closeModal, links, createLink, showToast]
   );
 
   const handleCreateBaselineWrapper = useCallback(
@@ -184,28 +181,28 @@ export const ManagementModals: React.FC = () => {
   return (
     <>
       <LinkModal
-        isOpen={ui.activeModal.type === 'link'}
+        isOpen={activeModal.type === 'link'}
         // Only an explicitly chosen source; never whatever artifact happens to be selected
-        sourceArtifactId={ui.linkSourceId}
-        sourceArtifactType={ui.linkSourceType || 'requirement'}
+        sourceArtifactId={linkSourceId}
+        sourceArtifactType={linkSourceType || 'requirement'}
         artifactsByType={linkableArtifacts}
-        onClose={ui.closeModal}
+        onClose={closeModal}
         onAddLink={handleAddArtifactLink}
       />
 
       <VersionHistory
-        isOpen={ui.activeModal.type === 'history'}
+        isOpen={activeModal.type === 'history'}
         baselines={baselines}
-        onClose={ui.closeModal}
+        onClose={closeModal}
         onCreateBaseline={handleCreateBaselineWrapper}
         onSelectArtifact={openArtifact}
       />
 
-      <UserSettingsModal isOpen={ui.activeModal.type === 'user-settings'} onClose={ui.closeModal} />
+      <UserSettingsModal isOpen={activeModal.type === 'user-settings'} onClose={closeModal} />
 
       <ExportModal
-        isOpen={ui.activeModal.type === 'export'}
-        onClose={ui.closeModal}
+        isOpen={activeModal.type === 'export'}
+        onClose={closeModal}
         baselines={baselines}
         onExport={handleExport}
         artifactCounts={{
@@ -220,24 +217,24 @@ export const ManagementModals: React.FC = () => {
       />
 
       <AdvancedSearchModal
-        isOpen={ui.activeModal.type === 'search'}
-        onClose={ui.closeModal}
+        isOpen={activeModal.type === 'search'}
+        onClose={closeModal}
         onNavigateToArtifact={(_type: string, id: string) => openArtifact(id)}
       />
 
       <CustomAttributeDefinitionModal
-        isOpen={ui.activeModal.type === 'custom-attribute'}
+        isOpen={activeModal.type === 'custom-attribute'}
         definition={null}
-        onClose={ui.closeModal}
+        onClose={closeModal}
         onSubmit={async (
           data: Omit<CustomAttributeDefinition, 'id' | 'dateCreated' | 'lastModified'>
         ) => {
           await diskCustomAttributeService.createDefinition(data);
-          ui.closeModal();
+          closeModal();
         }}
       />
 
-      <WorkflowModal isOpen={ui.activeModal.type === 'workflow'} onClose={ui.closeModal} />
+      <WorkflowModal isOpen={activeModal.type === 'workflow'} onClose={closeModal} />
     </>
   );
 };

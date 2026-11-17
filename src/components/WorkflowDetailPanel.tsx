@@ -8,13 +8,6 @@
 import React, { useState } from 'react';
 import { X, CheckCircle2, XCircle, Clock, User, FileText, MessageSquare } from 'lucide-react';
 import type { Workflow } from '../types';
-import {
-  useRequirements,
-  useUseCases,
-  useTestCases,
-  useInformation,
-  useRisks,
-} from '../app/providers';
 import { diskWorkflowService } from '../services/diskWorkflowService';
 import type { TestCase } from '../types';
 import { useAppStore } from '../state';
@@ -31,11 +24,12 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
   onUpdate,
 }) => {
   const currentUser = useAppStore((s) => s.currentUser);
-  const { requirements, handleUpdateRequirement } = useRequirements();
-  const { useCases, handleUpdateUseCase } = useUseCases();
-  const { testCases, handleUpdateTestCase } = useTestCases();
-  const { information, handleUpdateInformation } = useInformation();
-  const { risks, handleUpdateRisk } = useRisks();
+  const requirements = useAppStore((s) => s.artifacts.requirement);
+  const useCases = useAppStore((s) => s.artifacts.useCase);
+  const testCases = useAppStore((s) => s.artifacts.testCase);
+  const information = useAppStore((s) => s.artifacts.information);
+  const risks = useAppStore((s) => s.artifacts.risk);
+  const updateArtifact = useAppStore((s) => s.updateArtifact);
   const reloadData = useAppStore((s) => s.reload);
   const showToast = useAppStore((s) => s.showToast);
   const [comment, setComment] = useState('');
@@ -81,7 +75,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
     // Check requirements
     const req = requirements.find((r) => r.id === artifactId);
     if (req) {
-      await handleUpdateRequirement(artifactId, {
+      await updateArtifact('requirement', artifactId, {
         status: 'approved',
         approvalDate: Date.now(),
       });
@@ -91,7 +85,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
     // Check use cases
     const uc = useCases.find((u) => u.id === artifactId);
     if (uc) {
-      await handleUpdateUseCase(artifactId, {
+      await updateArtifact('useCase', artifactId, {
         status: 'approved',
       });
       return;
@@ -100,7 +94,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
     // Check test cases
     const tc = testCases.find((t) => t.id === artifactId);
     if (tc) {
-      await handleUpdateTestCase(artifactId, {
+      await updateArtifact('testCase', artifactId, {
         status: 'approved' as TestCase['status'],
       });
       return;
@@ -109,7 +103,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
     // Check information
     const info = information.find((i) => i.id === artifactId);
     if (info) {
-      await handleUpdateInformation(artifactId, {
+      await updateArtifact('information', artifactId, {
         status: 'approved',
       });
       return;
@@ -118,7 +112,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
     // Check risks
     const risk = risks.find((r) => r.id === artifactId);
     if (risk) {
-      await handleUpdateRisk(artifactId, {
+      await updateArtifact('risk', artifactId, {
         status: 'approved',
       });
       return;

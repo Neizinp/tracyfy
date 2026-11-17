@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
-import { useUI } from '../app/providers';
-import { useAppStoreApi } from '../state';
+import { useAppStore, useAppStoreApi } from '../state';
 import { kindOfId } from '../domain/artifactKinds';
 
 /**
@@ -9,7 +8,7 @@ import { kindOfId } from '../domain/artifactKinds';
  * Returns false when no such artifact exists.
  */
 export function useOpenArtifact(): (id: string) => boolean {
-  const { openModal } = useUI();
+  const openModal = useAppStore((s) => s.openModal);
   // Read when called, so the caller does not re-render whenever an artifact changes
   const store = useAppStoreApi();
 

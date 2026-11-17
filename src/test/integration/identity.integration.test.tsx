@@ -11,7 +11,7 @@ import { startApp, type Harness } from './appHarness';
 
 async function addRequirement(h: Harness, title: string) {
   const created = await act(() =>
-    h.app().requirements.handleAddRequirement({
+    h.app().addArtifact('requirement', {
       title,
       description: '',
       text: '',
@@ -65,7 +65,7 @@ describe('integration: the git author is the user', () => {
 
   it('changing your name in User Settings changes the author of the next commit', async () => {
     h = await startApp({ userName: 'Ada' });
-    await act(async () => h.app().ui.setIsUserSettingsModalOpen(true));
+    await act(async () => h.app().openModal('user-settings'));
     const dialog = await screen.findByRole('dialog', { name: /user settings/i });
     fireEvent.change(within(dialog).getByPlaceholderText('Enter your name'), {
       target: { value: 'Ada Lovelace' },

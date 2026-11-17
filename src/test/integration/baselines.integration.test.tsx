@@ -10,7 +10,7 @@ import { realGitService } from '../../services/realGitService';
 
 async function addAndCommitRequirement(h: Harness, title: string) {
   await act(() =>
-    h.app().requirements.handleAddRequirement({
+    h.app().addArtifact('requirement', {
       title,
       description: '',
       text: '',
@@ -27,7 +27,7 @@ async function addAndCommitRequirement(h: Harness, title: string) {
 
 /** Version History → Create Baseline → name → Save */
 async function createBaselineInUi(h: Harness, name: string, description: string) {
-  await act(async () => h.app().ui.setIsVersionHistoryOpen(true));
+  await act(async () => h.app().openModal('history'));
   fireEvent.click(await screen.findByRole('button', { name: /create baseline/i }));
   fireEvent.change(screen.getByPlaceholderText('Name (e.g. 1.0)'), { target: { value: name } });
   fireEvent.change(screen.getByPlaceholderText('Description (optional)'), {
@@ -88,7 +88,7 @@ describe('integration: baselines', () => {
     expect(h.app().baselines).toEqual([
       expect.objectContaining({ name: 'v2.0', description: 'Tagged in a terminal' }),
     ]);
-    await act(async () => h.app().ui.setIsVersionHistoryOpen(true));
+    await act(async () => h.app().openModal('history'));
     expect(await screen.findByText('v2.0')).toBeInTheDocument();
   }, 60_000);
 });

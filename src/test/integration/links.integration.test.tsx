@@ -13,7 +13,7 @@ import type { Requirement } from '../../types';
 async function addRequirement(h: Harness, title: string): Promise<Requirement> {
   const before = new Set(h.app().artifacts.requirement.map((r) => r.id));
   await act(() =>
-    h.app().requirements.handleAddRequirement({
+    h.app().addArtifact('requirement', {
       title,
       description: '',
       text: `${title} text`,
@@ -21,7 +21,7 @@ async function addRequirement(h: Harness, title: string): Promise<Requirement> {
       status: 'draft',
       priority: 'medium',
       dateCreated: Date.now(),
-    } as unknown as Parameters<ReturnType<typeof h.app>['requirements']['handleAddRequirement']>[0])
+    } as never)
   );
   let created: Requirement | undefined;
   await waitFor(() => {
@@ -47,7 +47,7 @@ function submitButton(name: RegExp) {
 
 /** Open a requirement's dialog on the Relationships tab, exactly like clicking it in the list */
 async function openRelationships(h: Harness, req: Requirement) {
-  await act(async () => h.app().requirements.handleEdit(req));
+  await act(async () => h.app().editArtifact('requirement', req));
   fireEvent.click(await screen.findByRole('button', { name: 'Relationships' }));
 }
 
@@ -172,7 +172,7 @@ describe('integration: links', () => {
     const a = await addRequirement(h, 'Login');
     await commitAll(h);
 
-    await act(async () => h.app().requirements.handleEdit(a));
+    await act(async () => h.app().editArtifact('requirement', a));
     fireEvent.change(await screen.findByDisplayValue('Login'), { target: { value: 'Login v2' } });
     fireEvent.click(await screen.findByRole('button', { name: /save changes/i }));
     await h.settle();
@@ -191,7 +191,7 @@ describe('integration: links', () => {
     const a = await addRequirement(h, 'Login');
     await commitAll(h);
 
-    await act(async () => h.app().requirements.handleEdit(a));
+    await act(async () => h.app().editArtifact('requirement', a));
     fireEvent.click(await screen.findByRole('button', { name: /save changes/i }));
     await h.settle();
 
@@ -202,7 +202,7 @@ describe('integration: links', () => {
     h = await startApp({ initialRoute: '/links' });
     const req = await addRequirement(h, 'Login');
     const risk = (await act(() =>
-      h.app().risks.handleAddRisk({
+      h.app().addArtifact('risk', {
         title: 'Credential stuffing',
         description: '',
         mitigation: 'Rate limiting',
@@ -247,20 +247,18 @@ describe('integration: links', () => {
     const req = await addRequirement(h, 'Login');
     const targets = {
       REQ: await addRequirement(h, 'Logout'),
-      UC: await act(() =>
-        h.app().useCases.handleAddUseCase({ ...base, title: 'Sign in' } as never)
-      ),
+      UC: await act(() => h.app().addArtifact('useCase', { ...base, title: 'Sign in' } as never)),
       TC: await act(() =>
-        h.app().testCases.handleAddTestCase({ ...base, title: 'Login works' } as never)
+        h.app().addArtifact('testCase', { ...base, title: 'Login works' } as never)
       ),
       INFO: await act(() =>
-        h.app().information.handleAddInformation({ ...base, title: 'Glossary' } as never)
+        h.app().addArtifact('information', { ...base, title: 'Glossary' } as never)
       ),
       RISK: await act(() =>
-        h.app().risks.handleAddRisk({ ...base, title: 'Lockout', mitigation: 'x' } as never)
+        h.app().addArtifact('risk', { ...base, title: 'Lockout', mitigation: 'x' } as never)
       ),
       DOC: await act(() =>
-        h.app().documents.handleAddDocument({
+        h.app().addArtifact('document', {
           ...base,
           title: 'Login spec',
           structure: [],

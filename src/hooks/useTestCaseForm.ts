@@ -1,6 +1,5 @@
 import { useCallback, useState, useEffect } from 'react';
 import type { TestCase } from '../types';
-import { useUI } from '../app/providers';
 import { useArtifactForm } from './useArtifactForm';
 import { useArtifactNavigation } from './useArtifactNavigation';
 
@@ -23,7 +22,6 @@ export function useTestCaseForm({
   onUpdate,
   onDelete,
 }: UseTestCaseFormOptions) {
-  useUI();
   const handleNavigateToArtifact = useArtifactNavigation(onClose);
 
   // Specialized fields for Test Cases

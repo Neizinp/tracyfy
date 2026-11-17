@@ -4,13 +4,8 @@ import React from 'react';
 import { TraceabilityDashboard } from '../TraceabilityDashboard';
 import type { Requirement, UseCase, TestCase, Information, Link } from '../../types';
 import { diskLinkService } from '../../services/diskLinkService';
-import { UIProvider } from '../../app/providers';
 import { renderWithStore } from '../../test/renderWithStore';
 
-// Wrapper that provides UIProvider context for Links tab tests
-const renderWithProviders = (ui: React.ReactElement) => {
-  return render(<UIProvider>{ui}</UIProvider>);
-};
 const render = (ui: React.ReactElement) =>
   renderWithStore(ui, { state: { isReady: true, links: storeLinks() } });
 
@@ -24,7 +19,7 @@ vi.mock('../../services/diskLinkService', () => ({
   },
 }));
 
-// Mock the FileSystemProvider for LinksView
+// Mock the disk link service for LinksView
 // The links LinksView reads from the store
 const storeLinks = (): Link[] => [
   {
@@ -210,7 +205,7 @@ describe('TraceabilityDashboard', () => {
     });
 
     it('switches to Links tab when clicked', async () => {
-      renderWithProviders(<TraceabilityDashboard {...defaultProps} />);
+      render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
       // LinksView shows header like "Links (N)"
@@ -298,7 +293,7 @@ describe('TraceabilityDashboard', () => {
     });
 
     it('displays LinksView with table headers', async () => {
-      renderWithProviders(<TraceabilityDashboard {...defaultProps} />);
+      render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
       await waitFor(() => {
@@ -310,7 +305,7 @@ describe('TraceabilityDashboard', () => {
     });
 
     it('shows links from diskLinkService', async () => {
-      renderWithProviders(<TraceabilityDashboard {...defaultProps} />);
+      render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
       await waitFor(() => {
@@ -322,7 +317,7 @@ describe('TraceabilityDashboard', () => {
     });
 
     it('displays link types in the table', async () => {
-      renderWithProviders(<TraceabilityDashboard {...defaultProps} />);
+      render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
       await waitFor(() => {

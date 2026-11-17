@@ -2,7 +2,7 @@
  * Integration test harness: runs the real app stack against a real temp
  * directory with real git. Nothing in the data path is mocked:
  *
- *   React providers → services → window.electronAPI (the real preload.js)
+ *   store → repository → services → window.electronAPI (the real preload.js)
  *     → IPC handlers (the real electron/ipcHandlers.js) → node fs + isomorphic-git
  *
  * Only the Electron runtime objects are faked (ipcMain, dialog, safeStorage),
@@ -21,38 +21,15 @@ import { render, waitFor, act, screen, fireEvent } from '@testing-library/react'
 import git from 'isomorphic-git';
 import { createElectronIpc, type ElectronIpc } from './electronIpc';
 import { classifyPendingPath } from '../../utils/pendingChanges';
-import { AppProviders } from '../../app/AppProviders';
 import { AppContent } from '../../app/AppContent';
 import { StatusBar, ToastContainer } from '../../components';
-import { useAppStoreApi, type AppState, type AppStore } from '../../state';
-import {
-  useRequirements,
-  useUseCases,
-  useTestCases,
-  useInformation,
-  useRisks,
-  useDocuments,
-  useUI,
-} from '../../app/providers';
+import { StoreProvider, useAppStoreApi, type AppState, type AppStore } from '../../state';
 
 /**
  * Generous: the whole app boots per test, and the suite runs many files in
  * parallel (cold transform cache in CI / fresh worktrees makes this slower).
  */
 const READY_TIMEOUT = 30_000;
-
-/** The app's store state (read live), plus the hooks that are not in the store yet */
-export interface AppHooks extends AppState {
-  requirements: ReturnType<typeof useRequirements>;
-  useCases: ReturnType<typeof useUseCases>;
-  testCases: ReturnType<typeof useTestCases>;
-  information: ReturnType<typeof useInformation>;
-  risks: ReturnType<typeof useRisks>;
-  documents: ReturnType<typeof useDocuments>;
-  ui: ReturnType<typeof useUI>;
-}
-
-type ProbedHooks = Omit<AppHooks, keyof AppState>;
 
 export interface Harness {
   /** Project directory on disk (what the user picked) */
@@ -67,8 +44,8 @@ export interface Harness {
    * to stand in for the network. All other operations stay real.
    */
   stubGitOp: (op: string, impl: (dir: string, ...args: unknown[]) => unknown) => void;
-  /** Latest state and hook values - read after act()/waitFor() */
-  app: () => AppHooks;
+  /** The app's store state, read live - after act()/waitFor() */
+  app: () => AppState;
   /** Read a project file from disk, or null if missing */
   readFile: (relPath: string) => string | null;
   exists: (relPath: string) => boolean;
@@ -118,26 +95,13 @@ export async function startApp(
   localStorage.clear();
   const ipc = installElectronApi(dir, userData);
 
-  const latest: { current: ProbedHooks | null; store: AppStore | null } = {
-    current: null,
-    store: null,
-  };
+  const latest: { store: AppStore | null } = { store: null };
+  // Hands the mounted app's store to the test
   const Probe: React.FC = () => {
     const store = useAppStoreApi();
-    const hooks: ProbedHooks = {
-      requirements: useRequirements(),
-      useCases: useUseCases(),
-      testCases: useTestCases(),
-      information: useInformation(),
-      risks: useRisks(),
-      documents: useDocuments(),
-      ui: useUI(),
-    };
-    // Publish after commit so tests always read the latest rendered values
     useLayoutEffect(() => {
-      latest.current = hooks;
       latest.store = store;
-    });
+    }, [store]);
     return null;
   };
 
@@ -145,20 +109,20 @@ export async function startApp(
   const tree = (
     <StrictMode>
       <MemoryRouter initialEntries={[options.initialRoute ?? '/requirements']}>
-        <AppProviders>
+        <StoreProvider>
           <AppContent />
           <StatusBar />
           <ToastContainer />
           <Probe />
-        </AppProviders>
+        </StoreProvider>
       </MemoryRouter>
     </StrictMode>
   );
   let rendered = render(tree);
 
-  const app = (): AppHooks => {
-    if (!latest.current || !latest.store) throw new Error('App not rendered');
-    return { ...latest.store.getState(), ...latest.current };
+  const app = (): AppState => {
+    if (!latest.store) throw new Error('App not rendered');
+    return latest.store.getState();
   };
   const liveState = () => latest.store?.getState();
 
@@ -246,7 +210,6 @@ export async function startApp(
     settle,
     restart: async () => {
       rendered.unmount();
-      latest.current = null;
       latest.store = null;
       // Record errors during startup so a failed restart explains itself
       const errors: string[] = [];
@@ -276,7 +239,6 @@ export async function startApp(
     },
     restartFailing: async () => {
       rendered.unmount();
-      latest.current = null;
       latest.store = null;
       const originalError = console.error;
       console.error = () => {}; // the failure is expected

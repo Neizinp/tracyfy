@@ -3,10 +3,10 @@ import { screen, fireEvent } from '@testing-library/react';
 import { renderWithStore as render } from '../../test/renderWithStore';
 import { TestCaseList } from '../TestCaseList';
 import type { TestCase, TestCaseColumnVisibility } from '../../types';
-import { useCustomAttributes } from '../../app/providers';
+import { useCustomAttributes } from '../../hooks/useCustomAttributes';
 
 // Mock hooks
-vi.mock('../../app/providers', () => ({
+vi.mock('../../hooks/useCustomAttributes', () => ({
   useCustomAttributes: vi.fn(),
 }));
 

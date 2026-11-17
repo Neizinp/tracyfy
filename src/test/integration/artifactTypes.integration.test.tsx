@@ -6,7 +6,8 @@
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { startApp, type Harness, type AppHooks } from './appHarness';
+import { startApp, type Harness } from './appHarness';
+import type { AppState } from '../../state';
 import { kind, type ArtifactKindId } from '../../domain/artifactKinds';
 
 interface TypeCase {
@@ -16,7 +17,7 @@ interface TypeCase {
   createLabel: RegExp;
   route: string;
   folder: string;
-  all: (app: AppHooks) => { id: string; title: string; revision: string }[];
+  all: (app: AppState) => { id: string; title: string; revision: string }[];
   /** Is the artifact a member of the current project? */
 }
 
@@ -191,7 +192,7 @@ describe.each(TYPES)('integration: opening a $name from elsewhere', (t) => {
 
     // Something to link from
     const source = await act(() =>
-      h.app().requirements.handleAddRequirement({
+      h.app().addArtifact('requirement', {
         title: 'Link source',
         description: '',
         text: '',
@@ -232,7 +233,7 @@ describe.each(TYPES)('integration: opening a $name from elsewhere', (t) => {
     // History: click the artifact on its commit
     await act(() => h.app().commitFile(`${t.folder}/${target.id}.md`, 'Add it'));
     await h.settle();
-    await act(async () => h.app().ui.setIsVersionHistoryOpen(true));
+    await act(async () => h.app().openModal('history'));
     const history = await screen.findByRole('dialog', { name: 'History' });
     fireEvent.click(within(history).getByRole('button', { name: 'Commits' }));
     fireEvent.click(await within(history).findByRole('button', { name: target.id }));
@@ -242,7 +243,7 @@ describe.each(TYPES)('integration: opening a $name from elsewhere', (t) => {
 
     // Search: click the result (search does not cover documents yet, see DESIGN.md)
     if (t.kind === 'document') return;
-    await act(async () => h.app().ui.setIsAdvancedSearchOpen(true));
+    await act(async () => h.app().openModal('search'));
     const search = await screen.findByRole('dialog', { name: 'Advanced Search' });
     fireEvent.click(await within(search).findByText(target.id));
     await expectDialogFor(`My ${t.name}`);

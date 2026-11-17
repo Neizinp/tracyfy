@@ -1,19 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
+import { renderWithStore as render } from '../../test/renderWithStore';
 import { TestCaseModal } from '../TestCaseModal';
 import { useTestCaseForm } from '../../hooks/useTestCaseForm';
 import type { TestCase } from '../../types';
 
 // Mock everything to solve the OOM/hang issues
-vi.mock('../../app/providers', () => ({
-  UIProvider: ({ children }: any) => <>{children}</>,
-  useUI: vi.fn(() => ({
-    setIsLinkModalOpen: vi.fn(),
-    setLinkSourceId: vi.fn(),
-    setLinkSourceType: vi.fn(),
-  })),
-}));
-
 vi.mock('../../hooks/useLinkService', () => ({
   useLinkService: vi.fn(() => ({
     outgoingLinks: [],

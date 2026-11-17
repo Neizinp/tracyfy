@@ -27,22 +27,22 @@ import {
 import { TraceabilityGraph } from './graph/TraceabilityGraph';
 import { ARTIFACT_KINDS, kind } from '../domain/artifactKinds';
 import { LinksView } from './LinksView';
-import { useUI } from '../app/providers';
+import { useAppStore } from '../state';
 
 type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
 
-// Separate component for Links tab to access useUI hook
+// Separate component for the Links tab, which opens the link dialog
 const LinksTabContent: React.FC<{
   onSelectArtifact?: (artifactId: string) => void;
 }> = ({ onSelectArtifact }) => {
-  const { setIsLinkModalOpen } = useUI();
+  const openLinkDialog = useAppStore((s) => s.openLinkDialog);
 
   return (
     <LinksView
       onNavigateToArtifact={(id) => {
         if (onSelectArtifact) onSelectArtifact(id);
       }}
-      onAdd={() => setIsLinkModalOpen(true)}
+      onAdd={() => openLinkDialog(null)}
     />
   );
 };

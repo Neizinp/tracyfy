@@ -1,18 +1,13 @@
-import React, { createContext, useContext, useCallback } from 'react';
-import type { ReactNode } from 'react';
-import { useImportExport as useImportExportHook } from '../../hooks/useImportExport';
-import { IMPORT_KINDS, countImported, type ImportBundle } from '../../utils/importUtils';
-import { useAppStore, useAppStoreApi } from '../../state';
+import { useCallback } from 'react';
+import { useImportExport } from './useImportExport';
+import { IMPORT_KINDS, countImported, type ImportBundle } from '../utils/importUtils';
+import { useAppStore, useAppStoreApi } from '../state';
 
-interface ImportExportContextValue {
-  handleExport: () => void;
-  handleImport: () => void;
-  handleImportExcel: () => void;
-}
-
-const ImportExportContext = createContext<ImportExportContextValue | undefined>(undefined);
-
-export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+/**
+ * Export the project to JSON and import JSON or Excel into it: the import
+ * merges by ID and overwrites existing artifacts only after confirmation.
+ */
+export function useProjectImportExport() {
   const project = useAppStore((s) => s.project);
   const artifacts = useAppStore((s) => s.artifacts);
   const store = useAppStoreApi();
@@ -67,7 +62,7 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
     [store, showToast, startTask, endTask]
   );
 
-  const importExportHook = useImportExportHook({
+  const importExportHook = useImportExport({
     project,
     requirements: artifacts.requirement,
     useCases: artifacts.useCase,
@@ -89,19 +84,9 @@ export const ImportExportProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
   }, [importExportHook, startTask, endTask]);
 
-  const value: ImportExportContextValue = {
+  return {
     handleExport,
     handleImport: importExportHook.handleImport,
     handleImportExcel: importExportHook.handleImportExcel,
   };
-
-  return <ImportExportContext.Provider value={value}>{children}</ImportExportContext.Provider>;
-};
-
-export const useImportExport = (): ImportExportContextValue => {
-  const context = useContext(ImportExportContext);
-  if (context === undefined) {
-    throw new Error('useImportExport must be used within an ImportExportProvider');
-  }
-  return context;
-};
+}

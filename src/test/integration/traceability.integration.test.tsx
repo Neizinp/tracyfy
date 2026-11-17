@@ -11,7 +11,7 @@ import type { Requirement } from '../../types';
 
 async function addRequirement(h: Harness, title: string): Promise<Requirement> {
   const created = await act(() =>
-    h.app().requirements.handleAddRequirement({
+    h.app().addArtifact('requirement', {
       title,
       description: '',
       text: '',
@@ -79,7 +79,7 @@ describe('integration: traceability dashboard', () => {
     h = await startApp({ initialRoute: '/traceability' });
     const req = await addRequirement(h, 'Login');
     const risk = (await act(() =>
-      h.app().risks.handleAddRisk({
+      h.app().addArtifact('risk', {
         title: 'Lockout',
         description: '',
         mitigation: 'x',
@@ -88,14 +88,14 @@ describe('integration: traceability dashboard', () => {
       } as never)
     ))!;
     const doc = (await act(() =>
-      h.app().documents.handleAddDocument({
+      h.app().addArtifact('document', {
         title: 'Login spec',
         structure: [],
         dateCreated: Date.now(),
       } as never)
     ))!;
     const unlinkedRisk = (await act(() =>
-      h.app().risks.handleAddRisk({
+      h.app().addArtifact('risk', {
         title: 'Unmitigated supplier risk',
         description: '',
         mitigation: '',

@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { TestCaseList } from '../components';
-import { useTestCases, useUI } from '../app/providers';
+import { useAppStore } from '../state';
+import type { TestCase } from '../types';
 import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
 
 export const TestCasesPage: React.FC = () => {
-  const { testCases, handleEditTestCase } = useTestCases();
-  const { searchQuery, testCaseColumnVisibility } = useUI();
+  const testCases = useAppStore((s) => s.artifacts.testCase);
+  const editArtifact = useAppStore((s) => s.editArtifact);
+  const handleEditTestCase = useCallback(
+    (item: TestCase) => editArtifact('testCase', item),
+    [editArtifact]
+  );
+  const searchQuery = useAppStore((s) => s.searchQuery);
+  const testCaseColumnVisibility = useAppStore((s) => s.columnVisibility.testCase);
 
   const { sortedData, sortConfig, handleSortChange } = useArtifactFilteredData(testCases, {
     searchQuery,

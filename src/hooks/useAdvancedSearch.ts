@@ -6,18 +6,12 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  useRequirements,
-  useUseCases,
-  useTestCases,
-  useInformation,
-  useRisks,
-} from '../app/providers';
 import type { Requirement, UseCase, TestCase, Information, Risk } from '../types';
 import { useCustomAttributes } from './useCustomAttributes';
 import { diskFilterService } from '../services/diskFilterService';
 import type { SavedFilter, FilterState } from '../types/filters';
 import type { ArtifactKindId } from '../domain/artifactKinds';
+import { useAppStore } from '../state';
 
 // Types
 type ArtifactType = Exclude<ArtifactKindId, 'document'>;
@@ -142,11 +136,11 @@ interface UseAdvancedSearchOptions {
 }
 
 export function useAdvancedSearch({ isOpen }: UseAdvancedSearchOptions) {
-  const { requirements } = useRequirements();
-  const { useCases } = useUseCases();
-  const { testCases } = useTestCases();
-  const { information } = useInformation();
-  const { risks } = useRisks();
+  const requirements = useAppStore((s) => s.artifacts.requirement);
+  const useCases = useAppStore((s) => s.artifacts.useCase);
+  const testCases = useAppStore((s) => s.artifacts.testCase);
+  const information = useAppStore((s) => s.artifacts.information);
+  const risks = useAppStore((s) => s.artifacts.risk);
   const { definitions: customAttrDefs } = useCustomAttributes();
 
   // Query builder criteria

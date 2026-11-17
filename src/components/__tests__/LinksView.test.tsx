@@ -120,13 +120,8 @@ describe('LinksView', () => {
       });
     });
 
-    // Note: Empty state test requires mocking useFileSystem with empty links
-    // This is not easily done per-test with vi.mock hoisting
-    // The empty state is tested via UI interaction instead
-    it.skip('should show empty state when no links exist', async () => {
-      // This test is skipped because the component now uses useFileSystem
-      // and vi.mock is hoisted, making per-test mocking difficult
-      renderWithStore(<LinksView />, { state: storeState() });
+    it('should show empty state when no links exist', async () => {
+      renderWithStore(<LinksView />, { state: { ...storeState(), links: [] } });
 
       await waitFor(() => {
         expect(screen.getByText(/No links/i)).toBeInTheDocument();

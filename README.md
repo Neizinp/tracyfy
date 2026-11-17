@@ -220,12 +220,10 @@ npm run lint          # ESLint
 
 ```
 src/
-├── app/
-│   └── providers/           # React context providers
-│       ├── FileSystemProvider.tsx    # File system & Git operations
-│       ├── GlobalStateProvider.tsx   # Global artifact state
-│       ├── ArtifactProviders/        # Per-artifact type providers
-│       └── ...
+├── app/                        # App shell (content, routes)
+├── state/                      # The one app store (zustand) and its slices
+├── domain/                     # Pure TypeScript: kinds, links, file format
+├── storage/                    # The project repository (files + git)
 ├── components/
 │   ├── RequirementTree.tsx     # Hierarchical tree view
 │   ├── TraceabilityMatrix.tsx  # Relationship visualization

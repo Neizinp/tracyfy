@@ -19,26 +19,26 @@ const base = { description: '', status: 'draft', priority: 'medium', dateCreated
 async function populate(h: Harness) {
   const app = () => h.app();
   const req = await act(() =>
-    app().requirements.handleAddRequirement({
+    app().addArtifact('requirement', {
       ...base,
       title: 'Login',
       text: 'Shall log in',
     } as never)
   );
   const uc = await act(() =>
-    app().useCases.handleAddUseCase({ ...base, title: 'Sign in', actor: 'User' } as never)
+    app().addArtifact('useCase', { ...base, title: 'Sign in', actor: 'User' } as never)
   );
   const tc = await act(() =>
-    app().testCases.handleAddTestCase({ ...base, title: 'Login works' } as never)
+    app().addArtifact('testCase', { ...base, title: 'Login works' } as never)
   );
   const info = await act(() =>
-    app().information.handleAddInformation({ ...base, title: 'Glossary', text: 'Terms' } as never)
+    app().addArtifact('information', { ...base, title: 'Glossary', text: 'Terms' } as never)
   );
   const risk = await act(() =>
-    app().risks.handleAddRisk({ ...base, title: 'Outage', mitigation: 'Redundancy' } as never)
+    app().addArtifact('risk', { ...base, title: 'Outage', mitigation: 'Redundancy' } as never)
   );
   const doc = await act(() =>
-    app().documents.handleAddDocument({
+    app().addArtifact('document', {
       ...base,
       title: 'Spec',
       structure: [],
@@ -132,11 +132,11 @@ describe('integration: export', () => {
     h = await startApp();
     const app = () => h.app();
     const add = (title: string) =>
-      act(() => app().requirements.handleAddRequirement({ ...base, title, text: '' } as never));
+      act(() => app().addArtifact('requirement', { ...base, title, text: '' } as never));
     const login = (await add('Login'))!;
     const logout = (await add('Logout'))!;
     const tc = (await act(() =>
-      app().testCases.handleAddTestCase({ ...base, title: 'Log in and out' } as never)
+      app().addArtifact('testCase', { ...base, title: 'Log in and out' } as never)
     ))!;
     // One link stored from each end
     await act(() => app().createLink(tc.id, login.id, 'verifies'));
@@ -194,7 +194,7 @@ describe('integration: export', () => {
       expect.objectContaining({ sourceId: a.req.id, targetId: a.uc.id, type: 'satisfies' }),
     ]);
     // Imported artifacts are visible in the project the user imported into
-    expect(h.app().requirements.requirements.map((r) => r.id)).toContain(a.req.id);
+    expect(h.app().artifacts.requirement.map((r) => r.id)).toContain(a.req.id);
     expect(h.exists(`requirements/${a.req.id}.md`)).toBe(true);
     // Nothing left that the user can't commit
     expect(await h.invisibleDirtyPaths()).toEqual([]);

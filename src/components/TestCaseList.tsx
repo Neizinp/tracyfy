@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import type { TestCase, TestCaseColumnVisibility } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
-import { useCustomAttributes } from '../app/providers';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { verifiedRequirementIds } from '../domain/links';
 import { BaseArtifactTable, MarkdownCell } from './index';
 import type { ColumnDef } from './BaseArtifactTable';

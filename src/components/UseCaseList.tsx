@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import type { UseCase, UseCaseColumnVisibility } from '../types';
-import { useCustomAttributes } from '../app/providers';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { BaseArtifactTable, MarkdownCell } from './index';
 import type { ColumnDef } from './BaseArtifactTable';
 import type { SortConfig } from './SortableHeader';

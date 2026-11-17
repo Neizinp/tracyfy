@@ -3,7 +3,6 @@ import { BaseArtifactModal } from './BaseArtifactModal';
 import type { TestCase } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
-import { useUI } from '../app/providers';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useLinkService } from '../hooks/useLinkService';
 import { useCustomAttributes } from '../hooks/useCustomAttributes';
@@ -13,6 +12,7 @@ import { ArtifactOverviewFields } from './forms/ArtifactOverviewFields';
 import { ArtifactRelationshipsTab } from './forms/ArtifactRelationshipsTab';
 import { ArtifactDetailsSections } from './forms/ArtifactDetailsSections';
 import { FormField } from './forms/FormField';
+import { useAppStore } from '../state';
 
 interface TestCaseModalProps {
   isOpen: boolean;
@@ -35,7 +35,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
   onDelete,
   onBack,
 }) => {
-  const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
+  const openLinkDialog = useAppStore((s) => s.openLinkDialog);
 
   // Use the extracted hook for form state and handlers
   const {
@@ -236,9 +236,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
           loading={linksLoading}
           onAddLink={() => {
             if (testCase) {
-              setLinkSourceId(testCase.id);
-              setLinkSourceType('testCase');
-              setIsLinkModalOpen(true);
+              openLinkDialog(testCase.id, 'testCase');
             }
           }}
           onRemoveLink={(linkId) =>

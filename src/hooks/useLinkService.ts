@@ -1,10 +1,8 @@
 /**
  * useLinkService Hook
  *
- * React hook for reading/managing links. State comes from FileSystemProvider;
- * writes go through the provider so all views update immediately.
- * Provides loading state, caching, and easy access to link operations.
- * Now leverages the centralized LinksProvider for state management.
+ * React hook for reading/managing links. Links come from the store, and
+ * writes go through the store's actions so all views update immediately.
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -41,7 +39,7 @@ export function useLinkService(options: UseLinkServiceOptions = {}): UseLinkServ
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Get centralized links from FileSystemProvider
+  // Links and link actions from the store
   const isReady = useAppStore((s) => s.isReady);
   const allLinksFromProvider = useAppStore((s) => s.links);
   const createLinkInProvider = useAppStore((s) => s.createLink);

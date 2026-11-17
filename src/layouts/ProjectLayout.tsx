@@ -3,19 +3,13 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Layout, ModalManager } from '../components';
 import { GenericColumnSelector } from '../components/GenericColumnSelector';
-import { useUI, useImportExport, useCustomAttributes } from '../app/providers';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
+import { useProjectImportExport } from '../hooks/useProjectImportExport';
 import { loadDemoData } from '../services/demoDataService';
 import { activeIds } from '../utils/activeArtifacts';
-import type {
-  ColumnVisibility,
-  UseCaseColumnVisibility,
-  TestCaseColumnVisibility,
-  InformationColumnVisibility,
-  RiskColumnVisibility,
-  DocumentColumnVisibility,
-  ExportOptions,
-} from '../types';
+import type { ExportOptions } from '../types';
 import { useAppStore } from '../state';
+import type { ColumnsByKind } from '../state';
 
 /** Shown while a lazily loaded page chunk is being fetched */
 const PageLoadingFallback: React.FC = () => (
@@ -33,8 +27,13 @@ export const ProjectLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // UI context
-  const ui = useUI();
+  // UI state
+  const openModal = useAppStore((s) => s.openModal);
+  const openLinkDialog = useAppStore((s) => s.openLinkDialog);
+  const setSelectedArtifact = useAppStore((s) => s.setSelectedArtifact);
+  const setSearchQuery = useAppStore((s) => s.setSearchQuery);
+  const columnVisibility = useAppStore((s) => s.columnVisibility);
+  const setColumnVisibility = useAppStore((s) => s.setColumnVisibility);
 
   // Global state
   const requirements = useAppStore((s) => s.artifacts.requirement);
@@ -186,7 +185,7 @@ export const ProjectLayout: React.FC = () => {
   }, [getDefinitionsForType]);
 
   // Import/Export handlers
-  const importExport = useImportExport();
+  const importExport = useProjectImportExport();
 
   // User context
   const currentUser = useAppStore((s) => s.currentUser);
@@ -195,7 +194,7 @@ export const ProjectLayout: React.FC = () => {
   const startTask = useAppStore((s) => s.startTask);
   const endTask = useAppStore((s) => s.endTask);
 
-  const handleOpenProjectSettings = useCallback(() => ui.setIsProjectSettingsOpen(true), [ui]);
+  const handleOpenProjectSettings = useCallback(() => openModal('project-settings'), [openModal]);
   // Demo data (empty folders only), with double-click confirmation
   const showToast = useAppStore((s) => s.showToast);
   const demoConfirmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -262,22 +261,22 @@ export const ProjectLayout: React.FC = () => {
       projectName={project.name}
       onOpenProjectSettings={handleOpenProjectSettings}
       onLoadDemoData={isEmptyProject ? handleLoadDemoData : undefined}
-      onNewRequirement={() => ui.setIsNewRequirementModalOpen(true)}
-      onNewUseCase={() => ui.setIsUseCaseModalOpen(true)}
-      onNewTestCase={() => ui.setIsNewTestCaseModalOpen(true)}
-      onNewInformation={() => ui.setIsInformationModalOpen(true)}
-      onNewRisk={() => ui.setIsRiskModalOpen(true)}
-      onNewWorkflow={() => ui.setIsWorkflowModalOpen(true)}
+      onNewRequirement={() => openModal('requirement')}
+      onNewUseCase={() => openModal('useCase')}
+      onNewTestCase={() => openModal('testCase')}
+      onNewInformation={() => openModal('information')}
+      onNewRisk={() => openModal('risk')}
+      onNewWorkflow={() => openModal('workflow')}
       onNewLink={() => navigate('/links')}
-      onNewCustomAttribute={() => ui.setIsCustomAttributeModalOpen(true)}
-      onNewDocument={() => ui.openModal('document')}
+      onNewCustomAttribute={() => openModal('custom-attribute')}
+      onNewDocument={() => openModal('document')}
       onExport={importExport.handleExport}
       onImport={importExport.handleImport}
       onImportExcel={importExport.handleImportExcel}
-      onOpenExportModal={() => ui.setIsExportModalOpen(true)}
-      onOpenAdvancedSearch={() => ui.setIsAdvancedSearchOpen(true)}
-      onViewHistory={() => ui.setIsVersionHistoryOpen(true)}
-      onOpenUserSettings={() => ui.setIsUserSettingsModalOpen(true)}
+      onOpenExportModal={() => openModal('export')}
+      onOpenAdvancedSearch={() => openModal('search')}
+      onViewHistory={() => openModal('history')}
+      onOpenUserSettings={() => openModal('user-settings')}
       onHelp={() => navigate('/help')}
       onChangeFolder={changeDirectory}
       currentUserName={currentUser?.name}
@@ -344,7 +343,7 @@ export const ProjectLayout: React.FC = () => {
           endTask(taskId);
         }
       }}
-      onSearch={ui.setSearchQuery}
+      onSearch={setSearchQuery}
     >
       <div style={{ marginBottom: 'var(--spacing-md)' }}>
         <div
@@ -367,7 +366,7 @@ export const ProjectLayout: React.FC = () => {
               location.pathname.includes('/requirements/detailed')) && (
               <>
                 <button
-                  onClick={() => ui.setIsNewRequirementModalOpen(true)}
+                  onClick={() => openModal('requirement')}
                   className="tf-btn-primary"
                   style={{
                     display: 'flex',
@@ -389,9 +388,9 @@ export const ProjectLayout: React.FC = () => {
                 </button>
                 <GenericColumnSelector
                   columns={requirementColumns}
-                  visibleColumns={ui.columnVisibility as Record<string, boolean>}
+                  visibleColumns={columnVisibility.requirement as Record<string, boolean>}
                   onColumnVisibilityChange={(columns) => {
-                    ui.setColumnVisibility(columns as ColumnVisibility);
+                    setColumnVisibility('requirement', columns as ColumnsByKind['requirement']);
                     try {
                       localStorage.setItem('column-visibility', JSON.stringify(columns));
                     } catch (error) {
@@ -405,8 +404,8 @@ export const ProjectLayout: React.FC = () => {
               <>
                 <button
                   onClick={() => {
-                    ui.setEditingUseCase(null);
-                    ui.setIsUseCaseModalOpen(true);
+                    setSelectedArtifact(null);
+                    openModal('useCase');
                   }}
                   className="tf-btn-primary"
                   style={{
@@ -429,9 +428,9 @@ export const ProjectLayout: React.FC = () => {
                 </button>
                 <GenericColumnSelector
                   columns={useCaseColumnsDynamic}
-                  visibleColumns={ui.useCaseColumnVisibility as Record<string, boolean>}
+                  visibleColumns={columnVisibility.useCase as Record<string, boolean>}
                   onColumnVisibilityChange={(cols) =>
-                    ui.setUseCaseColumnVisibility(cols as UseCaseColumnVisibility)
+                    setColumnVisibility('useCase', cols as ColumnsByKind['useCase'])
                   }
                 />
               </>
@@ -439,7 +438,7 @@ export const ProjectLayout: React.FC = () => {
             {location.pathname.includes('/test-cases') && (
               <>
                 <button
-                  onClick={() => ui.setIsNewTestCaseModalOpen(true)}
+                  onClick={() => openModal('testCase')}
                   className="tf-btn-primary"
                   style={{
                     display: 'flex',
@@ -461,9 +460,9 @@ export const ProjectLayout: React.FC = () => {
                 </button>
                 <GenericColumnSelector
                   columns={testCaseColumnsDynamic}
-                  visibleColumns={ui.testCaseColumnVisibility as Record<string, boolean>}
+                  visibleColumns={columnVisibility.testCase as Record<string, boolean>}
                   onColumnVisibilityChange={(cols) =>
-                    ui.setTestCaseColumnVisibility(cols as TestCaseColumnVisibility)
+                    setColumnVisibility('testCase', cols as ColumnsByKind['testCase'])
                   }
                 />
               </>
@@ -472,8 +471,8 @@ export const ProjectLayout: React.FC = () => {
               <>
                 <button
                   onClick={() => {
-                    ui.setSelectedInformation(null);
-                    ui.setIsInformationModalOpen(true);
+                    setSelectedArtifact(null);
+                    openModal('information');
                   }}
                   className="tf-btn-primary"
                   style={{
@@ -496,9 +495,9 @@ export const ProjectLayout: React.FC = () => {
                 </button>
                 <GenericColumnSelector
                   columns={informationColumnsDynamic}
-                  visibleColumns={ui.informationColumnVisibility as Record<string, boolean>}
+                  visibleColumns={columnVisibility.information as Record<string, boolean>}
                   onColumnVisibilityChange={(cols) =>
-                    ui.setInformationColumnVisibility(cols as InformationColumnVisibility)
+                    setColumnVisibility('information', cols as ColumnsByKind['information'])
                   }
                 />
               </>
@@ -506,7 +505,7 @@ export const ProjectLayout: React.FC = () => {
             {location.pathname.includes('/risks') && (
               <>
                 <button
-                  onClick={() => ui.setIsRiskModalOpen(true)}
+                  onClick={() => openModal('risk')}
                   className="tf-btn-primary"
                   style={{
                     display: 'flex',
@@ -528,9 +527,9 @@ export const ProjectLayout: React.FC = () => {
                 </button>
                 <GenericColumnSelector
                   columns={riskColumnsDynamic}
-                  visibleColumns={ui.riskColumnVisibility as Record<string, boolean>}
+                  visibleColumns={columnVisibility.risk as Record<string, boolean>}
                   onColumnVisibilityChange={(cols) =>
-                    ui.setRiskColumnVisibility(cols as RiskColumnVisibility)
+                    setColumnVisibility('risk', cols as ColumnsByKind['risk'])
                   }
                 />
               </>
@@ -539,8 +538,8 @@ export const ProjectLayout: React.FC = () => {
               <>
                 <button
                   onClick={() => {
-                    ui.setEditingDocument(null);
-                    ui.setIsEditDocumentModalOpen(true);
+                    setSelectedArtifact(null);
+                    openModal('document', true);
                   }}
                   className="tf-btn-primary"
                   style={{
@@ -563,9 +562,9 @@ export const ProjectLayout: React.FC = () => {
                 </button>
                 <GenericColumnSelector
                   columns={documentColumnsDynamic}
-                  visibleColumns={ui.documentColumnVisibility as Record<string, boolean>}
+                  visibleColumns={columnVisibility.document as Record<string, boolean>}
                   onColumnVisibilityChange={(cols) =>
-                    ui.setDocumentColumnVisibility(cols as DocumentColumnVisibility)
+                    setColumnVisibility('document', cols as ColumnsByKind['document'])
                   }
                 />
               </>
@@ -574,8 +573,7 @@ export const ProjectLayout: React.FC = () => {
               <button
                 onClick={() => {
                   // No preset source: the user picks one in the modal
-                  ui.setLinkSourceId(null);
-                  ui.setIsLinkModalOpen(true);
+                  openLinkDialog(null);
                 }}
                 style={{
                   display: 'flex',
@@ -598,7 +596,7 @@ export const ProjectLayout: React.FC = () => {
             )}
             {location.pathname.includes('/custom-attributes') && (
               <button
-                onClick={() => ui.setIsCustomAttributeModalOpen(true)}
+                onClick={() => openModal('custom-attribute')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -620,7 +618,7 @@ export const ProjectLayout: React.FC = () => {
             )}
             {location.pathname.includes('/workflows') && (
               <button
-                onClick={() => ui.setIsWorkflowModalOpen(true)}
+                onClick={() => openModal('workflow')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

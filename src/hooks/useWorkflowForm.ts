@@ -7,13 +7,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Workflow, Requirement, UseCase, TestCase, Information, Risk } from '../types';
-import {
-  useRequirements,
-  useUseCases,
-  useTestCases,
-  useInformation,
-  useRisks,
-} from '../app/providers';
 import { diskWorkflowService } from '../services/diskWorkflowService';
 import { notifyError, useAppStore } from '../state';
 
@@ -27,11 +20,11 @@ interface UseWorkflowFormOptions {
 export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWorkflowFormOptions) {
   const currentUser = useAppStore((s) => s.currentUser);
   const people = useAppStore((s) => s.people);
-  const { requirements } = useRequirements();
-  const { useCases } = useUseCases();
-  const { testCases } = useTestCases();
-  const { information } = useInformation();
-  const { risks } = useRisks();
+  const requirements = useAppStore((s) => s.artifacts.requirement);
+  const useCases = useAppStore((s) => s.artifacts.useCase);
+  const testCases = useAppStore((s) => s.artifacts.testCase);
+  const information = useAppStore((s) => s.artifacts.information);
+  const risks = useAppStore((s) => s.artifacts.risk);
 
   // Form state
   const [title, setTitle] = useState('');

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import type { Risk, RiskColumnVisibility } from '../types';
-import { useCustomAttributes } from '../app/providers';
+import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { formatDateTime } from '../utils/dateUtils';
 import { BaseArtifactTable, MarkdownCell } from './index';
 import type { ColumnDef } from './BaseArtifactTable';

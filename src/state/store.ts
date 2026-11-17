@@ -15,13 +15,17 @@ import { createProjectSlice, type ProjectSlice } from './slices/project';
 import { createGitSlice, type GitSlice } from './slices/git';
 import { createUserSlice, type UserSlice } from './slices/user';
 import { createBaselinesSlice, type BaselinesSlice } from './slices/baselines';
+import { createArtifactsSlice, type ArtifactsSlice } from './slices/artifacts';
+import { createUiSlice, type UiSlice } from './slices/ui';
 import { createTasksSlice, type TasksSlice } from './slices/tasks';
 import { createToastsSlice, type ToastsSlice } from './slices/toasts';
 
 export type AppState = ProjectSlice &
+  ArtifactsSlice &
   GitSlice &
   UserSlice &
   BaselinesSlice &
+  UiSlice &
   TasksSlice &
   ToastsSlice;
 
@@ -31,9 +35,11 @@ export type AppStore = StoreApi<AppState>;
 export function createAppStore(): AppStore {
   return createStore<AppState>()((...a) => ({
     ...createProjectSlice(...a),
+    ...createArtifactsSlice(...a),
     ...createGitSlice(...a),
     ...createUserSlice(...a),
     ...createBaselinesSlice(...a),
+    ...createUiSlice(...a),
     ...createTasksSlice(...a),
     ...createToastsSlice(...a),
   }));
