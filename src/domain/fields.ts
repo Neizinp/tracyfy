@@ -70,6 +70,7 @@ export const CREATED: FieldDef = {
   label: 'Created',
   type: 'date',
   readOnly: true,
+  showInTable: true,
 };
 export const REVISION: FieldDef = { id: 'revision', label: 'Rev', type: 'text', readOnly: true };
 

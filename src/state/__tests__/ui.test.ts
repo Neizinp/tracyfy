@@ -74,13 +74,21 @@ describe('ui slice', () => {
     expect(store.getState().linkSourceType).toBeNull();
   });
 
-  it('changes the visible columns of one kind only', () => {
+  it('remembers table columns per project folder', () => {
+    localStorage.clear();
     const store = createAppStore();
-    const before = store.getState().columnVisibility;
-    store.getState().setColumnVisibility('risk', { ...before.risk, owner: false });
+    store.setState({ directoryName: 'door-controller' });
+    store.getState().setColumnVisible('risk', 'owner', false);
+    expect(store.getState().columnVisibility).toEqual({ risk: { owner: false } });
 
-    expect(store.getState().columnVisibility.risk.owner).toBe(false);
-    expect(store.getState().columnVisibility.requirement).toBe(before.requirement);
+    // Another folder has its own columns; the same folder gets them back
+    const other = createAppStore();
+    other.setState({ directoryName: 'elevator' });
+    expect(other.getState().columnVisibility).toEqual({});
+    const again = createAppStore();
+    again.setState({ directoryName: 'door-controller' });
+    expect(again.getState().columnVisibility).toEqual({ risk: { owner: false } });
+    localStorage.clear();
   });
 
   it('updates the search query', () => {

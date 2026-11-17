@@ -368,3 +368,43 @@ input[type='radio'] {
   background-color: var(--color-error-bg);
   color: var(--color-error);
 }
+
+.tf-toolbar-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+/* Table cells */
+.tf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.tf-chip {
+  font-size: var(--font-size-xs);
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+}
+.tf-muted {
+  color: var(--color-text-muted);
+}
+.tf-accent {
+  color: var(--color-accent);
+  margin-bottom: 2px;
+}
+.tf-nowrap {
+  white-space: nowrap;
+}

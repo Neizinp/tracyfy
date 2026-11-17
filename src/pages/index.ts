@@ -1,13 +1,7 @@
-export { RequirementsPage } from './RequirementsPage';
 export { TraceabilityDashboardPage } from './TraceabilityDashboardPage';
-export { UseCasesPage } from './UseCasesPage';
-export { TestCasesPage } from './TestCasesPage';
-export { InformationPage } from './InformationPage';
-export { RisksPage } from './RisksPage';
 export { CustomAttributesPage } from './CustomAttributesPage';
 export { ProjectManual } from './ProjectManual';
 export { HelpCenter } from './HelpCenter';
 export { EngineeringGuide } from './EngineeringGuide';
-export { DocumentsPage } from './DocumentsPage';
 export { WorkflowsPage } from './WorkflowsPage';
 export { LinksPage } from './LinksPage';
