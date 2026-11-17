@@ -32,7 +32,10 @@ describe('pending changes coverage', () => {
       id: '1234-abcd.png',
     });
     expect(classifyPendingPath('workflows/WF-001.md')).toMatchObject({ type: 'workflow' });
-    expect(classifyPendingPath('links/LINK-001.md')).toBeNull();
+    expect(classifyPendingPath('links/LINK-001.md')).toMatchObject({
+      type: 'link',
+      id: 'LINK-001',
+    });
     expect(classifyPendingPath('README.md')).toBeNull();
   });
 });

@@ -74,7 +74,7 @@ interface FileSystemContextValue {
   saveProject: (project: Project) => Promise<void>;
   saveLink: (link: Link) => Promise<void>;
   deleteLink: (id: string) => Promise<void>;
-  /** Create (and auto-commit) a link; updates provider state so the UI reflects it immediately */
+  /** Create a link (a pending change like any other file); updates provider state at once */
   createLink: (sourceId: string, targetId: string, type: LinkType) => Promise<Link>;
   updateLink: (id: string, updates: Partial<Link>) => Promise<Link | null>;
   getNextId: (type: StoredType) => Promise<string>;
@@ -490,8 +490,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (link: Link) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (!isE2EMode()) {
-        // Link files are hidden from pending changes, so commit them right away
-        await diskLinkService.save(link, `Update link ${link.id}`);
+        await diskLinkService.save(link);
       }
       upsertLinkState(link);
       if (!isE2EMode()) refreshStatus(); // Fire-and-forget for responsive UI

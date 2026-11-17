@@ -85,12 +85,6 @@ export function parseStatusMatrix(matrix: [string, number, number, number][]): {
   for (const [filepath, headStatus, workdirStatus, stageStatus] of matrix) {
     allFiles.add(filepath);
 
-    // Debug: log the raw status for REQ-001
-    if (filepath.includes('REQ-001')) {
-      console.log(
-        `[parseStatusMatrix] ${filepath}: HEAD=${headStatus}, WORKDIR=${workdirStatus}, STAGE=${stageStatus}`
-      );
-    }
     // [filepath, HEAD, WORKDIR, STAGE]
     // 0 = absent, 1 = present unchanged, 2 = modified
     if (headStatus === 0 && workdirStatus === 2 && stageStatus === 0) {

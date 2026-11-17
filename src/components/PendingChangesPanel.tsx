@@ -24,6 +24,7 @@ export function PendingChangesPanel() {
     commitFile,
     revertFile,
     project,
+    links,
     getArtifactHistory,
     refreshStatus,
   } = useFileSystem();
@@ -65,7 +66,8 @@ export function PendingChangesPanel() {
         if (!classified) return null;
         const { type, id, filename } = classified;
 
-        const status = fs.status === 'new' ? 'new' : 'modified';
+        const status =
+          fs.status === 'new' ? 'new' : fs.status === 'deleted' ? 'deleted' : 'modified';
 
         // For the project file, show the project name
         // For assets, use the filename (which is a UUID)
@@ -77,13 +79,16 @@ export function PendingChangesPanel() {
           title = `Image: ${filename}`;
         } else if (type === 'saved-filter') {
           title = `Saved Search: ${id}`;
+        } else if (type === 'link') {
+          const link = links.find((l) => l.id === id);
+          if (link) title = `${id}: ${link.sourceId} ${link.type} ${link.targetId}`;
         }
 
         return {
           id,
           type,
           title,
-          status: status as 'new' | 'modified',
+          status,
           path: fs.path,
           commitMessage: commitMessages[id] || '',
         };
@@ -127,7 +132,12 @@ export function PendingChangesPanel() {
 
         // For links, use appropriate default
         if (change.type === 'link') {
-          defaults[change.id] = change.status === 'new' ? 'Add link' : 'Update link';
+          defaults[change.id] =
+            change.title !== change.id
+              ? `${change.status === 'new' ? 'Add' : 'Update'} link ${change.title}`
+              : change.status === 'deleted'
+                ? `Remove link ${change.id}`
+                : 'Update link';
           processedDefaultsRef.current.add(change.id);
           continue;
         }
@@ -178,7 +188,7 @@ export function PendingChangesPanel() {
     setDefaults();
     setParsedChanges(filteredChanges);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingChanges, project, getArtifactHistory]);
+  }, [pendingChanges, project, links, getArtifactHistory]);
 
   const handleCommitMessageChange = (id: string, message: string) => {
     setCommitMessages((prev) => ({ ...prev, [id]: message }));
@@ -266,11 +276,15 @@ export function PendingChangesPanel() {
   };
 
   const getStatusColor = (status: string) => {
-    return status === 'new' ? 'var(--color-success-light)' : 'var(--color-warning-light)';
+    if (status === 'new') return 'var(--color-success-light)';
+    if (status === 'deleted') return 'var(--color-error-light)';
+    return 'var(--color-warning-light)';
   };
 
   const getStatusText = (status: string) => {
-    return status === 'new' ? 'New' : 'Modified';
+    if (status === 'new') return 'New';
+    if (status === 'deleted') return 'Deleted';
+    return 'Modified';
   };
 
   if (statusError) {

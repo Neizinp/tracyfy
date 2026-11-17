@@ -240,7 +240,7 @@ export async function startApp(
       await harness.restart();
     },
     commitMessages: async () => {
-      const log = await git.log({ fs, dir });
+      const log = await git.log({ fs, dir }).catch(() => []); // no commits yet
       return log.map((c) => c.commit.message.trim());
     },
     settle,

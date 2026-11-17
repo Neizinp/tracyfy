@@ -12,11 +12,12 @@ import { ARTIFACT_KINDS } from '../domain/artifactKinds';
 /** The project's name and description, at the folder root */
 export const PROJECT_FILE = 'project.md';
 
-export const AUTO_COMMITTED_FOLDERS = ['links', 'custom-attributes'] as const;
+export const AUTO_COMMITTED_FOLDERS = ['custom-attributes'] as const;
 
 const FOLDER_TO_TYPE: Record<string, ArtifactChange['type']> = {
   ...Object.fromEntries(ARTIFACT_KINDS.map((k) => [k.folder, k.id])),
   assets: 'asset',
+  links: 'link',
   'saved-filters': 'saved-filter',
   workflows: 'workflow',
 };

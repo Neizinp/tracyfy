@@ -11,7 +11,8 @@ export interface ArtifactChange {
     | 'saved-filter'
     | 'workflow';
   title: string;
-  status: 'new' | 'modified'; // No 'deleted' - artifacts can only be removed from projects
+  /** Artifacts are never deleted from disk, but a removed link is a deleted file */
+  status: 'new' | 'modified' | 'deleted';
   path: string;
   commitMessage?: string; // User's pending commit message
 }
