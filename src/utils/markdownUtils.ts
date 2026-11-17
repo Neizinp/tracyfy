@@ -3,7 +3,6 @@ import type {
   UseCase,
   TestCase,
   Information,
-  User,
   Project,
   Risk,
   ArtifactDocument,
@@ -287,38 +286,6 @@ export function markdownToInformation(markdown: string): Information {
     deletedAt: (frontmatter.deletedAt as number) || undefined,
     revision: (frontmatter.revision as string) || '01',
     customAttributes: ensureArray<CustomAttributeValue>(frontmatter.customAttributes),
-  };
-}
-
-/**
- * Convert a User to Markdown with YAML frontmatter
- */
-export function userToMarkdown(user: User): string {
-  const frontmatter = {
-    id: user.id,
-    name: user.name,
-    dateCreated: user.dateCreated,
-    lastModified: user.lastModified,
-  };
-
-  const yaml = objectToYaml(frontmatter);
-
-  const body = `# ${user.name}`.trim();
-
-  return `${yaml}\n\n${body}`;
-}
-
-/**
- * Parse Markdown content into a User object
- */
-export function markdownToUser(markdown: string): User {
-  const { frontmatter } = parseYamlFrontmatter(markdown);
-
-  return {
-    id: (frontmatter.id as string) || '',
-    name: (frontmatter.name as string) || '',
-    dateCreated: (frontmatter.dateCreated as number) || Date.now(),
-    lastModified: (frontmatter.lastModified as number) || Date.now(),
   };
 }
 

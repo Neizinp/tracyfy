@@ -179,7 +179,6 @@ describe('VersionHistory', () => {
       expect(screen.getByText('PROJ')).toBeInTheDocument();
       expect(screen.getByText('LINK')).toBeInTheDocument();
       expect(screen.getByText('WF')).toBeInTheDocument();
-      expect(screen.getByText('USER')).toBeInTheDocument();
       expect(screen.getByText('OTHER')).toBeInTheDocument();
     });
 

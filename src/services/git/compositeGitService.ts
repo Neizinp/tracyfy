@@ -5,6 +5,8 @@ import { gitHistoryService } from './gitHistoryService';
 import { gitSyncService } from './gitSyncService';
 import { gitRemoteService } from './gitRemoteService';
 import { gitBaselineService } from './gitBaselineService';
+import { gitBackend, getRootDir } from './gitBackend';
+import type { GitAuthor } from '../../../shared/gitOps';
 import {
   type FileStatus,
   type CommitInfo,
@@ -110,8 +112,17 @@ class CompositeGitService {
     return gitCoreService.getStatus();
   }
 
-  async commitFile(path: string, msg: string, author?: string): Promise<void> {
-    return gitCoreService.commitFile(path, msg, author);
+  async commitFile(path: string, msg: string): Promise<void> {
+    return gitCoreService.commitFile(path, msg);
+  }
+
+  /** The user: user.name / user.email in this repository's .git/config (P5) */
+  async getAuthor(): Promise<GitAuthor | null> {
+    return gitBackend().getAuthor(getRootDir());
+  }
+
+  async setAuthor(author: GitAuthor): Promise<void> {
+    return gitBackend().setAuthor(getRootDir(), author);
   }
 
   async revertFile(path: string): Promise<void> {

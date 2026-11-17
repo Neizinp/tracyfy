@@ -320,10 +320,9 @@ class GitCoreService {
   }
 
   /**
-   * Commit a single file (Atomic Commit)
-   * @param authorName - Optional author name, defaults to 'Tracyfy User'
+   * Commit a single file. The author is the repository's user.name (P5).
    */
-  async commitFile(filepath: string, message: string, authorName?: string): Promise<void> {
+  async commitFile(filepath: string, message: string): Promise<void> {
     if (!this.initialized) {
       throw new Error('Git service not initialized');
     }
@@ -334,20 +333,15 @@ class GitCoreService {
         debug.log(`[commitFile] Starting commit for ${filepath}...`);
         const fileExists = (await fileSystemService.readFileBinary(filepath)) !== null;
         debug.log(`[commitFile] File exists: ${fileExists}`);
-        const authorNameToUse = authorName || 'Tracyfy User';
-        const author = { name: authorNameToUse, email: 'user@tracyfy.local' };
 
         // Stage the file (or its deletion) and commit; HEAD safety is part of commitPaths
         const commitOid = await gitBackend().commitPaths(
           getRootDir(),
           fileExists ? { add: [filepath] } : { remove: [filepath] },
-          message,
-          author
+          message
         );
 
-        debug.log(
-          `[commitFile] Successfully committed ${filepath} by ${authorNameToUse}, SHA: ${commitOid}`
-        );
+        debug.log(`[commitFile] Successfully committed ${filepath} SHA: ${commitOid}`);
 
         // Proactively cache the file for this commit
         this.addToCacheFn(commitOid, [filepath]);

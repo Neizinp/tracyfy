@@ -84,6 +84,11 @@ export interface Harness {
    * bookkeeping files has to commit them itself.
    */
   invisibleDirtyPaths: () => Promise<string[]>;
+  /**
+   * A colleague commits to this repository (as a pull would bring in), then
+   * the app restarts so it sees them as a person in the history.
+   */
+  colleagueCommits: (name: string) => Promise<void>;
   /** Commit messages on HEAD, newest first */
   commitMessages: () => Promise<string[]>;
   /** Wait until the debounced git status refresh in the app has settled */
@@ -169,6 +174,9 @@ export async function startApp(
     { timeout: READY_TIMEOUT }
   );
   fireEvent.change(nameInput, { target: { value: options.userName ?? 'Test User' } });
+  fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
+    target: { value: 'test@example.com' },
+  });
   fireEvent.submit(nameInput.closest('form')!);
   await waitFor(() => expect(app().user.currentUser?.name).toBe(options.userName ?? 'Test User'));
 
@@ -217,6 +225,19 @@ export async function startApp(
         .map(([filepath]) => filepath)
         .filter((p) => classifyPendingPath(p) === null)
         .sort();
+    },
+    colleagueCommits: async (name) => {
+      const file = `notes/${name.replace(/\W+/g, '-')}.txt`;
+      fs.mkdirSync(path.join(dir, 'notes'), { recursive: true });
+      fs.writeFileSync(path.join(dir, file), `${name} was here\n`);
+      await git.add({ fs, dir, filepath: file });
+      await git.commit({
+        fs,
+        dir,
+        message: `Note from ${name}`,
+        author: { name, email: `${name.toLowerCase()}@example.com` },
+      });
+      await harness.restart();
     },
     commitMessages: async () => {
       const log = await git.log({ fs, dir });

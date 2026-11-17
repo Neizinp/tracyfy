@@ -66,10 +66,7 @@ export function useArtifactCRUD<T extends BaseArtifact>({
   const handleAdd = useCallback(
     async (data: Omit<T, 'id' | 'lastModified' | 'revision'>) => {
       if (!currentUser) {
-        showToast(
-          'Please select a user before creating artifacts. Go to Settings → Users to select a user.',
-          'warning'
-        );
+        showToast('Set your name in User Settings before creating artifacts.', 'warning');
         return null;
       }
 

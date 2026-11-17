@@ -5,7 +5,6 @@ import { debug } from '../../utils/debug';
  * Handles tag/baseline operations: creating, listing, and getting details of tags.
  */
 
-import { DEFAULT_AUTHOR } from '../../../shared/gitOps';
 import { gitBackend, getRootDir } from './gitBackend';
 import type { TagDetails } from './types';
 
@@ -24,7 +23,7 @@ class GitBaselineService {
       throw new Error('Git service not initialized');
     }
 
-    await gitBackend().annotatedTag(getRootDir(), tagName, message, DEFAULT_AUTHOR);
+    await gitBackend().annotatedTag(getRootDir(), tagName, message);
   }
 
   /**

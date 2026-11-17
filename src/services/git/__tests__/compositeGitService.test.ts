@@ -99,11 +99,7 @@ describe('CompositeGitService', () => {
 
     it('should delegate commitFile', async () => {
       await compositeGitService.commitFile('path/to/file', 'feat: update');
-      expect(gitCoreService.commitFile).toHaveBeenCalledWith(
-        'path/to/file',
-        'feat: update',
-        undefined
-      );
+      expect(gitCoreService.commitFile).toHaveBeenCalledWith('path/to/file', 'feat: update');
     });
   });
 

@@ -102,6 +102,7 @@ vi.mock('isomorphic-git', () => ({
     remove: vi.fn(),
     isDescendent: vi.fn(),
     currentBranch: vi.fn(),
+    getConfig: vi.fn(async () => undefined),
   },
 }));
 

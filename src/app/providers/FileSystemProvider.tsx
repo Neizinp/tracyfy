@@ -59,9 +59,6 @@ interface FileSystemContextValue {
   risks: Risk[];
   documents: ArtifactDocument[];
   links: Link[];
-  // Preloaded user data for fast access
-  preloadedUsers: import('../../types').User[];
-  preloadedCurrentUserId: string;
   // Git-related
   pendingChanges: FileStatus[];
   /** Set when git status could not be read (shown instead of "No pending changes") */
@@ -84,7 +81,8 @@ interface FileSystemContextValue {
   // Reload from disk
   reloadData: () => Promise<void>;
   // Git operations
-  commitFile: (filepath: string, message: string, authorName?: string) => Promise<void>;
+  /** Commit one file; the author is the repository's user.name */
+  commitFile: (filepath: string, message: string) => Promise<void>;
   revertFile: (filepath: string) => Promise<void>;
   getArtifactHistory: (kind: ArtifactKindId, id: string) => Promise<CommitInfo[]>;
   readFileAtCommit: (filepath: string, commitHash: string) => Promise<string | null>;
@@ -140,10 +138,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [useCases, setUseCases] = useState<UseCase[]>([]);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
 
-  // Preloaded user data for fast access by UserProvider
-  const [preloadedUsers, setPreloadedUsers] = useState<import('../../types').User[]>([]);
-  const [preloadedCurrentUserId, setPreloadedCurrentUserId] = useState<string>('');
-
   // Counter for E2E mode to generate unique IDs
   const [e2eCounters, setE2eCounters] = useState<Partial<Record<StoredType, number>>>({});
 
@@ -195,10 +189,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setLinks(data.links);
       setRisks(data.risks);
 
-      // Preload user data so UserProvider doesn't need a second disk read
-      setPreloadedUsers(data.users);
-      setPreloadedCurrentUserId(data.currentUserId);
-
       debug.log('[reloadData] Data loaded:', {
         requirements: data.requirements.length,
         useCases: data.useCases.length,
@@ -207,7 +197,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         risks: data.risks.length,
         documents: data.documents.length,
         links: data.links.length,
-        users: data.users.length,
       });
     } finally {
       endTask(taskId);
@@ -577,13 +566,11 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Git operations
   const commitFile = useCallback(
-    async (filepath: string, message: string, authorName?: string) => {
+    async (filepath: string, message: string) => {
       if (!isReady) throw new Error('Filesystem not ready');
       if (isE2EMode()) return; // Skip git operations in E2E mode
-      debug.log(
-        `[commitFile] Committing ${filepath} with message: ${message} by ${authorName || 'Tracyfy User'}`
-      );
-      await realGitService.commitFile(filepath, message, authorName);
+      debug.log(`[commitFile] Committing ${filepath} with message: ${message}`);
+      await realGitService.commitFile(filepath, message);
       // Trigger sync status update
       window.dispatchEvent(new CustomEvent('git-check'));
     },
@@ -665,8 +652,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setRisks([]);
     setDocuments([]);
     setLinks([]);
-    setPreloadedUsers([]);
-    setPreloadedCurrentUserId('');
   }, []);
 
   // Static capability check; no need to recompute per render
@@ -690,8 +675,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       risks,
       documents,
       links,
-      preloadedUsers,
-      preloadedCurrentUserId,
       // Git
       pendingChanges,
       statusError,
@@ -738,8 +721,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       links,
       pendingChanges,
       statusError,
-      preloadedCurrentUserId,
-      preloadedUsers,
       project,
       pull,
       push,

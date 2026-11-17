@@ -21,7 +21,6 @@ export const ARTIFACT_TYPE_CONFIG: Record<string, { label: string; color: string
   project: { label: 'PROJ', color: 'var(--color-text-muted)' },
   link: { label: 'LINK', color: 'var(--color-text-secondary)' },
   workflow: { label: 'WF', color: 'var(--color-info-light)' },
-  user: { label: 'USER', color: 'var(--color-accent)' },
   other: { label: 'OTHER', color: 'var(--color-text-muted)' },
 };
 
@@ -30,7 +29,6 @@ const FOLDER_TO_TYPE: Record<string, string> = {
   'project.md': 'project',
   links: 'link',
   workflows: 'workflow',
-  users: 'user',
 };
 
 // Filter category of a file path ('other' for unrecognized folders)

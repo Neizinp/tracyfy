@@ -11,6 +11,7 @@
  * gitOps.d.ts.
  */
 
+/** Author of commits made before the user has set user.name in the repository */
 export const DEFAULT_AUTHOR = Object.freeze({ name: 'Tracyfy User', email: 'user@tracyfy.local' });
 
 /** Error thrown when a commit would discard commits on main (see ensureHeadAttached) */
@@ -85,9 +86,29 @@ export function createGitOps({ fs, git, getHttp, corsProxy }) {
     });
   }
 
+  /** The repository's user.name / user.email (.git/config), or null if no name is set */
+  async function getAuthor(dir) {
+    const name = await git.getConfig({ fs, dir, path: 'user.name' });
+    if (!name) return null;
+    const email = await git.getConfig({ fs, dir, path: 'user.email' });
+    return { name, email: email || '' };
+  }
+
+  /** The git author is the user (P5 in docs/DESIGN.md) */
+  async function authorOf(dir) {
+    return (await getAuthor(dir)) || DEFAULT_AUTHOR;
+  }
+
   return {
     canMoveMainTo,
     ensureHeadAttached,
+    getAuthor,
+
+    /** Set user.name / user.email in the repository's own config (not committed) */
+    async setAuthor(dir, { name, email }) {
+      await git.setConfig({ fs, dir, path: 'user.name', value: name });
+      await git.setConfig({ fs, dir, path: 'user.email', value: email });
+    },
 
     async init(dir) {
       await git.init({ fs, dir, defaultBranch: 'main' });
@@ -103,12 +124,12 @@ export function createGitOps({ fs, git, getHttp, corsProxy }) {
      * them, after making sure HEAD is safely attached to main.
      * @returns {Promise<string>} the new commit oid
      */
-    async commitPaths(dir, { add = [], remove = [] }, message, author) {
+    async commitPaths(dir, { add = [], remove = [] }, message) {
       await ensureHeadAttached(dir);
       const cache = {};
       for (const filepath of remove) await git.remove({ fs, dir, filepath, cache });
       for (const filepath of add) await git.add({ fs, dir, filepath, cache });
-      return git.commit({ fs, dir, message, author: author || DEFAULT_AUTHOR, cache });
+      return git.commit({ fs, dir, message, author: await authorOf(dir), cache });
     },
 
     /** Discard working-tree changes to one file */
@@ -123,6 +144,7 @@ export function createGitOps({ fs, git, getHttp, corsProxy }) {
         hash: c.oid,
         message: c.commit.message,
         author: c.commit.author.name,
+        authorEmail: c.commit.author.email,
         timestamp: c.commit.author.timestamp * 1000,
         parent: c.commit.parent,
       }));
@@ -150,8 +172,8 @@ export function createGitOps({ fs, git, getHttp, corsProxy }) {
       return (await git.currentBranch({ fs, dir })) || 'main';
     },
 
-    async annotatedTag(dir, ref, message, tagger) {
-      await git.annotatedTag({ fs, dir, ref, message, tagger: tagger || DEFAULT_AUTHOR });
+    async annotatedTag(dir, ref, message) {
+      await git.annotatedTag({ fs, dir, ref, message, tagger: await authorOf(dir) });
     },
 
     async listTags(dir) {
@@ -188,12 +210,12 @@ export function createGitOps({ fs, git, getHttp, corsProxy }) {
     },
 
     /** @returns {Promise<{ ok: boolean, conflicts: string[] }>} */
-    async pull(dir, { remote, branch, token, author } = {}) {
+    async pull(dir, { remote, branch, token } = {}) {
       try {
         await git.pull({
           ...(await remoteOptions(dir, remote, token)),
           ref: branch || 'main',
-          author: author || DEFAULT_AUTHOR,
+          author: await authorOf(dir),
         });
         return { ok: true, conflicts: [] };
       } catch (error) {
@@ -210,6 +232,8 @@ export function createGitOps({ fs, git, getHttp, corsProxy }) {
 export const GIT_OP_NAMES = Object.freeze([
   'canMoveMainTo',
   'ensureHeadAttached',
+  'getAuthor',
+  'setAuthor',
   'init',
   'statusMatrix',
   'commitPaths',

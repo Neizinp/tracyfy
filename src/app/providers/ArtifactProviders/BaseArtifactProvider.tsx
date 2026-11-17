@@ -70,10 +70,7 @@ export function createArtifactProvider<T extends BaseArtifact>(options: CreatePr
     const handleEdit = useCallback(
       (item: T) => {
         if (!currentUser) {
-          showToast(
-            'Please select a user before editing artifacts. Go to Settings → Users to select a user.',
-            'warning'
-          );
+          showToast('Set your name in User Settings before editing artifacts.', 'warning');
           return;
         }
         setEditingItem(item);

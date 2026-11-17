@@ -6,7 +6,7 @@
 
 import { BaseArtifactService, type ArtifactSerializer } from './baseArtifactService';
 import type { StoredType } from './storedTypes';
-import type { Requirement, UseCase, TestCase, Information, Risk, User } from '../types';
+import type { Requirement, UseCase, TestCase, Information, Risk } from '../types';
 import {
   requirementToMarkdown,
   markdownToRequirement,
@@ -18,8 +18,6 @@ import {
   markdownToInformation,
   riskToMarkdown,
   markdownToRisk,
-  userToMarkdown,
-  markdownToUser,
 } from '../utils/markdownUtils';
 
 // Requirements Service
@@ -63,13 +61,6 @@ const riskSerializer: ArtifactSerializer<Risk> = {
 };
 export const riskService = new BaseArtifactService<Risk>('risk', riskSerializer);
 
-// Users Service
-const userSerializer: ArtifactSerializer<User> = {
-  serialize: userToMarkdown,
-  deserialize: markdownToUser,
-};
-export const userService = new BaseArtifactService<User>('user', userSerializer);
-
 // Registry of all artifact services for generic iteration
 import { diskLinkService } from './diskLinkService';
 import { diskWorkflowService } from './diskWorkflowService';
@@ -84,7 +75,6 @@ export const ALL_ARTIFACT_SERVICES: Record<StoredType, BaseArtifactService<any>>
   testCase: testCaseService,
   information: informationService,
   risk: riskService,
-  user: userService,
   link: diskLinkService,
   workflow: diskWorkflowService,
   customAttribute: diskCustomAttributeService,

@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { FileText, GitCommit, AlertCircle } from 'lucide-react';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
-import { useUser } from '../app/providers/UserProvider';
 import { useBackgroundTaskActions } from '../app/providers/BackgroundTasksProvider';
 import { debug } from '../utils/debug';
 import type { ArtifactChange } from '../types';
@@ -12,7 +11,6 @@ import { isKindId, kind, type ArtifactKindId } from '../domain/artifactKinds';
 const OTHER_CHANGE_LABELS: Record<Exclude<ArtifactChange['type'], ArtifactKindId>, string> = {
   project: 'Project',
   asset: 'Assets',
-  user: 'Users',
   link: 'Links',
   'custom-attribute': 'Custom Attributes',
   'saved-filter': 'Saved Searches',
@@ -29,7 +27,6 @@ export function PendingChangesPanel() {
     getArtifactHistory,
     refreshStatus,
   } = useFileSystem();
-  const { currentUser } = useUser();
   const { startTask, endTask } = useBackgroundTaskActions();
   const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
   const [parsedChanges, setParsedChanges] = useState<ArtifactChange[]>([]);
@@ -124,13 +121,6 @@ export function PendingChangesPanel() {
         if (change.type === 'saved-filter') {
           defaults[change.id] =
             change.status === 'new' ? 'Add saved search' : 'Update saved search';
-          processedDefaultsRef.current.add(change.id);
-          continue;
-        }
-
-        // For users, use appropriate default
-        if (change.type === 'user') {
-          defaults[change.id] = change.status === 'new' ? 'Add user' : 'Update user';
           processedDefaultsRef.current.add(change.id);
           continue;
         }
@@ -240,10 +230,8 @@ export function PendingChangesPanel() {
     activeCommitsRef.current += 1;
 
     // Run commit in background (don't await - let it complete asynchronously)
-    debug.log(
-      `[handleCommit] Starting commit for ${change.path}, message: "${message}", user: ${currentUser?.name}`
-    );
-    commitFile(change.path, message, currentUser?.name)
+    debug.log(`[handleCommit] Starting commit for ${change.path}, message: "${message}"`);
+    commitFile(change.path, message)
       .then(() => {
         debug.log(`[handleCommit] Commit succeeded for ${change.path}`);
       })

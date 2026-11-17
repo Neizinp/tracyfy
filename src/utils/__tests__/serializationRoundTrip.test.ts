@@ -22,8 +22,6 @@ import {
   markdownToDocument,
   projectToMarkdown,
   markdownToProject,
-  userToMarkdown,
-  markdownToUser,
   customAttributeDefinitionToMarkdown,
   markdownToCustomAttributeDefinition,
 } from '../markdownUtils';
@@ -37,7 +35,6 @@ import type {
   Risk,
   ArtifactDocument,
   Project,
-  User,
   Link,
   Workflow,
 } from '../../types';
@@ -169,8 +166,6 @@ const project: Project = {
   description: TRICKY,
 };
 
-const user: User = { id: 'USER-003', name: 'Ada: Lovelace', dateCreated: T0, lastModified: T0 + 1 };
-
 const link: Link = {
   id: 'LINK-011',
   sourceId: 'REQ-042',
@@ -224,7 +219,6 @@ const CASES: [string, unknown, (x: never) => string, (s: string) => unknown][] =
   ['risk', risk, riskToMarkdown, markdownToRisk],
   ['document', document, documentToMarkdown, markdownToDocument],
   ['project', project, projectToMarkdown, markdownToProject],
-  ['user', user, userToMarkdown, markdownToUser],
   ['link', link, linkToMarkdown, parseMarkdownLink],
   ['workflow', workflow, workflowToMarkdown, parseMarkdownWorkflow],
   [

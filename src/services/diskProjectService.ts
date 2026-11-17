@@ -9,8 +9,6 @@
  * /usecases/UC-001.md
  * /testcases/TC-001.md
  * /information/INFO-001.md
- * /users/USER-001.md
- * .git/tracyfy-current-user    # selected user ID (local, not versioned)
  */
 
 import { BaseDiskService } from './baseDiskService';
@@ -38,10 +36,6 @@ import { fileSystemService } from './fileSystemService';
 import { projectToMarkdown, markdownToProject } from '../utils/markdownUtils';
 import { PROJECT_FILE } from '../utils/pendingChanges';
 
-// Which user is selected is local to this clone (each collaborator has their
-// own), so it lives inside .git and is never committed or pushed.
-const CURRENT_USER_FILE = '.git/tracyfy-current-user';
-
 class DiskProjectService extends BaseDiskService {
   /**
    * Initialize directory structure
@@ -51,20 +45,6 @@ class DiskProjectService extends BaseDiskService {
     for (const config of Object.values(STORED_TYPES)) {
       await this.ensureDirectory(config.folder);
     }
-  }
-
-  /**
-   * Get current user ID
-   */
-  async getCurrentUserId(): Promise<string> {
-    return this.readTextFile(CURRENT_USER_FILE);
-  }
-
-  /**
-   * Set current user ID
-   */
-  async setCurrentUserId(userId: string): Promise<void> {
-    await this.writeTextFile(CURRENT_USER_FILE, userId);
   }
 
   // ============ PROJECT ============
@@ -101,32 +81,18 @@ class DiskProjectService extends BaseDiskService {
     risks: Risk[];
     documents: ArtifactDocument[];
     links: Link[];
-    users: import('../types').User[];
-    currentUserId: string;
   }> {
-    const [
-      project,
-      requirements,
-      useCases,
-      testCases,
-      information,
-      risks,
-      documents,
-      links,
-      users,
-      currentUserId,
-    ] = await Promise.all([
-      this.loadProject(),
-      requirementService.loadAll(),
-      useCaseService.loadAll(),
-      testCaseService.loadAll(),
-      informationService.loadAll(),
-      riskService.loadAll(),
-      documentService.loadAll(),
-      diskLinkService.getAllLinks(),
-      (await import('./artifactServices')).userService.loadAll(),
-      this.getCurrentUserId(),
-    ]);
+    const [project, requirements, useCases, testCases, information, risks, documents, links] =
+      await Promise.all([
+        this.loadProject(),
+        requirementService.loadAll(),
+        useCaseService.loadAll(),
+        testCaseService.loadAll(),
+        informationService.loadAll(),
+        riskService.loadAll(),
+        documentService.loadAll(),
+        diskLinkService.getAllLinks(),
+      ]);
 
     return {
       project,
@@ -137,8 +103,6 @@ class DiskProjectService extends BaseDiskService {
       risks,
       documents,
       links,
-      users,
-      currentUserId,
     };
   }
 }

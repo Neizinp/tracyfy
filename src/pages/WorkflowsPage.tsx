@@ -12,7 +12,7 @@ import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
 const NOTIFIED_APPROVALS_KEY = 'workflow_notified_approvals';
 
 export const WorkflowsPage: React.FC = () => {
-  const { currentUser, users } = useUser();
+  const { currentUser } = useUser();
   const { showToast } = useToast();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,11 +48,11 @@ export const WorkflowsPage: React.FC = () => {
 
     const newlyApproved = workflows.filter(
       (wf) =>
-        wf.createdBy === currentUser.id && wf.status === 'approved' && !notifiedIds.has(wf.id!)
+        wf.createdBy === currentUser.name && wf.status === 'approved' && !notifiedIds.has(wf.id!)
     );
 
     newlyApproved.forEach((wf) => {
-      const approverName = users.find((u) => u.id === wf.approvedBy)?.name || 'Someone';
+      const approverName = wf.approvedBy || 'Someone';
       showToast(`🎉 Your workflow "${wf.title!}" was approved by ${approverName} !`, 'success');
       notifiedIds.add(wf.id!);
     });
@@ -60,16 +60,11 @@ export const WorkflowsPage: React.FC = () => {
     if (newlyApproved.length > 0) {
       localStorage.setItem(NOTIFIED_APPROVALS_KEY, JSON.stringify([...notifiedIds]));
     }
-  }, [currentUser, workflows, users, showToast]);
+  }, [currentUser, workflows, showToast]);
 
   // Shared helpers for columns
-  const getUserName = useCallback(
-    (userId: string): string => {
-      const user = users.find((u) => u.id === userId);
-      return user?.name || userId;
-    },
-    [users]
-  );
+  // Workflows name people by their git author name
+  const getUserName = useCallback((name: string): string => name, []);
 
   const getStatusColor = (status: Workflow['status']): string => {
     switch (status) {
@@ -147,7 +142,7 @@ export const WorkflowsPage: React.FC = () => {
     handleSortChange: onWaitingSortChange,
   } = useArtifactFilteredData(workflows, {
     searchQuery: '',
-    filterFn: (wf: Workflow) => wf.assignedTo === currentUser?.id && wf.status === 'pending',
+    filterFn: (wf: Workflow) => wf.assignedTo === currentUser?.name && wf.status === 'pending',
     getValueFn: (wf: Workflow, key: string) => {
       if (key === 'createdBy') return getUserName(wf.createdBy!);
       if (key === 'artifactIds') return wf.artifactIds?.length || 0;
@@ -161,7 +156,7 @@ export const WorkflowsPage: React.FC = () => {
     handleSortChange: onCreatedSortChange,
   } = useArtifactFilteredData(workflows, {
     searchQuery: '',
-    filterFn: (wf: Workflow) => wf.createdBy === currentUser?.id,
+    filterFn: (wf: Workflow) => wf.createdBy === currentUser?.name,
     getValueFn: (wf: Workflow, key: string) => {
       if (key === 'assignedTo') return getUserName(wf.assignedTo!);
       if (key === 'approvedBy') return wf.approvedBy ? getUserName(wf.approvedBy) : '';
@@ -245,7 +240,7 @@ export const WorkflowsPage: React.FC = () => {
           color: 'var(--color-text-muted)',
         }}
       >
-        Please select a user to view workflows.
+        Set your name in User Settings to view workflows.
       </div>
     );
   }

@@ -36,7 +36,7 @@ describe('integration: no invisible uncommitted files', () => {
 
   it('creating a workflow', async () => {
     h = await startApp({ initialRoute: '/workflows' });
-    await act(() => h.app().user.createUser('Reviewer'));
+    await h.colleagueCommits('Reviewer');
     await act(() =>
       h.app().requirements.handleAddRequirement({
         title: 'Login',
@@ -56,8 +56,7 @@ describe('integration: no invisible uncommitted files', () => {
     fireEvent.change(within(dialog).getAllByRole('textbox')[0], {
       target: { value: 'Approve login' },
     });
-    const reviewer = h.app().user.users.find((u) => u.name === 'Reviewer')!;
-    fireEvent.change(within(dialog).getByRole('combobox'), { target: { value: reviewer.id } });
+    fireEvent.change(within(dialog).getByRole('combobox'), { target: { value: 'Reviewer' } });
     fireEvent.change(within(dialog).getByPlaceholderText('Search artifacts by ID or title...'), {
       target: { value: 'Login' },
     });

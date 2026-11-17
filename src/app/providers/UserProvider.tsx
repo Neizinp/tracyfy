@@ -1,176 +1,98 @@
+/**
+ * The user is the git author of this repository (P5 in docs/DESIGN.md):
+ * user.name / user.email in .git/config. Every commit the app makes is
+ * authored by them. There is no separate user store.
+ */
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import type { User } from '../../types';
-import { diskProjectService } from '../../services/diskProjectService';
-import { userService } from '../../services/artifactServices';
-import { idAllocator } from '../../storage/idAllocator';
-import { STORED_TYPES } from '../../services/storedTypes';
+import type { Person } from '../../types';
+import { realGitService } from '../../services/realGitService';
 import { useFileSystem } from './FileSystemProvider';
-import { debug } from '../../utils/debug';
 
 interface UserContextValue {
-  // State
-  users: User[];
-  currentUserId: string;
-  currentUser: User | null;
+  /** Null until user.name is set in this repository */
+  currentUser: Person | null;
+  /** The user and everyone who authored a commit in this repository */
+  people: Person[];
   isLoading: boolean;
-
-  // Handlers
-  createUser: (name: string) => Promise<User>;
-  updateUser: (user: User) => Promise<void>;
-  deleteUser: (userId: string) => Promise<void>;
-  switchUser: (userId: string) => Promise<void>;
+  /** Set user.name / user.email in this repository's .git/config */
+  setIdentity: (person: Person) => Promise<void>;
 }
 
 const UserContext = createContext<UserContextValue | undefined>(undefined);
 
+const isE2EMode = () =>
+  typeof window !== 'undefined' &&
+  !!(window as unknown as { __E2E_TEST_MODE__?: boolean }).__E2E_TEST_MODE__;
+
+const E2E_USER: Person = { name: 'E2E Test User', email: 'e2e@tracyfy.local' };
+
+/** Commits made before user.name was set carry this placeholder author */
+const PLACEHOLDER_AUTHOR = 'Tracyfy User';
+
+function uniqueByName(people: Person[]): Person[] {
+  const seen = new Map<string, Person>();
+  for (const p of people) if (p.name && !seen.has(p.name)) seen.set(p.name, p);
+  return [...seen.values()];
+}
+
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const { isReady, directoryName } = useFileSystem();
+  const [currentUser, setCurrentUser] = useState<Person | null>(null);
+  const [authors, setAuthors] = useState<Person[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { isReady, preloadedUsers, preloadedCurrentUserId } = useFileSystem();
-
-  const createUser = useCallback(
-    async (name: string): Promise<User> => {
-      const isE2E =
-        typeof window !== 'undefined' &&
-        (window as unknown as { __E2E_TEST_MODE__?: boolean }).__E2E_TEST_MODE__;
-
-      let id: string;
-      if (isE2E) {
-        // In E2E mode, generate ID without disk access
-        const counter = users.length + 1;
-        id = `USR-${String(counter).padStart(3, '0')}`;
-      } else {
-        id = await idAllocator.next(STORED_TYPES.user.folder, STORED_TYPES.user.idPrefix);
-      }
-
-      const now = Date.now();
-      const newUser: User = {
-        id,
-        name,
-        dateCreated: now,
-        lastModified: now,
-      };
-
-      if (!isE2E) {
-        await userService.save(newUser);
-      }
-      setUsers((prev) => [...prev, newUser]);
-
-      // If no current user, set this as current
-      setCurrentUserId((prev) => {
-        if (!prev) {
-          if (!isE2E) {
-            diskProjectService.setCurrentUserId(id);
-          }
-          return id;
-        }
-        return prev;
-      });
-
-      return newUser;
-    },
-    [users.length]
-  );
-
-  const updateUser = useCallback(async (user: User): Promise<void> => {
-    const updatedUser = { ...user, lastModified: Date.now() };
-    await userService.save(updatedUser);
-    setUsers((prev) => prev.map((u) => (u.id === user.id ? updatedUser : u)));
-  }, []);
-
-  const deleteUser = useCallback(
-    async (userId: string): Promise<void> => {
-      await userService.delete(userId);
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
-
-      // If deleted user was current, switch to another user
-      if (currentUserId === userId) {
-        const remainingUsers = users.filter((u) => u.id !== userId);
-        if (remainingUsers.length > 0) {
-          await diskProjectService.setCurrentUserId(remainingUsers[0].id);
-          setCurrentUserId(remainingUsers[0].id);
-        } else {
-          await diskProjectService.setCurrentUserId('');
-          setCurrentUserId('');
-        }
-      }
-    },
-    [currentUserId, users]
-  );
-
-  const switchUser = useCallback(async (userId: string): Promise<void> => {
-    await diskProjectService.setCurrentUserId(userId);
-    setCurrentUserId(userId);
-  }, []);
-
-  // Load users when FileSystem is ready - use preloaded data from FileSystemProvider
   useEffect(() => {
     if (!isReady) {
+      setCurrentUser(null);
+      setAuthors([]);
+      setIsLoading(true);
       return;
     }
-
-    const initUsers = async () => {
-      setIsLoading(true);
+    if (isE2EMode()) {
+      setCurrentUser(E2E_USER);
+      setIsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
       try {
-        const isE2E =
-          typeof window !== 'undefined' &&
-          (window as unknown as { __E2E_TEST_MODE__?: boolean }).__E2E_TEST_MODE__;
-
-        // Use preloaded user data from FileSystemProvider (no disk read needed!)
-        let loadedUsers = preloadedUsers;
-
-        if (isE2E && loadedUsers.length === 0) {
-          debug.log('[UserProvider] E2E mode: creating default test user');
-          const testUser = await createUser('E2E Test User');
-          loadedUsers = [testUser];
-        }
-
-        setUsers(loadedUsers);
-        setCurrentUserId(
-          preloadedCurrentUserId || (isE2E && loadedUsers.length > 0 ? loadedUsers[0].id : '')
+        const [me, history] = await Promise.all([
+          realGitService.getAuthor(),
+          realGitService.getHistory(undefined, 500).catch(() => []),
+        ]);
+        if (cancelled) return;
+        setCurrentUser(me);
+        setAuthors(
+          history
+            .filter((c) => c.author && c.author !== PLACEHOLDER_AUTHOR)
+            .map((c) => ({ name: c.author, email: c.authorEmail ?? '' }))
         );
       } catch (error) {
-        console.error('Failed to load users:', error);
+        console.error('Failed to read the git author:', error);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
+    })();
+    return () => {
+      cancelled = true;
     };
+  }, [isReady, directoryName]);
 
-    initUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isReady, preloadedUsers, preloadedCurrentUserId]); // createUser intentionally excluded to prevent infinite loop
+  const setIdentity = useCallback(async (person: Person) => {
+    const identity = { name: person.name.trim(), email: person.email.trim() };
+    if (!isE2EMode()) await realGitService.setAuthor(identity);
+    setCurrentUser(identity);
+  }, []);
 
-  // Use preloaded data directly when local state hasn't been set yet
-  // This ensures users show IMMEDIATELY without waiting for the effect
-  const effectiveUsers = users.length > 0 ? users : preloadedUsers;
-  const effectiveCurrentUserId = currentUserId || preloadedCurrentUserId;
-  const effectiveCurrentUser = effectiveUsers.find((u) => u.id === effectiveCurrentUserId) || null;
+  const people = useMemo(
+    () => uniqueByName([...(currentUser ? [currentUser] : []), ...authors]),
+    [currentUser, authors]
+  );
 
-  const value: UserContextValue = useMemo(
-    () => ({
-      users: effectiveUsers,
-      currentUserId: effectiveCurrentUserId,
-      currentUser: effectiveCurrentUser,
-      isLoading: isLoading && preloadedUsers.length === 0, // Not loading if we have preloaded data
-      createUser,
-      updateUser,
-      deleteUser,
-      switchUser,
-    }),
-    [
-      createUser,
-      deleteUser,
-      effectiveCurrentUser,
-      effectiveCurrentUserId,
-      effectiveUsers,
-      isLoading,
-      preloadedUsers,
-      switchUser,
-      updateUser,
-    ]
+  const value = useMemo(
+    () => ({ currentUser, people, isLoading, setIdentity }),
+    [currentUser, people, isLoading, setIdentity]
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

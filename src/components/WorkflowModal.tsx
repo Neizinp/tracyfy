@@ -22,7 +22,7 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { currentUser, users } = useUser();
+  const { currentUser } = useUser();
   const {
     title,
     setTitle,
@@ -47,10 +47,6 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
 
   if (!isOpen) return null;
 
-  const getUserName = (userId: string) => {
-    return users.find((u) => u.id === userId)?.name || userId;
-  };
-
   return (
     <BaseArtifactModal
       isOpen={isOpen}
@@ -68,7 +64,7 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
       <ArtifactOverviewFields
         title={title}
         setTitle={setTitle}
-        author={workflow ? getUserName(workflow.createdBy || '') : currentUser?.name}
+        author={workflow ? workflow.createdBy : currentUser?.name}
         dateCreated={workflow?.dateCreated}
         isEditMode={!!workflow}
         currentUser={currentUser?.name}
@@ -89,7 +85,7 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
               fontSize: 'var(--font-size-sm)',
             }}
           >
-            No other users available. Create another user in User Settings to assign workflows.
+            No one else has committed to this repository yet, so there is no one to assign to.
           </div>
         ) : (
           <select
@@ -106,10 +102,10 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
               outline: 'none',
             }}
           >
-            <option value="">Select a user...</option>
-            {otherUsers.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.name}
+            <option value="">Select a person...</option>
+            {otherUsers.map((person) => (
+              <option key={person.name} value={person.name}>
+                {person.name}
               </option>
             ))}
           </select>

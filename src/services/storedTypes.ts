@@ -2,12 +2,12 @@
  * Everything the app stores as one file per item: the artifact kinds from the
  * registry, plus the bookkeeping types that are not artifacts.
  *
- * Users, workflows, custom attribute files and counters go away in step 4 of
- * docs/DESIGN.md; until then they share this one vocabulary.
+ * Workflows go away in step 7 of docs/DESIGN.md (P6); until then they share
+ * this one vocabulary.
  */
 import { ARTIFACT_KINDS, isKindId, kind, type ArtifactKindId } from '../domain/artifactKinds';
 
-export type StoredType = ArtifactKindId | 'link' | 'user' | 'workflow' | 'customAttribute';
+export type StoredType = ArtifactKindId | 'link' | 'workflow' | 'customAttribute';
 
 export interface StoredTypeConfig {
   idPrefix: string;
@@ -23,7 +23,6 @@ export const STORED_TYPES: Record<StoredType, StoredTypeConfig> = {
     ])
   ) as Record<ArtifactKindId, StoredTypeConfig>),
   link: { idPrefix: 'LINK', folder: 'links', label: 'Link' },
-  user: { idPrefix: 'USER', folder: 'users', label: 'User' },
   workflow: { idPrefix: 'WF', folder: 'workflows', label: 'Workflow' },
   customAttribute: { idPrefix: 'ATTR', folder: 'custom-attributes', label: 'Custom attribute' },
 };

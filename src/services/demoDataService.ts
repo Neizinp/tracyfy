@@ -13,7 +13,6 @@ import {
   testCaseService,
   informationService,
   riskService,
-  userService,
 } from './artifactServices';
 import { idAllocator } from '../storage/idAllocator';
 import { STORED_TYPES } from './storedTypes';
@@ -51,22 +50,6 @@ export async function loadDemoData(): Promise<Project> {
   };
 
   const projectName = DEMO_PROJECT.name;
-
-  // 0. Ensure a demo user exists and is selected
-  const existingUsers = await userService.loadAll();
-  let demoUser = existingUsers.find((u) => u.name === 'Demo User');
-  if (!demoUser) {
-    const userId = await idAllocator.next(STORED_TYPES.user.folder, STORED_TYPES.user.idPrefix);
-    demoUser = {
-      id: userId,
-      name: 'Demo User',
-      dateCreated: now,
-      lastModified: now,
-    };
-    await userService.save(demoUser);
-  }
-  // Set as current user so editing works
-  await diskProjectService.setCurrentUserId(demoUser.id);
 
   // 0.5 Create custom attribute definitions (if they don't exist)
   const existingDefs = await diskCustomAttributeService.getAllDefinitions();

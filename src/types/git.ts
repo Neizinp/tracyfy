@@ -6,7 +6,6 @@ export interface ArtifactChange {
     | ArtifactKindId
     | 'project'
     | 'asset'
-    | 'user'
     | 'link'
     | 'custom-attribute'
     | 'saved-filter'
@@ -28,6 +27,7 @@ export interface CommitInfo {
   hash: string;
   message: string;
   author: string;
+  authorEmail?: string;
   timestamp: number;
   parent?: string[];
 }
