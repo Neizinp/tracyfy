@@ -192,7 +192,7 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
           <div className="tf-linksview-loading">Loading links...</div>
         ) : (
           <BaseArtifactTable
-            data={links}
+            data={processedLinks}
             columns={columns}
             sortConfig={sortConfig}
             onSortChange={handleSortChange}
