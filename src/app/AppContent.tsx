@@ -6,28 +6,21 @@ import { useArtifactDeepLink } from '../hooks/useArtifactDeepLink';
 export function AppContent() {
   useArtifactDeepLink();
   const fileSystem = useFileSystem();
-  const { users, isLoading: isUserLoading, createUser, switchUser } = useUser();
-
-  // Show user onboarding if no users exist
-  const handleCreateFirstUser = async (name: string) => {
-    const newUser = await createUser(name);
-    if (newUser) {
-      switchUser(newUser.id);
-    }
-  };
+  const { currentUser, isLoading: isUserLoading, setIdentity } = useUser();
 
   const isE2E =
     typeof window !== 'undefined' &&
     (window as unknown as { __E2E_TEST_MODE__?: boolean }).__E2E_TEST_MODE__;
 
   const showDirectorySelector = !fileSystem.isReady && !fileSystem.isLoading;
-  const showUserOnboarding = !isE2E && fileSystem.isReady && !isUserLoading && users.length === 0;
+  // The repository has no user.name yet: ask who the user is
+  const showUserOnboarding = !isE2E && fileSystem.isReady && !isUserLoading && !currentUser;
 
   return (
     <>
       <AppRoutes />
       {showDirectorySelector && <DirectorySelector />}
-      <UserOnboardingModal isOpen={showUserOnboarding} onCreateUser={handleCreateFirstUser} />
+      <UserOnboardingModal isOpen={showUserOnboarding} onSubmit={setIdentity} />
     </>
   );
 }

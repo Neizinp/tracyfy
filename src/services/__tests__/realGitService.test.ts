@@ -54,7 +54,6 @@ describe('readFileAtCommit', () => {
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { Requirement, UseCase, TestCase, Information } from '../../types';
 
 // Mock debug utility to prevent ReferenceError
 vi.mock('../../utils/debug', () => ({
@@ -102,6 +101,7 @@ vi.mock('isomorphic-git', () => ({
     remove: vi.fn(),
     isDescendent: vi.fn(),
     currentBranch: vi.fn(),
+    getConfig: vi.fn(async () => undefined),
   },
 }));
 
@@ -305,9 +305,9 @@ describe('RealGitService', () => {
         switch (type) {
           case 'requirements':
             return ['REQ-001.md'];
-          case 'usecases':
+          case 'use-cases':
             return ['UC-001.md'];
-          case 'testcases':
+          case 'test-cases':
             return ['TC-001.md'];
           case 'information':
             return ['INF-001.md'];
@@ -319,8 +319,8 @@ describe('RealGitService', () => {
       const result = await realGitService.getStatus();
 
       expect(result).toContainEqual({ path: 'requirements/REQ-001.md', status: 'new' });
-      expect(result).toContainEqual({ path: 'usecases/UC-001.md', status: 'new' });
-      expect(result).toContainEqual({ path: 'testcases/TC-001.md', status: 'new' });
+      expect(result).toContainEqual({ path: 'use-cases/UC-001.md', status: 'new' });
+      expect(result).toContainEqual({ path: 'test-cases/TC-001.md', status: 'new' });
       expect(result).toContainEqual({ path: 'information/INF-001.md', status: 'new' });
     });
   });
@@ -402,380 +402,6 @@ describe('RealGitService', () => {
       await realGitService.commitFile('requirements/REQ-002.md', 'Commit 2');
 
       expect(git.commit).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  describe('saveArtifact', () => {
-    beforeEach(async () => {
-      vi.mocked(fileSystemService.checkGitExists).mockResolvedValue(true);
-      vi.mocked(fileSystemService.readFile).mockImplementation(async (path: string) => {
-        if (path === '.git/HEAD') return 'ref: refs/heads/main\n';
-        return null;
-      });
-      vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
-
-      await realGitService.init();
-    });
-
-    it('should save requirement as markdown', async () => {
-      const requirement: Requirement = {
-        id: 'REQ-001',
-        title: 'Test Requirement',
-        description: 'A test description',
-        text: 'The system shall do something',
-        rationale: 'Because it is needed',
-
-        status: 'draft',
-        priority: 'high',
-        dateCreated: 1700000000000,
-        lastModified: 1700000000000,
-        revision: '01',
-      };
-
-      await realGitService.saveArtifact('requirements', 'REQ-001', requirement);
-
-      expect(fileSystemService.writeFile).toHaveBeenCalledWith(
-        'requirements/REQ-001.md',
-        expect.stringContaining('id: "REQ-001"')
-      );
-      expect(fileSystemService.writeFile).toHaveBeenCalledWith(
-        'requirements/REQ-001.md',
-        expect.stringContaining('title: "Test Requirement"')
-      );
-      expect(fileSystemService.writeFile).toHaveBeenCalledWith(
-        'requirements/REQ-001.md',
-        expect.stringContaining('## Description')
-      );
-    });
-
-    it('should save use case as markdown', async () => {
-      const useCase: UseCase = {
-        id: 'UC-001',
-        title: 'Test Use Case',
-        description: 'A test use case',
-        actor: 'User',
-        preconditions: 'User is logged in',
-        postconditions: 'Action is complete',
-        mainFlow: '1. User clicks button',
-        status: 'draft',
-        priority: 'medium',
-        lastModified: 1700000000000,
-        revision: '01',
-      };
-
-      await realGitService.saveArtifact('usecases', 'UC-001', useCase);
-
-      expect(fileSystemService.writeFile).toHaveBeenCalledWith(
-        'usecases/UC-001.md',
-        expect.stringContaining('id: "UC-001"')
-      );
-      expect(fileSystemService.writeFile).toHaveBeenCalledWith(
-        'usecases/UC-001.md',
-        expect.stringContaining('actor: "User"')
-      );
-    });
-
-    it('should save test case as markdown', async () => {
-      const testCase: TestCase = {
-        id: 'TC-001',
-        title: 'Test Case 1',
-        description: 'A test case',
-        status: 'draft',
-        priority: 'high',
-        dateCreated: 1700000000000,
-        lastModified: 1700000000000,
-        revision: '01',
-      };
-
-      await realGitService.saveArtifact('testcases', 'TC-001', testCase);
-
-      expect(fileSystemService.writeFile).toHaveBeenCalledWith(
-        'testcases/TC-001.md',
-        expect.stringContaining('id: "TC-001"')
-      );
-    });
-
-    it('should save information item as markdown', async () => {
-      const info: Information = {
-        id: 'INF-001',
-        title: 'Meeting Notes',
-        content: 'Discussion about requirements',
-        type: 'meeting',
-        dateCreated: 1700000000000,
-        lastModified: 1700000000000,
-        revision: '01',
-      };
-
-      await realGitService.saveArtifact('information', 'INF-001', info);
-
-      expect(fileSystemService.writeFile).toHaveBeenCalledWith(
-        'information/INF-001.md',
-        expect.stringContaining('id: "INF-001"')
-      );
-      expect(fileSystemService.writeFile).toHaveBeenCalledWith(
-        'information/INF-001.md',
-        expect.stringContaining('type: "meeting"')
-      );
-    });
-  });
-
-  describe('deleteArtifact', () => {
-    beforeEach(async () => {
-      vi.mocked(fileSystemService.checkGitExists).mockResolvedValue(true);
-      vi.mocked(fileSystemService.readFile).mockImplementation(async (path: string) => {
-        if (path === '.git/HEAD') return 'ref: refs/heads/main\n';
-        return null;
-      });
-      vi.mocked(fileSystemService.deleteFile).mockResolvedValue(undefined);
-
-      await realGitService.init();
-    });
-
-    it('should delete requirement file', async () => {
-      await realGitService.deleteArtifact('requirements', 'REQ-001');
-
-      expect(fileSystemService.deleteFile).toHaveBeenCalledWith('requirements/REQ-001.md');
-    });
-
-    it('should delete use case file', async () => {
-      await realGitService.deleteArtifact('usecases', 'UC-001');
-
-      expect(fileSystemService.deleteFile).toHaveBeenCalledWith('usecases/UC-001.md');
-    });
-
-    it('should handle deletion of non-existent file gracefully', async () => {
-      vi.mocked(fileSystemService.deleteFile).mockRejectedValue(new Error('File not found'));
-
-      // Should not throw
-      await expect(
-        realGitService.deleteArtifact('requirements', 'NONEXISTENT')
-      ).resolves.toBeUndefined();
-    });
-  });
-
-  describe('loadAllArtifacts', () => {
-    beforeEach(async () => {
-      vi.mocked(fileSystemService.checkGitExists).mockResolvedValue(true);
-      vi.mocked(fileSystemService.readFile).mockImplementation(async (path: string) => {
-        if (path === '.git/HEAD') return 'ref: refs/heads/main\n';
-        return null;
-      });
-
-      await realGitService.init();
-    });
-
-    it('should load requirements from disk', async () => {
-      const reqMarkdown = `---
-id: "REQ-001"
-title: "Test Requirement"
-status: "draft"
-priority: "high"
-revision: "01"
-dateCreated: 1700000000000
-lastModified: 1700000000000
-
----
-
-# Test Requirement
-
-## Description
-Test description
-
-## Requirement Text
-The system shall test
-
-## Rationale
-Test rationale
-`;
-
-      vi.mocked(fileSystemService.listFiles).mockImplementation(async (type: string) => {
-        if (type === 'requirements') return ['REQ-001.md'];
-        return [];
-      });
-
-      vi.mocked(fileSystemService.readFile).mockImplementation(async (path: string) => {
-        if (path === '.git/HEAD') return 'ref: refs/heads/main\n';
-        if (path === 'requirements/REQ-001.md') return reqMarkdown;
-        return null;
-      });
-
-      const result = await realGitService.loadAllArtifacts();
-
-      expect(result.requirements).toHaveLength(1);
-      expect(result.requirements[0].id).toBe('REQ-001');
-      expect(result.requirements[0].title).toBe('Test Requirement');
-      expect(result.requirements[0].status).toBe('draft');
-    });
-
-    it('should load all artifact types', async () => {
-      const reqMarkdown = `---
-id: "REQ-001"
-title: "Requirement"
-status: "draft"
-priority: "high"
-revision: "01"
-dateCreated: 1700000000000
-lastModified: 1700000000000
-
----
-
-# Requirement
-
-## Description
-Desc
-
-## Requirement Text
-Text
-
-## Rationale
-Rationale
-`;
-
-      const ucMarkdown = `---
-id: "UC-001"
-title: "Use Case"
-status: "draft"
-priority: "medium"
-revision: "01"
-lastModified: 1700000000000
-actor: "User"
----
-
-# Use Case
-
-## Description
-Desc
-
-## Actor
-User
-
-## Preconditions
-Pre
-
-## Main Flow
-Flow
-
-## Postconditions
-Post
-`;
-
-      const tcMarkdown = `---
-id: "TC-001"
-title: "Test Case"
-status: "draft"
-priority: "low"
-revision: "01"
-dateCreated: 1700000000000
-lastModified: 1700000000000
----
-
-# Test Case
-
-## Description
-Desc
-
-## Requirements Covered
-`;
-
-      const infoMarkdown = `---
-id: "INF-001"
-title: "Info"
-type: "note"
-revision: "01"
-dateCreated: 1700000000000
-lastModified: 1700000000000
----
-
-# Info
-
-Content here
-`;
-
-      vi.mocked(fileSystemService.listFiles).mockImplementation(async (type: string) => {
-        switch (type) {
-          case 'requirements':
-            return ['REQ-001.md'];
-          case 'usecases':
-            return ['UC-001.md'];
-          case 'testcases':
-            return ['TC-001.md'];
-          case 'information':
-            return ['INF-001.md'];
-          default:
-            return [];
-        }
-      });
-
-      vi.mocked(fileSystemService.readFile).mockImplementation(async (path: string) => {
-        if (path === '.git/HEAD') return 'ref: refs/heads/main\n';
-        if (path === 'requirements/REQ-001.md') return reqMarkdown;
-        if (path === 'usecases/UC-001.md') return ucMarkdown;
-        if (path === 'testcases/TC-001.md') return tcMarkdown;
-        if (path === 'information/INF-001.md') return infoMarkdown;
-        return null;
-      });
-
-      const result = await realGitService.loadAllArtifacts();
-
-      expect(result.requirements).toHaveLength(1);
-      expect(result.useCases).toHaveLength(1);
-      expect(result.testCases).toHaveLength(1);
-      expect(result.information).toHaveLength(1);
-    });
-
-    it('should handle empty directories', async () => {
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue([]);
-
-      const result = await realGitService.loadAllArtifacts();
-
-      expect(result.requirements).toHaveLength(0);
-      expect(result.useCases).toHaveLength(0);
-      expect(result.testCases).toHaveLength(0);
-      expect(result.information).toHaveLength(0);
-    });
-
-    it('should skip non-markdown files', async () => {
-      vi.mocked(fileSystemService.listFiles).mockImplementation(async (type: string) => {
-        if (type === 'requirements') {
-          return ['REQ-001.md', 'README.txt', '.gitkeep', 'backup.json'];
-        }
-        return [];
-      });
-
-      vi.mocked(fileSystemService.readFile).mockImplementation(async (path: string) => {
-        if (path === '.git/HEAD') return 'ref: refs/heads/main\n';
-        if (path === 'requirements/REQ-001.md') {
-          return `---
-id: "REQ-001"
-title: "Test"
-status: "draft"
-priority: "high"
-revision: "01"
-dateCreated: 1700000000000
-lastModified: 1700000000000
-
----
-
-# Test
-
-## Description
-Desc
-
-## Requirement Text
-Text
-
-## Rationale
-Rationale
-`;
-        }
-        return null;
-      });
-
-      const result = await realGitService.loadAllArtifacts();
-
-      // Should only load the .md file
-      expect(result.requirements).toHaveLength(1);
-      expect(result.requirements[0].id).toBe('REQ-001');
     });
   });
 
@@ -891,9 +517,9 @@ Rationale
       // Mock file contents at each commit
       vi.spyOn(realGitService, 'readFileAtCommit').mockImplementation(async (_file, hash) => {
         if (hash === 'cmt1') {
-          return `---\nid: REQ-001\nrevision: '01'\n---\n# REQ-001\nDescription`;
+          return `---\ntitle: Login\nrevision: '01'\n---\n# REQ-001\nDescription`;
         } else if (hash === 'cmt2') {
-          return `---\nid: REQ-001\nrevision: '02'\n---\n# REQ-001\nDescription updated`;
+          return `---\ntitle: Login\nrevision: '02'\n---\n# REQ-001\nDescription updated`;
         }
         return null;
       });
@@ -902,7 +528,7 @@ Rationale
       expect(history).toHaveLength(2);
 
       // Import markdownToRequirement directly for parsing
-      const { markdownToRequirement } = await import('../../utils/markdownUtils');
+      const { parseRequirement } = await import('../../domain/artifactFormat');
 
       for (const commit of history) {
         const content = await realGitService.readFileAtCommit(
@@ -910,7 +536,7 @@ Rationale
           commit.hash
         );
         expect(content).toBeTruthy();
-        const parsed = markdownToRequirement(content!);
+        const parsed = parseRequirement('REQ-001', content!);
         expect(parsed.revision).not.toBe('—');
         expect(parsed.revision).toMatch(/^0[12]$/); // '01' or '02'
       }

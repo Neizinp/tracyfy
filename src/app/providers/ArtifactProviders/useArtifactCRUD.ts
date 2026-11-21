@@ -19,7 +19,6 @@ export interface CRUDOptions<T> {
   /** Every item of this type */
   items: T[];
   saveFn: (item: T) => Promise<void>;
-  deleteFn: (id: string) => Promise<void>;
   onBeforeUpdate?: (item: T) => void;
   onAfterUpdate?: (item: T) => void;
   onBeforeAdd?: (data: Omit<T, 'id' | 'lastModified' | 'revision'>) => void;
@@ -55,7 +54,6 @@ export function useArtifactCRUD<T extends BaseArtifact>({
   type,
   items,
   saveFn,
-  deleteFn,
   onBeforeUpdate,
   onAfterUpdate,
   onBeforeAdd,
@@ -68,10 +66,7 @@ export function useArtifactCRUD<T extends BaseArtifact>({
   const handleAdd = useCallback(
     async (data: Omit<T, 'id' | 'lastModified' | 'revision'>) => {
       if (!currentUser) {
-        showToast(
-          'Please select a user before creating artifacts. Go to Settings → Users to select a user.',
-          'warning'
-        );
+        showToast('Set your name in User Settings before creating artifacts.', 'warning');
         return null;
       }
 
@@ -169,21 +164,13 @@ export function useArtifactCRUD<T extends BaseArtifact>({
     [items, saveFn]
   );
 
-  const handlePermanentDelete = useCallback(
-    (id: string) => {
-      deleteFn(id).catch((err) => notifyError(`Could not permanently delete ${id}`, err));
-    },
-    [deleteFn]
-  );
-
   return useMemo(
     () => ({
       handleAdd,
       handleUpdate,
       handleDelete,
       handleRestore,
-      handlePermanentDelete,
     }),
-    [handleAdd, handleDelete, handlePermanentDelete, handleRestore, handleUpdate]
+    [handleAdd, handleDelete, handleRestore, handleUpdate]
   );
 }

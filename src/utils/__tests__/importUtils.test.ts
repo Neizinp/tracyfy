@@ -5,7 +5,6 @@ import {
   parseJsonImport,
   parseExcelImport,
   parseExcelFile,
-  maxIdNumber,
   countImported,
   describeSkipped,
 } from '../importUtils';
@@ -110,13 +109,6 @@ describe('parseExcelImport', () => {
   it('returns an empty bundle for workbooks without known sheets', () => {
     const bundle = parseExcelImport(workbookWith({ Other: [{ a: 1 }] }), XLSX.utils);
     expect(countImported(bundle)).toBe(0);
-  });
-});
-
-describe('maxIdNumber', () => {
-  it('returns the highest numeric suffix for the prefix', () => {
-    expect(maxIdNumber(['REQ-001', 'REQ-042', 'REQ-7', 'UC-100', 'REQ-x'], 'REQ')).toBe(42);
-    expect(maxIdNumber([], 'REQ')).toBe(0);
   });
 });
 

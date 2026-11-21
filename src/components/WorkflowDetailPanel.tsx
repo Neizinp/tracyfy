@@ -32,7 +32,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
   onClose,
   onUpdate,
 }) => {
-  const { currentUser, users } = useUser();
+  const { currentUser } = useUser();
   const { requirements, handleUpdateRequirement } = useRequirements();
   const { useCases, handleUpdateUseCase } = useUseCases();
   const { testCases, handleUpdateTestCase } = useTestCases();
@@ -43,14 +43,12 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isAssignedToMe = workflow.assignedTo === currentUser?.id;
+  const isAssignedToMe = workflow.assignedTo === currentUser?.name;
   const isPending = workflow.status === 'pending';
   const canApprove = isAssignedToMe && isPending;
 
-  const getUserName = (userId: string): string => {
-    const user = users.find((u) => u.id === userId);
-    return user?.name || userId;
-  };
+  // Workflows name people by their git author name
+  const getUserName = (name: string): string => name;
 
   const getStatusColor = (status: Workflow['status']): string => {
     switch (status) {
@@ -137,7 +135,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
       // 1. Approve the workflow
       const approvedWorkflow = await diskWorkflowService.approveWorkflow(
         workflow.id,
-        currentUser.id,
+        currentUser.name,
         currentUser.name,
         comment || undefined
       );
@@ -184,7 +182,7 @@ export const WorkflowDetailPanel: React.FC<WorkflowDetailPanelProps> = ({
 
     setIsSubmitting(true);
     try {
-      await diskWorkflowService.rejectWorkflow(workflow.id, currentUser.id, comment);
+      await diskWorkflowService.rejectWorkflow(workflow.id, currentUser.name, comment);
       showToast(`Workflow ${workflow.id} rejected`, 'info');
       await reloadData();
       onUpdate();

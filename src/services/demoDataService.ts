@@ -4,18 +4,8 @@
  * Fills an empty project with sample artifacts.
  */
 
-import { diskProjectService } from './diskProjectService';
-import { diskLinkService } from './diskLinkService';
 import { diskCustomAttributeService } from './diskCustomAttributeService';
-import {
-  requirementService,
-  useCaseService,
-  testCaseService,
-  informationService,
-  riskService,
-  userService,
-} from './artifactServices';
-import { idService } from './idService';
+import { repository } from '../storage/repository';
 import {
   DEMO_PROJECT,
   DEMO_ARTIFACTS,
@@ -51,22 +41,6 @@ export async function loadDemoData(): Promise<Project> {
 
   const projectName = DEMO_PROJECT.name;
 
-  // 0. Ensure a demo user exists and is selected
-  const existingUsers = await userService.loadAll();
-  let demoUser = existingUsers.find((u) => u.name === 'Demo User');
-  if (!demoUser) {
-    const userId = await idService.getNextId('user');
-    demoUser = {
-      id: userId,
-      name: 'Demo User',
-      dateCreated: now,
-      lastModified: now,
-    };
-    await userService.save(demoUser);
-  }
-  // Set as current user so editing works
-  await diskProjectService.setCurrentUserId(demoUser.id);
-
   // 0.5 Create custom attribute definitions (if they don't exist)
   const existingDefs = await diskCustomAttributeService.getAllDefinitions();
   const createdAttrIds: string[] = [];
@@ -92,15 +66,15 @@ export async function loadDemoData(): Promise<Project> {
 
   // 1. Name the project
   const project: Project = { name: projectName, description: DEMO_PROJECT.description };
-  await diskProjectService.saveProject(project);
+  await repository.saveProject(project);
 
-  // 2. Batch allocate all IDs at once (single disk write per type)
+  // 2. Allocate all IDs at once
   const [reqIds, ucIds, tcIds, infoIds, riskIds] = await Promise.all([
-    idService.getNextIds('requirement', DEMO_ARTIFACTS.requirements.length),
-    idService.getNextIds('useCase', DEMO_ARTIFACTS.useCases.length),
-    idService.getNextIds('testCase', DEMO_ARTIFACTS.testCases.length),
-    idService.getNextIds('information', DEMO_ARTIFACTS.information.length),
-    idService.getNextIds('risk', DEMO_ARTIFACTS.risks.length),
+    repository.nextIds('requirement', DEMO_ARTIFACTS.requirements.length),
+    repository.nextIds('useCase', DEMO_ARTIFACTS.useCases.length),
+    repository.nextIds('testCase', DEMO_ARTIFACTS.testCases.length),
+    repository.nextIds('information', DEMO_ARTIFACTS.information.length),
+    repository.nextIds('risk', DEMO_ARTIFACTS.risks.length),
   ]);
 
   createdIds.requirements = reqIds;
@@ -145,22 +119,20 @@ export async function loadDemoData(): Promise<Project> {
 
   // 4. Save all artifacts in parallel
   await Promise.all([
-    ...requirements.map((r) => requirementService.save(r)),
-    ...useCases.map((u) => useCaseService.save(u)),
-    ...testCases.map((t) => testCaseService.save(t)),
-    ...informationItems.map((i) => informationService.save(i)),
-    ...risks.map((r) => riskService.save(r)),
+    ...requirements.map((r) => repository.save('requirement', r)),
+    ...useCases.map((u) => repository.save('useCase', u)),
+    ...testCases.map((t) => repository.save('testCase', t)),
+    ...informationItems.map((i) => repository.save('information', i)),
+    ...risks.map((r) => repository.save('risk', r)),
   ]);
 
-  // 5. Create links between artifacts SEQUENTIALLY to avoid race condition on counter file
-  // Note: Promise.all() was causing all links to get the same ID because getNextId()
-  // reads/writes a counter file, and parallel calls all read the same counter value.
+  // 5. Create links between artifacts
   for (const linkDef of DEMO_ARTIFACTS.links) {
     const sourceId = getArtifactId(linkDef.sourceType, linkDef.sourceIndex, createdIds);
     const targetId = getArtifactId(linkDef.targetType, linkDef.targetIndex, createdIds);
 
     if (sourceId && targetId) {
-      await diskLinkService.createLink(sourceId, targetId, linkDef.type);
+      await repository.createLink(sourceId, targetId, linkDef.type);
     }
   }
 

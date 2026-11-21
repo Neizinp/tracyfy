@@ -1,47 +1,17 @@
 /**
- * Workflow Markdown Utilities
- *
- * Functions for converting Workflow objects to/from Markdown files with YAML frontmatter.
+ * Workflow files: workflows/WF-004.md. The file name is the ID.
+ * Workflows are replaced by the lifecycle in step 7 of docs/DESIGN.md.
  */
-
-import type { Workflow } from '../types';
-import {
-  objectToYaml,
-  parseYamlFrontmatter,
-  ensureArray,
-  filterValidCustomAttributes,
-  escapeBodyText as esc,
-  unescapeBodyText,
-} from './markdownBase';
-import type { WorkflowAction } from '../types';
+import type { Workflow, WorkflowAction } from '../types';
 import type { CustomAttributeValue } from '../types/customAttributes';
+import {
+  escapeBodyText as esc,
+  joinFrontmatter,
+  readBody,
+  splitFrontmatter,
+} from '../domain/frontmatter';
 
-/**
- * Convert a Workflow object to Markdown with YAML frontmatter
- */
 export function workflowToMarkdown(workflow: Workflow): string {
-  const frontmatter = {
-    id: workflow.id,
-    title: workflow.title,
-    type: workflow.type,
-    createdBy: workflow.createdBy,
-    assignedTo: workflow.assignedTo,
-    status: workflow.status,
-    artifactIds: workflow.artifactIds || [],
-    dateCreated: workflow.dateCreated,
-    lastModified: workflow.lastModified,
-    revision: workflow.revision,
-    approvedBy: workflow.approvedBy || null,
-    approvalDate: workflow.approvalDate || null,
-    approverComment: workflow.approverComment || null,
-    isDeleted: workflow.isDeleted || false,
-    deletedAt: workflow.deletedAt || null,
-    history: workflow.history || [],
-    customAttributes: filterValidCustomAttributes(workflow.customAttributes),
-  };
-
-  const yaml = objectToYaml(frontmatter);
-
   const artifactsList =
     (workflow.artifactIds?.length || 0) > 0
       ? workflow.artifactIds!.map((id) => `- ${id}`).join('\n')
@@ -51,71 +21,71 @@ export function workflowToMarkdown(workflow: Workflow): string {
   if (workflow.status === 'approved') {
     statusText = `**Approved** by ${workflow.approvedBy} on ${new Date(
       workflow.approvalDate!
-    ).toISOString()}${
-      workflow.approverComment ? `\n\n**Comment:**\n${esc(workflow.approverComment)}` : ''
-    }`;
+    ).toISOString()}`;
   } else if (workflow.status === 'rejected') {
-    statusText = `**Rejected** by ${workflow.approvedBy}${
-      workflow.approverComment ? `\n\n**Reason:**\n${esc(workflow.approverComment)}` : ''
-    }`;
+    statusText = `**Rejected** by ${workflow.approvedBy}`;
   }
 
-  const body = `# ${workflow.title}
-
-${esc(workflow.description)}
-
-## Artifacts for Approval
-${artifactsList}
-
-## Status
-${statusText}
-`.trim();
-
-  return `${yaml}\n\n${body}`;
+  return joinFrontmatter(
+    {
+      title: workflow.title,
+      type: workflow.type,
+      createdBy: workflow.createdBy,
+      assignedTo: workflow.assignedTo,
+      status: workflow.status,
+      artifactIds: workflow.artifactIds,
+      dateCreated: workflow.dateCreated,
+      lastModified: workflow.lastModified,
+      revision: workflow.revision,
+      approvedBy: workflow.approvedBy,
+      approvalDate: workflow.approvalDate,
+      isDeleted: workflow.isDeleted,
+      deletedAt: workflow.deletedAt,
+      history: workflow.history,
+      customAttributes: workflow.customAttributes,
+    },
+    [
+      `# ${workflow.title}`,
+      esc(workflow.description),
+      `## Artifacts for Approval\n${artifactsList}`,
+      `## Status\n${statusText}`,
+      workflow.approverComment ? `## Comment\n${esc(workflow.approverComment)}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n\n')
+  );
 }
 
-/**
- * Parse a Markdown file to extract Workflow data
- */
-export function parseMarkdownWorkflow(content: string): Workflow | null {
-  const { frontmatter, body } = parseYamlFrontmatter(content);
-
-  if (
-    !frontmatter.id ||
-    !frontmatter.title ||
-    !frontmatter.createdBy ||
-    !frontmatter.assignedTo ||
-    !frontmatter.status
-  ) {
+/** Read a workflow file, or null if it is not a complete workflow */
+export function parseMarkdownWorkflow(id: string, content: string): Workflow | null {
+  let parsed: ReturnType<typeof splitFrontmatter>;
+  try {
+    parsed = splitFrontmatter(content);
+  } catch {
     return null;
   }
-
-  // Description is everything before the first H2 section
-  const description = unescapeBodyText(
-    body
-      .split('\n## ')[0]
-      .replace(/^# [^\n]+(\n+|$)/, '')
-      .trim()
-  );
+  const f = parsed.data;
+  if (!f.title || !f.createdBy || !f.assignedTo || !f.status) return null;
+  const { text, sections } = readBody(parsed.body);
 
   return {
-    id: (frontmatter.id as string) || '',
-    title: (frontmatter.title as string) || '',
-    type: (frontmatter.type as string) || undefined,
-    description,
-    createdBy: (frontmatter.createdBy as string) || '',
-    assignedTo: (frontmatter.assignedTo as string) || '',
-    status: frontmatter.status as 'pending' | 'approved' | 'rejected',
-    artifactIds: ensureArray<string>(frontmatter.artifactIds),
-    approvedBy: (frontmatter.approvedBy as string) || undefined,
-    approvalDate: (frontmatter.approvalDate as number) || undefined,
-    approverComment: (frontmatter.approverComment as string) || undefined,
-    dateCreated: (frontmatter.dateCreated as number) || Date.now(),
-    lastModified: (frontmatter.lastModified as number) || Date.now(),
-    isDeleted: (frontmatter.isDeleted as boolean) || false,
-    deletedAt: (frontmatter.deletedAt as number) || undefined,
-    revision: (frontmatter.revision as string) || '1',
-    history: ensureArray<WorkflowAction>(frontmatter.history),
-    customAttributes: ensureArray<CustomAttributeValue>(frontmatter.customAttributes),
+    id,
+    title: String(f.title),
+    type: (f.type as string) || undefined,
+    description: text,
+    createdBy: String(f.createdBy),
+    assignedTo: String(f.assignedTo),
+    status: f.status as 'pending' | 'approved' | 'rejected',
+    artifactIds: (f.artifactIds as string[]) || [],
+    approvedBy: (f.approvedBy as string) || undefined,
+    approvalDate: (f.approvalDate as number) || undefined,
+    approverComment: sections['Comment'] || undefined,
+    dateCreated: (f.dateCreated as number) || 0,
+    lastModified: (f.lastModified as number) || 0,
+    isDeleted: (f.isDeleted as boolean) || false,
+    deletedAt: (f.deletedAt as number) || undefined,
+    revision: (f.revision as string) || '01',
+    history: (f.history as WorkflowAction[]) || [],
+    customAttributes: (f.customAttributes as CustomAttributeValue[]) || [],
   };
 }

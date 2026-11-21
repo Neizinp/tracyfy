@@ -120,7 +120,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     const selected =
       selectedBaselineId === 'current'
         ? null
-        : baselines.find((b) => b.id === selectedBaselineId) || null;
+        : baselines.find((b) => b.name === selectedBaselineId) || null;
     onExportPDF?.(selected);
     setIsExportMenuOpen(false);
   };
@@ -435,8 +435,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                     >
                       <option value="current">Current State</option>
                       {baselines.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.name} ({b.version})
+                        <option key={b.name} value={b.name}>
+                          {b.name}
                         </option>
                       ))}
                     </select>

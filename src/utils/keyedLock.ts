@@ -3,7 +3,7 @@
  *
  * Calls to `run` with the same key execute one after another, in call order,
  * even if earlier ones reject. Different keys run independently.
- * Used to make read-modify-write sequences (e.g. ID counters) atomic.
+ * Used to make read-modify-write sequences (e.g. ID allocation) atomic.
  */
 export class KeyedLock {
   private tails = new Map<string, Promise<unknown>>();

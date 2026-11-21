@@ -10,7 +10,14 @@ import { debug } from '../utils/debug';
 
 export interface ArtifactSerializer<T> {
   serialize: (item: T) => string;
-  deserialize: (content: string) => T | null;
+  /** The ID is the file name. May throw (FileFormatError) when the file does not fit */
+  deserialize: (id: string, content: string) => T | null;
+}
+
+/** A file that could not be read, and why */
+export interface FileProblem {
+  path: string;
+  message: string;
 }
 
 export class BaseArtifactService<T extends { id: string }> extends BaseDiskService {
@@ -28,8 +35,8 @@ export class BaseArtifactService<T extends { id: string }> extends BaseDiskServi
     return this.serializer.serialize(item);
   }
 
-  public deserialize(content: string): T | null {
-    return this.serializer.deserialize(content);
+  public deserialize(id: string, content: string): T | null {
+    return this.serializer.deserialize(id, content);
   }
 
   protected get config() {
@@ -66,7 +73,6 @@ export class BaseArtifactService<T extends { id: string }> extends BaseDiskServi
 
   private getFilePath(id: string): string {
     const folder = this.config.folder;
-    // Standardize on .md for all text-based storage including counters
     return `${folder}/${id}.md`;
   }
 
@@ -117,49 +123,47 @@ export class BaseArtifactService<T extends { id: string }> extends BaseDiskServi
     debug.log(`[BaseArtifactService] Soft deleted ${this.typeKey}: ${id}`);
   }
 
-  /**
-   * Load all artifacts of this type from disk
-   */
+  /** Every artifact of this type on disk */
   async loadAll(includeDeleted: boolean = false): Promise<T[]> {
-    const folder = this.config.folder;
-    const extension = '.md';
-
-    try {
-      const files = await this.listFiles(folder);
-      const mdFiles = files.filter((file) => file.endsWith(extension));
-
-      // Read all files in parallel for speed
-      const contents = await Promise.all(
-        mdFiles.map((file) => this.readTextFile(`${folder}/${file}`))
-      );
-
-      const items: T[] = [];
-      for (const content of contents) {
-        if (content) {
-          const item = this.serializer.deserialize(content);
-          if (item) {
-            if (!includeDeleted && (item as { isDeleted?: boolean }).isDeleted) continue;
-            items.push(item);
-          }
-        }
-      }
-
-      return items;
-    } catch {
-      debug.log(`[BaseArtifactService] Could not load ${this.typeKey} from ${folder}`);
-      return [];
-    }
+    return (await this.loadAllWithProblems(includeDeleted)).items;
   }
 
   /**
-   * Load a single artifact by ID
+   * Every artifact of this type, plus the files that could not be read.
+   * A broken file is reported, never silently left out or turned into wrong data.
    */
+  async loadAllWithProblems(
+    includeDeleted: boolean = false
+  ): Promise<{ items: T[]; problems: FileProblem[] }> {
+    const folder = this.config.folder;
+    const files = (await this.listFiles(folder)).filter((file) => file.endsWith('.md'));
+    const contents = await Promise.all(files.map((file) => this.readTextFile(`${folder}/${file}`)));
+
+    const items: T[] = [];
+    const problems: FileProblem[] = [];
+    files.forEach((file, i) => {
+      const path = `${folder}/${file}`;
+      try {
+        const item = this.serializer.deserialize(file.slice(0, -'.md'.length), contents[i]);
+        if (!item) throw new Error('not a complete file');
+        if (!includeDeleted && (item as { isDeleted?: boolean }).isDeleted) return;
+        items.push(item);
+      } catch (err) {
+        problems.push({ path, message: err instanceof Error ? err.message : String(err) });
+      }
+    });
+    if (problems.length > 0) debug.warn(`[BaseArtifactService] Unreadable files:`, problems);
+    return { items, problems };
+  }
+
+  /** One artifact, or null if its file is missing or cannot be read */
   async load(id: string): Promise<T | null> {
-    const path = this.getFilePath(id);
-    const content = await this.readTextFile(path);
-    if (content) {
-      return this.serializer.deserialize(content);
+    const content = await this.readTextFile(this.getFilePath(id));
+    if (!content) return null;
+    try {
+      return this.serializer.deserialize(id, content);
+    } catch {
+      return null;
     }
-    return null;
   }
 }

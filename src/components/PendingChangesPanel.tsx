@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { FileText, GitCommit, AlertCircle } from 'lucide-react';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
-import { useUser } from '../app/providers/UserProvider';
 import { useBackgroundTaskActions } from '../app/providers/BackgroundTasksProvider';
 import { debug } from '../utils/debug';
 import type { ArtifactChange } from '../types';
@@ -12,10 +11,7 @@ import { isKindId, kind, type ArtifactKindId } from '../domain/artifactKinds';
 const OTHER_CHANGE_LABELS: Record<Exclude<ArtifactChange['type'], ArtifactKindId>, string> = {
   project: 'Project',
   asset: 'Assets',
-  user: 'Users',
-  counter: 'Counters',
   link: 'Links',
-  'custom-attribute': 'Custom Attributes',
   'saved-filter': 'Saved Searches',
   workflow: 'Workflows',
 };
@@ -27,10 +23,10 @@ export function PendingChangesPanel() {
     commitFile,
     revertFile,
     project,
+    links,
     getArtifactHistory,
     refreshStatus,
   } = useFileSystem();
-  const { currentUser } = useUser();
   const { startTask, endTask } = useBackgroundTaskActions();
   const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
   const [parsedChanges, setParsedChanges] = useState<ArtifactChange[]>([]);
@@ -69,7 +65,8 @@ export function PendingChangesPanel() {
         if (!classified) return null;
         const { type, id, filename } = classified;
 
-        const status = fs.status === 'new' ? 'new' : 'modified';
+        const status =
+          fs.status === 'new' ? 'new' : fs.status === 'deleted' ? 'deleted' : 'modified';
 
         // For the project file, show the project name
         // For assets, use the filename (which is a UUID)
@@ -81,13 +78,16 @@ export function PendingChangesPanel() {
           title = `Image: ${filename}`;
         } else if (type === 'saved-filter') {
           title = `Saved Search: ${id}`;
+        } else if (type === 'link') {
+          const link = links.find((l) => l.id === id);
+          if (link) title = `${id}: ${link.sourceId} ${link.type} ${link.targetId}`;
         }
 
         return {
           id,
           type,
           title,
-          status: status as 'new' | 'modified',
+          status,
           path: fs.path,
           commitMessage: commitMessages[id] || '',
         };
@@ -109,7 +109,7 @@ export function PendingChangesPanel() {
         // The project file has no per-artifact history to base a message on
         if (change.type === 'project') {
           defaults[change.id] =
-            change.status === 'new' ? 'Set project name and description' : 'Update project details';
+            change.status === 'new' ? 'Set up project settings' : 'Update project settings';
           processedDefaultsRef.current.add(change.id);
           continue;
         }
@@ -129,31 +129,14 @@ export function PendingChangesPanel() {
           continue;
         }
 
-        // For users, use appropriate default
-        if (change.type === 'user') {
-          defaults[change.id] = change.status === 'new' ? 'Add user' : 'Update user';
-          processedDefaultsRef.current.add(change.id);
-          continue;
-        }
-
-        // For counters, use simple default
-        if (change.type === 'counter') {
-          defaults[change.id] = 'Update counter';
-          processedDefaultsRef.current.add(change.id);
-          continue;
-        }
-
         // For links, use appropriate default
         if (change.type === 'link') {
-          defaults[change.id] = change.status === 'new' ? 'Add link' : 'Update link';
-          processedDefaultsRef.current.add(change.id);
-          continue;
-        }
-
-        // For custom attributes, use appropriate default
-        if (change.type === 'custom-attribute') {
           defaults[change.id] =
-            change.status === 'new' ? 'Add custom attribute' : 'Update custom attribute';
+            change.title !== change.id
+              ? `${change.status === 'new' ? 'Add' : 'Update'} link ${change.title}`
+              : change.status === 'deleted'
+                ? `Remove link ${change.id}`
+                : 'Update link';
           processedDefaultsRef.current.add(change.id);
           continue;
         }
@@ -174,7 +157,7 @@ export function PendingChangesPanel() {
         } catch {
           // On error, fall back to status-based message
           defaults[change.id] =
-            change.status === 'new' ? 'Set project name and description' : 'Update project details';
+            change.status === 'new' ? 'Set up project settings' : 'Update project settings';
           processedDefaultsRef.current.add(change.id);
         }
       }
@@ -196,7 +179,7 @@ export function PendingChangesPanel() {
     setDefaults();
     setParsedChanges(filteredChanges);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingChanges, project, getArtifactHistory]);
+  }, [pendingChanges, project, links, getArtifactHistory]);
 
   const handleCommitMessageChange = (id: string, message: string) => {
     setCommitMessages((prev) => ({ ...prev, [id]: message }));
@@ -248,10 +231,8 @@ export function PendingChangesPanel() {
     activeCommitsRef.current += 1;
 
     // Run commit in background (don't await - let it complete asynchronously)
-    debug.log(
-      `[handleCommit] Starting commit for ${change.path}, message: "${message}", user: ${currentUser?.name}`
-    );
-    commitFile(change.path, message, currentUser?.name)
+    debug.log(`[handleCommit] Starting commit for ${change.path}, message: "${message}"`);
+    commitFile(change.path, message)
       .then(() => {
         debug.log(`[handleCommit] Commit succeeded for ${change.path}`);
       })
@@ -286,11 +267,15 @@ export function PendingChangesPanel() {
   };
 
   const getStatusColor = (status: string) => {
-    return status === 'new' ? 'var(--color-success-light)' : 'var(--color-warning-light)';
+    if (status === 'new') return 'var(--color-success-light)';
+    if (status === 'deleted') return 'var(--color-error-light)';
+    return 'var(--color-warning-light)';
   };
 
   const getStatusText = (status: string) => {
-    return status === 'new' ? 'New' : 'Modified';
+    if (status === 'new') return 'New';
+    if (status === 'deleted') return 'Deleted';
+    return 'Modified';
   };
 
   if (statusError) {

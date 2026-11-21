@@ -20,7 +20,7 @@ interface CustomAttributeDefinitionModalProps {
   isOpen: boolean;
   definition: CustomAttributeDefinition | null;
   onClose: () => void;
-  onSubmit: (data: Omit<CustomAttributeDefinition, 'id' | 'dateCreated' | 'lastModified'>) => void;
+  onSubmit: (data: Omit<CustomAttributeDefinition, 'id'>) => void;
 }
 
 const ATTRIBUTE_TYPES: { value: AttributeType; label: string; description: string }[] = [

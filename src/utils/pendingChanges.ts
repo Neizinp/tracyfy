@@ -1,23 +1,21 @@
 /**
  * Which uncommitted files the Pending Changes panel shows, and how.
  *
- * Files in AUTO_COMMITTED_FOLDERS are internal bookkeeping and are hidden from
- * the panel, so the code that writes them MUST commit them itself - otherwise
- * they stay uncommitted forever with no way for the user to commit them.
- * Anything else that is not mapped here is also invisible in the panel.
+ * Everything the app writes must be mapped here: there are no hidden
+ * bookkeeping files, so a file the panel does not show could never be
+ * committed by the user.
  */
 import type { ArtifactChange } from '../types';
 import { ARTIFACT_KINDS } from '../domain/artifactKinds';
+import { PROJECT_CONFIG_FILE } from '../domain/projectConfig';
 
-/** The project's name and description, at the folder root */
-export const PROJECT_FILE = 'project.md';
-
-export const AUTO_COMMITTED_FOLDERS = ['counters', 'links', 'custom-attributes'] as const;
+/** The project's settings, at the folder root */
+export const PROJECT_FILE = PROJECT_CONFIG_FILE;
 
 const FOLDER_TO_TYPE: Record<string, ArtifactChange['type']> = {
   ...Object.fromEntries(ARTIFACT_KINDS.map((k) => [k.folder, k.id])),
   assets: 'asset',
-  users: 'user',
+  links: 'link',
   'saved-filters': 'saved-filter',
   workflows: 'workflow',
 };

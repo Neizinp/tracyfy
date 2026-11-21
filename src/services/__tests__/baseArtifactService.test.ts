@@ -32,7 +32,7 @@ interface TestItem {
 describe('BaseArtifactService', () => {
   const mockSerializer: ArtifactSerializer<TestItem> = {
     serialize: vi.fn((item) => JSON.stringify(item)),
-    deserialize: vi.fn((content) => JSON.parse(content)),
+    deserialize: vi.fn((_id: string, content: string) => JSON.parse(content)),
   };
 
   let service: BaseArtifactService<TestItem>;
@@ -89,7 +89,7 @@ describe('BaseArtifactService', () => {
       const result = await service.load('REQ-001');
 
       expect(fileSystemService.readFile).toHaveBeenCalledWith('requirements/REQ-001.md');
-      expect(mockSerializer.deserialize).toHaveBeenCalledWith(JSON.stringify(item));
+      expect(mockSerializer.deserialize).toHaveBeenCalledWith('REQ-001', JSON.stringify(item));
       expect(result).toEqual(item);
     });
 

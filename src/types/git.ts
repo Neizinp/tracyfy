@@ -2,18 +2,10 @@ import type { ArtifactKindId } from '../domain/artifactKinds';
 
 export interface ArtifactChange {
   id: string;
-  type:
-    | ArtifactKindId
-    | 'project'
-    | 'asset'
-    | 'user'
-    | 'counter'
-    | 'link'
-    | 'custom-attribute'
-    | 'saved-filter'
-    | 'workflow';
+  type: ArtifactKindId | 'project' | 'asset' | 'link' | 'saved-filter' | 'workflow';
   title: string;
-  status: 'new' | 'modified'; // No 'deleted' - artifacts can only be removed from projects
+  /** Artifacts are never deleted from disk, but a removed link is a deleted file */
+  status: 'new' | 'modified' | 'deleted';
   path: string;
   commitMessage?: string; // User's pending commit message
 }
@@ -29,6 +21,7 @@ export interface CommitInfo {
   hash: string;
   message: string;
   author: string;
+  authorEmail?: string;
   timestamp: number;
   parent?: string[];
 }
@@ -42,20 +35,13 @@ export interface SyncStatus {
   lastFetched?: number;
 }
 
+/** A baseline is a git tag: a name for one commit of the whole project */
 export interface ProjectBaseline {
-  id: string;
-  version: string; // e.g., "01", "02", "03"
+  /** The tag name, e.g. "1.0" */
   name: string;
+  /** The tag message */
   description: string;
   timestamp: number;
-  // Snapshot of which artifacts are in the project at this baseline
-  artifactCommits: {
-    [artifactId: string]: {
-      commitHash: string;
-      type: ArtifactKindId;
-    };
-  };
-  // Track what was added/removed from project since last baseline
-  addedArtifacts?: string[];
-  removedArtifacts?: string[];
+  /** The commit the tag points at */
+  commit: string;
 }

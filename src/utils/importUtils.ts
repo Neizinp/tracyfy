@@ -245,18 +245,6 @@ export function countImported(bundle: ImportBundle): number {
 }
 
 /**
- * Highest numeric suffix among IDs like "REQ-042" → 42. Used to bump ID counters
- * after import so newly created artifacts never collide with imported ones.
- */
-export function maxIdNumber(ids: string[], prefix: string): number {
-  const pattern = new RegExp(`^${prefix}-(\\d+)$`);
-  return ids.reduce((max, id) => {
-    const match = pattern.exec(id);
-    return match ? Math.max(max, parseInt(match[1], 10)) : max;
-  }, 0);
-}
-
-/**
  * Human-readable summary of skipped rows (first few reasons).
  */
 export function describeSkipped(skipped: SkippedImportRow[], limit = 3): string {

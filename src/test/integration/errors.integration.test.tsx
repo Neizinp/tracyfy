@@ -25,7 +25,7 @@ describe('integration: errors are shown, not swallowed', () => {
 
   it('a workflow that cannot be saved shows an error instead of silently doing nothing', async () => {
     h = await startApp({ initialRoute: '/workflows' });
-    await act(() => h.app().user.createUser('Reviewer'));
+    await h.colleagueCommits('Reviewer');
     await act(() =>
       h.app().requirements.handleAddRequirement({
         title: 'Login',
@@ -46,8 +46,7 @@ describe('integration: errors are shown, not swallowed', () => {
       fireEvent.click(await screen.findByText('New Workflow'));
       const dialog = await screen.findByRole('dialog');
       fireEvent.change(within(dialog).getAllByRole('textbox')[0], { target: { value: 'Approve' } });
-      const reviewer = h.app().user.users.find((u) => u.name === 'Reviewer')!;
-      fireEvent.change(within(dialog).getByRole('combobox'), { target: { value: reviewer.id } });
+      fireEvent.change(within(dialog).getByRole('combobox'), { target: { value: 'Reviewer' } });
       fireEvent.change(within(dialog).getByPlaceholderText('Search artifacts by ID or title...'), {
         target: { value: 'Login' },
       });

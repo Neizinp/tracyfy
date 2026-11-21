@@ -12,7 +12,6 @@ interface TestCasesContextValue {
   handleUpdateTestCase: (id: string, data: Partial<TestCase>) => Promise<void>;
   handleDeleteTestCase: (id: string) => void;
   handleRestoreTestCase: (id: string) => void;
-  handlePermanentDeleteTestCase: (id: string) => void;
   handleEditTestCase: (tc: TestCase) => void;
 }
 
@@ -24,7 +23,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Te
   }),
   useFS: (fs) => ({
     save: fs.saveTestCase,
-    delete: fs.deleteTestCase,
     isReady: fs.isReady,
   }),
   useUIHelpers: (ui) => ({
@@ -55,7 +53,6 @@ export const useTestCases = (): TestCasesContextValue => {
     handleUpdateTestCase: context.handleUpdate,
     handleDeleteTestCase: context.handleDelete,
     handleRestoreTestCase: context.handleRestore,
-    handlePermanentDeleteTestCase: context.handlePermanentDelete,
     handleEditTestCase,
   };
 };

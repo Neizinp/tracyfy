@@ -2,7 +2,8 @@ import { BaseArtifactService } from './baseArtifactService';
 import { realGitService } from './realGitService';
 import type { Workflow } from '../types';
 import { workflowToMarkdown, parseMarkdownWorkflow } from '../utils/workflowMarkdownUtils';
-import { idService } from './idService';
+import { idAllocator } from '../storage/idAllocator';
+import { STORED_TYPES } from './storedTypes';
 
 class DiskWorkflowService extends BaseArtifactService<Workflow> {
   constructor() {
@@ -125,7 +126,10 @@ class DiskWorkflowService extends BaseArtifactService<Workflow> {
   async createWorkflow(
     workflow: Omit<Workflow, 'id' | 'dateCreated' | 'lastModified' | 'status'>
   ): Promise<Workflow> {
-    const nextId = await idService.getNextIdWithSync('workflow');
+    const nextId = await idAllocator.next(
+      STORED_TYPES.workflow.folder,
+      STORED_TYPES.workflow.idPrefix
+    );
     const newWorkflow: Workflow = {
       ...workflow,
       id: nextId,

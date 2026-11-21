@@ -115,12 +115,10 @@ describe('VersionHistory', () => {
     it('opens the snapshot of the commit the baseline tag points to', async () => {
       const mockBaselines: ProjectBaseline[] = [
         {
-          id: 'baseline-1',
           name: '1.0',
-          version: '1.0',
           description: 'First baseline',
           timestamp: Date.now(),
-          artifactCommits: {},
+          commit: 'abc1234def',
         },
       ];
 
@@ -179,8 +177,6 @@ describe('VersionHistory', () => {
       expect(screen.getByText('PROJ')).toBeInTheDocument();
       expect(screen.getByText('LINK')).toBeInTheDocument();
       expect(screen.getByText('WF')).toBeInTheDocument();
-      expect(screen.getByText('USER')).toBeInTheDocument();
-      expect(screen.getByText('CTR')).toBeInTheDocument();
       expect(screen.getByText('OTHER')).toBeInTheDocument();
     });
 
@@ -232,7 +228,7 @@ describe('VersionHistory', () => {
       ]);
       vi.mocked(realGitService.getCommitFiles).mockImplementation(async (hash: string) => {
         if (hash === 'commit1') return ['requirements/REQ-001.md'];
-        if (hash === 'commit2') return ['usecases/UC-001.md'];
+        if (hash === 'commit2') return ['use-cases/UC-001.md'];
         return [];
       });
 

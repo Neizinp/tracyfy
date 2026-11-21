@@ -32,11 +32,16 @@ describe('integration: no invisible uncommitted files', () => {
 
     expect(await screen.findByText('Component')).toBeInTheDocument();
     expect(await h.invisibleDirtyPaths()).toEqual([]);
+    // Part of the project settings, committed by the user like any other change
+    expect(await h.dirtyPaths()).toEqual(['tracyfy.yaml']);
+    expect(h.readFile('tracyfy.yaml')).toContain('name: Component');
+    expect(h.exists('custom-attributes')).toBe(false);
+    expect(await h.commitMessages()).toEqual([]);
   }, 60_000);
 
   it('creating a workflow', async () => {
     h = await startApp({ initialRoute: '/workflows' });
-    await act(() => h.app().user.createUser('Reviewer'));
+    await h.colleagueCommits('Reviewer');
     await act(() =>
       h.app().requirements.handleAddRequirement({
         title: 'Login',
@@ -56,8 +61,7 @@ describe('integration: no invisible uncommitted files', () => {
     fireEvent.change(within(dialog).getAllByRole('textbox')[0], {
       target: { value: 'Approve login' },
     });
-    const reviewer = h.app().user.users.find((u) => u.name === 'Reviewer')!;
-    fireEvent.change(within(dialog).getByRole('combobox'), { target: { value: reviewer.id } });
+    fireEvent.change(within(dialog).getByRole('combobox'), { target: { value: 'Reviewer' } });
     fireEvent.change(within(dialog).getByPlaceholderText('Search artifacts by ID or title...'), {
       target: { value: 'Login' },
     });

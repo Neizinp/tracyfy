@@ -1,0 +1,114 @@
+/**
+ * tracyfy.yaml: the project's settings, at the root of the folder.
+ *
+ *   schemaVersion: 1
+ *   name: Door Controller
+ *   description: |
+ *     Controls the lobby doors.
+ *   customAttributes:
+ *     - id: ATTR-001
+ *       name: Component
+ *       type: dropdown
+ *       options: [UI, Backend]
+ *       appliesTo: [requirement, testCase]
+ *
+ * Plain text the team edits and merges like any other file. Parsing validates
+ * the content, so a broken file is reported instead of silently becoming
+ * different settings.
+ *
+ * Pure TypeScript: no React, no IO.
+ */
+import { parse, stringify } from 'yaml';
+import { z } from 'zod';
+import { KIND_IDS } from './artifactKinds';
+import type { CustomAttributeDefinition } from '../types/customAttributes';
+import type { Project } from '../types/project';
+
+export const PROJECT_CONFIG_FILE = 'tracyfy.yaml';
+
+/** Bumped (with an explicit migration) whenever the file format changes */
+export const SCHEMA_VERSION = 1;
+
+const customAttributeSchema = z.object({
+  id: z.string().regex(/^ATTR-\d+$/, 'must look like ATTR-001'),
+  name: z.string().min(1),
+  type: z.enum(['text', 'number', 'date', 'dropdown', 'checkbox']),
+  description: z.string().optional(),
+  required: z.boolean().optional(),
+  defaultValue: z.union([z.string(), z.number(), z.boolean()]).optional(),
+  options: z.array(z.string()).optional(),
+  appliesTo: z.array(z.enum([...KIND_IDS, 'link'])),
+});
+
+const projectConfigSchema = z.object({
+  schemaVersion: z.literal(SCHEMA_VERSION),
+  name: z.string().min(1),
+  description: z.string().default(''),
+  customAttributes: z.array(customAttributeSchema).default([]),
+});
+
+export interface ProjectConfig {
+  schemaVersion: typeof SCHEMA_VERSION;
+  name: string;
+  description: string;
+  customAttributes: CustomAttributeDefinition[];
+}
+
+/** The settings of a folder that has no tracyfy.yaml yet */
+export function defaultProjectConfig(name: string): ProjectConfig {
+  return { schemaVersion: SCHEMA_VERSION, name, description: '', customAttributes: [] };
+}
+
+export class ProjectConfigError extends Error {
+  constructor(message: string) {
+    super(`${PROJECT_CONFIG_FILE}: ${message}`);
+    this.name = 'ProjectConfigError';
+  }
+}
+
+/** Parse and validate tracyfy.yaml; throws ProjectConfigError naming what is wrong */
+export function parseProjectConfig(text: string): ProjectConfig {
+  let data: unknown;
+  try {
+    data = parse(text);
+  } catch (err) {
+    throw new ProjectConfigError(`not valid YAML (${(err as Error).message})`);
+  }
+  const result = projectConfigSchema.safeParse(data);
+  if (!result.success) {
+    const issues = result.error.issues
+      .map((i) => `${i.path.join('.') || '(file)'}: ${i.message}`)
+      .join('; ');
+    throw new ProjectConfigError(issues);
+  }
+  return result.data as ProjectConfig;
+}
+
+/** Stable, readable YAML: fixed key order, empty optional fields left out */
+export function serializeProjectConfig(config: ProjectConfig): string {
+  const attributes = config.customAttributes.map((a) => ({
+    id: a.id,
+    name: a.name,
+    type: a.type,
+    ...(a.description ? { description: a.description } : {}),
+    ...(a.required ? { required: true } : {}),
+    ...(a.defaultValue !== undefined && a.defaultValue !== ''
+      ? { defaultValue: a.defaultValue }
+      : {}),
+    ...(a.options && a.options.length > 0 ? { options: a.options } : {}),
+    appliesTo: a.appliesTo,
+  }));
+  return stringify(
+    {
+      schemaVersion: config.schemaVersion,
+      name: config.name,
+      description: config.description,
+      ...(attributes.length > 0 ? { customAttributes: attributes } : {}),
+    },
+    { lineWidth: 0 }
+  );
+}
+
+export function projectOf(config: ProjectConfig): Project {
+  return { name: config.name, description: config.description };
+}

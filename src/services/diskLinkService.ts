@@ -2,8 +2,9 @@ import { BaseArtifactService } from './baseArtifactService';
 import type { Link } from '../types';
 import type { LinkType } from '../domain/linkTypes';
 import { getInverseType } from '../domain/linkTypes';
-import { linkToMarkdown, parseMarkdownLink } from '../utils/linkMarkdownUtils';
-import { idService } from './idService';
+import { parseLink, serializeLink } from '../domain/artifactFormat';
+import { idAllocator } from '../storage/idAllocator';
+import { STORED_TYPES } from './storedTypes';
 
 /**
  * Incoming link representation (from target's perspective)
@@ -17,8 +18,8 @@ export interface IncomingLink {
 class DiskLinkService extends BaseArtifactService<Link> {
   constructor() {
     super('link', {
-      serialize: linkToMarkdown,
-      deserialize: parseMarkdownLink,
+      serialize: serializeLink,
+      deserialize: parseLink,
     });
   }
 
@@ -76,7 +77,7 @@ class DiskLinkService extends BaseArtifactService<Link> {
    * Create a new link
    */
   async createLink(sourceId: string, targetId: string, type: LinkType): Promise<Link> {
-    const nextId = await idService.getNextIdWithSync('link');
+    const nextId = await idAllocator.next(STORED_TYPES.link.folder, STORED_TYPES.link.idPrefix);
     const link: Link = {
       id: nextId,
       sourceId,
@@ -86,15 +87,15 @@ class DiskLinkService extends BaseArtifactService<Link> {
       lastModified: Date.now(),
       revision: '01',
     };
-    // Link files are hidden from the pending-changes panel, so they are committed immediately
-    return this.save(link, `Add link ${link.id}: ${sourceId} ${type} ${targetId}`);
+    // Shows up in Pending Changes like any other file
+    return this.save(link);
   }
 
   /**
    * Delete a link
    */
   async deleteLink(id: string): Promise<void> {
-    await this.delete(id, `Remove link ${id}`);
+    await this.delete(id);
   }
 
   /**
@@ -116,7 +117,7 @@ class DiskLinkService extends BaseArtifactService<Link> {
       ...updates,
       lastModified: Date.now(),
     };
-    return this.save(updatedLink, `Update link ${id}`);
+    return this.save(updatedLink);
   }
 }
 

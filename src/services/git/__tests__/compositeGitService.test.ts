@@ -14,7 +14,6 @@ vi.mock('../gitCoreService', () => ({
     setAddToCacheFn: vi.fn(),
     setEnsureTokenLoadedFn: vi.fn(),
     init: vi.fn(),
-    saveArtifact: vi.fn(),
     commitFile: vi.fn(),
     getStatus: vi.fn(),
   },
@@ -37,7 +36,6 @@ vi.mock('../gitSyncService', () => ({
     setHasRemoteFn: vi.fn(),
     setReadFileAtCommitFn: vi.fn(),
     setGetHistoryFn: vi.fn(),
-    pullCounters: vi.fn(),
   },
 }));
 
@@ -91,20 +89,9 @@ describe('CompositeGitService', () => {
       expect(compositeGitService.initialized).toBe(true);
     });
 
-    it('should delegate saveArtifact with type casting', async () => {
-      const artifact = { id: 'REQ-1' };
-      await compositeGitService.saveArtifact('requirements', 'REQ-1', artifact);
-
-      expect(gitCoreService.saveArtifact).toHaveBeenCalledWith('requirements', 'REQ-1', artifact);
-    });
-
     it('should delegate commitFile', async () => {
       await compositeGitService.commitFile('path/to/file', 'feat: update');
-      expect(gitCoreService.commitFile).toHaveBeenCalledWith(
-        'path/to/file',
-        'feat: update',
-        undefined
-      );
+      expect(gitCoreService.commitFile).toHaveBeenCalledWith('path/to/file', 'feat: update');
     });
   });
 
@@ -156,11 +143,6 @@ describe('CompositeGitService', () => {
   });
 
   describe('Other Modules Facade', () => {
-    it('should delegate pullCounters to sync service', async () => {
-      await compositeGitService.pullCounters('origin', 'main');
-      expect(gitSyncService.pullCounters).toHaveBeenCalledWith('origin', 'main');
-    });
-
     it('should delegate remote methods to remote service', async () => {
       await compositeGitService.getRemotes();
       expect(gitRemoteService.getRemotes).toHaveBeenCalled();

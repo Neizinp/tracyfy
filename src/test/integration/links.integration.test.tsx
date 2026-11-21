@@ -2,9 +2,8 @@
  * Links, end to end through the real UI, real disk and real git.
  *
  * Every test checks what the user experiences: the link shows up in the UI,
- * the link file exists on disk, it is committed (link files are hidden from
- * the pending-changes panel, so they must never be left uncommitted), and
- * the linked artifacts are NOT marked as modified.
+ * the link file exists on disk and is a pending change like any other file
+ * (the user commits it), and the linked artifacts are NOT marked as modified.
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
@@ -69,7 +68,7 @@ describe('integration: links', () => {
   let h: Harness;
   afterEach(() => h?.cleanup());
 
-  it('creating a link from a requirement dialog shows it, writes it and commits it', async () => {
+  it('creating a link from a requirement dialog shows it and writes it as a pending change', async () => {
     h = await startApp();
     const a = await addRequirement(h, 'Login');
     const b = await addRequirement(h, 'Logout');
@@ -84,10 +83,11 @@ describe('integration: links', () => {
       ])
     );
     const linkId = h.app().fileSystem.links[0].id;
-    // On disk and committed; nothing else became dirty (no "commit the requirement again")
+    // On disk and pending; nothing else became dirty (no "commit the requirement again")
     expect(h.exists(`links/${linkId}.md`)).toBe(true);
-    expect(await h.dirtyPaths()).toEqual([]);
-    expect((await h.commitMessages())[0]).toContain(`Add link ${linkId}`);
+    expect(await h.dirtyPaths()).toEqual([`links/${linkId}.md`]);
+    expect(await h.invisibleDirtyPaths()).toEqual([]);
+    expect(await screen.findByText(`${linkId}: ${a.id} related_to ${b.id}`)).toBeInTheDocument();
 
     // Visible in the requirement's Relationships tab
     await openRelationships(h, a);
@@ -149,15 +149,15 @@ describe('integration: links', () => {
         expect.objectContaining({ sourceId: a.id, targetId: b.id }),
       ])
     );
-    expect(await h.dirtyPaths()).toEqual([]);
+    expect(await h.dirtyPaths()).toEqual([`links/${h.app().fileSystem.links[0].id}.md`]);
   }, 60_000);
 
-  it('removing a link deletes and commits the link file without touching the requirement', async () => {
+  it('removing a committed link is a pending deletion that can be committed, without touching the requirement', async () => {
     h = await startApp();
     const a = await addRequirement(h, 'Login');
     const b = await addRequirement(h, 'Logout');
-    await commitAll(h);
     await createLinkFromRequirementDialog(h, a, b);
+    await commitAll(h);
     const linkId = h.app().fileSystem.links[0].id;
 
     await openRelationships(h, a);
@@ -166,6 +166,10 @@ describe('integration: links', () => {
 
     await waitFor(() => expect(h.app().fileSystem.links).toEqual([]));
     expect(h.exists(`links/${linkId}.md`)).toBe(false);
+    expect(await h.dirtyPaths()).toEqual([`links/${linkId}.md`]);
+    expect(await screen.findByText('Deleted')).toBeInTheDocument();
+
+    await commitAll(h);
     expect(await h.dirtyPaths()).toEqual([]);
   }, 60_000);
 

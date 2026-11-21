@@ -1,34 +1,14 @@
 /**
  * Every artifact type must survive save → load with ALL fields intact.
  *
- * Replaces markdownPropertySafeguard.test.ts, which only searched the
- * serializer source code for property names. Here every field of every type
- * is populated (including text that looks like markdown/YAML syntax) and
- * the parsed result must equal the original exactly.
+ * Every field of every type is populated (including text that looks like
+ * markdown/YAML syntax) and the parsed result must equal the original
+ * exactly. The ID is the file name, so it is passed to the parser.
  */
 import { describe, it, expect } from 'vitest';
-import {
-  requirementToMarkdown,
-  markdownToRequirement,
-  convertUseCaseToMarkdown,
-  markdownToUseCase,
-  testCaseToMarkdown,
-  markdownToTestCase,
-  informationToMarkdown,
-  markdownToInformation,
-  riskToMarkdown,
-  markdownToRisk,
-  documentToMarkdown,
-  markdownToDocument,
-  projectToMarkdown,
-  markdownToProject,
-  userToMarkdown,
-  markdownToUser,
-  customAttributeDefinitionToMarkdown,
-  markdownToCustomAttributeDefinition,
-} from '../markdownUtils';
-import { linkToMarkdown, parseMarkdownLink } from '../linkMarkdownUtils';
-import { workflowToMarkdown, parseMarkdownWorkflow } from '../workflowMarkdownUtils';
+import { parseArtifact, serializeArtifact, parseLink, serializeLink } from '../artifactFormat';
+import { workflowToMarkdown, parseMarkdownWorkflow } from '../../utils/workflowMarkdownUtils';
+import type { ArtifactKindId } from '../artifactKinds';
 import type {
   Requirement,
   UseCase,
@@ -36,12 +16,9 @@ import type {
   Information,
   Risk,
   ArtifactDocument,
-  Project,
-  User,
   Link,
   Workflow,
 } from '../../types';
-import type { CustomAttributeDefinition } from '../../types/customAttributes';
 
 /** Text that tends to break hand-written frontmatter/markdown serializers */
 const TRICKY = [
@@ -164,13 +141,6 @@ const document: ArtifactDocument = {
   status: 'draft',
 };
 
-const project: Project = {
-  name: 'Project: Alpha',
-  description: TRICKY,
-};
-
-const user: User = { id: 'USER-003', name: 'Ada: Lovelace', dateCreated: T0, lastModified: T0 + 1 };
-
 const link: Link = {
   id: 'LINK-011',
   sourceId: 'REQ-042',
@@ -179,8 +149,6 @@ const link: Link = {
   dateCreated: T0,
   lastModified: T0 + 1,
   revision: '02',
-  isDeleted: true,
-  deletedAt: T0 + 2,
   customAttributes: common.customAttributes,
 };
 
@@ -201,38 +169,23 @@ const workflow: Workflow = {
   approverComment: TRICKY,
 };
 
-const attribute: CustomAttributeDefinition = {
-  id: 'ATTR-001',
-  name: 'Component: name',
-  type: 'dropdown',
-  description: TRICKY,
-  required: true,
-  defaultValue: 'Engine',
-  options: ['Engine', 'Brakes: front', 'UI'],
-  appliesTo: ['requirement', 'testCase'],
-  dateCreated: T0,
-  lastModified: T0 + 1,
-  isDeleted: true,
-  deletedAt: T0 + 2,
-};
-
-const CASES: [string, unknown, (x: never) => string, (s: string) => unknown][] = [
-  ['requirement', requirement, requirementToMarkdown, markdownToRequirement],
-  ['use case', useCase, convertUseCaseToMarkdown, markdownToUseCase],
-  ['test case', testCase, testCaseToMarkdown, markdownToTestCase],
-  ['information', information, informationToMarkdown, markdownToInformation],
-  ['risk', risk, riskToMarkdown, markdownToRisk],
-  ['document', document, documentToMarkdown, markdownToDocument],
-  ['project', project, projectToMarkdown, markdownToProject],
-  ['user', user, userToMarkdown, markdownToUser],
-  ['link', link, linkToMarkdown, parseMarkdownLink],
-  ['workflow', workflow, workflowToMarkdown, parseMarkdownWorkflow],
+const kindCase = (kindId: ArtifactKindId, original: { id: string }) =>
   [
-    'custom attribute',
-    attribute,
-    customAttributeDefinitionToMarkdown,
-    markdownToCustomAttributeDefinition,
-  ],
+    kindId,
+    original,
+    (x: never) => serializeArtifact(kindId, x),
+    (s: string) => parseArtifact(kindId, original.id, s),
+  ] as [string, { id: string }, (x: never) => string, (s: string) => unknown];
+
+const CASES: [string, { id: string }, (x: never) => string, (s: string) => unknown][] = [
+  kindCase('requirement', requirement),
+  kindCase('useCase', useCase),
+  kindCase('testCase', testCase),
+  kindCase('information', information),
+  kindCase('risk', risk),
+  kindCase('document', document),
+  ['link', link, serializeLink, (s) => parseLink(link.id, s)],
+  ['workflow', workflow, workflowToMarkdown, (s) => parseMarkdownWorkflow(workflow.id, s)],
 ];
 
 describe.each(CASES)('%s save → load round trip', (_name, original, serialize, parse) => {
@@ -247,50 +200,71 @@ describe.each(CASES)('%s save → load round trip', (_name, original, serialize,
   });
 });
 
-describe('files written by earlier versions still load', () => {
-  it('requirement without escaped lines or new fields', () => {
-    const legacy = [
-      '---',
-      'id: "REQ-001"',
-      'title: "Login"',
-      'status: "approved"',
-      'revision: "03"',
-      'dateCreated: 1700000000000',
-      'lastModified: 1700000000001',
-      'useCaseIds: []',
-      'linkedArtifacts: []',
-      '---',
-      '',
-      '# Login',
-      '',
-      '## Description',
-      'Users sign in.',
-      '',
-      '## Requirement Text',
-      'The system shall authenticate users.',
-      '',
-      '## Rationale',
-      'Security.',
-    ].join('\n');
-
-    expect(markdownToRequirement(legacy)).toMatchObject({
-      id: 'REQ-001',
-      title: 'Login',
+describe('the files are readable plain text', () => {
+  it('a requirement is short frontmatter plus markdown sections, named by its file', () => {
+    const file = serializeArtifact('requirement', {
+      id: 'REQ-012',
+      title: 'Login timeout',
       status: 'approved',
-      revision: '03',
-      dateCreated: 1700000000000,
-      description: 'Users sign in.',
-      text: 'The system shall authenticate users.',
-      rationale: 'Security.',
-    });
+      priority: 'high',
+      description: 'The session ends.',
+      text: 'The system shall log out after 15 minutes.',
+      rationale: '',
+      revision: '02',
+      dateCreated: 5,
+      lastModified: 6,
+    } as Requirement);
+
+    expect(file).toBe(
+      [
+        '---',
+        'title: Login timeout',
+        'status: approved',
+        'priority: high',
+        'revision: "02"',
+        'dateCreated: 5',
+        'lastModified: 6',
+        '---',
+        '',
+        '# Login timeout',
+        '',
+        '## Description',
+        'The session ends.',
+        '',
+        '## Requirement Text',
+        'The system shall log out after 15 minutes.',
+        '',
+        '## Rationale',
+        '',
+      ].join('\n')
+    );
   });
 
-  it('information and project bodies', () => {
-    const info = '---\nid: "INFO-001"\ntitle: "Arch"\n---\n\n# Arch\n\nSome notes.\nMore notes.';
-    expect(markdownToInformation(info)).toMatchObject({ text: 'Some notes.\nMore notes.' });
+  it('a hand-written file with only a title loads with defaults', () => {
+    expect(parseArtifact('requirement', 'REQ-001', '---\ntitle: Login\n---\n')).toMatchObject({
+      id: 'REQ-001',
+      title: 'Login',
+      status: 'draft',
+      priority: 'medium',
+      revision: '01',
+      text: '',
+    });
+  });
+});
 
-    const proj =
-      '---\nid: "PROJ-001"\nname: "Alpha"\nrequirementIds:\n  - "REQ-001"\n---\n\n# Alpha\n\nThe project.';
-    expect(markdownToProject(proj)).toEqual({ name: 'Alpha', description: 'The project.' });
+describe('a file that does not fit is reported, not loaded as wrong data', () => {
+  it.each([
+    ['no frontmatter', '# Login\n', /does not start with a --- frontmatter block/],
+    ['broken YAML', '---\ntitle: [unclosed\n---\n', /not valid YAML/],
+    ['no title', '---\nstatus: draft\n---\n', /title/],
+    ['wrong type', '---\ntitle: Login\ndateCreated: yesterday\n---\n', /dateCreated/],
+  ])('%s', (_case, content, message) => {
+    expect(() => parseArtifact('requirement', 'REQ-001', content)).toThrow(message);
+  });
+
+  it('a link to an unknown link type', () => {
+    expect(() =>
+      parseLink('LINK-001', '---\nsource: REQ-001\ntype: loves\ntarget: REQ-002\n---\n')
+    ).toThrow(/type/);
   });
 });

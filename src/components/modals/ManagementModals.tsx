@@ -177,7 +177,7 @@ export const ManagementModals: React.FC = () => {
 
   const handleCreateBaselineWrapper = useCallback(
     async (name: string, message: string) => {
-      await createBaseline(name, message, name);
+      await createBaseline(name, message);
     },
     [createBaseline]
   );

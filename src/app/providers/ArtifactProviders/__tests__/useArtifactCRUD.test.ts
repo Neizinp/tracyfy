@@ -55,7 +55,6 @@ describe('useArtifactCRUD.handleUpdate', () => {
         type: 'requirement',
         items: [existing],
         saveFn,
-        deleteFn: vi.fn(),
       })
     ).result;
 

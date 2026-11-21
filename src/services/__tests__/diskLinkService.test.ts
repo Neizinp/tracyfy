@@ -7,13 +7,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { diskLinkService } from '../diskLinkService';
 import { fileSystemService } from '../fileSystemService';
-import { idService } from '../idService';
+import { idAllocator } from '../../storage/idAllocator';
 import { realGitService } from '../realGitService';
 
-// Mock the idService
-vi.mock('../idService', () => ({
-  idService: {
-    getNextIdWithSync: vi.fn(),
+vi.mock('../../storage/idAllocator', () => ({
+  idAllocator: {
+    next: vi.fn(),
   },
 }));
 
@@ -28,7 +27,6 @@ vi.mock('../fileSystemService', () => ({
   },
 }));
 
-// Link files are hidden from the pending-changes panel, so writes must be committed
 vi.mock('../realGitService', () => ({
   realGitService: {
     commitFile: vi.fn(() => Promise.resolve()),
@@ -45,11 +43,9 @@ describe('DiskLinkService', () => {
   });
 
   const sampleLinkMarkdown = `---
-id: LINK-001
-sourceId: REQ-001
-targetId: UC-001
+source: REQ-001
 type: satisfies
-projectIds: 
+target: UC-001
 dateCreated: 1700000000000
 lastModified: 1700000100000
 ---
@@ -57,16 +53,12 @@ lastModified: 1700000100000
 # LINK-001
 
 Links **REQ-001** to **UC-001** (satisfies)
-
-**Scope:** Global (all projects)
 `;
 
   const projectScopedLinkMarkdown = `---
-id: LINK-002
-sourceId: REQ-002
-targetId: TC-001
+source: REQ-002
 type: verifies
-projectIds: PRJ-001, PRJ-002
+target: TC-001
 dateCreated: 1700000000000
 lastModified: 1700000000000
 ---
@@ -175,7 +167,7 @@ lastModified: 1700000000000
 
   describe('createLink', () => {
     it('should create a new link file with generated ID', async () => {
-      vi.mocked(idService.getNextIdWithSync).mockResolvedValue('LINK-001');
+      vi.mocked(idAllocator.next).mockResolvedValue('LINK-001');
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
       vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
         undefined as unknown as FileSystemDirectoryHandle
@@ -191,14 +183,12 @@ lastModified: 1700000000000
         'links/LINK-001.md',
         expect.any(String)
       );
-      expect(realGitService.commitFile).toHaveBeenCalledWith(
-        'links/LINK-001.md',
-        'Add link LINK-001: REQ-001 satisfies UC-001'
-      );
+      // A pending change: the user commits it
+      expect(realGitService.commitFile).not.toHaveBeenCalled();
     });
 
     it('should set dateCreated and lastModified', async () => {
-      vi.mocked(idService.getNextIdWithSync).mockResolvedValue('LINK-001');
+      vi.mocked(idAllocator.next).mockResolvedValue('LINK-001');
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
       vi.mocked(fileSystemService.getOrCreateDirectory).mockResolvedValue(
         undefined as unknown as FileSystemDirectoryHandle
@@ -221,10 +211,7 @@ lastModified: 1700000000000
       await diskLinkService.deleteLink('LINK-001');
 
       expect(fileSystemService.deleteFile).toHaveBeenCalledWith('links/LINK-001.md');
-      expect(realGitService.commitFile).toHaveBeenCalledWith(
-        'links/LINK-001.md',
-        'Remove link LINK-001'
-      );
+      expect(realGitService.commitFile).not.toHaveBeenCalled();
     });
 
     it('should throw error if deletion fails', async () => {
@@ -265,7 +252,7 @@ lastModified: 1700000000000
       expect(updated!.type).toBe('depends_on');
       expect(fileSystemService.writeFile).toHaveBeenCalledWith(
         'links/LINK-001.md',
-        expect.stringContaining('type: "depends_on"')
+        expect.stringContaining('type: depends_on')
       );
     });
 

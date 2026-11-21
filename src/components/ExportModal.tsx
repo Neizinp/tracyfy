@@ -56,7 +56,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     const baseline =
       selectedBaselineId === 'current'
         ? null
-        : baselines.find((b) => b.id === selectedBaselineId) || null;
+        : baselines.find((b) => b.name === selectedBaselineId) || null;
 
     onExport({
       format,
@@ -246,8 +246,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             >
               <option value="current">Current Working Copy (Latest)</option>
               {baselines.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name} (v{b.version}) - {new Date(b.timestamp).toLocaleDateString()}
+                <option key={b.name} value={b.name}>
+                  {b.name} - {new Date(b.timestamp).toLocaleDateString()}
                 </option>
               ))}
             </select>

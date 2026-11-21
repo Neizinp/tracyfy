@@ -36,6 +36,7 @@ import {
   useDocuments,
   useGlobalState,
   useUI,
+  useBaselines,
 } from '../../app/providers';
 
 /**
@@ -56,6 +57,7 @@ export interface AppHooks {
   documents: ReturnType<typeof useDocuments>;
   globalState: ReturnType<typeof useGlobalState>;
   ui: ReturnType<typeof useUI>;
+  baselines: ReturnType<typeof useBaselines>;
 }
 
 export interface Harness {
@@ -84,12 +86,19 @@ export interface Harness {
    * bookkeeping files has to commit them itself.
    */
   invisibleDirtyPaths: () => Promise<string[]>;
+  /**
+   * A colleague commits to this repository (as a pull would bring in), then
+   * the app restarts so it sees them as a person in the history.
+   */
+  colleagueCommits: (name: string) => Promise<void>;
   /** Commit messages on HEAD, newest first */
   commitMessages: () => Promise<string[]>;
   /** Wait until the debounced git status refresh in the app has settled */
   settle: () => Promise<void>;
   /** Unmount and remount the app on the same directory (simulates a restart) */
   restart: () => Promise<void>;
+  /** Restart, expecting the folder to fail to open; returns the error the user sees */
+  restartFailing: () => Promise<string>;
   cleanup: () => void;
 }
 
@@ -129,6 +138,7 @@ export async function startApp(
       documents: useDocuments(),
       globalState: useGlobalState(),
       ui: useUI(),
+      baselines: useBaselines(),
     };
     // Publish after commit so tests always read the latest rendered values
     useLayoutEffect(() => {
@@ -169,6 +179,9 @@ export async function startApp(
     { timeout: READY_TIMEOUT }
   );
   fireEvent.change(nameInput, { target: { value: options.userName ?? 'Test User' } });
+  fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
+    target: { value: 'test@example.com' },
+  });
   fireEvent.submit(nameInput.closest('form')!);
   await waitFor(() => expect(app().user.currentUser?.name).toBe(options.userName ?? 'Test User'));
 
@@ -218,8 +231,21 @@ export async function startApp(
         .filter((p) => classifyPendingPath(p) === null)
         .sort();
     },
+    colleagueCommits: async (name) => {
+      const file = `notes/${name.replace(/\W+/g, '-')}.txt`;
+      fs.mkdirSync(path.join(dir, 'notes'), { recursive: true });
+      fs.writeFileSync(path.join(dir, file), `${name} was here\n`);
+      await git.add({ fs, dir, filepath: file });
+      await git.commit({
+        fs,
+        dir,
+        message: `Note from ${name}`,
+        author: { name, email: `${name.toLowerCase()}@example.com` },
+      });
+      await harness.restart();
+    },
     commitMessages: async () => {
-      const log = await git.log({ fs, dir });
+      const log = await git.log({ fs, dir }).catch(() => []); // no commits yet
       return log.map((c) => c.commit.message.trim());
     },
     settle,
@@ -251,6 +277,26 @@ export async function startApp(
         console.error = originalError;
       }
       await settle();
+    },
+    restartFailing: async () => {
+      rendered.unmount();
+      latest.current = null;
+      const originalError = console.error;
+      console.error = () => {}; // the failure is expected
+      try {
+        rendered = render(tree);
+        let message = '';
+        await waitFor(
+          () => {
+            message = latest.current?.fileSystem.error ?? '';
+            expect(message).not.toBe('');
+          },
+          { timeout: READY_TIMEOUT }
+        );
+        return message;
+      } finally {
+        console.error = originalError;
+      }
     },
     cleanup: () => {
       rendered.unmount();

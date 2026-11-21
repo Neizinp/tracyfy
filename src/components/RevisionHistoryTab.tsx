@@ -3,7 +3,7 @@ import { debug } from '../utils/debug';
 import { useFileSystem } from '../app/providers';
 import type { CommitInfo } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
-import { MARKDOWN_TO_ARTIFACT } from '../utils/markdownUtils';
+import { parseArtifact } from '../domain/artifactFormat';
 import { kind, type ArtifactKindId } from '../domain/artifactKinds';
 
 interface RevisionHistoryTabProps {
@@ -47,7 +47,7 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
             let revision = '—';
             let parsed = undefined;
             if (content) {
-              parsed = MARKDOWN_TO_ARTIFACT[artifactType](content);
+              parsed = parseArtifact(artifactType, artifactId, content);
               // Extra debug log
 
               debug.log(

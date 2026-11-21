@@ -16,7 +16,7 @@ import { diskCustomAttributeService } from '../services/diskCustomAttributeServi
 interface UseCustomAttributeFormOptions {
   isOpen: boolean;
   definition: CustomAttributeDefinition | null;
-  onSubmit: (data: Omit<CustomAttributeDefinition, 'id' | 'dateCreated' | 'lastModified'>) => void;
+  onSubmit: (data: Omit<CustomAttributeDefinition, 'id'>) => void;
 }
 
 export function useCustomAttributeForm({
@@ -133,7 +133,6 @@ export function useCustomAttributeForm({
         defaultValue: processedDefaultValue,
         options: type === 'dropdown' ? options : undefined,
         appliesTo,
-        isDeleted: false,
       });
 
       setIsSubmitting(false);

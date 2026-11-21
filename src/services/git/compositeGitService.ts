@@ -1,19 +1,19 @@
 import { debug } from '../../utils/debug';
 import { fileSystemService } from '../fileSystemService';
 import { gitCoreService } from './gitCoreService';
-import { gitHistoryService } from './gitHistoryService';
+import { gitHistoryService, type ProjectSnapshot } from './gitHistoryService';
 import { gitSyncService } from './gitSyncService';
 import { gitRemoteService } from './gitRemoteService';
 import { gitBaselineService } from './gitBaselineService';
+import { gitBackend, getRootDir } from './gitBackend';
+import type { GitAuthor } from '../../../shared/gitOps';
 import {
   type FileStatus,
   type CommitInfo,
   type SyncStatus,
-  type ArtifactFolder,
   type TagDetails,
   type PullResult,
 } from './types';
-import type { Requirement, UseCase, TestCase, Information } from '../../types';
 
 class CompositeGitService {
   private _initialized = false;
@@ -40,10 +40,6 @@ class CompositeGitService {
     gitCoreService.setAddToCacheFn((hash, files) => this.addToCache(hash, files));
     gitCoreService.setEnsureTokenLoadedFn(() => this.ensureTokenLoaded());
 
-    gitSyncService.setFetchFn((remote, branch) => this.fetch(remote, branch));
-    gitSyncService.setPushFn((remote, branch) => this.push(remote, branch));
-    gitSyncService.setHasRemoteFn((name) => this.hasRemote(name));
-    gitSyncService.setReadFileAtCommitFn((path, hash) => this.readFileAtCommit(path, hash));
     gitSyncService.setGetHistoryFn((path, depth, ref) => this.getHistory(path, depth, ref));
   }
 
@@ -94,41 +90,25 @@ class CompositeGitService {
     return this.initialized;
   }
 
-  async saveArtifact(type: string, id: string, artifact: object): Promise<void> {
-    return gitCoreService.saveArtifact(
-      type as ArtifactFolder,
-      id,
-      artifact as Requirement | UseCase | TestCase | Information
-    );
-  }
-
-  async deleteArtifact(type: string, id: string): Promise<void> {
-    return gitCoreService.deleteArtifact(type as ArtifactFolder, id);
-  }
-
-  async renameFile(oldP: string, newP: string, cont: string, msg?: string): Promise<void> {
-    return gitCoreService.renameFile(oldP, newP, cont, msg);
-  }
-
   async getStatus(): Promise<FileStatus[]> {
     return gitCoreService.getStatus();
   }
 
-  async commitFile(path: string, msg: string, author?: string): Promise<void> {
-    return gitCoreService.commitFile(path, msg, author);
+  async commitFile(path: string, msg: string): Promise<void> {
+    return gitCoreService.commitFile(path, msg);
+  }
+
+  /** The user: user.name / user.email in this repository's .git/config (P5) */
+  async getAuthor(): Promise<GitAuthor | null> {
+    return gitBackend().getAuthor(getRootDir());
+  }
+
+  async setAuthor(author: GitAuthor): Promise<void> {
+    return gitBackend().setAuthor(getRootDir(), author);
   }
 
   async revertFile(path: string): Promise<void> {
     return gitCoreService.revertFile(path);
-  }
-
-  async loadAllArtifacts(): Promise<{
-    requirements: Requirement[];
-    useCases: UseCase[];
-    testCases: TestCase[];
-    information: Information[];
-  }> {
-    return gitCoreService.loadAllArtifacts();
   }
 
   // Facade Methods (History)
@@ -137,12 +117,7 @@ class CompositeGitService {
     return gitHistoryService.listFilesAtCommit(hash);
   }
 
-  async loadProjectSnapshot(hash: string): Promise<{
-    requirements: Requirement[];
-    useCases: UseCase[];
-    testCases: TestCase[];
-    information: Information[];
-  }> {
+  async loadProjectSnapshot(hash: string): Promise<ProjectSnapshot> {
     return gitHistoryService.loadProjectSnapshot(hash);
   }
 
@@ -230,14 +205,6 @@ class CompositeGitService {
 
   async pull(remote: string = 'origin', branch: string = 'main'): Promise<PullResult> {
     return gitRemoteService.pull(remote, branch);
-  }
-
-  async pullCounters(remote: string = 'origin', branch: string = 'main'): Promise<boolean> {
-    return gitSyncService.pullCounters(remote, branch);
-  }
-
-  async pushCounters(remote: string = 'origin', branch: string = 'main'): Promise<boolean> {
-    return gitSyncService.pushCounters(remote, branch);
   }
 
   async getCurrentBranch(): Promise<string> {

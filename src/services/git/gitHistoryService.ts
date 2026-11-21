@@ -7,27 +7,17 @@
 import { debug } from '../../utils/debug';
 import { fileSystemService } from '../fileSystemService';
 import { gitBackend, getRootDir } from './gitBackend';
-import {
-  markdownToRequirement,
-  markdownToUseCase,
-  markdownToTestCase,
-  markdownToInformation,
-  markdownToRisk,
-  markdownToDocument,
-} from '../../utils/markdownUtils';
-import { parseMarkdownLink } from '../../utils/linkMarkdownUtils';
-import { parseMarkdownWorkflow } from '../../utils/workflowMarkdownUtils';
+import { ARTIFACT_KINDS, type ArtifactKindId } from '../../domain/artifactKinds';
+import { parseArtifact, parseLink } from '../../domain/artifactFormat';
+import { STORED_TYPES } from '../storedTypes';
 import type { CommitInfo } from './types';
-import type {
-  Requirement,
-  UseCase,
-  TestCase,
-  Information,
-  Risk,
-  Link,
-  Workflow,
-  ArtifactDocument,
-} from '../../types';
+import type { BaseArtifact, Link } from '../../types';
+
+/** Every artifact and link at one commit; files that cannot be read are left out */
+export interface ProjectSnapshot {
+  artifacts: Record<ArtifactKindId, BaseArtifact[]>;
+  links: Link[];
+}
 
 class GitHistoryService {
   private initialized = false;
@@ -205,62 +195,44 @@ class GitHistoryService {
     }
   }
 
-  /**
-   * Load full project snapshot at a specific commit
-   */
-  async loadProjectSnapshot(commitHash: string): Promise<{
-    requirements: Requirement[];
-    useCases: UseCase[];
-    testCases: TestCase[];
-    information: Information[];
-    risks: Risk[];
-    links: Link[];
-    workflows: Workflow[];
-    documents: ArtifactDocument[];
-  }> {
-    const requirements: Requirement[] = [];
-    const useCases: UseCase[] = [];
-    const testCases: TestCase[] = [];
-    const information: Information[] = [];
-    const risks: Risk[] = [];
-    const links: Link[] = [];
-    const workflows: Workflow[] = [];
-    const documents: ArtifactDocument[] = [];
+  /** Every artifact and link at a commit */
+  async loadProjectSnapshot(commitHash: string): Promise<ProjectSnapshot> {
+    const snapshot: ProjectSnapshot = {
+      artifacts: Object.fromEntries(ARTIFACT_KINDS.map((k) => [k.id, []])) as unknown as Record<
+        ArtifactKindId,
+        BaseArtifact[]
+      >,
+      links: [],
+    };
+    const allFiles = await this.listFilesAtCommit(commitHash);
 
-    try {
-      const allFiles = await this.listFilesAtCommit(commitHash);
-
-      // Helper to load and parse files
-      const loadFiles = async <T>(
-        prefix: string,
-        parser: (md: string) => T | null,
-        targetArray: T[]
-      ) => {
-        const files = allFiles.filter((f) => f.startsWith(prefix) && f.endsWith('.md'));
-        for (const file of files) {
-          const content = await this.readFileAtCommit(file, commitHash);
-          if (content) {
-            const parsed = parser(content);
-            if (parsed) targetArray.push(parsed);
-          }
+    /** Files of a folder at the commit, parsed; unreadable ones are skipped */
+    const readFolder = async <T>(folder: string, parse: (id: string, text: string) => T) => {
+      const files = allFiles.filter((f) => f.startsWith(`${folder}/`) && f.endsWith('.md'));
+      const items: T[] = [];
+      for (const file of files) {
+        const content = await this.readFileAtCommit(file, commitHash);
+        if (!content) continue;
+        try {
+          items.push(parse(file.slice(folder.length + 1, -'.md'.length), content));
+        } catch (err) {
+          debug.warn(`[loadProjectSnapshot] ${file} at ${commitHash}:`, err);
         }
-      };
+      }
+      return items;
+    };
 
-      await Promise.all([
-        loadFiles('requirements/', markdownToRequirement, requirements),
-        loadFiles('usecases/', markdownToUseCase, useCases),
-        loadFiles('testcases/', markdownToTestCase, testCases),
-        loadFiles('information/', markdownToInformation, information),
-        loadFiles('risks/', markdownToRisk, risks),
-        loadFiles('links/', (content) => parseMarkdownLink(content), links),
-        loadFiles('workflows/', (content) => parseMarkdownWorkflow(content), workflows),
-        loadFiles('documents/', markdownToDocument, documents),
-      ]);
-    } catch (error) {
-      console.error('[loadProjectSnapshot] Failed to load snapshot:', error);
-    }
-
-    return { requirements, useCases, testCases, information, risks, links, workflows, documents };
+    await Promise.all([
+      ...ARTIFACT_KINDS.map(async (k) => {
+        snapshot.artifacts[k.id] = await readFolder(k.folder, (id, text) =>
+          parseArtifact(k.id, id, text)
+        );
+      }),
+      (async () => {
+        snapshot.links = await readFolder(STORED_TYPES.link.folder, parseLink);
+      })(),
+    ]);
+    return snapshot;
   }
 }
 

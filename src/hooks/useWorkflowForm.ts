@@ -26,7 +26,7 @@ interface UseWorkflowFormOptions {
 }
 
 export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWorkflowFormOptions) {
-  const { currentUser, users } = useUser();
+  const { currentUser, people } = useUser();
   const { requirements } = useRequirements();
   const { useCases } = useUseCases();
   const { testCases } = useTestCases();
@@ -124,10 +124,10 @@ export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWor
     [filteredArtifacts, selectedArtifactIds]
   );
 
-  // Other users (excluding current user for assignment)
+  // People to assign to: everyone in the git history except the user
   const otherUsers = useMemo(
-    () => users.filter((u) => u.id !== currentUser?.id),
-    [users, currentUser?.id]
+    () => people.filter((p) => p.name !== currentUser?.name),
+    [people, currentUser?.name]
   );
 
   const handleAddArtifact = useCallback((id: string) => {
@@ -164,7 +164,7 @@ export function useWorkflowForm({ isOpen, workflow, onClose, onSuccess }: UseWor
           title: title.trim(),
           description,
           revision: '01',
-          createdBy: currentUser.id,
+          createdBy: currentUser.name,
           assignedTo,
           artifactIds: selectedArtifactIds,
         });

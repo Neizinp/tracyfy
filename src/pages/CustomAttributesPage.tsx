@@ -43,9 +43,7 @@ export const CustomAttributesPage: React.FC = () => {
     setEditingDefinition(null);
   };
 
-  const handleModalSubmit = async (
-    data: Omit<CustomAttributeDefinition, 'id' | 'dateCreated' | 'lastModified'>
-  ) => {
+  const handleModalSubmit = async (data: Omit<CustomAttributeDefinition, 'id'>) => {
     try {
       if (editingDefinition) {
         await diskCustomAttributeService.updateDefinition(editingDefinition.id, data);

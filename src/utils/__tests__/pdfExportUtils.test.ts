@@ -1,11 +1,8 @@
 const mockBaseline = {
-  id: 'b1',
-  projectId: 'p1',
-  version: '1.0',
   name: 'Baseline 1.0',
   description: 'Test Baseline',
   timestamp: Date.now(),
-  artifactCommits: {},
+  commit: 'abc1234def',
 };
 import autoTable from 'jspdf-autotable';
 
@@ -164,6 +161,13 @@ vi.mock('../../services/diskLinkService', () => ({
   },
 }));
 
+// Custom attribute definitions come from tracyfy.yaml; none here
+vi.mock('../../services/diskCustomAttributeService', () => ({
+  diskCustomAttributeService: {
+    getAllDefinitions: vi.fn().mockResolvedValue([]),
+  },
+}));
+
 describe('pdfExportUtils', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -241,13 +245,10 @@ describe('pdfExportUtils', () => {
     });
 
     const mockBaseline = {
-      id: 'b1',
-      projectId: 'p1',
-      version: '1.0',
       name: 'Baseline 1.0',
       description: 'Test Baseline',
       timestamp: Date.now(),
-      artifactCommits: {},
+      commit: 'abc1234def',
     };
 
     await exportProjectToPDF(
@@ -280,7 +281,7 @@ describe('pdfExportUtils', () => {
     );
 
     // Verify Baseline
-    expect(mockText).toHaveBeenCalledWith('Baseline: Baseline 1.0 (v1.0)', 105, 155, {
+    expect(mockText).toHaveBeenCalledWith('Baseline: Baseline 1.0', 105, 155, {
       align: 'center',
     });
   });
@@ -641,13 +642,10 @@ describe('pdfExportUtils', () => {
       delete (window as unknown as Record<string, unknown>).showSaveFilePicker;
 
       const testBaseline = {
-        id: 'b1',
-        projectId: 'p1',
-        version: '1.0',
         name: 'v1.0 Release',
         description: 'Test Baseline',
         timestamp: Date.now(),
-        artifactCommits: {},
+        commit: 'abc1234def',
       };
 
       await exportProjectToPDF(mockProject, globalState, ['r1'], [], [], [], [], testBaseline);
@@ -658,27 +656,17 @@ describe('pdfExportUtils', () => {
 
   describe('Revision History Filtering', () => {
     const baselineOld = {
-      id: 'b1',
-      projectId: 'p1',
-      version: '1.0',
       name: 'Baseline 1.0',
       description: 'First baseline',
       timestamp: 1699990000000, // Before mock commits
-      artifactCommits: {
-        r1: { commitHash: 'old123', type: 'requirement' as const },
-      },
+      commit: 'abc1234def',
     };
 
     const baselineNew = {
-      id: 'b2',
-      projectId: 'p1',
-      version: '2.0',
       name: 'Baseline 2.0',
       description: 'Second baseline',
       timestamp: 1700002000000, // After mock commits
-      artifactCommits: {
-        r1: { commitHash: 'new456', type: 'requirement' as const },
-      },
+      commit: 'abc1234def',
     };
 
     it('should show no revision history when exporting first baseline', async () => {
@@ -781,13 +769,10 @@ describe('pdfExportUtils', () => {
 
       // Baseline is before both commits, so current state should show both
       const oldBaseline = {
-        id: 'b1',
-        projectId: 'p1',
-        version: '1.0',
         name: 'Old Baseline',
         description: 'Before commits',
         timestamp: 1699900000000, // Before all mock commits
-        artifactCommits: {},
+        commit: 'abc1234def',
       };
 
       await exportProjectToPDF(

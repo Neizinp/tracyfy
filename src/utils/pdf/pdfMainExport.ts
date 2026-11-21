@@ -10,6 +10,7 @@ import type {
   Risk,
   ArtifactDocument,
 } from '../../types';
+import { kind } from '../../domain/artifactKinds';
 import { realGitService } from '../../services/realGitService';
 import { diskLinkService } from '../../services/diskLinkService';
 import { diskCustomAttributeService } from '../../services/diskCustomAttributeService';
@@ -152,7 +153,7 @@ export async function exportProjectToPDF(
   let upperBoundTimestamp: number | null = null;
 
   if (selectedBaseline) {
-    const selectedIndex = sortedBaselines.findIndex((b) => b.id === selectedBaseline.id);
+    const selectedIndex = sortedBaselines.findIndex((b) => b.name === selectedBaseline.name);
     if (selectedIndex >= 0 && selectedIndex < sortedBaselines.length - 1) {
       previousBaseline = sortedBaselines[selectedIndex + 1];
     }
@@ -187,7 +188,7 @@ export async function exportProjectToPDF(
   // Fetch history for each artifact type
   for (const req of projectRequirements) {
     try {
-      const history = await realGitService.getHistory(`requirements/${req.id}.md`);
+      const history = await realGitService.getHistory(`${kind('requirement').folder}/${req.id}.md`);
       const filteredHistory = filterCommits(history);
       const isNew = isArtifactNew(history);
       if (filteredHistory.length > 0 || isNew) {
@@ -206,7 +207,7 @@ export async function exportProjectToPDF(
 
   for (const uc of projectUseCases) {
     try {
-      const history = await realGitService.getHistory(`usecases/${uc.id}.md`);
+      const history = await realGitService.getHistory(`${kind('useCase').folder}/${uc.id}.md`);
       const filteredHistory = filterCommits(history);
       const isNew = isArtifactNew(history);
       if (filteredHistory.length > 0 || isNew) {
@@ -225,7 +226,7 @@ export async function exportProjectToPDF(
 
   for (const tc of projectTestCases) {
     try {
-      const history = await realGitService.getHistory(`testcases/${tc.id}.md`);
+      const history = await realGitService.getHistory(`${kind('testCase').folder}/${tc.id}.md`);
       const filteredHistory = filterCommits(history);
       const isNew = isArtifactNew(history);
       if (filteredHistory.length > 0 || isNew) {
@@ -244,7 +245,9 @@ export async function exportProjectToPDF(
 
   for (const info of projectInformation) {
     try {
-      const history = await realGitService.getHistory(`information/${info.id}.md`);
+      const history = await realGitService.getHistory(
+        `${kind('information').folder}/${info.id}.md`
+      );
       const filteredHistory = filterCommits(history);
       const isNew = isArtifactNew(history);
       if (filteredHistory.length > 0 || isNew) {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { X, FileText, BookOpen, CheckSquare, Info, Loader } from 'lucide-react';
 import { realGitService } from '../services/realGitService';
+import type { ProjectSnapshot } from '../services/git/gitHistoryService';
 import type { Requirement, UseCase, TestCase, Information } from '../types';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { kind } from '../domain/artifactKinds';
@@ -31,12 +32,7 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<Tab>('requirement');
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<{
-    requirements: Requirement[];
-    useCases: UseCase[];
-    testCases: TestCase[];
-    information: Information[];
-  } | null>(null);
+  const [data, setData] = useState<ProjectSnapshot | null>(null);
 
   useKeyboardShortcuts({
     onClose: onClose,
@@ -68,13 +64,7 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
 
   const itemsOf = (tab: Tab): (Requirement | UseCase | TestCase | Information)[] => {
     if (!data) return [];
-    const byKind = {
-      requirement: data.requirements,
-      useCase: data.useCases,
-      testCase: data.testCases,
-      information: data.information,
-    };
-    return byKind[tab];
+    return data.artifacts[tab] as (Requirement | UseCase | TestCase | Information)[];
   };
 
   const renderContent = () => {

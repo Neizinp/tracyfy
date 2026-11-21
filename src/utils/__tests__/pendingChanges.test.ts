@@ -1,25 +1,25 @@
 /**
- * Every folder the app stores data in must either be shown in the Pending
- * Changes panel or be committed automatically by the code that writes it -
- * otherwise users end up with uncommitted files they cannot see or commit.
- * (workflows/ was neither, until this check existed.)
+ * Every folder the app stores data in must be shown in the Pending Changes
+ * panel - otherwise users end up with uncommitted files they cannot see or
+ * commit. (workflows/ was not, until this check existed.)
  */
 import { describe, it, expect } from 'vitest';
 import { STORED_TYPES } from '../../services/storedTypes';
-import { classifyPendingPath, AUTO_COMMITTED_FOLDERS } from '../pendingChanges';
+import { classifyPendingPath } from '../pendingChanges';
 
 const DATA_FOLDERS = [
   ...Object.values(STORED_TYPES).map((c) => c.folder),
-  'counters',
   'assets',
   'saved-filters',
 ];
 
 describe('pending changes coverage', () => {
-  it.each(DATA_FOLDERS)('%s/ is shown in the panel or auto-committed', (folder) => {
-    const shown = classifyPendingPath(`${folder}/X-001.md`) !== null;
-    const autoCommitted = (AUTO_COMMITTED_FOLDERS as readonly string[]).includes(folder);
-    expect(shown || autoCommitted).toBe(true);
+  it.each(DATA_FOLDERS)('%s/ is shown in the panel', (folder) => {
+    expect(classifyPendingPath(`${folder}/X-001.md`)).not.toBeNull();
+  });
+
+  it('tracyfy.yaml is shown as the project', () => {
+    expect(classifyPendingPath('tracyfy.yaml')).toMatchObject({ type: 'project' });
   });
 
   it('maps paths to the change shown in the panel', () => {
@@ -33,7 +33,10 @@ describe('pending changes coverage', () => {
       id: '1234-abcd.png',
     });
     expect(classifyPendingPath('workflows/WF-001.md')).toMatchObject({ type: 'workflow' });
-    expect(classifyPendingPath('links/LINK-001.md')).toBeNull();
+    expect(classifyPendingPath('links/LINK-001.md')).toMatchObject({
+      type: 'link',
+      id: 'LINK-001',
+    });
     expect(classifyPendingPath('README.md')).toBeNull();
   });
 });

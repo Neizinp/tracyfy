@@ -1,40 +1,15 @@
 /**
  * Git Core Service
  *
- * Handles core git operations: initialization, status, commits, and file operations.
+ * Handles core git operations: initialization, status and commits.
  */
 
 import { debug } from '../../utils/debug';
 import { fileSystemService } from '../fileSystemService';
 import { fsAdapter } from '../fsAdapter';
 import { gitBackend, getRootDir } from './gitBackend';
-import { isElectronEnv, parseStatusMatrix, type FileStatus, type ArtifactFolder } from './types';
-import type {
-  Requirement,
-  UseCase,
-  TestCase,
-  Information,
-  Risk,
-  Link,
-  Workflow,
-  ArtifactDocument,
-} from '../../types';
-import {
-  requirementToMarkdown,
-  convertUseCaseToMarkdown,
-  testCaseToMarkdown,
-  informationToMarkdown,
-  riskToMarkdown,
-  documentToMarkdown,
-  markdownToRequirement,
-  markdownToUseCase,
-  markdownToTestCase,
-  markdownToInformation,
-  markdownToRisk,
-  markdownToDocument,
-} from '../../utils/markdownUtils';
-import { linkToMarkdown, parseMarkdownLink } from '../../utils/linkMarkdownUtils';
-import { workflowToMarkdown, parseMarkdownWorkflow } from '../../utils/workflowMarkdownUtils';
+import { isElectronEnv, parseStatusMatrix, type FileStatus } from './types';
+import { STORED_TYPES } from '../storedTypes';
 
 export { DetachedHeadError } from './gitBackend';
 
@@ -46,13 +21,6 @@ class GitCoreService {
   private addToCacheFn: (commitHash: string, files: string[]) => void = () => {};
   // Callback to ensure token is loaded
   private ensureTokenLoadedFn: () => Promise<void> = async () => {};
-  // Track recently committed files to filter stale statusMatrix results
-  // isomorphic-git's statusMatrix can return stale data immediately after commit
-  private recentlyCommittedFiles: Map<string, number> = new Map();
-  private readonly COMMIT_GRACE_PERIOD_MS = 5000; // 5 second grace period
-  // Short-term cache for getStatus to avoid repeated enumeration
-  private statusCache: { result: import('./types').FileStatus[]; timestamp: number } | null = null;
-  private readonly STATUS_CACHE_TTL_MS = 500; // 500ms cache
 
   setInitialized(value: boolean): void {
     this.initialized = value;
@@ -68,13 +36,6 @@ class GitCoreService {
 
   setEnsureTokenLoadedFn(fn: () => Promise<void>): void {
     this.ensureTokenLoadedFn = fn;
-  }
-
-  /**
-   * Invalidate the status cache (for tests or forced refresh)
-   */
-  invalidateStatusCache(): void {
-    this.statusCache = null;
   }
 
   /**
@@ -137,8 +98,6 @@ class GitCoreService {
     }
 
     this.initialized = true;
-    // Clear status cache to ensure fresh status on next getStatus call
-    this.statusCache = null;
 
     // Ensure essential git files exist
     const essentialFiles = [
@@ -164,120 +123,10 @@ class GitCoreService {
   }
 
   /**
-   * Save an artifact to disk (no commit)
-   */
-  async saveArtifact(
-    type: ArtifactFolder,
-    id: string,
-    artifact:
-      | Requirement
-      | UseCase
-      | TestCase
-      | Information
-      | Risk
-      | Link
-      | Workflow
-      | ArtifactDocument
-  ): Promise<void> {
-    if (!this.initialized) {
-      throw new Error('Git service not initialized');
-    }
-
-    // Convert artifact to markdown
-    let markdown: string;
-    switch (type) {
-      case 'requirements':
-        markdown = requirementToMarkdown(artifact as Requirement);
-        break;
-      case 'usecases':
-        markdown = convertUseCaseToMarkdown(artifact as UseCase);
-        break;
-      case 'testcases':
-        markdown = testCaseToMarkdown(artifact as TestCase);
-        break;
-      case 'information':
-        markdown = informationToMarkdown(artifact as Information);
-        break;
-      case 'risks':
-        markdown = riskToMarkdown(artifact as Risk);
-        break;
-      case 'links':
-        markdown = linkToMarkdown(artifact as Link);
-        break;
-      case 'workflows':
-        markdown = workflowToMarkdown(artifact as Workflow);
-        break;
-      case 'documents':
-        markdown = documentToMarkdown(artifact as ArtifactDocument);
-        break;
-      default:
-        // For types like users and baselines that might use different serialization or are handled elsewhere
-        // But we should support them if they are passed here
-        markdown = JSON.stringify(artifact, null, 2);
-    }
-
-    const filePath = `${type}/${id}.md`;
-    await fileSystemService.writeFile(filePath, markdown);
-  }
-
-  /**
-   * Delete an artifact from disk (no commit)
-   */
-  async deleteArtifact(type: ArtifactFolder, id: string): Promise<void> {
-    if (!this.initialized) {
-      throw new Error('Git service not initialized');
-    }
-
-    const filePath = `${type}/${id}.md`;
-
-    try {
-      await fileSystemService.deleteFile(filePath);
-    } catch (error) {
-      console.error('Failed to delete artifact:', error);
-    }
-  }
-
-  /**
-   * Rename a file with proper git tracking and auto-commit
-   */
-  async renameFile(
-    oldPath: string,
-    newPath: string,
-    newContent: string,
-    commitMessage?: string
-  ): Promise<void> {
-    if (!this.initialized) {
-      throw new Error('Git service not initialized');
-    }
-
-    // 1. Write the new file with updated content
-    await fileSystemService.writeFile(newPath, newContent);
-
-    // 2. Delete the old file
-    await fileSystemService.deleteFile(oldPath);
-
-    const oldName = oldPath.split('/').pop()?.replace('.md', '') || oldPath;
-    const newName = newPath.split('/').pop()?.replace('.md', '') || newPath;
-    const message = commitMessage || `Renamed project: ${oldName} → ${newName}`;
-
-    // One commit: remove the old path, add the new one
-    await gitBackend().commitPaths(getRootDir(), { remove: [oldPath], add: [newPath] }, message);
-
-    debug.log(`[renameFile] Committed rename: ${oldPath} -> ${newPath}`);
-  }
-
-  /**
    * Get git status
    */
   async getStatus(): Promise<FileStatus[]> {
     if (!this.initialized) return [];
-
-    // Return cached result if fresh
-    const now = Date.now();
-    if (this.statusCache && now - this.statusCache.timestamp < this.STATUS_CACHE_TTL_MS) {
-      debug.log('[getStatus] Returning cached result');
-      return this.statusCache.result;
-    }
 
     try {
       let result: FileStatus[] = [];
@@ -293,18 +142,8 @@ class GitCoreService {
         statusMatrixFiles.size > 0 ? statusMatrixFiles : new Set(result.map((f) => f.path));
       const untrackedFiles: FileStatus[] = [];
 
-      const artifactTypes = [
-        'requirements',
-        'usecases',
-        'testcases',
-        'information',
-        'risks',
-        'links',
-        'workflows',
-        'custom-attributes',
-        'documents',
-        'assets',
-      ];
+      // Every folder the app writes one file per item to
+      const artifactTypes = [...Object.values(STORED_TYPES).map((t) => t.folder), 'assets'];
       const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.tiff'];
 
       // Parallel enumeration of all artifact directories
@@ -334,28 +173,7 @@ class GitCoreService {
         untrackedFiles.push(...arr);
       }
 
-      // Filter out recently committed files (grace period to avoid stale statusMatrix data)
-      const now = Date.now();
-      const filteredResult = [...result, ...untrackedFiles].filter((file) => {
-        const commitTime = this.recentlyCommittedFiles.get(file.path);
-        if (commitTime && now - commitTime < this.COMMIT_GRACE_PERIOD_MS) {
-          debug.log(`[getStatus] Filtering recently committed file: ${file.path}`);
-          return false;
-        }
-        return true;
-      });
-
-      // Clean up old entries
-      for (const [path, time] of this.recentlyCommittedFiles.entries()) {
-        if (now - time > this.COMMIT_GRACE_PERIOD_MS) {
-          this.recentlyCommittedFiles.delete(path);
-        }
-      }
-
-      // Cache the result
-      this.statusCache = { result: filteredResult, timestamp: Date.now() };
-
-      return filteredResult;
+      return [...result, ...untrackedFiles];
     } catch (error) {
       // Callers must surface this; an empty list would look like "everything committed"
       console.error('Failed to get status:', error);
@@ -364,10 +182,9 @@ class GitCoreService {
   }
 
   /**
-   * Commit a single file (Atomic Commit)
-   * @param authorName - Optional author name, defaults to 'Tracyfy User'
+   * Commit a single file. The author is the repository's user.name (P5).
    */
-  async commitFile(filepath: string, message: string, authorName?: string): Promise<void> {
+  async commitFile(filepath: string, message: string): Promise<void> {
     if (!this.initialized) {
       throw new Error('Git service not initialized');
     }
@@ -378,26 +195,15 @@ class GitCoreService {
         debug.log(`[commitFile] Starting commit for ${filepath}...`);
         const fileExists = (await fileSystemService.readFileBinary(filepath)) !== null;
         debug.log(`[commitFile] File exists: ${fileExists}`);
-        const authorNameToUse = authorName || 'Tracyfy User';
-        const author = { name: authorNameToUse, email: 'user@tracyfy.local' };
 
         // Stage the file (or its deletion) and commit; HEAD safety is part of commitPaths
         const commitOid = await gitBackend().commitPaths(
           getRootDir(),
           fileExists ? { add: [filepath] } : { remove: [filepath] },
-          message,
-          author
+          message
         );
 
-        debug.log(
-          `[commitFile] Successfully committed ${filepath} by ${authorNameToUse}, SHA: ${commitOid}`
-        );
-
-        // Track this file as recently committed to filter stale statusMatrix results
-        this.recentlyCommittedFiles.set(filepath, Date.now());
-
-        // Invalidate status cache so next getStatus returns fresh data
-        this.statusCache = null;
+        debug.log(`[commitFile] Successfully committed ${filepath} SHA: ${commitOid}`);
 
         // Proactively cache the file for this commit
         this.addToCacheFn(commitOid, [filepath]);
@@ -456,59 +262,6 @@ class GitCoreService {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('git-status-changed'));
     }
-  }
-
-  /**
-   * Load all artifacts from disk
-   */
-  async loadAllArtifacts(): Promise<{
-    requirements: Requirement[];
-    useCases: UseCase[];
-    testCases: TestCase[];
-    information: Information[];
-    risks: Risk[];
-    links: Link[];
-    workflows: Workflow[];
-    documents: ArtifactDocument[];
-  }> {
-    // Helper to load files in parallel for a given folder and parser
-    const loadArtifactType = async <T>(
-      folder: string,
-      parser: (content: string) => T | null
-    ): Promise<T[]> => {
-      try {
-        const files = await fileSystemService.listFiles(folder);
-        const mdFiles = files.filter((f) => f.endsWith('.md'));
-        const contents = await Promise.all(
-          mdFiles.map((file) => fileSystemService.readFile(`${folder}/${file}`))
-        );
-        const items: T[] = [];
-        for (const content of contents) {
-          if (content) {
-            const item = parser(content);
-            if (item) items.push(item);
-          }
-        }
-        return items;
-      } catch {
-        return [];
-      }
-    };
-
-    // Load all artifact types in parallel
-    const [requirements, useCases, testCases, information, risks, links, workflows, documents] =
-      await Promise.all([
-        loadArtifactType('requirements', markdownToRequirement),
-        loadArtifactType('usecases', markdownToUseCase),
-        loadArtifactType('testcases', markdownToTestCase),
-        loadArtifactType('information', markdownToInformation),
-        loadArtifactType('risks', markdownToRisk),
-        loadArtifactType('links', parseMarkdownLink),
-        loadArtifactType('workflows', parseMarkdownWorkflow),
-        loadArtifactType('documents', markdownToDocument),
-      ]);
-
-    return { requirements, useCases, testCases, information, risks, links, workflows, documents };
   }
 }
 

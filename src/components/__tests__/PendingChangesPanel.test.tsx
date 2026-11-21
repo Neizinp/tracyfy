@@ -136,7 +136,7 @@ describe('PendingChangesPanel', () => {
 
   it('should parse usecase paths correctly', () => {
     vi.mocked(useFileSystem).mockReturnValue({
-      pendingChanges: [{ path: 'usecases/UC-001.md', status: 'new' }],
+      pendingChanges: [{ path: 'use-cases/UC-001.md', status: 'new' }],
       commitFile: mockCommitFile,
       getArtifactHistory: mockGetArtifactHistory,
       refreshStatus: mockRefreshStatus,
@@ -197,7 +197,7 @@ describe('PendingChangesPanel', () => {
       pendingChanges: [
         { path: 'requirements/REQ-001.md', status: 'new' },
         { path: 'assets/photo.jpg', status: 'new' },
-        { path: 'usecases/UC-001.md', status: 'modified' },
+        { path: 'use-cases/UC-001.md', status: 'modified' },
       ],
       commitFile: mockCommitFile,
       getArtifactHistory: mockGetArtifactHistory,

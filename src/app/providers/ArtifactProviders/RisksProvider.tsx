@@ -1,3 +1,4 @@
+import { kind } from '../../../domain/artifactKinds';
 import React, { useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useFileSystem } from '../FileSystemProvider';
@@ -15,7 +16,6 @@ interface RisksContextValue {
   handleUpdateRisk: (id: string, data: Partial<Risk>) => Promise<void>;
   handleDeleteRisk: (id: string) => void;
   handleRestoreRisk: (id: string) => void;
-  handlePermanentDeleteRisk: (id: string) => void;
   handleEdit: (risk: Risk) => void;
 }
 
@@ -27,7 +27,6 @@ const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Ri
   }),
   useFS: (fs) => ({
     save: fs.saveRisk,
-    delete: fs.deleteRisk,
     isReady: fs.isReady,
   }),
   useUIHelpers: (ui) => ({
@@ -69,7 +68,7 @@ export const useRisks = (): RisksContextValue => {
   const getRiskHistory = useCallback(
     async (id: string) => {
       if (!isReady || !realGitService.isInitialized()) return [];
-      return await realGitService.getHistory(`risks/${id}.md`);
+      return await realGitService.getHistory(`${kind('risk').folder}/${id}.md`);
     },
     [isReady]
   );
@@ -83,7 +82,6 @@ export const useRisks = (): RisksContextValue => {
     handleUpdateRisk: context.handleUpdate,
     handleDeleteRisk: context.handleDelete,
     handleRestoreRisk: context.handleRestore,
-    handlePermanentDeleteRisk: context.handlePermanentDelete,
     handleEdit: context.handleEdit,
   };
 };
