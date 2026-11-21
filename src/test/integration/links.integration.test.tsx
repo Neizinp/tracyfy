@@ -93,6 +93,24 @@ describe('integration: links', () => {
     expect(within(reqDialog).getByText(b.id)).toBeInTheDocument();
   }, 60_000);
 
+  it('after the link dialog, the requirement dialog is back on its Relationships tab', async () => {
+    h = await startApp();
+    const a = await addRequirement(h, 'Login');
+    const b = await addRequirement(h, 'Logout');
+
+    await createLinkFromRequirementDialog(h, a, b);
+    // "+ Add link" is only on the Relationships tab
+    expect(await screen.findByRole('button', { name: /\+ add link/i })).toBeInTheDocument();
+    expect(h.app().activeModal.type).toBe('requirement');
+
+    // Cancelling comes back too
+    fireEvent.click(screen.getByRole('button', { name: /\+ add link/i }));
+    const dialog = await screen.findByRole('dialog', { name: /create link/i });
+    fireEvent.click(within(dialog).getByRole('button', { name: /cancel/i }));
+    expect(await screen.findByRole('button', { name: /\+ add link/i })).toBeInTheDocument();
+    expect(h.app().links).toHaveLength(1);
+  }, 60_000);
+
   it('both ends of a link open the linked artifact from the Relationships tab', async () => {
     h = await startApp();
     const a = await addRequirement(h, 'Login');
