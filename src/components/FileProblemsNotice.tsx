@@ -1,13 +1,13 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { useFileSystem } from '../app/providers';
+import { useAppStore } from '../state';
 
 /**
  * Project files that could not be read. They are left out of the app until
  * fixed (by hand, or by reverting them in git), never loaded as wrong data.
  */
 export const FileProblemsNotice: React.FC = () => {
-  const { fileProblems } = useFileSystem();
+  const fileProblems = useAppStore((s) => s.fileProblems);
   if (fileProblems.length === 0) return null;
 
   return (

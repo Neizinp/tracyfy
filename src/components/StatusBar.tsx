@@ -5,16 +5,16 @@
  * background operations are in progress.
  */
 
-import { useBackgroundTasks } from '../app/providers/BackgroundTasksProvider';
 import { Loader2 } from 'lucide-react';
+import { useAppStore } from '../state';
 
 export function StatusBar() {
   const isE2E =
     typeof window !== 'undefined' &&
     (window as Window & { __E2E_TEST_MODE__?: boolean }).__E2E_TEST_MODE__;
-  const { tasks, isWorking } = useBackgroundTasks();
+  const tasks = useAppStore((s) => s.tasks);
 
-  if (!isWorking || isE2E) {
+  if (tasks.length === 0 || isE2E) {
     return null;
   }
 

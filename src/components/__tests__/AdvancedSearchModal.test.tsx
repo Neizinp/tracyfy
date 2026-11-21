@@ -1,96 +1,91 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { renderWithStore } from '../../test/renderWithStore';
+import type { AppState } from '../../state';
 import { AdvancedSearchModal } from '../AdvancedSearchModal';
 
-// Mock the hooks
-vi.mock('../../app/providers', () => ({
-  useRequirements: () => ({
-    requirements: [
-      {
-        id: 'REQ-001',
-        title: 'User Authentication',
-        description: 'Users must be able to log in',
-        status: 'active',
-        priority: 'high',
-        dateCreated: new Date('2024-01-15').getTime(),
-        isDeleted: false,
-        text: 'The system shall provide user authentication',
-        rationale: 'Security requirement',
-        author: 'John Doe',
-      },
-      {
-        id: 'REQ-002',
-        title: 'Password Reset',
-        description: 'Users can reset passwords',
-        status: 'draft',
-        priority: 'medium',
-        dateCreated: new Date('2024-02-20').getTime(),
-        isDeleted: false,
-        text: 'Users shall be able to reset their password',
-        rationale: 'User convenience',
-        author: 'Jane Smith',
-      },
-      {
-        id: 'REQ-003',
-        title: 'Admin Dashboard',
-        description: 'Admin panel for management',
-        status: 'active',
-        priority: 'high',
-        dateCreated: new Date('2024-03-10').getTime(),
-        isDeleted: false,
-        text: 'Administrators shall have access to a dashboard',
-        rationale: 'Management requirement',
-        author: 'John Doe',
-      },
-      {
-        id: 'REQ-004',
-        title: 'Deleted Requirement',
-        description: 'This should not appear',
-        status: 'deprecated',
-        priority: 'low',
-        dateCreated: new Date('2024-01-01').getTime(),
-        isDeleted: true,
-      },
-    ],
-  }),
-  useUseCases: () => ({
-    useCases: [
-      {
-        id: 'UC-001',
-        title: 'Login Flow',
-        description: 'User login process',
-        status: 'active',
-        priority: 'high',
-        isDeleted: false,
-      },
-    ],
-  }),
-  useTestCases: () => ({
-    testCases: [
-      {
-        id: 'TC-001',
-        title: 'Test Login',
-        description: 'Verify login works',
-        status: 'passed',
-        priority: 'high',
-        isDeleted: false,
-      },
-    ],
-  }),
-  useInformation: () => ({ information: [] }),
-  useRisks: () => ({
-    risks: [
-      {
-        id: 'RSK-001',
-        title: 'Security Breach',
-        description: 'Potential data leak',
-        status: 'active',
-        impact: 'high',
-        isDeleted: false,
-      },
-    ],
-  }),
-}));
+// The artifacts the search looks through, as the store holds them
+const artifacts = {
+  requirement: [
+    {
+      id: 'REQ-001',
+      title: 'User Authentication',
+      description: 'Users must be able to log in',
+      status: 'active',
+      priority: 'high',
+      dateCreated: new Date('2024-01-15').getTime(),
+      isDeleted: false,
+      text: 'The system shall provide user authentication',
+      rationale: 'Security requirement',
+      author: 'John Doe',
+    },
+    {
+      id: 'REQ-002',
+      title: 'Password Reset',
+      description: 'Users can reset passwords',
+      status: 'draft',
+      priority: 'medium',
+      dateCreated: new Date('2024-02-20').getTime(),
+      isDeleted: false,
+      text: 'Users shall be able to reset their password',
+      rationale: 'User convenience',
+      author: 'Jane Smith',
+    },
+    {
+      id: 'REQ-003',
+      title: 'Admin Dashboard',
+      description: 'Admin panel for management',
+      status: 'active',
+      priority: 'high',
+      dateCreated: new Date('2024-03-10').getTime(),
+      isDeleted: false,
+      text: 'Administrators shall have access to a dashboard',
+      rationale: 'Management requirement',
+      author: 'John Doe',
+    },
+    {
+      id: 'REQ-004',
+      title: 'Deleted Requirement',
+      description: 'This should not appear',
+      status: 'deprecated',
+      priority: 'low',
+      dateCreated: new Date('2024-01-01').getTime(),
+      isDeleted: true,
+    },
+  ],
+  useCase: [
+    {
+      id: 'UC-001',
+      title: 'Login Flow',
+      description: 'User login process',
+      status: 'active',
+      priority: 'high',
+      isDeleted: false,
+    },
+  ],
+  testCase: [
+    {
+      id: 'TC-001',
+      title: 'Test Login',
+      description: 'Verify login works',
+      status: 'passed',
+      priority: 'high',
+      isDeleted: false,
+    },
+  ],
+  information: [],
+  risk: [
+    {
+      id: 'RSK-001',
+      title: 'Security Breach',
+      description: 'Potential data leak',
+      status: 'active',
+      impact: 'high',
+      isDeleted: false,
+    },
+  ],
+  document: [],
+} as unknown as AppState['artifacts'];
 
 vi.mock('../../hooks/useCustomAttributes', () => ({
   useCustomAttributes: () => ({
@@ -105,6 +100,8 @@ vi.mock('../../services/diskFilterService', () => ({
     deleteFilter: vi.fn().mockResolvedValue(undefined),
   },
 }));
+
+const render = (ui: React.ReactElement) => renderWithStore(ui, { state: { artifacts } });
 
 describe('AdvancedSearchModal', () => {
   const mockOnClose = vi.fn();

@@ -11,9 +11,9 @@ describe('integration: app startup', () => {
   it('initializes a git repo with a user in an empty folder; the folder is the project', async () => {
     h = await startApp();
     expect(h.exists('.git')).toBe(true);
-    expect(h.app().user.currentUser?.name).toBe('Test User');
+    expect(h.app().currentUser?.name).toBe('Test User');
     // No project to create: it is named after the folder until renamed
-    expect(h.app().project.project.name).toBe('project');
+    expect(h.app().project.name).toBe('project');
     expect(screen.getByRole('button', { name: 'Project settings: project' })).toBeInTheDocument();
     expect(h.exists('tracyfy.yaml')).toBe(false);
   }, 30_000);
@@ -39,14 +39,43 @@ describe('integration: app startup', () => {
     // A normal, visible pending change
     expect(await h.dirtyPaths()).toContain('tracyfy.yaml');
     expect(await h.invisibleDirtyPaths()).toEqual([]);
-    await act(() => h.app().fileSystem.commitFile('tracyfy.yaml', 'Name the project'));
+    await act(() => h.app().commitFile('tracyfy.yaml', 'Name the project'));
 
     await h.restart();
     expect(
       await screen.findByRole('button', { name: 'Project settings: Door Controller' })
     ).toBeInTheDocument();
-    expect(h.app().project.project.description).toBe('Firmware for the lobby doors');
+    expect(h.app().project.description).toBe('Firmware for the lobby doors');
     expect(await h.dirtyPaths()).not.toContain('tracyfy.yaml');
+  }, 60_000);
+
+  it('the project name is saved trimmed, and an empty name is refused', async () => {
+    h = await startApp();
+    const openSettings = async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^Project settings: / }));
+      return screen.findByRole('dialog');
+    };
+    const setName = (dialog: HTMLElement, value: string) =>
+      fireEvent.change(within(dialog).getByRole('textbox', { name: /project name/i }), {
+        target: { value },
+      });
+
+    let dialog = await openSettings();
+    setName(dialog, '  Gate  ');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await h.settle();
+    expect(h.readFile('tracyfy.yaml')).toBe('schemaVersion: 1\nname: Gate\ndescription: ""\n');
+
+    dialog = await openSettings();
+    setName(dialog, '   ');
+    expect(within(dialog).getByRole('button', { name: 'Save' })).toBeDisabled();
+    // The store refuses it too, whoever asks
+    await expect(h.app().updateProject({ name: '   ', description: '' })).rejects.toThrow(
+      'The project needs a name'
+    );
+    await h.settle();
+    expect(h.app().project.name).toBe('Gate');
+    expect(h.readFile('tracyfy.yaml')).toBe('schemaVersion: 1\nname: Gate\ndescription: ""\n');
   }, 60_000);
 
   it('a broken tracyfy.yaml is reported, not silently replaced by defaults', async () => {

@@ -1,19 +1,10 @@
 import React, { useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { TraceabilityDashboard } from '../components';
-import {
-  useRequirements,
-  useUseCases,
-  useTestCases,
-  useInformation,
-  useUI,
-  useRisks,
-  useDocuments,
-} from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
-import { notifyError } from '../app/providers/ToastProvider';
 import { isKindId } from '../domain/artifactKinds';
 import { useOpenArtifact } from '../hooks/useOpenArtifact';
+import { notifyError, useAppStore } from '../state';
 
 type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
 
@@ -25,13 +16,14 @@ export const TraceabilityDashboardPage: React.FC = () => {
       ? tabParam
       : 'overview';
 
-  const { requirements } = useRequirements();
-  const { useCases } = useUseCases();
-  const { testCases } = useTestCases();
-  const { information } = useInformation();
-  const { risks } = useRisks();
-  const { documents } = useDocuments();
-  const { searchQuery, setLinkSourceId, setLinkSourceType, setIsLinkModalOpen } = useUI();
+  const requirements = useAppStore((s) => s.artifacts.requirement);
+  const useCases = useAppStore((s) => s.artifacts.useCase);
+  const testCases = useAppStore((s) => s.artifacts.testCase);
+  const information = useAppStore((s) => s.artifacts.information);
+  const risks = useAppStore((s) => s.artifacts.risk);
+  const documents = useAppStore((s) => s.artifacts.document);
+  const searchQuery = useAppStore((s) => s.searchQuery);
+  const openLinkDialog = useAppStore((s) => s.openLinkDialog);
   const openArtifact = useOpenArtifact();
   const { allLinks: standaloneLinks, deleteLink } = useLinkService({});
 
@@ -113,11 +105,9 @@ export const TraceabilityDashboardPage: React.FC = () => {
   // Handler to open LinkModal for adding a link
   const handleAddLink = useCallback(
     (artifactId: string, artifactType: string) => {
-      setLinkSourceId(artifactId);
-      setLinkSourceType(isKindId(artifactType) ? artifactType : 'requirement');
-      setIsLinkModalOpen(true);
+      openLinkDialog(artifactId, isKindId(artifactType) ? artifactType : 'requirement');
     },
-    [setLinkSourceId, setLinkSourceType, setIsLinkModalOpen]
+    [openLinkDialog]
   );
 
   // Handler to remove an orphan link

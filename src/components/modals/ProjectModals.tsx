@@ -1,16 +1,18 @@
 import React from 'react';
 import { ProjectSettingsModal } from '../';
-import { useUI, useProject } from '../../app/providers';
+import { useAppStore } from '../../state';
 
 export const ProjectModals: React.FC = () => {
-  const ui = useUI();
-  const { project, updateProject } = useProject();
+  const isOpen = useAppStore((s) => s.activeModal.type === 'project-settings');
+  const closeModal = useAppStore((s) => s.closeModal);
+  const project = useAppStore((s) => s.project);
+  const updateProject = useAppStore((s) => s.updateProject);
 
   return (
     <ProjectSettingsModal
-      isOpen={ui.activeModal.type === 'project-settings'}
+      isOpen={isOpen}
       project={project}
-      onClose={ui.closeModal}
+      onClose={closeModal}
       onSave={updateProject}
     />
   );

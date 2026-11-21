@@ -1,26 +1,26 @@
-import { useCustomAttributeContext } from '../app/providers/CustomAttributeProvider';
+import { useCallback } from 'react';
+import { useAppStore } from '../state';
 import type { CustomAttributeDefinition, ApplicableArtifactType } from '../types/customAttributes';
 
 interface UseCustomAttributesResult {
   definitions: CustomAttributeDefinition[];
+  /** True until a folder is open and its definitions are loaded */
   loading: boolean;
-  error: Error | null;
+  /** Read the definitions from tracyfy.yaml again */
   refetch: () => Promise<void>;
   getDefinitionsForType: (type: ApplicableArtifactType) => CustomAttributeDefinition[];
 }
 
-/**
- * Hook to access custom attribute definitions.
- * Now uses centralized CustomAttributeProvider for efficient, consistent state.
- */
+/** The custom attribute definitions of the project (from tracyfy.yaml) */
 export const useCustomAttributes = (): UseCustomAttributesResult => {
-  const context = useCustomAttributeContext();
+  const definitions = useAppStore((s) => s.attributeDefinitions);
+  const loading = useAppStore((s) => !s.isReady);
+  const refetch = useAppStore((s) => s.reloadConfig);
 
-  return {
-    definitions: context.definitions,
-    loading: context.loading,
-    error: context.error,
-    refetch: context.refetch,
-    getDefinitionsForType: context.getDefinitionsForType,
-  };
+  const getDefinitionsForType = useCallback(
+    (type: ApplicableArtifactType) => definitions.filter((def) => def.appliesTo.includes(type)),
+    [definitions]
+  );
+
+  return { definitions, loading, refetch, getDefinitionsForType };
 };

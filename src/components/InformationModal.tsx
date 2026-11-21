@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { BaseArtifactModal } from './BaseArtifactModal';
 import type { Information } from '../types';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
-import { useUI } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
 import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { CustomAttributeEditor } from './CustomAttributeEditor';
@@ -12,6 +11,7 @@ import { ArtifactOverviewFields } from './forms/ArtifactOverviewFields';
 import { ArtifactRelationshipsTab } from './forms/ArtifactRelationshipsTab';
 import { ArtifactDetailsSections } from './forms/ArtifactDetailsSections';
 import { FormField } from './forms/FormField';
+import { useAppStore } from '../state';
 
 interface InformationModalProps {
   isOpen: boolean;
@@ -36,7 +36,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
   onDelete,
   onBack,
 }) => {
-  const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
+  const openLinkDialog = useAppStore((s) => s.openLinkDialog);
 
   // Use the extracted hook for form state and handlers
   const {
@@ -220,9 +220,7 @@ export const InformationModal: React.FC<InformationModalProps> = ({
           loading={linksLoading}
           onAddLink={() => {
             if (information) {
-              setLinkSourceId(information.id);
-              setLinkSourceType('information');
-              setIsLinkModalOpen(true);
+              openLinkDialog(information.id, 'information');
             }
           }}
           onRemoveLink={(linkId) =>

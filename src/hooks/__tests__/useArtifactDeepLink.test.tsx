@@ -1,106 +1,77 @@
-import { renderHook } from '@testing-library/react';
+/**
+ * ?id=REQ-001 in the URL opens that artifact's dialog, and the open dialog
+ * is written back to the URL. The UI state is a real store.
+ */
+import { act, renderHook } from '@testing-library/react';
 import { useArtifactDeepLink } from '../useArtifactDeepLink';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useSearchParams } from 'react-router-dom';
-import { useUI, useGlobalState } from '../../app/providers';
-import type { UIContextValue, GlobalStateContextValue } from '../../app/providers';
+import { storeWrapper } from '../../test/renderWithStore';
+import type { AppState } from '../../state';
+import type { Requirement } from '../../types';
 
 vi.mock('react-router-dom', () => ({
   useSearchParams: vi.fn(),
 }));
 
-vi.mock('../../app/providers', () => ({
-  useUI: vi.fn(),
-  useGlobalState: vi.fn(),
-}));
-
-const mockedUseUI = vi.mocked(useUI);
-const mockedUseGlobalState = vi.mocked(useGlobalState);
 const mockedUseSearchParams = vi.mocked(useSearchParams);
+const mockSetSearchParams = vi.fn();
+
+const withUrl = (query: string) =>
+  mockedUseSearchParams.mockReturnValue([new URLSearchParams(query), mockSetSearchParams]);
+
+/** A store holding REQ-001 (unless `requirements` says otherwise) */
+function render(state: Partial<AppState> = {}, requirements = ['REQ-001']) {
+  const { wrapper, store } = storeWrapper();
+  store.setState((s) => ({
+    artifacts: {
+      ...s.artifacts,
+      requirement: requirements.map((id) => ({ id, title: 'Test Req' }) as Requirement),
+    },
+    ...state,
+  }));
+  const hook = renderHook(() => useArtifactDeepLink(), { wrapper });
+  return { ...hook, store };
+}
 
 describe('useArtifactDeepLink', () => {
-  const mockOpenModal = vi.fn();
-  const mockSetSearchParams = vi.fn();
+  beforeEach(() => vi.clearAllMocks());
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockedUseUI.mockReturnValue({
-      openModal: mockOpenModal,
-      activeModal: { type: null },
-      selectedArtifact: null,
-    } as unknown as UIContextValue);
-    mockedUseGlobalState.mockReturnValue({
-      requirements: [{ id: 'REQ-001', title: 'Test Req' }],
-      useCases: [],
-      testCases: [],
-      information: [],
-      risks: [],
-    } as unknown as GlobalStateContextValue);
+  it('opens the dialog of the artifact in the URL', () => {
+    withUrl('?id=REQ-001');
+    const { store } = render();
+
+    expect(store.getState().activeModal).toEqual({ type: 'requirement', isEdit: true });
+    expect(store.getState().selectedArtifact).toMatchObject({ id: 'REQ-001', type: 'requirement' });
   });
 
-  it('should open modal when id is present in search params', () => {
-    mockedUseSearchParams.mockReturnValue([
-      new URLSearchParams('?id=REQ-001'),
-      mockSetSearchParams,
-    ]);
-
-    renderHook(() => useArtifactDeepLink());
-
-    expect(mockOpenModal).toHaveBeenCalledWith(
-      'requirement',
-      true,
-      expect.objectContaining({
-        id: 'REQ-001',
-        type: 'requirement',
-      })
-    );
-  });
-
-  it('should not open modal if id is already processed', () => {
-    mockedUseSearchParams.mockReturnValue([
-      new URLSearchParams('?id=REQ-001'),
-      mockSetSearchParams,
-    ]);
-
-    const { rerender } = renderHook(() => useArtifactDeepLink());
-    expect(mockOpenModal).toHaveBeenCalledTimes(1);
+  it('does not reopen an artifact that was already opened from the URL', () => {
+    withUrl('?id=REQ-001');
+    const { store, rerender } = render();
+    act(() => store.getState().closeModal());
 
     rerender();
-    expect(mockOpenModal).toHaveBeenCalledTimes(1);
+
+    expect(store.getState().activeModal.type).toBeNull();
   });
 
-  it('should update search params when a modal is opened manually', () => {
-    mockedUseSearchParams.mockReturnValue([new URLSearchParams(''), mockSetSearchParams]);
-    mockedUseUI.mockReturnValue({
-      openModal: mockOpenModal,
-      activeModal: { type: 'requirement' },
+  it('writes a dialog opened in the app to the URL', () => {
+    withUrl('');
+    render({
+      activeModal: { type: 'requirement', isEdit: true },
       selectedArtifact: { id: 'REQ-002', type: 'requirement' },
-    } as unknown as UIContextValue);
-
-    renderHook(() => useArtifactDeepLink());
+    });
 
     expect(mockSetSearchParams).toHaveBeenCalled();
-    const call = mockSetSearchParams.mock.calls[0][0];
-    expect(call.get('id')).toBe('REQ-002');
+    expect(mockSetSearchParams.mock.calls[0][0].get('id')).toBe('REQ-002');
   });
 
-  it('should remove search params when modal is closed', () => {
-    mockedUseSearchParams.mockReturnValue([
-      new URLSearchParams('?id=REQ-001'),
-      mockSetSearchParams,
-    ]);
-    mockedUseUI.mockReturnValue({
-      openModal: mockOpenModal,
-      activeModal: { type: null },
-      selectedArtifact: null,
-    } as unknown as UIContextValue);
+  it('removes the ID from the URL when no dialog is open', () => {
+    // No such artifact, so nothing opens
+    withUrl('?id=REQ-001');
+    render({}, []);
 
-    renderHook(() => useArtifactDeepLink());
-
-    // First effect opens modal (if it wasn't for the mock return value)
-    // Second effect removes ID because modal is null
     expect(mockSetSearchParams).toHaveBeenCalled();
-    const call = mockSetSearchParams.mock.calls[0][0];
-    expect(call.has('id')).toBe(false);
+    expect(mockSetSearchParams.mock.calls[0][0].has('id')).toBe(false);
   });
 });

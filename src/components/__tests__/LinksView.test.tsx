@@ -5,7 +5,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithStore } from '../../test/renderWithStore';
+import type { AppState } from '../../state';
 import { LinksView } from '../LinksView';
 import { diskLinkService } from '../../services/diskLinkService';
 import type { Link } from '../../types';
@@ -20,48 +22,39 @@ vi.mock('../../services/diskLinkService', () => ({
   },
 }));
 
-// Mock the FileSystemProvider
-vi.mock('../../app/providers/FileSystemProvider', () => ({
-  useFileSystem: () => ({
-    isReady: true,
-    links: [
-      {
-        id: 'LINK-001',
-        sourceId: 'REQ-001',
-        targetId: 'UC-001',
-        type: 'satisfies',
-        projectIds: [],
-        dateCreated: 1700000000000,
-        lastModified: 1700000100000,
-        revision: '01',
-      },
-      {
-        id: 'LINK-002',
-        sourceId: 'REQ-002',
-        targetId: 'TC-001',
-        type: 'verifies',
-        projectIds: ['PRJ-001'],
-        dateCreated: 1700000000000,
-        lastModified: 1700000000000,
-        revision: '01',
-      },
-      {
-        id: 'LINK-003',
-        sourceId: 'UC-001',
-        targetId: 'INFO-001',
-        type: 'related_to',
-        projectIds: [],
-        dateCreated: 1700000000000,
-        lastModified: 1700000000000,
-        revision: '01',
-      },
-    ],
-    setLinks: vi.fn(),
-    saveLink: vi.fn(),
-    deleteLink: vi.fn(),
-    reloadData: vi.fn(),
-  }),
-}));
+// What LinksView reads from the store
+const storeState = (): Partial<AppState> => ({
+  isReady: true,
+  links: [
+    {
+      id: 'LINK-001',
+      sourceId: 'REQ-001',
+      targetId: 'UC-001',
+      type: 'satisfies',
+      dateCreated: 1700000000000,
+      lastModified: 1700000100000,
+      revision: '01',
+    },
+    {
+      id: 'LINK-002',
+      sourceId: 'REQ-002',
+      targetId: 'TC-001',
+      type: 'verifies',
+      dateCreated: 1700000000000,
+      lastModified: 1700000000000,
+      revision: '01',
+    },
+    {
+      id: 'LINK-003',
+      sourceId: 'UC-001',
+      targetId: 'INFO-001',
+      type: 'related_to',
+      dateCreated: 1700000000000,
+      lastModified: 1700000000000,
+      revision: '01',
+    },
+  ],
+});
 
 describe('LinksView', () => {
   const mockLinks: Link[] = [
@@ -102,16 +95,16 @@ describe('LinksView', () => {
 
   describe('Rendering', () => {
     it('should render the component', async () => {
-      render(<LinksView />);
+      renderWithStore(<LinksView />, { state: storeState() });
 
-      // Component uses useFileSystem for data - just check it renders
+      // Component reads its data from the store - just check it renders
       await waitFor(() => {
         expect(screen.getByText('Source')).toBeInTheDocument();
       });
     });
 
     it('should display links table after loading', async () => {
-      render(<LinksView />);
+      renderWithStore(<LinksView />, { state: storeState() });
 
       await waitFor(() => {
         expect(screen.getByText('Source')).toBeInTheDocument();
@@ -120,20 +113,15 @@ describe('LinksView', () => {
     });
 
     it('should show link IDs in the table', async () => {
-      render(<LinksView />);
+      renderWithStore(<LinksView />, { state: storeState() });
 
       await waitFor(() => {
         expect(screen.getByText('LINK-001')).toBeInTheDocument();
       });
     });
 
-    // Note: Empty state test requires mocking useFileSystem with empty links
-    // This is not easily done per-test with vi.mock hoisting
-    // The empty state is tested via UI interaction instead
-    it.skip('should show empty state when no links exist', async () => {
-      // This test is skipped because the component now uses useFileSystem
-      // and vi.mock is hoisted, making per-test mocking difficult
-      render(<LinksView />);
+    it('should show empty state when no links exist', async () => {
+      renderWithStore(<LinksView />, { state: { ...storeState(), links: [] } });
 
       await waitFor(() => {
         expect(screen.getByText(/No links/i)).toBeInTheDocument();
@@ -143,7 +131,7 @@ describe('LinksView', () => {
 
   describe('Table headers', () => {
     it('should display Source and Target columns', async () => {
-      render(<LinksView />);
+      renderWithStore(<LinksView />, { state: storeState() });
 
       await waitFor(() => {
         expect(screen.getByText('Source')).toBeInTheDocument();
@@ -152,7 +140,7 @@ describe('LinksView', () => {
     });
 
     it('should display Type column', async () => {
-      render(<LinksView />);
+      renderWithStore(<LinksView />, { state: storeState() });
 
       await waitFor(() => {
         // Type might be in header
@@ -164,7 +152,7 @@ describe('LinksView', () => {
 
   describe('Data display', () => {
     it('should display link IDs in the table', async () => {
-      render(<LinksView />);
+      renderWithStore(<LinksView />, { state: storeState() });
 
       await waitFor(() => {
         expect(screen.getByText('LINK-001')).toBeInTheDocument();
@@ -175,7 +163,7 @@ describe('LinksView', () => {
 
   describe('Refresh functionality', () => {
     it('should have a refresh button', async () => {
-      render(<LinksView />);
+      renderWithStore(<LinksView />, { state: storeState() });
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /refresh/i })).toBeInTheDocument();

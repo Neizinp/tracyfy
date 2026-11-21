@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useUI } from '../app/providers';
+import { useAppStore } from '../state';
 import { kindOfId } from '../domain/artifactKinds';
 import { useOpenArtifact } from './useOpenArtifact';
 
@@ -11,7 +11,8 @@ import { useOpenArtifact } from './useOpenArtifact';
  */
 export function useArtifactDeepLink() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { activeModal, selectedArtifact } = useUI();
+  const activeModal = useAppStore((s) => s.activeModal);
+  const selectedArtifact = useAppStore((s) => s.selectedArtifact);
   const openArtifact = useOpenArtifact();
 
   // Track the last processed ID to avoid re-opening if it was manually closed

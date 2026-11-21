@@ -1,15 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
+import { screen, fireEvent, within, waitFor } from '@testing-library/react';
 import React from 'react';
 import { TraceabilityDashboard } from '../TraceabilityDashboard';
 import type { Requirement, UseCase, TestCase, Information, Link } from '../../types';
 import { diskLinkService } from '../../services/diskLinkService';
-import { UIProvider } from '../../app/providers';
+import { renderWithStore } from '../../test/renderWithStore';
 
-// Wrapper that provides UIProvider context for Links tab tests
-const renderWithProviders = (ui: React.ReactElement) => {
-  return render(<UIProvider>{ui}</UIProvider>);
-};
+const render = (ui: React.ReactElement) =>
+  renderWithStore(ui, { state: { isReady: true, links: storeLinks() } });
 
 // Mock the diskLinkService for LinksView
 vi.mock('../../services/diskLinkService', () => ({
@@ -21,38 +19,28 @@ vi.mock('../../services/diskLinkService', () => ({
   },
 }));
 
-// Mock the FileSystemProvider for LinksView
-vi.mock('../../app/providers/FileSystemProvider', () => ({
-  useFileSystem: () => ({
-    isReady: true,
-    links: [
-      {
-        id: 'LINK-001',
-        sourceId: 'REQ-001',
-        targetId: 'UC-001',
-        type: 'satisfies',
-        projectIds: [],
-        dateCreated: Date.now(),
-        lastModified: Date.now(),
-        revision: '01',
-      },
-      {
-        id: 'LINK-002',
-        sourceId: 'TC-001',
-        targetId: 'REQ-001',
-        type: 'verifies',
-        projectIds: [],
-        dateCreated: Date.now(),
-        lastModified: Date.now(),
-        revision: '01',
-      },
-    ],
-    setLinks: vi.fn(),
-    saveLink: vi.fn(),
-    deleteLink: vi.fn(),
-    reloadData: vi.fn(),
-  }),
-}));
+// Mock the disk link service for LinksView
+// The links LinksView reads from the store
+const storeLinks = (): Link[] => [
+  {
+    id: 'LINK-001',
+    sourceId: 'REQ-001',
+    targetId: 'UC-001',
+    type: 'satisfies',
+    dateCreated: Date.now(),
+    lastModified: Date.now(),
+    revision: '01',
+  },
+  {
+    id: 'LINK-002',
+    sourceId: 'TC-001',
+    targetId: 'REQ-001',
+    type: 'verifies',
+    dateCreated: Date.now(),
+    lastModified: Date.now(),
+    revision: '01',
+  },
+];
 
 // Default mock setup - reset before each test
 beforeEach(() => {
@@ -217,7 +205,7 @@ describe('TraceabilityDashboard', () => {
     });
 
     it('switches to Links tab when clicked', async () => {
-      renderWithProviders(<TraceabilityDashboard {...defaultProps} />);
+      render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
       // LinksView shows header like "Links (N)"
@@ -305,7 +293,7 @@ describe('TraceabilityDashboard', () => {
     });
 
     it('displays LinksView with table headers', async () => {
-      renderWithProviders(<TraceabilityDashboard {...defaultProps} />);
+      render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
       await waitFor(() => {
@@ -317,7 +305,7 @@ describe('TraceabilityDashboard', () => {
     });
 
     it('shows links from diskLinkService', async () => {
-      renderWithProviders(<TraceabilityDashboard {...defaultProps} />);
+      render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
       await waitFor(() => {
@@ -329,7 +317,7 @@ describe('TraceabilityDashboard', () => {
     });
 
     it('displays link types in the table', async () => {
-      renderWithProviders(<TraceabilityDashboard {...defaultProps} />);
+      render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Links');
 
       await waitFor(() => {

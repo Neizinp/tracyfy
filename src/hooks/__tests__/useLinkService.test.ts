@@ -1,13 +1,14 @@
 /**
  * useLinkService Hook Tests
  *
- * Tests for the React hook that manages links using FileSystemProvider.
- * The hook now derives links from useFileSystem() and only calls diskLinkService for mutations.
+ * The hook reads links from the store and writes them through the store's
+ * actions (so every view updates), never through diskLinkService directly.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useLinkService } from '../useLinkService';
+import { storeWrapper } from '../../test/renderWithStore';
 import { diskLinkService } from '../../services/diskLinkService';
 import type { Link } from '../../types';
 
@@ -56,54 +57,48 @@ const mockLinks: Link[] = [
   },
 ];
 
-// Writes must go through the provider (so link state updates everywhere), not the disk service
-const { mockCreateLink, mockDeleteLink } = vi.hoisted(() => ({
-  mockCreateLink: vi.fn(),
-  mockDeleteLink: vi.fn(),
-}));
+const mockCreateLink = vi.fn();
+const mockDeleteLink = vi.fn();
 
-// Mock the FileSystemProvider - the hook now uses this for link data
-vi.mock('../../app/providers/FileSystemProvider', () => ({
-  useFileSystem: vi.fn(() => ({
-    isReady: true,
-    links: mockLinks,
-    setLinks: vi.fn(),
-    saveLink: vi.fn(),
-    deleteLink: mockDeleteLink,
-    createLink: mockCreateLink,
-    reloadData: vi.fn(),
-  })),
-}));
+const render = (options?: Parameters<typeof useLinkService>[0]) =>
+  renderHook(() => useLinkService(options), {
+    wrapper: storeWrapper({
+      isReady: true,
+      links: mockLinks,
+      createLink: mockCreateLink,
+      deleteLink: mockDeleteLink,
+    }).wrapper,
+  });
 
 describe('useLinkService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('Link data from provider', () => {
-    it('should return all links from provider', () => {
-      const { result } = renderHook(() => useLinkService());
+  describe('Link data from the store', () => {
+    it('should return all links in the store', () => {
+      const { result } = render();
 
       expect(result.current.allLinks).toHaveLength(3);
       expect(result.current.allLinks).toEqual(mockLinks);
     });
 
     it('should return empty outgoing/incoming when no artifactId', () => {
-      const { result } = renderHook(() => useLinkService());
+      const { result } = render();
 
       expect(result.current.outgoingLinks).toEqual([]);
       expect(result.current.incomingLinks).toEqual([]);
     });
 
     it('should filter outgoing links by artifactId', () => {
-      const { result } = renderHook(() => useLinkService({ artifactId: 'REQ-001' }));
+      const { result } = render({ artifactId: 'REQ-001' });
 
       expect(result.current.outgoingLinks).toHaveLength(2);
       expect(result.current.outgoingLinks.every((l) => l.sourceId === 'REQ-001')).toBe(true);
     });
 
     it('should filter incoming links by artifactId', () => {
-      const { result } = renderHook(() => useLinkService({ artifactId: 'REQ-001' }));
+      const { result } = render({ artifactId: 'REQ-001' });
 
       expect(result.current.incomingLinks).toHaveLength(1);
       expect(result.current.incomingLinks[0].sourceId).toBe('UC-001');
@@ -111,7 +106,7 @@ describe('useLinkService', () => {
   });
 
   describe('createLink', () => {
-    it('should create links through the FileSystemProvider', async () => {
+    it('should create links through the store', async () => {
       const newLink: Link = {
         id: 'LINK-004',
         sourceId: 'REQ-002',
@@ -123,7 +118,7 @@ describe('useLinkService', () => {
       };
       mockCreateLink.mockResolvedValue(newLink);
 
-      const { result } = renderHook(() => useLinkService());
+      const { result } = render();
 
       let created: Link | undefined;
       await act(async () => {
@@ -138,7 +133,7 @@ describe('useLinkService', () => {
     it('should throw when create fails', async () => {
       mockCreateLink.mockRejectedValue(new Error('Create failed'));
 
-      const { result } = renderHook(() => useLinkService());
+      const { result } = render();
 
       let thrownError: Error | null = null;
       await act(async () => {
@@ -155,10 +150,10 @@ describe('useLinkService', () => {
   });
 
   describe('deleteLink', () => {
-    it('should delete links through the FileSystemProvider', async () => {
+    it('should delete links through the store', async () => {
       mockDeleteLink.mockResolvedValue(undefined);
 
-      const { result } = renderHook(() => useLinkService());
+      const { result } = render();
 
       await act(async () => {
         await result.current.deleteLink('LINK-001');
@@ -171,7 +166,7 @@ describe('useLinkService', () => {
     it('should throw when delete fails', async () => {
       mockDeleteLink.mockRejectedValue(new Error('Delete failed'));
 
-      const { result } = renderHook(() => useLinkService());
+      const { result } = render();
 
       let thrownError: Error | null = null;
       await act(async () => {
@@ -189,7 +184,7 @@ describe('useLinkService', () => {
 
   describe('Loading state', () => {
     it('should not be loading when provider is ready', () => {
-      const { result } = renderHook(() => useLinkService());
+      const { result } = render();
 
       expect(result.current.loading).toBeDefined();
     });
@@ -197,7 +192,7 @@ describe('useLinkService', () => {
 
   describe('Error state', () => {
     it('should have null error on success', () => {
-      const { result } = renderHook(() => useLinkService());
+      const { result } = render();
 
       expect(result.current.error).toBeNull();
     });

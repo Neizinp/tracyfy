@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Information } from '../types';
-import { useUI } from '../app/providers';
 import { useArtifactForm } from './useArtifactForm';
 import { useArtifactNavigation } from './useArtifactNavigation';
 
@@ -23,7 +22,6 @@ export function useInformationForm({
   onClose,
   onSubmit,
 }: UseInformationFormOptions) {
-  useUI();
   const handleNavigateToArtifact = useArtifactNavigation(onClose);
 
   // Specialized fields for Information entries

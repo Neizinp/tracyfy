@@ -1,6 +1,6 @@
 # Tracyfy target design
 
-Status: steps 1–4 of §7 are done; the rest is the plan.
+Status: steps 1–5 of §7 are done; the rest is the plan.
 
 This document describes where the codebase should end up, the decisions behind it, and
 the order in which to get there. The goal is a codebase where a change that concerns
@@ -284,7 +284,14 @@ order is chosen so that each step makes the next one smaller.
    auto-committed any more except workflow approvals (step 7). A baseline is only a git tag.
    One codec (`src/domain/artifactFormat.ts`) reads and writes every kind with zod
    validation, and `src/storage/repository.ts` is the one storage API the app uses.
-5. **Single store** (§5). Replace the providers.
+5. ✅ **Single store** (§5) - done. One zustand store in `src/state/` replaces all sixteen
+   providers. It is made per mounted app (`StoreProvider`), so a remount starts clean, and is
+   split into slices: project (folder, `artifacts` by kind, links, custom attribute
+   definitions), artifacts (`addArtifact` / `updateArtifact` / `deleteArtifact` /
+   `restoreArtifact` / `editArtifact`, the same for every kind), git, user, baselines, UI,
+   tasks and toasts. Components read it with selectors; the per-kind providers and their
+   `handleAddRequirement`-style APIs are gone. Component tests render with a real, seeded
+   store (`src/test/renderWithStore.tsx`) instead of mocking hooks.
 6. **Generic UI** (§3.2). ArtifactForm, ArtifactTable and ArtifactDetail driven by field defs,
    with custom attributes folded in. Delete the per-kind modals, form hooks and lists one kind
    at a time.
@@ -331,6 +338,19 @@ Things noticed while doing a step that belong to a later one:
   - `FileSystemProvider` still holds one state array per kind; the single store (step 5)
     replaces it with `repository.load()`'s `artifacts` record.
   - Tags are not pushed with Push; a baseline only exists in the local clone until it is.
+- **Left after step 5**:
+  - Column visibility now lives in the store per kind (`columnVisibility[kind]`), but it
+    is still not saved anywhere. Decide where with the field defs in step 6.
+  - Custom attribute definitions and workflows are still written by components through their
+    disk services (`diskCustomAttributeService`, `diskWorkflowService`). The store follows
+    tracyfy.yaml through `projectConfigStore.subscribe`. Custom attribute writes should become
+    store actions with the field defs in step 6; workflows go in step 7.
+  - The sidebar's sync status (ahead/behind) still runs on window events (`git-check`,
+    `git-status-changed`) and its own polling, not on store state.
+  - `useLinkService` is now a thin wrapper over the store with a `loading`/`refresh` that do
+    nothing. The generic UI in step 6 can read `links` and call the link actions directly.
+  - An open dialog shows `selectedArtifact.data`, a copy taken when it opened. Dialogs
+    could read the artifact from `artifacts` by ID instead (step 6, ArtifactDetail).
 
 ## 8. Open questions
 

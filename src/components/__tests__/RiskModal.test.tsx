@@ -1,25 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
+import { renderWithStore as render } from '../../test/renderWithStore';
 import { RiskModal } from '../RiskModal';
 import { useRiskForm } from '../../hooks/useRiskForm';
 import type { Risk } from '../../types';
 
 // Mock everything to solve the OOM/hang issues
-vi.mock('../../app/providers', () => ({
-  UIProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useUI: vi.fn(() => ({
-    setIsLinkModalOpen: vi.fn(),
-    setLinkSourceId: vi.fn(),
-    setLinkSourceType: vi.fn(),
-    activeModal: { type: null, isEdit: false },
-    selectedArtifact: null,
-    editingRequirement: null,
-    editingUseCase: null,
-    selectedInformation: null,
-    closeModal: vi.fn(),
-  })),
-}));
-
 vi.mock('../../hooks/useLinkService', () => ({
   useLinkService: vi.fn(() => ({
     outgoingLinks: [],

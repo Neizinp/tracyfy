@@ -11,9 +11,9 @@ import { startApp, type Harness } from './appHarness';
 import type { Requirement } from '../../types';
 
 async function addRequirement(h: Harness, title: string): Promise<Requirement> {
-  const before = new Set(h.app().globalState.requirements.map((r) => r.id));
+  const before = new Set(h.app().artifacts.requirement.map((r) => r.id));
   await act(() =>
-    h.app().requirements.handleAddRequirement({
+    h.app().addArtifact('requirement', {
       title,
       description: '',
       text: `${title} text`,
@@ -21,11 +21,11 @@ async function addRequirement(h: Harness, title: string): Promise<Requirement> {
       status: 'draft',
       priority: 'medium',
       dateCreated: Date.now(),
-    } as unknown as Parameters<ReturnType<typeof h.app>['requirements']['handleAddRequirement']>[0])
+    } as never)
   );
   let created: Requirement | undefined;
   await waitFor(() => {
-    created = h.app().globalState.requirements.find((r) => !before.has(r.id));
+    created = h.app().artifacts.requirement.find((r) => !before.has(r.id));
     expect(created).toBeDefined();
   });
   return created!;
@@ -35,7 +35,7 @@ async function addRequirement(h: Harness, title: string): Promise<Requirement> {
 async function commitAll(h: Harness) {
   await h.settle();
   for (const p of await h.dirtyPaths()) {
-    await act(() => h.app().fileSystem.commitFile(p, `Commit ${p}`));
+    await act(() => h.app().commitFile(p, `Commit ${p}`));
   }
   await h.settle();
   expect(await h.dirtyPaths()).toEqual([]);
@@ -47,7 +47,7 @@ function submitButton(name: RegExp) {
 
 /** Open a requirement's dialog on the Relationships tab, exactly like clicking it in the list */
 async function openRelationships(h: Harness, req: Requirement) {
-  await act(async () => h.app().requirements.handleEdit(req));
+  await act(async () => h.app().editArtifact('requirement', req));
   fireEvent.click(await screen.findByRole('button', { name: 'Relationships' }));
 }
 
@@ -78,11 +78,9 @@ describe('integration: links', () => {
 
     // In app state (what every view renders from)
     await waitFor(() =>
-      expect(h.app().fileSystem.links).toEqual([
-        expect.objectContaining({ sourceId: a.id, targetId: b.id }),
-      ])
+      expect(h.app().links).toEqual([expect.objectContaining({ sourceId: a.id, targetId: b.id })])
     );
-    const linkId = h.app().fileSystem.links[0].id;
+    const linkId = h.app().links[0].id;
     // On disk and pending; nothing else became dirty (no "commit the requirement again")
     expect(h.exists(`links/${linkId}.md`)).toBe(true);
     expect(await h.dirtyPaths()).toEqual([`links/${linkId}.md`]);
@@ -99,7 +97,7 @@ describe('integration: links', () => {
     h = await startApp();
     const a = await addRequirement(h, 'Login');
     const b = await addRequirement(h, 'Logout');
-    await act(() => h.app().fileSystem.createLink(a.id, b.id, 'related_to'));
+    await act(() => h.app().createLink(a.id, b.id, 'related_to'));
     await h.settle();
 
     // Outgoing: from a, open b
@@ -123,9 +121,7 @@ describe('integration: links', () => {
 
     await h.restart();
 
-    expect(h.app().fileSystem.links).toEqual([
-      expect.objectContaining({ sourceId: a.id, targetId: b.id }),
-    ]);
+    expect(h.app().links).toEqual([expect.objectContaining({ sourceId: a.id, targetId: b.id })]);
   }, 60_000);
 
   it('the Add button on the Links page creates a link with a chosen source', async () => {
@@ -145,11 +141,9 @@ describe('integration: links', () => {
     await h.settle();
 
     await waitFor(() =>
-      expect(h.app().fileSystem.links).toEqual([
-        expect.objectContaining({ sourceId: a.id, targetId: b.id }),
-      ])
+      expect(h.app().links).toEqual([expect.objectContaining({ sourceId: a.id, targetId: b.id })])
     );
-    expect(await h.dirtyPaths()).toEqual([`links/${h.app().fileSystem.links[0].id}.md`]);
+    expect(await h.dirtyPaths()).toEqual([`links/${h.app().links[0].id}.md`]);
   }, 60_000);
 
   it('removing a committed link is a pending deletion that can be committed, without touching the requirement', async () => {
@@ -158,13 +152,13 @@ describe('integration: links', () => {
     const b = await addRequirement(h, 'Logout');
     await createLinkFromRequirementDialog(h, a, b);
     await commitAll(h);
-    const linkId = h.app().fileSystem.links[0].id;
+    const linkId = h.app().links[0].id;
 
     await openRelationships(h, a);
     fireEvent.click(await screen.findByTitle('Remove link'));
     await h.settle();
 
-    await waitFor(() => expect(h.app().fileSystem.links).toEqual([]));
+    await waitFor(() => expect(h.app().links).toEqual([]));
     expect(h.exists(`links/${linkId}.md`)).toBe(false);
     expect(await h.dirtyPaths()).toEqual([`links/${linkId}.md`]);
     expect(await screen.findByText('Deleted')).toBeInTheDocument();
@@ -178,13 +172,13 @@ describe('integration: links', () => {
     const a = await addRequirement(h, 'Login');
     await commitAll(h);
 
-    await act(async () => h.app().requirements.handleEdit(a));
+    await act(async () => h.app().editArtifact('requirement', a));
     fireEvent.change(await screen.findByDisplayValue('Login'), { target: { value: 'Login v2' } });
     fireEvent.click(await screen.findByRole('button', { name: /save changes/i }));
     await h.settle();
 
     await waitFor(() =>
-      expect(h.app().globalState.requirements[0]).toMatchObject({
+      expect(h.app().artifacts.requirement[0]).toMatchObject({
         title: 'Login v2',
         revision: '02',
       })
@@ -197,7 +191,7 @@ describe('integration: links', () => {
     const a = await addRequirement(h, 'Login');
     await commitAll(h);
 
-    await act(async () => h.app().requirements.handleEdit(a));
+    await act(async () => h.app().editArtifact('requirement', a));
     fireEvent.click(await screen.findByRole('button', { name: /save changes/i }));
     await h.settle();
 
@@ -208,7 +202,7 @@ describe('integration: links', () => {
     h = await startApp({ initialRoute: '/links' });
     const req = await addRequirement(h, 'Login');
     const risk = (await act(() =>
-      h.app().risks.handleAddRisk({
+      h.app().addArtifact('risk', {
         title: 'Credential stuffing',
         description: '',
         mitigation: 'Rate limiting',
@@ -227,7 +221,7 @@ describe('integration: links', () => {
     fireEvent.click(submitButton(/create link/i));
     await h.settle();
     await waitFor(() =>
-      expect(h.app().fileSystem.links).toEqual([
+      expect(h.app().links).toEqual([
         expect.objectContaining({ sourceId: req.id, targetId: risk.id }),
       ])
     );
@@ -241,8 +235,8 @@ describe('integration: links', () => {
     fireEvent.click(within(dialog).getByText('Login'));
     fireEvent.click(submitButton(/create link/i));
     await h.settle();
-    await waitFor(() => expect(h.app().fileSystem.links).toHaveLength(2));
-    expect(h.app().fileSystem.links).toContainEqual(
+    await waitFor(() => expect(h.app().links).toHaveLength(2));
+    expect(h.app().links).toContainEqual(
       expect.objectContaining({ sourceId: risk.id, targetId: req.id })
     );
   }, 60_000);
@@ -253,20 +247,18 @@ describe('integration: links', () => {
     const req = await addRequirement(h, 'Login');
     const targets = {
       REQ: await addRequirement(h, 'Logout'),
-      UC: await act(() =>
-        h.app().useCases.handleAddUseCase({ ...base, title: 'Sign in' } as never)
-      ),
+      UC: await act(() => h.app().addArtifact('useCase', { ...base, title: 'Sign in' } as never)),
       TC: await act(() =>
-        h.app().testCases.handleAddTestCase({ ...base, title: 'Login works' } as never)
+        h.app().addArtifact('testCase', { ...base, title: 'Login works' } as never)
       ),
       INFO: await act(() =>
-        h.app().information.handleAddInformation({ ...base, title: 'Glossary' } as never)
+        h.app().addArtifact('information', { ...base, title: 'Glossary' } as never)
       ),
       RISK: await act(() =>
-        h.app().risks.handleAddRisk({ ...base, title: 'Lockout', mitigation: 'x' } as never)
+        h.app().addArtifact('risk', { ...base, title: 'Lockout', mitigation: 'x' } as never)
       ),
       DOC: await act(() =>
-        h.app().documents.handleAddDocument({
+        h.app().addArtifact('document', {
           ...base,
           title: 'Login spec',
           structure: [],
@@ -284,7 +276,7 @@ describe('integration: links', () => {
       fireEvent.click(submitButton(/create link/i));
       await h.settle();
       await waitFor(() =>
-        expect(h.app().fileSystem.links).toContainEqual(
+        expect(h.app().links).toContainEqual(
           expect.objectContaining({ sourceId: req.id, targetId: target!.id })
         )
       );
@@ -300,7 +292,7 @@ describe('integration: links', () => {
     fireEvent.click(submitButton(/create link/i));
     await h.settle();
     await waitFor(() =>
-      expect(h.app().fileSystem.links).toContainEqual(
+      expect(h.app().links).toContainEqual(
         expect.objectContaining({ sourceId: targets.DOC!.id, targetId: req.id })
       )
     );

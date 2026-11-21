@@ -1,10 +1,8 @@
 /**
  * useLinkService Hook
  *
- * React hook for reading/managing links. State comes from FileSystemProvider;
- * writes go through the provider so all views update immediately.
- * Provides loading state, caching, and easy access to link operations.
- * Now leverages the centralized LinksProvider for state management.
+ * React hook for reading/managing links. Links come from the store, and
+ * writes go through the store's actions so all views update immediately.
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -12,7 +10,7 @@ import type { IncomingLink } from '../services/diskLinkService';
 import type { Link } from '../types';
 import type { LinkType } from '../domain/linkTypes';
 import { debug } from '../utils/debug';
-import { useFileSystem } from '../app/providers/FileSystemProvider';
+import { useAppStore } from '../state';
 
 interface UseLinkServiceReturn {
   // Data
@@ -41,13 +39,11 @@ export function useLinkService(options: UseLinkServiceOptions = {}): UseLinkServ
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Get centralized links from FileSystemProvider
-  const {
-    isReady,
-    links: allLinksFromProvider,
-    createLink: createLinkInProvider,
-    deleteLink: deleteLinkInProvider,
-  } = useFileSystem();
+  // Links and link actions from the store
+  const isReady = useAppStore((s) => s.isReady);
+  const allLinksFromProvider = useAppStore((s) => s.links);
+  const createLinkInProvider = useAppStore((s) => s.createLink);
+  const deleteLinkInProvider = useAppStore((s) => s.deleteLink);
 
   const allLinks = useMemo(() => allLinksFromProvider ?? [], [allLinksFromProvider]);
 

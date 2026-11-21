@@ -5,8 +5,8 @@ import { diskCustomAttributeService } from '../services/diskCustomAttributeServi
 import type { CustomAttributeDefinition, AttributeType } from '../types/customAttributes';
 import { CustomAttributeDefinitionModal } from '../components/CustomAttributeDefinitionModal';
 import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
-import { notifyError } from '../app/providers/ToastProvider';
 import { kind } from '../domain/artifactKinds';
+import { notifyError } from '../state';
 
 const TYPE_COLORS: Record<AttributeType, string> = {
   text: 'var(--color-info)',
@@ -17,7 +17,7 @@ const TYPE_COLORS: Record<AttributeType, string> = {
 };
 
 export const CustomAttributesPage: React.FC = () => {
-  // Shared with the artifact dialogs via CustomAttributeProvider (single source of truth)
+  // Shared with the artifact dialogs through the store (single source of truth)
   const { definitions, loading, refetch: loadDefinitions } = useCustomAttributes();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDefinition, setEditingDefinition] = useState<CustomAttributeDefinition | null>(

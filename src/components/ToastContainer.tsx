@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, AlertTriangle, Info, CheckCircle, XCircle } from 'lucide-react';
-import { useToast, useToasts } from '../app/providers/ToastProvider';
+import { useAppStore } from '../state';
 
 /** Icon color per toast type; the toast itself is a neutral raised surface */
 const TOAST_ACCENT: Record<'info' | 'warning' | 'error' | 'success', string> = {
@@ -41,8 +41,8 @@ const getIcon = (type: 'info' | 'warning' | 'error' | 'success') => {
 };
 
 export const ToastContainer: React.FC = () => {
-  const toasts = useToasts();
-  const { removeToast } = useToast();
+  const toasts = useAppStore((s) => s.toasts);
+  const removeToast = useAppStore((s) => s.removeToast);
 
   if (toasts.length === 0) return null;
 

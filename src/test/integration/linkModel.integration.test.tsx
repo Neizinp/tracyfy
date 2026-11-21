@@ -10,7 +10,7 @@ import type { Requirement, TestCase } from '../../types';
 
 async function addRequirement(h: Harness, title: string): Promise<Requirement> {
   return (await act(() =>
-    h.app().requirements.handleAddRequirement({
+    h.app().addArtifact('requirement', {
       title,
       description: '',
       text: '',
@@ -24,7 +24,7 @@ async function addRequirement(h: Harness, title: string): Promise<Requirement> {
 
 async function addTestCase(h: Harness, title: string): Promise<TestCase> {
   return (await act(() =>
-    h.app().testCases.handleAddTestCase({
+    h.app().addArtifact('testCase', {
       title,
       description: '',
       status: 'draft',
@@ -59,8 +59,8 @@ describe('integration: one link model', () => {
       expect(content).not.toMatch(/requirementIds|useCaseIds|linkedArtifacts/);
     }
 
-    const link = await act(() => h.app().fileSystem.createLink(tc.id, req.id, 'verifies'));
-    await act(() => h.app().fileSystem.deleteLink(link.id));
+    const link = await act(() => h.app().createLink(tc.id, req.id, 'verifies'));
+    await act(() => h.app().deleteLink(link.id));
     await h.settle();
 
     expect(files.map((f) => h.readFile(f))).toEqual(before);
@@ -74,9 +74,9 @@ describe('integration: one link model', () => {
     const other = await addRequirement(h, 'Unrelated');
     const tc = await addTestCase(h, 'Log in and out');
     // One link from each end, and one that is not a verification
-    await act(() => h.app().fileSystem.createLink(tc.id, login.id, 'verifies'));
-    await act(() => h.app().fileSystem.createLink(logout.id, tc.id, 'verified_by'));
-    await act(() => h.app().fileSystem.createLink(tc.id, other.id, 'related_to'));
+    await act(() => h.app().createLink(tc.id, login.id, 'verifies'));
+    await act(() => h.app().createLink(logout.id, tc.id, 'verified_by'));
+    await act(() => h.app().createLink(tc.id, other.id, 'related_to'));
     await h.settle();
 
     const row = (await screen.findByText('Log in and out')).closest('tr')!;
@@ -90,8 +90,8 @@ describe('integration: one link model', () => {
     const a = await addRequirement(h, 'Login');
     const b = await addRequirement(h, 'Logout');
     const c = await addRequirement(h, 'Session timeout');
-    await act(() => h.app().fileSystem.createLink(a.id, b.id, 'related_to'));
-    await act(() => h.app().fileSystem.createLink(a.id, c.id, 'depends_on'));
+    await act(() => h.app().createLink(a.id, b.id, 'related_to'));
+    await act(() => h.app().createLink(a.id, c.id, 'depends_on'));
     await h.settle();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Graph' }));

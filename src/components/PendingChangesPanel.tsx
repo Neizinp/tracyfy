@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { FileText, GitCommit, AlertCircle } from 'lucide-react';
-import { useFileSystem } from '../app/providers/FileSystemProvider';
-import { useBackgroundTaskActions } from '../app/providers/BackgroundTasksProvider';
 import { debug } from '../utils/debug';
 import type { ArtifactChange } from '../types';
 import { classifyPendingPath } from '../utils/pendingChanges';
 import { isKindId, kind, type ArtifactKindId } from '../domain/artifactKinds';
+import { useAppStore } from '../state';
 
 /** Group headings for pending changes that are not artifacts */
 const OTHER_CHANGE_LABELS: Record<Exclude<ArtifactChange['type'], ArtifactKindId>, string> = {
@@ -17,17 +16,16 @@ const OTHER_CHANGE_LABELS: Record<Exclude<ArtifactChange['type'], ArtifactKindId
 };
 
 export function PendingChangesPanel() {
-  const {
-    pendingChanges,
-    statusError,
-    commitFile,
-    revertFile,
-    project,
-    links,
-    getArtifactHistory,
-    refreshStatus,
-  } = useFileSystem();
-  const { startTask, endTask } = useBackgroundTaskActions();
+  const pendingChanges = useAppStore((s) => s.pendingChanges);
+  const statusError = useAppStore((s) => s.statusError);
+  const commitFile = useAppStore((s) => s.commitFile);
+  const revertFile = useAppStore((s) => s.revertFile);
+  const project = useAppStore((s) => s.project);
+  const links = useAppStore((s) => s.links);
+  const getArtifactHistory = useAppStore((s) => s.artifactHistory);
+  const refreshStatus = useAppStore((s) => s.refreshStatus);
+  const startTask = useAppStore((s) => s.startTask);
+  const endTask = useAppStore((s) => s.endTask);
   const [commitMessages, setCommitMessages] = useState<Record<string, string>>({});
   const [parsedChanges, setParsedChanges] = useState<ArtifactChange[]>([]);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});

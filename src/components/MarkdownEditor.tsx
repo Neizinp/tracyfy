@@ -1,13 +1,12 @@
 import { debug } from '../utils/debug';
-import { useState, useRef, useCallback, useEffect, useContext, lazy, Suspense } from 'react';
+import { useState, useRef, useCallback, useEffect, lazy, Suspense } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { safeMarkdownRehypePlugins } from '../utils/markdownSanitize';
 import { Eye, Edit2, ImagePlus } from 'lucide-react';
 import { assetService } from '../services/assetService';
 import { AssetImage } from './AssetImage';
-import { FileSystemContext } from '../app/providers/FileSystemProvider';
-import { notifyError } from '../app/providers/ToastProvider';
+import { notifyError, useOptionalAppStoreApi } from '../state';
 
 // The editor (with its syntax highlighting deps) is large and only needed in edit mode
 const MDEditor = lazy(() => import('@uiw/react-md-editor'));
@@ -31,9 +30,9 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
-  // Use optional context - may be null if not inside FileSystemProvider (e.g., in tests)
-  const fileSystemContext = useContext(FileSystemContext);
-  const refreshStatus = fileSystemContext?.refreshStatus;
+  // No store when the editor is rendered on its own (e.g. in tests)
+  const store = useOptionalAppStoreApi();
+  const refreshStatus = store?.getState().refreshStatus;
 
   // Handle file upload
   const handleFileUpload = useCallback(

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useGlobalState } from '../app/providers';
+import { useAppStore } from '../state';
 import type { ArtifactKindId } from '../domain/artifactKinds';
 
 /** What the link dialog and Links page need to know about an artifact */
@@ -17,21 +17,17 @@ const excerpt = (text: string | undefined, max = 100) =>
 
 /** Every artifact in the project, grouped by kind */
 export function useLinkableArtifacts(): ArtifactsByKind {
-  const g = useGlobalState();
+  const artifacts = useAppStore((s) => s.artifacts);
   return useMemo(
     () => ({
-      requirement: g.requirements,
-      useCase: g.useCases,
-      testCase: g.testCases,
-      information: g.information.map((i) => ({
+      ...artifacts,
+      information: artifacts.information.map((i) => ({
         id: i.id,
         title: i.title,
         description: excerpt(i.content || i.text),
         isDeleted: i.isDeleted,
       })),
-      risk: g.risks,
-      document: g.documents,
     }),
-    [g.requirements, g.useCases, g.testCases, g.information, g.risks, g.documents]
+    [artifacts]
   );
 }

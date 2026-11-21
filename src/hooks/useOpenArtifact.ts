@@ -1,6 +1,6 @@
-import { useCallback, useMemo } from 'react';
-import { useUI, useGlobalState } from '../app/providers';
-import { kindOfId, type ArtifactKindId } from '../domain/artifactKinds';
+import { useCallback } from 'react';
+import { useAppStore, useAppStoreApi } from '../state';
+import { kindOfId } from '../domain/artifactKinds';
 
 /**
  * Open any artifact's dialog from its ID. The kind comes from the ID prefix,
@@ -8,25 +8,15 @@ import { kindOfId, type ArtifactKindId } from '../domain/artifactKinds';
  * Returns false when no such artifact exists.
  */
 export function useOpenArtifact(): (id: string) => boolean {
-  const { openModal } = useUI();
-  const g = useGlobalState();
-
-  const byKind = useMemo<Record<ArtifactKindId, { id: string }[]>>(
-    () => ({
-      requirement: g.requirements,
-      useCase: g.useCases,
-      testCase: g.testCases,
-      information: g.information,
-      risk: g.risks,
-      document: g.documents,
-    }),
-    [g.requirements, g.useCases, g.testCases, g.information, g.risks, g.documents]
-  );
+  const openModal = useAppStore((s) => s.openModal);
+  // Read when called, so the caller does not re-render whenever an artifact changes
+  const store = useAppStoreApi();
 
   return useCallback(
     (id: string) => {
       const kind = kindOfId(id);
-      const artifact = kind && byKind[kind].find((a) => a.id === id);
+      const artifact =
+        kind && (store.getState().artifacts[kind] as { id: string }[]).find((a) => a.id === id);
       if (!kind || !artifact) return false;
       openModal(kind, true, {
         id,
@@ -35,6 +25,6 @@ export function useOpenArtifact(): (id: string) => boolean {
       });
       return true;
     },
-    [byKind, openModal]
+    [store, openModal]
   );
 }

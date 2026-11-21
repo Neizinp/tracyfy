@@ -1,171 +1,84 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { DirectorySelector } from '../DirectorySelector';
+import { fileSystemService } from '../../services/fileSystemService';
+import { renderWithStore } from '../../test/renderWithStore';
+import type { AppState } from '../../state';
 
-// Mock the useFileSystem hook
-vi.mock('../../app/providers/FileSystemProvider', async () => {
-  const actual = await vi.importActual('../../app/providers/FileSystemProvider');
-  return {
-    ...actual,
-    useFileSystem: vi.fn(),
-  };
-});
+const selectFolder = vi.fn(async () => {});
 
-import { useFileSystem } from '../../app/providers/FileSystemProvider';
-
-// Type for the mock return value
-type MockFileSystemContext = ReturnType<typeof useFileSystem>;
+/** Render with the folder state the selector reads from the store */
+const renderSelector = (state: Partial<AppState>, onReady?: () => void) =>
+  renderWithStore(<DirectorySelector onReady={onReady} />, {
+    state: {
+      isReady: false,
+      isLoading: false,
+      folderError: null,
+      directoryName: null,
+      selectFolder,
+      ...state,
+    },
+  });
 
 describe('DirectorySelector', () => {
-  const mockSelectDirectory = vi.fn();
-  const mockOnReady = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(fileSystemService, 'isSupported').mockReturnValue(true);
   });
 
   it('should render when not ready', () => {
-    vi.mocked(useFileSystem).mockReturnValue({
-      isReady: false,
-      isLoading: false,
-      error: null,
-      selectDirectory: mockSelectDirectory,
-      directoryName: null,
-      isApiSupported: true,
-    } as unknown as MockFileSystemContext);
-
-    render(<DirectorySelector />);
-
+    renderSelector({});
     expect(screen.getByText('Select Project Directory')).toBeInTheDocument();
   });
 
   it('should not render when ready', () => {
-    vi.mocked(useFileSystem).mockReturnValue({
-      isReady: true,
-      isLoading: false,
-      error: null,
-      selectDirectory: mockSelectDirectory,
-      directoryName: 'test-dir',
-    } as unknown as MockFileSystemContext);
-
-    render(<DirectorySelector />);
-
+    renderSelector({ isReady: true, directoryName: 'test-dir' });
     expect(screen.queryByText('Select Project Directory')).not.toBeInTheDocument();
   });
 
   it('should call onReady when ready', () => {
-    vi.mocked(useFileSystem).mockReturnValue({
-      isReady: true,
-      isLoading: false,
-      error: null,
-      selectDirectory: mockSelectDirectory,
-      directoryName: 'test-dir',
-    } as unknown as MockFileSystemContext);
-
-    render(<DirectorySelector onReady={mockOnReady} />);
-
-    expect(mockOnReady).toHaveBeenCalled();
+    const onReady = vi.fn();
+    renderSelector({ isReady: true, directoryName: 'test-dir' }, onReady);
+    expect(onReady).toHaveBeenCalled();
   });
 
   it('should display error message when error exists', () => {
-    vi.mocked(useFileSystem).mockReturnValue({
-      isReady: false,
-      isLoading: false,
-      error: 'Failed to access directory',
-      selectDirectory: mockSelectDirectory,
-      directoryName: null,
-    } as unknown as MockFileSystemContext);
-
-    render(<DirectorySelector />);
-
+    renderSelector({ folderError: 'Failed to access directory' });
     expect(screen.getByText(/Failed to access directory/i)).toBeInTheDocument();
   });
 
   it('should show loading state', () => {
-    vi.mocked(useFileSystem).mockReturnValue({
-      isReady: false,
-      isLoading: true,
-      error: null,
-      selectDirectory: mockSelectDirectory,
-      directoryName: null,
-      isApiSupported: true,
-    } as unknown as MockFileSystemContext);
-
-    const { container } = render(<DirectorySelector />);
+    const { container } = renderSelector({ isLoading: true });
 
     // Loading spinner should be present - just a spinner icon, no other content
-    const svg = container.querySelector('svg');
-    expect(svg).toBeInTheDocument();
-    // The "Select Project Directory" text should NOT be present since it's showing spinner-only UI
+    expect(container.querySelector('svg')).toBeInTheDocument();
     expect(screen.queryByText('Select Project Directory')).not.toBeInTheDocument();
   });
 
-  it('should call selectDirectory when button clicked', () => {
-    vi.mocked(useFileSystem).mockReturnValue({
-      isReady: false,
-      isLoading: false,
-      error: null,
-      selectDirectory: mockSelectDirectory,
-      directoryName: null,
-      isApiSupported: true,
-    } as unknown as MockFileSystemContext);
-
-    render(<DirectorySelector />);
-
-    const selectButton = screen.getByText(/Choose Folder/i);
-    fireEvent.click(selectButton);
-
-    expect(mockSelectDirectory).toHaveBeenCalled();
+  it('should open the folder picker when the button is clicked', () => {
+    renderSelector({});
+    fireEvent.click(screen.getByText(/Choose Folder/i));
+    expect(selectFolder).toHaveBeenCalled();
   });
 
   it('should display instructions', () => {
-    vi.mocked(useFileSystem).mockReturnValue({
-      isReady: false,
-      isLoading: false,
-      error: null,
-      selectDirectory: mockSelectDirectory,
-      directoryName: null,
-      isApiSupported: true,
-    } as unknown as MockFileSystemContext);
-
-    render(<DirectorySelector />);
-
+    renderSelector({});
     expect(screen.getByText(/Choose a folder to store/i)).toBeInTheDocument();
   });
 
   it('should render folder icon', () => {
-    vi.mocked(useFileSystem).mockReturnValue({
-      isReady: false,
-      isLoading: false,
-      error: null,
-      selectDirectory: mockSelectDirectory,
-      directoryName: null,
-      isApiSupported: true,
-    } as unknown as MockFileSystemContext);
-
-    const { container } = render(<DirectorySelector />);
-
-    const folderIcon = container.querySelector('svg.lucide-folder');
-    expect(folderIcon).toBeInTheDocument();
+    const { container } = renderSelector({});
+    expect(container.querySelector('svg.lucide-folder')).toBeInTheDocument();
   });
 
   it('should hide button when File System Access API is not supported', () => {
-    vi.mocked(useFileSystem).mockReturnValue({
-      isReady: false,
-      isLoading: false,
-      error: 'File System Access API is not supported. Please use Chrome, Edge, or Opera.',
-      selectDirectory: mockSelectDirectory,
-      directoryName: null,
-      isApiSupported: false,
-    } as unknown as MockFileSystemContext);
+    vi.spyOn(fileSystemService, 'isSupported').mockReturnValue(false);
+    renderSelector({
+      folderError: 'File System Access API is not supported. Please use Chrome, Edge, or Opera.',
+    });
 
-    render(<DirectorySelector />);
-
-    // The error message should be displayed
     expect(screen.getByText(/File System Access API is not supported/i)).toBeInTheDocument();
-    // But the button should NOT be displayed
     expect(screen.queryByText(/Choose Folder/i)).not.toBeInTheDocument();
-    // And the tip should NOT be displayed
     expect(
       screen.queryByText(/Tip: You can use an existing Git repository/i)
     ).not.toBeInTheDocument();

@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DocumentList } from '../DocumentList';
 import type { ArtifactDocument, DocumentColumnVisibility } from '../../types';
-import { useCustomAttributes } from '../../app/providers';
+import { useCustomAttributes } from '../../hooks/useCustomAttributes';
 
 // Mock hooks
-vi.mock('../../app/providers', () => ({
+vi.mock('../../hooks/useCustomAttributes', () => ({
   useCustomAttributes: vi.fn(),
 }));
 
@@ -75,7 +75,6 @@ describe('DocumentList', () => {
     vi.mocked(useCustomAttributes).mockReturnValue({
       definitions: [],
       loading: false,
-      error: null,
       refetch: vi.fn(),
       getDefinitionsForType: vi.fn(),
     });

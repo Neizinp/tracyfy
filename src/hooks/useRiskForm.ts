@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Risk } from '../types';
-import { useUI } from '../app/providers';
 import { useArtifactForm } from './useArtifactForm';
 import { useArtifactNavigation } from './useArtifactNavigation';
 
@@ -16,7 +15,6 @@ interface UseRiskFormOptions {
 type Tab = 'overview' | 'mitigation' | 'relationships' | 'customAttributes' | 'history';
 
 export function useRiskForm({ isOpen, risk, onClose, onSubmit }: UseRiskFormOptions) {
-  useUI();
   const handleNavigateToArtifact = useArtifactNavigation(onClose);
 
   // Specialized fields for Risks

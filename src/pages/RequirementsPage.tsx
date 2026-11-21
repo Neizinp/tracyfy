@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { RequirementList } from '../components';
-import { useRequirements, useUI } from '../app/providers';
+import { useAppStore } from '../state';
+import type { Requirement } from '../types';
 import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
 
 export const RequirementsPage: React.FC = () => {
-  const { requirements, handleEdit } = useRequirements();
-  const { searchQuery, columnVisibility } = useUI();
+  const requirements = useAppStore((s) => s.artifacts.requirement);
+  const editArtifact = useAppStore((s) => s.editArtifact);
+  const handleEdit = useCallback(
+    (item: Requirement) => editArtifact('requirement', item),
+    [editArtifact]
+  );
+  const searchQuery = useAppStore((s) => s.searchQuery);
+  const columnVisibility = useAppStore((s) => s.columnVisibility.requirement);
 
   const { sortedData, sortConfig, handleSortChange } = useArtifactFilteredData(requirements, {
     searchQuery,

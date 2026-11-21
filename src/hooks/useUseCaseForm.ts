@@ -7,7 +7,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { UseCase } from '../types';
-import { useUI } from '../app/providers';
 import { useArtifactForm } from './useArtifactForm';
 import { useArtifactNavigation } from './useArtifactNavigation';
 
@@ -23,7 +22,6 @@ interface UseUseCaseFormOptions {
 type Tab = 'overview' | 'flows' | 'conditions' | 'relationships' | 'customAttributes' | 'history';
 
 export function useUseCaseForm({ isOpen, useCase, onClose, onSubmit }: UseUseCaseFormOptions) {
-  useUI();
   const handleNavigateToArtifact = useArtifactNavigation(onClose);
 
   // Specialized fields for Use Cases

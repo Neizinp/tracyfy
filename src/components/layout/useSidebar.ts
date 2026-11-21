@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { debug } from '../../utils/debug';
-import { useFileSystem } from '../../app/providers';
+import { useAppStore } from '../../state';
 import { realGitService } from '../../services/realGitService';
 import type { SyncStatus } from '../../types';
 
@@ -66,7 +66,11 @@ export function useSidebar() {
   });
 
   // Check for remote on mount or when filesystem is ready
-  const { isReady, refreshStatus, push, pull, hasRemote: checkHasRemote } = useFileSystem();
+  const isReady = useAppStore((s) => s.isReady);
+  const refreshStatus = useAppStore((s) => s.refreshStatus);
+  const push = useAppStore((s) => s.push);
+  const pull = useAppStore((s) => s.pull);
+  const checkHasRemote = useAppStore((s) => s.hasRemote);
 
   // Function to check sync status
   const checkSyncStatus = useCallback(async () => {

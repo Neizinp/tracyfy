@@ -9,13 +9,6 @@ import { render, screen } from '@testing-library/react';
 import { BaseArtifactTable } from '../BaseArtifactTable';
 
 // Mock providers
-vi.mock('../../app/providers', () => ({
-  useUI: () => ({
-    columnVisibility: {},
-    setColumnVisibility: vi.fn(),
-  }),
-}));
-
 describe('Empty State Rendering', () => {
   describe('BaseArtifactTable empty states', () => {
     it('should render default empty message when no data', () => {

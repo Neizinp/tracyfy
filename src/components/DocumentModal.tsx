@@ -11,7 +11,7 @@ import { useLinkService } from '../hooks/useLinkService';
 import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { CustomAttributeEditor } from './CustomAttributeEditor';
 import { ArtifactRelationshipsTab } from './forms/ArtifactRelationshipsTab';
-import { useUI } from '../app/providers';
+import { useAppStore } from '../state';
 
 interface DocumentModalProps {
   isOpen: boolean;
@@ -38,7 +38,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
   onExport,
   onBack,
 }) => {
-  const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
+  const openLinkDialog = useAppStore((s) => s.openLinkDialog);
 
   const {
     isEditMode,
@@ -200,9 +200,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
           loading={linksLoading}
           onAddLink={() => {
             if (document) {
-              setLinkSourceId(document.id);
-              setLinkSourceType('document');
-              setIsLinkModalOpen(true);
+              openLinkDialog(document.id, 'document');
             }
           }}
           onRemoveLink={(linkId) =>

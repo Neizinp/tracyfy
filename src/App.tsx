@@ -1,13 +1,13 @@
-import { AppProviders } from './app/AppProviders';
+import { StoreProvider } from './state';
 import { AppContent } from './app/AppContent';
 import { StatusBar, ToastContainer } from './components';
 
 export default function App() {
   return (
-    <AppProviders>
+    <StoreProvider>
       <AppContent />
       <StatusBar />
       <ToastContainer />
-    </AppProviders>
+    </StoreProvider>
   );
 }

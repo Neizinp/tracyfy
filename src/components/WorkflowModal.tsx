@@ -6,8 +6,8 @@ import { BaseArtifactModal } from './BaseArtifactModal';
 import { ArtifactOverviewFields } from './forms/ArtifactOverviewFields';
 import { ArtifactDetailsSections } from './forms/ArtifactDetailsSections';
 import { FormField } from './forms/FormField';
-import { useUser } from '../app/providers';
 import type { Workflow } from '../types';
+import { useAppStore } from '../state';
 
 interface WorkflowModalProps {
   isOpen: boolean;
@@ -22,7 +22,7 @@ export const WorkflowModal: React.FC<WorkflowModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { currentUser } = useUser();
+  const currentUser = useAppStore((s) => s.currentUser);
   const {
     title,
     setTitle,

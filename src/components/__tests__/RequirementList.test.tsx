@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RequirementList } from '../RequirementList';
 import type { Requirement, ColumnVisibility } from '../../types';
-import { useCustomAttributes } from '../../app/providers';
+import { useCustomAttributes } from '../../hooks/useCustomAttributes';
 
 // Mock ReactMarkdown to avoid ESM issues and simplify testing
 vi.mock('react-markdown', () => ({
@@ -13,7 +13,7 @@ vi.mock('remark-gfm', () => ({ default: () => {} }));
 vi.mock('rehype-raw', () => ({ default: () => {} }));
 
 // Mock hooks
-vi.mock('../../app/providers', () => ({
+vi.mock('../../hooks/useCustomAttributes', () => ({
   useCustomAttributes: vi.fn(() => ({
     definitions: [],
   })),
@@ -107,7 +107,6 @@ describe('RequirementList', () => {
     vi.mocked(useCustomAttributes).mockReturnValue({
       definitions: [],
       loading: false,
-      error: null,
       refetch: vi.fn(),
       getDefinitionsForType: vi.fn(),
     });

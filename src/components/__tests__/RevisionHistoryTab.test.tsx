@@ -1,22 +1,20 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithStore } from '../../test/renderWithStore';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RevisionHistoryTab } from '../RevisionHistoryTab';
 
-// Mock the unified providers
+// The history actions RevisionHistoryTab reads from the store
 const mockGetArtifactHistory = vi.fn();
 const mockReadFileAtCommit = vi.fn().mockResolvedValue(null);
-const mockGetRiskHistory = vi.fn();
 
-vi.mock('../../app/providers', () => ({
-  useFileSystem: () => ({
-    getArtifactHistory: mockGetArtifactHistory,
-    readFileAtCommit: mockReadFileAtCommit,
-    isReady: true,
-  }),
-  useRisks: () => ({
-    getRiskHistory: mockGetRiskHistory,
-  }),
-}));
+const render = (ui: React.ReactElement) =>
+  renderWithStore(ui, {
+    state: {
+      isReady: true,
+      artifactHistory: mockGetArtifactHistory,
+      readFileAtCommit: mockReadFileAtCommit,
+    },
+  });
 
 describe('RevisionHistoryTab', () => {
   beforeEach(() => {

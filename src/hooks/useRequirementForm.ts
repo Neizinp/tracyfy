@@ -7,7 +7,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Requirement } from '../types';
-import { useUI } from '../app/providers';
 import { useArtifactForm } from './useArtifactForm';
 import { useArtifactNavigation } from './useArtifactNavigation';
 
@@ -30,7 +29,6 @@ export function useRequirementForm({
   onUpdate,
   onDelete,
 }: UseRequirementFormOptions) {
-  useUI();
   const handleNavigateToArtifact = useArtifactNavigation(onClose);
 
   // Specialized fields for Requirements

@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { BaseArtifactModal } from './BaseArtifactModal';
 import type { UseCase } from '../types';
 import { RevisionHistoryTab } from './RevisionHistoryTab';
-import { useUI } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
 import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { CustomAttributeEditor } from './CustomAttributeEditor';
@@ -12,6 +11,7 @@ import { ArtifactOverviewFields } from './forms/ArtifactOverviewFields';
 import { ArtifactRelationshipsTab } from './forms/ArtifactRelationshipsTab';
 import { ArtifactDetailsSections } from './forms/ArtifactDetailsSections';
 import { FormField } from './forms/FormField';
+import { useAppStore } from '../state';
 
 interface UseCaseModalProps {
   isOpen: boolean;
@@ -34,7 +34,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
   onDelete,
   onBack,
 }) => {
-  const { setIsLinkModalOpen, setLinkSourceId, setLinkSourceType } = useUI();
+  const openLinkDialog = useAppStore((s) => s.openLinkDialog);
 
   // Use the extracted hook for form state and handlers
   const {
@@ -268,9 +268,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
           incomingLinks={incomingLinks}
           loading={linksLoading}
           onAddLink={() => {
-            setLinkSourceId(useCase.id);
-            setLinkSourceType('useCase');
-            setIsLinkModalOpen(true);
+            openLinkDialog(useCase.id, 'useCase');
           }}
           onRemoveLink={(linkId) =>
             deleteLink(linkId).catch((err) => console.error('Failed to remove link:', err))

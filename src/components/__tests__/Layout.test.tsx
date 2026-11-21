@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { Layout } from '../Layout';
-import { AppProviders } from '../../app/AppProviders';
+import { StoreProvider } from '../../state';
 
 vi.mock('../ModalManager', () => ({
   ModalManager: () => <div>ModalManager</div>,
@@ -11,7 +11,7 @@ vi.mock('../ModalManager', () => ({
 describe('Layout', () => {
   it('should render without crashing', () => {
     const { container } = render(
-      <AppProviders>
+      <StoreProvider>
         <BrowserRouter>
           <Layout
             projectName="Door Controller"
@@ -21,7 +21,7 @@ describe('Layout', () => {
             <div>Content</div>
           </Layout>
         </BrowserRouter>
-      </AppProviders>
+      </StoreProvider>
     );
     expect(container).toBeTruthy();
   });

@@ -22,15 +22,13 @@ describe('integration: demo data', () => {
       await screen.findByText('Demo data loaded', {}, { timeout: 30_000 })
     ).toBeInTheDocument();
 
-    const g = h.app().globalState;
+    const g = h.app().artifacts;
     const existing = new Set(
-      [...g.requirements, ...g.useCases, ...g.testCases, ...g.information, ...g.risks].map(
-        (a) => a.id
-      )
+      [...g.requirement, ...g.useCase, ...g.testCase, ...g.information, ...g.risk].map((a) => a.id)
     );
-    await waitFor(() => expect(h.app().fileSystem.links).toHaveLength(DEMO_ARTIFACTS.links.length));
+    await waitFor(() => expect(h.app().links).toHaveLength(DEMO_ARTIFACTS.links.length));
 
-    const links = h.app().fileSystem.links;
+    const links = h.app().links;
     const kinds = links.map((l) => [kindOfId(l.sourceId), kindOfId(l.targetId)]);
     expect(kinds).toEqual(DEMO_ARTIFACTS.links.map((d) => [d.sourceType, d.targetType]));
     for (const link of links) {

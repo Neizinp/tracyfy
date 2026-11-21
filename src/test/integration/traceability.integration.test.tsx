@@ -11,7 +11,7 @@ import type { Requirement } from '../../types';
 
 async function addRequirement(h: Harness, title: string): Promise<Requirement> {
   const created = await act(() =>
-    h.app().requirements.handleAddRequirement({
+    h.app().addArtifact('requirement', {
       title,
       description: '',
       text: '',
@@ -33,7 +33,7 @@ describe('integration: traceability dashboard', () => {
     const a = await addRequirement(h, 'Login');
     const b = await addRequirement(h, 'Logout');
     await addRequirement(h, 'Unrelated');
-    await act(() => h.app().fileSystem.createLink(a.id, b.id, 'related_to'));
+    await act(() => h.app().createLink(a.id, b.id, 'related_to'));
     await h.settle();
 
     fireEvent.click(await screen.findByRole('button', { name: /^gaps/i }));
@@ -60,7 +60,7 @@ describe('integration: traceability dashboard', () => {
     h = await startApp({ initialRoute: '/traceability' });
     const a = await addRequirement(h, 'Login');
     const b = await addRequirement(h, 'Logout');
-    const link = await act(() => h.app().fileSystem.createLink(a.id, b.id, 'related_to'));
+    const link = await act(() => h.app().createLink(a.id, b.id, 'related_to'));
     // e.g. removed by hand or by a pull; the app itself never removes artifact files
     fs.rmSync(path.join(h.dir, `requirements/${b.id}.md`));
     await h.restart();
@@ -70,7 +70,7 @@ describe('integration: traceability dashboard', () => {
     fireEvent.click(screen.getByTitle('Remove the orphan link'));
     await h.settle();
 
-    expect(h.app().fileSystem.links).toEqual([]);
+    expect(h.app().links).toEqual([]);
     expect(h.exists(`links/${link.id}.md`)).toBe(false);
     expect(await h.invisibleDirtyPaths()).toEqual([]);
   }, 60_000);
@@ -79,7 +79,7 @@ describe('integration: traceability dashboard', () => {
     h = await startApp({ initialRoute: '/traceability' });
     const req = await addRequirement(h, 'Login');
     const risk = (await act(() =>
-      h.app().risks.handleAddRisk({
+      h.app().addArtifact('risk', {
         title: 'Lockout',
         description: '',
         mitigation: 'x',
@@ -88,14 +88,14 @@ describe('integration: traceability dashboard', () => {
       } as never)
     ))!;
     const doc = (await act(() =>
-      h.app().documents.handleAddDocument({
+      h.app().addArtifact('document', {
         title: 'Login spec',
         structure: [],
         dateCreated: Date.now(),
       } as never)
     ))!;
     const unlinkedRisk = (await act(() =>
-      h.app().risks.handleAddRisk({
+      h.app().addArtifact('risk', {
         title: 'Unmitigated supplier risk',
         description: '',
         mitigation: '',
@@ -103,8 +103,8 @@ describe('integration: traceability dashboard', () => {
         dateCreated: Date.now(),
       } as never)
     ))!;
-    await act(() => h.app().fileSystem.createLink(req.id, risk.id, 'related_to'));
-    await act(() => h.app().fileSystem.createLink(doc.id, req.id, 'satisfies'));
+    await act(() => h.app().createLink(req.id, risk.id, 'related_to'));
+    await act(() => h.app().createLink(doc.id, req.id, 'satisfies'));
     await h.settle();
 
     // Overview counts all four artifacts; only the unlinked risk is a gap

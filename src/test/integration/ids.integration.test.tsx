@@ -11,7 +11,7 @@ import type { Requirement } from '../../types';
 
 async function addRequirement(h: Harness, title: string): Promise<Requirement> {
   const created = await act(() =>
-    h.app().requirements.handleAddRequirement({
+    h.app().addArtifact('requirement', {
       title,
       description: '',
       text: '',
@@ -32,7 +32,7 @@ describe('integration: IDs from file names', () => {
   it('creating artifacts writes no counter files and makes no counter commits', async () => {
     h = await startApp();
     await addRequirement(h, 'First');
-    await act(() => h.app().fileSystem.createLink('REQ-001', 'REQ-001', 'related_to'));
+    await act(() => h.app().createLink('REQ-001', 'REQ-001', 'related_to'));
     await h.settle();
 
     expect(h.exists('counters')).toBe(false);
@@ -60,7 +60,7 @@ describe('integration: IDs from file names', () => {
     h = await startApp();
     await addRequirement(h, 'One');
     const two = await addRequirement(h, 'Two');
-    await act(async () => h.app().requirements.handleDeleteRequirement(two.id));
+    await act(async () => h.app().deleteArtifact('requirement', two.id));
     await h.settle();
     await h.restart();
 

@@ -16,7 +16,7 @@ describe('integration: errors are shown, not swallowed', () => {
     // Something the user should be told about: git can't read the repository
     fs.writeFileSync(path.join(h.dir, '.git', 'index'), 'not a git index');
 
-    await act(async () => h.app().fileSystem.refreshStatus());
+    await act(async () => h.app().refreshStatus());
     await h.settle();
 
     expect(screen.queryByText('No pending changes')).toBeNull();
@@ -27,7 +27,7 @@ describe('integration: errors are shown, not swallowed', () => {
     h = await startApp({ initialRoute: '/workflows' });
     await h.colleagueCommits('Reviewer');
     await act(() =>
-      h.app().requirements.handleAddRequirement({
+      h.app().addArtifact('requirement', {
         title: 'Login',
         description: '',
         text: '',
@@ -63,7 +63,7 @@ describe('integration: errors are shown, not swallowed', () => {
     h = await startApp();
     for (const title of ['Login', 'Logout']) {
       await act(() =>
-        h.app().requirements.handleAddRequirement({
+        h.app().addArtifact('requirement', {
           title,
           description: '',
           text: '',
@@ -82,7 +82,7 @@ describe('integration: errors are shown, not swallowed', () => {
         (e: Error) => e.message
       );
       expect(outcome).toBe('ready');
-      expect(h.app().globalState.requirements.map((r) => r.title)).toContain('Logout');
+      expect(h.app().artifacts.requirement.map((r) => r.title)).toContain('Logout');
     } finally {
       fs.chmodSync(broken, 0o644);
     }
@@ -91,7 +91,7 @@ describe('integration: errors are shown, not swallowed', () => {
   it('a failed save does not show the unsaved edit as if it were saved', async () => {
     h = await startApp();
     const req = (await act(() =>
-      h.app().requirements.handleAddRequirement({
+      h.app().addArtifact('requirement', {
         title: 'Login',
         description: '',
         text: '',
@@ -115,7 +115,7 @@ describe('integration: errors are shown, not swallowed', () => {
       expect(await screen.findByText(/failed to update/i)).toBeInTheDocument();
       // What the app shows must match what is on disk
       expect(h.readFile(`requirements/${req.id}.md`)).not.toContain('Login v2');
-      expect(h.app().requirements.requirements.find((r) => r.id === req.id)?.title).toBe('Login');
+      expect(h.app().artifacts.requirement.find((r) => r.id === req.id)?.title).toBe('Login');
     } finally {
       fs.chmodSync(file, 0o644);
     }

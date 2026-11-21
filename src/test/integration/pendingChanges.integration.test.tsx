@@ -9,7 +9,7 @@ import type { Requirement } from '../../types';
 
 async function addRequirement(h: Harness, title: string): Promise<Requirement> {
   const created = await act(() =>
-    h.app().requirements.handleAddRequirement({
+    h.app().addArtifact('requirement', {
       title,
       description: '',
       text: '',
@@ -28,7 +28,7 @@ const isRequirement = (p: string) => p.startsWith('requirements/');
 const pendingPaths = (h: Harness) =>
   h
     .app()
-    .fileSystem.pendingChanges.map((c) => c.path)
+    .pendingChanges.map((c) => c.path)
     .filter(isRequirement)
     .sort();
 
@@ -54,8 +54,8 @@ describe('integration: pending changes are never stale', () => {
     h = await startApp();
     const req = await addRequirement(h, 'Login');
     await h.settle();
-    await act(() => h.app().fileSystem.commitFile(`requirements/${req.id}.md`, 'Add login'));
-    await act(() => h.app().requirements.handleUpdateRequirement(req.id, { title: 'Log in' }));
+    await act(() => h.app().commitFile(`requirements/${req.id}.md`, 'Add login'));
+    await act(() => h.app().updateArtifact('requirement', req.id, { title: 'Log in' }));
     await h.settle();
 
     expect((await h.dirtyPaths()).filter(isRequirement)).toEqual([`requirements/${req.id}.md`]);
