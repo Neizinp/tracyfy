@@ -8,6 +8,8 @@ import type { ArtifactByKind } from '../../types';
 import { kind as kindDef, type ArtifactKindId } from '../../domain/artifactKinds';
 import { hasArtifactChanges } from '../../domain/artifactChanges';
 import { savedByTheApp } from '../../domain/kindRules';
+import { fingerprint } from '../../domain/fingerprint';
+import { statusAfterEdit } from '../../domain/lifecycle';
 import { incrementRevision } from '../../utils/revisionUtils';
 import { withTask } from './tasks';
 import { notifyError } from '../notify';
@@ -87,7 +89,15 @@ export const createArtifactsSlice: StateCreator<AppState, [], [], ArtifactsSlice
       if (!hasArtifactChanges(existing, updates)) return false;
 
       const now = Date.now();
-      const changed = { ...existing, ...updates };
+      const edited = { ...existing, ...updates } as typeof existing & { status?: string };
+      const status = statusAfterEdit(
+        kindDef(kindId).lifecycle,
+        get().settings.lifecycle,
+        existing as { status?: string },
+        edited,
+        fingerprint(kindId, existing) !== fingerprint(kindId, edited)
+      );
+      const changed = { ...edited, status };
       const updated = {
         ...changed,
         ...savedByTheApp(kindId, existing as never, changed as never, now),
@@ -96,6 +106,9 @@ export const createArtifactsSlice: StateCreator<AppState, [], [], ArtifactsSlice
       };
       try {
         await withTask(get(), `Saving ${id}...`, () => get().saveArtifact(kindId, updated));
+        if (status !== edited.status) {
+          get().showToast(`${id} changed after approval, so it needs review again`, 'info');
+        }
         return true;
       } catch (error) {
         console.error(`Failed to update ${kindId}:`, error);

@@ -145,11 +145,23 @@ function formatOf(kindId: ArtifactKindId): KindFormat {
   const frontmatter = fields.filter((f) => !inSection(f));
   const kindKeys = frontmatter.filter((f) => !COMMON_KEYS.includes(f.id));
   const extra = EXTRA[kindId] ?? {};
+  const states = k.lifecycle.states;
+  const status = text
+    .superRefine((v, ctx) => {
+      if (!states.includes(v)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `"${v}" is not a status of a ${k.label.singular.toLowerCase()} (${states.join(', ')})`,
+        });
+      }
+    })
+    .optional();
   const defaults: Record<string, unknown> = { ...EXTRA_DEFAULTS[kindId] };
   for (const f of k.fields) if (f.default !== undefined) defaults[f.id] = f.default;
   return {
     schema: z.object({
       ...common,
+      status,
       ...Object.fromEntries(kindKeys.map((f) => [f.id, fieldSchema(f)])),
       ...extra,
     }),

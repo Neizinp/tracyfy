@@ -8,7 +8,14 @@ import type { AppState } from '../store';
 import type { ArtifactByKind, ArtifactsByKind, Link, LinkType, Project } from '../../types';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import { KIND_IDS, type ArtifactKindId } from '../../domain/artifactKinds';
-import { projectOf, withNewAttribute } from '../../domain/projectConfig';
+import {
+  DEFAULT_SETTINGS,
+  projectOf,
+  settingsOf,
+  withNewAttribute,
+  type ProjectSettings,
+} from '../../domain/projectConfig';
+import type { LifecycleSettings } from '../../domain/lifecycle';
 import { repository } from '../../storage/repository';
 import { projectConfigStore } from '../../storage/projectConfigStore';
 import { fileSystemService } from '../../services/fileSystemService';
@@ -34,6 +41,8 @@ export interface ProjectSlice {
   fileProblems: FileProblem[];
   /** Custom attribute definitions from tracyfy.yaml */
   attributeDefinitions: CustomAttributeDefinition[];
+  /** Lifecycle and traceability rules from tracyfy.yaml, with defaults filled in */
+  settings: ProjectSettings;
 
   /**
    * Called when the app mounts: reopens the folder picked last time and
@@ -56,6 +65,9 @@ export interface ProjectSlice {
     id: string,
     updates: Partial<Omit<CustomAttributeDefinition, 'id'>>
   ) => Promise<void>;
+
+  /** Change lifecycle settings (in tracyfy.yaml, a pending change) */
+  updateLifecycleSettings: (updates: Partial<LifecycleSettings>) => Promise<void>;
 
   saveArtifact: <K extends ArtifactKindId>(kind: K, artifact: ArtifactByKind[K]) => Promise<void>;
   /** Rename the project or change its description */
@@ -139,6 +151,7 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
     links: [],
     fileProblems: [],
     attributeDefinitions: [],
+    settings: DEFAULT_SETTINGS,
 
     start: () => {
       const unsubscribe = projectConfigStore.subscribe(() => void get().reloadConfig());
@@ -195,6 +208,7 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
         links: [],
         fileProblems: [],
         attributeDefinitions: [],
+        settings: DEFAULT_SETTINGS,
         pendingChanges: [],
         statusError: null,
         currentUser: null,
@@ -213,13 +227,18 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
           links: data.links,
           fileProblems: data.problems,
           attributeDefinitions: data.customAttributes,
+          settings: data.settings,
         });
       }),
 
     reloadConfig: async () => {
       if (e2e || !get().isReady) return;
       const config = await projectConfigStore.load();
-      set({ project: projectOf(config), attributeDefinitions: config.customAttributes });
+      set({
+        project: projectOf(config),
+        attributeDefinitions: config.customAttributes,
+        settings: settingsOf(config),
+      });
     },
 
     addAttributeDefinition: async (def) => {
@@ -242,6 +261,22 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
         customAttributes: config.customAttributes.map((d) =>
           d.id === id ? { ...d, ...updates, id } : d
         ),
+      }));
+      await get().reloadConfig();
+      get().refreshStatus();
+    },
+
+    updateLifecycleSettings: async (updates) => {
+      requireReady();
+      if (e2e) {
+        set((s) => ({
+          settings: { ...s.settings, lifecycle: { ...s.settings.lifecycle, ...updates } },
+        }));
+        return;
+      }
+      await projectConfigStore.update((config) => ({
+        ...config,
+        lifecycle: { ...config.lifecycle, ...updates },
       }));
       await get().reloadConfig();
       get().refreshStatus();

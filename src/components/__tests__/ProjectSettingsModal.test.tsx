@@ -7,6 +7,7 @@ describe('ProjectSettingsModal', () => {
   const onSave = vi.fn();
   const props = {
     project: { name: 'Door Controller', description: 'Lobby doors' },
+    lifecycle: { reviewOnContentChange: true },
     isOpen: true,
     onClose,
     onSave,
@@ -35,7 +36,11 @@ describe('ProjectSettingsModal', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() =>
-      expect(onSave).toHaveBeenCalledWith({ name: 'Gate Controller', description: 'Lobby doors' })
+      expect(onSave).toHaveBeenCalledWith({
+        name: 'Gate Controller',
+        description: 'Lobby doors',
+        reviewOnContentChange: true,
+      })
     );
     expect(onClose).toHaveBeenCalled();
   });

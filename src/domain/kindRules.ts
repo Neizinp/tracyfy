@@ -9,7 +9,8 @@ type Fields = Record<string, unknown>;
 
 /**
  * Fields the app sets itself when an artifact is saved: a test case records
- * when it last ran whenever its status becomes passed or failed.
+ * when it last ran whenever its status becomes passed or failed, and a
+ * requirement when it was approved.
  */
 export function savedByTheApp(
   kindId: ArtifactKindId,
@@ -17,9 +18,11 @@ export function savedByTheApp(
   next: Fields,
   now: number
 ): Fields {
+  const becomes = (status: string) => next.status === status && previous?.status !== status;
+  // A requirement records when it was approved, which the Approved field shows
+  if (kindId === 'requirement') return becomes('approved') ? { approvalDate: now } : {};
   if (kindId !== 'testCase') return {};
-  const ran = next.status === 'passed' || next.status === 'failed';
-  return ran && previous?.status !== next.status ? { lastRun: now } : {};
+  return becomes('passed') || becomes('failed') ? { lastRun: now } : {};
 }
 
 export type RiskLevel = 'low' | 'medium' | 'high';

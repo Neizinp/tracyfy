@@ -118,7 +118,7 @@ const risk: Risk = {
   contingency: TRICKY,
   owner: 'Bob',
   author: 'Ada',
-  status: 'open',
+  status: 'mitigating',
   dateCreated: T0,
 };
 
@@ -286,6 +286,11 @@ describe('a file that does not fit is reported, not loaded as wrong data', () =>
     ['broken YAML', '---\ntitle: [unclosed\n---\n', /not valid YAML/],
     ['no title', '---\nstatus: draft\n---\n', /title/],
     ['wrong type', '---\ntitle: Login\ndateCreated: yesterday\n---\n', /dateCreated/],
+    [
+      'a status the lifecycle does not have',
+      '---\ntitle: Login\nstatus: review\n---\n',
+      /status: "review" is not a status of a requirement \(draft, in_review, approved/,
+    ],
   ])('%s', (_case, content, message) => {
     expect(() => parseArtifact('requirement', 'REQ-001', content)).toThrow(message);
   });
