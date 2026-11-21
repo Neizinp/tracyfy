@@ -180,6 +180,26 @@ export function serializeProjectConfig(config: ProjectConfig): string {
   );
 }
 
+/**
+ * The config with these traceability rules written out in full, or, with
+ * null, with none at all, so the defaults apply (and follow future defaults).
+ */
+export function withTraceability(
+  config: ProjectConfig,
+  rules: TraceabilityRules | null
+): ProjectConfig {
+  const rest: ProjectConfig = { ...config };
+  delete rest.traceability;
+  if (!rules) return rest;
+  return {
+    ...rest,
+    traceability: {
+      allowed: rules.allowed.map((r) => [...r] as AllowedLink),
+      coverage: rules.coverage.map((r) => ({ ...r, name: r.name.trim(), needs: { ...r.needs } })),
+    },
+  };
+}
+
 export function projectOf(config: ProjectConfig): Project {
   return { name: config.name, description: config.description };
 }

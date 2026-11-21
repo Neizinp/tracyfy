@@ -368,7 +368,7 @@ Things noticed while doing a step that belong to a later one:
     not editable (a requirement's category) now are.
   - `BaseArtifactModal`, the Links page and the search dialog still have many inline styles.
 - **Left after step 7**:
-  - The traceability rules can only be edited in tracyfy.yaml; there is no UI for them.
+  - ~~The traceability rules can only be edited in tracyfy.yaml~~ (done, see below).
   - The fingerprint covers the title and text fields. Enum fields (a risk's impact) and
     custom attributes do not make a link suspect.
   - Approving commits the artifact's file as it is, so its other uncommitted edits go into
@@ -395,6 +395,13 @@ Things noticed while doing a step that belong to a later one:
   - Every enum value, not only status, is checked when a file is read (from step 6).
   - `people` is gone from the store (from step 7).
   - After the link dialog, the artifact dialog is back on its Relationships tab (from step 7).
+- **Done after the merge** (branch `feat/traceability-rules-ui`):
+  - The traceability rules are edited on a Traceability Rules page (`src/pages/TraceabilityRulesPage.tsx`):
+    one row of dropdowns per allowed link and per coverage rule. Saving writes tracyfy.yaml as
+    a pending change; rules equal to the defaults are not written out, so the project follows
+    the defaults. A coverage rule without a name, a name used twice or an allowed link listed
+    twice cannot be saved; a coverage rule no allowed link can meet is a warning
+    (`ruleProblems` in `src/domain/traceability.ts`) (from step 7).
 
 ## 8. Open questions
 
