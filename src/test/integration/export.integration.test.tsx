@@ -8,8 +8,15 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import * as XLSX from 'xlsx';
+import fs from 'node:fs';
+import path from 'node:path';
+import zlib from 'node:zlib';
 import { startApp, type Harness } from './appHarness';
-import { ARTIFACT_KINDS } from '../../domain/artifactKinds';
+import { ARTIFACT_KINDS, kindOfId } from '../../domain/artifactKinds';
+import { fingerprint } from '../../domain/fingerprint';
+import { isSuspect } from '../../domain/traceability';
+import type { AppState } from '../../state/store';
+import type { ArtifactDocument } from '../../types';
 
 const now = () => Date.now();
 
@@ -37,6 +44,15 @@ async function populate(h: Harness) {
   const link = await act(() => app().createLink(req!.id, uc!.id, 'satisfies'));
   await h.settle();
   return { req: req!, uc: uc!, tc: tc!, info: info!, risk: risk!, doc: doc!, link };
+}
+
+/** Each link as the user sees it: its ends, type and whether it is suspect */
+function linkView(app: AppState) {
+  return app.links.map((l) => {
+    const k = kindOfId(l.targetId)!;
+    const target = app.artifacts[k].find((a) => a.id === l.targetId)!;
+    return { ...l, suspect: isSuspect(l, fingerprint(k, target)) };
+  });
 }
 
 /** jsdom's Blob has no arrayBuffer(); FileReader works */
@@ -74,6 +90,29 @@ async function exportVia(format: RegExp, adjust?: () => void): Promise<Uint8Arra
   adjust?.();
   fireEvent.click(screen.getByRole('button', { name: /generate export/i }));
   return saved;
+}
+
+/** A blank RGB PNG of the given size */
+function png(width: number, height: number): Buffer {
+  const chunk = (type: string, data: Buffer) => {
+    const body = Buffer.concat([Buffer.from(type, 'latin1'), data]);
+    const out = Buffer.alloc(body.length + 8);
+    out.writeUInt32BE(data.length, 0);
+    body.copy(out, 4);
+    out.writeUInt32BE(zlib.crc32(body), body.length + 4);
+    return out;
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header.set([8, 2, 0, 0, 0], 8);
+  const pixels = Buffer.alloc((width * 3 + 1) * height);
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', header),
+    chunk('IDAT', zlib.deflateSync(pixels)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
 }
 
 const pdfText = (bytes: Uint8Array) => new TextDecoder('latin1').decode(bytes);
@@ -225,6 +264,35 @@ describe('integration: export', () => {
     ]);
   }, 120_000);
 
+  it('a baseline export shows images as they were at the baseline', async () => {
+    h = await startApp();
+    const writeImage = (w: number, height: number) => {
+      fs.mkdirSync(path.join(h.dir, 'assets'), { recursive: true });
+      fs.writeFileSync(path.join(h.dir, 'assets', 'diagram.png'), png(w, height));
+    };
+    writeImage(2, 3);
+    await act(() =>
+      h.app().addArtifact('requirement', {
+        title: 'Login',
+        text: 'See ![diagram](./assets/diagram.png)',
+        dateCreated: now(),
+      } as never)
+    );
+    await commitAll(h, 'Add login');
+    await act(() => h.app().createBaseline('1.0', ''));
+    writeImage(5, 7);
+    await commitAll(h, 'New diagram');
+
+    const pick10 = () =>
+      fireEvent.change(screen.getByLabelText('Project State'), { target: { value: '1.0' } });
+    const atBaseline = pdfText(await exportVia(/pdf document/i, pick10));
+    expect(atBaseline).toMatch(/\/Width 2\s*\/Height 3/);
+    expect(atBaseline).not.toMatch(/\/Width 5\s*\/Height 7/);
+
+    const current = pdfText(await exportVia(/pdf document/i));
+    expect(current).toMatch(/\/Width 5\s*\/Height 7/);
+  }, 120_000);
+
   it('the revision history lists changes since the baseline for every kind', async () => {
     h = await startApp();
     await act(() => h.app().addArtifact('risk', { title: 'Outage', dateCreated: now() } as never));
@@ -327,6 +395,50 @@ describe('integration: export', () => {
     });
     for (const k of ARTIFACT_KINDS) expect(h.app().artifacts[k.id]).toHaveLength(1);
     expect(h.app().artifacts.useCase[0]).toMatchObject({ actor: 'User' });
+    await act(() => h.app().reload());
+    expect(h.app().fileProblems).toEqual([]);
+  }, 120_000);
+
+  it('Excel export → import keeps the links, which are suspect, and the outlines', async () => {
+    h = await startApp();
+    const a = await populate(h);
+    const tcLink = await act(() => h.app().createLink(a.tc.id, a.req.id, 'verifies'));
+    // The use case changes after the requirement was linked to it: that link is suspect
+    await act(() => h.app().updateArtifact('useCase', a.uc.id, { title: 'Sign in (v2)' }));
+    await h.settle();
+    const before = linkView(h.app());
+    expect(before.map((l) => [l.id, l.suspect])).toEqual([
+      [a.link.id, true],
+      [tcLink.id, false],
+    ]);
+    const wb = XLSX.read(await exportVia(/excel sheet/i), { type: 'array' });
+    expect(rowsOf(wb, 'Links').map((r) => r['Suspect'] ?? '')).toEqual(['Yes', '']);
+    h.cleanup();
+
+    // Someone adds a link in Excel, by the type's label
+    const links = rowsOf(wb, 'Links');
+    links.push({ 'Link ID': 'LINK-003', Source: a.risk.id, Type: 'Related to', Target: a.info.id });
+    wb.Sheets['Links'] = XLSX.utils.json_to_sheet(links);
+    const bytes = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+
+    h = await startApp();
+    await importVia(h, 'Import Excel', new File([bytes], 'export.xlsx'));
+
+    await waitFor(() => expect(h.app().links).toHaveLength(3));
+    const view = (l: ReturnType<typeof linkView>[number]) => [
+      l.id,
+      l.sourceId,
+      l.type,
+      l.targetId,
+      l.suspect,
+    ];
+    expect(linkView(h.app()).map(view)).toEqual([
+      ...before.map(view),
+      ['LINK-003', a.risk.id, 'related_to', a.info.id, false],
+    ]);
+    expect((h.app().artifacts.document[0] as ArtifactDocument).structure).toEqual(
+      (a.doc as ArtifactDocument).structure
+    );
     await act(() => h.app().reload());
     expect(h.app().fileProblems).toEqual([]);
   }, 120_000);

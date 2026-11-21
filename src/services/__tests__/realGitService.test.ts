@@ -32,7 +32,7 @@ describe('readFileAtCommit', () => {
     const result = await realGitService.readFileAtCommit('foo.md', 'abc123');
     expect(result).toBeNull();
     expect(errorSpy).toHaveBeenCalledWith(
-      '[readFileAtCommit] Unexpected error reading',
+      '[readBytesAtCommit] Unexpected error reading',
       'foo.md',
       'at',
       'abc123',

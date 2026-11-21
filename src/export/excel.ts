@@ -1,8 +1,10 @@
 /**
  * The Excel export: one sheet per kind with a column per field (built-in and
- * custom) and per relation, plus links, revision history and the two
- * matrices. Its import reads the kind sheets back by the same column labels,
- * so an exported workbook can be edited and imported again.
+ * custom) and per relation, plus links, the documents' outlines, revision
+ * history and the two matrices. Its import reads the kind sheets, the links
+ * and the outlines back by the same column labels, so an exported workbook
+ * can be edited and imported again. The relation columns are derived from
+ * the links and are not read: a link is changed in the Links sheet.
  */
 import type * as XLSXModule from 'xlsx';
 import {
@@ -13,9 +15,12 @@ import {
   type ArtifactKindId,
 } from '../domain/artifactKinds';
 import { defaultValues, setFieldValue, type FieldDef, type FieldValue } from '../domain/fields';
-import { linkTypeLabel } from '../domain/linkTypes';
+import { LINK_TYPE_IDS, linkTypeLabel } from '../domain/linkTypes';
+import { fingerprint } from '../domain/fingerprint';
+import { isSuspect } from '../domain/traceability';
 import { formatDate, formatDateTime } from '../utils/dateUtils';
 import type { CustomAttributeDefinition } from '../types/customAttributes';
+import type { ArtifactDocument, BaseArtifact, DocumentEntry } from '../types';
 import {
   exported,
   exportedLinks,
@@ -26,12 +31,36 @@ import {
   type ExportSource,
 } from './exportData';
 import { changeSummary, type ArtifactChange } from './revisionHistory';
-import { emptyBundle, validArtifacts, type ImportBundle } from './importBundle';
+import { emptyBundle, validArtifacts, validLinks, type ImportBundle } from './importBundle';
 
 type XLSX = typeof XLSXModule;
 type Row = Record<string, string>;
 
 const ID = 'ID';
+const LINKS = 'Links';
+const OUTLINE = 'Document Outline';
+
+/** Link sheet columns */
+const L = {
+  id: 'Link ID',
+  source: 'Source',
+  type: 'Type',
+  target: 'Target',
+  created: 'Created',
+  suspect: 'Suspect',
+} as const;
+
+/** Outline sheet columns: one row per entry, in order */
+const O = { document: 'Document ID', level: 'Level', heading: 'Heading', artifact: 'Artifact ID' };
+
+/** Each artifact's fingerprint, by ID */
+function fingerprints(artifacts: Partial<Record<ArtifactKindId, readonly BaseArtifact[]>>) {
+  const byId = new Map<string, string>();
+  for (const k of ARTIFACT_KINDS) {
+    for (const a of artifacts[k.id] ?? []) if (!a.isDeleted) byId.set(a.id, fingerprint(k.id, a));
+  }
+  return byId;
+}
 
 function width(field: FieldDef): number {
   if (field.type === 'markdown') return 40;
@@ -91,14 +120,35 @@ function historySheet(xlsx: XLSX, changes: readonly ArtifactChange[]) {
 }
 
 function linksSheet(xlsx: XLSX, source: ExportSource) {
+  const targets = fingerprints(source.artifacts);
   const rows = exportedLinks(source).map((l) => ({
-    'Link ID': l.id,
-    Source: l.sourceId,
-    Type: linkTypeLabel(l.type),
-    Target: l.targetId,
-    Created: l.dateCreated ? formatDate(l.dateCreated) : '',
+    [L.id]: l.id,
+    [L.source]: l.sourceId,
+    [L.type]: linkTypeLabel(l.type),
+    [L.target]: l.targetId,
+    [L.created]: l.dateCreated ? formatDate(l.dateCreated) : '',
+    [L.suspect]: isSuspect(l, targets.get(l.targetId)) ? 'Yes' : '',
   }));
-  return sheet(xlsx, rows, [12, 14, 18, 14, 14]);
+  return sheet(xlsx, rows, [12, 14, 18, 14, 14, 10], Object.values(L));
+}
+
+/** Every document's outline: headings with their level, and the artifacts it includes */
+function outlineSheet(xlsx: XLSX, source: ExportSource) {
+  const rows: Row[] = [];
+  for (const doc of exported(source, 'document') as ArtifactDocument[]) {
+    for (const entry of doc.structure ?? []) {
+      rows.push(
+        entry.type === 'heading'
+          ? {
+              [O.document]: doc.id,
+              [O.level]: String(entry.level ?? 1),
+              [O.heading]: entry.title ?? '',
+            }
+          : { [O.document]: doc.id, [O.heading]: entry.title ?? '', [O.artifact]: entry.id ?? '' }
+      );
+    }
+  }
+  return sheet(xlsx, rows, [14, 8, 40, 14], Object.values(O));
 }
 
 /** Every exported artifact against every other: the cell names the link from row to column */
@@ -179,7 +229,13 @@ export function buildWorkbook(
   for (const k of kinds) {
     if (exported(source, k).length > 0) add(kindSheet(xlsx, source, k), kind(k).label.plural);
   }
-  if (options.links && exportedLinks(source).length > 0) add(linksSheet(xlsx, source), 'Links');
+  if (
+    kinds.includes('document') &&
+    exported(source, 'document').some((d) => (d as ArtifactDocument).structure?.length)
+  ) {
+    add(outlineSheet(xlsx, source), OUTLINE);
+  }
+  if (options.links && exportedLinks(source).length > 0) add(linksSheet(xlsx, source), LINKS);
   if (options.traceabilityMatrix && kinds.some((k) => exported(source, k).length > 0)) {
     add(traceabilitySheet(xlsx, source, kinds), 'Traceability Matrix');
   }
@@ -214,18 +270,63 @@ function cellValue(field: FieldDef, raw: unknown): FieldValue {
   }
 }
 
+const text = (raw: unknown) => (raw === undefined || raw === null ? '' : String(raw).trim());
+
+/** A date cell: Excel's day number, or text such as 2026-11-21 */
+function cellTime(raw: unknown, fallback: number): number {
+  if (typeof raw === 'number') return Math.round((raw - 25569) * 86_400_000);
+  const t = Date.parse(text(raw));
+  return Number.isNaN(t) ? fallback : t;
+}
+
+/** Each document's outline from the outline sheet, by document ID */
+function readOutlines(xlsx: XLSX, wb: XLSXModule.WorkBook): Map<string, DocumentEntry[]> {
+  const outlines = new Map<string, DocumentEntry[]>();
+  const ws = wb.Sheets[OUTLINE];
+  if (!ws) return outlines;
+  for (const row of xlsx.utils.sheet_to_json<Record<string, unknown>>(ws)) {
+    const doc = text(row[O.document]);
+    if (!doc) continue;
+    const artifact = text(row[O.artifact]);
+    const heading = text(row[O.heading]);
+    const entry: DocumentEntry = artifact
+      ? {
+          type: 'artifact',
+          id: artifact,
+          ...(kindOfId(artifact) ? { artifactType: kindOfId(artifact) } : {}),
+          ...(heading ? { title: heading } : {}),
+        }
+      : { type: 'heading', title: heading, level: Math.max(1, Number(text(row[O.level])) || 1) };
+    if (!outlines.has(doc)) outlines.set(doc, []);
+    outlines.get(doc)!.push(entry);
+  }
+  return outlines;
+}
+
+/** A link type from its label ("Verifies") or its ID ("verifies") */
+function linkTypeOf(raw: unknown): string {
+  const t = text(raw).toLowerCase();
+  return LINK_TYPE_IDS.find((id) => id === t || linkTypeLabel(id).toLowerCase() === t) ?? t;
+}
+
 /**
- * Read the kind sheets of a workbook (named like the kinds: "Requirements",
- * "Use Cases", …). Columns are matched by field label; read-only fields
- * (author, dates, revision) and relation columns are ignored.
+ * Read a workbook back: the kind sheets (named like the kinds: "Requirements",
+ * "Use Cases", …) with columns matched by field label, the documents'
+ * outlines and the links. Read-only fields (author, dates, revision) and
+ * relation columns are ignored.
+ *
+ * A link not marked suspect counts as reviewed against its target as
+ * imported, or as it is in `existing` when the workbook does not have it.
  */
 export function parseWorkbook(
   xlsx: XLSX,
   wb: XLSXModule.WorkBook,
   definitions: readonly CustomAttributeDefinition[],
+  existing: Partial<Record<ArtifactKindId, readonly BaseArtifact[]>> = {},
   now = Date.now()
 ): ImportBundle {
   const bundle = emptyBundle();
+  const outlines = readOutlines(xlsx, wb);
   for (const k of ARTIFACT_KINDS) {
     const ws = wb.Sheets[k.label.plural];
     if (!ws) continue;
@@ -234,7 +335,7 @@ export function parseWorkbook(
     const rows = xlsx.utils.sheet_to_json<Record<string, unknown>>(ws).map((row) => {
       let item: Record<string, unknown> = {
         ...defaultValues(fields),
-        id: String(row[ID] ?? '').trim(),
+        id: text(row[ID]),
         dateCreated: now,
         lastModified: now,
       };
@@ -243,9 +344,32 @@ export function parseWorkbook(
         const v = cellValue(f, row[labels[i]]);
         if (v !== undefined) item = setFieldValue(item, f, v);
       });
+      if (k.id === 'document') item.structure = outlines.get(item.id as string) ?? [];
       return item;
     });
     bundle.artifacts[k.id] = validArtifacts(k.id, rows, bundle.skipped);
+  }
+
+  const ws = wb.Sheets[LINKS];
+  if (ws) {
+    const targets = new Map([...fingerprints(existing), ...fingerprints(bundle.artifacts)]);
+    const rows = xlsx.utils.sheet_to_json<Record<string, unknown>>(ws).map((row) => {
+      const targetId = text(row[L.target]);
+      const suspect = ['yes', 'true', '1', 'x'].includes(text(row[L.suspect]).toLowerCase());
+      const reviewed = suspect ? undefined : targets.get(targetId);
+      const created = cellTime(row[L.created], now);
+      return {
+        id: text(row[L.id]),
+        sourceId: text(row[L.source]),
+        targetId,
+        type: linkTypeOf(row[L.type]),
+        ...(reviewed ? { reviewed } : {}),
+        dateCreated: created,
+        lastModified: now,
+        revision: '01',
+      };
+    });
+    bundle.links = validLinks(rows, bundle.skipped);
   }
   return bundle;
 }

@@ -5,7 +5,8 @@
 import type { StateCreator } from 'zustand';
 import type { AppState } from '../store';
 import type { ArtifactByKind } from '../../types';
-import { kind as kindDef, type ArtifactKindId } from '../../domain/artifactKinds';
+import { fieldsFor, kind as kindDef, type ArtifactKindId } from '../../domain/artifactKinds';
+import { defaultValues } from '../../domain/fields';
 import { hasArtifactChanges } from '../../domain/artifactChanges';
 import { savedByTheApp } from '../../domain/kindRules';
 import { fingerprint } from '../../domain/fingerprint';
@@ -22,7 +23,8 @@ export type NewArtifact<K extends ArtifactKindId> = Omit<
 
 export interface ArtifactsSlice {
   /**
-   * Create an artifact with the next free ID. Returns null (after telling the
+   * Create an artifact with the next free ID; fields `data` leaves out get
+   * their defaults. Returns null (after telling the
    * user why) if there is no user yet or the write failed.
    */
   addArtifact: <K extends ArtifactKindId>(
@@ -115,9 +117,17 @@ export const createArtifactsSlice: StateCreator<AppState, [], [], ArtifactsSlice
       }
       try {
         const now = Date.now();
+        // Fields left out start at their defaults, as in the dialog
+        const given = Object.fromEntries(
+          Object.entries(data as Record<string, unknown>).filter(([, v]) => v !== undefined)
+        );
+        const filled = {
+          ...defaultValues(fieldsFor(kindId, get().attributeDefinitions)),
+          ...given,
+        };
         const artifact = {
-          ...data,
-          ...savedByTheApp(kindId, undefined, data as Record<string, unknown>, now),
+          ...filled,
+          ...savedByTheApp(kindId, undefined, filled, now),
           // The git author is the user (P5)
           author: (data as { author?: string }).author || currentUser.name,
           dateCreated: data.dateCreated ?? now,
@@ -128,7 +138,7 @@ export const createArtifactsSlice: StateCreator<AppState, [], [], ArtifactsSlice
         // The store shows it only after the write succeeded
         await get().saveArtifact(kindId, artifact);
         showToast(`${label(kindId)} ${artifact.id} created`, 'success');
-        return artifact;
+        return find(kindId, artifact.id) ?? artifact;
       } catch (error) {
         console.error(`Failed to add ${kindId}:`, error);
         showToast(`Failed to add ${label(kindId).toLowerCase()}`, 'error');

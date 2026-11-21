@@ -74,6 +74,24 @@ describe('integration: remote sync', () => {
     expect(h.app().artifacts.requirement.map((r) => r.title)).toContain('From a colleague');
   }, 60_000);
 
+  it('after Pull, a collaborator’s baseline is listed', async () => {
+    h = await startApp();
+    await connectRemote(h);
+    h.stubGitOp('pull', async () => {
+      fs.writeFileSync(path.join(h.dir, 'notes.md'), 'x');
+      await git.add({ fs, dir: h.dir, filepath: 'notes.md' });
+      const author = { name: 'Colleague', email: 'c@example.com' };
+      await git.commit({ fs, dir: h.dir, message: 'Release', author });
+      await git.annotatedTag({ fs, dir: h.dir, ref: 'R1', message: 'Release 1', tagger: author });
+      return { ok: true, conflicts: [] };
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /^pull$/i }));
+    await h.settle();
+
+    await waitFor(() => expect(h.app().baselines.map((b) => b.name)).toEqual(['R1']));
+  }, 60_000);
+
   it('merge conflicts on Pull are shown to the user', async () => {
     h = await startApp();
     await connectRemote(h);
@@ -92,8 +110,10 @@ describe('integration: remote sync', () => {
   it('a failing automatic push is shown to the user', async () => {
     h = await startApp();
     await connectRemote(h);
-    localStorage.setItem('tracyfy-auto-sync', 'true');
-    window.dispatchEvent(new CustomEvent('auto-sync-changed', { detail: { enabled: true } }));
+    // Turned on in Remote Settings, as a user does
+    fireEvent.click(screen.getByTitle('Remote Settings'));
+    fireEvent.click(await screen.findByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: /^close$/i }));
     h.stubGitOp('push', async () => {
       throw new Error('remote rejected: permission denied');
     });

@@ -8,7 +8,15 @@
  * (Electron or the browser's File System Access API) and git through
  * shared/gitOps.js.
  */
-import type { BaseArtifact, CommitInfo, Link, Person, Project, ProjectBaseline } from '../types';
+import type {
+  BaseArtifact,
+  CommitInfo,
+  Link,
+  Person,
+  Project,
+  ProjectBaseline,
+  SyncStatus,
+} from '../types';
 import type { LinkType } from '../domain/linkTypes';
 import type { CustomAttributeDefinition } from '../types/customAttributes';
 import { ARTIFACT_KINDS, kind, type ArtifactKindId } from '../domain/artifactKinds';
@@ -50,6 +58,7 @@ export interface ProjectRepository {
   ): Promise<Link>;
   saveLink(link: Link): Promise<void>;
   updateLink(id: string, updates: Partial<Link>): Promise<Link | null>;
+  /** A committed link stays as a file marked deleted, so its ID is not reused */
   deleteLink(id: string): Promise<void>;
   /** The next free ID: one more than the highest file of that type */
   nextId(type: StoredType): Promise<string>;
@@ -64,8 +73,8 @@ export interface ProjectRepository {
   commits(depth?: number): Promise<CommitInfo[]>;
   readAt(path: string, commit: string): Promise<string | null>;
   snapshot(commit: string): Promise<ProjectSnapshot>;
-  /** A file in the project folder as bytes (an image in assets/), or null */
-  readAsset(path: string): Promise<Uint8Array | null>;
+  /** A file in the project folder as bytes (an image in assets/), or null; at `commit` when given */
+  readAsset(path: string, commit?: string): Promise<Uint8Array | null>;
   baselines(): Promise<ProjectBaseline[]>;
   createBaseline(name: string, description: string): Promise<void>;
   author(): Promise<Person | null>;
@@ -73,6 +82,8 @@ export interface ProjectRepository {
   pull(): Promise<PullResult>;
   push(): Promise<void>;
   hasRemote(): Promise<boolean>;
+  /** How the branch stands against the remote's */
+  syncStatus(): Promise<SyncStatus>;
 }
 
 class FsGitRepository implements ProjectRepository {
@@ -133,8 +144,10 @@ class FsGitRepository implements ProjectRepository {
     return diskLinkService.updateLink(id, updates);
   }
 
-  deleteLink(id: string): Promise<void> {
-    return diskLinkService.deleteLink(id);
+  async deleteLink(id: string): Promise<void> {
+    const path = `${STORED_TYPES.link.folder}/${id}.md`;
+    const isNew = (await this.status()).some((f) => f.path === path && f.status === 'new');
+    await diskLinkService.deleteLink(id, !isNew);
   }
 
   nextId(type: StoredType): Promise<string> {
@@ -175,7 +188,8 @@ class FsGitRepository implements ProjectRepository {
     return realGitService.loadProjectSnapshot(commit);
   }
 
-  async readAsset(path: string): Promise<Uint8Array | null> {
+  async readAsset(path: string, commit?: string): Promise<Uint8Array | null> {
+    if (commit) return realGitService.readBytesAtCommit(path, commit);
     return (await fileSystemService.readFileBinary(path)) ?? null;
   }
 
@@ -211,6 +225,10 @@ class FsGitRepository implements ProjectRepository {
 
   hasRemote(): Promise<boolean> {
     return realGitService.hasRemote();
+  }
+
+  syncStatus(): Promise<SyncStatus> {
+    return realGitService.getSyncStatus();
   }
 }
 

@@ -19,6 +19,7 @@ const OTHER_CHANGE_LABELS: Record<Exclude<ArtifactChange['type'], ArtifactKindId
 export function PendingChangesPanel() {
   const pendingChanges = useAppStore((s) => s.pendingChanges);
   const links = useAppStore((s) => s.links);
+  const fileProblems = useAppStore((s) => s.fileProblems);
   const artifacts = useAppStore((s) => s.artifacts);
   // Links into an artifact whose change has not been reviewed yet, by that artifact
   const suspectCount = useMemo(() => {
@@ -76,8 +77,19 @@ export function PendingChangesPanel() {
         if (!classified) return null;
         const { type, id, filename } = classified;
 
+        // A removed link that was committed keeps its file, marked deleted, and
+        // is not loaded: a changed link file without a link is a removal
+        const removedLink =
+          type === 'link' &&
+          fs.status !== 'new' &&
+          !links.some((l) => l.id === id) &&
+          !fileProblems.some((p) => p.path === fs.path);
         const status =
-          fs.status === 'new' ? 'new' : fs.status === 'deleted' ? 'deleted' : 'modified';
+          fs.status === 'new'
+            ? 'new'
+            : fs.status === 'deleted' || removedLink
+              ? 'deleted'
+              : 'modified';
 
         // For the project file, show the project name
         // For assets, use the filename (which is a UUID)
@@ -190,7 +202,7 @@ export function PendingChangesPanel() {
     setDefaults();
     setParsedChanges(filteredChanges);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingChanges, project, links, getArtifactHistory]);
+  }, [pendingChanges, project, links, fileProblems, getArtifactHistory]);
 
   const handleCommitMessageChange = (id: string, message: string) => {
     setCommitMessages((prev) => ({ ...prev, [id]: message }));

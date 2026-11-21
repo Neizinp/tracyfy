@@ -170,3 +170,68 @@ describe.each(RUNTIMES)('gitOps in $name', (runtime) => {
     });
   });
 });
+
+/**
+ * Remote ops at the network boundary: isomorphic-git only speaks http(s), so
+ * its remote calls are recorded instead of sent. Everything local is real.
+ */
+describe('gitOps remote: baselines travel with Push and Pull', () => {
+  let calls: { op: string; ref?: string; tags?: boolean }[];
+  let rejectTag: string | null;
+  let remoteOps: GitOps;
+
+  beforeEach(async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tracyfy-gitops-'));
+    calls = [];
+    rejectTag = null;
+    const record =
+      (op: string) =>
+      async ({ ref, tags }: { ref?: string; tags?: boolean }) => {
+        calls.push({ op, ref, ...(tags ? { tags } : {}) });
+        if (op === 'push' && ref === `refs/tags/${rejectTag}`) throw new Error('rejected');
+        return op === 'fetch' ? {} : undefined;
+      };
+    const remoteGit = {
+      ...git,
+      push: record('push'),
+      fetch: record('fetch'),
+      pull: record('pull'),
+    } as unknown as typeof git;
+    remoteOps = createGitOps({ fs, git: remoteGit, getHttp: async () => ({}) });
+    await remoteOps.init(dir);
+    await remoteOps.addRemote(dir, 'origin', 'https://example.invalid/r.git');
+    fs.writeFileSync(path.join(dir, 'a.md'), 'a');
+    await remoteOps.commitPaths(dir, { add: ['a.md'] }, 'a');
+    await remoteOps.annotatedTag(dir, '1.0', 'First');
+    await remoteOps.annotatedTag(dir, '1.1', 'Second');
+  });
+  afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
+
+  it('Push sends the branch and every baseline', async () => {
+    await remoteOps.push(dir, { branch: 'main' });
+    expect(calls).toEqual([
+      { op: 'push', ref: 'main' },
+      { op: 'push', ref: 'refs/tags/1.0' },
+      { op: 'push', ref: 'refs/tags/1.1' },
+    ]);
+  });
+
+  it('a baseline the remote refuses is reported; the others are still pushed', async () => {
+    rejectTag = '1.0';
+    await expect(remoteOps.push(dir, { branch: 'main' })).rejects.toThrow(
+      /other baselines named 1\.0$/
+    );
+    expect(calls.map((c) => c.ref)).toEqual(['main', 'refs/tags/1.0', 'refs/tags/1.1']);
+  });
+
+  it('Pull and fetch bring the remote’s baselines', async () => {
+    await remoteOps.pull(dir, { branch: 'main' });
+    expect(calls).toEqual([
+      { op: 'fetch', ref: 'main', tags: true },
+      { op: 'pull', ref: 'main' },
+    ]);
+    calls = [];
+    await remoteOps.fetch(dir, { branch: 'main' });
+    expect(calls).toEqual([{ op: 'fetch', ref: 'main', tags: true }]);
+  });
+});

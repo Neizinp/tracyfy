@@ -93,6 +93,24 @@ describe('integration: links', () => {
     expect(within(reqDialog).getByText(b.id)).toBeInTheDocument();
   }, 60_000);
 
+  it('after the link dialog, the requirement dialog is back on its Relationships tab', async () => {
+    h = await startApp();
+    const a = await addRequirement(h, 'Login');
+    const b = await addRequirement(h, 'Logout');
+
+    await createLinkFromRequirementDialog(h, a, b);
+    // "+ Add link" is only on the Relationships tab
+    expect(await screen.findByRole('button', { name: /\+ add link/i })).toBeInTheDocument();
+    expect(h.app().activeModal.type).toBe('requirement');
+
+    // Cancelling comes back too
+    fireEvent.click(screen.getByRole('button', { name: /\+ add link/i }));
+    const dialog = await screen.findByRole('dialog', { name: /create link/i });
+    fireEvent.click(within(dialog).getByRole('button', { name: /cancel/i }));
+    expect(await screen.findByRole('button', { name: /\+ add link/i })).toBeInTheDocument();
+    expect(h.app().links).toHaveLength(1);
+  }, 60_000);
+
   it('both ends of a link open the linked artifact from the Relationships tab', async () => {
     h = await startApp();
     const a = await addRequirement(h, 'Login');
@@ -159,7 +177,7 @@ describe('integration: links', () => {
     await h.settle();
 
     await waitFor(() => expect(h.app().links).toEqual([]));
-    expect(h.exists(`links/${linkId}.md`)).toBe(false);
+    expect(h.readFile(`links/${linkId}.md`)).toMatch(/isDeleted: true/);
     expect(await h.dirtyPaths()).toEqual([`links/${linkId}.md`]);
     expect(await screen.findByText('Deleted')).toBeInTheDocument();
 
@@ -243,7 +261,7 @@ describe('integration: links', () => {
 
   it('every artifact type can be a link target and a link source', async () => {
     h = await startApp({ initialRoute: '/links' });
-    const base = { description: '', status: 'draft', priority: 'medium', dateCreated: Date.now() };
+    const base = { description: '', dateCreated: Date.now() };
     const req = await addRequirement(h, 'Login');
     const targets = {
       REQ: await addRequirement(h, 'Logout'),

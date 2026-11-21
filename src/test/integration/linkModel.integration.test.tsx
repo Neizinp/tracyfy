@@ -67,6 +67,29 @@ describe('integration: one link model', () => {
     expect(await h.dirtyPaths()).toEqual(dirtyBefore);
   }, 60_000);
 
+  it('a removed link that was committed keeps its ID: the next link gets a new one', async () => {
+    h = await startApp();
+    const req = await addRequirement(h, 'Login');
+    const tc = await addTestCase(h, 'Log in');
+    const first = await act(() => h.app().createLink(tc.id, req.id, 'verifies'));
+    await h.settle();
+    for (const p of await h.dirtyPaths()) await act(() => h.app().commitFile(p, 'Add'));
+
+    await act(() => h.app().deleteLink(first.id));
+    await h.settle();
+    expect(h.app().links).toEqual([]);
+    // The removal is a pending change of the link's file, not a missing file
+    expect(await h.dirtyPaths()).toEqual([`links/${first.id}.md`]);
+    expect(h.exists(`links/${first.id}.md`)).toBe(true);
+
+    const second = await act(() => h.app().createLink(tc.id, req.id, 'verifies'));
+    expect(second.id).not.toBe(first.id);
+
+    await act(() => h.app().reload());
+    expect(h.app().links.map((l) => l.id)).toEqual([second.id]);
+    expect(h.app().fileProblems).toEqual([]);
+  }, 60_000);
+
   it('the test case list shows the requirements a test case verifies', async () => {
     h = await startApp({ initialRoute: '/test-cases' });
     const login = await addRequirement(h, 'Login');

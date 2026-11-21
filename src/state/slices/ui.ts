@@ -35,6 +35,10 @@ export interface UiSlice {
   /** The artifact the link dialog links from; null lets the user pick one */
   linkSourceId: string | null;
   linkSourceType: ArtifactKindId | null;
+  /** The artifact dialog the link dialog was opened from; it reopens when that closes */
+  linkReturn: { artifact: SelectedArtifact; tab: string } | null;
+  /** The tab the next artifact dialog opens on (then cleared) */
+  dialogTab: string | null;
   searchQuery: string;
   columnVisibility: ColumnChoices;
 
@@ -43,7 +47,15 @@ export interface UiSlice {
   setActiveModal: (modal: ActiveModal) => void;
   setSelectedArtifact: (artifact: SelectedArtifact | null) => void;
   /** Open the link dialog, linking from `sourceId` (or from an artifact the user picks) */
-  openLinkDialog: (sourceId: string | null, sourceType?: ArtifactKindId | null) => void;
+  /** `from`: the artifact dialog it is opened from, which comes back on `tab` */
+  openLinkDialog: (
+    sourceId: string | null,
+    sourceType?: ArtifactKindId | null,
+    from?: { artifact: SelectedArtifact; tab: string }
+  ) => void;
+  /** Close the link dialog, back to the artifact dialog it was opened from if any */
+  closeLinkDialog: () => void;
+  clearDialogTab: () => void;
   pushNavigationStack: (artifact: SelectedArtifact) => void;
   /** Reopen the artifact the current dialog was opened from */
   popNavigationStack: () => void;
@@ -59,6 +71,8 @@ export const createUiSlice: StateCreator<AppState, [], [], UiSlice> = (set, get)
   navigationStack: [],
   linkSourceId: null,
   linkSourceType: null,
+  linkReturn: null,
+  dialogTab: null,
   searchQuery: '',
   columnVisibility: {},
 
@@ -75,12 +89,28 @@ export const createUiSlice: StateCreator<AppState, [], [], UiSlice> = (set, get)
 
   setSelectedArtifact: (selectedArtifact) => set({ selectedArtifact }),
 
-  openLinkDialog: (sourceId, sourceType = null) =>
+  openLinkDialog: (sourceId, sourceType = null, from) =>
     set({
       linkSourceId: sourceId,
       linkSourceType: sourceType,
+      linkReturn: from ?? null,
       activeModal: { type: 'link', isEdit: false },
     }),
+
+  closeLinkDialog: () => {
+    // Called both after a link is added and when the dialog closes
+    if (get().activeModal.type !== 'link') return;
+    const back = get().linkReturn;
+    if (!back) return set({ activeModal: { type: null }, selectedArtifact: null, dialogTab: null });
+    set({
+      linkReturn: null,
+      activeModal: { type: back.artifact.type, isEdit: true },
+      selectedArtifact: back.artifact,
+      dialogTab: back.tab,
+    });
+  },
+
+  clearDialogTab: () => set({ dialogTab: null }),
 
   pushNavigationStack: (artifact) =>
     set((s) => ({ navigationStack: [...s.navigationStack, artifact] })),

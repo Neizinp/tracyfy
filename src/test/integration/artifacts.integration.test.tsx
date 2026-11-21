@@ -6,6 +6,7 @@ import { act, fireEvent, screen } from '@testing-library/react';
 import fs from 'node:fs';
 import path from 'node:path';
 import { startApp, type Harness } from './appHarness';
+import { ARTIFACT_KINDS } from '../../domain/artifactKinds';
 
 describe('integration: requirements via the UI', () => {
   let h: Harness;
@@ -54,6 +55,52 @@ describe('integration: requirements via the UI', () => {
 
     expect(await screen.findByText('From a colleague')).toBeInTheDocument();
     expect(screen.getByText('Created here')).toBeInTheDocument();
+  }, 60_000);
+
+  it('an artifact added with only a title has its defaults at once, as read back from disk', async () => {
+    h = await startApp();
+    const returned = [];
+    for (const k of ARTIFACT_KINDS) {
+      returned.push(await act(() => h.app().addArtifact(k.id, { title: `A ${k.id}` } as never)));
+    }
+    await h.settle();
+    const inMemory = ARTIFACT_KINDS.map((k) => h.app().artifacts[k.id][0]);
+    expect(returned).toEqual(inMemory);
+    expect(inMemory[0]).toMatchObject({ status: 'draft', priority: 'medium' });
+
+    await act(() => h.app().reload());
+    expect(ARTIFACT_KINDS.map((k) => h.app().artifacts[k.id][0])).toEqual(inMemory);
+  }, 60_000);
+
+  it('an artifact its file could not hold is refused, and nothing is written', async () => {
+    h = await startApp();
+    // "draft" is not a risk status; read back, the file would be a file problem
+    const added = await act(() =>
+      h.app().addArtifact('risk', { title: 'Outage', status: 'draft' } as never)
+    );
+    await h.settle();
+
+    expect(added).toBeNull();
+    expect(h.app().artifacts.risk).toEqual([]);
+    expect(h.exists('risks/RISK-001.md')).toBe(false);
+  }, 60_000);
+
+  it('a file with a value its field does not have (a risk probability) is reported', async () => {
+    h = await startApp();
+    await act(() => h.app().addArtifact('risk', { title: 'Outage' } as never));
+    await h.settle();
+    const file = path.join(h.dir, 'risks/RISK-001.md');
+    fs.writeFileSync(
+      file,
+      fs.readFileSync(file, 'utf8').replace(/^probability: .*$/m, 'probability: sometimes')
+    );
+
+    await act(() => h.app().reload());
+
+    expect(h.app().artifacts.risk).toEqual([]);
+    expect(h.app().fileProblems).toEqual([
+      { path: 'risks/RISK-001.md', message: expect.stringContaining('"sometimes" is not one of') },
+    ]);
   }, 60_000);
 
   it('a file that cannot be read is reported and left out, not loaded as wrong data', async () => {

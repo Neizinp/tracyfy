@@ -358,16 +358,7 @@ features on purpose. Step 7 is new functionality, and only becomes cheap after 1
 
 Things noticed while doing a step that belong to a later one:
 
-- **Left after step 4**:
-  - A removed link deletes its file, so the highest link ID can be handed out again. Naming
-    link files by fact was considered in step 7 and not chosen.
-  - Tags are not pushed with Push; a baseline only exists in the local clone until it is.
-- **Left after step 5**:
-  - The sidebar's sync status (ahead/behind) still runs on window events (`git-check`,
-    `git-status-changed`) and its own polling, not on store state.
 - **Left after step 6**:
-  - Other enum values than status (priority, a risk's probability) are still not checked
-    when a file is read.
   - Custom attribute values are not validated against their definitions when a file is read,
     on purpose: renaming a dropdown option must not make every file that uses it unreadable.
     The dialog enforces required attributes when saving.
@@ -382,23 +373,28 @@ Things noticed while doing a step that belong to a later one:
     custom attributes do not make a link suspect.
   - Approving commits the artifact's file as it is, so its other uncommitted edits go into
     the approval commit. That is intended: you approve what you see.
-  - `people` in the store (commit authors) was only used for workflow assignees and has no
-    reader left.
-  - After the link dialog closes, the artifact dialog it was opened from is back on its
-    Overview tab.
   - The traceability dashboard and the link dialog (`LinkModal`) still use inline styles.
-
 - **Left after step 8**:
-  - Images in a baseline export are read from the working copy, not from the baseline's commit.
-  - The store's `addArtifact` does not fill in field defaults (the dialog does), so an artifact
-    added another way has no status in memory until the project is read again.
-  - Excel import reads artifacts only; links and the relation columns are not imported, and a
-    document imported from Excel has no outline.
   - The PDF no longer draws a box around each artifact (it broke across pages).
   - Without a previous baseline there is no revision history in Excel either (it used to list
     every commit), the same rule as the PDF.
   - JSON exports made before step 8 cannot be imported (D4).
-  - `diskCustomAttributeService` is only used by the demo data.
+  - The relation columns in Excel are derived from the links and not read on import; a link
+    is changed in the Links sheet.
+- **Done after step 8** (branch `refactor/after-export`):
+  - A baseline export reads images from the baseline's commit.
+  - `addArtifact` fills in field defaults, and the store keeps every saved artifact as its
+    file reads back; an artifact its file could not hold (a wrong status) is not written.
+  - Excel import reads the Links sheet (with a Suspect column, so a round trip keeps which
+    links are suspect) and a Document Outline sheet.
+  - `diskCustomAttributeService` is gone; the demo data reads the config it updates.
+  - A removed link that was committed keeps its file, marked deleted, so its ID is not
+    reused (from step 4).
+  - Baselines (tags) are pushed with Push and fetched with Pull (from step 4).
+  - The sidebar's sync status is store state; the window events are gone (from step 5).
+  - Every enum value, not only status, is checked when a file is read (from step 6).
+  - `people` is gone from the store (from step 7).
+  - After the link dialog, the artifact dialog is back on its Relationships tab (from step 7).
 
 ## 8. Open questions
 

@@ -16,6 +16,7 @@ import { useAppStore } from '../../state';
 export const ManagementModals: React.FC = () => {
   const activeModal = useAppStore((s) => s.activeModal);
   const closeModal = useAppStore((s) => s.closeModal);
+  const closeLinkDialog = useAppStore((s) => s.closeLinkDialog);
   const addAttributeDefinition = useAppStore((s) => s.addAttributeDefinition);
   const linkSourceId = useAppStore((s) => s.linkSourceId);
   const linkSourceType = useAppStore((s) => s.linkSourceType);
@@ -40,7 +41,7 @@ export const ManagementModals: React.FC = () => {
       );
       if (duplicate) {
         showToast(`${sourceId} already has this link to ${newLink.targetId}`, 'warning');
-        closeModal();
+        closeLinkDialog();
         return;
       }
 
@@ -54,9 +55,9 @@ export const ManagementModals: React.FC = () => {
           'error'
         );
       }
-      closeModal();
+      closeLinkDialog();
     },
-    [linkSourceId, closeModal, links, createLink, showToast]
+    [linkSourceId, closeLinkDialog, links, createLink, showToast]
   );
 
   const handleCreateBaselineWrapper = useCallback(
@@ -74,7 +75,7 @@ export const ManagementModals: React.FC = () => {
         sourceArtifactId={linkSourceId}
         sourceArtifactType={linkSourceType || 'requirement'}
         artifactsByType={linkableArtifacts}
-        onClose={closeModal}
+        onClose={closeLinkDialog}
         onAddLink={handleAddArtifactLink}
       />
 

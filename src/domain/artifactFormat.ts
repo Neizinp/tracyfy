@@ -116,6 +116,20 @@ function fieldSchema(field: FieldDef): z.ZodTypeAny {
       return time.optional();
     case 'boolean':
       return z.boolean().optional();
+    case 'enum': {
+      // An empty value is allowed: the field is then simply not set
+      const values = (field.options ?? []).map((o) => o.value);
+      return text
+        .superRefine((v, ctx) => {
+          if (v !== '' && !values.includes(v)) {
+            ctx.addIssue({
+              code: 'custom',
+              message: `"${v}" is not one of ${values.join(', ')}`,
+            });
+          }
+        })
+        .optional();
+    }
     default:
       return optionalText;
   }
@@ -263,6 +277,8 @@ const linkSchema = z.object({
   revision: optionalText,
   dateCreated: time.optional(),
   lastModified: time.optional(),
+  isDeleted: z.boolean().optional(),
+  deletedAt: time.optional(),
   customAttributes,
 });
 
@@ -276,6 +292,7 @@ export function serializeLink(link: Link): string {
       revision: link.revision,
       dateCreated: writeTime(link.dateCreated),
       lastModified: writeTime(link.lastModified),
+      ...(link.isDeleted ? { isDeleted: true, deletedAt: writeTime(link.deletedAt) } : {}),
       customAttributes: validAttributes(link.customAttributes),
     },
     `# ${link.id}\n\nLinks **${link.sourceId}** to **${link.targetId}** (${linkTypeLabel(link.type).toLowerCase()})`
@@ -296,6 +313,7 @@ export function parseLink(id: string, content: string): Link {
     revision: l.revision ?? '01',
     dateCreated: l.dateCreated ?? 0,
     lastModified: l.lastModified ?? l.dateCreated ?? 0,
+    ...(l.isDeleted ? { isDeleted: true, ...(l.deletedAt ? { deletedAt: l.deletedAt } : {}) } : {}),
     customAttributes: l.customAttributes ?? [],
   };
 }

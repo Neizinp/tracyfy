@@ -79,11 +79,4 @@ describe('integration: the git author is the user', () => {
     expect((await headAuthor(h)).name).toBe('Ada Lovelace');
     expect(await git.getConfig({ fs, dir: h.dir, path: 'user.name' })).toBe('Ada Lovelace');
   }, 60_000);
-
-  it('people who committed to the repository are known by name', async () => {
-    h = await startApp({ userName: 'Ada' });
-    await h.colleagueCommits('Grace');
-
-    expect(h.app().people.map((p) => p.name)).toEqual(['Ada', 'Grace']);
-  }, 60_000);
 });

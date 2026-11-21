@@ -6,7 +6,7 @@
  * The few kind-specific extras (a document's outline, a risk's level) come
  * from ui/kinds. Saving and deleting go through the store's artifact actions.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { BaseArtifactModal } from '../../components/BaseArtifactModal';
 import { RevisionHistoryTab } from '../../components/RevisionHistoryTab';
 import { ArtifactLinks } from './ArtifactLinks';
@@ -87,7 +87,13 @@ export const ArtifactDialog: React.FC<ArtifactDialogProps> = ({
     () => artifact ?? { ...defaultValues(fields), ...EMPTY_STRUCTURE[kindId] }
   );
   const [draft, setDraft] = useState<Draft>(initial);
-  const [activeTab, setActiveTab] = useState('overview');
+  const dialogTab = useAppStore((s) => s.dialogTab);
+  const clearDialogTab = useAppStore((s) => s.clearDialogTab);
+  // Back from the link dialog, it opens on the tab it was left on
+  const [activeTab, setActiveTab] = useState(() => dialogTab ?? 'overview');
+  useEffect(() => {
+    if (dialogTab) clearDialogTab();
+  }, [dialogTab, clearDialogTab]);
   const [missing, setMissing] = useState<string[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -237,7 +243,11 @@ export const ArtifactDialog: React.FC<ArtifactDialogProps> = ({
         <ArtifactLinks
           artifactId={id}
           kindLabel={label.toLowerCase()}
-          onAddLink={() => id && openLinkDialog(id, kindId)}
+          onAddLink={() =>
+            id &&
+            selectedArtifact &&
+            openLinkDialog(id, kindId, { artifact: selectedArtifact, tab: 'relationships' })
+          }
           onNavigate={handleNavigate}
         />
       ) : activeTab === 'history' && id ? (

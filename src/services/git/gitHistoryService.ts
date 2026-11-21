@@ -156,20 +156,25 @@ class GitHistoryService {
    * Read file content at a specific commit
    */
   async readFileAtCommit(filepath: string, commitHash: string): Promise<string | null> {
+    const bytes = await this.readBytesAtCommit(filepath, commitHash);
+    return bytes && new TextDecoder().decode(bytes);
+  }
+
+  /** A file's bytes at a commit (an image), or null when it did not exist then */
+  async readBytesAtCommit(filepath: string, commitHash: string): Promise<Uint8Array | null> {
     if (!this.initialized) {
       throw new Error('Git service not initialized');
     }
 
     try {
-      const blob = await gitBackend().readBlob(getRootDir(), commitHash, filepath);
-      return new TextDecoder().decode(blob);
+      return await gitBackend().readBlob(getRootDir(), commitHash, filepath);
     } catch (error: unknown) {
       const err = error as { code?: string };
       if (err?.code === 'NotFoundError') {
         return null;
       }
       console.error(
-        '[readFileAtCommit] Unexpected error reading',
+        '[readBytesAtCommit] Unexpected error reading',
         filepath,
         'at',
         commitHash,

@@ -141,6 +141,10 @@ class CompositeGitService {
     return gitHistoryService.readFileAtCommit(path, hash);
   }
 
+  async readBytesAtCommit(path: string, hash: string): Promise<Uint8Array | null> {
+    return gitHistoryService.readBytesAtCommit(path, hash);
+  }
+
   // Facade Methods (Baseline/Tags)
 
   async createTag(name: string, msg: string): Promise<void> {

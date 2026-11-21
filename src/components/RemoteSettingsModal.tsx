@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Globe, Key, Check, AlertCircle, Loader2, Trash2, RefreshCw } from 'lucide-react';
 import { realGitService } from '../services/realGitService';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-
-const AUTO_SYNC_KEY = 'tracyfy-auto-sync';
+import { useAppStore } from '../state';
 
 export interface RemoteSettingsModalProps {
   isOpen: boolean;
@@ -18,13 +17,8 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
-  const [autoSync, setAutoSync] = useState(() => {
-    try {
-      return localStorage.getItem(AUTO_SYNC_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const autoSync = useAppStore((s) => s.autoSync);
+  const setAutoSync = useAppStore((s) => s.setAutoSync);
 
   // Close modal on Escape key
   useKeyboardShortcuts({ onClose });
@@ -41,17 +35,7 @@ export const RemoteSettingsModal: React.FC<RemoteSettingsModalProps> = ({ isOpen
     }
   }, [isOpen]);
 
-  // Persist autoSync setting
-  const handleAutoSyncChange = (enabled: boolean) => {
-    setAutoSync(enabled);
-    try {
-      localStorage.setItem(AUTO_SYNC_KEY, String(enabled));
-      // Dispatch event so sidebar can react
-      window.dispatchEvent(new CustomEvent('auto-sync-changed', { detail: { enabled } }));
-    } catch {
-      // Ignore localStorage errors
-    }
-  };
+  const handleAutoSyncChange = (enabled: boolean) => setAutoSync(enabled);
 
   const loadRemotes = async () => {
     const remotes = await realGitService.getRemotes();
