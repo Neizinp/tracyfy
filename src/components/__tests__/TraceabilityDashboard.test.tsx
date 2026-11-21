@@ -5,6 +5,7 @@ import { TraceabilityDashboard } from '../TraceabilityDashboard';
 import type { Requirement, UseCase, TestCase, Information, Link } from '../../types';
 import { diskLinkService } from '../../services/diskLinkService';
 import { renderWithStore } from '../../test/renderWithStore';
+import { fingerprint } from '../../domain/fingerprint';
 
 const render = (ui: React.ReactElement) =>
   renderWithStore(ui, { state: { isReady: true, links: storeLinks() } });
@@ -118,13 +119,14 @@ describe('TraceabilityDashboard', () => {
     },
   ];
 
-  // Links as the app stores them (link files)
+  // Links as the app stores them (link files), reviewed against their targets
   const fixtureLinks: Link[] = [
     {
       id: 'LINK-101',
       sourceId: 'REQ-001',
       targetId: 'UC-001',
       type: 'satisfies',
+      reviewed: fingerprint('useCase', mockUseCases[0]),
       dateCreated: 1,
       lastModified: 1,
       revision: '01',
@@ -134,6 +136,7 @@ describe('TraceabilityDashboard', () => {
       sourceId: 'UC-001',
       targetId: 'REQ-001',
       type: 'derived_from',
+      reviewed: fingerprint('requirement', mockRequirements[0]),
       dateCreated: 1,
       lastModified: 1,
       revision: '01',
@@ -266,6 +269,7 @@ describe('TraceabilityDashboard', () => {
             targetId: 'REQ-001',
             sourceId: 'TC-001',
             type: 'verifies' as const,
+            reviewed: fingerprint('requirement', mockRequirements[0]),
           },
         ],
       };

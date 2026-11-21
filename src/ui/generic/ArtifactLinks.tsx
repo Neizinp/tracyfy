@@ -2,12 +2,17 @@
  * The links of one artifact, each read from this artifact's side: a
  * requirement shows "Verified by TC-007" for the link "TC-007 verifies
  * REQ-012". Used as the Relationships tab of the artifact dialog.
+ *
+ * A link whose target changed since it was last reviewed is marked suspect,
+ * with a button to mark it reviewed (DESIGN.md §3.3, P3).
  */
 import React, { useMemo } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useAppStore, notifyError } from '../../state';
 import { kind, kindOfId } from '../../domain/artifactKinds';
 import { linkLabelFrom } from '../../domain/linkTypes';
+import { fingerprintsOf } from '../../domain/fingerprint';
+import { isSuspect } from '../../domain/traceability';
 import type { Link } from '../../types';
 
 interface ArtifactLinksProps {
@@ -47,6 +52,8 @@ export const ArtifactLinks: React.FC<ArtifactLinksProps> = ({
   const links = useAppStore((s) => s.links);
   const artifacts = useAppStore((s) => s.artifacts);
   const deleteLink = useAppStore((s) => s.deleteLink);
+  const markLinkReviewed = useAppStore((s) => s.markLinkReviewed);
+  const fingerprintOf = useMemo(() => fingerprintsOf(artifacts), [artifacts]);
   const rows = useMemo(
     () => (artifactId ? linkRowsOf(links, artifactId) : []),
     [links, artifactId]
@@ -78,6 +85,7 @@ export const ArtifactLinks: React.FC<ArtifactLinksProps> = ({
           {rows.map(({ link, label, otherId }) => {
             const k = kindOfId(otherId);
             const title = titleOf(otherId);
+            const suspect = isSuspect(link, fingerprintOf(link.targetId));
             return (
               <li key={link.id} className="tf-link-row">
                 <span className="tf-chip">{label}</span>
@@ -90,6 +98,27 @@ export const ArtifactLinks: React.FC<ArtifactLinksProps> = ({
                   <span className="tf-mono">{otherId}</span>
                 </button>
                 <span className="tf-link-title">{title ?? 'Not in the project'}</span>
+                {suspect && (
+                  <>
+                    <span
+                      className="tf-badge tf-badge-medium"
+                      title={`${link.targetId} changed since this link was last reviewed`}
+                    >
+                      Suspect
+                    </span>
+                    <button
+                      type="button"
+                      className="tf-button tf-button-small"
+                      onClick={() =>
+                        markLinkReviewed(link.id).catch((err) =>
+                          notifyError('Could not mark the link reviewed', err)
+                        )
+                      }
+                    >
+                      Mark reviewed
+                    </button>
+                  </>
+                )}
                 <button
                   type="button"
                   className="tf-icon-button"

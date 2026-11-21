@@ -30,13 +30,19 @@ class DiskLinkService extends BaseArtifactService<Link> {
   /**
    * Create a new link
    */
-  async createLink(sourceId: string, targetId: string, type: LinkType): Promise<Link> {
+  async createLink(
+    sourceId: string,
+    targetId: string,
+    type: LinkType,
+    reviewed?: string
+  ): Promise<Link> {
     const nextId = await idAllocator.next(STORED_TYPES.link.folder, STORED_TYPES.link.idPrefix);
     const link: Link = {
       id: nextId,
       sourceId,
       targetId,
       type,
+      ...(reviewed ? { reviewed } : {}),
       dateCreated: Date.now(),
       lastModified: Date.now(),
       revision: '01',

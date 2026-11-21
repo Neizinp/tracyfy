@@ -29,10 +29,10 @@ async function approvedRequirement(title: string): Promise<Requirement> {
 }
 
 /** Open the requirement's dialog from the table, change one input, save */
-async function editInDialog(title: string, change: (dialog: HTMLElement) => void) {
+async function editInDialog(title: string, change: (dialog: HTMLElement) => void | Promise<void>) {
   fireEvent.click(await screen.findByText(title));
   const dialog = await screen.findByRole('dialog');
-  change(dialog);
+  await change(dialog);
   fireEvent.click(within(dialog).getByRole('button', { name: /save/i }));
   await h.settle();
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -73,8 +73,8 @@ describe('integration: lifecycle', () => {
     const req = await approvedRequirement('Session timeout');
     expect(statusOf(req.id)).toBe('approved');
 
-    await editInDialog('Session timeout', (dialog) => {
-      fireEvent.change(within(dialog).getByDisplayValue(/log out after 15 minutes/), {
+    await editInDialog('Session timeout', async (dialog) => {
+      fireEvent.change(await within(dialog).findByDisplayValue(/log out after 15 minutes/), {
         target: { value: 'The system shall log out after 5 minutes.' },
       });
     });
@@ -102,8 +102,8 @@ describe('integration: lifecycle', () => {
     h = await startApp({ initialRoute: '/requirements' });
     const req = await approvedRequirement('Session timeout');
 
-    await editInDialog('Session timeout', (dialog) => {
-      fireEvent.change(within(dialog).getByDisplayValue(/log out after 15 minutes/), {
+    await editInDialog('Session timeout', async (dialog) => {
+      fireEvent.change(await within(dialog).findByDisplayValue(/log out after 15 minutes/), {
         target: { value: 'Reworded.' },
       });
       fireEvent.change(within(dialog).getByLabelText('Status'), {
@@ -132,8 +132,8 @@ describe('integration: lifecycle', () => {
 
     // Still off after reopening the folder: it is read from the file
     await h.restart();
-    await editInDialog('Session timeout', (dialog) => {
-      fireEvent.change(within(dialog).getByDisplayValue(/log out after 15 minutes/), {
+    await editInDialog('Session timeout', async (dialog) => {
+      fireEvent.change(await within(dialog).findByDisplayValue(/log out after 15 minutes/), {
         target: { value: 'Reworded.' },
       });
     });

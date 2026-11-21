@@ -142,12 +142,16 @@ export function linkOptions(
 export interface TracedArtifact {
   id: string;
   isDeleted?: boolean;
+  /** Its content fingerprint; without one, links to it are never suspect */
+  fingerprint?: string;
 }
 export interface TracedLink {
   id: string;
   sourceId: string;
   targetId: string;
   type: LinkType;
+  /** The target's fingerprint when the link was last reviewed */
+  reviewed?: string;
 }
 
 export type Gap =
@@ -156,7 +160,17 @@ export type Gap =
   /** A link whose kinds and type the rules do not allow */
   | { issue: 'not_allowed'; artifactId: string; linkId: string }
   /** A link with an end that is not in the project (removed by hand, or by a pull) */
-  | { issue: 'orphan_link'; artifactId: string; linkId: string; missingId: string };
+  | { issue: 'orphan_link'; artifactId: string; linkId: string; missingId: string }
+  /**
+   * The target changed since the link was last reviewed (or the link was never
+   * reviewed): its source may no longer be right. Reported on the source.
+   */
+  | { issue: 'suspect'; artifactId: string; linkId: string; changedId: string };
+
+/** Whether the target changed since the link was reviewed; false if the target is unknown */
+export function isSuspect(link: { reviewed?: string }, targetFingerprint: string | undefined) {
+  return targetFingerprint !== undefined && link.reviewed !== targetFingerprint;
+}
 
 /** Every rule violation in the project, in artifact order */
 export function findGaps(
@@ -165,6 +179,7 @@ export function findGaps(
   links: readonly TracedLink[]
 ): Gap[] {
   const live = new Set(artifacts.filter((a) => !a.isDeleted).map((a) => a.id));
+  const fingerprints = new Map(artifacts.map((a) => [a.id, a.fingerprint]));
   const known = new Set(artifacts.map((a) => a.id));
   const gaps: Gap[] = [];
   const byArtifact = new Map<string, Gap[]>();
@@ -195,7 +210,17 @@ export function findGaps(
     if (source && target && !isAllowed(rules, source, link.type, target)) {
       add({ issue: 'not_allowed', artifactId: link.sourceId, linkId: link.id });
     }
-    if (live.has(link.sourceId) && live.has(link.targetId)) counted.push(link);
+    if (live.has(link.sourceId) && live.has(link.targetId)) {
+      counted.push(link);
+      if (isSuspect(link, fingerprints.get(link.targetId))) {
+        add({
+          issue: 'suspect',
+          artifactId: link.sourceId,
+          linkId: link.id,
+          changedId: link.targetId,
+        });
+      }
+    }
   }
 
   for (const rule of rules.coverage) {

@@ -7,6 +7,12 @@ export interface Link {
   sourceId: string; // The artifact creating the link (e.g., REQ-001)
   targetId: string; // The artifact being linked to (e.g., UC-003)
   type: LinkType; // Link relationship type
+  /**
+   * Fingerprint of the target's content when the link was last reviewed
+   * (domain/fingerprint.ts). When the target changes it no longer matches and
+   * the link is suspect until someone reviews it again.
+   */
+  reviewed?: string;
   dateCreated: number;
   lastModified: number;
   revision: string; // Satisfies BaseArtifact

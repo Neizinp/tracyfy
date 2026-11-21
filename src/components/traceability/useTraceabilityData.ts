@@ -20,6 +20,7 @@ import type {
 import type { UnifiedArtifact, GapInfo } from './types';
 import { KIND_IDS, kindOfId, type ArtifactKindId } from '../../domain/artifactKinds';
 import { findGaps } from '../../domain/traceability';
+import { fingerprintsOf } from '../../domain/fingerprint';
 import { useAppStore } from '../../state';
 
 interface UseTraceabilityDataOptions {
@@ -88,11 +89,30 @@ export function useTraceabilityData({
   // Every rule violation, with the artifact it is about
   const gapArtifacts = useMemo((): GapInfo[] => {
     const byId = new Map(allArtifacts.map((a) => [a.id, a]));
-    return findGaps(rules, allArtifacts, standaloneLinks).flatMap((gap) => {
+    const fingerprintOf = fingerprintsOf({
+      requirement: requirements,
+      useCase: useCases,
+      testCase: testCases,
+      information,
+      risk: risks,
+      document: documents,
+    });
+    const traced = allArtifacts.map((a) => ({ id: a.id, fingerprint: fingerprintOf(a.id) }));
+    return findGaps(rules, traced, standaloneLinks).flatMap((gap) => {
       const artifact = byId.get(gap.artifactId);
       return artifact ? [{ artifact, gap }] : [];
     });
-  }, [rules, allArtifacts, standaloneLinks]);
+  }, [
+    rules,
+    allArtifacts,
+    standaloneLinks,
+    requirements,
+    useCases,
+    testCases,
+    information,
+    risks,
+    documents,
+  ]);
 
   // Per kind: how many there are, how many have a link, how many have a gap
   const stats = useMemo(() => {

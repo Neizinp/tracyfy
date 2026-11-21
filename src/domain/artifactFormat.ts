@@ -256,6 +256,10 @@ const linkSchema = z.object({
   source: z.string().min(1),
   type: z.enum(LINK_TYPE_IDS),
   target: z.string().min(1),
+  reviewed: z
+    .string()
+    .regex(/^[0-9a-f]{8}$/, 'must be a fingerprint like 3f9a1c2e')
+    .optional(),
   revision: optionalText,
   dateCreated: time.optional(),
   lastModified: time.optional(),
@@ -268,6 +272,7 @@ export function serializeLink(link: Link): string {
       source: link.sourceId,
       type: link.type,
       target: link.targetId,
+      reviewed: link.reviewed,
       revision: link.revision,
       dateCreated: writeTime(link.dateCreated),
       lastModified: writeTime(link.lastModified),
@@ -287,6 +292,7 @@ export function parseLink(id: string, content: string): Link {
     sourceId: l.source,
     targetId: l.target,
     type: l.type,
+    ...(l.reviewed ? { reviewed: l.reviewed } : {}),
     revision: l.revision ?? '01',
     dateCreated: l.dateCreated ?? 0,
     lastModified: l.lastModified ?? l.dateCreated ?? 0,

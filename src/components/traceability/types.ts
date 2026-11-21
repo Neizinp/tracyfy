@@ -27,6 +27,7 @@ export const ISSUE_COLORS: Record<IssueType, string> = {
   coverage: 'var(--color-warning-light)',
   not_allowed: 'var(--color-info-light, #60a5fa)',
   orphan_link: 'var(--color-error-light, #f87171)',
+  suspect: 'var(--color-warning)',
 };
 
 /** What the gap list says about a gap */
@@ -38,5 +39,7 @@ export function gapLabel(gap: Gap): { label: string; details?: string } {
       return { label: 'Link not allowed by the rules', details: gap.linkId };
     case 'orphan_link':
       return { label: 'Orphan link', details: `${gap.linkId} → ${gap.missingId}` };
+    case 'suspect':
+      return { label: 'Suspect link', details: `${gap.changedId} changed (${gap.linkId})` };
   }
 }

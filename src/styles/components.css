@@ -468,3 +468,8 @@ input[type='radio'] {
   color: var(--color-text-primary);
   background-color: var(--color-bg-hover);
 }
+
+.tf-button-small {
+  padding: 2px 8px;
+  font-size: var(--font-size-xs);
+}

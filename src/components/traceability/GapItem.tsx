@@ -9,13 +9,21 @@ interface GapItemProps {
   onClick?: () => void;
   onAddLink?: () => void;
   onRemoveOrphan?: () => void;
+  onMarkReviewed?: () => void;
 }
 
-export const GapItem: React.FC<GapItemProps> = ({ gap, onClick, onAddLink, onRemoveOrphan }) => {
+export const GapItem: React.FC<GapItemProps> = ({
+  gap,
+  onClick,
+  onAddLink,
+  onRemoveOrphan,
+  onMarkReviewed,
+}) => {
   const colors = kind(gap.artifact.type).color;
   const issueColor = ISSUE_COLORS[gap.gap.issue];
   const { label, details } = gapLabel(gap.gap);
   const isOrphan = gap.gap.issue === 'orphan_link';
+  const isSuspectLink = gap.gap.issue === 'suspect';
 
   return (
     <div
@@ -64,7 +72,19 @@ export const GapItem: React.FC<GapItemProps> = ({ gap, onClick, onAddLink, onRem
         </span>
       )}
       {/* Quick action buttons */}
-      {!isOrphan && onAddLink && (
+      {isSuspectLink && onMarkReviewed && (
+        <button
+          type="button"
+          className="tf-button tf-button-small"
+          onClick={(e) => {
+            e.stopPropagation();
+            onMarkReviewed();
+          }}
+        >
+          Mark reviewed
+        </button>
+      )}
+      {!isOrphan && !isSuspectLink && onAddLink && (
         <button
           type="button"
           onClick={(e) => {

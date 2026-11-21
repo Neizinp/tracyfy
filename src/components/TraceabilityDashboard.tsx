@@ -27,7 +27,7 @@ import {
 import { TraceabilityGraph } from './graph/TraceabilityGraph';
 import { ARTIFACT_KINDS, kind } from '../domain/artifactKinds';
 import { LinksView } from './LinksView';
-import { useAppStore } from '../state';
+import { notifyError, useAppStore } from '../state';
 
 type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
 
@@ -76,6 +76,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   onRemoveLink,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  const markLinkReviewed = useAppStore((s) => s.markLinkReviewed);
 
   // Sync activeTab with initialTab when it changes
   useEffect(() => {
@@ -356,6 +357,14 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                   onClick={onSelectArtifact ? () => onSelectArtifact(gap.artifact.id) : undefined}
                   onAddLink={
                     onAddLink ? () => onAddLink(gap.artifact.id, gap.artifact.type) : undefined
+                  }
+                  onMarkReviewed={
+                    gap.gap.issue === 'suspect'
+                      ? () =>
+                          markLinkReviewed((gap.gap as { linkId: string }).linkId).catch((err) =>
+                            notifyError('Could not mark the link reviewed', err)
+                          )
+                      : undefined
                   }
                   onRemoveOrphan={
                     gap.gap.issue === 'orphan_link' && onRemoveLink

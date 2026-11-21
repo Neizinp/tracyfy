@@ -11,7 +11,7 @@
  *
  * Pure TypeScript: no React, no IO.
  */
-import { kind, type ArtifactKindId } from './artifactKinds';
+import { kind, kindOfId, type ArtifactKindId } from './artifactKinds';
 import { TITLE, type FieldDef } from './fields';
 
 const isContent = (field: FieldDef) =>
@@ -47,7 +47,28 @@ function fnv1a(text: string): string {
 export function fingerprint(kindId: ArtifactKindId, artifact: object): string {
   const item = artifact as Record<string, unknown>;
   const text = contentFields(kindId)
-    .map((f) => `${f.id}\u0000${normalize(item[f.id])}`)
+    // A field the artifact leaves out has its default, as when its file is read
+    .map((f) => `${f.id}\u0000${normalize(item[f.id] ?? f.default)}`)
     .join('\u0001');
   return fnv1a(text);
+}
+
+type ArtifactsByKind = Partial<
+  Record<ArtifactKindId, readonly { id: string; isDeleted?: boolean }[]>
+>;
+
+/**
+ * A lookup of the current fingerprint of any artifact by ID; undefined for an
+ * artifact that is not in the project or is deleted.
+ */
+export function fingerprintsOf(artifacts: ArtifactsByKind): (id: string) => string | undefined {
+  const cache = new Map<string, string | undefined>();
+  return (id) => {
+    if (cache.has(id)) return cache.get(id);
+    const kindId = kindOfId(id);
+    const artifact = kindId ? artifacts[kindId]?.find((a) => a.id === id) : undefined;
+    const value = artifact && !artifact.isDeleted ? fingerprint(kindId!, artifact) : undefined;
+    cache.set(id, value);
+    return value;
+  };
 }

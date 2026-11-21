@@ -142,6 +142,7 @@ const link: Link = {
   sourceId: 'REQ-042',
   targetId: 'UC-007',
   type: 'satisfies',
+  reviewed: '3f9a1c2e',
   dateCreated: T0,
   lastModified: T0 + 1,
   revision: '02',

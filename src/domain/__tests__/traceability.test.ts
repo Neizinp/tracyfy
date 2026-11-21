@@ -3,6 +3,7 @@ import {
   DEFAULT_TRACEABILITY,
   findGaps,
   isAllowed,
+  isSuspect,
   linkOptions,
   type TraceabilityRules,
   type TracedLink,
@@ -152,5 +153,25 @@ describe('rules in tracyfy.yaml', () => {
         'schemaVersion: 1\nname: x\ntraceability:\n  allowed:\n    - [testCase, verified_by, requirement]\n'
       )
     ).toThrow(/traceability\.allowed\.0\.1/);
+  });
+});
+
+describe('suspect links', () => {
+  it('a link whose target changed since it was reviewed is a gap on its source', () => {
+    const verifies = { ...link('TC-001', 'verifies', 'REQ-001'), reviewed: 'aaaaaaaa' };
+    const gaps = findGaps(
+      { ...rules, coverage: [] },
+      [{ id: 'REQ-001', fingerprint: 'bbbbbbbb' }, { id: 'TC-001' }],
+      [verifies]
+    );
+    expect(gaps).toEqual([
+      { issue: 'suspect', artifactId: 'TC-001', linkId: verifies.id, changedId: 'REQ-001' },
+    ]);
+  });
+
+  it('is not suspect while the fingerprint matches; never reviewed is suspect', () => {
+    expect(isSuspect({ reviewed: 'aaaaaaaa' }, 'aaaaaaaa')).toBe(false);
+    expect(isSuspect({}, 'aaaaaaaa')).toBe(true);
+    expect(isSuspect({}, undefined)).toBe(false);
   });
 });
