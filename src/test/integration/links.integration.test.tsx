@@ -142,6 +142,35 @@ describe('integration: links', () => {
     expect(h.app().links).toEqual([expect.objectContaining({ sourceId: a.id, targetId: b.id })]);
   }, 60_000);
 
+  it('searching, filtering by type and sorting on the Links page change the rows shown', async () => {
+    h = await startApp({ initialRoute: '/links' });
+    const a = await addRequirement(h, 'Login');
+    const b = await addRequirement(h, 'Logout');
+    const c = await addRequirement(h, 'Session');
+    const first = await act(() => h.app().createLink(a.id, b.id, 'depends_on'));
+    const second = await act(() => h.app().createLink(b.id, c.id, 'refines'));
+    await h.settle();
+    expect(await screen.findByText(first.id)).toBeInTheDocument();
+    expect(screen.getByText(second.id)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('Search links...'), { target: { value: c.id } });
+    await waitFor(() => expect(screen.queryByText(first.id)).not.toBeInTheDocument());
+    expect(screen.getByText(second.id)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('Search links...'), { target: { value: '' } });
+    fireEvent.change(screen.getByDisplayValue('All Types'), { target: { value: 'depends_on' } });
+    await waitFor(() => expect(screen.queryByText(second.id)).not.toBeInTheDocument());
+    expect(screen.getByText(first.id)).toBeInTheDocument();
+
+    // Newest first after clicking the ID header (ascending is the default)
+    fireEvent.change(screen.getByDisplayValue('Depends on'), { target: { value: 'all' } });
+    fireEvent.click(screen.getByText('ID'));
+    await waitFor(() => {
+      const ids = screen.getAllByText(/^LINK-\d+$/).map((e) => e.textContent);
+      expect(ids).toEqual([second.id, first.id]);
+    });
+  }, 60_000);
+
   it('the Add button on the Links page creates a link with a chosen source', async () => {
     h = await startApp({ initialRoute: '/links' });
     const a = await addRequirement(h, 'Login');

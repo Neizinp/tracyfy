@@ -86,7 +86,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
       isSubmitDisabled={!selectedTargetId || !effectiveSourceId || !selectedOption}
       width="600px"
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className="tf-linkmodal">
         {needsSourceSelection ? (
           <FormField
             label="Source Artifact"
@@ -97,15 +97,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
               aria-label="Source Artifact"
               value={chosenSourceId}
               onChange={(e) => setChosenSourceId(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                backgroundColor: 'var(--color-bg-secondary)',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-primary)',
-                fontSize: 'var(--font-size-sm)',
-              }}
+              className="tf-linkmodal-box"
             >
               <option value="">Select source…</option>
               {sourceOptions.map((a) => (
@@ -117,45 +109,17 @@ export const LinkModal: React.FC<LinkModalProps> = ({
           </FormField>
         ) : (
           // Source Artifact (read-only)
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label
-              style={{
-                fontSize: 'var(--font-size-xs)',
-                color: 'var(--color-text-muted)',
-                fontWeight: 500,
-              }}
-            >
-              Source Artifact
-            </label>
-            <div
-              style={{
-                padding: '10px 12px',
-                backgroundColor: 'var(--color-bg-secondary)',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--color-border)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                fontSize: 'var(--font-size-sm)',
-                fontFamily: 'monospace',
-              }}
-            >
+          <div className="tf-linkmodal-source">
+            <label className="tf-linkmodal-label">Source Artifact</label>
+            <div className="tf-linkmodal-box tf-linkmodal-source-id">
               <span
-                style={{
-                  fontSize: '10px',
-                  color: 'var(--color-on-accent)',
-                  padding: '2px 6px',
-                  borderRadius: 'var(--radius-xs)',
-                  textTransform: 'uppercase',
-                  fontWeight: 700,
-                  backgroundColor: kind(sourceArtifactType).color.text,
-                }}
+                className="tf-linkmodal-badge"
+                // The kind's own color
+                style={{ backgroundColor: kind(sourceArtifactType).color.text }}
               >
                 {kind(sourceArtifactType).prefix}
               </span>
-              <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>
-                {sourceArtifactId}
-              </span>
+              <span className="tf-linkmodal-id">{sourceArtifactId}</span>
             </div>
           </div>
         )}
@@ -166,18 +130,8 @@ export const LinkModal: React.FC<LinkModalProps> = ({
           fullWidth
           description="Select the artifact you want to link to."
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {/* Type Selector */}
-            <div
-              style={{
-                display: 'flex',
-                backgroundColor: 'var(--color-bg-secondary)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '4px',
-                border: '1px solid var(--color-border)',
-                gap: '4px',
-              }}
-            >
+          <div className="tf-linkmodal-target">
+            <div className="tf-linkmodal-kinds">
               {ARTIFACT_KINDS.map(({ id: type, prefix: short, label: { plural: label } }) => (
                 <button
                   key={type}
@@ -190,140 +144,38 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                   }
                   disabled={optionsByKind[type].length === 0}
                   aria-pressed={targetType === type}
-                  style={{
-                    flex: 1,
-                    padding: '6px',
-                    borderRadius: 'var(--radius-xs)',
-                    border: 'none',
-                    fontSize: 'var(--font-size-xs)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    backgroundColor: targetType === type ? 'var(--color-accent)' : 'transparent',
-                    color:
-                      targetType === type
-                        ? 'var(--color-on-accent)'
-                        : 'var(--color-text-secondary)',
-                    transition: 'all 0.2s',
-                  }}
+                  className="tf-linkmodal-kind"
                 >
                   {short}
                 </button>
               ))}
             </div>
 
-            {/* Search */}
-            <div style={{ position: 'relative' }}>
-              <Search
-                size={14}
-                style={{
-                  position: 'absolute',
-                  left: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--color-text-muted)',
-                }}
-              />
+            <div className="tf-linkmodal-search">
+              <Search size={14} className="tf-linkmodal-search-icon" />
               <input
                 type="text"
                 placeholder="Search artifacts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px 8px 32px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--color-bg-app)',
-                  color: 'var(--color-text-primary)',
-                  fontSize: 'var(--font-size-sm)',
-                  outline: 'none',
-                }}
               />
             </div>
 
-            {/* List */}
-            <div
-              style={{
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'var(--color-bg-secondary)',
-                maxHeight: '180px',
-                overflowY: 'auto',
-              }}
-            >
+            <div className="tf-linkmodal-list">
               {filteredArtifacts.length === 0 ? (
-                <div
-                  style={{
-                    padding: '20px',
-                    textAlign: 'center',
-                    color: 'var(--color-text-muted)',
-                    fontSize: 'var(--font-size-sm)',
-                    fontStyle: 'italic',
-                  }}
-                >
-                  No {targetType}s found
-                </div>
+                <div className="tf-linkmodal-empty">No {targetType}s found</div>
               ) : (
-                filteredArtifacts.map((artifact) => {
-                  const isSelected = selectedTargetId === artifact.id;
-
-                  return (
-                    <div
-                      key={artifact.id}
-                      onClick={() => setSelectedTargetId(artifact.id)}
-                      style={{
-                        padding: '10px 12px',
-                        borderBottom: '1px solid var(--color-border)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        backgroundColor: isSelected ? 'var(--color-info-bg)' : 'transparent',
-                        transition: 'background-color 0.15s',
-                      }}
-                      onMouseEnter={(e) =>
-                        !isSelected &&
-                        (e.currentTarget.style.backgroundColor = 'var(--color-bg-app)')
-                      }
-                      onMouseLeave={(e) =>
-                        !isSelected && (e.currentTarget.style.backgroundColor = 'transparent')
-                      }
-                    >
-                      <div style={{ minWidth: 0, flex: 1, marginRight: '10px' }}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            marginBottom: '2px',
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: 'var(--font-size-xs)',
-                              fontFamily: 'monospace',
-                              fontWeight: 600,
-                              color: 'var(--color-accent)',
-                            }}
-                          >
-                            {artifact.id}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: 'var(--font-size-sm)',
-                              fontWeight: 500,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                          >
-                            {artifact.title}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
+                filteredArtifacts.map((artifact) => (
+                  <div
+                    key={artifact.id}
+                    onClick={() => setSelectedTargetId(artifact.id)}
+                    className="tf-linkmodal-item"
+                    data-selected={selectedTargetId === artifact.id || undefined}
+                  >
+                    <span className="tf-linkmodal-item-id">{artifact.id}</span>
+                    <span className="tf-linkmodal-item-title">{artifact.title}</span>
+                  </div>
+                ))
               )}
             </div>
           </div>
