@@ -160,10 +160,10 @@ lastModified: 1700000000000
   });
 
   describe('deleteLink', () => {
-    it('should delete the link file', async () => {
+    it('should delete the file of a link that was never committed', async () => {
       vi.mocked(fileSystemService.deleteFile).mockResolvedValue(undefined);
 
-      await diskLinkService.deleteLink('LINK-001');
+      await diskLinkService.deleteLink('LINK-001', false);
 
       expect(fileSystemService.deleteFile).toHaveBeenCalledWith('links/LINK-001.md');
       expect(realGitService.commitFile).not.toHaveBeenCalled();
@@ -172,7 +172,7 @@ lastModified: 1700000000000
     it('should throw error if deletion fails', async () => {
       vi.mocked(fileSystemService.deleteFile).mockRejectedValue(new Error('Delete failed'));
 
-      await expect(diskLinkService.deleteLink('LINK-999')).rejects.toThrow('Delete failed');
+      await expect(diskLinkService.deleteLink('LINK-999', false)).rejects.toThrow('Delete failed');
     });
   });
 

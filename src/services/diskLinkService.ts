@@ -52,10 +52,12 @@ class DiskLinkService extends BaseArtifactService<Link> {
   }
 
   /**
-   * Delete a link
+   * Remove a link. One that was never committed loses its file; a committed
+   * one keeps it, marked deleted, so its ID is never handed out again.
    */
-  async deleteLink(id: string): Promise<void> {
-    await this.delete(id);
+  async deleteLink(id: string, committed: boolean): Promise<void> {
+    if (committed) await this.softDelete(id);
+    else await this.delete(id);
   }
 
   /**

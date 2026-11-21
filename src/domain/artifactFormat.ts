@@ -263,6 +263,8 @@ const linkSchema = z.object({
   revision: optionalText,
   dateCreated: time.optional(),
   lastModified: time.optional(),
+  isDeleted: z.boolean().optional(),
+  deletedAt: time.optional(),
   customAttributes,
 });
 
@@ -276,6 +278,7 @@ export function serializeLink(link: Link): string {
       revision: link.revision,
       dateCreated: writeTime(link.dateCreated),
       lastModified: writeTime(link.lastModified),
+      ...(link.isDeleted ? { isDeleted: true, deletedAt: writeTime(link.deletedAt) } : {}),
       customAttributes: validAttributes(link.customAttributes),
     },
     `# ${link.id}\n\nLinks **${link.sourceId}** to **${link.targetId}** (${linkTypeLabel(link.type).toLowerCase()})`
@@ -296,6 +299,7 @@ export function parseLink(id: string, content: string): Link {
     revision: l.revision ?? '01',
     dateCreated: l.dateCreated ?? 0,
     lastModified: l.lastModified ?? l.dateCreated ?? 0,
+    ...(l.isDeleted ? { isDeleted: true, ...(l.deletedAt ? { deletedAt: l.deletedAt } : {}) } : {}),
     customAttributes: l.customAttributes ?? [],
   };
 }

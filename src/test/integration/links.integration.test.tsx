@@ -159,7 +159,7 @@ describe('integration: links', () => {
     await h.settle();
 
     await waitFor(() => expect(h.app().links).toEqual([]));
-    expect(h.exists(`links/${linkId}.md`)).toBe(false);
+    expect(h.readFile(`links/${linkId}.md`)).toMatch(/isDeleted: true/);
     expect(await h.dirtyPaths()).toEqual([`links/${linkId}.md`]);
     expect(await screen.findByText('Deleted')).toBeInTheDocument();
 

@@ -50,6 +50,7 @@ export interface ProjectRepository {
   ): Promise<Link>;
   saveLink(link: Link): Promise<void>;
   updateLink(id: string, updates: Partial<Link>): Promise<Link | null>;
+  /** A committed link stays as a file marked deleted, so its ID is not reused */
   deleteLink(id: string): Promise<void>;
   /** The next free ID: one more than the highest file of that type */
   nextId(type: StoredType): Promise<string>;
@@ -133,8 +134,10 @@ class FsGitRepository implements ProjectRepository {
     return diskLinkService.updateLink(id, updates);
   }
 
-  deleteLink(id: string): Promise<void> {
-    return diskLinkService.deleteLink(id);
+  async deleteLink(id: string): Promise<void> {
+    const path = `${STORED_TYPES.link.folder}/${id}.md`;
+    const isNew = (await this.status()).some((f) => f.path === path && f.status === 'new');
+    await diskLinkService.deleteLink(id, !isNew);
   }
 
   nextId(type: StoredType): Promise<string> {
