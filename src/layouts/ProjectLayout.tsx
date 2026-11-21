@@ -4,10 +4,8 @@ import { Plus } from 'lucide-react';
 import { Layout, ModalManager } from '../components';
 import { ArtifactColumnSelector } from '../ui/generic/ArtifactColumnSelector';
 import { kind, kindOfFolder } from '../domain/artifactKinds';
-import { useProjectImportExport } from '../hooks/useProjectImportExport';
+import { useProjectImport } from '../hooks/useProjectImport';
 import { loadDemoData } from '../services/demoDataService';
-import { activeIds } from '../utils/activeArtifacts';
-import type { ExportOptions } from '../types';
 import { useAppStore } from '../state';
 
 /** Shown while a lazily loaded page chunk is being fetched */
@@ -35,22 +33,15 @@ export const ProjectLayout: React.FC = () => {
   const setSearchQuery = useAppStore((s) => s.setSearchQuery);
 
   // Global state
-  const requirements = useAppStore((s) => s.artifacts.requirement);
-  const useCases = useAppStore((s) => s.artifacts.useCase);
-  const testCases = useAppStore((s) => s.artifacts.testCase);
-  const information = useAppStore((s) => s.artifacts.information);
-  const documents = useAppStore((s) => s.artifacts.document);
+  const artifacts = useAppStore((s) => s.artifacts);
 
   // FileSystem context
   const reloadData = useAppStore((s) => s.reload);
   const refreshStatus = useAppStore((s) => s.refreshStatus);
   const changeDirectory = useAppStore((s) => s.closeFolder);
 
-  // Baselines context
-  const baselines = useAppStore((s) => s.baselines);
-
   // Import/Export handlers
-  const importExport = useProjectImportExport();
+  const importExport = useProjectImport();
 
   // User context
   const currentUser = useAppStore((s) => s.currentUser);
@@ -103,9 +94,7 @@ export const ProjectLayout: React.FC = () => {
   }, [reloadData, refreshStatus, startTask, endTask, showToast]);
 
   // Demo data only goes into a project that has nothing in it yet
-  const isEmptyProject = [requirements, useCases, testCases, information, documents].every(
-    (items) => items.length === 0
-  );
+  const isEmptyProject = Object.values(artifacts).every((items) => items.length === 0);
 
   // Get page title from current route
   const getPageTitle = () => {
@@ -130,7 +119,6 @@ export const ProjectLayout: React.FC = () => {
       onNewLink={() => navigate('/links')}
       onNewCustomAttribute={() => openModal('custom-attribute')}
       onNewDocument={() => openModal('document')}
-      onExport={importExport.handleExport}
       onImport={importExport.handleImport}
       onImportExcel={importExport.handleImportExcel}
       onOpenExportModal={() => openModal('export')}
@@ -140,69 +128,6 @@ export const ProjectLayout: React.FC = () => {
       onHelp={() => navigate('/help')}
       onChangeFolder={changeDirectory}
       currentUserName={currentUser?.name}
-      baselines={baselines}
-      onExportPDF={async (selectedBaseline) => {
-        const taskId = startTask('Exporting PDF...');
-        try {
-          const { exportProjectToPDF } = await import('../utils/pdfExportUtils');
-          await exportProjectToPDF(
-            project,
-            {
-              requirements: requirements,
-              useCases: useCases,
-              testCases: testCases,
-              information: information,
-            },
-            activeIds(requirements),
-            activeIds(useCases),
-            activeIds(testCases),
-            activeIds(information),
-            baselines,
-            selectedBaseline, // selectedBaseline: ProjectBaseline | null
-            currentUser?.name,
-            true,
-            documents
-          );
-        } finally {
-          endTask(taskId);
-        }
-      }}
-      onExportExcel={async () => {
-        const taskId = startTask('Exporting Excel...');
-        try {
-          const { exportProjectToExcel } = await import('../utils/excelExportUtils');
-          await exportProjectToExcel(
-            project,
-            {
-              requirements: requirements,
-              useCases: useCases,
-              testCases: testCases,
-              information: information,
-            },
-            activeIds(requirements),
-            activeIds(useCases),
-            activeIds(testCases),
-            activeIds(information),
-            baselines,
-            {
-              format: 'excel',
-              baseline: null,
-              includeRequirements: true,
-              includeUseCases: true,
-              includeTestCases: true,
-              includeInformation: true,
-              includeRisks: true,
-              includeLinks: true,
-              includeTitlePage: true,
-              includeRevisionHistory: true,
-              includeTraceability: true,
-              includeVerificationMatrix: true,
-            } as ExportOptions
-          );
-        } finally {
-          endTask(taskId);
-        }
-      }}
       onSearch={setSearchQuery}
     >
       <div style={{ marginBottom: 'var(--spacing-md)' }}>

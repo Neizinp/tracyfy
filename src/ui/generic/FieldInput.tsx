@@ -5,7 +5,7 @@
 import React from 'react';
 import { MarkdownEditor } from '../../components/MarkdownEditor';
 import { isCustomField, type FieldDef, type FieldValue } from '../../domain/fields';
-import { formatFieldValue } from './formatFieldValue';
+import { formatFieldValue } from '../../domain/formatFieldValue';
 
 interface FieldInputProps {
   field: FieldDef;

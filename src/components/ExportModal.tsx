@@ -1,488 +1,158 @@
 import React, { useState } from 'react';
-import { FileText, FileSpreadsheet, Download, X } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText, X } from 'lucide-react';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import type { ExportOptions, ProjectBaseline } from '../types';
+import { ARTIFACT_KINDS, type ArtifactKindId } from '../domain/artifactKinds';
+import { DEFAULT_EXPORT_OPTIONS, type ExportOptions } from '../export/exportData';
+import { useAppStore } from '../state';
 
 interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  baselines: ProjectBaseline[];
-  onExport: (options: ExportOptions) => void;
-  artifactCounts?: {
-    requirements: number;
-    useCases: number;
-    testCases: number;
-    information: number;
-    risks: number;
-    documents: number;
-    links: number;
-  };
 }
 
-type ExportFormat = 'pdf' | 'excel' | 'json';
+const FORMATS = [
+  { id: 'pdf', label: 'PDF Document', icon: FileText },
+  { id: 'excel', label: 'Excel Sheet', icon: FileSpreadsheet },
+  { id: 'json', label: 'JSON Data', icon: Download },
+] as const;
 
-export const ExportModal: React.FC<ExportModalProps> = ({
-  isOpen,
-  onClose,
-  baselines,
-  onExport,
-  artifactCounts,
-}) => {
-  const [format, setFormat] = useState<ExportFormat>('pdf');
-  const [selectedBaselineId, setSelectedBaselineId] = useState<string>('current');
+type Toggle = 'links' | 'revisionHistory' | 'traceabilityMatrix' | 'verificationMatrix';
 
-  // Artifact toggles
-  const [includeRequirements, setIncludeRequirements] = useState(true);
-  const [includeUseCases, setIncludeUseCases] = useState(true);
-  const [includeTestCases, setIncludeTestCases] = useState(true);
-  const [includeInformation, setIncludeInformation] = useState(true);
-  const [includeRisks, setIncludeRisks] = useState(true);
-  const [includeDocuments, setIncludeDocuments] = useState(true);
-  const [includeLinks, setIncludeLinks] = useState(true);
+const SECTIONS: { id: Toggle; label: string; formats: ExportOptions['format'][] }[] = [
+  {
+    id: 'revisionHistory',
+    label: 'Revision history since the previous baseline',
+    formats: ['pdf', 'excel'],
+  },
+  { id: 'traceabilityMatrix', label: 'Traceability matrix', formats: ['excel'] },
+  { id: 'verificationMatrix', label: 'Verification matrix worksheet', formats: ['excel'] },
+];
 
-  // PDF-specific toggles
-  const [includeTitlePage, setIncludeTitlePage] = useState(true);
-  const [includeRevisionHistory, setIncludeRevisionHistory] = useState(true);
-  const [includeTraceability, setIncludeTraceability] = useState(true);
-  const [includeVerificationMatrix, setIncludeVerificationMatrix] = useState(false);
+/** Choose a format, the project state (working copy or a baseline) and what to include */
+export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) =>
+  // Mounted only while open, so every export starts from the defaults
+  isOpen ? <ExportDialog onClose={onClose} /> : null;
 
-  useKeyboardShortcuts({
-    onClose: onClose,
-  });
+const ExportDialog: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const baselines = useAppStore((s) => s.baselines);
+  const artifacts = useAppStore((s) => s.artifacts);
+  const links = useAppStore((s) => s.links);
+  const exportProject = useAppStore((s) => s.exportProject);
+  const [options, setOptions] = useState<ExportOptions>(DEFAULT_EXPORT_OPTIONS);
 
-  if (!isOpen) return null;
+  useKeyboardShortcuts({ onClose });
+
+  const set = (patch: Partial<ExportOptions>) => setOptions((o) => ({ ...o, ...patch }));
+  const toggleKind = (id: ArtifactKindId, on: boolean) =>
+    set({ kinds: on ? [...options.kinds, id] : options.kinds.filter((k) => k !== id) });
+  const count = (items: readonly { isDeleted?: boolean }[]) =>
+    items.filter((a) => !a.isDeleted).length;
 
   const handleExport = () => {
-    const baseline =
-      selectedBaselineId === 'current'
-        ? null
-        : baselines.find((b) => b.name === selectedBaselineId) || null;
-
-    onExport({
-      format,
-      baseline,
-      includeRequirements,
-      includeUseCases,
-      includeTestCases,
-      includeInformation,
-      includeRisks,
-      includeDocuments,
-      includeLinks,
-      includeTitlePage,
-      includeRevisionHistory,
-      includeTraceability,
-      includeVerificationMatrix,
-    });
+    void exportProject(options);
     onClose();
   };
 
-  const formatButtonStyle = (selected: boolean) => ({
-    flex: 1,
-    padding: '12px',
-    borderRadius: 'var(--radius-lg)',
-    border: '2px solid transparent',
-    backgroundColor: selected ? 'rgba(var(--color-accent-rgb), 0.1)' : 'var(--color-bg-card)',
-    borderColor: selected ? 'var(--color-accent)' : 'transparent',
-    color: selected ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-    cursor: 'pointer',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    gap: '12px',
-    fontWeight: selected ? 600 : 500,
-    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-  });
-
-  const checkboxStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '12px 16px',
-    borderRadius: 'var(--radius-lg)',
-    backgroundColor: 'var(--color-bg-card)',
-    border: '1px solid var(--color-border)',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  };
-
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'var(--color-bg-overlay)',
-        backdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        style={{
-          backgroundColor: 'var(--color-bg-secondary)',
-          borderRadius: '24px',
-          border: '1px solid var(--color-border)',
-          width: '560px',
-          maxWidth: '90%',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: 'var(--shadow-popover)',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Header */}
-        <div
-          style={{
-            padding: '24px',
-            borderBottom: '1px solid var(--color-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background:
-              'linear-gradient(to right, var(--color-bg-tertiary), var(--color-bg-secondary))',
-          }}
-        >
-          <div>
-            <h3
-              style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-text-primary)' }}
-            >
-              Export Project
-            </h3>
-            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>
-              Choose your preferred format and options
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'rgba(var(--color-text-muted-rgb), 0.1)',
-              border: 'none',
-              borderRadius: '50%',
-              color: 'var(--color-text-muted)',
-              cursor: 'pointer',
-              padding: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <X size={20} />
+    <div className="tf-dialog-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="tf-dialog tf-export" role="dialog" aria-labelledby="export-title">
+        <div className="tf-dialog-header">
+          <h2 id="export-title">Export Project</h2>
+          <button type="button" className="tf-btn" onClick={onClose} aria-label="Close">
+            <X size={18} />
           </button>
         </div>
 
-        {/* Content */}
-        <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-          {/* Format Selection */}
-          <section style={{ marginBottom: '32px' }}>
-            <h4
-              style={{
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                color: 'var(--color-text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '16px',
-              }}
+        <h3>Format</h3>
+        <div className="tf-export-formats">
+          {FORMATS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              className="tf-export-format"
+              aria-pressed={options.format === id}
+              onClick={() => set({ format: id })}
             >
-              Format
-            </h4>
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <button onClick={() => setFormat('pdf')} style={formatButtonStyle(format === 'pdf')}>
-                <FileText size={24} />
-                <span>PDF Document</span>
-              </button>
-              <button
-                onClick={() => setFormat('excel')}
-                style={formatButtonStyle(format === 'excel')}
-              >
-                <FileSpreadsheet size={24} />
-                <span>Excel Sheet</span>
-              </button>
-              <button
-                onClick={() => setFormat('json')}
-                style={formatButtonStyle(format === 'json')}
-              >
-                <Download size={24} />
-                <span>JSON Data</span>
-              </button>
-            </div>
-          </section>
-
-          {/* Baseline Selection */}
-          <section style={{ marginBottom: '32px' }}>
-            <h4
-              style={{
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                color: 'var(--color-text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '16px',
-              }}
-            >
-              Project State
-            </h4>
-            <select
-              id="baseline-select"
-              value={selectedBaselineId}
-              onChange={(e) => setSelectedBaselineId(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-bg-card)',
-                color: 'var(--color-text-primary)',
-                fontSize: '0.925rem',
-                outline: 'none',
-              }}
-            >
-              <option value="current">Current Working Copy (Latest)</option>
-              {baselines.map((b) => (
-                <option key={b.name} value={b.name}>
-                  {b.name} - {new Date(b.timestamp).toLocaleDateString()}
-                </option>
-              ))}
-            </select>
-          </section>
-
-          {/* Artifact Selection (not for JSON) */}
-          {format !== 'json' && (
-            <section style={{ marginBottom: '32px' }}>
-              <h4
-                style={{
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  color: 'var(--color-text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  marginBottom: '16px',
-                }}
-              >
-                Included Content
-              </h4>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: '12px',
-                }}
-              >
-                <label style={checkboxStyle}>
-                  <input
-                    type="checkbox"
-                    checked={includeRequirements}
-                    onChange={(e) => setIncludeRequirements(e.target.checked)}
-                  />
-                  <span>
-                    Requirements{' '}
-                    {artifactCounts && (
-                      <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
-                        [{artifactCounts.requirements}]
-                      </span>
-                    )}
-                  </span>
-                </label>
-                <label style={checkboxStyle}>
-                  <input
-                    type="checkbox"
-                    checked={includeUseCases}
-                    onChange={(e) => setIncludeUseCases(e.target.checked)}
-                  />
-                  <span>
-                    Use Cases{' '}
-                    {artifactCounts && (
-                      <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
-                        [{artifactCounts.useCases}]
-                      </span>
-                    )}
-                  </span>
-                </label>
-                <label style={checkboxStyle}>
-                  <input
-                    type="checkbox"
-                    checked={includeTestCases}
-                    onChange={(e) => setIncludeTestCases(e.target.checked)}
-                  />
-                  <span>
-                    Test Cases{' '}
-                    {artifactCounts && (
-                      <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
-                        [{artifactCounts.testCases}]
-                      </span>
-                    )}
-                  </span>
-                </label>
-                <label style={checkboxStyle}>
-                  <input
-                    type="checkbox"
-                    checked={includeInformation}
-                    onChange={(e) => setIncludeInformation(e.target.checked)}
-                  />
-                  <span>
-                    Doc Assets{' '}
-                    {artifactCounts && (
-                      <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
-                        [{artifactCounts.information}]
-                      </span>
-                    )}
-                  </span>
-                </label>
-                <label style={checkboxStyle}>
-                  <input
-                    type="checkbox"
-                    checked={includeRisks}
-                    onChange={(e) => setIncludeRisks(e.target.checked)}
-                  />
-                  <span>
-                    Risks{' '}
-                    {artifactCounts && (
-                      <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
-                        [{artifactCounts.risks}]
-                      </span>
-                    )}
-                  </span>
-                </label>
-                <label style={checkboxStyle}>
-                  <input
-                    type="checkbox"
-                    checked={includeDocuments}
-                    onChange={(e) => setIncludeDocuments(e.target.checked)}
-                  />
-                  <span>
-                    Documents{' '}
-                    {artifactCounts?.documents !== undefined && (
-                      <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
-                        [{artifactCounts.documents}]
-                      </span>
-                    )}
-                  </span>
-                </label>
-                <label style={checkboxStyle}>
-                  <input
-                    type="checkbox"
-                    checked={includeLinks}
-                    onChange={(e) => setIncludeLinks(e.target.checked)}
-                  />
-                  <span>
-                    Trace Links{' '}
-                    {artifactCounts && (
-                      <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
-                        [{artifactCounts.links}]
-                      </span>
-                    )}
-                  </span>
-                </label>
-              </div>
-            </section>
-          )}
-
-          {/* PDF & Excel Sections */}
-          {(format === 'pdf' || format === 'excel') && (
-            <section style={{ marginBottom: '8px' }}>
-              <h4
-                style={{
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  color: 'var(--color-text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  marginBottom: '16px',
-                }}
-              >
-                {format === 'pdf' ? 'Layout Sections' : 'Excel Worksheets'}
-              </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {format === 'pdf' && (
-                  <label style={checkboxStyle}>
-                    <input
-                      type="checkbox"
-                      checked={includeTitlePage}
-                      onChange={(e) => setIncludeTitlePage(e.target.checked)}
-                    />
-                    <span>Title Page & Metadata</span>
-                  </label>
-                )}
-                <label style={checkboxStyle}>
-                  <input
-                    type="checkbox"
-                    checked={includeRevisionHistory}
-                    onChange={(e) => setIncludeRevisionHistory(e.target.checked)}
-                  />
-                  <span>Complete Revision Log</span>
-                </label>
-                <label style={checkboxStyle}>
-                  <input
-                    type="checkbox"
-                    checked={includeTraceability}
-                    onChange={(e) => setIncludeTraceability(e.target.checked)}
-                  />
-                  <span>
-                    {format === 'pdf' ? 'Traceability Annex' : 'Traceability Matrix Sheet'}
-                  </span>
-                </label>
-                {format === 'excel' && (
-                  <label style={checkboxStyle}>
-                    <input
-                      type="checkbox"
-                      checked={includeVerificationMatrix}
-                      onChange={(e) => setIncludeVerificationMatrix(e.target.checked)}
-                    />
-                    <span>Verification Matrix Workspace</span>
-                  </label>
-                )}
-              </div>
-            </section>
-          )}
+              <Icon size={22} />
+              <span>{label}</span>
+            </button>
+          ))}
         </div>
 
-        {/* Footer */}
-        <div
-          style={{
-            padding: '24px',
-            borderTop: '1px solid var(--color-border)',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '16px',
-            backgroundColor: 'var(--color-bg-tertiary)',
-          }}
+        <h3>
+          <label htmlFor="baseline-select">Project State</label>
+        </h3>
+        <select
+          id="baseline-select"
+          className="tf-input tf-field-full"
+          value={options.baseline?.name ?? ''}
+          onChange={(e) =>
+            set({ baseline: baselines.find((b) => b.name === e.target.value) ?? null })
+          }
         >
-          <button
-            onClick={onClose}
-            style={{
-              padding: '12px 24px',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'transparent',
-              color: 'var(--color-text-secondary)',
-              cursor: 'pointer',
-              fontWeight: 600,
-              transition: 'all 0.2s ease',
-            }}
-          >
+          <option value="">Current working copy</option>
+          {baselines.map((b) => (
+            <option key={b.name} value={b.name}>
+              Baseline {b.name} - {new Date(b.timestamp).toLocaleDateString()}
+            </option>
+          ))}
+        </select>
+        {options.baseline && (
+          <p className="tf-hint">The export shows the project as it was at this baseline.</p>
+        )}
+
+        {options.format !== 'json' && (
+          <>
+            <h3>Included Content</h3>
+            <div className="tf-form-grid">
+              {ARTIFACT_KINDS.map((k) => (
+                <label key={k.id} className="tf-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={options.kinds.includes(k.id)}
+                    onChange={(e) => toggleKind(k.id, e.target.checked)}
+                  />
+                  <span>
+                    {k.label.plural} <span className="tf-muted">[{count(artifacts[k.id])}]</span>
+                  </span>
+                </label>
+              ))}
+              <label className="tf-checkbox">
+                <input
+                  type="checkbox"
+                  checked={options.links}
+                  onChange={(e) => set({ links: e.target.checked })}
+                />
+                <span>
+                  Links <span className="tf-muted">[{count(links)}]</span>
+                </span>
+              </label>
+            </div>
+
+            <h3>Sections</h3>
+            {SECTIONS.filter((s) => s.formats.includes(options.format)).map((s) => (
+              <label key={s.id} className="tf-checkbox">
+                <input
+                  type="checkbox"
+                  checked={options[s.id]}
+                  onChange={(e) => set({ [s.id]: e.target.checked })}
+                />
+                <span>{s.label}</span>
+              </label>
+            ))}
+          </>
+        )}
+        {options.format === 'json' && (
+          <p className="tf-hint">
+            Every artifact and link, as data that Import JSON reads back into a project.
+          </p>
+        )}
+
+        <div className="tf-dialog-actions">
+          <button type="button" className="tf-button" onClick={onClose}>
             Cancel
           </button>
-          <button
-            onClick={handleExport}
-            style={{
-              padding: '12px 32px',
-              borderRadius: 'var(--radius-lg)',
-              border: 'none',
-              backgroundColor: 'var(--color-accent)',
-              color: 'var(--color-on-accent)',
-              cursor: 'pointer',
-              fontWeight: 700,
-              boxShadow: '0 4px 6px -1px rgba(var(--color-accent-rgb), 0.4)',
-              transition: 'all 0.2s ease',
-            }}
-          >
+          <button type="button" className="tf-button tf-button-primary" onClick={handleExport}>
             Generate Export
           </button>
         </div>

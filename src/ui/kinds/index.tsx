@@ -18,7 +18,7 @@ import { riskLevel } from '../../domain/kindRules';
 import type { ArtifactDocument, DocumentEntry, Link } from '../../types';
 import { verifiedRequirementIds } from '../../domain/links';
 import { DocumentEditor } from '../../components/DocumentEditor';
-import { useAppStore, useAppStoreApi } from '../../state';
+import { useAppStore } from '../../state';
 
 export type Draft = Record<string, unknown>;
 
@@ -60,25 +60,13 @@ export interface KindOverrides {
 }
 
 const DocumentExportButton: React.FC<{ artifact: Draft }> = ({ artifact }) => {
-  const store = useAppStoreApi();
-  const currentUser = useAppStore((s) => s.currentUser);
-  const exportPdf = async () => {
-    const { exportSingleDocumentToPDF } = await import('../../utils/pdf/pdfMainExport');
-    const { artifacts } = store.getState();
-    await exportSingleDocumentToPDF(
-      artifact as unknown as ArtifactDocument,
-      {
-        requirements: artifacts.requirement,
-        useCases: artifacts.useCase,
-        testCases: artifacts.testCase,
-        information: artifacts.information,
-        risks: artifacts.risk,
-      },
-      currentUser?.name
-    );
-  };
+  const exportDocument = useAppStore((s) => s.exportDocument);
   return (
-    <button type="button" className="tf-button" onClick={() => void exportPdf()}>
+    <button
+      type="button"
+      className="tf-button"
+      onClick={() => void exportDocument(artifact as unknown as ArtifactDocument)}
+    >
       Export to PDF
     </button>
   );

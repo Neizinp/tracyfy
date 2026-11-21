@@ -64,6 +64,8 @@ export interface ProjectRepository {
   commits(depth?: number): Promise<CommitInfo[]>;
   readAt(path: string, commit: string): Promise<string | null>;
   snapshot(commit: string): Promise<ProjectSnapshot>;
+  /** A file in the project folder as bytes (an image in assets/), or null */
+  readAsset(path: string): Promise<Uint8Array | null>;
   baselines(): Promise<ProjectBaseline[]>;
   createBaseline(name: string, description: string): Promise<void>;
   author(): Promise<Person | null>;
@@ -171,6 +173,10 @@ class FsGitRepository implements ProjectRepository {
 
   snapshot(commit: string): Promise<ProjectSnapshot> {
     return realGitService.loadProjectSnapshot(commit);
+  }
+
+  async readAsset(path: string): Promise<Uint8Array | null> {
+    return (await fileSystemService.readFileBinary(path)) ?? null;
   }
 
   async baselines(): Promise<ProjectBaseline[]> {
