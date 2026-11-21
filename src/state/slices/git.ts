@@ -30,7 +30,6 @@ export interface GitSlice {
   readFileAtCommit: (path: string, commit: string) => Promise<string | null>;
   push: () => Promise<void>;
   pull: () => Promise<PullResult>;
-  hasRemote: () => Promise<boolean>;
 }
 
 const REFRESH_STATUS_DEBOUNCE_MS = 300;
@@ -73,16 +72,15 @@ export const createGitSlice: StateCreator<AppState, [], [], GitSlice> = (set, ge
       if (!get().isReady) throw new Error('Filesystem not ready');
       if (e2e) return;
       await repository.commit(path, message);
-      // Lets the sidebar update its sync status
-      window.dispatchEvent(new CustomEvent('git-check'));
+      void get().syncAfterCommit();
     },
 
     revertFile: async (path) => {
       if (!get().isReady) throw new Error('Filesystem not ready');
       if (e2e) return;
       await repository.revert(path);
-      // The file changed on disk; git status follows from the git-status-changed event
       await get().reload();
+      get().refreshStatus();
     },
 
     artifactHistory: async (kindId, id) => {
@@ -95,7 +93,10 @@ export const createGitSlice: StateCreator<AppState, [], [], GitSlice> = (set, ge
       return repository.readAt(path, commit);
     },
 
-    push: () => repository.push(),
+    push: async () => {
+      await repository.push();
+      await get().checkSync();
+    },
 
     pull: async () => {
       const result = await repository.pull();
@@ -106,10 +107,9 @@ export const createGitSlice: StateCreator<AppState, [], [], GitSlice> = (set, ge
         get().refreshStatus();
         // Colleagues' baselines come with the pull
         void get().refreshBaselines();
+        await get().checkSync();
       }
       return result;
     },
-
-    hasRemote: () => repository.hasRemote(),
   };
 };

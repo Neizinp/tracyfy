@@ -207,11 +207,6 @@ class GitCoreService {
 
         // Proactively cache the file for this commit
         this.addToCacheFn(commitOid, [filepath]);
-
-        // Dispatch event to notify UI of status change
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('git-status-changed'));
-        }
       } catch (error) {
         // Log the error with full details before rethrowing
         console.error(`[commitFile] Failed to commit ${filepath}:`, error);
@@ -257,11 +252,6 @@ class GitCoreService {
     }
 
     debug.log(`[revertFile] Successfully reverted ${filepath}`);
-
-    // Dispatch event to notify UI of status change
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('git-status-changed'));
-    }
   }
 }
 

@@ -67,6 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     closeRemoteSettings,
     refreshStatus,
     syncStatus,
+    checkSyncStatus,
     autoSync,
   } = useSidebar();
 
@@ -272,7 +273,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  window.dispatchEvent(new CustomEvent('git-check'));
+                  void checkSyncStatus();
                 }}
                 style={{
                   background: 'none',

@@ -8,7 +8,15 @@
  * (Electron or the browser's File System Access API) and git through
  * shared/gitOps.js.
  */
-import type { BaseArtifact, CommitInfo, Link, Person, Project, ProjectBaseline } from '../types';
+import type {
+  BaseArtifact,
+  CommitInfo,
+  Link,
+  Person,
+  Project,
+  ProjectBaseline,
+  SyncStatus,
+} from '../types';
 import type { LinkType } from '../domain/linkTypes';
 import type { CustomAttributeDefinition } from '../types/customAttributes';
 import { ARTIFACT_KINDS, kind, type ArtifactKindId } from '../domain/artifactKinds';
@@ -74,6 +82,8 @@ export interface ProjectRepository {
   pull(): Promise<PullResult>;
   push(): Promise<void>;
   hasRemote(): Promise<boolean>;
+  /** How the branch stands against the remote's */
+  syncStatus(): Promise<SyncStatus>;
 }
 
 class FsGitRepository implements ProjectRepository {
@@ -215,6 +225,10 @@ class FsGitRepository implements ProjectRepository {
 
   hasRemote(): Promise<boolean> {
     return realGitService.hasRemote();
+  }
+
+  syncStatus(): Promise<SyncStatus> {
+    return realGitService.getSyncStatus();
   }
 }
 

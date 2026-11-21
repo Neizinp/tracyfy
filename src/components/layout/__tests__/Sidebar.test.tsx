@@ -12,12 +12,18 @@ vi.mock('../../PendingChangesPanel', () => ({
 // Sync actions the sidebar reads from the store
 const mockPush = vi.fn();
 const mockPull = vi.fn();
-const mockHasRemote = vi.fn(() => Promise.resolve(false));
+const mockCheckSync = vi.fn(() => Promise.resolve());
 
 // Wrap component with router for NavLink
 const renderWithRouter = (component: React.ReactElement) => {
   return renderWithStore(<BrowserRouter>{component}</BrowserRouter>, {
-    state: { isReady: true, push: mockPush, pull: mockPull, hasRemote: mockHasRemote },
+    state: {
+      isReady: true,
+      push: mockPush,
+      pull: mockPull,
+      hasRemote: false,
+      checkSync: mockCheckSync,
+    },
   });
 };
 

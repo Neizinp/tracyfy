@@ -147,6 +147,7 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
     // Neither blocks the app from showing
     void get().loadUser();
     void get().refreshBaselines();
+    void get().checkSync();
   };
 
   return {

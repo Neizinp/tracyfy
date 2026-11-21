@@ -110,8 +110,10 @@ describe('integration: remote sync', () => {
   it('a failing automatic push is shown to the user', async () => {
     h = await startApp();
     await connectRemote(h);
-    localStorage.setItem('tracyfy-auto-sync', 'true');
-    window.dispatchEvent(new CustomEvent('auto-sync-changed', { detail: { enabled: true } }));
+    // Turned on in Remote Settings, as a user does
+    fireEvent.click(screen.getByTitle('Remote Settings'));
+    fireEvent.click(await screen.findByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: /^close$/i }));
     h.stubGitOp('push', async () => {
       throw new Error('remote rejected: permission denied');
     });
