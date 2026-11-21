@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import { renderWithStore } from '../../test/renderWithStore';
 import type { AppState } from '../../state';
 import { LinksView } from '../LinksView';
@@ -161,13 +161,28 @@ describe('LinksView', () => {
     });
   });
 
-  describe('Refresh functionality', () => {
-    it('should have a refresh button', async () => {
-      renderWithStore(<LinksView />, { state: storeState() });
+  describe('follows the store', () => {
+    it('shows a link as soon as it exists, without refreshing', async () => {
+      const { store } = renderWithStore(<LinksView />, { state: storeState() });
+      expect(screen.queryByText('LINK-099')).not.toBeInTheDocument();
 
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /refresh/i })).toBeInTheDocument();
-      });
+      act(() =>
+        store.setState({
+          links: [
+            ...store.getState().links,
+            {
+              id: 'LINK-099',
+              sourceId: 'REQ-009',
+              targetId: 'TC-009',
+              type: 'verified_by',
+              revision: '01',
+              dateCreated: 1,
+              lastModified: 1,
+            },
+          ],
+        })
+      );
+      await waitFor(() => expect(screen.getByText('LINK-099')).toBeInTheDocument());
     });
   });
 });

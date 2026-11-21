@@ -8,7 +8,7 @@ import type { AppState } from '../store';
 import type { ArtifactByKind, ArtifactsByKind, Link, LinkType, Project } from '../../types';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import { KIND_IDS, type ArtifactKindId } from '../../domain/artifactKinds';
-import { projectOf } from '../../domain/projectConfig';
+import { projectOf, withNewAttribute } from '../../domain/projectConfig';
 import { repository } from '../../storage/repository';
 import { projectConfigStore } from '../../storage/projectConfigStore';
 import { fileSystemService } from '../../services/fileSystemService';
@@ -48,6 +48,14 @@ export interface ProjectSlice {
   reload: () => Promise<void>;
   /** Read tracyfy.yaml again (after something changed it) */
   reloadConfig: () => Promise<void>;
+  /** Define a custom attribute (in tracyfy.yaml, a pending change); returns it with its ID */
+  addAttributeDefinition: (
+    def: Omit<CustomAttributeDefinition, 'id'>
+  ) => Promise<CustomAttributeDefinition>;
+  updateAttributeDefinition: (
+    id: string,
+    updates: Partial<Omit<CustomAttributeDefinition, 'id'>>
+  ) => Promise<void>;
 
   saveArtifact: <K extends ArtifactKindId>(kind: K, artifact: ArtifactByKind[K]) => Promise<void>;
   /** Rename the project or change its description */
@@ -212,6 +220,31 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
       if (e2e || !get().isReady) return;
       const config = await projectConfigStore.load();
       set({ project: projectOf(config), attributeDefinitions: config.customAttributes });
+    },
+
+    addAttributeDefinition: async (def) => {
+      requireReady();
+      let created: CustomAttributeDefinition | undefined;
+      await projectConfigStore.update((config) => {
+        const next = withNewAttribute(config, def);
+        created = next.created;
+        return next.config;
+      });
+      await get().reloadConfig();
+      get().refreshStatus();
+      return created!;
+    },
+
+    updateAttributeDefinition: async (id, updates) => {
+      requireReady();
+      await projectConfigStore.update((config) => ({
+        ...config,
+        customAttributes: config.customAttributes.map((d) =>
+          d.id === id ? { ...d, ...updates, id } : d
+        ),
+      }));
+      await get().reloadConfig();
+      get().refreshStatus();
     },
 
     saveArtifact: async (kindId, artifact) => {

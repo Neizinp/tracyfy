@@ -1,15 +1,14 @@
-import React, { Suspense, useCallback, useRef, useMemo } from 'react';
+import React, { Suspense, useCallback, useRef } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Layout, ModalManager } from '../components';
-import { GenericColumnSelector } from '../components/GenericColumnSelector';
-import { useCustomAttributes } from '../hooks/useCustomAttributes';
+import { ArtifactColumnSelector } from '../ui/generic/ArtifactColumnSelector';
+import { kind, kindOfFolder } from '../domain/artifactKinds';
 import { useProjectImportExport } from '../hooks/useProjectImportExport';
 import { loadDemoData } from '../services/demoDataService';
 import { activeIds } from '../utils/activeArtifacts';
 import type { ExportOptions } from '../types';
 import { useAppStore } from '../state';
-import type { ColumnsByKind } from '../state';
 
 /** Shown while a lazily loaded page chunk is being fetched */
 const PageLoadingFallback: React.FC = () => (
@@ -31,9 +30,9 @@ export const ProjectLayout: React.FC = () => {
   const openModal = useAppStore((s) => s.openModal);
   const openLinkDialog = useAppStore((s) => s.openLinkDialog);
   const setSelectedArtifact = useAppStore((s) => s.setSelectedArtifact);
+  /** The kind whose list is shown, if any: /use-cases -> 'useCase' */
+  const pageKind = kindOfFolder(location.pathname.split('/')[1] ?? '');
   const setSearchQuery = useAppStore((s) => s.setSearchQuery);
-  const columnVisibility = useAppStore((s) => s.columnVisibility);
-  const setColumnVisibility = useAppStore((s) => s.setColumnVisibility);
 
   // Global state
   const requirements = useAppStore((s) => s.artifacts.requirement);
@@ -49,140 +48,6 @@ export const ProjectLayout: React.FC = () => {
 
   // Baselines context
   const baselines = useAppStore((s) => s.baselines);
-
-  // Custom Attributes context
-  const { getDefinitionsForType } = useCustomAttributes();
-
-  // Dynamically generate column configurations
-  const requirementColumns = useMemo(() => {
-    const customDefs = getDefinitionsForType('requirement');
-    const base: { key: string; label: string; alwaysVisible?: boolean }[] = [
-      { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
-      { key: 'description', label: 'Description' },
-      { key: 'text', label: 'Requirement Text' },
-      { key: 'rationale', label: 'Rationale' },
-      { key: 'author', label: 'Author' },
-      { key: 'verification', label: 'Verification' },
-      { key: 'priority', label: 'Priority' },
-      { key: 'status', label: 'Status' },
-      { key: 'comments', label: 'Comments' },
-      { key: 'created', label: 'Created' },
-      { key: 'approved', label: 'Approved' },
-    ];
-
-    const custom = customDefs.map((def) => ({
-      key: def.id,
-      label: def.name,
-    }));
-
-    return [...base, ...custom];
-  }, [getDefinitionsForType]);
-
-  const useCaseColumnsDynamic = useMemo(() => {
-    const customDefs = getDefinitionsForType('useCase');
-    const base: { key: string; label: string; alwaysVisible?: boolean }[] = [
-      { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
-      { key: 'revision', label: 'Rev' },
-      { key: 'description', label: 'Description' },
-      { key: 'actor', label: 'Actor' },
-      { key: 'priority', label: 'Priority' },
-      { key: 'status', label: 'Status' },
-      { key: 'preconditions', label: 'Preconditions' },
-      { key: 'mainFlow', label: 'Main Flow' },
-      { key: 'alternativeFlows', label: 'Alternative Flows' },
-      { key: 'postconditions', label: 'Postconditions' },
-    ];
-
-    const custom = customDefs.map((def) => ({
-      key: def.id,
-      label: def.name,
-    }));
-
-    return [...base, ...custom];
-  }, [getDefinitionsForType]);
-
-  const testCaseColumnsDynamic = useMemo(() => {
-    const customDefs = getDefinitionsForType('testCase');
-    const base: { key: string; label: string; alwaysVisible?: boolean }[] = [
-      { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
-      { key: 'revision', label: 'Rev' },
-      { key: 'description', label: 'Description' },
-      { key: 'requirements', label: 'Requirements' },
-      { key: 'priority', label: 'Priority' },
-      { key: 'status', label: 'Status' },
-      { key: 'lastRun', label: 'Last Run' },
-      { key: 'created', label: 'Created' },
-    ];
-
-    const custom = customDefs.map((def) => ({
-      key: def.id,
-      label: def.name,
-    }));
-
-    return [...base, ...custom];
-  }, [getDefinitionsForType]);
-
-  const informationColumnsDynamic = useMemo(() => {
-    const customDefs = getDefinitionsForType('information');
-    const base: { key: string; label: string; alwaysVisible?: boolean }[] = [
-      { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
-      { key: 'revision', label: 'Rev' },
-      { key: 'type', label: 'Type' },
-      { key: 'text', label: 'Content' },
-      { key: 'created', label: 'Created' },
-    ];
-
-    const custom = customDefs.map((def) => ({
-      key: def.id,
-      label: def.name,
-    }));
-
-    return [...base, ...custom];
-  }, [getDefinitionsForType]);
-
-  const riskColumnsDynamic = useMemo(() => {
-    const customDefs = getDefinitionsForType('risk');
-    const base: { key: string; label: string; alwaysVisible?: boolean }[] = [
-      { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
-      { key: 'revision', label: 'Rev' },
-      { key: 'category', label: 'Category' },
-      { key: 'probability', label: 'Probability' },
-      { key: 'impact', label: 'Impact' },
-      { key: 'status', label: 'Status' },
-      { key: 'owner', label: 'Owner' },
-      { key: 'description', label: 'Description' },
-      { key: 'mitigation', label: 'Mitigation' },
-      { key: 'contingency', label: 'Contingency' },
-      { key: 'created', label: 'Created' },
-    ];
-
-    const custom = customDefs.map((def) => ({
-      key: def.id,
-      label: def.name,
-    }));
-
-    return [...base, ...custom];
-  }, [getDefinitionsForType]);
-
-  const documentColumnsDynamic = useMemo(() => {
-    const customDefs = getDefinitionsForType('document');
-    const base: { key: string; label: string; alwaysVisible?: boolean }[] = [
-      { key: 'idTitle', label: 'ID / Title', alwaysVisible: true },
-      { key: 'revision', label: 'Rev' },
-      { key: 'status', label: 'Status' },
-      { key: 'author', label: 'Author' },
-      { key: 'structure', label: 'Items' },
-      { key: 'created', label: 'Created' },
-      { key: 'description', label: 'Description' },
-    ];
-
-    const custom = customDefs.map((def) => ({
-      key: def.id,
-      label: def.name,
-    }));
-
-    return [...base, ...custom];
-  }, [getDefinitionsForType]);
 
   // Import/Export handlers
   const importExport = useProjectImportExport();
@@ -244,13 +109,9 @@ export const ProjectLayout: React.FC = () => {
 
   // Get page title from current route
   const getPageTitle = () => {
-    if (location.pathname === '/requirements') return 'Requirements';
+    if (pageKind) return kind(pageKind).label.plural;
     if (location.pathname.includes('/traceability')) return 'Traceability Dashboard';
     if (location.pathname.includes('/links')) return 'Links';
-    if (location.pathname.includes('/use-cases')) return 'Use Cases';
-    if (location.pathname.includes('/test-cases')) return 'Test Cases';
-    if (location.pathname.includes('/information')) return 'Information';
-    if (location.pathname.includes('/risks')) return 'Risks';
     if (location.pathname.includes('/workflows')) return 'Workflows';
     if (location.pathname.includes('/custom-attributes')) return 'Custom Attributes';
     return '';
@@ -362,211 +223,19 @@ export const ProjectLayout: React.FC = () => {
             </h2>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            {(location.pathname === '/requirements' ||
-              location.pathname.includes('/requirements/detailed')) && (
-              <>
-                <button
-                  onClick={() => openModal('requirement')}
-                  className="tf-btn-primary"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    height: '32px',
-                    padding: '0 12px',
-                    backgroundColor: 'var(--color-accent)',
-                    color: 'var(--color-on-accent)',
-                    border: 'none',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: 500,
-                  }}
-                >
-                  <Plus size={16} />
-                  Add
-                </button>
-                <GenericColumnSelector
-                  columns={requirementColumns}
-                  visibleColumns={columnVisibility.requirement as Record<string, boolean>}
-                  onColumnVisibilityChange={(columns) => {
-                    setColumnVisibility('requirement', columns as ColumnsByKind['requirement']);
-                    try {
-                      localStorage.setItem('column-visibility', JSON.stringify(columns));
-                    } catch (error) {
-                      console.error('Failed to save column visibility:', error);
-                    }
-                  }}
-                />
-              </>
-            )}
-            {location.pathname.includes('/use-cases') && (
+            {pageKind && (
               <>
                 <button
                   onClick={() => {
                     setSelectedArtifact(null);
-                    openModal('useCase');
+                    openModal(pageKind);
                   }}
-                  className="tf-btn-primary"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    height: '32px',
-                    padding: '0 12px',
-                    backgroundColor: 'var(--color-accent)',
-                    color: 'var(--color-on-accent)',
-                    border: 'none',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: 500,
-                  }}
+                  className="tf-btn-primary tf-toolbar-button"
                 >
                   <Plus size={16} />
                   Add
                 </button>
-                <GenericColumnSelector
-                  columns={useCaseColumnsDynamic}
-                  visibleColumns={columnVisibility.useCase as Record<string, boolean>}
-                  onColumnVisibilityChange={(cols) =>
-                    setColumnVisibility('useCase', cols as ColumnsByKind['useCase'])
-                  }
-                />
-              </>
-            )}
-            {location.pathname.includes('/test-cases') && (
-              <>
-                <button
-                  onClick={() => openModal('testCase')}
-                  className="tf-btn-primary"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    height: '32px',
-                    padding: '0 12px',
-                    backgroundColor: 'var(--color-accent)',
-                    color: 'var(--color-on-accent)',
-                    border: 'none',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: 500,
-                  }}
-                >
-                  <Plus size={16} />
-                  Add
-                </button>
-                <GenericColumnSelector
-                  columns={testCaseColumnsDynamic}
-                  visibleColumns={columnVisibility.testCase as Record<string, boolean>}
-                  onColumnVisibilityChange={(cols) =>
-                    setColumnVisibility('testCase', cols as ColumnsByKind['testCase'])
-                  }
-                />
-              </>
-            )}
-            {location.pathname.includes('/information') && (
-              <>
-                <button
-                  onClick={() => {
-                    setSelectedArtifact(null);
-                    openModal('information');
-                  }}
-                  className="tf-btn-primary"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    height: '32px',
-                    padding: '0 12px',
-                    backgroundColor: 'var(--color-accent)',
-                    color: 'var(--color-on-accent)',
-                    border: 'none',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: 500,
-                  }}
-                >
-                  <Plus size={16} />
-                  Add
-                </button>
-                <GenericColumnSelector
-                  columns={informationColumnsDynamic}
-                  visibleColumns={columnVisibility.information as Record<string, boolean>}
-                  onColumnVisibilityChange={(cols) =>
-                    setColumnVisibility('information', cols as ColumnsByKind['information'])
-                  }
-                />
-              </>
-            )}
-            {location.pathname.includes('/risks') && (
-              <>
-                <button
-                  onClick={() => openModal('risk')}
-                  className="tf-btn-primary"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    height: '32px',
-                    padding: '0 12px',
-                    backgroundColor: 'var(--color-accent)',
-                    color: 'var(--color-on-accent)',
-                    border: 'none',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: 500,
-                  }}
-                >
-                  <Plus size={16} />
-                  Add
-                </button>
-                <GenericColumnSelector
-                  columns={riskColumnsDynamic}
-                  visibleColumns={columnVisibility.risk as Record<string, boolean>}
-                  onColumnVisibilityChange={(cols) =>
-                    setColumnVisibility('risk', cols as ColumnsByKind['risk'])
-                  }
-                />
-              </>
-            )}
-            {location.pathname.includes('/documents') && (
-              <>
-                <button
-                  onClick={() => {
-                    setSelectedArtifact(null);
-                    openModal('document', true);
-                  }}
-                  className="tf-btn-primary"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    height: '32px',
-                    padding: '0 12px',
-                    backgroundColor: 'var(--color-accent)',
-                    color: 'var(--color-on-accent)',
-                    border: 'none',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: 500,
-                  }}
-                >
-                  <Plus size={16} />
-                  Add
-                </button>
-                <GenericColumnSelector
-                  columns={documentColumnsDynamic}
-                  visibleColumns={columnVisibility.document as Record<string, boolean>}
-                  onColumnVisibilityChange={(cols) =>
-                    setColumnVisibility('document', cols as ColumnsByKind['document'])
-                  }
-                />
+                <ArtifactColumnSelector kindId={pageKind} />
               </>
             )}
             {location.pathname.includes('/links') && (

@@ -21,6 +21,7 @@
 import { parse, stringify } from 'yaml';
 import { z } from 'zod';
 import { KIND_IDS } from './artifactKinds';
+import { nextIds } from './ids';
 import type { CustomAttributeDefinition } from '../types/customAttributes';
 import type { Project } from '../types/project';
 
@@ -111,4 +112,21 @@ export function serializeProjectConfig(config: ProjectConfig): string {
 
 export function projectOf(config: ProjectConfig): Project {
   return { name: config.name, description: config.description };
+}
+
+/** The config with one more custom attribute, which gets the next free ATTR ID */
+export function withNewAttribute(
+  config: ProjectConfig,
+  def: Omit<CustomAttributeDefinition, 'id'>
+): { config: ProjectConfig; created: CustomAttributeDefinition } {
+  const [id] = nextIds(
+    'ATTR',
+    config.customAttributes.map((d) => d.id),
+    1
+  );
+  const created = { ...def, id };
+  return {
+    config: { ...config, customAttributes: [...config.customAttributes, created] },
+    created,
+  };
 }

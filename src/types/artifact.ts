@@ -48,8 +48,6 @@ export interface UseCase extends BaseArtifact {
   status?: string;
   priority?: string;
   actor?: string;
-  precondition?: string;
-  postcondition?: string;
   preconditions?: string;
   postconditions?: string;
   mainFlow?: string;
@@ -75,7 +73,6 @@ export interface Information extends BaseArtifact {
   title: string;
   description?: string;
   text?: string;
-  content?: string;
   type?: string;
   status?: string;
   author?: string;

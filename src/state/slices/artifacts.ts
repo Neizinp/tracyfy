@@ -7,6 +7,7 @@ import type { AppState } from '../store';
 import type { ArtifactByKind } from '../../types';
 import { kind as kindDef, type ArtifactKindId } from '../../domain/artifactKinds';
 import { hasArtifactChanges } from '../../domain/artifactChanges';
+import { savedByTheApp } from '../../domain/kindRules';
 import { incrementRevision } from '../../utils/revisionUtils';
 import { withTask } from './tasks';
 import { notifyError } from '../notify';
@@ -59,6 +60,9 @@ export const createArtifactsSlice: StateCreator<AppState, [], [], ArtifactsSlice
         const now = Date.now();
         const artifact = {
           ...data,
+          ...savedByTheApp(kindId, undefined, data as Record<string, unknown>, now),
+          // The git author is the user (P5)
+          author: (data as { author?: string }).author || currentUser.name,
           dateCreated: data.dateCreated ?? now,
           id: await get().nextId(kindId),
           lastModified: now,
@@ -82,11 +86,13 @@ export const createArtifactsSlice: StateCreator<AppState, [], [], ArtifactsSlice
       // otherwise the artifact shows up as modified and needs a pointless commit
       if (!hasArtifactChanges(existing, updates)) return false;
 
+      const now = Date.now();
+      const changed = { ...existing, ...updates };
       const updated = {
-        ...existing,
-        ...updates,
+        ...changed,
+        ...savedByTheApp(kindId, existing as never, changed as never, now),
         revision: incrementRevision(existing.revision || '01'),
-        lastModified: Date.now(),
+        lastModified: now,
       };
       try {
         await withTask(get(), `Saving ${id}...`, () => get().saveArtifact(kindId, updated));

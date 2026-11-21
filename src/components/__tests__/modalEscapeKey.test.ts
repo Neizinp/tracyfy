@@ -23,11 +23,7 @@ import { describe, it, expect } from 'vitest';
 // Note: UserOnboardingModal is excluded because it's a mandatory onboarding flow
 // that must complete before the user can proceed (no onClose prop).
 const MODAL_FILES = {
-  RequirementModal: () => import('../RequirementModal.tsx?raw'),
-  UseCaseModal: () => import('../UseCaseModal.tsx?raw'),
-  TestCaseModal: () => import('../TestCaseModal.tsx?raw'),
-  InformationModal: () => import('../InformationModal.tsx?raw'),
-  RiskModal: () => import('../RiskModal.tsx?raw'),
+  ArtifactDialog: () => import('../../ui/generic/ArtifactDialog.tsx?raw'),
   LinkModal: () => import('../LinkModal.tsx?raw'),
   EditLinkModal: () => import('../EditLinkModal.tsx?raw'),
   ProjectSettingsModal: () => import('../ProjectSettingsModal.tsx?raw'),

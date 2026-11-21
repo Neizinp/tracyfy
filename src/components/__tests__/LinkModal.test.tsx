@@ -73,7 +73,6 @@ describe('LinkModal', () => {
   const mockInformation: Information = {
     id: 'INFO-001',
     title: 'Test Info',
-    content: 'Info content',
     type: 'note',
     dateCreated: 1000000,
     lastModified: 1000000,

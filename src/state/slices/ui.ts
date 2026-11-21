@@ -4,27 +4,26 @@
  */
 import type { StateCreator } from 'zustand';
 import type { AppState } from '../store';
-import type {
-  ActiveModal,
-  ColumnVisibility,
-  DocumentColumnVisibility,
-  InformationColumnVisibility,
-  ModalType,
-  RiskColumnVisibility,
-  SelectedArtifact,
-  TestCaseColumnVisibility,
-  UseCaseColumnVisibility,
-} from '../../types';
+import type { ActiveModal, ModalType, SelectedArtifact } from '../../types';
 import type { ArtifactKindId } from '../../domain/artifactKinds';
 
-/** The visible table columns of each kind */
-export interface ColumnsByKind {
-  requirement: ColumnVisibility;
-  useCase: UseCaseColumnVisibility;
-  testCase: TestCaseColumnVisibility;
-  information: InformationColumnVisibility;
-  risk: RiskColumnVisibility;
-  document: DocumentColumnVisibility;
+/**
+ * Table columns the user turned on or off, per kind and column key. Columns
+ * not listed show their default (the field's showInTable).
+ */
+export type ColumnChoices = Partial<Record<ArtifactKindId, Record<string, boolean>>>;
+
+const columnsKey = (directoryName: string) => `tracyfy.columns.${directoryName}`;
+
+/** The column choices saved for a project folder (per user, in this browser) */
+export function readColumnChoices(directoryName: string | null): ColumnChoices {
+  if (!directoryName) return {};
+  try {
+    const saved = localStorage.getItem(columnsKey(directoryName));
+    return saved ? (JSON.parse(saved) as ColumnChoices) : {};
+  } catch {
+    return {};
+  }
 }
 
 export interface UiSlice {
@@ -37,7 +36,7 @@ export interface UiSlice {
   linkSourceId: string | null;
   linkSourceType: ArtifactKindId | null;
   searchQuery: string;
-  columnVisibility: ColumnsByKind;
+  columnVisibility: ColumnChoices;
 
   openModal: (type: ModalType, isEdit?: boolean, artifact?: SelectedArtifact) => void;
   closeModal: () => void;
@@ -50,86 +49,18 @@ export interface UiSlice {
   popNavigationStack: () => void;
   clearNavigationStack: () => void;
   setSearchQuery: (query: string) => void;
-  setColumnVisibility: <K extends ArtifactKindId>(kind: K, columns: ColumnsByKind[K]) => void;
+  /** Show or hide a table column; remembered for this project folder */
+  setColumnVisible: (kind: ArtifactKindId, column: string, visible: boolean) => void;
 }
 
-const DEFAULT_COLUMNS: ColumnsByKind = {
-  requirement: {
-    idTitle: true,
-    description: true,
-    text: true,
-    rationale: true,
-    author: true,
-    verification: true,
-    priority: true,
-    status: true,
-    category: false,
-    comments: false,
-    created: false,
-    revision: false,
-  },
-  useCase: {
-    idTitle: true,
-    description: true,
-    actor: true,
-    priority: true,
-    status: true,
-    created: true,
-    revision: false,
-    author: true,
-  },
-  testCase: {
-    idTitle: true,
-    description: true,
-    requirements: true,
-    priority: true,
-    status: true,
-    author: true,
-    created: true,
-    revision: false,
-  },
-  information: {
-    idTitle: true,
-    description: true,
-    type: true,
-    status: true,
-    author: true,
-    created: true,
-    revision: false,
-  },
-  risk: {
-    idTitle: true,
-    description: true,
-    category: true,
-    probability: true,
-    impact: true,
-    status: true,
-    owner: true,
-    mitigation: false,
-    contingency: false,
-    created: true,
-    revision: false,
-    author: true,
-  },
-  document: {
-    idTitle: true,
-    description: true,
-    structure: true,
-    created: true,
-    revision: false,
-    author: true,
-    status: true,
-  },
-};
-
-export const createUiSlice: StateCreator<AppState, [], [], UiSlice> = (set) => ({
+export const createUiSlice: StateCreator<AppState, [], [], UiSlice> = (set, get) => ({
   activeModal: { type: null },
   selectedArtifact: null,
   navigationStack: [],
   linkSourceId: null,
   linkSourceType: null,
   searchQuery: '',
-  columnVisibility: DEFAULT_COLUMNS,
+  columnVisibility: {},
 
   openModal: (type, isEdit = false, artifact) =>
     set(
@@ -169,6 +100,18 @@ export const createUiSlice: StateCreator<AppState, [], [], UiSlice> = (set) => (
 
   setSearchQuery: (searchQuery) => set({ searchQuery }),
 
-  setColumnVisibility: (kind, columns) =>
-    set((s) => ({ columnVisibility: { ...s.columnVisibility, [kind]: columns } })),
+  setColumnVisible: (kind, column, visible) => {
+    const choices = {
+      ...get().columnVisibility,
+      [kind]: { ...get().columnVisibility[kind], [column]: visible },
+    };
+    set({ columnVisibility: choices });
+    const dir = get().directoryName;
+    if (!dir) return;
+    try {
+      localStorage.setItem(columnsKey(dir), JSON.stringify(choices));
+    } catch (err) {
+      console.error('Could not remember the table columns:', err);
+    }
+  },
 });

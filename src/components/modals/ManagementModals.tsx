@@ -9,7 +9,6 @@ import {
   CustomAttributeDefinitionModal,
   WorkflowModal,
 } from '../';
-import { diskCustomAttributeService } from '../../services/diskCustomAttributeService';
 import { exportProjectToJSON } from '../../utils/jsonExportUtils';
 import type { ExportOptions } from '../../types';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
@@ -21,6 +20,7 @@ import { notifyError, useAppStore } from '../../state';
 export const ManagementModals: React.FC = () => {
   const activeModal = useAppStore((s) => s.activeModal);
   const closeModal = useAppStore((s) => s.closeModal);
+  const addAttributeDefinition = useAppStore((s) => s.addAttributeDefinition);
   const linkSourceId = useAppStore((s) => s.linkSourceId);
   const linkSourceType = useAppStore((s) => s.linkSourceType);
   const project = useAppStore((s) => s.project);
@@ -229,7 +229,7 @@ export const ManagementModals: React.FC = () => {
         onSubmit={async (
           data: Omit<CustomAttributeDefinition, 'id' | 'dateCreated' | 'lastModified'>
         ) => {
-          await diskCustomAttributeService.createDefinition(data);
+          await addAttributeDefinition(data);
           closeModal();
         }}
       />

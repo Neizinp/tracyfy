@@ -91,4 +91,29 @@ describe('integration: baselines', () => {
     await act(async () => h.app().openModal('history'));
     expect(await screen.findByText('v2.0')).toBeInTheDocument();
   }, 60_000);
+
+  it("a baseline's snapshot shows every kind, risks and documents included", async () => {
+    h = await startApp();
+    await act(() =>
+      h.app().addArtifact('risk', { title: 'Outage', description: 'Power cut' } as never)
+    );
+    await act(() =>
+      h.app().addArtifact('document', { title: 'Spec', description: 'All of it' } as never)
+    );
+    await h.settle();
+    for (const p of await h.dirtyPaths()) {
+      await act(() => h.app().commitFile(p, `Commit ${p}`));
+    }
+    await createBaselineInUi(h, '1.0', '');
+    await waitFor(() => expect(h.app().baselines).toHaveLength(1));
+
+    fireEvent.click(await screen.findByRole('button', { name: /^view$/i }));
+    const risks = await screen.findByRole('button', { name: /^Risks/ });
+    await waitFor(() => expect(risks).toHaveTextContent('1'));
+    fireEvent.click(risks);
+    expect(await screen.findByText('Outage')).toBeInTheDocument();
+    expect(screen.getByText('Power cut')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Documents/ }));
+    expect(await screen.findByText('Spec')).toBeInTheDocument();
+  }, 60_000);
 });

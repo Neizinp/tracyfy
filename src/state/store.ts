@@ -16,7 +16,7 @@ import { createGitSlice, type GitSlice } from './slices/git';
 import { createUserSlice, type UserSlice } from './slices/user';
 import { createBaselinesSlice, type BaselinesSlice } from './slices/baselines';
 import { createArtifactsSlice, type ArtifactsSlice } from './slices/artifacts';
-import { createUiSlice, type UiSlice } from './slices/ui';
+import { createUiSlice, readColumnChoices, type UiSlice } from './slices/ui';
 import { createTasksSlice, type TasksSlice } from './slices/tasks';
 import { createToastsSlice, type ToastsSlice } from './slices/toasts';
 
@@ -33,7 +33,7 @@ export type AppStore = StoreApi<AppState>;
 
 /** A new, empty store. The app makes one per mount (see StoreProvider). */
 export function createAppStore(): AppStore {
-  return createStore<AppState>()((...a) => ({
+  const store = createStore<AppState>()((...a) => ({
     ...createProjectSlice(...a),
     ...createArtifactsSlice(...a),
     ...createGitSlice(...a),
@@ -43,4 +43,11 @@ export function createAppStore(): AppStore {
     ...createTasksSlice(...a),
     ...createToastsSlice(...a),
   }));
+  // Each project folder has its own table columns
+  store.subscribe((state, previous) => {
+    if (state.directoryName !== previous.directoryName) {
+      store.setState({ columnVisibility: readColumnChoices(state.directoryName) });
+    }
+  });
+  return store;
 }

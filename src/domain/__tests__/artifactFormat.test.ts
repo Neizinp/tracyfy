@@ -74,9 +74,6 @@ const useCase: UseCase = {
   actor: 'User',
   preconditions: TRICKY,
   postconditions: TRICKY,
-  // legacy singular aliases are filled from the same sections on load
-  precondition: TRICKY,
-  postcondition: TRICKY,
   mainFlow: TRICKY,
   alternativeFlows: TRICKY,
   dateCreated: T0,
@@ -103,7 +100,6 @@ const information: Information = {
   title: 'Architecture',
   description: TRICKY,
   text: TRICKY,
-  content: TRICKY,
   type: 'note',
   status: 'draft',
   author: 'Ada',
@@ -211,8 +207,8 @@ describe('the files are readable plain text', () => {
       text: 'The system shall log out after 15 minutes.',
       rationale: '',
       revision: '02',
-      dateCreated: 5,
-      lastModified: 6,
+      dateCreated: Date.UTC(2026, 10, 17, 13, 15, 18, 275),
+      lastModified: Date.UTC(2026, 10, 17, 14, 2, 51, 3),
     } as Requirement);
 
     expect(file).toBe(
@@ -222,8 +218,8 @@ describe('the files are readable plain text', () => {
         'status: approved',
         'priority: high',
         'revision: "02"',
-        'dateCreated: 5',
-        'lastModified: 6',
+        'dateCreated: 2026-11-17T13:15:18.275Z',
+        'lastModified: 2026-11-17T14:02:51.003Z',
         '---',
         '',
         '# Login timeout',
@@ -238,6 +234,38 @@ describe('the files are readable plain text', () => {
         '',
       ].join('\n')
     );
+  });
+
+  it('times are ISO dates; epoch milliseconds from older files are still read', () => {
+    const iso = parseArtifact(
+      'testCase',
+      'TC-001',
+      '---\ntitle: Load\ndateCreated: 2026-11-17T13:15:18.275Z\nlastRun: 2026-11-18\n---\n'
+    ) as TestCase;
+    expect(iso.dateCreated).toBe(Date.UTC(2026, 10, 17, 13, 15, 18, 275));
+    expect(iso.lastRun).toBe(Date.UTC(2026, 10, 18));
+
+    const old = parseArtifact(
+      'testCase',
+      'TC-001',
+      '---\ntitle: Load\ndateCreated: 5\n---\n'
+    ) as TestCase;
+    expect(old.dateCreated).toBe(5);
+    expect(serializeArtifact('testCase', old)).toContain('dateCreated: 1970-01-01T00:00:00.005Z');
+  });
+
+  it('link files have ISO dates too', () => {
+    const file = serializeLink({
+      id: 'LINK-001',
+      sourceId: 'TC-001',
+      targetId: 'REQ-001',
+      type: 'verifies',
+      revision: '01',
+      dateCreated: Date.UTC(2026, 0, 2),
+      lastModified: Date.UTC(2026, 0, 2),
+    });
+    expect(file).toContain('dateCreated: 2026-01-02T00:00:00.000Z');
+    expect(parseLink('LINK-001', file).dateCreated).toBe(Date.UTC(2026, 0, 2));
   });
 
   it('a hand-written file with only a title loads with defaults', () => {

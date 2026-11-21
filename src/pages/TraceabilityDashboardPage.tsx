@@ -1,7 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { TraceabilityDashboard } from '../components';
-import { useLinkService } from '../hooks/useLinkService';
 import { isKindId } from '../domain/artifactKinds';
 import { useOpenArtifact } from '../hooks/useOpenArtifact';
 import { notifyError, useAppStore } from '../state';
@@ -25,7 +24,8 @@ export const TraceabilityDashboardPage: React.FC = () => {
   const searchQuery = useAppStore((s) => s.searchQuery);
   const openLinkDialog = useAppStore((s) => s.openLinkDialog);
   const openArtifact = useOpenArtifact();
-  const { allLinks: standaloneLinks, deleteLink } = useLinkService({});
+  const standaloneLinks = useAppStore((s) => s.links);
+  const deleteLink = useAppStore((s) => s.deleteLink);
 
   const filteredRequirements = useMemo(() => {
     const query = searchQuery.toLowerCase();
@@ -75,7 +75,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
       return (
         info.id.toLowerCase().includes(query) ||
         info.title.toLowerCase().includes(query) ||
-        (info.content || info.text || '').toLowerCase().includes(query)
+        (info.text || '').toLowerCase().includes(query)
       );
     });
   }, [information, searchQuery]);

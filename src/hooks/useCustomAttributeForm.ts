@@ -11,7 +11,7 @@ import type {
   AttributeType,
   ApplicableArtifactType,
 } from '../types/customAttributes';
-import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
+import { useAppStoreApi } from '../state';
 
 interface UseCustomAttributeFormOptions {
   isOpen: boolean;
@@ -25,6 +25,7 @@ export function useCustomAttributeForm({
   onSubmit,
 }: UseCustomAttributeFormOptions) {
   const isEditMode = definition !== null;
+  const store = useAppStoreApi();
 
   // Form state
   const [name, setName] = useState('');
@@ -94,12 +95,15 @@ export function useCustomAttributeForm({
     if (type === 'dropdown' && options.length < 2) {
       return 'Dropdown type requires at least 2 options';
     }
-    const exists = await diskCustomAttributeService.nameExists(name.trim(), definition?.id);
+    const wanted = name.trim().toLowerCase();
+    const exists = store
+      .getState()
+      .attributeDefinitions.some((d) => d.name.toLowerCase() === wanted && d.id !== definition?.id);
     if (exists) {
       return 'An attribute with this name already exists';
     }
     return null;
-  }, [name, appliesTo, type, options, definition?.id]);
+  }, [name, appliesTo, type, options, definition?.id, store]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {

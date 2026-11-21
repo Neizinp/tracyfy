@@ -24,7 +24,7 @@ export function useLinkableArtifacts(): ArtifactsByKind {
       information: artifacts.information.map((i) => ({
         id: i.id,
         title: i.title,
-        description: excerpt(i.content || i.text),
+        description: excerpt(i.text),
         isDeleted: i.isDeleted,
       })),
     }),
