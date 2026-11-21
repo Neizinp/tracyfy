@@ -4,7 +4,6 @@
  * Fills an empty project with sample artifacts.
  */
 
-import { diskCustomAttributeService } from './diskCustomAttributeService';
 import { projectConfigStore } from '../storage/projectConfigStore';
 import { withNewAttribute } from '../domain/projectConfig';
 import { repository } from '../storage/repository';
@@ -44,25 +43,22 @@ export async function loadDemoData(): Promise<Project> {
 
   const projectName = DEMO_PROJECT.name;
 
-  // 0.5 Create custom attribute definitions (if they don't exist)
-  const existingDefs = await diskCustomAttributeService.getAllDefinitions();
+  // 0.5 Create the demo's custom attributes; ones with the same name are reused
   const createdAttrIds: string[] = [];
-
   for (const attrDef of DEMO_CUSTOM_ATTRIBUTES) {
-    // Check if attribute with same name already exists
-    const existing = existingDefs.find((d) => d.name === attrDef.name);
-    if (existing) {
-      createdAttrIds.push(existing.id);
-    } else {
-      try {
-        await projectConfigStore.update((config) => {
-          const next = withNewAttribute(config, attrDef);
-          createdAttrIds.push(next.created.id);
-          return next.config;
-        });
-      } catch (error) {
-        console.error('Failed to create custom attribute:', attrDef.name, error);
-      }
+    try {
+      await projectConfigStore.update((config) => {
+        const existing = config.customAttributes.find((d) => d.name === attrDef.name);
+        if (existing) {
+          createdAttrIds.push(existing.id);
+          return config;
+        }
+        const next = withNewAttribute(config, attrDef);
+        createdAttrIds.push(next.created.id);
+        return next.config;
+      });
+    } catch (error) {
+      console.error('Failed to create custom attribute:', attrDef.name, error);
     }
   }
 
