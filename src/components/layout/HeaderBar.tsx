@@ -12,7 +12,6 @@ import {
   Download,
   Upload,
   Clock,
-  FileText,
   FileSpreadsheet,
   ChevronDown,
   Search,
@@ -21,15 +20,12 @@ import {
   HelpCircle,
   SlidersHorizontal,
 } from 'lucide-react';
-import type { ProjectBaseline } from '../../types';
 import {
   headerButtonStyle,
   dropdownMenuStyle,
   searchContainerStyle,
   searchIconStyle,
   searchInputStyle,
-  dropdownItemStyle,
-  hoverHandlers,
   primaryButtonStyle,
   advancedSearchButtonStyle,
 } from './layoutStyles';
@@ -52,10 +48,6 @@ interface HeaderBarProps {
   onImport?: () => void;
   onImportExcel?: () => void;
   onOpenExportModal?: () => void;
-  onExport?: () => void;
-  onExportPDF?: (selectedBaseline: ProjectBaseline | null) => void;
-  onExportExcel?: () => void;
-  baselines?: ProjectBaseline[];
   onOpenUserSettings?: () => void;
   currentUserName?: string;
   onOpenAdvancedSearch?: () => void;
@@ -76,10 +68,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onImport,
   onImportExcel,
   onOpenExportModal,
-  onExport,
-  onExportPDF,
-  onExportExcel,
-  baselines = [],
   onOpenUserSettings,
   currentUserName,
   onOpenAdvancedSearch,
@@ -88,15 +76,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onChangeFolder,
 }) => {
   const {
-    isExportMenuOpen,
-    setIsExportMenuOpen,
     isImportMenuOpen,
     setIsImportMenuOpen,
     isCreateMenuOpen,
     setIsCreateMenuOpen,
-    selectedBaselineId,
-    setSelectedBaselineId,
-    exportMenuRef,
     importMenuRef,
     createMenuRef,
     searchInputRef,
@@ -113,20 +96,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     },
     onHelp,
   });
-
-  const handleExportPDF = () => {
-    const selected =
-      selectedBaselineId === 'current'
-        ? null
-        : baselines.find((b) => b.name === selectedBaselineId) || null;
-    onExportPDF?.(selected);
-    setIsExportMenuOpen(false);
-  };
-
-  const handleExportJSON = () => {
-    onExport?.();
-    setIsExportMenuOpen(false);
-  };
 
   return (
     <header
@@ -377,88 +346,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             <Download size={18} />
             Export
           </button>
-        )}
-
-        {/* Legacy Export Dropdown (kept for E2E tests and backward compatibility) */}
-        {!onOpenExportModal && (
-          <div style={{ position: 'relative' }} ref={exportMenuRef}>
-            <button
-              onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-              style={headerButtonStyle}
-              className="tf-btn"
-              data-testid="export-button-legacy"
-            >
-              <Download size={18} />
-              Export
-              <ChevronDown size={14} />
-            </button>
-
-            {isExportMenuOpen && (
-              <div data-testid="export-dropdown" style={dropdownMenuStyle}>
-                {/* PDF Export with baseline selection */}
-                {onExportPDF && (
-                  <div style={{ padding: '0.5rem 1rem' }}>
-                    <label
-                      htmlFor="baseline-select"
-                      style={{
-                        fontSize: 'var(--font-size-sm)',
-                        fontWeight: 500,
-                        display: 'block',
-                        marginBottom: 4,
-                      }}
-                    >
-                      Export Version:
-                    </label>
-                    <select
-                      id="baseline-select"
-                      value={selectedBaselineId}
-                      onChange={(e) => setSelectedBaselineId(e.target.value)}
-                      style={{
-                        width: '100%',
-                        marginBottom: 8,
-                        padding: '0.25rem',
-                        borderRadius: 4,
-                      }}
-                    >
-                      <option value="current">Current State</option>
-                      {baselines.map((b) => (
-                        <option key={b.name} value={b.name}>
-                          {b.name}
-                        </option>
-                      ))}
-                    </select>
-                    <button onClick={handleExportPDF} style={dropdownItemStyle} {...hoverHandlers}>
-                      <FileText size={16} />
-                      Export to PDF
-                    </button>
-                  </div>
-                )}
-
-                {/* Excel Export */}
-                {onExportExcel && (
-                  <DropdownMenuItem
-                    onClick={() => {
-                      onExportExcel();
-                      setIsExportMenuOpen(false);
-                    }}
-                    icon={FileSpreadsheet}
-                    label="Export to Excel"
-                  />
-                )}
-
-                {/* JSON Export */}
-                {onExport && (
-                  <DropdownMenuItem
-                    onClick={handleExportJSON}
-                    icon={Download}
-                    label="Export JSON"
-                    showBorder
-                    testId="export-json"
-                  />
-                )}
-              </div>
-            )}
-          </div>
         )}
 
         {/* Theme Toggle */}

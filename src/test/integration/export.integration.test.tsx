@@ -1,9 +1,6 @@
 /**
- * Export / import through the real UI with real data.
- *
- * Replaces exportCompleteness.test.ts, which only checked that export source
- * files contained words like "requirements". Here a project with one of every
- * artifact type and a link is exported, and the produced file is inspected.
+ * Export / import through the real UI with real data: a real project folder
+ * and git repository, the export dialog, and the produced file inspected.
  *
  * Only the OS file dialogs are replaced: "Save as" (showSaveFilePicker)
  * captures the written bytes, and the import file picker hands over a File.
@@ -12,38 +9,31 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import * as XLSX from 'xlsx';
 import { startApp, type Harness } from './appHarness';
+import { ARTIFACT_KINDS } from '../../domain/artifactKinds';
 
-const base = { description: '', status: 'draft', priority: 'medium', dateCreated: Date.now() };
+const now = () => Date.now();
 
-/** One artifact of every type in the current project, plus a link */
+/** One artifact of every kind, each with a valid status for its kind, plus a link */
 async function populate(h: Harness) {
   const app = () => h.app();
-  const req = await act(() =>
-    app().addArtifact('requirement', {
-      ...base,
-      title: 'Login',
-      text: 'Shall log in',
-    } as never)
-  );
-  const uc = await act(() =>
-    app().addArtifact('useCase', { ...base, title: 'Sign in', actor: 'User' } as never)
-  );
-  const tc = await act(() =>
-    app().addArtifact('testCase', { ...base, title: 'Login works' } as never)
-  );
-  const info = await act(() =>
-    app().addArtifact('information', { ...base, title: 'Glossary', text: 'Terms' } as never)
-  );
-  const risk = await act(() =>
-    app().addArtifact('risk', { ...base, title: 'Outage', mitigation: 'Redundancy' } as never)
-  );
-  const doc = await act(() =>
-    app().addArtifact('document', {
-      ...base,
-      title: 'Spec',
-      structure: [],
-    } as never)
-  );
+  const add = (k: Parameters<ReturnType<typeof app>['addArtifact']>[0], data: object) =>
+    act(() => app().addArtifact(k, { description: '', dateCreated: now(), ...data } as never));
+  const req = await add('requirement', { title: 'Login', text: 'Shall log in' });
+  const uc = await add('useCase', { title: 'Sign in', actor: 'User' });
+  const tc = await add('testCase', { title: 'Login works' });
+  const info = await add('information', { title: 'Glossary', text: 'Terms' });
+  const risk = await add('risk', {
+    title: 'Outage',
+    status: 'identified',
+    mitigation: 'Redundancy',
+  });
+  const doc = await add('document', {
+    title: 'Spec',
+    structure: [
+      { type: 'heading', title: 'Introduction', level: 1 },
+      { type: 'artifact', id: 'REQ-001', artifactType: 'requirement' },
+    ],
+  });
   const link = await act(() => app().createLink(req!.id, uc!.id, 'satisfies'));
   await h.settle();
   return { req: req!, uc: uc!, tc: tc!, info: info!, risk: risk!, doc: doc!, link };
@@ -76,12 +66,47 @@ function captureSaveAs(): Promise<Uint8Array> {
   });
 }
 
-async function exportVia(format: RegExp): Promise<Uint8Array> {
+/** Open the export dialog, pick the format, let `adjust` change options, generate */
+async function exportVia(format: RegExp, adjust?: () => void): Promise<Uint8Array> {
   const saved = captureSaveAs();
   fireEvent.click(screen.getByTestId('export-button'));
   fireEvent.click(await screen.findByText(format));
+  adjust?.();
   fireEvent.click(screen.getByRole('button', { name: /generate export/i }));
   return saved;
+}
+
+const pdfText = (bytes: Uint8Array) => new TextDecoder('latin1').decode(bytes);
+const readJson = (bytes: Uint8Array) => JSON.parse(new TextDecoder().decode(bytes));
+const rowsOf = (wb: XLSX.WorkBook, sheet: string) =>
+  XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[sheet] ?? {});
+
+async function commitAll(h: Harness, message: string) {
+  await h.settle();
+  for (const p of await h.dirtyPaths()) await act(() => h.app().commitFile(p, message));
+}
+
+/** Tags and commits have whole seconds; keep commits after a baseline out of its second */
+const nextSecond = () => new Promise((r) => setTimeout(r, 1100));
+
+/** The app's file picker: capture the hidden <input type=file> it clicks, hand it `file` */
+async function importVia(h: Harness, item: string, file: File) {
+  const pickers: HTMLInputElement[] = [];
+  vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(function (
+    this: HTMLInputElement
+  ) {
+    pickers.push(this);
+  });
+  fireEvent.click(screen.getByTestId('import-button'));
+  fireEvent.click(await screen.findByText(item));
+  const input = pickers[0];
+  expect(input).toBeDefined();
+  Object.defineProperty(input, 'files', { value: [file] });
+  await act(async () => {
+    input.onchange?.({ target: input } as unknown as Event);
+    await new Promise((r) => setTimeout(r, 300));
+  });
+  await h.settle();
 }
 
 afterEach(() => {
@@ -93,66 +118,160 @@ describe('integration: export', () => {
   let h: Harness;
   afterEach(() => h?.cleanup());
 
-  it('JSON export contains every artifact type and the links', async () => {
+  it('JSON export has every kind, keyed by kind, and the links', async () => {
     h = await startApp();
     const a = await populate(h);
 
-    const json = JSON.parse(new TextDecoder().decode(await exportVia(/json data/i)));
+    const json = readJson(await exportVia(/json data/i));
 
-    expect(json.requirements.map((r: { id: string }) => r.id)).toEqual([a.req.id]);
-    expect(json.useCases.map((r: { id: string }) => r.id)).toEqual([a.uc.id]);
-    expect(json.testCases.map((r: { id: string }) => r.id)).toEqual([a.tc.id]);
-    expect(json.information.map((r: { id: string }) => r.id)).toEqual([a.info.id]);
-    expect(json.risks.map((r: { id: string }) => r.id)).toEqual([a.risk.id]);
-    expect(json.documents.map((r: { id: string }) => r.id)).toEqual([a.doc.id]);
+    const ids = (k: string) => json.artifacts[k].map((r: { id: string }) => r.id);
+    expect(ids('requirement')).toEqual([a.req.id]);
+    expect(ids('useCase')).toEqual([a.uc.id]);
+    expect(ids('testCase')).toEqual([a.tc.id]);
+    expect(ids('information')).toEqual([a.info.id]);
+    expect(ids('risk')).toEqual([a.risk.id]);
+    expect(ids('document')).toEqual([a.doc.id]);
     expect(json.links.map((r: { id: string }) => r.id)).toEqual([a.link.id]);
+    expect(json.baseline).toBeNull();
   }, 90_000);
 
-  it('Excel export has a sheet per type containing the artifacts', async () => {
+  it('Excel has a sheet per kind with a column per field, custom attributes included', async () => {
     h = await startApp();
+    const attr = await act(() =>
+      h.app().addAttributeDefinition({ name: 'Component', type: 'text', appliesTo: ['risk'] })
+    );
     const a = await populate(h);
+    await act(() =>
+      h.app().updateArtifact('risk', a.risk.id, {
+        customAttributes: [{ attributeId: attr.id, value: 'Backend' }],
+      })
+    );
+    await h.settle();
 
     const wb = XLSX.read(await exportVia(/excel sheet/i), { type: 'array' });
-    const ids = (sheet: string) =>
-      XLSX.utils
-        .sheet_to_json<Record<string, unknown>>(wb.Sheets[sheet] ?? {})
-        .map((row) => row['ID']);
 
     expect(wb.SheetNames).toEqual(
-      expect.arrayContaining(['Requirements', 'Use Cases', 'Test Cases', 'Information', 'Risks'])
+      expect.arrayContaining(ARTIFACT_KINDS.map((k) => k.label.plural))
     );
-    expect(ids('Requirements')).toContain(a.req.id);
-    expect(ids('Use Cases')).toContain(a.uc.id);
-    expect(ids('Test Cases')).toContain(a.tc.id);
-    expect(ids('Information')).toContain(a.info.id);
-    expect(ids('Risks')).toContain(a.risk.id);
+    const risk = rowsOf(wb, 'Risks').find((r) => r['ID'] === a.risk.id);
+    expect(risk).toMatchObject({
+      Title: 'Outage',
+      Status: 'Identified',
+      'Mitigation Strategy': 'Redundancy',
+      Component: 'Backend',
+    });
+    expect(rowsOf(wb, 'Documents').map((r) => r['ID'])).toEqual([a.doc.id]);
   }, 90_000);
 
-  it('Excel and PDF list the requirements each test case verifies, from the links', async () => {
+  it('Excel and PDF show each relation from both ends, from the links', async () => {
     h = await startApp();
     const app = () => h.app();
     const add = (title: string) =>
-      act(() => app().addArtifact('requirement', { ...base, title, text: '' } as never));
+      act(() => app().addArtifact('requirement', { title, dateCreated: now() } as never));
     const login = (await add('Login'))!;
     const logout = (await add('Logout'))!;
     const tc = (await act(() =>
-      app().addArtifact('testCase', { ...base, title: 'Log in and out' } as never)
+      app().addArtifact('testCase', { title: 'Log in and out', dateCreated: now() } as never)
     ))!;
-    // One link stored from each end
     await act(() => app().createLink(tc.id, login.id, 'verifies'));
     await act(() => app().createLink(tc.id, logout.id, 'verifies'));
     await h.settle();
 
     const wb = XLSX.read(await exportVia(/excel sheet/i), { type: 'array' });
-    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets['Test Cases']);
-    expect(rows.find((r) => r['ID'] === tc.id)?.['Tests Requirements']).toBe(
+    expect(rowsOf(wb, 'Test Cases').find((r) => r['ID'] === tc.id)?.['Verifies']).toBe(
       `${login.id}, ${logout.id}`
+    );
+    expect(rowsOf(wb, 'Requirements').find((r) => r['ID'] === login.id)?.['Verified by']).toBe(
+      tc.id
     );
 
     // jsPDF writes text uncompressed: "(REQ-001, REQ-002) Tj"
-    const pdf = new TextDecoder('latin1').decode(await exportVia(/pdf document/i));
-    expect(pdf).toContain('(Tests Requirements:)');
+    const pdf = pdfText(await exportVia(/pdf document/i));
+    expect(pdf).toContain('(Verifies:)');
     expect(pdf).toContain(`(${login.id}, ${logout.id})`);
+    expect(pdf).toContain('(Verified by:)');
+  }, 90_000);
+
+  it('a baseline export shows the project as it was at the baseline', async () => {
+    h = await startApp();
+    const req = (await act(() =>
+      h.app().addArtifact('requirement', { title: 'Login', dateCreated: now() } as never)
+    ))!;
+    await commitAll(h, 'Add login');
+    await act(() => h.app().createBaseline('1.0', 'First release'));
+    await act(() => h.app().updateArtifact('requirement', req.id, { title: 'Sign-in' }));
+    await act(() =>
+      h.app().addArtifact('risk', { title: 'Added later', dateCreated: now() } as never)
+    );
+    await commitAll(h, 'Rename');
+
+    const pick10 = () =>
+      fireEvent.change(screen.getByLabelText('Project State'), { target: { value: '1.0' } });
+    const atBaseline = readJson(await exportVia(/json data/i, pick10));
+    expect(atBaseline.baseline).toBe('1.0');
+    expect(atBaseline.artifacts.requirement.map((r: { title: string }) => r.title)).toEqual([
+      'Login',
+    ]);
+    expect(atBaseline.artifacts.risk).toEqual([]);
+
+    const pdf = pdfText(await exportVia(/pdf document/i, pick10));
+    expect(pdf).toContain(`(${req.id} - Login)`);
+    expect(pdf).not.toContain('Sign-in');
+    expect(pdf).toContain('(Baseline 1.0)');
+
+    const current = readJson(await exportVia(/json data/i));
+    expect(current.artifacts.requirement.map((r: { title: string }) => r.title)).toEqual([
+      'Sign-in',
+    ]);
+  }, 120_000);
+
+  it('the revision history lists changes since the baseline for every kind', async () => {
+    h = await startApp();
+    await act(() => h.app().addArtifact('risk', { title: 'Outage', dateCreated: now() } as never));
+    await act(() =>
+      h.app().addArtifact('document', { title: 'Spec', structure: [], dateCreated: now() } as never)
+    );
+    await commitAll(h, 'First version');
+    await act(() => h.app().createBaseline('1.0', ''));
+    await nextSecond();
+    await act(() => h.app().updateArtifact('risk', 'RISK-001', { owner: 'Ops' }));
+    await act(() => h.app().updateArtifact('document', 'DOC-001', { description: 'v2' }));
+    await commitAll(h, 'Assign an owner');
+
+    const pdf = pdfText(await exportVia(/pdf document/i));
+    expect(pdf).toContain('(1. Revision History)');
+    expect(pdf).toContain('(RISK-001)');
+    expect(pdf).toContain('(DOC-001)');
+    expect(pdf).toContain('(Assign an owner)');
+
+    const wb = XLSX.read(await exportVia(/excel sheet/i), { type: 'array' });
+    expect(rowsOf(wb, 'Revision History').map((r) => r['ID'])).toEqual(['RISK-001', 'DOC-001']);
+  }, 120_000);
+
+  it('a kind that is unchecked in the dialog is left out', async () => {
+    h = await startApp();
+    const a = await populate(h);
+    const uncheckRisks = () => fireEvent.click(screen.getByRole('checkbox', { name: /^risks/i }));
+
+    const pdf = pdfText(await exportVia(/pdf document/i, uncheckRisks));
+    expect(pdf).not.toContain(`(${a.risk.id} - Outage)`);
+    expect(pdf).toContain(`(${a.req.id} - Login)`);
+
+    const wb = XLSX.read(await exportVia(/excel sheet/i, uncheckRisks), { type: 'array' });
+    expect(wb.SheetNames).not.toContain('Risks');
+    expect(wb.SheetNames).toContain('Requirements');
+  }, 90_000);
+
+  it('a document in the PDF has its outline and the artifacts it includes', async () => {
+    h = await startApp();
+    const a = await populate(h);
+
+    const pdf = pdfText(await exportVia(/pdf document/i));
+
+    expect(pdf).toMatch(/\(\d\. Document: Spec\)/);
+    expect(pdf).toMatch(/\(\d\.1 Introduction\)/);
+    // In the contents, the Requirements section and the document
+    expect(pdf.split(`(${a.req.id} - Login)`).length - 1).toBe(3);
   }, 90_000);
 
   it('JSON export → import into an empty project folder restores everything', async () => {
@@ -161,42 +280,69 @@ describe('integration: export', () => {
     const exported = await exportVia(/json data/i);
     h.cleanup();
 
-    // A fresh folder and a new user
     h = await startApp({ userName: 'Other User' });
-    // The OS file picker: capture the hidden <input type=file> the app clicks
-    const pickers: HTMLInputElement[] = [];
-    vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(function (
-      this: HTMLInputElement
-    ) {
-      pickers.push(this);
-    });
-    fireEvent.click(screen.getByTestId('import-button'));
-    fireEvent.click(await screen.findByText('Import JSON'));
-    const input = pickers[0];
-    expect(input).toBeDefined();
-    Object.defineProperty(input, 'files', {
-      value: [new File([exported as BlobPart], 'export.json', { type: 'application/json' })],
-    });
-    await act(async () => {
-      input.onchange?.({ target: input } as unknown as Event);
-      await new Promise((r) => setTimeout(r, 200));
-    });
-    await h.settle();
+    await importVia(
+      h,
+      'Import JSON',
+      new File([exported as BlobPart], 'export.json', { type: 'application/json' })
+    );
 
+    await waitFor(() => expect(h.app().artifacts.requirement.map((r) => r.id)).toEqual([a.req.id]));
     const g = h.app().artifacts;
-    await waitFor(() => expect(g.requirement.map((r) => r.id)).toContain(a.req.id));
-    expect(h.app().artifacts.useCase.map((r) => r.id)).toContain(a.uc.id);
-    expect(h.app().artifacts.testCase.map((r) => r.id)).toContain(a.tc.id);
-    expect(h.app().artifacts.information.map((r) => r.id)).toContain(a.info.id);
-    expect(h.app().artifacts.risk.map((r) => r.id)).toContain(a.risk.id);
-    expect(h.app().artifacts.document.map((r) => r.id)).toContain(a.doc.id);
+    expect(g.useCase.map((r) => r.id)).toEqual([a.uc.id]);
+    expect(g.testCase.map((r) => r.id)).toEqual([a.tc.id]);
+    expect(g.information.map((r) => r.id)).toEqual([a.info.id]);
+    expect(g.risk.map((r) => r.id)).toEqual([a.risk.id]);
+    expect(g.document.map((r) => r.id)).toEqual([a.doc.id]);
     expect(h.app().links).toEqual([
       expect.objectContaining({ sourceId: a.req.id, targetId: a.uc.id, type: 'satisfies' }),
     ]);
-    // Imported artifacts are visible in the project the user imported into
-    expect(h.app().artifacts.requirement.map((r) => r.id)).toContain(a.req.id);
-    expect(h.exists(`requirements/${a.req.id}.md`)).toBe(true);
-    // Nothing left that the user can't commit
+    expect(h.exists(`risks/${a.risk.id}.md`)).toBe(true);
+    // Every imported file can be read back without problems
+    await act(() => h.app().reload());
+    expect(h.app().fileProblems).toEqual([]);
     expect(await h.invisibleDirtyPaths()).toEqual([]);
   }, 120_000);
+
+  it('Excel export → edit → import updates every kind', async () => {
+    h = await startApp();
+    const a = await populate(h);
+    const wb = XLSX.read(await exportVia(/excel sheet/i), { type: 'array' });
+    h.cleanup();
+
+    // Edit a cell, as someone would in Excel
+    const risks = rowsOf(wb, 'Risks');
+    risks[0]['Probability'] = 'High';
+    wb.Sheets['Risks'] = XLSX.utils.json_to_sheet(risks);
+    const bytes = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+
+    h = await startApp();
+    await importVia(h, 'Import Excel', new File([bytes], 'export.xlsx'));
+
+    await waitFor(() => expect(h.app().artifacts.risk.map((r) => r.id)).toEqual([a.risk.id]));
+    expect(h.app().artifacts.risk[0]).toMatchObject({
+      title: 'Outage',
+      probability: 'high',
+      mitigation: 'Redundancy',
+    });
+    for (const k of ARTIFACT_KINDS) expect(h.app().artifacts[k.id]).toHaveLength(1);
+    expect(h.app().artifacts.useCase[0]).toMatchObject({ actor: 'User' });
+    await act(() => h.app().reload());
+    expect(h.app().fileProblems).toEqual([]);
+  }, 120_000);
+
+  it('a document exports to its own PDF from its dialog', async () => {
+    h = await startApp();
+    const a = await populate(h);
+    const saved = captureSaveAs();
+    await act(async () =>
+      h.app().openModal('document', true, { id: a.doc.id, type: 'document', data: a.doc as never })
+    );
+    fireEvent.click(await screen.findByRole('button', { name: /export to pdf/i }));
+
+    const pdf = pdfText(await saved);
+    expect(pdf).toContain('(Spec)');
+    expect(pdf).toContain('(1 Introduction)');
+    expect(pdf).toContain(`(${a.req.id} - Login)`);
+  }, 90_000);
 });

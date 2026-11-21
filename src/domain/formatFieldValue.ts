@@ -1,5 +1,5 @@
-import { optionLabel, type FieldDef, type FieldValue } from '../../domain/fields';
-import { formatDateTime } from '../../utils/dateUtils';
+import { optionLabel, type FieldDef, type FieldValue } from './fields';
+import { formatDateTime } from '../utils/dateUtils';
 
 /** A field value as a person reads it: enum labels, Yes / No, local date and time */
 export function formatFieldValue(field: FieldDef, value: FieldValue): string {

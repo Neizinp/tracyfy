@@ -19,6 +19,7 @@ import { createArtifactsSlice, type ArtifactsSlice } from './slices/artifacts';
 import { createUiSlice, readColumnChoices, type UiSlice } from './slices/ui';
 import { createTasksSlice, type TasksSlice } from './slices/tasks';
 import { createToastsSlice, type ToastsSlice } from './slices/toasts';
+import { createExportSlice, type ExportSlice } from './slices/export';
 
 export type AppState = ProjectSlice &
   ArtifactsSlice &
@@ -27,7 +28,8 @@ export type AppState = ProjectSlice &
   BaselinesSlice &
   UiSlice &
   TasksSlice &
-  ToastsSlice;
+  ToastsSlice &
+  ExportSlice;
 
 export type AppStore = StoreApi<AppState>;
 
@@ -42,6 +44,7 @@ export function createAppStore(): AppStore {
     ...createUiSlice(...a),
     ...createTasksSlice(...a),
     ...createToastsSlice(...a),
+    ...createExportSlice(...a),
   }));
   // Each project folder has its own table columns
   store.subscribe((state, previous) => {

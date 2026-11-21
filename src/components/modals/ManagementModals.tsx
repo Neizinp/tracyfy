@@ -1,4 +1,3 @@
-import { activeIds } from '../../utils/activeArtifacts';
 import React, { useCallback } from 'react';
 import {
   LinkModal,
@@ -8,13 +7,11 @@ import {
   AdvancedSearchModal,
   CustomAttributeDefinitionModal,
 } from '../';
-import { exportProjectToJSON } from '../../utils/jsonExportUtils';
-import type { ExportOptions } from '../../types';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import type { LinkModalResult } from '../LinkModal';
 import { useLinkableArtifacts } from '../../hooks/useLinkableArtifacts';
 import { useOpenArtifact } from '../../hooks/useOpenArtifact';
-import { notifyError, useAppStore } from '../../state';
+import { useAppStore } from '../../state';
 
 export const ManagementModals: React.FC = () => {
   const activeModal = useAppStore((s) => s.activeModal);
@@ -22,121 +19,13 @@ export const ManagementModals: React.FC = () => {
   const addAttributeDefinition = useAppStore((s) => s.addAttributeDefinition);
   const linkSourceId = useAppStore((s) => s.linkSourceId);
   const linkSourceType = useAppStore((s) => s.linkSourceType);
-  const project = useAppStore((s) => s.project);
-
-  const requirements = useAppStore((s) => s.artifacts.requirement);
-  const useCases = useAppStore((s) => s.artifacts.useCase);
-  const testCases = useAppStore((s) => s.artifacts.testCase);
-  const information = useAppStore((s) => s.artifacts.information);
   const baselines = useAppStore((s) => s.baselines);
   const createBaseline = useAppStore((s) => s.createBaseline);
-  const risks = useAppStore((s) => s.artifacts.risk);
-  const documents = useAppStore((s) => s.artifacts.document);
-  const currentUser = useAppStore((s) => s.currentUser);
-  const startTask = useAppStore((s) => s.startTask);
-  const endTask = useAppStore((s) => s.endTask);
   const links = useAppStore((s) => s.links);
   const createLink = useAppStore((s) => s.createLink);
   const linkableArtifacts = useLinkableArtifacts();
   const showToast = useAppStore((s) => s.showToast);
   const openArtifact = useOpenArtifact();
-
-  const handleExport = useCallback(
-    async (options: ExportOptions) => {
-      const reqIds = options.includeRequirements ? activeIds(requirements) : [];
-      const ucIds = options.includeUseCases ? activeIds(useCases) : [];
-      const tcIds = options.includeTestCases ? activeIds(testCases) : [];
-      const infoIds = options.includeInformation ? activeIds(information) : [];
-
-      const globalState = {
-        requirements: requirements,
-        useCases: useCases,
-        testCases: testCases,
-        information: information,
-        risks: risks,
-        documents: documents,
-      };
-
-      try {
-        switch (options.format) {
-          case 'pdf': {
-            const taskId = startTask('Exporting PDF...');
-            try {
-              const { exportProjectToPDF } = await import('../../utils/pdfExportUtils');
-              await exportProjectToPDF(
-                project,
-                globalState,
-                reqIds,
-                ucIds,
-                tcIds,
-                infoIds,
-                baselines,
-                options.baseline,
-                currentUser?.name,
-                options.includeDocuments,
-                documents.filter((d) => !d.isDeleted)
-              );
-            } finally {
-              endTask(taskId);
-            }
-            break;
-          }
-          case 'excel': {
-            const taskId = startTask('Exporting to Excel...');
-            try {
-              const { exportProjectToExcel } = await import('../../utils/excelExportUtils');
-              await exportProjectToExcel(
-                project,
-                globalState,
-                reqIds,
-                ucIds,
-                tcIds,
-                infoIds,
-                baselines,
-                options
-              );
-            } finally {
-              endTask(taskId);
-            }
-            break;
-          }
-          case 'json': {
-            const taskId = startTask('Exporting JSON...');
-            try {
-              await exportProjectToJSON(
-                project,
-                globalState,
-                reqIds,
-                ucIds,
-                tcIds,
-                infoIds,
-                activeIds(risks),
-                activeIds(documents)
-              );
-            } finally {
-              endTask(taskId);
-            }
-            break;
-          }
-        }
-      } catch (error) {
-        notifyError('Export failed', error);
-      }
-    },
-    [
-      project,
-      requirements,
-      useCases,
-      testCases,
-      information,
-      risks,
-      baselines,
-      currentUser,
-      startTask,
-      endTask,
-      documents,
-    ]
-  );
 
   const handleAddArtifactLink = useCallback(
     async (newLink: LinkModalResult) => {
@@ -199,21 +88,7 @@ export const ManagementModals: React.FC = () => {
 
       <UserSettingsModal isOpen={activeModal.type === 'user-settings'} onClose={closeModal} />
 
-      <ExportModal
-        isOpen={activeModal.type === 'export'}
-        onClose={closeModal}
-        baselines={baselines}
-        onExport={handleExport}
-        artifactCounts={{
-          requirements: activeIds(requirements).length,
-          useCases: activeIds(useCases).length,
-          testCases: activeIds(testCases).length,
-          information: activeIds(information).length,
-          risks: activeIds(risks).length,
-          documents: activeIds(documents).length,
-          links: activeIds(links).length,
-        }}
-      />
+      <ExportModal isOpen={activeModal.type === 'export'} onClose={closeModal} />
 
       <AdvancedSearchModal
         isOpen={activeModal.type === 'search'}

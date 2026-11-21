@@ -9,7 +9,7 @@ import { fieldsFor, type ArtifactKindId } from '../../domain/artifactKinds';
 import { fieldText, getFieldValue, type FieldDef } from '../../domain/fields';
 import type { CustomAttributeDefinition, Link } from '../../types';
 import { KIND_OVERRIDES, type Draft } from '../kinds';
-import { formatFieldValue } from './formatFieldValue';
+import { formatFieldValue } from '../../domain/formatFieldValue';
 
 export interface Column {
   key: string;

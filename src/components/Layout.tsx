@@ -1,4 +1,3 @@
-import type { ProjectBaseline } from '../types';
 import { FileProblemsNotice } from './FileProblemsNotice';
 import { Sidebar } from './layout/Sidebar';
 import { HeaderBar } from './layout/HeaderBar';
@@ -11,11 +10,8 @@ export interface LayoutProps {
   onNewRequirement: () => void;
   onNewUseCase?: () => void;
   onNewTestCase?: () => void;
-  onExport?: () => void;
   onImport?: () => void;
   onViewHistory?: () => void;
-  onExportPDF?: (selectedBaseline: ProjectBaseline | null) => void;
-  onExportExcel?: () => void;
   onImportExcel?: () => void;
   onOpenExportModal?: () => void;
   onSearch?: (query: string) => void;
@@ -24,7 +20,6 @@ export interface LayoutProps {
   onNewLink?: () => void;
   onNewCustomAttribute?: () => void;
   onNewDocument?: () => void;
-  baselines?: ProjectBaseline[];
   onOpenUserSettings?: () => void;
   currentUserName?: string;
   onOpenAdvancedSearch?: () => void;
@@ -44,11 +39,8 @@ export const Layout: React.FC<LayoutProps> = ({
   onNewRequirement,
   onNewUseCase,
   onNewTestCase,
-  onExport,
   onImport,
   onViewHistory,
-  onExportPDF,
-  onExportExcel,
   onImportExcel,
   onOpenExportModal,
   onSearch,
@@ -57,7 +49,6 @@ export const Layout: React.FC<LayoutProps> = ({
   onNewLink,
   onNewCustomAttribute,
   onNewDocument,
-  baselines = [],
   onOpenUserSettings,
   currentUserName,
   onOpenAdvancedSearch,
@@ -87,10 +78,6 @@ export const Layout: React.FC<LayoutProps> = ({
           onImport={onImport}
           onImportExcel={onImportExcel}
           onOpenExportModal={onOpenExportModal}
-          onExport={onExport}
-          onExportPDF={onExportPDF}
-          onExportExcel={onExportExcel}
-          baselines={baselines}
           onOpenUserSettings={onOpenUserSettings}
           currentUserName={currentUserName}
           onOpenAdvancedSearch={onOpenAdvancedSearch}

@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { HeaderBar } from '../HeaderBar';
-import type { ProjectBaseline } from '../../../types';
 
 describe('HeaderBar', () => {
   const defaultProps = {
@@ -172,79 +171,6 @@ describe('HeaderBar', () => {
       fireEvent.click(screen.getByText('Import'));
 
       expect(screen.getByText('Import Excel')).toBeInTheDocument();
-    });
-  });
-
-  describe('Export dropdown', () => {
-    it('should open Export dropdown when clicked', () => {
-      const onExport = vi.fn();
-      render(<HeaderBar {...defaultProps} onExport={onExport} />);
-
-      fireEvent.click(screen.getByText('Export'));
-
-      expect(screen.getByText('Export JSON')).toBeInTheDocument();
-    });
-
-    it('should show Export to PDF when onExportPDF is provided', () => {
-      const onExportPDF = vi.fn();
-      render(<HeaderBar {...defaultProps} onExportPDF={onExportPDF} />);
-
-      fireEvent.click(screen.getByText('Export'));
-
-      expect(screen.getByText('Export to PDF')).toBeInTheDocument();
-    });
-
-    it('should show Export to Excel when onExportExcel is provided', () => {
-      const onExportExcel = vi.fn();
-      render(<HeaderBar {...defaultProps} onExportExcel={onExportExcel} />);
-
-      fireEvent.click(screen.getByText('Export'));
-
-      expect(screen.getByText('Export to Excel')).toBeInTheDocument();
-    });
-
-    it('should show baseline selection in PDF export', () => {
-      const onExportPDF = vi.fn();
-      const baselines: ProjectBaseline[] = [
-        {
-          name: 'Release 1.0',
-          description: 'Release baseline',
-          timestamp: 1000000,
-          commit: 'abc1234def',
-        },
-      ];
-
-      render(<HeaderBar {...defaultProps} onExportPDF={onExportPDF} baselines={baselines} />);
-
-      fireEvent.click(screen.getByText('Export'));
-
-      expect(screen.getByText('Export Version:')).toBeInTheDocument();
-      expect(screen.getByText('Current State')).toBeInTheDocument();
-      expect(screen.getByText('Release 1.0')).toBeInTheDocument();
-    });
-
-    it('should call onExportPDF with selected baseline', () => {
-      const onExportPDF = vi.fn();
-      const baselines: ProjectBaseline[] = [
-        {
-          name: 'Release 1.0',
-          description: 'Release baseline',
-          timestamp: 1000000,
-          commit: 'abc1234def',
-        },
-      ];
-
-      render(<HeaderBar {...defaultProps} onExportPDF={onExportPDF} baselines={baselines} />);
-
-      fireEvent.click(screen.getByText('Export'));
-
-      // Select a baseline
-      const select = screen.getByRole('combobox');
-      fireEvent.change(select, { target: { value: 'Release 1.0' } });
-
-      fireEvent.click(screen.getByText('Export to PDF'));
-
-      expect(onExportPDF).toHaveBeenCalledWith(baselines[0]);
     });
   });
 });

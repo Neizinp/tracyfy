@@ -503,3 +503,30 @@ input[type='radio'] {
 .tf-review-actions .tf-input {
   flex: 1;
 }
+
+/* Export dialog: format choice */
+.tf-export {
+  width: 560px;
+}
+.tf-export-formats {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+.tf-export-format {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--color-border);
+  background-color: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.tf-export-format[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  font-weight: 600;
+}
