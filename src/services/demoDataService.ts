@@ -5,6 +5,8 @@
  */
 
 import { diskCustomAttributeService } from './diskCustomAttributeService';
+import { projectConfigStore } from '../storage/projectConfigStore';
+import { withNewAttribute } from '../domain/projectConfig';
 import { repository } from '../storage/repository';
 import {
   DEMO_PROJECT,
@@ -52,8 +54,11 @@ export async function loadDemoData(): Promise<Project> {
       createdAttrIds.push(existing.id);
     } else {
       try {
-        const newDef = await diskCustomAttributeService.createDefinition(attrDef);
-        createdAttrIds.push(newDef.id);
+        await projectConfigStore.update((config) => {
+          const next = withNewAttribute(config, attrDef);
+          createdAttrIds.push(next.created.id);
+          return next.config;
+        });
       } catch (error) {
         console.error('Failed to create custom attribute:', attrDef.name, error);
       }

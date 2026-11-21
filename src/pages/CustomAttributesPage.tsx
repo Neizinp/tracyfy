@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useCustomAttributes } from '../hooks/useCustomAttributes';
 import { Search } from 'lucide-react';
-import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
 import type { CustomAttributeDefinition, AttributeType } from '../types/customAttributes';
 import { CustomAttributeDefinitionModal } from '../components/CustomAttributeDefinitionModal';
 import { useArtifactFilteredData } from '../hooks/useArtifactFilteredData';
 import { kind } from '../domain/artifactKinds';
-import { notifyError } from '../state';
+import { notifyError, useAppStore } from '../state';
 
 const TYPE_COLORS: Record<AttributeType, string> = {
   text: 'var(--color-info)',
@@ -18,7 +17,9 @@ const TYPE_COLORS: Record<AttributeType, string> = {
 
 export const CustomAttributesPage: React.FC = () => {
   // Shared with the artifact dialogs through the store (single source of truth)
-  const { definitions, loading, refetch: loadDefinitions } = useCustomAttributes();
+  const { definitions, loading } = useCustomAttributes();
+  const addAttributeDefinition = useAppStore((s) => s.addAttributeDefinition);
+  const updateAttributeDefinition = useAppStore((s) => s.updateAttributeDefinition);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDefinition, setEditingDefinition] = useState<CustomAttributeDefinition | null>(
     null
@@ -46,11 +47,10 @@ export const CustomAttributesPage: React.FC = () => {
   const handleModalSubmit = async (data: Omit<CustomAttributeDefinition, 'id'>) => {
     try {
       if (editingDefinition) {
-        await diskCustomAttributeService.updateDefinition(editingDefinition.id, data);
+        await updateAttributeDefinition(editingDefinition.id, data);
       } else {
-        await diskCustomAttributeService.createDefinition(data);
+        await addAttributeDefinition(data);
       }
-      await loadDefinitions();
       handleModalClose();
     } catch (error) {
       notifyError('Could not save custom attribute', error);

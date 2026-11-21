@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link as LinkIcon, ArrowRight, RefreshCw, Plus } from 'lucide-react';
-import { useLinkService } from '../hooks/useLinkService';
+import { Link as LinkIcon, ArrowRight, Plus } from 'lucide-react';
 import { LINK_TYPE_LABELS } from '../domain/linkTypes';
 import { kind, kindOfId } from '../domain/artifactKinds';
 import type { Link } from '../types';
@@ -16,7 +15,10 @@ interface LinksViewProps {
 }
 
 export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAdd }) => {
-  const { allLinks: links, loading, refresh: loadLinks, deleteLink } = useLinkService();
+  // Links come from the store, so every view shows the same ones as soon as they change
+  const links = useAppStore((s) => s.links);
+  const loading = useAppStore((s) => !s.isReady);
+  const deleteLink = useAppStore((s) => s.deleteLink);
   const updateLink = useAppStore((s) => s.updateLink);
   const [filter, setFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -208,24 +210,6 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
               Add
             </button>
           )}
-          <button
-            onClick={loadLinks}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-bg-card)',
-              color: 'var(--color-text-primary)',
-              cursor: 'pointer',
-              fontSize: 'var(--font-size-sm)',
-            }}
-          >
-            <RefreshCw size={14} className={loading ? 'spin' : ''} />
-            Refresh
-          </button>
         </div>
       </div>
 
