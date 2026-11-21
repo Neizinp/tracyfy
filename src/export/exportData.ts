@@ -26,7 +26,7 @@ export interface ExportSource {
   exportedBy?: string;
   /** Commits that changed one artifact, newest first */
   history: (kindId: ArtifactKindId, id: string) => Promise<CommitInfo[]>;
-  /** An image the markdown refers to (`./assets/x.png`), or null */
+  /** An image the markdown refers to (`./assets/x.png`) as it was at the baseline, or null */
   readAsset: (path: string) => Promise<Uint8Array | null>;
 }
 

@@ -8,6 +8,9 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import * as XLSX from 'xlsx';
+import fs from 'node:fs';
+import path from 'node:path';
+import zlib from 'node:zlib';
 import { startApp, type Harness } from './appHarness';
 import { ARTIFACT_KINDS } from '../../domain/artifactKinds';
 
@@ -74,6 +77,29 @@ async function exportVia(format: RegExp, adjust?: () => void): Promise<Uint8Arra
   adjust?.();
   fireEvent.click(screen.getByRole('button', { name: /generate export/i }));
   return saved;
+}
+
+/** A blank RGB PNG of the given size */
+function png(width: number, height: number): Buffer {
+  const chunk = (type: string, data: Buffer) => {
+    const body = Buffer.concat([Buffer.from(type, 'latin1'), data]);
+    const out = Buffer.alloc(body.length + 8);
+    out.writeUInt32BE(data.length, 0);
+    body.copy(out, 4);
+    out.writeUInt32BE(zlib.crc32(body), body.length + 4);
+    return out;
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header.set([8, 2, 0, 0, 0], 8);
+  const pixels = Buffer.alloc((width * 3 + 1) * height);
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', header),
+    chunk('IDAT', zlib.deflateSync(pixels)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
 }
 
 const pdfText = (bytes: Uint8Array) => new TextDecoder('latin1').decode(bytes);
@@ -223,6 +249,35 @@ describe('integration: export', () => {
     expect(current.artifacts.requirement.map((r: { title: string }) => r.title)).toEqual([
       'Sign-in',
     ]);
+  }, 120_000);
+
+  it('a baseline export shows images as they were at the baseline', async () => {
+    h = await startApp();
+    const writeImage = (w: number, height: number) => {
+      fs.mkdirSync(path.join(h.dir, 'assets'), { recursive: true });
+      fs.writeFileSync(path.join(h.dir, 'assets', 'diagram.png'), png(w, height));
+    };
+    writeImage(2, 3);
+    await act(() =>
+      h.app().addArtifact('requirement', {
+        title: 'Login',
+        text: 'See ![diagram](./assets/diagram.png)',
+        dateCreated: now(),
+      } as never)
+    );
+    await commitAll(h, 'Add login');
+    await act(() => h.app().createBaseline('1.0', ''));
+    writeImage(5, 7);
+    await commitAll(h, 'New diagram');
+
+    const pick10 = () =>
+      fireEvent.change(screen.getByLabelText('Project State'), { target: { value: '1.0' } });
+    const atBaseline = pdfText(await exportVia(/pdf document/i, pick10));
+    expect(atBaseline).toMatch(/\/Width 2\s*\/Height 3/);
+    expect(atBaseline).not.toMatch(/\/Width 5\s*\/Height 7/);
+
+    const current = pdfText(await exportVia(/pdf document/i));
+    expect(current).toMatch(/\/Width 5\s*\/Height 7/);
   }, 120_000);
 
   it('the revision history lists changes since the baseline for every kind', async () => {

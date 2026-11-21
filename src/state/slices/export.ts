@@ -36,7 +36,7 @@ export const createExportSlice: StateCreator<AppState, [], [], ExportSlice> = (_
       exportedBy: s.currentUser?.name,
       history: (kindId: Parameters<typeof repository.history>[0], id: string) =>
         repository.history(kindId, id),
-      readAsset: (path: string) => repository.readAsset(path),
+      readAsset: (path: string) => repository.readAsset(path, baseline?.commit),
     };
     if (!baseline) {
       return {
