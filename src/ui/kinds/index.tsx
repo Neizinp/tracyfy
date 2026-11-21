@@ -4,6 +4,15 @@
  * else about a kind is generic and comes from the registry.
  */
 import React from 'react';
+import {
+  BookOpen,
+  CheckSquare,
+  FileStack,
+  FileText,
+  Info,
+  ShieldAlert,
+  type LucideIcon,
+} from 'lucide-react';
 import type { ArtifactKindId } from '../../domain/artifactKinds';
 import { riskLevel } from '../../domain/kindRules';
 import type { ArtifactDocument, DocumentEntry, Link } from '../../types';
@@ -12,6 +21,16 @@ import { DocumentEditor } from '../../components/DocumentEditor';
 import { useAppStore, useAppStoreApi } from '../../state';
 
 export type Draft = Record<string, unknown>;
+
+/** The icon of each kind, wherever kinds are listed side by side */
+export const KIND_ICONS: Record<ArtifactKindId, LucideIcon> = {
+  requirement: FileText,
+  useCase: BookOpen,
+  testCase: CheckSquare,
+  information: Info,
+  risk: ShieldAlert,
+  document: FileStack,
+};
 
 export interface ExtraTab {
   id: string;

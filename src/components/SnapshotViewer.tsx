@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { X, FileText, BookOpen, CheckSquare, Info, Loader } from 'lucide-react';
+import { X, Loader } from 'lucide-react';
 import { realGitService } from '../services/realGitService';
 import type { ProjectSnapshot } from '../services/git/gitHistoryService';
-import type { Requirement, UseCase, TestCase, Information } from '../types';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import { kind } from '../domain/artifactKinds';
+import { ARTIFACT_KINDS, kind, type ArtifactKindId } from '../domain/artifactKinds';
+import { KIND_ICONS } from '../ui/kinds';
 
 interface SnapshotViewerProps {
   isOpen: boolean;
@@ -14,14 +14,17 @@ interface SnapshotViewerProps {
   timestamp: number;
 }
 
-type Tab = 'requirement' | 'useCase' | 'testCase' | 'information';
+type Item = { id: string; title?: string } & Record<string, unknown>;
 
-const TABS: { id: Tab; icon: typeof FileText }[] = [
-  { id: 'requirement', icon: FileText },
-  { id: 'useCase', icon: BookOpen },
-  { id: 'testCase', icon: CheckSquare },
-  { id: 'information', icon: Info },
-];
+/** The text that shows what an artifact says: its body, or its first text section */
+function excerptOf(kindId: ArtifactKindId, item: Item): string {
+  const k = kind(kindId);
+  const textFields = [k.body, ...k.fields.filter((f) => f.type === 'markdown').map((f) => f.id)];
+  for (const id of textFields) {
+    if (id && typeof item[id] === 'string' && item[id]) return item[id] as string;
+  }
+  return '';
+}
 
 export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
   isOpen,
@@ -30,7 +33,7 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
   baselineName,
   timestamp,
 }) => {
-  const [activeTab, setActiveTab] = useState<Tab>('requirement');
+  const [activeTab, setActiveTab] = useState<ArtifactKindId>('requirement');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<ProjectSnapshot | null>(null);
 
@@ -62,10 +65,8 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
 
   if (!isOpen) return null;
 
-  const itemsOf = (tab: Tab): (Requirement | UseCase | TestCase | Information)[] => {
-    if (!data) return [];
-    return data.artifacts[tab] as (Requirement | UseCase | TestCase | Information)[];
-  };
+  const itemsOf = (tab: ArtifactKindId): Item[] =>
+    data ? (data.artifacts[tab] as unknown as Item[]) : [];
 
   const renderContent = () => {
     if (loading) {
@@ -150,11 +151,7 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
                 whiteSpace: 'pre-wrap',
               }}
             >
-              {'text' in item && item.text
-                ? item.text
-                : 'description' in item
-                  ? item.description || ''
-                  : ''}
+              {excerptOf(activeTab, item)}
             </div>
           </div>
         ))}
@@ -251,47 +248,53 @@ export const SnapshotViewer: React.FC<SnapshotViewerProps> = ({
             backgroundColor: 'var(--color-bg-card)',
           }}
         >
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                flex: 1,
-                padding: '12px 16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                background: activeTab === tab.id ? 'var(--color-bg-app)' : 'transparent',
-                border: 'none',
-                borderBottom:
-                  activeTab === tab.id ? '2px solid var(--color-accent)' : '2px solid transparent',
-                color: activeTab === tab.id ? 'var(--color-accent)' : 'var(--color-text-muted)',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              <tab.icon size={18} />
-              {kind(tab.id).label.plural}
-              {data && (
-                <span
-                  style={{
-                    backgroundColor:
-                      activeTab === tab.id ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
-                    color: activeTab === tab.id ? 'white' : 'var(--color-text-muted)',
-                    padding: '0 6px',
-                    borderRadius: 'var(--radius-lg)',
-                    fontSize: '10px',
-                    minWidth: '20px',
-                    textAlign: 'center',
-                  }}
-                >
-                  {itemsOf(tab.id).length}
-                </span>
-              )}
-            </button>
-          ))}
+          {ARTIFACT_KINDS.map((tab) => {
+            const Icon = KIND_ICONS[tab.id];
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  background: activeTab === tab.id ? 'var(--color-bg-app)' : 'transparent',
+                  border: 'none',
+                  borderBottom:
+                    activeTab === tab.id
+                      ? '2px solid var(--color-accent)'
+                      : '2px solid transparent',
+                  color: activeTab === tab.id ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <Icon size={18} />
+                {tab.label.plural}
+                {data && (
+                  <span
+                    style={{
+                      backgroundColor:
+                        activeTab === tab.id ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
+                      color: activeTab === tab.id ? 'white' : 'var(--color-text-muted)',
+                      padding: '0 6px',
+                      borderRadius: 'var(--radius-lg)',
+                      fontSize: '10px',
+                      minWidth: '20px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {itemsOf(tab.id).length}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Content */}
