@@ -1,6 +1,6 @@
 # Tracyfy target design
 
-Status: steps 1–5 of §7 are done; the rest is the plan.
+Status: steps 1–6 of §7 are done; the rest is the plan.
 
 This document describes where the codebase should end up, the decisions behind it, and
 the order in which to get there. The goal is a codebase where a change that concerns
@@ -207,8 +207,8 @@ my-project/                 ← one git repository = one project
 - Frontmatter is parsed with the `yaml` package and validated with zod
   (`src/domain/artifactFormat.ts`, one description per kind). Invalid files show up as a
   notice in the UI (path and reason) and are left out. They are not silently turned into
-  wrong data. Validating custom attribute values against their definitions comes with the
-  field defs in step 6.
+  wrong data. The format of each kind is derived from its fields in the registry. Times are
+  ISO 8601 (`dateCreated: 2026-11-17T13:15:18.275Z`).
 - `tracyfy.yaml` has a `schemaVersion`. Future format changes are explicit migrations
   keyed on it.
 - Removed: `projects/`, `counters/`, `users/`, `baselines/`, `project.md` and
@@ -292,9 +292,17 @@ order is chosen so that each step makes the next one smaller.
    tasks and toasts. Components read it with selectors; the per-kind providers and their
    `handleAddRequirement`-style APIs are gone. Component tests render with a real, seeded
    store (`src/test/renderWithStore.tsx`) instead of mocking hooks.
-6. **Generic UI** (§3.2). ArtifactForm, ArtifactTable and ArtifactDetail driven by field defs,
-   with custom attributes folded in. Delete the per-kind modals, form hooks and lists one kind
-   at a time.
+6. ✅ **Generic UI** (§3.2) - done. Each kind in the registry lists its fields
+   (`FieldDef` in `src/domain/fields.ts`: type, options, default, form tab, table default);
+   custom attributes become the same `FieldDef`, and `fieldsFor(kind, customAttributes)`
+   is the one list everything iterates. The file codec is derived from the fields, and times
+   in files are ISO 8601 (epoch ms from older files are still read). `ArtifactDialog`,
+   `ArtifactsPage` and the column menu in `src/ui/generic/` replace the six modals, seven form
+   hooks, six lists and six pages; `src/ui/kinds/` holds the only kind-specific parts (document
+   outline and PDF export, a risk's level, a test case's verified requirements, kind icons).
+   Advanced search (`src/domain/search.ts`) and the snapshot viewer cover every kind. Table
+   columns are remembered per user and project folder (local storage). The UI changes custom
+   attributes and links only through store actions; `useLinkService` is gone.
 7. **RE features**: traceability rules and rule-based gaps (P2), suspect links (P3),
    lifecycle (P6, replaces workflows).
 8. **Export** (PDF, Excel, JSON) rewritten over the registry.
@@ -308,10 +316,6 @@ features on purpose. Step 7 is new functionality, and only becomes cheap after 1
 
 Things noticed while doing a step that belong to a later one:
 
-- The requirements column selector writes `column-visibility` to localStorage, but nothing
-  reads it back. Column visibility should be stored once, for all kinds, in step 6.
-- **Advanced search does not cover documents**: `useAdvancedSearch` lists kinds by hand.
-  Search should iterate the registry and the field defs in step 6.
 - **PDF and Excel export miss kinds**: revision history in the PDF only covers requirements,
   use cases, test cases and information. This gets fixed by the rewrite in step 8.
 - **Left after step 2**: the JSON import/export keys its collections by state name
@@ -330,27 +334,26 @@ Things noticed while doing a step that belong to a later one:
     files could instead be named by what they link (`TC-007.verifies.REQ-012.md`): one file
     per fact, no ID to allocate, and two branches adding the same link merge cleanly. Worth
     deciding with the link rules in step 7.
-  - Dates in frontmatter are epoch milliseconds (`dateCreated: 1794922552184`). ISO dates
-    would read better as plain text; git also knows when a file changed. Decide in step 6
-    together with the field defs.
-  - The Version History snapshot viewer shows four kinds by hand; it should iterate the
-    registry in step 6.
-  - `FileSystemProvider` still holds one state array per kind; the single store (step 5)
-    replaces it with `repository.load()`'s `artifacts` record.
   - Tags are not pushed with Push; a baseline only exists in the local clone until it is.
 - **Left after step 5**:
-  - Column visibility now lives in the store per kind (`columnVisibility[kind]`), but it
-    is still not saved anywhere. Decide where with the field defs in step 6.
-  - Custom attribute definitions and workflows are still written by components through their
-    disk services (`diskCustomAttributeService`, `diskWorkflowService`). The store follows
-    tracyfy.yaml through `projectConfigStore.subscribe`. Custom attribute writes should become
-    store actions with the field defs in step 6; workflows go in step 7.
   - The sidebar's sync status (ahead/behind) still runs on window events (`git-check`,
     `git-status-changed`) and its own polling, not on store state.
-  - `useLinkService` is now a thin wrapper over the store with a `loading`/`refresh` that do
-    nothing. The generic UI in step 6 can read `links` and call the link actions directly.
-  - An open dialog shows `selectedArtifact.data`, a copy taken when it opened. Dialogs
-    could read the artifact from `artifacts` by ID instead (step 6, ArtifactDetail).
+  - Workflows are still written by components through `diskWorkflowService`; they go in step 7.
+- **Left after step 6**:
+  - Enum values are not checked when a file is read: a requirement with `status: review`
+    loads as is. Which statuses a kind has becomes the lifecycle in step 7 (P6).
+  - Custom attribute values are not validated against their definitions when a file is read,
+    on purpose: renaming a dropdown option must not make every file that uses it unreadable.
+    The dialog enforces required attributes when saving.
+  - PDF and Excel export read the custom attribute definitions themselves
+    (`diskCustomAttributeService`) and list kinds and fields by hand; step 8.
+  - `WorkflowModal` still uses the old form pieces (`ArtifactOverviewFields`,
+    `ArtifactDetailsSections`); they go with workflows in step 7.
+  - Changes users will notice: a requirement's Comments tab is now part of Details, the
+    requirement "Approved" column is gone (Status shows it), a risk's broken Severity column
+    is its Level, an information's description can be edited, and fields that were stored but
+    not editable (a requirement's category) now are.
+  - `BaseArtifactModal`, the Links page and the search dialog still have many inline styles.
 
 ## 8. Open questions
 
