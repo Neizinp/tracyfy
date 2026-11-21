@@ -105,158 +105,52 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
     standaloneLinks,
   });
 
-  const tabStyle = (isActive: boolean): React.CSSProperties => ({
-    padding: '8px 16px',
-    backgroundColor: isActive ? 'var(--color-accent)' : 'transparent',
-    color: isActive ? 'white' : 'var(--color-text-secondary)',
-    border: 'none',
-    borderRadius: 'var(--radius-sm)',
-    cursor: 'pointer',
-    fontWeight: isActive ? 600 : 400,
-    fontSize: 'var(--font-size-sm)',
-    transition: 'all 0.15s',
-  });
+  const tabs: { id: typeof activeTab; label: string }[] = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'gaps', label: `Gaps (${totalGaps})` },
+    { id: 'links', label: `Links (${standaloneLinks.length})` },
+    { id: 'impact', label: 'Impact' },
+    { id: 'matrix', label: 'Matrix' },
+    { id: 'graph', label: 'Graph' },
+  ];
+
+  const stat = (value: number, label: string, tone: string) => (
+    <div className="tf-dashboard-stat" data-tone={tone}>
+      <div className="tf-dashboard-stat-value">{value}</div>
+      <div className="tf-dashboard-stat-label">{label}</div>
+    </div>
+  );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
-      {/* Header with tabs */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div
-          style={{
-            display: 'flex',
-            gap: '4px',
-            backgroundColor: 'var(--color-bg-tertiary)',
-            padding: '4px',
-            borderRadius: 'var(--radius-md)',
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setActiveTab('overview')}
-            style={tabStyle(activeTab === 'overview')}
-          >
-            Overview
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('gaps')}
-            style={tabStyle(activeTab === 'gaps')}
-          >
-            Gaps ({totalGaps})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('links')}
-            style={tabStyle(activeTab === 'links')}
-          >
-            Links ({standaloneLinks.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('impact')}
-            style={tabStyle(activeTab === 'impact')}
-          >
-            Impact
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('matrix')}
-            style={tabStyle(activeTab === 'matrix')}
-          >
-            Matrix
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('graph')}
-            style={tabStyle(activeTab === 'graph')}
-          >
-            Graph
-          </button>
+    <div className="tf-dashboard">
+      <div className="tf-dashboard-header">
+        <div className="tf-dashboard-tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              aria-pressed={activeTab === tab.id}
+              className="tf-dashboard-tab"
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Overview Tab */}
       {activeTab === 'overview' && (
         <>
-          {/* Overall stats */}
-          <div
-            style={{
-              display: 'flex',
-              gap: 'var(--spacing-lg)',
-              padding: 'var(--spacing-lg)',
-              backgroundColor: 'var(--color-bg-card)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--color-border)',
-            }}
-          >
-            <div style={{ textAlign: 'center', flex: 1 }}>
-              <div
-                style={{
-                  fontSize: 'var(--font-size-3xl)',
-                  fontWeight: 700,
-                  color: 'var(--color-text-primary)',
-                }}
-              >
-                {totalArtifacts}
-              </div>
-              <div
-                style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}
-              >
-                Total Artifacts
-              </div>
-            </div>
-            <div style={{ textAlign: 'center', flex: 1 }}>
-              <div
-                style={{
-                  fontSize: 'var(--font-size-3xl)',
-                  fontWeight: 700,
-                  color: 'var(--color-success-light)',
-                }}
-              >
-                {totalLinked}
-              </div>
-              <div
-                style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}
-              >
-                Linked
-              </div>
-            </div>
-            <div style={{ textAlign: 'center', flex: 1 }}>
-              <div
-                style={{
-                  fontSize: 'var(--font-size-3xl)',
-                  fontWeight: 700,
-                  color: 'var(--color-warning-light)',
-                }}
-              >
-                {totalGaps}
-              </div>
-              <div
-                style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}
-              >
-                Gaps
-              </div>
-            </div>
-            <div style={{ textAlign: 'center', flex: 1 }}>
-              <div
-                style={{
-                  fontSize: 'var(--font-size-3xl)',
-                  fontWeight: 700,
-                  color: 'var(--color-accent)',
-                }}
-              >
-                {standaloneLinks.length}
-              </div>
-              <div
-                style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}
-              >
-                Links
-              </div>
-            </div>
+          <div className="tf-dashboard-stats">
+            {stat(totalArtifacts, 'Total Artifacts', 'primary')}
+            {stat(totalLinked, 'Linked', 'success')}
+            {stat(totalGaps, 'Gaps', 'warning')}
+            {stat(standaloneLinks.length, 'Links', 'accent')}
           </div>
 
           {/* Summary Cards */}
-          <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap' }}>
+          <div className="tf-dashboard-cards">
             {ARTIFACT_KINDS.map(({ id: type, label: { plural: label } }) => (
               <SummaryCard
                 key={type}
@@ -273,83 +167,33 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
             ))}
           </div>
 
-          {/* Quick Links Legend */}
-          <div
-            style={{
-              padding: 'var(--spacing-md)',
-              backgroundColor: 'var(--color-bg-tertiary)',
-              borderRadius: 'var(--radius-md)',
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-text-secondary)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Link2 size={14} />
-                <strong>Tip:</strong>
-              </div>
-              <span>
-                Gaps are artifacts that break a traceability rule (see Traceability Rules), such as
-                a requirement no test case verifies. Use the Links tab to view all relationships.
-              </span>
-            </div>
+          <div className="tf-dashboard-tip">
+            <span className="tf-dashboard-tip-label">
+              <Link2 size={14} />
+              <strong>Tip:</strong>
+            </span>
+            <span>
+              Gaps are artifacts that break a traceability rule (see Traceability Rules), such as a
+              requirement no test case verifies. Use the Links tab to view all relationships.
+            </span>
           </div>
         </>
       )}
 
       {/* Gaps Tab */}
       {activeTab === 'gaps' && (
-        <div
-          style={{
-            backgroundColor: 'var(--color-bg-card)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--color-border)',
-            padding: 'var(--spacing-md)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 'var(--spacing-md)',
-            }}
-          >
-            <h3
-              style={{
-                margin: 0,
-                fontSize: 'var(--font-size-lg)',
-                color: 'var(--color-text-primary)',
-              }}
-            >
-              Gaps ({filteredGaps.length})
-            </h3>
+        <div className="tf-dashboard-gaps">
+          <div className="tf-dashboard-gaps-header">
+            <h3>Gaps ({filteredGaps.length})</h3>
             <TypeFilterButtons selectedTypes={selectedTypes} onToggle={toggleType} />
           </div>
           {filteredGaps.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: 'var(--spacing-xl)',
-                color: 'var(--color-text-muted)',
-              }}
-            >
-              <CheckCircle2
-                size={48}
-                style={{ marginBottom: '12px', color: 'var(--color-success-light)' }}
-              />
+            <div className="tf-dashboard-no-gaps">
+              <CheckCircle2 size={48} />
               <p>No gaps: every traceability rule is met.</p>
             </div>
           ) : (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                maxHeight: '400px',
-                overflowY: 'auto',
-              }}
-            >
+            <div className="tf-dashboard-gap-list">
               {filteredGaps.map((gap, i) => (
                 <GapItem
                   key={`${gap.artifact.id}-${i}`}

@@ -1313,3 +1313,121 @@ input[type='radio'] {
   color: var(--color-text-muted);
   cursor: default;
 }
+
+/* Traceability dashboard */
+.tf-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+.tf-dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tf-dashboard-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-tertiary);
+}
+.tf-dashboard-tab {
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tf-dashboard-tab[aria-pressed='true'] {
+  background-color: var(--color-accent);
+  color: white;
+  font-weight: 600;
+}
+.tf-dashboard-stats {
+  display: flex;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-card);
+}
+.tf-dashboard-stat {
+  flex: 1;
+  text-align: center;
+}
+.tf-dashboard-stat-value {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+.tf-dashboard-stat[data-tone='success'] .tf-dashboard-stat-value {
+  color: var(--color-success-light);
+}
+.tf-dashboard-stat[data-tone='warning'] .tf-dashboard-stat-value {
+  color: var(--color-warning-light);
+}
+.tf-dashboard-stat[data-tone='accent'] .tf-dashboard-stat-value {
+  color: var(--color-accent);
+}
+.tf-dashboard-stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+.tf-dashboard-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+.tf-dashboard-tip {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-tertiary);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+.tf-dashboard-tip-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tf-dashboard-gaps {
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-card);
+}
+.tf-dashboard-gaps-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+.tf-dashboard-gaps-header h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
+}
+.tf-dashboard-no-gaps {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+.tf-dashboard-no-gaps svg {
+  margin-bottom: 12px;
+  color: var(--color-success-light);
+}
+.tf-dashboard-gap-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
