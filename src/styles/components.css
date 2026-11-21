@@ -758,3 +758,139 @@ input[type='radio'] {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Link dialog (LinkModal) */
+.tf-linkmodal {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.tf-linkmodal-box {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+.tf-linkmodal-source {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tf-linkmodal-label {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+.tf-linkmodal-source-id {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: monospace;
+}
+.tf-linkmodal-badge {
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-on-accent);
+}
+.tf-linkmodal-id {
+  font-weight: 600;
+  color: var(--color-accent);
+}
+.tf-linkmodal-target {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tf-linkmodal-kinds {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-secondary);
+}
+.tf-linkmodal-kind {
+  flex: 1;
+  padding: 6px;
+  border: none;
+  border-radius: var(--radius-xs);
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tf-linkmodal-kind[aria-pressed='true'] {
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+.tf-linkmodal-search {
+  position: relative;
+}
+.tf-linkmodal-search-icon {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+}
+.tf-linkmodal-search input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  background-color: var(--color-bg-app);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+.tf-linkmodal-list {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-secondary);
+}
+.tf-linkmodal-empty {
+  padding: 20px;
+  text-align: center;
+  font-size: var(--font-size-sm);
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+.tf-linkmodal-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.tf-linkmodal-item:hover {
+  background-color: var(--color-bg-app);
+}
+.tf-linkmodal-item[data-selected] {
+  background-color: var(--color-info-bg);
+}
+.tf-linkmodal-item-id {
+  font-family: monospace;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-accent);
+}
+.tf-linkmodal-item-title {
+  overflow: hidden;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
