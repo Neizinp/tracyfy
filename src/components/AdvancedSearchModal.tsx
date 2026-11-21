@@ -18,22 +18,6 @@ interface AdvancedSearchModalProps {
   onNavigateToArtifact: (type: string, id: string) => void;
 }
 
-const selectStyle: React.CSSProperties = {
-  padding: '8px 12px',
-  borderRadius: 'var(--radius-sm)',
-  border: '1px solid var(--color-border)',
-  backgroundColor: 'var(--color-bg-app)',
-  color: 'var(--color-text-primary)',
-  fontSize: '13px',
-  minWidth: '140px',
-};
-
-const inputStyle: React.CSSProperties = {
-  ...selectStyle,
-  flex: 1,
-  minWidth: '120px',
-};
-
 export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
   isOpen,
   onClose,
@@ -76,184 +60,62 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'var(--color-bg-overlay)',
-        backdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-        paddingTop: '6vh',
-        zIndex: 1000,
-      }}
-      onClick={onClose}
-    >
+    <div className="tf-search-backdrop" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Advanced Search"
-        style={{
-          backgroundColor: 'var(--color-bg-card)',
-          borderRadius: 'var(--radius-xl)',
-          width: '95%',
-          maxWidth: '950px',
-          maxHeight: '85vh',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          boxShadow: 'var(--shadow-popover)',
-          border: '1px solid var(--color-border)',
-        }}
+        className="tf-search-dialog"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div
-          style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--color-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Search size={22} style={{ color: 'var(--color-accent)' }} />
-            <span style={{ fontSize: '18px', fontWeight: 600 }}>Advanced Search</span>
+        <div className="tf-search-header">
+          <div className="tf-search-heading">
+            <Search size={22} className="tf-accent-icon" />
+            <span>Advanced Search</span>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--color-text-muted)',
-              padding: '4px',
-            }}
-          >
+          <button onClick={onClose} className="tf-search-icon-button">
             <X size={20} />
           </button>
         </div>
 
-        {/* Criteria Toggle */}
-        <div
-          style={{
-            padding: '10px 20px',
-            backgroundColor: 'var(--color-bg-secondary)',
-            borderBottom: '1px solid var(--color-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <button
-            onClick={() => setShowCriteria(!showCriteria)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--color-text-secondary)',
-              fontSize: '13px',
-              fontWeight: 500,
-            }}
-          >
+        <div className="tf-search-bar">
+          <button onClick={() => setShowCriteria(!showCriteria)} className="tf-search-toggle">
             <Filter size={14} />
             Search Criteria
             {activeCriteriaCount > 0 && (
-              <span
-                style={{
-                  backgroundColor: 'var(--color-accent)',
-                  color: 'var(--color-on-accent)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '1px 7px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                }}
-              >
-                {activeCriteriaCount}
-              </span>
+              <span className="tf-search-count">{activeCriteriaCount}</span>
             )}
             {showCriteria ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={handleClearAll}
-              style={{
-                padding: '5px 10px',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'transparent',
-                color: 'var(--color-text-secondary)',
-                fontSize: '12px',
-                cursor: 'pointer',
-              }}
-            >
+          <div className="tf-search-bar-actions">
+            <button onClick={handleClearAll} className="tf-search-small tf-search-small-plain">
               Clear All
             </button>
             <button
               onClick={() => setShowSaveDialog(true)}
-              style={{
-                padding: '5px 10px',
-                borderRadius: 'var(--radius-sm)',
-                border: 'none',
-                backgroundColor: 'var(--color-accent)',
-                color: 'var(--color-on-accent)',
-                fontSize: '12px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
+              className="tf-search-small tf-search-small-primary"
             >
               <Save size={12} /> Save Search
             </button>
           </div>
         </div>
 
-        {/* Criteria Builder */}
         {showCriteria && (
-          <div
-            style={{
-              padding: '16px 20px',
-              borderBottom: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-bg-secondary)',
-            }}
-          >
+          <div className="tf-search-criteria">
             {criteria.map((criterion, index) => {
               const prop = findProperty(propertyGroups, criterion.property);
               const propType = prop?.type ?? 'text';
               const conditions = CONDITIONS[propType];
 
               return (
-                <div
-                  key={criterion.id}
-                  style={{
-                    display: 'flex',
-                    gap: '10px',
-                    alignItems: 'center',
-                    marginBottom: '10px',
-                  }}
-                >
-                  {index > 0 && (
-                    <span
-                      style={{ fontSize: '12px', color: 'var(--color-text-muted)', width: '30px' }}
-                    >
-                      AND
-                    </span>
-                  )}
-                  {index === 0 && <span style={{ width: '30px' }} />}
+                <div key={criterion.id} className="tf-search-criterion">
+                  <span className="tf-search-and">{index > 0 ? 'AND' : null}</span>
 
-                  {/* Property selector */}
                   <select
                     value={criterion.property}
                     onChange={(e) => updateCriterion(criterion.id, 'property', e.target.value)}
-                    style={selectStyle}
+                    className="tf-search-field"
                   >
                     {propertyGroups.map((group) => (
                       <optgroup key={group.label} label={group.label}>
@@ -266,11 +128,10 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                     ))}
                   </select>
 
-                  {/* Condition selector */}
                   <select
                     value={criterion.condition}
                     onChange={(e) => updateCriterion(criterion.id, 'condition', e.target.value)}
-                    style={{ ...selectStyle, minWidth: '120px' }}
+                    className="tf-search-field tf-search-condition"
                   >
                     {conditions.map((c) => (
                       <option key={c.value} value={c.value}>
@@ -279,13 +140,12 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                     ))}
                   </select>
 
-                  {/* Value input */}
                   {!criterion.condition.includes('Empty') &&
                     (prop?.options ? (
                       <select
                         value={criterion.value}
                         onChange={(e) => updateCriterion(criterion.id, 'value', e.target.value)}
-                        style={inputStyle}
+                        className="tf-search-field tf-search-value"
                       >
                         <option value="">Select...</option>
                         {prop.options.map((o) => (
@@ -301,7 +161,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                         onChange={(e) => updateCriterion(criterion.id, 'value', e.target.value)}
                         placeholder="YYYY-MM-DD"
                         pattern="\d{4}-\d{2}-\d{2}"
-                        style={inputStyle}
+                        className="tf-search-field tf-search-value"
                       />
                     ) : (
                       <input
@@ -309,22 +169,14 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                         value={criterion.value}
                         onChange={(e) => updateCriterion(criterion.id, 'value', e.target.value)}
                         placeholder="Enter value..."
-                        style={inputStyle}
+                        className="tf-search-field tf-search-value"
                       />
                     ))}
 
-                  {/* Remove button */}
                   <button
                     onClick={() => removeCriterion(criterion.id)}
                     disabled={criteria.length === 1}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: criteria.length > 1 ? 'pointer' : 'default',
-                      color:
-                        criteria.length > 1 ? 'var(--color-text-muted)' : 'var(--color-border)',
-                      padding: '4px',
-                    }}
+                    className="tf-search-icon-button tf-search-remove"
                   >
                     <X size={16} />
                   </button>
@@ -332,51 +184,21 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
               );
             })}
 
-            <button
-              onClick={addCriterion}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                marginTop: '4px',
-                background: 'none',
-                border: '1px dashed var(--color-border)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '8px 14px',
-                cursor: 'pointer',
-                color: 'var(--color-text-secondary)',
-                fontSize: '13px',
-              }}
-            >
+            <button onClick={addCriterion} className="tf-search-add">
               <Plus size={14} /> Add Criterion
             </button>
           </div>
         )}
 
-        {/* Results & Saved Searches */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 }}>
-          {/* Results */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
-            <div
-              style={{
-                color: 'var(--color-text-muted)',
-                fontSize: '12px',
-                marginBottom: '8px',
-                fontWeight: 500,
-              }}
-            >
+        <div className="tf-search-main">
+          <div className="tf-search-results">
+            <div className="tf-search-results-count">
               {results.length} {results.length === 1 ? 'result' : 'results'}
             </div>
             {results.length === 0 ? (
-              <div
-                style={{
-                  textAlign: 'center',
-                  padding: '40px 20px',
-                  color: 'var(--color-text-muted)',
-                }}
-              >
-                <Search size={40} style={{ opacity: 0.3, marginBottom: '12px' }} />
-                <div style={{ fontSize: '14px' }}>No artifacts match your search criteria</div>
+              <div className="tf-search-none">
+                <Search size={40} />
+                <div>No artifacts match your search criteria</div>
               </div>
             ) : (
               results.slice(0, 100).map((result) => {
@@ -385,168 +207,50 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                   <div
                     key={`${result.type}-${result.id}`}
                     onClick={() => handleResultClick(result)}
-                    style={{
-                      padding: '12px 14px',
-                      borderRadius: 'var(--radius-lg)',
-                      marginBottom: '6px',
-                      cursor: 'pointer',
-                      backgroundColor: 'var(--color-bg-secondary)',
-                      border: '1px solid transparent',
-                      transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
-                      e.currentTarget.style.borderColor = 'var(--color-border)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)';
-                      e.currentTarget.style.borderColor = 'transparent';
-                    }}
+                    className="tf-search-result"
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className="tf-search-result-head">
                       <span
-                        style={{
-                          fontSize: '10px',
-                          fontWeight: 700,
-                          padding: '3px 8px',
-                          borderRadius: 'var(--radius-xs)',
-                          backgroundColor: typeColors.bg,
-                          color: typeColors.text,
-                        }}
+                        className="tf-search-result-id"
+                        // The kind's own colors
+                        style={{ backgroundColor: typeColors.bg, color: typeColors.text }}
                       >
                         {result.id}
                       </span>
-                      <span
-                        style={{
-                          fontWeight: 500,
-                          fontSize: '14px',
-                          color: 'var(--color-text-primary)',
-                        }}
-                      >
-                        {result.title}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '11px',
-                          color: 'var(--color-text-muted)',
-                          marginLeft: 'auto',
-                        }}
-                      >
-                        {result.status}
-                      </span>
+                      <span className="tf-search-result-title">{result.title}</span>
+                      <span className="tf-search-result-status">{result.status}</span>
                     </div>
                     {result.description && (
-                      <div
-                        style={{
-                          fontSize: '12px',
-                          color: 'var(--color-text-muted)',
-                          marginTop: '6px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {result.description}
-                      </div>
+                      <div className="tf-search-result-description">{result.description}</div>
                     )}
                   </div>
                 );
               })
             )}
             {results.length > 100 && (
-              <div
-                style={{
-                  textAlign: 'center',
-                  padding: '10px',
-                  color: 'var(--color-text-muted)',
-                  fontSize: '12px',
-                }}
-              >
-                Showing first 100 of {results.length} results
-              </div>
+              <div className="tf-search-more">Showing first 100 of {results.length} results</div>
             )}
           </div>
 
-          {/* Saved Searches */}
-          <div
-            style={{
-              width: '180px',
-              borderLeft: '1px solid var(--color-border)',
-              padding: '12px',
-              overflowY: 'auto',
-              backgroundColor: 'var(--color-bg-app)',
-            }}
-          >
-            <div
-              style={{
-                fontSize: '11px',
-                fontWeight: 600,
-                color: 'var(--color-text-muted)',
-                marginBottom: '10px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-              }}
-            >
-              Saved Searches
-            </div>
+          <div className="tf-search-saved">
+            <div className="tf-search-saved-title">Saved Searches</div>
             {savedFilters.length === 0 ? (
-              <div
-                style={{
-                  color: 'var(--color-text-muted)',
-                  fontSize: '12px',
-                  textAlign: 'center',
-                  padding: '20px 0',
-                }}
-              >
-                No saved searches
-              </div>
+              <div className="tf-search-saved-none">No saved searches</div>
             ) : (
               savedFilters.map((filter) => (
                 <div
                   key={filter.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 10px',
-                    borderRadius: 'var(--radius-sm)',
-                    marginBottom: '4px',
-                    cursor: 'pointer',
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    fontSize: '13px',
-                  }}
+                  className="tf-search-saved-item"
                   onClick={() => handleLoadFilter(filter)}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)')
-                  }
                 >
-                  <Filter size={12} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
-                  <span
-                    style={{
-                      flex: 1,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {filter.name}
-                  </span>
+                  <Filter size={12} className="tf-search-saved-icon" />
+                  <span className="tf-search-saved-name">{filter.name}</span>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteFilter(filter.id);
                     }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'var(--color-text-muted)',
-                      padding: '2px',
-                      opacity: 0.6,
-                    }}
+                    className="tf-search-icon-button tf-search-saved-delete"
                   >
                     <Trash2 size={12} />
                   </button>
@@ -556,82 +260,30 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
           </div>
         </div>
 
-        {/* Save Dialog */}
         {showSaveDialog && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundColor: 'var(--color-bg-overlay)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 'var(--radius-xl)',
-            }}
-            onClick={() => setShowSaveDialog(false)}
-          >
-            <div
-              style={{
-                backgroundColor: 'var(--color-bg-card)',
-                padding: '24px',
-                borderRadius: 'var(--radius-lg)',
-                width: '320px',
-                boxShadow: 'var(--shadow-popover)',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
-                Save Search
-              </div>
+          <div className="tf-search-save-backdrop" onClick={() => setShowSaveDialog(false)}>
+            <div className="tf-search-save" onClick={(e) => e.stopPropagation()}>
+              <div className="tf-search-save-title">Save Search</div>
               <input
                 type="text"
                 value={saveFilterName}
                 onChange={(e) => setSaveFilterName(e.target.value)}
                 placeholder="Enter search name..."
                 autoFocus
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--color-bg-app)',
-                  color: 'var(--color-text-primary)',
-                  fontSize: '14px',
-                  marginBottom: '16px',
-                  boxSizing: 'border-box',
-                }}
+                className="tf-search-save-name"
                 onKeyDown={(e) => e.key === 'Enter' && handleSaveFilter()}
               />
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <div className="tf-search-save-actions">
                 <button
                   onClick={() => setShowSaveDialog(false)}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'transparent',
-                    color: 'var(--color-text-secondary)',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                  }}
+                  className="tf-search-save-button tf-search-save-cancel"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveFilter}
                   disabled={!saveFilterName.trim()}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: 'var(--radius-md)',
-                    border: 'none',
-                    backgroundColor: saveFilterName.trim()
-                      ? 'var(--color-accent)'
-                      : 'var(--color-bg-secondary)',
-                    color: saveFilterName.trim() ? 'white' : 'var(--color-text-muted)',
-                    cursor: saveFilterName.trim() ? 'pointer' : 'default',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                  }}
+                  className="tf-search-save-button tf-search-save-confirm"
                 >
                   Save
                 </button>
