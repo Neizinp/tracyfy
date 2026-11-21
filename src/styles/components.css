@@ -595,3 +595,166 @@ input[type='radio'] {
   align-items: center;
   gap: var(--spacing-xs);
 }
+
+/* BaseArtifactModal: the dialog every artifact and settings form opens in */
+.tf-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg-overlay);
+  backdrop-filter: blur(2px);
+}
+.tf-modal {
+  display: flex;
+  flex-direction: column;
+  max-width: 95%;
+  overflow: hidden;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-bg-raised);
+  box-shadow: var(--shadow-dialog);
+}
+.tf-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--color-border);
+}
+.tf-modal-header-tabs {
+  padding: 16px 18px 6px;
+  border-bottom: none;
+}
+.tf-modal-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+.tf-modal-back {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.tf-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+.tf-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.tf-modal-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+.tf-modal-tab {
+  position: relative;
+  bottom: -1px;
+  padding: 8px 8px 9px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+.tf-modal-tab[data-active] {
+  border-bottom-color: var(--color-accent);
+  color: var(--color-text-primary);
+}
+.tf-modal-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  overflow-y: auto;
+}
+.tf-modal-confirm {
+  margin: 0 var(--spacing-lg) var(--spacing-lg);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  background-color: var(--color-error-bg);
+}
+.tf-modal-confirm-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--spacing-xs);
+  font-weight: 600;
+  color: var(--color-status-error);
+}
+.tf-modal-confirm-message {
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+.tf-modal-confirm-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+.tf-modal-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--color-border);
+}
+.tf-modal-spacer {
+  flex: 1;
+}
+.tf-modal-button {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  cursor: pointer;
+}
+.tf-modal-cancel,
+.tf-modal-secondary {
+  border: 1px solid var(--color-border-light);
+  color: var(--color-text-primary);
+}
+.tf-modal-secondary {
+  color: var(--color-text-secondary);
+}
+.tf-modal-danger {
+  border: none;
+  background-color: var(--color-error);
+  color: var(--color-on-accent);
+}
+.tf-modal-submit {
+  padding: 0 14px;
+  border: none;
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: var(--shadow-popover);
+}
+.tf-modal-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
