@@ -1,20 +1,17 @@
+import type { ArtifactKindId } from '../domain/artifactKinds';
+
 export interface ArtifactChange {
   id: string;
   type:
-    | 'requirement'
-    | 'usecase'
-    | 'testcase'
-    | 'information'
+    | ArtifactKindId
     | 'project'
     | 'asset'
-    | 'risk'
     | 'user'
     | 'counter'
     | 'link'
     | 'custom-attribute'
     | 'saved-filter'
-    | 'workflow'
-    | 'document';
+    | 'workflow';
   title: string;
   status: 'new' | 'modified'; // No 'deleted' - artifacts can only be removed from projects
   path: string;
@@ -55,7 +52,7 @@ export interface ProjectBaseline {
   artifactCommits: {
     [artifactId: string]: {
       commitHash: string;
-      type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk' | 'document';
+      type: ArtifactKindId;
     };
   };
   // Track what was added/removed from project since last baseline

@@ -4,11 +4,15 @@
  * open it from the list → edit and save → saved and marked modified →
  * save again without changes → nothing changes → restart → still there.
  */
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, it, expect, afterEach } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { startApp, type Harness, type AppHooks } from './appHarness';
+import { kind, type ArtifactKindId } from '../../domain/artifactKinds';
 
 interface TypeCase {
+  kind: ArtifactKindId;
   name: string;
   menuItem: string;
   createLabel: RegExp;
@@ -20,6 +24,7 @@ interface TypeCase {
 
 const TYPES: TypeCase[] = [
   {
+    kind: 'requirement',
     name: 'requirement',
     menuItem: 'New Requirement',
     createLabel: /create requirement/i,
@@ -28,6 +33,7 @@ const TYPES: TypeCase[] = [
     all: (a) => a.globalState.requirements,
   },
   {
+    kind: 'useCase',
     name: 'use case',
     menuItem: 'New Use Case',
     createLabel: /create use case/i,
@@ -36,6 +42,7 @@ const TYPES: TypeCase[] = [
     all: (a) => a.globalState.useCases,
   },
   {
+    kind: 'testCase',
     name: 'test case',
     menuItem: 'New Test Case',
     createLabel: /create test case/i,
@@ -44,6 +51,7 @@ const TYPES: TypeCase[] = [
     all: (a) => a.globalState.testCases,
   },
   {
+    kind: 'information',
     name: 'information',
     menuItem: 'New Information',
     createLabel: /create information/i,
@@ -52,6 +60,7 @@ const TYPES: TypeCase[] = [
     all: (a) => a.globalState.information,
   },
   {
+    kind: 'risk',
     name: 'risk',
     menuItem: 'New Risk',
     createLabel: /create risk/i,
@@ -60,6 +69,7 @@ const TYPES: TypeCase[] = [
     all: (a) => a.globalState.risks,
   },
   {
+    kind: 'document',
     name: 'document',
     menuItem: 'New Document',
     createLabel: /create document/i,
@@ -133,5 +143,115 @@ describe.each(TYPES)('integration: $name lifecycle via the UI', (t) => {
     // Restart → still there
     await h.restart();
     expect(t.all(h.app()).find((a) => a.id === id)?.title).toBe(`My ${t.name} v2`);
+  }, 90_000);
+});
+
+describe.each(TYPES)('integration: custom attribute on a $name', (t) => {
+  let h: Harness;
+  afterEach(() => h?.cleanup());
+
+  it('can be defined for this kind and shows in its dialog', async () => {
+    h = await startApp({ initialRoute: t.route });
+
+    fireEvent.click(screen.getByRole('button', { name: /create new/i }));
+    fireEvent.click(await screen.findByText('New Custom Attribute'));
+    let dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByPlaceholderText('e.g., Component, Release Version'), {
+      target: { value: 'Component' },
+    });
+    // New attributes apply to requirements by default; make this one apply to t.kind only
+    if (t.kind !== 'requirement') {
+      fireEvent.click(within(dialog).getByText(kind('requirement').label.plural));
+      fireEvent.click(within(dialog).getByText(kind(t.kind).label.plural));
+    }
+    fireEvent.click(within(dialog).getByRole('button', { name: /create attribute/i }));
+    await h.settle();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    const [file] = fs.readdirSync(path.join(h.dir, 'custom-attributes'));
+    expect(h.readFile(`custom-attributes/${file}`)).toMatch(
+      new RegExp(`appliesTo:[\\s\\S]*${t.kind}`)
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /create new/i }));
+    fireEvent.click(await screen.findByText(t.menuItem));
+    dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Custom Attributes' }));
+    expect(await within(dialog).findByText('Component')).toBeInTheDocument();
+  }, 60_000);
+});
+
+describe.each(TYPES)('integration: opening a $name from elsewhere', (t) => {
+  let h: Harness;
+  afterEach(() => h?.cleanup());
+
+  const expectDialogFor = async (title: string) => {
+    const dialog = await screen.findByRole('dialog');
+    await waitFor(() => expect(titleInput(dialog)).toHaveValue(title));
+    return dialog;
+  };
+
+  it('from the Links page and from search', async () => {
+    h = await startApp({ initialRoute: '/links' });
+
+    // Something to link from
+    const source = await act(() =>
+      h.app().requirements.handleAddRequirement({
+        title: 'Link source',
+        description: '',
+        text: '',
+        rationale: '',
+        status: 'draft',
+        priority: 'medium',
+        dateCreated: Date.now(),
+      } as never)
+    );
+
+    // The artifact, created through the UI
+    fireEvent.click(screen.getByRole('button', { name: /create new/i }));
+    fireEvent.click(await screen.findByText(t.menuItem));
+    let dialog = await screen.findByRole('dialog');
+    fireEvent.change(titleInput(dialog), { target: { value: `My ${t.name}` } });
+    dialog
+      .querySelectorAll<HTMLInputElement>('input[required], textarea[required]')
+      .forEach((el) => {
+        if (!el.value) fireEvent.change(el, { target: { value: 'Someone' } });
+      });
+    fireEvent.click(within(dialog).getByRole('button', { name: t.createLabel }));
+    await h.settle();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    const target = t.all(h.app()).find((a) => a.title === `My ${t.name}`)!;
+    expect(
+      await screen.findByText(`${kind(t.kind).label.singular} ${target.id} created`)
+    ).toBeInTheDocument();
+
+    await act(() =>
+      h.app().fileSystem.createLink((source as { id: string }).id, target.id, 'related_to')
+    );
+    await h.settle();
+
+    // Links page: click the target's ID
+    fireEvent.click(await within(await screen.findByRole('table')).findByText(target.id));
+    dialog = await expectDialogFor(`My ${t.name}`);
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    // History: click the artifact on its commit
+    await act(() => h.app().fileSystem.commitFile(`${t.folder}/${target.id}.md`, 'Add it'));
+    await h.settle();
+    await act(async () => h.app().ui.setIsVersionHistoryOpen(true));
+    const history = await screen.findByRole('dialog', { name: 'History' });
+    fireEvent.click(within(history).getByRole('button', { name: 'Commits' }));
+    fireEvent.click(await within(history).findByRole('button', { name: target.id }));
+    dialog = await expectDialogFor(`My ${t.name}`);
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    // Search: click the result (search does not cover documents yet, see DESIGN.md)
+    if (t.kind === 'document') return;
+    await act(async () => h.app().ui.setIsAdvancedSearchOpen(true));
+    const search = await screen.findByRole('dialog', { name: 'Advanced Search' });
+    fireEvent.click(await within(search).findByText(target.id));
+    await expectDialogFor(`My ${t.name}`);
   }, 90_000);
 });

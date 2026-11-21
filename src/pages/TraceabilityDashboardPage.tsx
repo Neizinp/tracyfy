@@ -12,7 +12,8 @@ import {
 } from '../app/providers';
 import { useLinkService } from '../hooks/useLinkService';
 import { notifyError } from '../app/providers/ToastProvider';
-import type { LinkableType } from '../constants/linkableArtifacts';
+import { isKindId } from '../domain/artifactKinds';
+import { useOpenArtifact } from '../hooks/useOpenArtifact';
 
 type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
 
@@ -31,6 +32,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
   const { risks } = useRisks();
   const { documents } = useDocuments();
   const { searchQuery, setLinkSourceId, setLinkSourceType, setIsLinkModalOpen } = useUI();
+  const openArtifact = useOpenArtifact();
   const { allLinks: standaloneLinks, deleteLink } = useLinkService({});
 
   const filteredRequirements = useMemo(() => {
@@ -111,16 +113,8 @@ export const TraceabilityDashboardPage: React.FC = () => {
   // Handler to open LinkModal for adding a link
   const handleAddLink = useCallback(
     (artifactId: string, artifactType: string) => {
-      const typeMap: Record<string, LinkableType> = {
-        requirement: 'requirement',
-        useCase: 'usecase',
-        testCase: 'testcase',
-        information: 'information',
-        risk: 'risk',
-        document: 'document',
-      };
       setLinkSourceId(artifactId);
-      setLinkSourceType(typeMap[artifactType] || 'requirement');
+      setLinkSourceType(isKindId(artifactType) ? artifactType : 'requirement');
       setIsLinkModalOpen(true);
     },
     [setLinkSourceId, setLinkSourceType, setIsLinkModalOpen]
@@ -149,6 +143,7 @@ export const TraceabilityDashboardPage: React.FC = () => {
       documents={filteredDocuments}
       standaloneLinks={standaloneLinks}
       initialTab={initialTab}
+      onSelectArtifact={openArtifact}
       onAddLink={handleAddLink}
       onRemoveLink={handleRemoveLink}
     />

@@ -20,7 +20,7 @@ interface RisksContextValue {
 }
 
 const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<Risk>({
-  type: 'risks',
+  type: 'risk',
   displayName: 'Risks',
   useData: (state) => ({
     items: state.risks,

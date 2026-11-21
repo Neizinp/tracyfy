@@ -95,6 +95,26 @@ describe('integration: links', () => {
     expect(within(reqDialog).getByText(b.id)).toBeInTheDocument();
   }, 60_000);
 
+  it('both ends of a link open the linked artifact from the Relationships tab', async () => {
+    h = await startApp();
+    const a = await addRequirement(h, 'Login');
+    const b = await addRequirement(h, 'Logout');
+    await act(() => h.app().fileSystem.createLink(a.id, b.id, 'related_to'));
+    await h.settle();
+
+    // Outgoing: from a, open b
+    await openRelationships(h, a);
+    fireEvent.click(within(await screen.findByRole('dialog')).getByText(b.id));
+    const bDialog = await screen.findByRole('dialog', { name: `Edit Requirement - ${b.id}` });
+
+    // Incoming: from b, open a
+    fireEvent.click(within(bDialog).getByRole('button', { name: 'Relationships' }));
+    fireEvent.click(await within(bDialog).findByText(a.id));
+    expect(
+      await screen.findByRole('dialog', { name: `Edit Requirement - ${a.id}` })
+    ).toBeInTheDocument();
+  }, 60_000);
+
   it('links survive a restart', async () => {
     h = await startApp();
     const a = await addRequirement(h, 'Login');

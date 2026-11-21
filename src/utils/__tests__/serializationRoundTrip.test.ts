@@ -160,7 +160,7 @@ const document: ArtifactDocument = {
   description: TRICKY,
   structure: [
     { type: 'heading', title: 'Intro: overview', level: 1 },
-    { type: 'artifact', id: 'REQ-042', artifactType: 'requirements' },
+    { type: 'artifact', id: 'REQ-042', artifactType: 'requirement' },
     { type: 'heading', title: 'Details', level: 2 },
   ],
   dateCreated: T0,

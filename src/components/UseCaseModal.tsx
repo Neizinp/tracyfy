@@ -269,7 +269,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
           loading={linksLoading}
           onAddLink={() => {
             setLinkSourceId(useCase.id);
-            setLinkSourceType('usecase');
+            setLinkSourceType('useCase');
             setIsLinkModalOpen(true);
           }}
           onRemoveLink={(linkId) =>
@@ -280,7 +280,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
       )}
 
       {activeTab === 'history' && useCase && (
-        <RevisionHistoryTab artifactId={useCase.id} artifactType="usecases" />
+        <RevisionHistoryTab artifactId={useCase.id} artifactType="useCase" />
       )}
 
       {activeTab === 'customAttributes' && (

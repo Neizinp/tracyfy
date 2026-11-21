@@ -243,8 +243,10 @@ order is chosen so that each step makes the next one smaller.
 1. ✅ **Delete multi-project and the library** (D1, D2) - done. Pure removal, so it is the biggest
    simplification for the least risk. Project membership lists, project switching, the library,
    link scope and `projectIds` all go.
-2. **Domain registry + one vocabulary** (§3.1). Replace the four type vocabularies and the
-   two registries added recently (`LINKABLE_TYPES`, `TRACE_TYPES`) with the registry.
+2. ✅ **Domain registry + one vocabulary** (§3.1) - done. `src/domain/artifactKinds.ts`
+   replaces `LINKABLE_TYPES`, `TRACE_TYPES`, `ARTIFACT_CONFIG` and the 'usecase' /
+   'usecases' / 'useCases' / 'uc' variants. Opening an artifact from its ID is one hook
+   (`useOpenArtifact`).
 3. **One link model** (§3.3, without rules yet). Remove `requirementIds`, `useCaseIds`,
    `linkedArtifacts` and the legacy migration.
 4. **Storage layer + new file format** (§4, P4, P5). Repository interface, zod schemas,
@@ -273,6 +275,15 @@ Things noticed while doing a step that belong to a later one:
   it moves into `tracyfy.yaml` in step 4.
 - The requirements column selector writes `column-visibility` to localStorage, but nothing
   reads it back. Column visibility should be stored once, for all kinds, in step 6.
+- **Advanced search does not cover documents**: `useAdvancedSearch` lists kinds by hand.
+  Search should iterate the registry and the field defs in step 6.
+- **PDF and Excel export miss kinds**: revision history in the PDF only covers requirements,
+  use cases, test cases and information. This gets fixed by the rewrite in step 8.
+- **Left after step 2**: the storage layer still names folders by hand
+  (`gitCoreService.loadAllArtifacts`, `gitHistoryService.loadProjectSnapshot`, `ArtifactFolder`),
+  and `STORED_TYPES` still carries users, workflows and custom-attribute files. The JSON
+  import/export keys its collections by state name (`useCases`). All of this belongs to the
+  repository in step 4 and the export rewrite in step 8.
 
 ## 8. Open questions
 

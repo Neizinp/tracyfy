@@ -3,7 +3,7 @@
  * (stored as link files), not only the legacy embedded linkedArtifacts.
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
 import { startApp, type Harness } from './appHarness';
 import type { Requirement } from '../../types';
 
@@ -40,6 +40,18 @@ describe('integration: traceability dashboard', () => {
     expect(await screen.findAllByText('No links')).toHaveLength(1);
     expect(screen.getAllByText('No incoming links')).toHaveLength(1); // a
     expect(screen.getAllByText('No outgoing links')).toHaveLength(1); // b
+  }, 60_000);
+
+  it('clicking an artifact in the gap list opens it', async () => {
+    h = await startApp({ initialRoute: '/traceability' });
+    const req = await addRequirement(h, 'Unlinked requirement');
+    await h.settle();
+
+    fireEvent.click(await screen.findByRole('button', { name: /^gaps/i }));
+    fireEvent.click(await screen.findByText(req.id, { selector: 'span[style*="monospace"]' }));
+
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getAllByRole('textbox')[0]).toHaveValue('Unlinked requirement');
   }, 60_000);
 
   it('an orphan link (target permanently deleted) is shown and can be removed', async () => {

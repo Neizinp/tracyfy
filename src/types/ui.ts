@@ -1,4 +1,5 @@
 import type { ProjectBaseline } from './git';
+import type { ArtifactKindId } from '../domain/artifactKinds';
 
 export interface ColumnVisibility {
   idTitle: boolean;
@@ -75,23 +76,8 @@ export interface DocumentColumnVisibility {
   [key: string]: boolean | undefined;
 }
 
-export type ViewType =
-  | 'tree'
-  | 'detailed'
-  | 'matrix'
-  | 'usecases'
-  | 'testcases'
-  | 'information'
-  | 'risks'
-  | 'baselines'
-  | 'baseline-history';
-
 export type ModalType =
-  | 'requirement'
-  | 'usecase'
-  | 'testcase'
-  | 'information'
-  | 'risk'
+  | ArtifactKindId
   | 'project-settings'
   | 'user-settings'
   | 'onboarding'
@@ -101,7 +87,6 @@ export type ModalType =
   | 'search'
   | 'custom-attribute'
   | 'workflow'
-  | 'documents'
   | null;
 
 export interface ActiveModal {
@@ -111,7 +96,7 @@ export interface ActiveModal {
 
 export interface SelectedArtifact {
   id: string;
-  type: 'requirement' | 'usecase' | 'testcase' | 'information' | 'risk' | 'user' | 'documents';
+  type: ArtifactKindId;
   data?: Record<string, unknown>;
 }
 

@@ -16,8 +16,8 @@ import type {
   ArtifactDocument,
   Link,
 } from '../../types';
-import type { ArtifactType, UnifiedArtifact, GapInfo } from './types';
-import { ALL_TRACE_TYPES, traceTypeOf } from './types';
+import type { UnifiedArtifact, GapInfo } from './types';
+import { KIND_IDS, kindOfId, type ArtifactKindId } from '../../domain/artifactKinds';
 
 interface UseTraceabilityDataOptions {
   requirements: Requirement[];
@@ -41,10 +41,10 @@ export function useTraceabilityData({
   standaloneLinks,
 }: UseTraceabilityDataOptions) {
   // Multi-select type toggles - all selected by default
-  const [selectedTypes, setSelectedTypes] = useState<Set<ArtifactType>>(new Set(ALL_TRACE_TYPES));
+  const [selectedTypes, setSelectedTypes] = useState<Set<ArtifactKindId>>(new Set(KIND_IDS));
 
   // Toggle a type on/off
-  const toggleType = useCallback((type: ArtifactType) => {
+  const toggleType = useCallback((type: ArtifactKindId) => {
     setSelectedTypes((prev) => {
       const next = new Set(prev);
       if (next.has(type)) {
@@ -118,11 +118,8 @@ export function useTraceabilityData({
     };
 
     return Object.fromEntries(
-      ALL_TRACE_TYPES.map((type) => [
-        type,
-        calculateStats(allArtifacts.filter((a) => a.type === type)),
-      ])
-    ) as Record<ArtifactType, { total: number; linked: number; gaps: number }>;
+      KIND_IDS.map((type) => [type, calculateStats(allArtifacts.filter((a) => a.type === type))])
+    ) as Record<ArtifactKindId, { total: number; linked: number; gaps: number }>;
   }, [allArtifacts, allLinksSet]);
 
   // Get gap artifacts with issue types, from link files (legacy embedded
@@ -174,14 +171,14 @@ export function useTraceabilityData({
       sourceId: string;
       targetId: string;
       type: string;
-      sourceType: ArtifactType;
-      targetType: ArtifactType;
+      sourceType: ArtifactKindId;
+      targetType: ArtifactKindId;
     }[] = [];
     const artifactTypeMap = new Map(allArtifacts.map((a) => [a.id, a.type]));
     const artifactIds = new Set(allArtifacts.map((a) => a.id));
 
-    const getTypeFromId = (id: string): ArtifactType =>
-      artifactTypeMap.get(id) ?? traceTypeOf(id) ?? 'requirement';
+    const getTypeFromId = (id: string): ArtifactKindId =>
+      artifactTypeMap.get(id) ?? kindOfId(id) ?? 'requirement';
 
     standaloneLinks.forEach((link) => {
       if (artifactIds.has(link.sourceId) && artifactIds.has(link.targetId)) {
@@ -217,13 +214,13 @@ export function useTraceabilityData({
 
   // Filter gaps by selected types
   const filteredGaps = useMemo(() => {
-    if (selectedTypes.size === ALL_TRACE_TYPES.length) return gapArtifacts;
+    if (selectedTypes.size === KIND_IDS.length) return gapArtifacts;
     return gapArtifacts.filter((gap) => selectedTypes.has(gap.artifact.type));
   }, [gapArtifacts, selectedTypes]);
 
   // Computed totals
-  const totalGaps = ALL_TRACE_TYPES.reduce((sum, t) => sum + stats[t].gaps, 0);
-  const totalLinked = ALL_TRACE_TYPES.reduce((sum, t) => sum + stats[t].linked, 0);
+  const totalGaps = KIND_IDS.reduce((sum, t) => sum + stats[t].gaps, 0);
+  const totalLinked = KIND_IDS.reduce((sum, t) => sum + stats[t].linked, 0);
   const totalArtifacts = allArtifacts.length;
 
   return {

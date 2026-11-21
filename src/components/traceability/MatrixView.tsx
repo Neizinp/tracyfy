@@ -6,14 +6,13 @@
  */
 
 import React from 'react';
-import type { ArtifactType } from './types';
-import { TYPE_COLORS, ALL_TRACE_TYPES } from './types';
+import { kind, KIND_IDS, type ArtifactKindId } from '../../domain/artifactKinds';
 import { TypeFilterButtons } from './TypeFilterButtons';
 
 export interface MatrixArtifact {
   id: string;
   title: string;
-  type: ArtifactType;
+  type: ArtifactKindId;
   linkedArtifacts: { targetId: string; type: string }[];
 }
 
@@ -26,8 +25,8 @@ export interface MatrixLink {
 interface MatrixViewProps {
   allArtifacts: MatrixArtifact[];
   allLinks: MatrixLink[];
-  selectedTypes: Set<ArtifactType>;
-  toggleType: (type: ArtifactType) => void;
+  selectedTypes: Set<ArtifactKindId>;
+  toggleType: (type: ArtifactKindId) => void;
 }
 
 const MAX_MATRIX_SIZE = 20;
@@ -64,7 +63,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
   toggleType,
 }) => {
   const unsortedArtifacts =
-    selectedTypes.size === ALL_TRACE_TYPES.length
+    selectedTypes.size === KIND_IDS.length
       ? allArtifacts
       : allArtifacts.filter((a) => selectedTypes.has(a.type));
 
@@ -146,22 +145,21 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
         </div>
       ) : (
         <>
-          {allArtifacts.length > MAX_MATRIX_SIZE &&
-            selectedTypes.size === ALL_TRACE_TYPES.length && (
-              <div
-                style={{
-                  padding: '8px 12px',
-                  backgroundColor: 'var(--color-warning-bg)',
-                  borderRadius: 'var(--radius-sm)',
-                  marginBottom: 'var(--spacing-md)',
-                  fontSize: 'var(--font-size-sm)',
-                  color: 'var(--color-warning-light)',
-                }}
-              >
-                Showing first {MAX_MATRIX_SIZE} of {allArtifacts.length} artifacts. Use the toggles
-                to narrow down.
-              </div>
-            )}
+          {allArtifacts.length > MAX_MATRIX_SIZE && selectedTypes.size === KIND_IDS.length && (
+            <div
+              style={{
+                padding: '8px 12px',
+                backgroundColor: 'var(--color-warning-bg)',
+                borderRadius: 'var(--radius-sm)',
+                marginBottom: 'var(--spacing-md)',
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--color-warning-light)',
+              }}
+            >
+              Showing first {MAX_MATRIX_SIZE} of {allArtifacts.length} artifacts. Use the toggles to
+              narrow down.
+            </div>
+          )}
 
           <div style={{ overflowX: 'auto' }}>
             <table
@@ -189,10 +187,10 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
                       key={col.id}
                       style={{
                         padding: '6px 8px',
-                        backgroundColor: TYPE_COLORS[col.type].bg,
+                        backgroundColor: kind(col.type).color.bg,
                         border: '1px solid var(--color-border)',
                         fontWeight: 600,
-                        color: TYPE_COLORS[col.type].text,
+                        color: kind(col.type).color.text,
                         writingMode: 'vertical-rl',
                         textOrientation: 'mixed',
                         maxWidth: '30px',
@@ -210,10 +208,10 @@ export const MatrixView: React.FC<MatrixViewProps> = ({
                     <td
                       style={{
                         padding: '6px 8px',
-                        backgroundColor: TYPE_COLORS[row.type].bg,
+                        backgroundColor: kind(row.type).color.bg,
                         border: '1px solid var(--color-border)',
                         fontWeight: 600,
-                        color: TYPE_COLORS[row.type].text,
+                        color: kind(row.type).color.text,
                       }}
                       title={`${row.id}: ${row.title}`}
                     >

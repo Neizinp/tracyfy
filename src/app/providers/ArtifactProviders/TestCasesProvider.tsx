@@ -17,7 +17,7 @@ interface TestCasesContextValue {
 }
 
 const { Provider: BaseProvider, useProviderContext } = createArtifactProvider<TestCase>({
-  type: 'testCases',
+  type: 'testCase',
   displayName: 'TestCases',
   useData: (state) => ({
     items: state.testCases,

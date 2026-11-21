@@ -7,6 +7,7 @@
  * Anything else that is not mapped here is also invisible in the panel.
  */
 import type { ArtifactChange } from '../types';
+import { ARTIFACT_KINDS } from '../domain/artifactKinds';
 
 /** The project's name and description, at the folder root */
 export const PROJECT_FILE = 'project.md';
@@ -14,15 +15,10 @@ export const PROJECT_FILE = 'project.md';
 export const AUTO_COMMITTED_FOLDERS = ['counters', 'links', 'custom-attributes'] as const;
 
 const FOLDER_TO_TYPE: Record<string, ArtifactChange['type']> = {
-  requirements: 'requirement',
-  usecases: 'usecase',
-  testcases: 'testcase',
-  information: 'information',
-  risks: 'risk',
+  ...Object.fromEntries(ARTIFACT_KINDS.map((k) => [k.folder, k.id])),
   assets: 'asset',
   users: 'user',
   'saved-filters': 'saved-filter',
-  documents: 'document',
   workflows: 'workflow',
 };
 

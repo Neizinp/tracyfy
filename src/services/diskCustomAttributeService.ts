@@ -8,7 +8,7 @@ import { idService } from './idService';
 
 class DiskCustomAttributeService extends BaseArtifactService<CustomAttributeDefinition> {
   constructor() {
-    super('customAttributes', {
+    super('customAttribute', {
       serialize: customAttributeDefinitionToMarkdown,
       deserialize: markdownToCustomAttributeDefinition,
     });
@@ -61,7 +61,7 @@ class DiskCustomAttributeService extends BaseArtifactService<CustomAttributeDefi
   async createDefinition(
     def: Omit<CustomAttributeDefinition, 'id' | 'dateCreated' | 'lastModified'>
   ): Promise<CustomAttributeDefinition> {
-    const nextId = await idService.getNextIdWithSync('customAttributes');
+    const nextId = await idService.getNextIdWithSync('customAttribute');
     const newDef: CustomAttributeDefinition = {
       ...def,
       id: nextId,

@@ -3,6 +3,12 @@ import { Trash2 } from 'lucide-react';
 import type { Link } from '../../types';
 import type { IncomingLink } from '../../services/diskLinkService';
 import { LINK_TYPE_LABELS } from '../../utils/linkTypes';
+import { kind, kindOfId } from '../../domain/artifactKinds';
+
+const kindLabel = (id: string) => {
+  const k = kindOfId(id);
+  return k ? kind(k).label.singular : 'Unknown';
+};
 
 interface ArtifactRelationshipsTabProps {
   artifactId: string | undefined;
@@ -14,7 +20,7 @@ interface ArtifactRelationshipsTabProps {
   onAddLink: () => void;
   /** Deletes the link with the given link ID */
   onRemoveLink: (linkId: string) => void;
-  onNavigateToArtifact: (id: string, type: string) => void;
+  onNavigateToArtifact: (id: string) => void;
 }
 
 export const ArtifactRelationshipsTab: React.FC<ArtifactRelationshipsTabProps> = ({
@@ -118,15 +124,7 @@ export const ArtifactRelationshipsTab: React.FC<ArtifactRelationshipsTabProps> =
                   }}
                 >
                   <div
-                    onClick={() => {
-                      const id = link.targetId;
-                      let type = 'requirement';
-                      if (id.startsWith('UC-')) type = 'useCase';
-                      else if (id.startsWith('TC-')) type = 'testCase';
-                      else if (id.startsWith('INFO-')) type = 'information';
-                      else if (id.startsWith('RISK-')) type = 'risk';
-                      onNavigateToArtifact(id, type);
-                    }}
+                    onClick={() => onNavigateToArtifact(link.targetId)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -228,7 +226,7 @@ export const ArtifactRelationshipsTab: React.FC<ArtifactRelationshipsTabProps> =
               {incomingLinks.map((link, index) => (
                 <div
                   key={`${link.sourceId}-${index}`}
-                  onClick={() => onNavigateToArtifact(link.sourceId, link.sourceType)}
+                  onClick={() => onNavigateToArtifact(link.sourceId)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -264,7 +262,7 @@ export const ArtifactRelationshipsTab: React.FC<ArtifactRelationshipsTabProps> =
                       marginLeft: 'auto',
                     }}
                   >
-                    ({link.sourceType})
+                    ({kindLabel(link.sourceId)})
                   </span>
                 </div>
               ))}

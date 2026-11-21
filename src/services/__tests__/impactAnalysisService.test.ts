@@ -133,6 +133,18 @@ describe('impactAnalysisService', () => {
       expect(summary.byArtifactType['testCase']).toBe(1);
     });
 
+    it('counts risks and documents under their own kind', () => {
+      const links: Link[] = [
+        createLink('REQ-001', 'RISK-001'),
+        createLink('REQ-001', 'RISK-002'),
+        createLink('REQ-001', 'DOC-001'),
+      ];
+
+      const summary = getImpactSummary(getImpactChain('REQ-001', links, 'downstream'));
+
+      expect(summary.byArtifactType).toEqual({ risk: 2, document: 1 });
+    });
+
     it('calculates max depth correctly', () => {
       const links: Link[] = [
         createLink('REQ-001', 'UC-001'),

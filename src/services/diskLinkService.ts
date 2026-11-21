@@ -3,7 +3,6 @@ import type { Link } from '../types';
 import type { LinkType } from '../utils/linkTypes';
 import { getInverseType } from '../utils/linkTypes';
 import { linkToMarkdown, parseMarkdownLink } from '../utils/linkMarkdownUtils';
-import { getTypeFromId } from '../constants/artifactConfig';
 import { idService } from './idService';
 
 /**
@@ -12,13 +11,12 @@ import { idService } from './idService';
 export interface IncomingLink {
   linkId: string;
   sourceId: string;
-  sourceType: string; // Derived from sourceId prefix
   linkType: LinkType; // The inverse type
 }
 
 class DiskLinkService extends BaseArtifactService<Link> {
   constructor() {
-    super('links', {
+    super('link', {
       serialize: linkToMarkdown,
       deserialize: parseMarkdownLink,
     });
@@ -57,7 +55,6 @@ class DiskLinkService extends BaseArtifactService<Link> {
       .map((link) => ({
         linkId: link.id,
         sourceId: link.sourceId,
-        sourceType: getTypeFromId(link.sourceId),
         linkType: getInverseType(link.type),
       }));
   }
@@ -79,7 +76,7 @@ class DiskLinkService extends BaseArtifactService<Link> {
    * Create a new link
    */
   async createLink(sourceId: string, targetId: string, type: LinkType): Promise<Link> {
-    const nextId = await idService.getNextIdWithSync('links');
+    const nextId = await idService.getNextIdWithSync('link');
     const link: Link = {
       id: nextId,
       sourceId,

@@ -5,7 +5,7 @@
  */
 
 import { BaseDiskService } from './baseDiskService';
-import { ARTIFACT_CONFIG } from '../constants/artifactConfig';
+import { STORED_TYPES, type StoredType } from './storedTypes';
 import { debug } from '../utils/debug';
 
 export interface ArtifactSerializer<T> {
@@ -14,11 +14,11 @@ export interface ArtifactSerializer<T> {
 }
 
 export class BaseArtifactService<T extends { id: string }> extends BaseDiskService {
-  private typeKey: string;
+  private typeKey: StoredType;
   private serializer: ArtifactSerializer<T>;
   private listeners: Set<() => void> = new Set();
 
-  constructor(typeKey: string, serializer: ArtifactSerializer<T>) {
+  constructor(typeKey: StoredType, serializer: ArtifactSerializer<T>) {
     super();
     this.typeKey = typeKey;
     this.serializer = serializer;
@@ -33,7 +33,7 @@ export class BaseArtifactService<T extends { id: string }> extends BaseDiskServi
   }
 
   protected get config() {
-    const config = ARTIFACT_CONFIG[this.typeKey];
+    const config = STORED_TYPES[this.typeKey];
     if (!config) {
       throw new Error(`Artifact configuration not found for type: ${this.typeKey}`);
     }

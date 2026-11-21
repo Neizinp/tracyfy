@@ -302,7 +302,7 @@ export const RequirementModal: React.FC<RequirementModalProps> = ({
       )}
 
       {activeTab === 'history' && requirement && (
-        <RevisionHistoryTab artifactId={requirement.id} artifactType="requirements" />
+        <RevisionHistoryTab artifactId={requirement.id} artifactType="requirement" />
       )}
     </BaseArtifactModal>
   );

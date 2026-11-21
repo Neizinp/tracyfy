@@ -237,7 +237,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
           onAddLink={() => {
             if (testCase) {
               setLinkSourceId(testCase.id);
-              setLinkSourceType('testcase');
+              setLinkSourceType('testCase');
               setIsLinkModalOpen(true);
             }
           }}
@@ -249,7 +249,7 @@ export const TestCaseModal: React.FC<TestCaseModalProps> = ({
       )}
 
       {activeTab === 'history' && testCase && (
-        <RevisionHistoryTab artifactId={testCase.id} artifactType="testcases" />
+        <RevisionHistoryTab artifactId={testCase.id} artifactType="testCase" />
       )}
 
       {activeTab === 'customAttributes' && (

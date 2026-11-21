@@ -89,8 +89,8 @@ describe('LinkModal', () => {
     currentProjectId: 'PROJ-001',
     artifactsByType: {
       requirement: [mockReq1, mockReq2],
-      usecase: [mockUseCase],
-      testcase: [mockTestCase],
+      useCase: [mockUseCase],
+      testCase: [mockTestCase],
       information: [mockInformation],
       risk: [],
       document: [],

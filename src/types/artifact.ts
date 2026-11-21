@@ -1,14 +1,6 @@
 import type { CustomAttributeValue } from './customAttributes';
 import type { ArtifactLink } from './link';
-
-export type ArtifactType =
-  | 'requirements'
-  | 'useCases'
-  | 'testCases'
-  | 'information'
-  | 'risks'
-  | 'documents'
-  | 'workflows';
+import type { ArtifactKindId } from '../domain/artifactKinds';
 
 export interface BaseArtifact {
   id: string;
@@ -23,7 +15,7 @@ export interface BaseArtifact {
 export interface DocumentEntry {
   type: 'heading' | 'artifact';
   id?: string; // id of the artifact if type === 'artifact'
-  artifactType?: ArtifactType; // type of the artifact
+  artifactType?: ArtifactKindId;
   title?: string; // custom title OR heading text
   level?: number; // 1, 2, 3... for headings
 }

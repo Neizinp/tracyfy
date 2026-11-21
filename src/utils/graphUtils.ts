@@ -1,14 +1,13 @@
 import type { Node, Edge } from 'reactflow';
 import type { UnifiedArtifact } from '../components/traceability';
-import type { ArtifactType } from '../components/traceability';
-import { TYPE_COLORS } from '../components/traceability';
+import { kind, KIND_IDS, type ArtifactKindId } from '../domain/artifactKinds';
 
 export type LayoutAlgorithm = 'hierarchical' | 'force' | 'dagre';
 
 export interface ArtifactNodeData {
   artifactId: string;
   title: string;
-  artifactType: ArtifactType;
+  artifactType: ArtifactKindId;
   linkCount: number;
   highlighted: boolean;
   isSelected: boolean;
@@ -52,8 +51,8 @@ export function transformLinksToEdges(
     sourceId: string;
     targetId: string;
     type: string;
-    sourceType: ArtifactType;
-    targetType: ArtifactType;
+    sourceType: ArtifactKindId;
+    targetType: ArtifactKindId;
   }[],
   selectedNodeId: string | null = null
 ): Edge<LinkEdgeData>[] {
@@ -117,15 +116,8 @@ function calculateHierarchicalLayout(artifacts: UnifiedArtifact[]): { x: number;
   const verticalSpacing = 150;
 
   // Group by artifact type for hierarchical levels
-  const typeOrder: ArtifactType[] = [
-    'requirement',
-    'useCase',
-    'testCase',
-    'information',
-    'risk',
-    'document',
-  ];
-  const grouped = new Map<ArtifactType, UnifiedArtifact[]>();
+  const typeOrder = KIND_IDS;
+  const grouped = new Map<ArtifactKindId, UnifiedArtifact[]>();
 
   typeOrder.forEach((type) => {
     grouped.set(
@@ -203,8 +195,8 @@ function getLinkColor(linkType: string): string {
 /**
  * Get node color based on artifact type
  */
-export function getNodeColor(type: ArtifactType): { bg: string; border: string; text: string } {
-  const colors = TYPE_COLORS[type];
+export function getNodeColor(type: ArtifactKindId): { bg: string; border: string; text: string } {
+  const colors = kind(type).color;
   return {
     bg: colors.bg,
     border: colors.text,

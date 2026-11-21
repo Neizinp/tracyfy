@@ -9,7 +9,7 @@ const documentSerializer: ArtifactSerializer<ArtifactDocument> = {
 
 export class DocumentService extends BaseArtifactService<ArtifactDocument> {
   constructor() {
-    super('documents', documentSerializer);
+    super('document', documentSerializer);
   }
 }
 

@@ -14,6 +14,7 @@ import type {
 } from '../types/customAttributes';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useCustomAttributeForm } from '../hooks/useCustomAttributeForm';
+import { ARTIFACT_KINDS } from '../domain/artifactKinds';
 
 interface CustomAttributeDefinitionModalProps {
   isOpen: boolean;
@@ -31,11 +32,7 @@ const ATTRIBUTE_TYPES: { value: AttributeType; label: string; description: strin
 ];
 
 const ARTIFACT_TYPES: { value: ApplicableArtifactType; label: string }[] = [
-  { value: 'requirement', label: 'Requirements' },
-  { value: 'useCase', label: 'Use Cases' },
-  { value: 'testCase', label: 'Test Cases' },
-  { value: 'information', label: 'Information' },
-  { value: 'risk', label: 'Risks' },
+  ...ARTIFACT_KINDS.map((k) => ({ value: k.id, label: k.label.plural })),
   { value: 'link', label: 'Links' },
 ];
 

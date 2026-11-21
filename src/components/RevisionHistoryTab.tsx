@@ -1,20 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { debug } from '../utils/debug';
-import { useFileSystem, useRisks } from '../app/providers';
+import { useFileSystem } from '../app/providers';
 import type { CommitInfo } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
-import {
-  markdownToRequirement,
-  markdownToUseCase,
-  markdownToTestCase,
-  markdownToInformation,
-  markdownToRisk,
-  markdownToDocument,
-} from '../utils/markdownUtils';
+import { MARKDOWN_TO_ARTIFACT } from '../utils/markdownUtils';
+import { kind, type ArtifactKindId } from '../domain/artifactKinds';
 
 interface RevisionHistoryTabProps {
   artifactId: string;
-  artifactType: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks' | 'documents';
+  artifactType: ArtifactKindId;
 }
 
 export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
@@ -25,22 +19,15 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
   const [revisions, setRevisions] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const { getArtifactHistory: getFsHistory, readFileAtCommit, isReady } = useFileSystem();
-  const { getRiskHistory } = useRisks();
 
   useEffect(() => {
     const loadHistory = async () => {
       if (!isReady) return;
       setLoading(true);
       try {
-        const commits =
-          artifactType === 'risks'
-            ? await getRiskHistory(artifactId)
-            : await getFsHistory(
-                artifactType as 'requirements' | 'usecases' | 'testcases' | 'information',
-                artifactId
-              );
+        const commits = await getFsHistory(artifactType, artifactId);
         setHistory(commits);
-        const filePath = `${artifactType}/${artifactId}.md`;
+        const filePath = `${kind(artifactType).folder}/${artifactId}.md`;
         const revs: Record<string, string> = {};
         for (const commit of commits) {
           try {
@@ -60,19 +47,7 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
             let revision = '—';
             let parsed = undefined;
             if (content) {
-              if (artifactType === 'requirements') {
-                parsed = markdownToRequirement(content);
-              } else if (artifactType === 'usecases') {
-                parsed = markdownToUseCase(content);
-              } else if (artifactType === 'testcases') {
-                parsed = markdownToTestCase(content);
-              } else if (artifactType === 'information') {
-                parsed = markdownToInformation(content);
-              } else if (artifactType === 'risks') {
-                parsed = markdownToRisk(content);
-              } else if (artifactType === 'documents') {
-                parsed = markdownToDocument(content);
-              }
+              parsed = MARKDOWN_TO_ARTIFACT[artifactType](content);
               // Extra debug log
 
               debug.log(
@@ -119,7 +94,7 @@ export const RevisionHistoryTab: React.FC<RevisionHistoryTabProps> = ({
     } else {
       setLoading(false);
     }
-  }, [artifactId, artifactType, getFsHistory, getRiskHistory, readFileAtCommit, isReady]);
+  }, [artifactId, artifactType, getFsHistory, readFileAtCommit, isReady]);
 
   if (loading) {
     return (

@@ -13,7 +13,21 @@ import {
   Search,
   X,
 } from 'lucide-react';
-import type { DocumentEntry, ArtifactType } from '../types';
+import type { DocumentEntry } from '../types';
+import { KIND_IDS, kind, type ArtifactKindId } from '../domain/artifactKinds';
+
+/** Kinds a document can include (not other documents) */
+type IncludableKind = Exclude<ArtifactKindId, 'document'>;
+const INCLUDABLE_KINDS = KIND_IDS.filter((k): k is IncludableKind => k !== 'document');
+
+const KIND_ICONS: Record<ArtifactKindId, React.ReactNode> = {
+  requirement: <FileText size={14} />,
+  useCase: <BookOpen size={14} />,
+  testCase: <CheckSquare size={14} />,
+  information: <Info size={14} />,
+  risk: <ShieldAlert size={14} />,
+  document: <FileText size={14} />,
+};
 import { useGlobalState } from '../app/providers';
 
 interface DocumentEditorProps {
@@ -25,7 +39,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
   const { requirements, useCases, testCases, information, risks } = useGlobalState();
   const [isAddingArtifact, setIsAddingArtifact] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<ArtifactType>('requirements');
+  const [selectedType, setSelectedType] = useState<IncludableKind>('requirement');
 
   const handleAddHeading = () => {
     const newEntry: DocumentEntry = {
@@ -36,7 +50,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
     onChange([...structure, newEntry]);
   };
 
-  const handleAddArtifact = (id: string, type: ArtifactType, title: string) => {
+  const handleAddArtifact = (id: string, type: ArtifactKindId, title: string) => {
     const newEntry: DocumentEntry = {
       type: 'artifact',
       id,
@@ -75,33 +89,18 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
   };
 
   const filteredArtifacts = useMemo(() => {
-    let list: { id: string; title: string; type: ArtifactType }[] = [];
-    if (selectedType === 'requirements')
-      list = requirements.map((a) => ({
-        id: a.id,
-        title: a.title,
-        type: 'requirements' as ArtifactType,
-      }));
-    else if (selectedType === 'useCases')
-      list = useCases.map((a) => ({
-        id: a.id,
-        title: a.title,
-        type: 'useCases' as ArtifactType,
-      }));
-    else if (selectedType === 'testCases')
-      list = testCases.map((a) => ({
-        id: a.id,
-        title: a.title,
-        type: 'testCases' as ArtifactType,
-      }));
-    else if (selectedType === 'information')
-      list = information.map((a) => ({
-        id: a.id,
-        title: a.title,
-        type: 'information' as ArtifactType,
-      }));
-    else if (selectedType === 'risks')
-      list = risks.map((a) => ({ id: a.id, title: a.title, type: 'risks' as ArtifactType }));
+    const byKind: Record<IncludableKind, { id: string; title: string }[]> = {
+      requirement: requirements,
+      useCase: useCases,
+      testCase: testCases,
+      information,
+      risk: risks,
+    };
+    const list = byKind[selectedType].map((a) => ({
+      id: a.id,
+      title: a.title,
+      type: selectedType,
+    }));
 
     if (!searchQuery) return list;
     const query = searchQuery.toLowerCase();
@@ -110,22 +109,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
     );
   }, [selectedType, searchQuery, requirements, useCases, testCases, information, risks]);
 
-  const getIcon = (type: ArtifactType) => {
-    switch (type) {
-      case 'requirements':
-        return <FileText size={14} />;
-      case 'useCases':
-        return <BookOpen size={14} />;
-      case 'testCases':
-        return <CheckSquare size={14} />;
-      case 'information':
-        return <Info size={14} />;
-      case 'risks':
-        return <ShieldAlert size={14} />;
-      default:
-        return <FileText size={14} />;
-    }
-  };
+  const getIcon = (type: ArtifactKindId | undefined) => KIND_ICONS[type ?? 'requirement'];
 
   return (
     <div
@@ -251,7 +235,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
                     }}
                   >
                     <span style={{ color: 'var(--color-accent)' }}>
-                      {getIcon(entry.artifactType!)}
+                      {getIcon(entry.artifactType)}
                     </span>
                     <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{entry.id}</span>
                     <span
@@ -392,15 +376,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
                   borderRadius: 'var(--radius-sm)',
                 }}
               >
-                {(
-                  [
-                    'requirements',
-                    'useCases',
-                    'testCases',
-                    'information',
-                    'risks',
-                  ] as ArtifactType[]
-                ).map((t) => (
+                {INCLUDABLE_KINDS.map((t) => (
                   <button
                     key={t}
                     onClick={() => setSelectedType(t)}
@@ -416,7 +392,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ structure, onCha
                       color: selectedType === t ? 'white' : 'var(--color-text-secondary)',
                     }}
                   >
-                    {t.substring(0, 4)}
+                    {kind(t).prefix}
                   </button>
                 ))}
               </div>

@@ -42,7 +42,7 @@ describe('IdService', () => {
       vi.mocked(fileSystemService.readFile).mockResolvedValue(null);
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
 
-      const id = await idService.getNextId('requirements');
+      const id = await idService.getNextId('requirement');
 
       expect(id).toBe('REQ-001');
     });
@@ -51,7 +51,7 @@ describe('IdService', () => {
       vi.mocked(fileSystemService.readFile).mockResolvedValue('5');
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
 
-      const id = await idService.getNextId('requirements');
+      const id = await idService.getNextId('requirement');
 
       expect(id).toBe('REQ-006');
       expect(fileSystemService.writeFile).toHaveBeenCalledWith('counters/requirements.md', '6');
@@ -63,7 +63,7 @@ describe('IdService', () => {
       vi.mocked(fileSystemService.readFile).mockResolvedValue('0');
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
 
-      const ids = await idService.getNextIds('requirements', 3);
+      const ids = await idService.getNextIds('requirement', 3);
 
       expect(ids).toEqual(['REQ-001', 'REQ-002', 'REQ-003']);
       expect(fileSystemService.writeFile).toHaveBeenCalledWith('counters/requirements.md', '3');
@@ -75,7 +75,7 @@ describe('IdService', () => {
       vi.mocked(fileSystemService.readFile).mockResolvedValue('5');
       vi.mocked(fileSystemService.writeFile).mockResolvedValue(undefined);
 
-      const id = await idService.getNextIdWithSync('requirements');
+      const id = await idService.getNextIdWithSync('requirement');
 
       expect(id).toBe('REQ-006');
     });
@@ -100,7 +100,7 @@ describe('IdService', () => {
     it('never hands out duplicate IDs for concurrent getNextId calls', async () => {
       useSlowInMemoryFs();
       const ids = await Promise.all(
-        Array.from({ length: 10 }, () => idService.getNextId('requirements'))
+        Array.from({ length: 10 }, () => idService.getNextId('requirement'))
       );
       expect(new Set(ids).size).toBe(10);
       expect([...ids].sort()).toEqual(
@@ -111,9 +111,9 @@ describe('IdService', () => {
     it('does not overlap between getNextIds batches and single allocations', async () => {
       useSlowInMemoryFs();
       const [batch, single, sync] = await Promise.all([
-        idService.getNextIds('testcases', 3),
-        idService.getNextId('testcases'),
-        idService.getNextIdWithSync('testcases'),
+        idService.getNextIds('testCase', 3),
+        idService.getNextId('testCase'),
+        idService.getNextIdWithSync('testCase'),
       ]);
       const all = [...batch, single, sync];
       expect(new Set(all).size).toBe(5);

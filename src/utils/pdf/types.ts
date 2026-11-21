@@ -5,6 +5,7 @@
  */
 
 import type { CommitInfo } from '../../types';
+import type { ArtifactKindId } from '../../domain/artifactKinds';
 
 // Table of Contents entry
 export interface TOCEntry {
@@ -17,7 +18,7 @@ export interface TOCEntry {
 export interface ArtifactCommit {
   artifactId: string;
   artifactTitle: string;
-  artifactType: 'requirement' | 'usecase' | 'testcase' | 'information';
+  artifactType: ArtifactKindId;
   commits: CommitInfo[];
   isNew?: boolean;
 }
@@ -25,7 +26,7 @@ export interface ArtifactCommit {
 // Removed artifact for revision history
 export interface RemovedArtifact {
   artifactId: string;
-  artifactType: 'requirement' | 'usecase' | 'testcase' | 'information';
+  artifactType: ArtifactKindId;
 }
 
 // Page reference for tracking across page breaks

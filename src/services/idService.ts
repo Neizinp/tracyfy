@@ -2,12 +2,12 @@
  * ID Service
  *
  * Centralizes ID generation and counter management for all artifacts.
- * Uses ARTIFACT_CONFIG for prefix and category metadata.
+ * Uses STORED_TYPES for prefix and folder metadata.
  */
 
 import { BaseDiskService } from './baseDiskService';
 import { realGitService } from './realGitService';
-import { ARTIFACT_CONFIG } from '../constants/artifactConfig';
+import { STORED_TYPES, type StoredType } from './storedTypes';
 import { debug } from '../utils/debug';
 import { KeyedLock } from '../utils/keyedLock';
 
@@ -18,8 +18,8 @@ export class IdService extends BaseDiskService {
   /**
    * Get counter value from file
    */
-  async getCounter(type: string): Promise<number> {
-    const config = ARTIFACT_CONFIG[type];
+  async getCounter(type: StoredType): Promise<number> {
+    const config = STORED_TYPES[type];
     if (!config) {
       throw new Error(`[IdService] No config found for type: ${type}`);
     }
@@ -32,8 +32,8 @@ export class IdService extends BaseDiskService {
   /**
    * Set counter value
    */
-  async setCounter(type: string, value: number, skipCommit: boolean = false): Promise<void> {
-    const config = ARTIFACT_CONFIG[type];
+  async setCounter(type: StoredType, value: number, skipCommit: boolean = false): Promise<void> {
+    const config = STORED_TYPES[type];
     if (!config) {
       throw new Error(`[IdService] No config found for type: ${type}`);
     }
@@ -47,7 +47,7 @@ export class IdService extends BaseDiskService {
   /**
    * Get next artifact ID and increment counter
    */
-  async getNextId(type: string): Promise<string> {
+  async getNextId(type: StoredType): Promise<string> {
     const [id] = await this.getNextIds(type, 1);
     return id;
   }
@@ -56,10 +56,10 @@ export class IdService extends BaseDiskService {
    * Get multiple artifact IDs at once (batch allocation).
    * Allocation is serialized per type, so concurrent callers never receive the same ID.
    */
-  async getNextIds(type: string, count: number): Promise<string[]> {
+  async getNextIds(type: StoredType, count: number): Promise<string[]> {
     if (count <= 0) return [];
 
-    const config = ARTIFACT_CONFIG[type];
+    const config = STORED_TYPES[type];
     if (!config) {
       throw new Error(`[IdService] No config found for type: ${type}`);
     }
@@ -71,8 +71,8 @@ export class IdService extends BaseDiskService {
    * Raise the counter to at least `value` (never lowers it).
    * Used after importing artifacts with explicit IDs so new IDs don't collide.
    */
-  async ensureCounterAtLeast(type: string, value: number): Promise<void> {
-    if (!ARTIFACT_CONFIG[type]) {
+  async ensureCounterAtLeast(type: StoredType, value: number): Promise<void> {
+    if (!STORED_TYPES[type]) {
       throw new Error(`[IdService] No config found for type: ${type}`);
     }
     await this.counterLock.run(type, async () => {
@@ -86,8 +86,8 @@ export class IdService extends BaseDiskService {
   /**
    * Read-modify-write of the counter. Must only be called while holding counterLock for `type`.
    */
-  private async allocate(type: string, count: number): Promise<string[]> {
-    const config = ARTIFACT_CONFIG[type];
+  private async allocate(type: StoredType, count: number): Promise<string[]> {
+    const config = STORED_TYPES[type];
     const current = await this.getCounter(type);
     const nextEnd = current + count;
     await this.setCounter(type, nextEnd);
@@ -102,8 +102,8 @@ export class IdService extends BaseDiskService {
   /**
    * Get next artifact ID with remote sync (for collaboration)
    */
-  async getNextIdWithSync(type: string): Promise<string> {
-    if (!ARTIFACT_CONFIG[type]) {
+  async getNextIdWithSync(type: StoredType): Promise<string> {
+    if (!STORED_TYPES[type]) {
       throw new Error(`[IdService] No config found for type: ${type}`);
     }
 

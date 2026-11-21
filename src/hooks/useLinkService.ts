@@ -64,7 +64,6 @@ export function useLinkService(options: UseLinkServiceOptions = {}): UseLinkServ
       .map((link) => ({
         linkId: link.id,
         sourceId: link.sourceId,
-        sourceType: link.sourceId.split('-')[0],
         linkType: link.type,
       }));
   }, [allLinks, artifactId]);

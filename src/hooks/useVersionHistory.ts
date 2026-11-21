@@ -9,58 +9,40 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { debug } from '../utils/debug';
 import type { ProjectBaseline, CommitInfo } from '../types';
 import { realGitService } from '../services/realGitService';
+import { ARTIFACT_KINDS } from '../domain/artifactKinds';
 
 export type TabType = 'baselines' | 'commits';
 
-// Configuration for artifact type filters
+// Commit filter categories: one per artifact kind, plus files that are not artifacts
 export const ARTIFACT_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
-  requirements: { label: 'REQ', color: 'var(--color-info)' },
-  usecases: { label: 'UC', color: 'var(--color-accent)' },
-  testcases: { label: 'TC', color: 'var(--color-success)' },
-  information: { label: 'INFO', color: 'var(--color-warning)' },
-  risks: { label: 'RISK', color: 'var(--color-error)' },
+  ...Object.fromEntries(
+    ARTIFACT_KINDS.map((k) => [k.id, { label: k.prefix, color: k.color.text }])
+  ),
   project: { label: 'PROJ', color: 'var(--color-text-muted)' },
-  links: { label: 'LINK', color: 'var(--color-text-secondary)' },
-  workflows: { label: 'WF', color: 'var(--color-info-light)' },
-  users: { label: 'USER', color: 'var(--color-accent)' },
-  counters: { label: 'CTR', color: 'var(--color-text-muted)' },
+  link: { label: 'LINK', color: 'var(--color-text-secondary)' },
+  workflow: { label: 'WF', color: 'var(--color-info-light)' },
+  user: { label: 'USER', color: 'var(--color-accent)' },
+  counter: { label: 'CTR', color: 'var(--color-text-muted)' },
   other: { label: 'OTHER', color: 'var(--color-text-muted)' },
 };
 
-// Folders that map to known artifact types
 const FOLDER_TO_TYPE: Record<string, string> = {
-  requirements: 'requirements',
-  usecases: 'usecases',
-  testcases: 'testcases',
-  information: 'information',
-  risks: 'risks',
+  ...Object.fromEntries(ARTIFACT_KINDS.map((k) => [k.folder, k.id])),
   'project.md': 'project',
-  links: 'links',
-  workflows: 'workflows',
-  users: 'users',
-  counters: 'counters',
+  links: 'link',
+  workflows: 'workflow',
+  users: 'user',
+  counters: 'counter',
 };
 
-// Get artifact type from file path (returns 'other' for unrecognized folders)
+// Filter category of a file path ('other' for unrecognized folders)
 export const getArtifactTypeFromPath = (filePath: string): string => {
   const folderName = filePath.split('/')[0];
   return FOLDER_TO_TYPE[folderName] || 'other';
 };
 
-// Default selected artifact types
-const DEFAULT_SELECTED_TYPES = new Set([
-  'requirements',
-  'usecases',
-  'testcases',
-  'information',
-  'risks',
-  'project',
-  'links',
-  'workflows',
-  'users',
-  'counters',
-  'other',
-]);
+// Everything is shown by default
+const DEFAULT_SELECTED_TYPES = new Set(Object.keys(ARTIFACT_TYPE_CONFIG));
 
 interface UseVersionHistoryOptions {
   isOpen: boolean;

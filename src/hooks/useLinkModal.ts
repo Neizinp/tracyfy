@@ -7,11 +7,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { ArtifactLink } from '../types';
-import {
-  LINKABLE_TYPES,
-  type ArtifactsByType,
-  type LinkableType,
-} from '../constants/linkableArtifacts';
+import { KIND_IDS, type ArtifactKindId } from '../domain/artifactKinds';
+import type { ArtifactsByKind } from './useLinkableArtifacts';
 
 export interface LinkModalResult {
   /** Set when the source was chosen in the modal (e.g. from the Links page) */
@@ -23,9 +20,9 @@ export interface LinkModalResult {
 interface UseLinkModalOptions {
   isOpen: boolean;
   sourceArtifactId: string | null;
-  sourceArtifactType: LinkableType;
+  sourceArtifactType: ArtifactKindId;
   /** Every linkable artifact, grouped by type */
-  artifactsByType: ArtifactsByType;
+  artifactsByType: ArtifactsByKind;
   onClose: () => void;
   onAddLink: (link: LinkModalResult) => void;
 }
@@ -37,7 +34,7 @@ export function useLinkModal({
   onClose,
   onAddLink,
 }: UseLinkModalOptions) {
-  const [targetType, setTargetType] = useState<LinkableType>('requirement');
+  const [targetType, setTargetType] = useState<ArtifactKindId>('requirement');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
   const [linkType, setLinkType] = useState<ArtifactLink['type']>('related_to');
@@ -78,7 +75,7 @@ export function useLinkModal({
   /** All artifacts that can act as a link source (used when no source is preset) */
   const sourceOptions = useMemo(
     () =>
-      LINKABLE_TYPES.flatMap(({ type }) => artifactsByType[type])
+      KIND_IDS.flatMap((k) => artifactsByType[k])
         .filter((a) => !a.isDeleted)
         .map((a) => ({ id: a.id, title: a.title })),
     [artifactsByType]
@@ -99,7 +96,7 @@ export function useLinkModal({
     [selectedTargetId, effectiveSourceId, linkType, onAddLink, onClose]
   );
 
-  const selectTargetType = useCallback((type: LinkableType) => {
+  const selectTargetType = useCallback((type: ArtifactKindId) => {
     setTargetType(type);
     setSelectedTargetId('');
   }, []);

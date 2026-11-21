@@ -17,9 +17,10 @@ import type { Requirement, UseCase, TestCase, Information, Risk } from '../types
 import { useCustomAttributes } from './useCustomAttributes';
 import { diskFilterService } from '../services/diskFilterService';
 import type { SavedFilter, FilterState } from '../types/filters';
+import type { ArtifactKindId } from '../domain/artifactKinds';
 
 // Types
-type ArtifactType = 'requirement' | 'useCase' | 'testCase' | 'information' | 'risk';
+type ArtifactType = Exclude<ArtifactKindId, 'document'>;
 
 export interface SearchCriterion {
   id: string;

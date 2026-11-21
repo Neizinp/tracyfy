@@ -212,7 +212,7 @@ export async function exportProjectToPDF(
         artifactCommits.push({
           artifactId: uc.id,
           artifactTitle: uc.title,
-          artifactType: 'usecase',
+          artifactType: 'useCase',
           commits: filteredHistory,
           isNew,
         });
@@ -231,7 +231,7 @@ export async function exportProjectToPDF(
         artifactCommits.push({
           artifactId: tc.id,
           artifactTitle: tc.title,
-          artifactType: 'testcase',
+          artifactType: 'testCase',
           commits: filteredHistory,
           isNew,
         });

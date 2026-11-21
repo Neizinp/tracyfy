@@ -88,7 +88,7 @@ describe('SnapshotViewer', () => {
     fireEvent.click(screen.getByText('Test Cases'));
 
     await waitFor(() => {
-      expect(screen.getByText('No testcases found in this snapshot.')).toBeInTheDocument();
+      expect(screen.getByText('No test cases found in this snapshot.')).toBeInTheDocument();
     });
   });
 

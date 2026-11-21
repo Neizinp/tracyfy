@@ -4,6 +4,7 @@ import { useUser } from '../UserProvider';
 import { useToast, notifyError } from '../ToastProvider';
 import { useBackgroundTaskActions } from '../BackgroundTasksProvider';
 import { incrementRevision } from '../../../utils/revisionUtils';
+import { storedTypeLabel, type StoredType } from '../../../services/storedTypes';
 
 export interface BaseArtifact {
   id: string;
@@ -13,18 +14,8 @@ export interface BaseArtifact {
   deletedAt?: number;
 }
 
-export type ArtifactType =
-  | 'requirements'
-  | 'useCases'
-  | 'testCases'
-  | 'information'
-  | 'risks'
-  | 'workflows'
-  | 'documents'
-  | 'links';
-
 export interface CRUDOptions<T> {
-  type: ArtifactType;
+  type: StoredType;
   /** Every item of this type */
   items: T[];
   saveFn: (item: T) => Promise<void>;
@@ -100,14 +91,11 @@ export function useArtifactCRUD<T extends BaseArtifact>({
         // State is updated by saveFn after the write succeeds, so the UI never
         // shows data that isn't on disk
         await saveFn(newItem);
-        showToast(
-          `${type.charAt(0).toUpperCase() + type.slice(1, -1)} ${newId} created`,
-          'success'
-        );
+        showToast(`${storedTypeLabel(type)} ${newId} created`, 'success');
         return newItem;
       } catch (error) {
         console.error(`Failed to add ${type}:`, error);
-        showToast(`Failed to add ${type}`, 'error');
+        showToast(`Failed to add ${storedTypeLabel(type).toLowerCase()}`, 'error');
         return null;
       }
     },
@@ -140,7 +128,7 @@ export function useArtifactCRUD<T extends BaseArtifact>({
         if (onAfterUpdate) onAfterUpdate(finalItem);
       } catch (error) {
         console.error(`Failed to update ${type}:`, error);
-        showToast(`Failed to update ${type}`, 'error');
+        showToast(`Failed to update ${storedTypeLabel(type).toLowerCase()}`, 'error');
       } finally {
         endTask(taskId);
       }

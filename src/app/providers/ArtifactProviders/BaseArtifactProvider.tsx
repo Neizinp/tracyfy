@@ -6,7 +6,8 @@ import { useFileSystem } from '../FileSystemProvider';
 import { useUser } from '../UserProvider';
 import { useToast } from '../ToastProvider';
 import { useArtifactCRUD } from './useArtifactCRUD';
-import type { ArtifactType, BaseArtifact } from './useArtifactCRUD';
+import type { BaseArtifact } from './useArtifactCRUD';
+import type { StoredType } from '../../../services/storedTypes';
 
 export interface BaseArtifactContextValue<T extends BaseArtifact> {
   items: T[];
@@ -22,7 +23,7 @@ export interface BaseArtifactContextValue<T extends BaseArtifact> {
 }
 
 export interface CreateProviderOptions<T extends BaseArtifact> {
-  type: ArtifactType;
+  type: StoredType;
   displayName: string;
   /** Items for the current view (read-only; FileSystemProvider owns the data) */
   useData: (state: ReturnType<typeof useGlobalState>) => {

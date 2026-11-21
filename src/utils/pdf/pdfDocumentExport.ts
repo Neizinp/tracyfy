@@ -128,17 +128,17 @@ export async function renderFlatStructure(
 
       // Find the artifact and render it
       let result;
-      if (artifactType === 'requirements') {
+      if (artifactType === 'requirement') {
         const req = requirements.find((r) => r.id === artifactId);
         if (req) {
           result = await renderRequirement(doc, req, yPos, page, customAttributeDefinitions);
         }
-      } else if (artifactType === 'useCases') {
+      } else if (artifactType === 'useCase') {
         const uc = useCases.find((u) => u.id === artifactId);
         if (uc) {
           result = await renderUseCase(doc, uc, yPos, page, customAttributeDefinitions);
         }
-      } else if (artifactType === 'testCases') {
+      } else if (artifactType === 'testCase') {
         const tc = testCases.find((t) => t.id === artifactId);
         if (tc) {
           result = await renderTestCase(doc, tc, yPos, page, customAttributeDefinitions);
@@ -148,7 +148,7 @@ export async function renderFlatStructure(
         if (info) {
           result = await renderInformation(doc, info, yPos, page, customAttributeDefinitions);
         }
-      } else if (artifactType === 'risks') {
+      } else if (artifactType === 'risk') {
         const risk = risks.find((r) => r.id === artifactId);
         if (risk) {
           result = await renderRisk(doc, risk, yPos, page);

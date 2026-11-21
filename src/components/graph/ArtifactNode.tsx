@@ -4,7 +4,7 @@ import { Link2 } from 'lucide-react';
 import type { NodeProps } from 'reactflow';
 import type { ArtifactNodeData } from '../../utils/graphUtils';
 import { getNodeColor } from '../../utils/graphUtils';
-import { TRACE_TYPES } from '../traceability/types';
+import { kind } from '../../domain/artifactKinds';
 
 /**
  * Custom node component for rendering artifacts in the graph
@@ -84,7 +84,7 @@ export const ArtifactNode: React.FC<NodeProps<ArtifactNodeData>> = ({ data, sele
             letterSpacing: '0.5px',
           }}
         >
-          {TRACE_TYPES.find((t) => t.type === data.artifactType)?.short ?? 'REQ'}
+          {kind(data.artifactType).prefix}
         </span>
 
         {/* Link count badge */}

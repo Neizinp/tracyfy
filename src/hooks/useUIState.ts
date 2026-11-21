@@ -15,7 +15,7 @@ import type {
   SelectedArtifact,
   ModalType,
 } from '../types';
-import type { LinkableType } from '../constants/linkableArtifacts';
+import type { ArtifactKindId } from '../domain/artifactKinds';
 
 /** Pure factory for the default column visibility (module-level so it's referentially stable) */
 const getDefaultColumnVisibility = (): ColumnVisibility => ({
@@ -41,7 +41,7 @@ export function useUIState() {
 
   // Legacy compatibility states (to be removed once all components are migrated)
   const [linkSourceId, setLinkSourceId] = useState<string | null>(null);
-  const [linkSourceType, setLinkSourceType] = useState<LinkableType | null>(null);
+  const [linkSourceType, setLinkSourceType] = useState<ArtifactKindId | null>(null);
 
   // Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -161,9 +161,9 @@ export function useUIState() {
   // Computed Legacy Flags for Compatibility
   const isNewRequirementModalOpen = activeModal.type === 'requirement' && !activeModal.isEdit;
   const isEditRequirementModalOpen = activeModal.type === 'requirement' && !!activeModal.isEdit;
-  const isUseCaseModalOpen = activeModal.type === 'usecase';
-  const isNewTestCaseModalOpen = activeModal.type === 'testcase' && !activeModal.isEdit;
-  const isEditTestCaseModalOpen = activeModal.type === 'testcase' && !!activeModal.isEdit;
+  const isUseCaseModalOpen = activeModal.type === 'useCase';
+  const isNewTestCaseModalOpen = activeModal.type === 'testCase' && !activeModal.isEdit;
+  const isEditTestCaseModalOpen = activeModal.type === 'testCase' && !!activeModal.isEdit;
   const isInformationModalOpen = activeModal.type === 'information';
   const isRiskModalOpen = activeModal.type === 'risk';
   const isProjectSettingsOpen = activeModal.type === 'project-settings';
@@ -174,20 +174,20 @@ export function useUIState() {
   const isAdvancedSearchOpen = activeModal.type === 'search';
   const isCustomAttributeModalOpen = activeModal.type === 'custom-attribute';
   const isWorkflowModalOpen = activeModal.type === 'workflow';
-  const isDocumentsModalOpen = activeModal.type === 'documents';
-  const isEditDocumentModalOpen = activeModal.type === 'documents' && !!activeModal.isEdit;
+  const isDocumentsModalOpen = activeModal.type === 'document';
+  const isEditDocumentModalOpen = activeModal.type === 'document' && !!activeModal.isEdit;
 
   // Computed Legacy Selection State
   const selectedRequirementId =
     selectedArtifact?.type === 'requirement' ? selectedArtifact.id : null;
-  const selectedUseCaseId = selectedArtifact?.type === 'usecase' ? selectedArtifact.id : null;
+  const selectedUseCaseId = selectedArtifact?.type === 'useCase' ? selectedArtifact.id : null;
   const editingRequirement =
     selectedArtifact?.type === 'requirement'
       ? (selectedArtifact.data as unknown as Requirement)
       : null;
   const editingUseCase =
-    selectedArtifact?.type === 'usecase' ? (selectedArtifact.data as unknown as UseCase) : null;
-  const selectedTestCaseId = selectedArtifact?.type === 'testcase' ? selectedArtifact.id : null;
+    selectedArtifact?.type === 'useCase' ? (selectedArtifact.data as unknown as UseCase) : null;
+  const selectedTestCaseId = selectedArtifact?.type === 'testCase' ? selectedArtifact.id : null;
   const selectedInformation =
     selectedArtifact?.type === 'information'
       ? (selectedArtifact.data as unknown as Information)
@@ -195,7 +195,7 @@ export function useUIState() {
   const editingRisk =
     selectedArtifact?.type === 'risk' ? (selectedArtifact.data as unknown as Risk) : null;
   const editingDocument =
-    selectedArtifact?.type === 'documents'
+    selectedArtifact?.type === 'document'
       ? (selectedArtifact.data as unknown as ArtifactDocument)
       : null;
 
@@ -215,7 +215,7 @@ export function useUIState() {
         setSelectedArtifact(id ? { id, type: 'requirement' } : null),
       selectedUseCaseId,
       setSelectedUseCaseId: (id: string | null) =>
-        setSelectedArtifact(id ? { id, type: 'usecase' } : null),
+        setSelectedArtifact(id ? { id, type: 'useCase' } : null),
       isNewRequirementModalOpen,
       setIsNewRequirementModalOpen: (val: boolean) =>
         val ? openModal('requirement') : closeModal(),
@@ -223,12 +223,12 @@ export function useUIState() {
       setIsEditRequirementModalOpen: (val: boolean) =>
         val ? openModal('requirement', true) : closeModal(),
       isUseCaseModalOpen,
-      setIsUseCaseModalOpen: (val: boolean) => (val ? openModal('usecase') : closeModal()),
+      setIsUseCaseModalOpen: (val: boolean) => (val ? openModal('useCase') : closeModal()),
       isNewTestCaseModalOpen,
-      setIsNewTestCaseModalOpen: (val: boolean) => (val ? openModal('testcase') : closeModal()),
+      setIsNewTestCaseModalOpen: (val: boolean) => (val ? openModal('testCase') : closeModal()),
       isEditTestCaseModalOpen,
       setIsEditTestCaseModalOpen: (val: boolean) =>
-        val ? openModal('testcase', true) : closeModal(),
+        val ? openModal('testCase', true) : closeModal(),
       isInformationModalOpen,
       setIsInformationModalOpen: (val: boolean) => (val ? openModal('information') : closeModal()),
       isRiskModalOpen,
@@ -265,11 +265,11 @@ export function useUIState() {
       editingUseCase,
       setEditingUseCase: (uc: UseCase | null) =>
         setSelectedArtifact(
-          uc ? { id: uc.id, type: 'usecase', data: uc as unknown as Record<string, unknown> } : null
+          uc ? { id: uc.id, type: 'useCase', data: uc as unknown as Record<string, unknown> } : null
         ),
       selectedTestCaseId,
       setSelectedTestCaseId: (id: string | null) =>
-        setSelectedArtifact(id ? { id, type: 'testcase' } : null),
+        setSelectedArtifact(id ? { id, type: 'testCase' } : null),
       selectedInformation,
       setSelectedInformation: (info: Information | null) =>
         setSelectedArtifact(
@@ -288,13 +288,13 @@ export function useUIState() {
       setEditingDocument: (doc: ArtifactDocument | null) =>
         setSelectedArtifact(
           doc
-            ? { id: doc.id, type: 'documents', data: doc as unknown as Record<string, unknown> }
+            ? { id: doc.id, type: 'document', data: doc as unknown as Record<string, unknown> }
             : null
         ),
       isDocumentsModalOpen,
       isEditDocumentModalOpen,
       setIsEditDocumentModalOpen: (val: boolean) =>
-        val ? openModal('documents', true) : closeModal(),
+        val ? openModal('document', true) : closeModal(),
 
       // Still standalone for now
       linkSourceId,

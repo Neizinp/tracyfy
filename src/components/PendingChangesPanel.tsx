@@ -6,6 +6,19 @@ import { useBackgroundTaskActions } from '../app/providers/BackgroundTasksProvid
 import { debug } from '../utils/debug';
 import type { ArtifactChange } from '../types';
 import { classifyPendingPath } from '../utils/pendingChanges';
+import { isKindId, kind, type ArtifactKindId } from '../domain/artifactKinds';
+
+/** Group headings for pending changes that are not artifacts */
+const OTHER_CHANGE_LABELS: Record<Exclude<ArtifactChange['type'], ArtifactKindId>, string> = {
+  project: 'Project',
+  asset: 'Assets',
+  user: 'Users',
+  counter: 'Counters',
+  link: 'Links',
+  'custom-attribute': 'Custom Attributes',
+  'saved-filter': 'Saved Searches',
+  workflow: 'Workflows',
+};
 
 export function PendingChangesPanel() {
   const {
@@ -93,19 +106,6 @@ export function PendingChangesPanel() {
       const defaults: Record<string, string> = {};
 
       for (const change of idsToProcess) {
-        // Map artifact type to folder name for history lookup
-        const folderMap: Record<
-          string,
-          'requirements' | 'usecases' | 'testcases' | 'information' | 'risks' | 'documents'
-        > = {
-          requirement: 'requirements',
-          usecase: 'usecases',
-          testcase: 'testcases',
-          information: 'information',
-          risk: 'risks',
-          document: 'documents',
-        };
-
         // The project file has no per-artifact history to base a message on
         if (change.type === 'project') {
           defaults[change.id] =
@@ -158,12 +158,11 @@ export function PendingChangesPanel() {
           continue;
         }
 
-        const artifactFolder = folderMap[change.type as keyof typeof folderMap];
-        if (!artifactFolder) continue;
+        if (!isKindId(change.type)) continue;
 
         try {
           // Check if there's existing git history for this artifact
-          const history = await getArtifactHistory(artifactFolder, change.id);
+          const history = await getArtifactHistory(change.type, change.id);
           if (history.length > 0) {
             // Has history - leave empty for user to type
             defaults[change.id] = '';
@@ -330,32 +329,9 @@ export function PendingChangesPanel() {
   // Group by type
   const groupedChanges: Record<string, ArtifactChange[]> = {};
   parsedChanges.forEach((change) => {
-    const typeName =
-      change.type === 'requirement'
-        ? 'Requirements'
-        : change.type === 'usecase'
-          ? 'Use Cases'
-          : change.type === 'testcase'
-            ? 'Test Cases'
-            : change.type === 'project'
-              ? 'Project'
-              : change.type === 'asset'
-                ? 'Assets'
-                : change.type === 'risk'
-                  ? 'Risks'
-                  : change.type === 'user'
-                    ? 'Users'
-                    : change.type === 'counter'
-                      ? 'Counters'
-                      : change.type === 'link'
-                        ? 'Links'
-                        : change.type === 'custom-attribute'
-                          ? 'Custom Attributes'
-                          : change.type === 'document'
-                            ? 'Documents'
-                            : change.type === 'saved-filter'
-                              ? 'Saved Searches'
-                              : 'Information';
+    const typeName = isKindId(change.type)
+      ? kind(change.type).label.plural
+      : OTHER_CHANGE_LABELS[change.type];
     if (!groupedChanges[typeName]) {
       groupedChanges[typeName] = [];
     }

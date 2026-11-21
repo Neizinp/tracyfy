@@ -333,7 +333,7 @@ export const RiskModal: React.FC<RiskModalProps> = ({
       )}
 
       {activeTab === 'history' && risk && (
-        <RevisionHistoryTab artifactId={risk.id} artifactType="risks" />
+        <RevisionHistoryTab artifactId={risk.id} artifactType="risk" />
       )}
 
       {activeTab === 'customAttributes' && (

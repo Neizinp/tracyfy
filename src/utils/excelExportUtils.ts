@@ -15,6 +15,7 @@ import { realGitService } from '../services/realGitService';
 import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
 import { diskLinkService } from '../services/diskLinkService';
 import { LINK_TYPE_LABELS } from './linkTypes';
+import { kind, type ArtifactKindId } from '../domain/artifactKinds';
 
 // Helper to sanitize text for Excel (remove newlines if needed, or keep them)
 // Excel handles newlines in cells if wrapText is on.
@@ -207,20 +208,16 @@ export async function exportProjectToExcel(
     }[] = [];
 
     // Helper to fetch and format history
-    const fetchHistory = async (
-      type: 'requirements' | 'usecases' | 'testcases' | 'information' | 'risks',
-      id: string,
-      title: string
-    ) => {
+    const fetchHistory = async (type: ArtifactKindId, id: string, title: string) => {
       try {
-        const history = await realGitService.getHistory(`${type}/${id}.md`);
+        const history = await realGitService.getHistory(`${kind(type).folder}/${id}.md`);
         const filteredHistory = lastBaseline
           ? history.filter((commit) => commit.timestamp > lastBaseline.timestamp)
           : history;
 
         filteredHistory.forEach((commit) => {
           historyData.push({
-            'Artifact Type': type.charAt(0).toUpperCase() + type.slice(1, -1), // Remove 's' and capitalize
+            'Artifact Type': kind(type).label.singular,
             ID: id,
             Title: title,
             Date: formatDate(commit.timestamp),
@@ -235,11 +232,11 @@ export async function exportProjectToExcel(
     };
 
     // Fetch history for all artifacts
-    for (const req of projectRequirements) await fetchHistory('requirements', req.id, req.title);
-    for (const uc of projectUseCases) await fetchHistory('usecases', uc.id, uc.title);
-    for (const tc of projectTestCases) await fetchHistory('testcases', tc.id, tc.title);
+    for (const req of projectRequirements) await fetchHistory('requirement', req.id, req.title);
+    for (const uc of projectUseCases) await fetchHistory('useCase', uc.id, uc.title);
+    for (const tc of projectTestCases) await fetchHistory('testCase', tc.id, tc.title);
     for (const info of projectInformation) await fetchHistory('information', info.id, info.title);
-    for (const risk of projectRisks) await fetchHistory('risks', risk.id, risk.title);
+    for (const risk of projectRisks) await fetchHistory('risk', risk.id, risk.title);
 
     // Sort history by date descending
     historyData.sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime());
