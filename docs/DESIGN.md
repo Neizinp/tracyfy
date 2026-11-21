@@ -366,14 +366,16 @@ Things noticed while doing a step that belong to a later one:
     requirement "Approved" column is gone (Status shows it), a risk's broken Severity column
     is its Level, an information's description can be edited, and fields that were stored but
     not editable (a requirement's category) now are.
-  - `BaseArtifactModal`, the Links page and the search dialog still have many inline styles.
+  - ~~`BaseArtifactModal`, the Links page and the search dialog still have many inline styles~~
+    (done, see below).
 - **Left after step 7**:
   - ~~The traceability rules can only be edited in tracyfy.yaml~~ (done, see below).
   - The fingerprint covers the title and text fields. Enum fields (a risk's impact) and
     custom attributes do not make a link suspect.
   - Approving commits the artifact's file as it is, so its other uncommitted edits go into
     the approval commit. That is intended: you approve what you see.
-  - The traceability dashboard and the link dialog (`LinkModal`) still use inline styles.
+  - ~~The traceability dashboard and the link dialog (`LinkModal`) still use inline styles~~
+    (done, see below).
 - **Left after step 8**:
   - The PDF no longer draws a box around each artifact (it broke across pages).
   - Without a previous baseline there is no revision history in Excel either (it used to list
@@ -402,6 +404,16 @@ Things noticed while doing a step that belong to a later one:
     the defaults. A coverage rule without a name, a name used twice or an allowed link listed
     twice cannot be saved; a coverage rule no allowed link can meet is a warning
     (`ruleProblems` in `src/domain/traceability.ts`) (from step 7).
+- **Done after the merge** (branch `refactor/inline-styles`, on top of the rules page):
+  - `BaseArtifactModal`, `LinkModal`, `LinksView`, `AdvancedSearchModal` and
+    `TraceabilityDashboard` use classes in `src/styles/components.css` (`tf-modal-*`,
+    `tf-linkmodal-*`, `tf-linksview-*`, `tf-search-*`, `tf-dashboard-*`). State is styled by
+    attributes (`aria-pressed`, `data-active`, `data-selected`, `:disabled`) and hover by CSS,
+    not mouse handlers. Only values that come from data (a kind's color, a dialog's width) stay
+    inline. Screenshots before and after each change are the same. Other components still have
+    inline styles; move them when they are changed for another reason.
+  - Found along the way: search, type filter and sort on the Links page only changed the count
+    in the heading, not the rows (fixed, with a test).
 
 ## 8. Open questions
 
