@@ -1,6 +1,6 @@
 # Tracyfy target design
 
-Status: steps 1–7 of §7 are done; the rest is the plan.
+Status: steps 1–8 of §7 are done.
 
 This document describes where the codebase should end up, the decisions behind it, and
 the order in which to get there. The goal is a codebase where a change that concerns
@@ -325,7 +325,29 @@ order is chosen so that each step makes the next one smaller.
      each with Mark reviewed. A link without a fingerprint has never been reviewed, so it
      is suspect.
    - Link files keep `LINK-NNN` names (decided against naming them by fact).
-8. **Export** (PDF, Excel, JSON) rewritten over the registry.
+8. ✅ **Export** (PDF, Excel, JSON) rewritten over the registry - done. `src/export/` replaces
+   `src/utils/pdf/`, the Excel and JSON export and the import parsing. Every format iterates
+   `fieldsFor(kind, customAttributes)`, so every kind and custom attribute is exported without
+   kind-specific code:
+   - **PDF**: one renderer for every kind (`pdf/artifact.ts`): short fields in a bar, text fields
+     with their images, relations, custom attributes, dates. A small writer (`pdf/writer.ts`)
+     wraps text and breaks pages; the table of contents gets exactly the pages it needs.
+   - **Excel**: a sheet per kind with a column per field, plus links, revision history, a
+     traceability matrix and a verification matrix. Import reads the kind sheets back by the same
+     column labels, so an exported workbook can be edited and imported (every kind, not only
+     requirements and use cases).
+   - **JSON** is keyed by kind ID (`artifacts.requirement`, …). Import checks every row with the
+     file codec, so an imported artifact is exactly what the app would read from disk.
+   - **Relations** come from the links, read from each end ("Verifies", "Verified by", …), for
+     every kind; the test case's "Tests Requirements" column is one case of this.
+   - **A baseline export shows the baseline**: artifacts, links, name and custom attributes as
+     they were at its commit. Before, only the cover page said "baseline".
+   - The **revision history** covers every kind, including deleted artifacts, between the
+     previous baseline and the exported one.
+   - One store action (`exportProject`, `exportDocument` in `src/state/slices/export.ts`) does
+     every export: the save dialog first, then the build. The export dialog lists the kinds from
+     the registry; options that did nothing (title page, PDF traceability annex) are gone, as is
+     the header bar's unused export menu.
 
 Styling moves to classes continuously, whenever a component is touched in steps 5–8.
 
@@ -336,10 +358,6 @@ features on purpose. Step 7 is new functionality, and only becomes cheap after 1
 
 Things noticed while doing a step that belong to a later one:
 
-- **PDF and Excel export miss kinds**: revision history in the PDF only covers requirements,
-  use cases, test cases and information. This gets fixed by the rewrite in step 8.
-- **Left after step 2**: the JSON import/export keys its collections by state name
-  (`useCases`). It goes with the export rewrite in step 8.
 - **Left after step 4**:
   - A removed link deletes its file, so the highest link ID can be handed out again. Naming
     link files by fact was considered in step 7 and not chosen.
@@ -353,8 +371,6 @@ Things noticed while doing a step that belong to a later one:
   - Custom attribute values are not validated against their definitions when a file is read,
     on purpose: renaming a dropdown option must not make every file that uses it unreadable.
     The dialog enforces required attributes when saving.
-  - PDF and Excel export read the custom attribute definitions themselves
-    (`diskCustomAttributeService`) and list kinds and fields by hand; step 8.
   - Changes users will notice: a requirement's Comments tab is now part of Details, the
     requirement "Approved" column is gone (Status shows it), a risk's broken Severity column
     is its Level, an information's description can be edited, and fields that were stored but
@@ -371,6 +387,18 @@ Things noticed while doing a step that belong to a later one:
   - After the link dialog closes, the artifact dialog it was opened from is back on its
     Overview tab.
   - The traceability dashboard and the link dialog (`LinkModal`) still use inline styles.
+
+- **Left after step 8**:
+  - Images in a baseline export are read from the working copy, not from the baseline's commit.
+  - The store's `addArtifact` does not fill in field defaults (the dialog does), so an artifact
+    added another way has no status in memory until the project is read again.
+  - Excel import reads artifacts only; links and the relation columns are not imported, and a
+    document imported from Excel has no outline.
+  - The PDF no longer draws a box around each artifact (it broke across pages).
+  - Without a previous baseline there is no revision history in Excel either (it used to list
+    every commit), the same rule as the PDF.
+  - JSON exports made before step 8 cannot be imported (D4).
+  - `diskCustomAttributeService` is only used by the demo data.
 
 ## 8. Open questions
 
