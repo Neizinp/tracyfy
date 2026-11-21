@@ -389,16 +389,19 @@ Things noticed while doing a step that belong to a later one:
   - The traceability dashboard and the link dialog (`LinkModal`) still use inline styles.
 
 - **Left after step 8**:
-  - Images in a baseline export are read from the working copy, not from the baseline's commit.
-  - The store's `addArtifact` does not fill in field defaults (the dialog does), so an artifact
-    added another way has no status in memory until the project is read again.
-  - Excel import reads artifacts only; links and the relation columns are not imported, and a
-    document imported from Excel has no outline.
   - The PDF no longer draws a box around each artifact (it broke across pages).
   - Without a previous baseline there is no revision history in Excel either (it used to list
     every commit), the same rule as the PDF.
   - JSON exports made before step 8 cannot be imported (D4).
-  - `diskCustomAttributeService` is only used by the demo data.
+  - The relation columns in Excel are derived from the links and not read on import; a link
+    is changed in the Links sheet.
+- **Done after step 8**:
+  - A baseline export reads images from the baseline's commit.
+  - `addArtifact` fills in field defaults, and the store keeps every saved artifact as its
+    file reads back; an artifact its file could not hold (a wrong status) is not written.
+  - Excel import reads the Links sheet (with a Suspect column, so a round trip keeps which
+    links are suspect) and a Document Outline sheet.
+  - `diskCustomAttributeService` is gone; the demo data reads the config it updates.
 
 ## 8. Open questions
 
