@@ -11,12 +11,15 @@ import { KIND_IDS, type ArtifactKindId } from '../../domain/artifactKinds';
 import { parseArtifact, serializeArtifact } from '../../domain/artifactFormat';
 import {
   DEFAULT_SETTINGS,
+  defaultProjectConfig,
   projectOf,
   settingsOf,
   withNewAttribute,
+  withTraceability,
   type ProjectSettings,
 } from '../../domain/projectConfig';
 import type { LifecycleSettings } from '../../domain/lifecycle';
+import type { TraceabilityRules } from '../../domain/traceability';
 import { fingerprintsOf } from '../../domain/fingerprint';
 import { repository } from '../../storage/repository';
 import { projectConfigStore } from '../../storage/projectConfigStore';
@@ -70,6 +73,11 @@ export interface ProjectSlice {
 
   /** Change lifecycle settings (in tracyfy.yaml, a pending change) */
   updateLifecycleSettings: (updates: Partial<LifecycleSettings>) => Promise<void>;
+  /**
+   * Replace the traceability rules (in tracyfy.yaml, a pending change), or,
+   * with null, remove them so the defaults apply
+   */
+  updateTraceabilityRules: (rules: TraceabilityRules | null) => Promise<void>;
 
   /** Write an artifact's file; the store then holds it as the file reads back */
   saveArtifact: <K extends ArtifactKindId>(kind: K, artifact: ArtifactByKind[K]) => Promise<void>;
@@ -286,6 +294,23 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
         ...config,
         lifecycle: { ...config.lifecycle, ...updates },
       }));
+      await get().reloadConfig();
+      get().refreshStatus();
+    },
+
+    updateTraceabilityRules: async (rules) => {
+      requireReady();
+      if (e2e) {
+        set((s) => ({
+          settings: {
+            ...s.settings,
+            traceability: settingsOf(withTraceability(defaultProjectConfig(''), rules))
+              .traceability,
+          },
+        }));
+        return;
+      }
+      await projectConfigStore.update((config) => withTraceability(config, rules));
       await get().reloadConfig();
       get().refreshStatus();
     },

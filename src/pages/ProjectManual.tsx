@@ -208,7 +208,7 @@ export const ProjectManual: React.FC = () => {
         />
         <FeatureCard
           title="Traceability rules and suspect links"
-          description="tracyfy.yaml says which links are allowed and what counts as coverage, for example that every requirement is verified by a test case. The Gaps tab lists what breaks a rule. A link becomes suspect when its target changes. Check that it still holds, then use Mark reviewed."
+          description="The Traceability Rules page (saved in tracyfy.yaml) says which links are allowed and what counts as coverage, for example that every requirement is verified by a test case. The Gaps tab lists what breaks a rule. A link becomes suspect when its target changes. Check that it still holds, then use Mark reviewed."
         />
       </Section>
 

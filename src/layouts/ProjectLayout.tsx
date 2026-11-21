@@ -99,6 +99,7 @@ export const ProjectLayout: React.FC = () => {
   // Get page title from current route
   const getPageTitle = () => {
     if (pageKind) return kind(pageKind).label.plural;
+    if (location.pathname.includes('/traceability-rules')) return 'Traceability Rules';
     if (location.pathname.includes('/traceability')) return 'Traceability Dashboard';
     if (location.pathname.includes('/links')) return 'Links';
     if (location.pathname.includes('/review')) return 'Review';

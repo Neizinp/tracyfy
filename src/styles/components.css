@@ -530,3 +530,68 @@ input[type='radio'] {
   color: var(--color-accent);
   font-weight: 600;
 }
+
+/* Traceability Rules page: rows of dropdowns, one per rule */
+.tf-rules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  max-width: 1100px;
+}
+.tf-rules h2 {
+  margin: 0 0 var(--spacing-xs);
+  font-size: var(--font-size-lg);
+}
+.tf-rules-intro {
+  margin: 0;
+}
+.tf-rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+.tf-rules-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-card);
+}
+.tf-rules-row .tf-input {
+  width: auto;
+}
+.tf-rules-row .tf-rules-name {
+  flex: 1 1 220px;
+}
+.tf-rules-coverage > span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+.tf-rules .tf-problems {
+  margin: 0;
+}
+.tf-rules-error {
+  color: var(--color-error);
+}
+.tf-rules-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-bg-app);
+}
+.tf-rules-spacer {
+  flex: 1;
+}
+.tf-rules .tf-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}

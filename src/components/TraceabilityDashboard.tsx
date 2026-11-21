@@ -289,8 +289,8 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                 <strong>Tip:</strong>
               </div>
               <span>
-                Gaps are artifacts that break a traceability rule (tracyfy.yaml), such as a
-                requirement no test case verifies. Use the Links tab to view all relationships.
+                Gaps are artifacts that break a traceability rule (see Traceability Rules), such as
+                a requirement no test case verifies. Use the Links tab to view all relationships.
               </span>
             </div>
           </div>

@@ -204,7 +204,7 @@ describe('integration: traceability dashboard', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: /cancel/i }));
 
     // The gap is named by the project's rule; the default test case rule is gone
-    fireEvent.click(screen.getByRole('link', { name: /traceability/i }));
+    fireEvent.click(screen.getByRole('link', { name: 'Traceability Dashboard' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Gaps (1)' }));
     const [row] = screen.getAllByText('Every requirement has a test');
     expect(within(row.parentElement!).getByText(req.id)).toBeInTheDocument();

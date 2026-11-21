@@ -258,3 +258,75 @@ function meets(rule: CoverageRule, id: string, links: readonly TracedLink[]): bo
     return other !== undefined && (!kindAtOtherEnd || kindOfId(other) === kindAtOtherEnd);
   });
 }
+
+// ---- Checking rules before they are saved ----
+
+/** What is wrong with a set of rules, as the rules editor shows it */
+export interface RuleProblems {
+  /** Rules that cannot be saved as they are */
+  errors: string[];
+  /** Rules that can be saved but will not work as meant */
+  warnings: string[];
+}
+
+const describeAllowed = ([s, t, g]: AllowedLink) => `${s} ${t} ${g}`;
+
+/**
+ * Errors: a coverage rule without a name, two coverage rules with the same
+ * name (the gap list names gaps by rule), the same allowed link twice.
+ * Warnings: a coverage rule that needs a link the allowed links never permit,
+ * so its gaps could never be closed from the link dialog.
+ */
+export function ruleProblems(rules: TraceabilityRules): RuleProblems {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  const seenAllowed = new Set<string>();
+  for (const rule of rules.allowed) {
+    const key = describeAllowed(rule);
+    if (seenAllowed.has(key)) errors.push(`The allowed link "${key}" is listed twice.`);
+    seenAllowed.add(key);
+  }
+
+  const seenNames = new Set<string>();
+  rules.coverage.forEach((rule, i) => {
+    const name = rule.name.trim();
+    if (!name) {
+      errors.push(`Coverage rule ${i + 1} has no name.`);
+      return;
+    }
+    if (seenNames.has(name)) errors.push(`Two coverage rules are named "${name}".`);
+    seenNames.add(name);
+
+    const needs = rule.needs;
+    const reachable =
+      'incoming' in needs
+        ? rules.allowed.some(
+            ([s, t, g]) =>
+              t === needs.incoming &&
+              matches(g, rule.kind) &&
+              (!needs.from || matches(s, needs.from))
+          ) ||
+          (isSymmetricType(needs.incoming) &&
+            rules.allowed.some(
+              ([s, t, g]) =>
+                t === needs.incoming &&
+                matches(s, rule.kind) &&
+                (!needs.from || matches(g, needs.from))
+            ))
+        : rules.allowed.some(
+            ([s, t, g]) =>
+              t === needs.outgoing && matches(s, rule.kind) && (!needs.to || matches(g, needs.to))
+          ) ||
+          (isSymmetricType(needs.outgoing) &&
+            rules.allowed.some(
+              ([s, t, g]) =>
+                t === needs.outgoing && matches(g, rule.kind) && (!needs.to || matches(s, needs.to))
+            ));
+    if (!reachable) {
+      warnings.push(`No allowed link can meet "${name}", so its gaps can never be closed.`);
+    }
+  });
+
+  return { errors, warnings };
+}

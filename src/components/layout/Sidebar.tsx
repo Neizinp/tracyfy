@@ -16,6 +16,7 @@ import {
   Link2,
   ShieldAlert,
   Settings2,
+  ListChecks,
   ChevronRight,
   Upload,
   Download,
@@ -636,6 +637,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <NavLink to="/risks" icon={ShieldAlert} label="Risks" />
               <NavLink to="/traceability?tab=links" icon={Link2} label="Links" />
               <NavLink to="/custom-attributes" icon={Settings2} label="Custom Attributes" />
+              <NavLink to="/traceability-rules" icon={ListChecks} label="Traceability Rules" />
             </div>
           )}
         </div>
