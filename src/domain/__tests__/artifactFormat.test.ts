@@ -110,7 +110,7 @@ const risk: Risk = {
   title: 'Data loss',
   description: TRICKY,
   probability: 'high',
-  impact: 'critical',
+  impact: 'high',
   mitigation: TRICKY,
   category: 'technical',
   contingency: TRICKY,

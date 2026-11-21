@@ -85,6 +85,24 @@ describe('integration: requirements via the UI', () => {
     expect(h.exists('risks/RISK-001.md')).toBe(false);
   }, 60_000);
 
+  it('a file with a value its field does not have (a risk probability) is reported', async () => {
+    h = await startApp();
+    await act(() => h.app().addArtifact('risk', { title: 'Outage' } as never));
+    await h.settle();
+    const file = path.join(h.dir, 'risks/RISK-001.md');
+    fs.writeFileSync(
+      file,
+      fs.readFileSync(file, 'utf8').replace(/^probability: .*$/m, 'probability: sometimes')
+    );
+
+    await act(() => h.app().reload());
+
+    expect(h.app().artifacts.risk).toEqual([]);
+    expect(h.app().fileProblems).toEqual([
+      { path: 'risks/RISK-001.md', message: expect.stringContaining('"sometimes" is not one of') },
+    ]);
+  }, 60_000);
+
   it('a file that cannot be read is reported and left out, not loaded as wrong data', async () => {
     h = await startApp();
     const good = (await act(() =>

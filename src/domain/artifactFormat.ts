@@ -116,6 +116,20 @@ function fieldSchema(field: FieldDef): z.ZodTypeAny {
       return time.optional();
     case 'boolean':
       return z.boolean().optional();
+    case 'enum': {
+      // An empty value is allowed: the field is then simply not set
+      const values = (field.options ?? []).map((o) => o.value);
+      return text
+        .superRefine((v, ctx) => {
+          if (v !== '' && !values.includes(v)) {
+            ctx.addIssue({
+              code: 'custom',
+              message: `"${v}" is not one of ${values.join(', ')}`,
+            });
+          }
+        })
+        .optional();
+    }
     default:
       return optionalText;
   }
