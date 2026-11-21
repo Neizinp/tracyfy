@@ -8,6 +8,7 @@ import type { AppState } from '../store';
 import type { ArtifactByKind, ArtifactsByKind, Link, LinkType, Project } from '../../types';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import { KIND_IDS, type ArtifactKindId } from '../../domain/artifactKinds';
+import { parseArtifact, serializeArtifact } from '../../domain/artifactFormat';
 import {
   DEFAULT_SETTINGS,
   projectOf,
@@ -70,6 +71,7 @@ export interface ProjectSlice {
   /** Change lifecycle settings (in tracyfy.yaml, a pending change) */
   updateLifecycleSettings: (updates: Partial<LifecycleSettings>) => Promise<void>;
 
+  /** Write an artifact's file; the store then holds it as the file reads back */
   saveArtifact: <K extends ArtifactKindId>(kind: K, artifact: ArtifactByKind[K]) => Promise<void>;
   /** Rename the project or change its description */
   updateProject: (project: Project) => Promise<void>;
@@ -290,9 +292,16 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
 
     saveArtifact: async (kindId, artifact) => {
       requireReady();
+      // What a reload would show, so memory and disk never differ; an
+      // artifact the file could not hold (a wrong status) is not written
+      const saved = parseArtifact(
+        kindId,
+        artifact.id,
+        serializeArtifact(kindId, artifact)
+      ) as ArtifactByKind[typeof kindId];
       if (!e2e) await repository.save(kindId, artifact);
       set((s) => ({
-        artifacts: { ...s.artifacts, [kindId]: upsert(s.artifacts[kindId], artifact) },
+        artifacts: { ...s.artifacts, [kindId]: upsert(s.artifacts[kindId], saved) },
       }));
       if (!e2e) get().refreshStatus(); // Fire-and-forget for a responsive UI
     },

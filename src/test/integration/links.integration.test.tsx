@@ -243,7 +243,7 @@ describe('integration: links', () => {
 
   it('every artifact type can be a link target and a link source', async () => {
     h = await startApp({ initialRoute: '/links' });
-    const base = { description: '', status: 'draft', priority: 'medium', dateCreated: Date.now() };
+    const base = { description: '', dateCreated: Date.now() };
     const req = await addRequirement(h, 'Login');
     const targets = {
       REQ: await addRequirement(h, 'Logout'),
