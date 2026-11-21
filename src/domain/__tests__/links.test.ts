@@ -13,11 +13,6 @@ describe('linkedIds', () => {
     expect(linkedIds(links, 'TC-001', 'verifies')).toEqual(['REQ-002']);
   });
 
-  it('finds links stored from the other end under the inverse type', () => {
-    const links = [link('REQ-001', 'verified_by', 'TC-001'), link('TC-001', 'verifies', 'REQ-002')];
-    expect(linkedIds(links, 'TC-001', 'verifies')).toEqual(['REQ-001', 'REQ-002']);
-  });
-
   it('reads a symmetric type in both directions', () => {
     const links = [link('REQ-001', 'related_to', 'REQ-002')];
     expect(linkedIds(links, 'REQ-002', 'related_to')).toEqual(['REQ-001']);
@@ -32,7 +27,7 @@ describe('linkedIds', () => {
     const links = [
       { ...link('TC-001', 'verifies', 'REQ-001'), isDeleted: true },
       link('TC-001', 'verifies', 'REQ-002'),
-      link('REQ-002', 'verified_by', 'TC-001'),
+      link('TC-001', 'verifies', 'REQ-002'),
     ];
     expect(linkedIds(links, 'TC-001', 'verifies')).toEqual(['REQ-002']);
   });
@@ -50,10 +45,10 @@ describe('linkCounts', () => {
 });
 
 describe('verifiedRequirementIds', () => {
-  it('lists the requirements a test case verifies, from either end', () => {
+  it('lists the requirements a test case verifies', () => {
     const links = [
       link('TC-001', 'verifies', 'REQ-002'),
-      link('REQ-001', 'verified_by', 'TC-001'),
+      link('TC-001', 'verifies', 'REQ-001'),
       link('TC-001', 'verifies', 'UC-001'), // not a requirement
       link('TC-002', 'verifies', 'REQ-003'), // another test case
     ];

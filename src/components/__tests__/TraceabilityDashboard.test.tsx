@@ -200,7 +200,7 @@ describe('TraceabilityDashboard', () => {
       render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Gaps');
 
-      expect(screen.getByText(/Unlinked Artifacts/)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /^Gaps \(\d+\)$/ })).toBeInTheDocument();
     });
 
     it('switches to Links tab when clicked', async () => {
@@ -230,37 +230,50 @@ describe('TraceabilityDashboard', () => {
   });
 
   describe('Gaps Tab', () => {
-    it('lists unlinked artifacts with issue type badges', () => {
+    const gapRow = (id: string) => screen.getByText(id).parentElement!;
+
+    it('lists the artifacts that break a coverage rule, by rule name', () => {
       render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Gaps');
 
-      // REQ-002 and INFO-001 have no links
-      expect(screen.getByText('REQ-002')).toBeInTheDocument();
-      expect(screen.getByText('INFO-001')).toBeInTheDocument();
+      // No test case verifies the requirements, and the test case verifies nothing
+      expect(within(gapRow('REQ-002')).getByText('Every requirement is verified')).toBeVisible();
+      expect(
+        within(gapRow('TC-001')).getByText('Every test case verifies something')
+      ).toBeVisible();
+      // No rule asks anything of information
+      expect(screen.queryByText('INFO-001')).not.toBeInTheDocument();
     });
 
-    it('shows issue type labels', () => {
+    it('reports a link the rules do not allow', () => {
       render(<TraceabilityDashboard {...defaultProps} />);
       clickTab('Gaps');
 
-      // Should show issue type badges
-      const noLinksLabels = screen.getAllByText(/No links|No outgoing|No incoming/);
-      expect(noLinksLabels.length).toBeGreaterThan(0);
+      // A use case derived from a requirement is not in the default rules
+      expect(within(gapRow('UC-001')).getByText('Link not allowed by the rules')).toBeVisible();
+      expect(within(gapRow('UC-001')).getByText('LINK-102')).toBeVisible();
     });
 
-    it('shows empty state when all artifacts are linked', () => {
+    it('shows empty state when every rule is met', () => {
       const allLinkedProps = {
         requirements: [{ ...mockRequirements[0] }],
-        useCases: mockUseCases,
-        testCases: [],
+        useCases: [],
+        testCases: mockTestCases,
         information: [],
-        standaloneLinks: fixtureLinks,
+        standaloneLinks: [
+          {
+            ...fixtureLinks[0],
+            targetId: 'REQ-001',
+            sourceId: 'TC-001',
+            type: 'verifies' as const,
+          },
+        ],
       };
 
       render(<TraceabilityDashboard {...allLinkedProps} />);
       clickTab('Gaps');
 
-      expect(screen.getByText('All artifacts are linked!')).toBeInTheDocument();
+      expect(screen.getByText('No gaps: every traceability rule is met.')).toBeInTheDocument();
     });
   });
 
@@ -476,7 +489,7 @@ describe('TraceabilityDashboard', () => {
       fireEvent.click(screen.getByRole('button', { name: 'TC' }));
 
       expect(screen.getByText('REQ-002')).toBeInTheDocument();
-      expect(screen.queryByText('INFO-001')).not.toBeInTheDocument();
+      expect(screen.queryByText('TC-001')).not.toBeInTheDocument();
     });
   });
 
@@ -497,7 +510,7 @@ describe('TraceabilityDashboard', () => {
       const gapButtons = screen.getAllByRole('button', { name: /\d+ gaps?/ });
       fireEvent.click(gapButtons[0]);
 
-      expect(screen.getByText(/Unlinked Artifacts/)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /^Gaps \(\d+\)$/ })).toBeInTheDocument();
     });
   });
 });

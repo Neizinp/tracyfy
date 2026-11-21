@@ -740,38 +740,38 @@ Most Requirement Management Tools (RMTs) use a single monolithic database. This 
     }, // Check PDF -> PDF Generation
     {
       sourceIndex: 0,
-      sourceType: 'useCase',
+      sourceType: 'requirement',
       targetIndex: 0,
-      targetType: 'requirement',
+      targetType: 'useCase',
       type: 'satisfies',
-    }, // Create Artifact -> Atomic Storage
+    }, // Atomic Storage satisfies Create Artifact
     {
-      sourceIndex: 1,
-      sourceType: 'useCase',
-      targetIndex: 7,
-      targetType: 'requirement',
+      sourceIndex: 7,
+      sourceType: 'requirement',
+      targetIndex: 1,
+      targetType: 'useCase',
       type: 'satisfies',
-    }, // Establish Link -> Universal Linking
+    }, // Universal Linking satisfies Establish Link
+    {
+      sourceIndex: 13,
+      sourceType: 'requirement',
+      targetIndex: 2,
+      targetType: 'useCase',
+      type: 'satisfies',
+    }, // Dependency Traversal satisfies Run Analysis
     {
       sourceIndex: 2,
-      sourceType: 'useCase',
-      targetIndex: 13,
-      targetType: 'requirement',
-      type: 'satisfies',
-    }, // Run Analysis -> Dependency Traversal
+      sourceType: 'requirement',
+      targetIndex: 0,
+      targetType: 'risk',
+      type: 'mitigates',
+    }, // Local-First Indexing mitigates Browser Compatibility
     {
-      sourceIndex: 0,
-      sourceType: 'risk',
-      targetIndex: 2,
-      targetType: 'requirement',
-      type: 'related_to',
-    }, // Browser Compatibility -> Local-First Indexing
-    {
-      sourceIndex: 1,
-      sourceType: 'risk',
-      targetIndex: 15,
-      targetType: 'requirement',
-      type: 'related_to',
-    }, // Performance Scale -> Full-Text Search
+      sourceIndex: 15,
+      sourceType: 'requirement',
+      targetIndex: 1,
+      targetType: 'risk',
+      type: 'mitigates',
+    }, // Full-Text Search mitigates Performance Scale
   ],
 };

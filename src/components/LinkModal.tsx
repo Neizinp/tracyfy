@@ -1,12 +1,15 @@
 import React, { useCallback } from 'react';
 import { Search, Link as LinkIcon } from 'lucide-react';
-import type { LinkType } from '../types';
 import { ARTIFACT_KINDS, kind, type ArtifactKindId } from '../domain/artifactKinds';
+import { LINK_TYPES, type LinkType } from '../domain/linkTypes';
+
+const linkTypeDescription = (type: LinkType) => LINK_TYPES[type].description;
 import type { ArtifactsByKind } from '../hooks/useLinkableArtifacts';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useLinkModal, type LinkModalResult } from '../hooks/useLinkModal';
 import { BaseArtifactModal } from './BaseArtifactModal';
 import { FormField } from './forms/FormField';
+import { useAppStore } from '../state';
 
 export type { LinkModalResult };
 
@@ -28,6 +31,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
   onClose,
   onAddLink,
 }) => {
+  const rules = useAppStore((s) => s.settings.traceability);
   const {
     targetType,
     selectTargetType,
@@ -35,8 +39,10 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     setSearchQuery,
     selectedTargetId,
     setSelectedTargetId,
-    linkType,
-    setLinkType,
+    typeOptions,
+    optionsByKind,
+    selectedOption,
+    setOptionKey,
     filteredArtifacts,
     handleSubmit,
     needsSourceSelection,
@@ -49,6 +55,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     sourceArtifactId,
     sourceArtifactType,
     artifactsByType,
+    rules,
     onClose,
     onAddLink,
   });
@@ -76,7 +83,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
       title="Create Link"
       icon={<LinkIcon size={20} style={{ color: 'var(--color-accent)' }} />}
       submitLabel="Create Link"
-      isSubmitDisabled={!selectedTargetId || !effectiveSourceId}
+      isSubmitDisabled={!selectedTargetId || !effectiveSourceId || !selectedOption}
       width="600px"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -176,7 +183,12 @@ export const LinkModal: React.FC<LinkModalProps> = ({
                   key={type}
                   type="button"
                   onClick={() => selectTargetType(type)}
-                  title={label}
+                  title={
+                    optionsByKind[type].length > 0
+                      ? label
+                      : `The traceability rules allow no link to ${label.toLowerCase()} from here`
+                  }
+                  disabled={optionsByKind[type].length === 0}
                   aria-pressed={targetType === type}
                   style={{
                     flex: 1,
@@ -317,35 +329,31 @@ export const LinkModal: React.FC<LinkModalProps> = ({
           </div>
         </FormField>
 
-        {/* Link Type */}
-        <FormField label="Relation Type" fullWidth>
-          <select
-            value={linkType}
-            onChange={(e) => setLinkType(e.target.value as LinkType)}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-bg-app)',
-              color: 'var(--color-text-primary)',
-              fontSize: 'var(--font-size-sm)',
-              outline: 'none',
-            }}
-          >
-            <option value="parent">Parent (hierarchical decomposition)</option>
-            <option value="child">Child (hierarchical decomposition)</option>
-            <option value="derived_from">Derived From (logical derivation)</option>
-            <option value="depends_on">Depends On (dependency)</option>
-            <option value="conflicts_with">Conflicts With (mutual exclusivity)</option>
-            <option value="duplicates">Duplicates / Similar To (redundancy)</option>
-            <option value="refines">Refines (adds detail)</option>
-            <option value="satisfies">Satisfies / Implements (design link)</option>
-            <option value="verifies">Verifies (test/validation link)</option>
-            <option value="constrains">Constrains (imposes restrictions)</option>
-            <option value="requires">Requires (precondition)</option>
-            <option value="related_to">Related To (generic association)</option>
-          </select>
+        {/* Relation: only what the traceability rules allow, read from the source */}
+        <FormField
+          label="Relation Type"
+          fullWidth
+          htmlFor="link-relation"
+          description={selectedOption ? linkTypeDescription(selectedOption.type) : undefined}
+        >
+          {typeOptions.length === 0 ? (
+            <div role="alert" className="tf-hint">
+              The traceability rules in tracyfy.yaml allow no link between these kinds.
+            </div>
+          ) : (
+            <select
+              id="link-relation"
+              className="tf-input"
+              value={selectedOption?.key ?? ''}
+              onChange={(e) => setOptionKey(e.target.value)}
+            >
+              {typeOptions.map((o) => (
+                <option key={o.key} value={o.key}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          )}
         </FormField>
       </div>
     </BaseArtifactModal>

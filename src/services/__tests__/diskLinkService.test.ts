@@ -120,51 +120,6 @@ lastModified: 1700000000000
     });
   });
 
-  describe('getOutgoingLinks', () => {
-    it('should return links where artifact is the source', async () => {
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue(['LINK-001.md', 'LINK-002.md']);
-      vi.mocked(fileSystemService.readFile)
-        .mockResolvedValueOnce(sampleLinkMarkdown)
-        .mockResolvedValueOnce(projectScopedLinkMarkdown);
-
-      const links = await diskLinkService.getOutgoingLinks('REQ-001');
-
-      expect(links).toHaveLength(1);
-      expect(links[0].sourceId).toBe('REQ-001');
-    });
-
-    it('should return empty array when no outgoing links exist', async () => {
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue(['LINK-001.md']);
-      vi.mocked(fileSystemService.readFile).mockResolvedValue(sampleLinkMarkdown);
-
-      const links = await diskLinkService.getOutgoingLinks('UC-999');
-
-      expect(links).toEqual([]);
-    });
-  });
-
-  describe('getIncomingLinks', () => {
-    it('should return links where artifact is the target with inverse types', async () => {
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue(['LINK-001.md']);
-      vi.mocked(fileSystemService.readFile).mockResolvedValue(sampleLinkMarkdown);
-
-      const links = await diskLinkService.getIncomingLinks('UC-001');
-
-      expect(links).toHaveLength(1);
-      expect(links[0].sourceId).toBe('REQ-001');
-      expect(links[0].linkType).toBeDefined(); // Inverse type of 'satisfies'
-    });
-
-    it('should return empty array when no incoming links exist', async () => {
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue(['LINK-001.md']);
-      vi.mocked(fileSystemService.readFile).mockResolvedValue(sampleLinkMarkdown);
-
-      const links = await diskLinkService.getIncomingLinks('REQ-999');
-
-      expect(links).toEqual([]);
-    });
-  });
-
   describe('createLink', () => {
     it('should create a new link file with generated ID', async () => {
       vi.mocked(idAllocator.next).mockResolvedValue('LINK-001');
@@ -274,37 +229,6 @@ lastModified: 1700000000000
       const updated = await diskLinkService.updateLink('LINK-999', { type: 'depends_on' });
 
       expect(updated).toBeNull();
-    });
-  });
-
-  describe('linkExists', () => {
-    it('should return true if link exists between artifacts', async () => {
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue(['LINK-001.md']);
-      vi.mocked(fileSystemService.readFile).mockResolvedValue(sampleLinkMarkdown);
-
-      const exists = await diskLinkService.linkExists('REQ-001', 'UC-001');
-
-      expect(exists).toBe(true);
-    });
-
-    it('should return false if no link exists', async () => {
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue(['LINK-001.md']);
-      vi.mocked(fileSystemService.readFile).mockResolvedValue(sampleLinkMarkdown);
-
-      const exists = await diskLinkService.linkExists('REQ-999', 'UC-999');
-
-      expect(exists).toBe(false);
-    });
-
-    it('should check specific link type when provided', async () => {
-      vi.mocked(fileSystemService.listFiles).mockResolvedValue(['LINK-001.md']);
-      vi.mocked(fileSystemService.readFile).mockResolvedValue(sampleLinkMarkdown);
-
-      const existsSatisfies = await diskLinkService.linkExists('REQ-001', 'UC-001', 'satisfies');
-      const existsDependsOn = await diskLinkService.linkExists('REQ-001', 'UC-001', 'depends_on');
-
-      expect(existsSatisfies).toBe(true);
-      expect(existsDependsOn).toBe(false);
     });
   });
 });

@@ -42,9 +42,7 @@ import type {
 } from '../types/artifact';
 import type { Link } from '../types/link';
 import type { CustomAttributeValue } from '../types/customAttributes';
-import { LINK_INVERSE, type LinkType } from './linkTypes';
-
-const LINK_TYPE_IDS = Object.keys(LINK_INVERSE) as [LinkType, ...LinkType[]];
+import { LINK_TYPE_IDS, linkTypeLabel } from './linkTypes';
 
 /** A short text field; a bare number (`title: 2024`) is read as text */
 const text = z.preprocess((v) => (typeof v === 'number' ? String(v) : v), z.string());
@@ -275,7 +273,7 @@ export function serializeLink(link: Link): string {
       lastModified: writeTime(link.lastModified),
       customAttributes: validAttributes(link.customAttributes),
     },
-    `# ${link.id}\n\nLinks **${link.sourceId}** to **${link.targetId}** (${link.type.replaceAll('_', ' ')})`
+    `# ${link.id}\n\nLinks **${link.sourceId}** to **${link.targetId}** (${linkTypeLabel(link.type).toLowerCase()})`
   );
 }
 

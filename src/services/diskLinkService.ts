@@ -1,19 +1,9 @@
 import { BaseArtifactService } from './baseArtifactService';
 import type { Link } from '../types';
 import type { LinkType } from '../domain/linkTypes';
-import { getInverseType } from '../domain/linkTypes';
 import { parseLink, serializeLink } from '../domain/artifactFormat';
 import { idAllocator } from '../storage/idAllocator';
 import { STORED_TYPES } from './storedTypes';
-
-/**
- * Incoming link representation (from target's perspective)
- */
-export interface IncomingLink {
-  linkId: string;
-  sourceId: string;
-  linkType: LinkType; // The inverse type
-}
 
 class DiskLinkService extends BaseArtifactService<Link> {
   constructor() {
@@ -35,42 +25,6 @@ class DiskLinkService extends BaseArtifactService<Link> {
    */
   async getAllLinks(): Promise<Link[]> {
     return this.loadAll();
-  }
-
-  /**
-   * Get outgoing links FROM an artifact (where it is the source)
-   */
-  async getOutgoingLinks(artifactId: string): Promise<Link[]> {
-    const allLinks = await this.getAllLinks();
-    return allLinks.filter((link) => link.sourceId === artifactId);
-  }
-
-  /**
-   * Get incoming links TO an artifact (where it is the target)
-   * Returns with inverse types computed
-   */
-  async getIncomingLinks(artifactId: string): Promise<IncomingLink[]> {
-    const allLinks = await this.getAllLinks();
-    return allLinks
-      .filter((link) => link.targetId === artifactId)
-      .map((link) => ({
-        linkId: link.id,
-        sourceId: link.sourceId,
-        linkType: getInverseType(link.type),
-      }));
-  }
-
-  /**
-   * Check if a link already exists between two artifacts
-   */
-  async linkExists(sourceId: string, targetId: string, type?: LinkType): Promise<boolean> {
-    const allLinks = await this.getAllLinks();
-    return allLinks.some(
-      (link) =>
-        link.sourceId === sourceId &&
-        link.targetId === targetId &&
-        (type === undefined || link.type === type)
-    );
   }
 
   /**
