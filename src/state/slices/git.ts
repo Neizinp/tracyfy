@@ -104,6 +104,8 @@ export const createGitSlice: StateCreator<AppState, [], [], GitSlice> = (set, ge
         // works on the pulled data instead of stale state
         await get().reload();
         get().refreshStatus();
+        // Colleagues' baselines come with the pull
+        void get().refreshBaselines();
       }
       return result;
     },

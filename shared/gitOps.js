@@ -198,20 +198,48 @@ export function createGitOps({ fs, git, getHttp, corsProxy }) {
       return remotes.map((r) => ({ name: r.remote, url: r.url }));
     },
 
+    /** Fetches the branch and the remote's tags (baselines) */
     async fetch(dir, { remote, branch, token } = {}) {
       await git.fetch({
         ...(await remoteOptions(dir, remote, token)),
         ...(branch ? { ref: branch, singleBranch: true } : {}),
+        tags: true,
       });
     },
 
+    /**
+     * Pushes the branch, then every tag (a baseline exists only in the local
+     * clone until it is pushed). A tag the remote has with other content is
+     * not overwritten; those are reported together after the others are pushed.
+     */
     async push(dir, { remote, branch, token } = {}) {
-      await git.push({ ...(await remoteOptions(dir, remote, token)), ref: branch || 'main' });
+      const options = await remoteOptions(dir, remote, token);
+      await git.push({ ...options, ref: branch || 'main' });
+      const rejected = [];
+      for (const tag of await git.listTags({ fs, dir })) {
+        try {
+          await git.push({ ...options, ref: `refs/tags/${tag}` });
+        } catch {
+          rejected.push(tag);
+        }
+      }
+      if (rejected.length > 0) {
+        throw new Error(
+          `Pushed, but the remote already has other baselines named ${rejected.join(', ')}`
+        );
+      }
     },
 
     /** @returns {Promise<{ ok: boolean, conflicts: string[] }>} */
     async pull(dir, { remote, branch, token } = {}) {
       try {
+        // pull() fetches no tags: fetch them first, so colleagues' baselines arrive
+        await git.fetch({
+          ...(await remoteOptions(dir, remote, token)),
+          ref: branch || 'main',
+          singleBranch: true,
+          tags: true,
+        });
         await git.pull({
           ...(await remoteOptions(dir, remote, token)),
           ref: branch || 'main',
