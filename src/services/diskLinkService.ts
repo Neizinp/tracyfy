@@ -1,7 +1,7 @@
 import { BaseArtifactService } from './baseArtifactService';
 import type { Link } from '../types';
-import type { LinkType } from '../utils/linkTypes';
-import { getInverseType } from '../utils/linkTypes';
+import type { LinkType } from '../domain/linkTypes';
+import { getInverseType } from '../domain/linkTypes';
 import { linkToMarkdown, parseMarkdownLink } from '../utils/linkMarkdownUtils';
 import { idService } from './idService';
 

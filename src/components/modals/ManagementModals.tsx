@@ -23,7 +23,7 @@ import {
 } from '../../app/providers';
 import { diskCustomAttributeService } from '../../services/diskCustomAttributeService';
 import { exportProjectToJSON } from '../../utils/jsonExportUtils';
-import type { LinkType, ExportOptions } from '../../types';
+import type { ExportOptions } from '../../types';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import type { LinkModalResult } from '../LinkModal';
 import { useLinkableArtifacts } from '../../hooks/useLinkableArtifacts';
@@ -161,7 +161,7 @@ export const ManagementModals: React.FC = () => {
       }
 
       try {
-        const link = await createLink(sourceId, newLink.targetId, newLink.type as LinkType);
+        const link = await createLink(sourceId, newLink.targetId, newLink.type);
         showToast(`Created link ${link.id}: ${sourceId} → ${newLink.targetId}`, 'success');
       } catch (error) {
         console.error('Failed to create link:', error);

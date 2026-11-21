@@ -14,7 +14,8 @@ import { formatDate } from './dateUtils';
 import { realGitService } from '../services/realGitService';
 import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
 import { diskLinkService } from '../services/diskLinkService';
-import { LINK_TYPE_LABELS } from './linkTypes';
+import { LINK_TYPE_LABELS } from '../domain/linkTypes';
+import { verifiedRequirementIds } from '../domain/links';
 import { kind, type ArtifactKindId } from '../domain/artifactKinds';
 
 // Helper to sanitize text for Excel (remove newlines if needed, or keep them)
@@ -176,11 +177,8 @@ export async function exportProjectToExcel(
   );
   const projectRisks = sortByIdNumber((globalState.risks || []).filter((r) => !r.isDeleted));
 
-  // Pre-fetch links and build artifact ID list if needed for Matrices or Links sheet
-  const projectLinks =
-    includeLinks || includeTraceability || includeVerificationMatrix
-      ? await diskLinkService.getAllLinks()
-      : [];
+  // Links feed the test cases' requirements column as well as the link sheets
+  const projectLinks = await diskLinkService.getAllLinks();
 
   const allArtifactIds = includeTraceability
     ? [
@@ -343,7 +341,7 @@ export async function exportProjectToExcel(
       Priority: tc.priority || 'medium',
       Author: tc.author || '',
       Description: sanitize(tc.description),
-      'Tests Requirements': tc.requirementIds ? tc.requirementIds.join(', ') : '',
+      'Tests Requirements': verifiedRequirementIds(projectLinks, tc.id).join(', '),
       Created: formatDate(tc.dateCreated),
       'Last Modified': formatDate(tc.lastModified),
       'Last Run': tc.lastRun ? formatDate(tc.lastRun) : '',

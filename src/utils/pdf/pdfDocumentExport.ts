@@ -7,7 +7,9 @@ import type {
   TestCase,
   Information,
   Risk,
+  Link,
 } from '../../types';
+import { verifiedRequirementIds } from '../../domain/links';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import {
   renderRequirement,
@@ -24,6 +26,7 @@ interface ExportContext {
   testCases: TestCase[];
   information: Information[];
   risks: Risk[];
+  links: Link[];
   customAttributeDefinitions: CustomAttributeDefinition[];
   tocEntries: { title: string; page: number; level: number }[];
 }
@@ -141,7 +144,14 @@ export async function renderFlatStructure(
       } else if (artifactType === 'testCase') {
         const tc = testCases.find((t) => t.id === artifactId);
         if (tc) {
-          result = await renderTestCase(doc, tc, yPos, page, customAttributeDefinitions);
+          result = await renderTestCase(
+            doc,
+            tc,
+            yPos,
+            page,
+            customAttributeDefinitions,
+            verifiedRequirementIds(context.links, tc.id)
+          );
         }
       } else if (artifactType === 'information') {
         const info = information.find((i) => i.id === artifactId);

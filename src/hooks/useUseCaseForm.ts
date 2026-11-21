@@ -56,7 +56,6 @@ export function useUseCaseForm({ isOpen, useCase, onClose, onSubmit }: UseUseCas
     confirmDelete,
     cancelDelete,
     showDeleteConfirm,
-    handleRemoveLink,
   } = useArtifactForm<UseCase, Tab>({
     isOpen,
     artifact: useCase as UseCase | null,
@@ -135,7 +134,6 @@ export function useUseCaseForm({ isOpen, useCase, onClose, onSubmit }: UseUseCas
     confirmDelete,
     cancelDelete,
     showDeleteConfirm,
-    handleRemoveLink,
     handleNavigateToArtifact,
   };
 }

@@ -109,7 +109,6 @@ describe('excelExportUtils', () => {
     lastModified: 0,
     revision: '01',
     dateCreated: 0,
-    requirementIds: [],
   };
 
   const mockInfo: Information = {

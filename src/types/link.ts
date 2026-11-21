@@ -1,23 +1,5 @@
 import type { CustomAttributeValue } from './customAttributes';
-import type { LinkType } from '../utils/linkTypes';
-
-// Link stored within an artifact (DEPRECATED - use Link instead)
-export interface ArtifactLink {
-  targetId: string;
-  type:
-    | 'parent' // Hierarchical decomposition - this is a parent of target
-    | 'child' // Hierarchical decomposition - this is a child of target
-    | 'derived_from' // Logical derivation, not strict hierarchy
-    | 'depends_on' // Dependency
-    | 'conflicts_with' // Mutual exclusivity
-    | 'duplicates' // Redundancy or overlap (Similar To)
-    | 'refines' // Adds detail without changing intent
-    | 'satisfies' // Links to design or implementation (Implements)
-    | 'verifies' // Links to test cases or validation
-    | 'constrains' // Imposes restrictions on another requirement
-    | 'requires' // Precondition for another requirement
-    | 'related_to'; // Generic association for context
-}
+import type { LinkType } from '../domain/linkTypes';
 
 // Standalone link entity stored in links/ folder
 export interface Link {

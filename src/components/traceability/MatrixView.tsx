@@ -13,7 +13,6 @@ export interface MatrixArtifact {
   id: string;
   title: string;
   type: ArtifactKindId;
-  linkedArtifacts: { targetId: string; type: string }[];
 }
 
 export interface MatrixLink {

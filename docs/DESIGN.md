@@ -247,8 +247,12 @@ order is chosen so that each step makes the next one smaller.
    replaces `LINKABLE_TYPES`, `TRACE_TYPES`, `ARTIFACT_CONFIG` and the 'usecase' /
    'usecases' / 'useCases' / 'uc' variants. Opening an artifact from its ID is one hook
    (`useOpenArtifact`).
-3. **One link model** (§3.3, without rules yet). Remove `requirementIds`, `useCaseIds`,
-   `linkedArtifacts` and the legacy migration.
+3. ✅ **One link model** (§3.3, without rules yet) - done. `requirementIds`, `useCaseIds`,
+   `linkedArtifacts` and the legacy migration are gone; artifact files hold no relations.
+   Link types live in `src/domain/linkTypes.ts`, and `src/domain/links.ts` answers "what does X
+   relate to" from the links, reading a link from either end (`TC verifies REQ` and
+   `REQ verified_by TC` are the same fact). The test case list, graph and PDF/Excel export
+   read relations from there.
 4. **Storage layer + new file format** (§4, P4, P5). Repository interface, zod schemas,
    `tracyfy.yaml`, IDs from file names. Delete counters, users and the other auto-commit
    special cases.
@@ -284,6 +288,13 @@ Things noticed while doing a step that belong to a later one:
   and `STORED_TYPES` still carries users, workflows and custom-attribute files. The JSON
   import/export keys its collections by state name (`useCases`). All of this belongs to the
   repository in step 4 and the export rewrite in step 8.
+- **Left after step 3**: `Workflow.artifactIds` still lists artifacts inside the workflow file.
+  It goes with workflows in step 7 (P6). The gap analysis still counts "has any link"; the
+  rule-based version is step 7 (P2).
+- **A link is one fact, stored from one end.** Creating `REQ verified_by TC` and
+  `TC verifies REQ` gives two link files for the same fact. The link dialog should normalize
+  to one direction per type pair (for example always `verifies`), which also makes the
+  `allowed` rules in §3.3 simpler. This fits with the link rules in step 7.
 
 ## 8. Open questions
 

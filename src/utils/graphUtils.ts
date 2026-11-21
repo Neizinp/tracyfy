@@ -24,7 +24,8 @@ export function transformArtifactsToNodes(
   artifacts: UnifiedArtifact[],
   layout: LayoutAlgorithm = 'force',
   selectedNodeId: string | null = null,
-  connectedNodeIds: Set<string> = new Set()
+  connectedNodeIds: Set<string> = new Set(),
+  linkCounts: ReadonlyMap<string, number> = new Map()
 ): Node<ArtifactNodeData>[] {
   const positions = calculateLayout(artifacts, layout);
 
@@ -36,7 +37,7 @@ export function transformArtifactsToNodes(
       artifactId: artifact.id,
       title: artifact.title,
       artifactType: artifact.type,
-      linkCount: artifact.linkedArtifacts.length,
+      linkCount: linkCounts.get(artifact.id) ?? 0,
       highlighted: connectedNodeIds.has(artifact.id),
       isSelected: artifact.id === selectedNodeId,
     },

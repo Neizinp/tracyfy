@@ -1,6 +1,6 @@
 /**
  * The traceability dashboard must reflect links created in the app
- * (stored as link files), not only the legacy embedded linkedArtifacts.
+ * (stored as link files).
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { act, fireEvent, screen, within } from '@testing-library/react';

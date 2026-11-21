@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { IncomingLink } from '../services/diskLinkService';
 import type { Link } from '../types';
-import type { LinkType } from '../utils/linkTypes';
+import type { LinkType } from '../domain/linkTypes';
 import { debug } from '../utils/debug';
 import { useFileSystem } from '../app/providers/FileSystemProvider';
 

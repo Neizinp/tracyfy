@@ -51,7 +51,6 @@ export function useDocumentForm({ isOpen, document, onClose, onSubmit }: UseDocu
     confirmDelete,
     cancelDelete,
     showDeleteConfirm,
-    handleRemoveLink,
   } = useArtifactForm<ArtifactDocument, Tab>({
     isOpen,
     artifact: document,
@@ -99,7 +98,6 @@ export function useDocumentForm({ isOpen, document, onClose, onSubmit }: UseDocu
     confirmDelete,
     cancelDelete,
     showDeleteConfirm,
-    handleRemoveLink,
     handleNavigateToArtifact,
   };
 }

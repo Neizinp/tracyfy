@@ -19,6 +19,7 @@ import {
   getNodeColor,
 } from '../../utils/graphUtils';
 import { ArtifactNode } from './ArtifactNode';
+import { linkCounts } from '../../domain/links';
 
 interface TraceabilityGraphProps {
   artifacts: UnifiedArtifact[];
@@ -77,10 +78,20 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
     return connected;
   }, [selectedNodeId, filteredLinks]);
 
+  // Links per artifact, counted over the project's links (not only the visible ones)
+  const counts = useMemo(() => linkCounts(links), [links]);
+
   // Transform to React Flow format with highlighting info
   const initialNodes = useMemo(
-    () => transformArtifactsToNodes(filteredArtifacts, layout, selectedNodeId, connectedNodeIds),
-    [filteredArtifacts, layout, selectedNodeId, connectedNodeIds]
+    () =>
+      transformArtifactsToNodes(
+        filteredArtifacts,
+        layout,
+        selectedNodeId,
+        connectedNodeIds,
+        counts
+      ),
+    [filteredArtifacts, layout, selectedNodeId, connectedNodeIds, counts]
   );
 
   const initialEdges = useMemo(
@@ -117,10 +128,11 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
       filteredArtifacts,
       layout,
       selectedNodeId,
-      connectedNodeIds
+      connectedNodeIds,
+      counts
     );
     setNodes(newNodes);
-  }, [filteredArtifacts, layout, setNodes, selectedNodeId, connectedNodeIds]);
+  }, [filteredArtifacts, layout, setNodes, selectedNodeId, connectedNodeIds, counts]);
 
   // Handle layout change
   const handleLayoutChange = useCallback(
@@ -130,11 +142,12 @@ export const TraceabilityGraph: React.FC<TraceabilityGraphProps> = ({
         filteredArtifacts,
         newLayout,
         selectedNodeId,
-        connectedNodeIds
+        connectedNodeIds,
+        counts
       );
       setNodes(newNodes);
     },
-    [filteredArtifacts, setNodes, selectedNodeId, connectedNodeIds]
+    [filteredArtifacts, setNodes, selectedNodeId, connectedNodeIds, counts]
   );
 
   return (

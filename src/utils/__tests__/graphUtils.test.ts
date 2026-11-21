@@ -15,14 +15,8 @@ describe('graphUtils', () => {
   const createArtifact = (
     id: string,
     type: ArtifactKindId,
-    title: string = 'Test',
-    linkedArtifacts: string[] = []
-  ): UnifiedArtifact => ({
-    id,
-    type,
-    title,
-    linkedArtifacts: linkedArtifacts.map((targetId) => ({ targetId, type: 'related_to' })),
-  });
+    title: string = 'Test'
+  ): UnifiedArtifact => ({ id, type, title });
 
   describe('transformArtifactsToNodes', () => {
     it('should transform artifacts into React Flow nodes', () => {
@@ -41,14 +35,21 @@ describe('graphUtils', () => {
       expect(nodes[0].data.artifactType).toBe('requirement');
     });
 
-    it('should set correct link count from linkedArtifacts', () => {
+    it("takes each node's link count from the counts it is given", () => {
       const artifacts: UnifiedArtifact[] = [
-        createArtifact('REQ-001', 'requirement', 'Requirement', ['UC-001', 'TC-001']),
+        createArtifact('REQ-001', 'requirement'),
+        createArtifact('REQ-002', 'requirement'),
       ];
 
-      const nodes = transformArtifactsToNodes(artifacts);
+      const nodes = transformArtifactsToNodes(
+        artifacts,
+        'force',
+        null,
+        new Set(),
+        new Map([['REQ-001', 2]])
+      );
 
-      expect(nodes[0].data.linkCount).toBe(2);
+      expect(nodes.map((n) => n.data.linkCount)).toEqual([2, 0]);
     });
 
     it('should calculate node positions based on layout algorithm', () => {

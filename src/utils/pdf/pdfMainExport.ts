@@ -130,6 +130,7 @@ export async function exportProjectToPDF(
 
   // Fetch custom attribute definitions for displaying values
   const customAttributeDefinitions = await diskCustomAttributeService.getAllDefinitions();
+  const projectLinks = await diskLinkService.getAllLinks();
 
   // 3. Fetch git commit history since last baseline
   const projectRequirements = sortByIdNumber(
@@ -312,7 +313,8 @@ export async function exportProjectToPDF(
       currentPage,
       tocEntries,
       sectionNumber,
-      customAttributeDefinitions
+      customAttributeDefinitions,
+      projectLinks
     );
   }
 
@@ -351,6 +353,7 @@ export async function exportProjectToPDF(
         testCases: globalState.testCases,
         information: globalState.information,
         risks: globalState.risks || [],
+        links: projectLinks,
         customAttributeDefinitions,
       },
       projectDocuments,
@@ -360,7 +363,6 @@ export async function exportProjectToPDF(
   }
 
   // 11. Links Section
-  const projectLinks = await diskLinkService.getAllLinks();
   if (projectLinks.length > 0) {
     doc.addPage();
     sectionNumber++;
@@ -480,6 +482,7 @@ export async function exportSingleDocumentToPDF(
       testCases: globalState.testCases,
       information: globalState.information,
       risks: globalState.risks || [],
+      links: await diskLinkService.getAllLinks(),
       customAttributeDefinitions,
       tocEntries,
     },

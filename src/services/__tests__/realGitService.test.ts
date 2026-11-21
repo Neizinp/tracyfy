@@ -425,7 +425,6 @@ describe('RealGitService', () => {
         text: 'The system shall do something',
         rationale: 'Because it is needed',
 
-        useCaseIds: [],
         status: 'draft',
         priority: 'high',
         dateCreated: 1700000000000,
@@ -481,7 +480,6 @@ describe('RealGitService', () => {
         id: 'TC-001',
         title: 'Test Case 1',
         description: 'A test case',
-        requirementIds: ['REQ-001', 'REQ-002'],
         status: 'draft',
         priority: 'high',
         dateCreated: 1700000000000,
@@ -494,10 +492,6 @@ describe('RealGitService', () => {
       expect(fileSystemService.writeFile).toHaveBeenCalledWith(
         'testcases/TC-001.md',
         expect.stringContaining('id: "TC-001"')
-      );
-      expect(fileSystemService.writeFile).toHaveBeenCalledWith(
-        'testcases/TC-001.md',
-        expect.stringContaining('requirementIds:')
       );
     });
 
@@ -580,7 +574,6 @@ revision: "01"
 dateCreated: 1700000000000
 lastModified: 1700000000000
 
-useCaseIds: []
 ---
 
 # Test Requirement
@@ -674,7 +667,6 @@ priority: "low"
 revision: "01"
 dateCreated: 1700000000000
 lastModified: 1700000000000
-requirementIds: []
 ---
 
 # Test Case

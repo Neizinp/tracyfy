@@ -172,7 +172,7 @@ npm run preview  # Preview the production build
 1. Click the **link icon** on any artifact
 2. Select target artifact from the modal
 3. Choose link type (relates to, depends on, conflicts with)
-4. Links are stored in the source artifact's `linkedArtifacts` field
+4. Each link is its own file in `links/` (for example `links/LINK-001.md`); creating or removing a link never changes the linked artifacts
 
 ### Creating Baselines
 
@@ -260,9 +260,6 @@ title: 'User Authentication'
 status: 'approved'
 priority: 'high'
 revision: '02'
-linkedArtifacts:
-  - targetId: 'UC-001'
-    type: 'relates_to'
 ---
 
 # User Authentication
@@ -278,6 +275,17 @@ Users must authenticate using email and password...
 ## Rationale
 
 Security is a core requirement for the system.
+```
+
+Relations are not stored in the artifact. Each link is a file of its own:
+
+```markdown
+---
+id: 'LINK-001'
+sourceId: 'TC-001'
+targetId: 'REQ-001'
+type: 'verifies'
+---
 ```
 
 ### Repository File Structure
@@ -308,7 +316,7 @@ your-project-repo/
 **Key points:**
 
 - Each artifact is a separate `.md` file, making them easy to review in Git diffs
-- Links between artifacts are stored in the source artifact's `linkedArtifacts` field
+- Links between artifacts are separate files in `links/`; no artifact stores references to other artifacts
 - Project metadata (ID counters, project info) is stored in `.tracyfy/project.md`
 - Baselines are Git tags, not separate files
 - The entire repository can be cloned, reviewed, and merged using standard Git workflows

@@ -52,7 +52,6 @@ export function useTestCaseForm({
     confirmDelete,
     cancelDelete,
     showDeleteConfirm,
-    handleRemoveLink,
   } = useArtifactForm<TestCase, Tab>({
     isOpen,
     artifact: testCase,
@@ -130,7 +129,6 @@ export function useTestCaseForm({
     confirmDelete,
     cancelDelete,
     showDeleteConfirm,
-    handleRemoveLink,
     handleNavigateToArtifact,
   };
 }

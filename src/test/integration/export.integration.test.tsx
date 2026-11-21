@@ -128,6 +128,33 @@ describe('integration: export', () => {
     expect(ids('Risks')).toContain(a.risk.id);
   }, 90_000);
 
+  it('Excel and PDF list the requirements each test case verifies, from the links', async () => {
+    h = await startApp();
+    const app = () => h.app();
+    const add = (title: string) =>
+      act(() => app().requirements.handleAddRequirement({ ...base, title, text: '' } as never));
+    const login = (await add('Login'))!;
+    const logout = (await add('Logout'))!;
+    const tc = (await act(() =>
+      app().testCases.handleAddTestCase({ ...base, title: 'Log in and out' } as never)
+    ))!;
+    // One link stored from each end
+    await act(() => app().fileSystem.createLink(tc.id, login.id, 'verifies'));
+    await act(() => app().fileSystem.createLink(logout.id, tc.id, 'verified_by'));
+    await h.settle();
+
+    const wb = XLSX.read(await exportVia(/excel sheet/i), { type: 'array' });
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets['Test Cases']);
+    expect(rows.find((r) => r['ID'] === tc.id)?.['Tests Requirements']).toBe(
+      `${login.id}, ${logout.id}`
+    );
+
+    // jsPDF writes text uncompressed: "(REQ-001, REQ-002) Tj"
+    const pdf = new TextDecoder('latin1').decode(await exportVia(/pdf document/i));
+    expect(pdf).toContain('(Tests Requirements:)');
+    expect(pdf).toContain(`(${login.id}, ${logout.id})`);
+  }, 90_000);
+
   it('JSON export → import into an empty project folder restores everything', async () => {
     h = await startApp();
     const a = await populate(h);

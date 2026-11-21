@@ -79,7 +79,7 @@ describe('parseExcelImport', () => {
     const bundle = parseExcelImport(
       workbookWith({
         Requirements: [
-          { ID: 'REQ-010', Title: 'Login', Parents: 'REQ-001, ../bad, REQ-002' },
+          { ID: 'REQ-010', Title: 'Login' },
           { ID: '', Title: 'No id' },
         ],
         'Use Cases': [{ ID: 'UC-005', Title: 'Sign in', Actor: 'User' }],
@@ -94,7 +94,6 @@ describe('parseExcelImport', () => {
       title: 'Login',
       status: 'draft',
       priority: 'medium',
-      parentIds: ['REQ-001', 'REQ-002'],
       dateCreated: 1234,
     });
     expect(bundle.useCases[0]).toMatchObject({ id: 'UC-005', actor: 'User', status: 'draft' });

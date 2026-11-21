@@ -58,46 +58,17 @@ export function useTraceabilityData({
 
   // Build unified artifacts list
   const allArtifacts = useMemo((): UnifiedArtifact[] => {
-    const artifacts: UnifiedArtifact[] = [];
-    requirements.forEach((r) =>
-      artifacts.push({
-        id: r.id,
-        title: r.title,
-        type: 'requirement',
-        linkedArtifacts: r.linkedArtifacts || [],
-      })
-    );
-    useCases.forEach((u) =>
-      artifacts.push({
-        id: u.id,
-        title: u.title,
-        type: 'useCase',
-        linkedArtifacts: u.linkedArtifacts || [],
-      })
-    );
-    testCases.forEach((t) =>
-      artifacts.push({
-        id: t.id,
-        title: t.title,
-        type: 'testCase',
-        linkedArtifacts: t.linkedArtifacts || [],
-      })
-    );
-    information.forEach((i) =>
-      artifacts.push({
-        id: i.id,
-        title: i.title,
-        type: 'information',
-        linkedArtifacts: i.linkedArtifacts || [],
-      })
-    );
-    risks.forEach((r) =>
-      artifacts.push({ id: r.id, title: r.title, type: 'risk', linkedArtifacts: [] })
-    );
-    documents.forEach((d) =>
-      artifacts.push({ id: d.id, title: d.title, type: 'document', linkedArtifacts: [] })
-    );
-    return artifacts;
+    const entry =
+      (type: ArtifactKindId) =>
+      (a: { id: string; title: string }): UnifiedArtifact => ({ id: a.id, title: a.title, type });
+    return [
+      ...requirements.map(entry('requirement')),
+      ...useCases.map(entry('useCase')),
+      ...testCases.map(entry('testCase')),
+      ...information.map(entry('information')),
+      ...risks.map(entry('risk')),
+      ...documents.map(entry('document')),
+    ];
   }, [requirements, useCases, testCases, information, risks, documents]);
 
   // Build all links set for bi-directional lookup
@@ -122,8 +93,7 @@ export function useTraceabilityData({
     ) as Record<ArtifactKindId, { total: number; linked: number; gaps: number }>;
   }, [allArtifacts, allLinksSet]);
 
-  // Get gap artifacts with issue types, from link files (legacy embedded
-  // links are migrated to link files on load - see linkMigrationService).
+  // Get gap artifacts with issue types, from the link files
   const gapArtifacts = useMemo((): GapInfo[] => {
     const gaps: GapInfo[] = [];
     const artifactIds = new Set(allArtifacts.map((a) => a.id));
@@ -193,24 +163,8 @@ export function useTraceabilityData({
       }
     });
 
-    testCases.forEach((tc) => {
-      if (tc.requirementIds) {
-        tc.requirementIds.forEach((reqId) => {
-          if (artifactIds.has(reqId)) {
-            links.push({
-              sourceId: tc.id,
-              targetId: reqId,
-              type: 'verifies',
-              sourceType: 'testCase',
-              targetType: 'requirement',
-            });
-          }
-        });
-      }
-    });
-
     return links;
-  }, [allArtifacts, testCases, standaloneLinks]);
+  }, [allArtifacts, standaloneLinks]);
 
   // Filter gaps by selected types
   const filteredGaps = useMemo(() => {

@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { ArtifactLink } from '../types';
 import type { CustomAttributeValue } from '../types/customAttributes';
 import { useUser } from '../app/providers';
 import { useBaseArtifactForm } from './useBaseArtifactForm';
@@ -52,7 +51,6 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
   const [priority, setPriority] = useState<string>('medium');
   const [status, setStatus] = useState<string>('draft');
   const [author, setAuthor] = useState('');
-  const [linkedArtifacts, setLinkedArtifacts] = useState<ArtifactLink[]>([]);
   const [customAttributes, setCustomAttributes] = useState<CustomAttributeValue[]>([]);
 
   // Reset form when modal opens or artifact changes
@@ -67,7 +65,6 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
         setPriority((a.priority as string) || 'medium');
         setStatus((a.status as string) || 'draft');
         setAuthor((a.author as string) || '');
-        setLinkedArtifacts((a.linkedArtifacts as ArtifactLink[]) || []);
         setCustomAttributes((a.customAttributes as CustomAttributeValue[]) || []);
       } else {
         // Create mode: reset to defaults
@@ -77,7 +74,6 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
         setPriority('medium');
         setStatus('draft');
         setAuthor(currentUser?.name || '');
-        setLinkedArtifacts([]);
         setCustomAttributes([]);
       }
     }
@@ -94,7 +90,6 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
         status,
         priority,
         author,
-        linkedArtifacts,
         customAttributes,
         lastModified: Date.now(),
         ...additionalData,
@@ -123,7 +118,6 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
       status,
       priority,
       author,
-      linkedArtifacts,
       customAttributes,
       onCreate,
       onUpdate,
@@ -145,10 +139,6 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, handleSubmit]);
-
-  const handleRemoveLink = useCallback((targetId: string) => {
-    setLinkedArtifacts((prev) => prev.filter((link) => link.targetId !== targetId));
-  }, []);
 
   return {
     // Mode
@@ -172,14 +162,11 @@ export function useArtifactForm<T extends { id: string }, TabType extends string
     setStatus,
     author,
     setAuthor,
-    linkedArtifacts,
-    setLinkedArtifacts,
     customAttributes,
     setCustomAttributes,
 
     // Actions (including from base hook)
     handleSubmit,
-    handleRemoveLink,
     handleDelete,
     confirmDelete,
     cancelDelete,

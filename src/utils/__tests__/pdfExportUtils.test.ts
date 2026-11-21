@@ -50,7 +50,6 @@ const mockTestCase: TestCase = {
   lastModified: 0,
   revision: '01',
   dateCreated: 0,
-  requirementIds: [],
   isDeleted: false,
 };
 
@@ -583,41 +582,6 @@ describe('pdfExportUtils', () => {
       expect.any(Number),
       expect.any(Number)
     );
-  });
-
-  it('should export all test case attributes', async () => {
-    (window as unknown as Record<string, unknown>).showSaveFilePicker = vi.fn().mockResolvedValue({
-      createWritable: vi.fn().mockResolvedValue({
-        write: vi.fn(),
-        close: vi.fn(),
-      }),
-    });
-
-    const fullTestCase: TestCase = {
-      ...mockTestCase,
-      author: 'Jane Smith',
-      lastRun: 1234567890000,
-      requirementIds: ['r1', 'r2'],
-    };
-
-    await exportProjectToPDF(
-      mockProject,
-      { ...globalState, testCases: [fullTestCase] },
-      [],
-      [],
-      ['t1'],
-      [],
-      [],
-      null
-    );
-
-    // Verify Tests Requirements section (traceability)
-    expect(mockText).toHaveBeenCalledWith(
-      'Tests Requirements:',
-      expect.any(Number),
-      expect.any(Number)
-    );
-    expect(mockText).toHaveBeenCalledWith('r1, r2', expect.any(Number), expect.any(Number));
   });
 
   it('should export all information attributes', async () => {

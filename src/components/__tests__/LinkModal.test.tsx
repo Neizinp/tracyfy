@@ -63,7 +63,6 @@ describe('LinkModal', () => {
     description: 'Test case',
     status: 'draft',
     priority: 'medium',
-    requirementIds: [],
     author: '',
     dateCreated: 1000000,
     lastModified: 1000000,

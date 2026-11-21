@@ -19,7 +19,6 @@ const mockFsRequirements: Requirement[] = [
 
     dateCreated: 1000000,
     lastModified: 1000000,
-    linkedArtifacts: [],
     isDeleted: false,
   },
 ];
@@ -38,7 +37,6 @@ const mockFsUseCases: UseCase[] = [
     priority: 'medium',
     revision: '01',
     lastModified: 1000000,
-    linkedArtifacts: [],
     isDeleted: false,
   },
 ];
@@ -53,7 +51,6 @@ const mockFsTestCases: TestCase[] = [
     revision: '01',
     dateCreated: 1000000,
     lastModified: 1000000,
-    requirementIds: [],
     author: '',
     isDeleted: false,
   },
@@ -68,7 +65,6 @@ const mockFsInformation: Information[] = [
     revision: '01',
     dateCreated: 1000000,
     lastModified: 1000000,
-    linkedArtifacts: [],
     isDeleted: false,
   },
 ];

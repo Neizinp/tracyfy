@@ -5,7 +5,8 @@
  */
 
 import jsPDF from 'jspdf';
-import type { Requirement, UseCase, TestCase, Information } from '../../types';
+import type { Requirement, UseCase, TestCase, Information, Link } from '../../types';
+import { verifiedRequirementIds } from '../../domain/links';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import type { TOCEntry } from './types';
 import {
@@ -80,7 +81,8 @@ export async function addTestCasesSection(
   startPage: number,
   tocEntries: TOCEntry[],
   sectionNumber: number,
-  customAttributeDefinitions: CustomAttributeDefinition[]
+  customAttributeDefinitions: CustomAttributeDefinition[],
+  links: Link[]
 ): Promise<number> {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
@@ -90,7 +92,14 @@ export async function addTestCasesSection(
   let page = startPage;
 
   for (const testCase of testCases) {
-    const result = await renderTestCase(doc, testCase, yPos, page, customAttributeDefinitions);
+    const result = await renderTestCase(
+      doc,
+      testCase,
+      yPos,
+      page,
+      customAttributeDefinitions,
+      verifiedRequirementIds(links, testCase.id)
+    );
     yPos = result.yPos;
     page = result.page;
     tocEntries.push({ title: `${testCase.id} - ${testCase.title}`, page: page, level: 1 });

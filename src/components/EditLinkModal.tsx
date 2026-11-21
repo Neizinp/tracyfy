@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link as LinkIcon, Trash2, ArrowRight } from 'lucide-react';
 import type { Link } from '../types';
-import type { LinkType } from '../utils/linkTypes';
-import { LINK_TYPE_LABELS } from '../utils/linkTypes';
+import type { LinkType } from '../domain/linkTypes';
+import { LINK_TYPE_LABELS } from '../domain/linkTypes';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { BaseArtifactModal } from './BaseArtifactModal';
 import { FormField } from './forms/FormField';

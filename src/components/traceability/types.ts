@@ -1,11 +1,9 @@
-import type { ArtifactLink } from '../../types';
 import type { ArtifactKindId } from '../../domain/artifactKinds';
 
 export interface UnifiedArtifact {
   id: string;
   title: string;
   type: ArtifactKindId;
-  linkedArtifacts: ArtifactLink[];
 }
 
 export type IssueType = 'no_outgoing' | 'no_incoming' | 'orphan_link' | 'unlinked';

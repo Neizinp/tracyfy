@@ -111,7 +111,6 @@ describe('TraceabilityDashboard', () => {
       id: 'TC-001',
       title: 'Test Case',
       description: '',
-      requirementIds: ['REQ-001'],
       status: 'draft',
       priority: 'medium',
       revision: '01',
