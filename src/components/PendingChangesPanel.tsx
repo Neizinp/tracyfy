@@ -14,7 +14,6 @@ const OTHER_CHANGE_LABELS: Record<Exclude<ArtifactChange['type'], ArtifactKindId
   asset: 'Assets',
   link: 'Links',
   'saved-filter': 'Saved Searches',
-  workflow: 'Workflows',
 };
 
 export function PendingChangesPanel() {

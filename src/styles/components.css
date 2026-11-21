@@ -473,3 +473,33 @@ input[type='radio'] {
   padding: 2px 8px;
   font-size: var(--font-size-xs);
 }
+
+/* Review page */
+.tf-review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  padding: var(--spacing-lg);
+}
+.tf-review h2 {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-lg);
+}
+.tf-review-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-card);
+}
+.tf-review-head,
+.tf-review-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+.tf-review-actions .tf-input {
+  flex: 1;
+}

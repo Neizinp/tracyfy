@@ -97,27 +97,3 @@ export interface Risk extends BaseArtifact {
   status?: string;
   dateCreated: number;
 }
-
-export interface Workflow extends BaseArtifact {
-  title: string;
-  description: string;
-  type?: string;
-  status?: string;
-  assignedTo?: string;
-  createdBy?: string;
-  artifactIds?: string[];
-  history?: WorkflowAction[];
-  dateCreated: number;
-  approvedBy?: string;
-  approvalDate?: number;
-  approverComment?: string;
-}
-
-export interface WorkflowAction {
-  id: string;
-  type?: string;
-  user?: string;
-  timestamp?: number;
-  comment?: string;
-  metadata?: Record<string, unknown>;
-}

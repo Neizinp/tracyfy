@@ -11,7 +11,6 @@ export type ModalType =
   | 'history'
   | 'search'
   | 'custom-attribute'
-  | 'workflow'
   | null;
 
 export interface ActiveModal {

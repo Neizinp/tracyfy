@@ -2,7 +2,7 @@ import type { ArtifactKindId } from '../domain/artifactKinds';
 
 export interface ArtifactChange {
   id: string;
-  type: ArtifactKindId | 'project' | 'asset' | 'link' | 'saved-filter' | 'workflow';
+  type: ArtifactKindId | 'project' | 'asset' | 'link' | 'saved-filter';
   title: string;
   /** Artifacts are never deleted from disk, but a removed link is a deleted file */
   status: 'new' | 'modified' | 'deleted';

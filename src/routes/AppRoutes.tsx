@@ -20,8 +20,8 @@ const EngineeringGuide = lazy(() =>
   import('../pages/EngineeringGuide').then((m) => ({ default: m.EngineeringGuide }))
 );
 const LinksPage = lazy(() => import('../pages/LinksPage').then((m) => ({ default: m.LinksPage })));
-const WorkflowsPage = lazy(() =>
-  import('../pages/WorkflowsPage').then((m) => ({ default: m.WorkflowsPage }))
+const ReviewPage = lazy(() =>
+  import('../pages/ReviewPage').then((m) => ({ default: m.ReviewPage }))
 );
 const HelpPage = lazy(() =>
   import('../pages/ProjectManual').then((m) => ({ default: m.ProjectManual }))
@@ -39,7 +39,7 @@ export function AppRoutes() {
         ))}
         <Route path="traceability" element={<TraceabilityDashboardPage />} />
         <Route path="links" element={<LinksPage />} />
-        <Route path="workflows" element={<WorkflowsPage />} />
+        <Route path="review" element={<ReviewPage />} />
 
         <Route path="custom-attributes" element={<CustomAttributesPage />} />
         <Route path="help">

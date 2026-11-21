@@ -7,7 +7,6 @@
  */
 import { describe, it, expect } from 'vitest';
 import { parseArtifact, serializeArtifact, parseLink, serializeLink } from '../artifactFormat';
-import { workflowToMarkdown, parseMarkdownWorkflow } from '../../utils/workflowMarkdownUtils';
 import type { ArtifactKindId } from '../artifactKinds';
 import type {
   Requirement,
@@ -17,7 +16,6 @@ import type {
   Risk,
   ArtifactDocument,
   Link,
-  Workflow,
 } from '../../types';
 
 /** Text that tends to break hand-written frontmatter/markdown serializers */
@@ -149,23 +147,6 @@ const link: Link = {
   customAttributes: common.customAttributes,
 };
 
-const workflow: Workflow = {
-  ...common,
-  id: 'WF-004',
-  title: 'Approve: login',
-  description: TRICKY,
-  type: 'approval',
-  status: 'approved',
-  assignedTo: 'USER-002',
-  createdBy: 'USER-001',
-  artifactIds: ['REQ-042', 'UC-007'],
-  history: [{ id: 'H-1', type: 'approved', user: 'USER-002', timestamp: T0 + 5, comment: TRICKY }],
-  dateCreated: T0,
-  approvedBy: 'USER-002',
-  approvalDate: T0 + 6,
-  approverComment: TRICKY,
-};
-
 const kindCase = (kindId: ArtifactKindId, original: { id: string }) =>
   [
     kindId,
@@ -182,7 +163,6 @@ const CASES: [string, { id: string }, (x: never) => string, (s: string) => unkno
   kindCase('risk', risk),
   kindCase('document', document),
   ['link', link, serializeLink, (s) => parseLink(link.id, s)],
-  ['workflow', workflow, workflowToMarkdown, (s) => parseMarkdownWorkflow(workflow.id, s)],
 ];
 
 describe.each(CASES)('%s save → load round trip', (_name, original, serialize, parse) => {

@@ -23,42 +23,6 @@ describe('integration: errors are shown, not swallowed', () => {
     expect(await screen.findByText(/could not read git status/i)).toBeInTheDocument();
   }, 60_000);
 
-  it('a workflow that cannot be saved shows an error instead of silently doing nothing', async () => {
-    h = await startApp({ initialRoute: '/workflows' });
-    await h.colleagueCommits('Reviewer');
-    await act(() =>
-      h.app().addArtifact('requirement', {
-        title: 'Login',
-        description: '',
-        text: '',
-        status: 'draft',
-        priority: 'medium',
-        dateCreated: Date.now(),
-      } as never)
-    );
-    await h.settle();
-    // A real write failure: the workflows folder is read-only
-    const wfDir = path.join(h.dir, 'workflows');
-    fs.mkdirSync(wfDir, { recursive: true });
-    fs.chmodSync(wfDir, 0o555);
-    try {
-      fireEvent.click(screen.getByRole('button', { name: /create new/i }));
-      fireEvent.click(await screen.findByText('New Workflow'));
-      const dialog = await screen.findByRole('dialog');
-      fireEvent.change(within(dialog).getAllByRole('textbox')[0], { target: { value: 'Approve' } });
-      fireEvent.change(within(dialog).getByRole('combobox'), { target: { value: 'Reviewer' } });
-      fireEvent.change(within(dialog).getByPlaceholderText('Search artifacts by ID or title...'), {
-        target: { value: 'Login' },
-      });
-      fireEvent.click(await within(dialog).findByText('Login'));
-      fireEvent.click(within(dialog).getByRole('button', { name: /create workflow/i }));
-
-      expect(await screen.findByText(/could not save workflow/i)).toBeInTheDocument();
-    } finally {
-      fs.chmodSync(wfDir, 0o755);
-    }
-  }, 60_000);
-
   it('one unreadable artifact file does not prevent the rest of the project from loading', async () => {
     h = await startApp();
     for (const title of ['Login', 'Logout']) {
