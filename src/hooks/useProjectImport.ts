@@ -115,7 +115,8 @@ export function useProjectImport() {
           import('../export/excel'),
         ]);
         const wb = XLSX.read(await readFile(file, 'bytes'), { type: 'array' });
-        bundle = parseWorkbook(XLSX, wb, store.getState().attributeDefinitions);
+        const { attributeDefinitions, artifacts } = store.getState();
+        bundle = parseWorkbook(XLSX, wb, attributeDefinitions, artifacts);
       } catch (err) {
         showToast(`Could not read the Excel file: ${message(err)}`, 'error');
         return;

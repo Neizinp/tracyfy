@@ -12,7 +12,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { startApp, type Harness } from './appHarness';
-import { ARTIFACT_KINDS } from '../../domain/artifactKinds';
+import { ARTIFACT_KINDS, kindOfId } from '../../domain/artifactKinds';
+import { fingerprint } from '../../domain/fingerprint';
+import { isSuspect } from '../../domain/traceability';
+import type { AppState } from '../../state/store';
+import type { ArtifactDocument } from '../../types';
 
 const now = () => Date.now();
 
@@ -40,6 +44,15 @@ async function populate(h: Harness) {
   const link = await act(() => app().createLink(req!.id, uc!.id, 'satisfies'));
   await h.settle();
   return { req: req!, uc: uc!, tc: tc!, info: info!, risk: risk!, doc: doc!, link };
+}
+
+/** Each link as the user sees it: its ends, type and whether it is suspect */
+function linkView(app: AppState) {
+  return app.links.map((l) => {
+    const k = kindOfId(l.targetId)!;
+    const target = app.artifacts[k].find((a) => a.id === l.targetId)!;
+    return { ...l, suspect: isSuspect(l, fingerprint(k, target)) };
+  });
 }
 
 /** jsdom's Blob has no arrayBuffer(); FileReader works */
@@ -382,6 +395,50 @@ describe('integration: export', () => {
     });
     for (const k of ARTIFACT_KINDS) expect(h.app().artifacts[k.id]).toHaveLength(1);
     expect(h.app().artifacts.useCase[0]).toMatchObject({ actor: 'User' });
+    await act(() => h.app().reload());
+    expect(h.app().fileProblems).toEqual([]);
+  }, 120_000);
+
+  it('Excel export → import keeps the links, which are suspect, and the outlines', async () => {
+    h = await startApp();
+    const a = await populate(h);
+    const tcLink = await act(() => h.app().createLink(a.tc.id, a.req.id, 'verifies'));
+    // The use case changes after the requirement was linked to it: that link is suspect
+    await act(() => h.app().updateArtifact('useCase', a.uc.id, { title: 'Sign in (v2)' }));
+    await h.settle();
+    const before = linkView(h.app());
+    expect(before.map((l) => [l.id, l.suspect])).toEqual([
+      [a.link.id, true],
+      [tcLink.id, false],
+    ]);
+    const wb = XLSX.read(await exportVia(/excel sheet/i), { type: 'array' });
+    expect(rowsOf(wb, 'Links').map((r) => r['Suspect'] ?? '')).toEqual(['Yes', '']);
+    h.cleanup();
+
+    // Someone adds a link in Excel, by the type's label
+    const links = rowsOf(wb, 'Links');
+    links.push({ 'Link ID': 'LINK-003', Source: a.risk.id, Type: 'Related to', Target: a.info.id });
+    wb.Sheets['Links'] = XLSX.utils.json_to_sheet(links);
+    const bytes = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+
+    h = await startApp();
+    await importVia(h, 'Import Excel', new File([bytes], 'export.xlsx'));
+
+    await waitFor(() => expect(h.app().links).toHaveLength(3));
+    const view = (l: ReturnType<typeof linkView>[number]) => [
+      l.id,
+      l.sourceId,
+      l.type,
+      l.targetId,
+      l.suspect,
+    ];
+    expect(linkView(h.app()).map(view)).toEqual([
+      ...before.map(view),
+      ['LINK-003', a.risk.id, 'related_to', a.info.id, false],
+    ]);
+    expect((h.app().artifacts.document[0] as ArtifactDocument).structure).toEqual(
+      (a.doc as ArtifactDocument).structure
+    );
     await act(() => h.app().reload());
     expect(h.app().fileProblems).toEqual([]);
   }, 120_000);
