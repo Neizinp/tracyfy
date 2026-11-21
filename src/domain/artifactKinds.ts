@@ -21,6 +21,7 @@ import {
   type FieldDef,
 } from './fields';
 import type { CustomAttributeDefinition } from '../types/customAttributes';
+import { LIFECYCLES, type Lifecycle } from './lifecycle';
 
 export const KIND_IDS = [
   'requirement',
@@ -67,14 +68,17 @@ export interface ArtifactKind {
   body?: string;
   /** Placeholder for the title of a new artifact */
   titlePlaceholder?: string;
+  /** Its statuses and how it is reviewed; the status field is derived from it */
+  lifecycle: Lifecycle;
 }
 
-const status = (values: string[], initial = values[0]): FieldDef => ({
+/** The status field of a lifecycle: one option per state */
+const status = (lifecycle: Lifecycle): FieldDef => ({
   id: 'status',
   label: 'Status',
   type: 'enum',
-  options: options(values),
-  default: initial,
+  options: options([...lifecycle.states]),
+  default: lifecycle.initial,
   showInTable: true,
 });
 
@@ -102,8 +106,9 @@ export const ARTIFACT_KINDS: readonly ArtifactKind[] = [
     label: { singular: 'Requirement', plural: 'Requirements' },
     color: colors('--color-info'),
     titlePlaceholder: 'e.g., System shall authenticate users',
+    lifecycle: LIFECYCLES.specification,
     fields: [
-      status(['draft', 'approved', 'implemented', 'verified']),
+      status(LIFECYCLES.specification),
       PRIORITY,
       { id: 'category', label: 'Category', type: 'text', default: 'technical', tab: 'details' },
       {
@@ -135,8 +140,9 @@ export const ARTIFACT_KINDS: readonly ArtifactKind[] = [
     label: { singular: 'Use Case', plural: 'Use Cases' },
     color: colors('--color-accent-light'),
     titlePlaceholder: 'e.g., User Login',
+    lifecycle: LIFECYCLES.specification,
     fields: [
-      status(['draft', 'approved', 'implemented', 'verified']),
+      status(LIFECYCLES.specification),
       PRIORITY,
       markdown('description', 'Description', { showInTable: true }),
       {
@@ -168,8 +174,9 @@ export const ARTIFACT_KINDS: readonly ArtifactKind[] = [
     label: { singular: 'Test Case', plural: 'Test Cases' },
     color: colors('--color-success'),
     titlePlaceholder: 'e.g., Load Testing',
+    lifecycle: LIFECYCLES.test,
     fields: [
-      status(['draft', 'approved', 'passed', 'failed', 'blocked']),
+      status(LIFECYCLES.test),
       PRIORITY,
       { id: 'lastRun', label: 'Last Run', type: 'date', readOnly: true },
       markdown('description', 'Description', { showInTable: true }),
@@ -184,8 +191,9 @@ export const ARTIFACT_KINDS: readonly ArtifactKind[] = [
     label: { singular: 'Information', plural: 'Information' },
     color: colors('--color-warning'),
     titlePlaceholder: 'e.g., System Architecture',
+    lifecycle: LIFECYCLES.information,
     fields: [
-      status(['draft', 'approved', 'archived']),
+      status(LIFECYCLES.information),
       {
         id: 'type',
         label: 'Type',
@@ -211,8 +219,9 @@ export const ARTIFACT_KINDS: readonly ArtifactKind[] = [
     folder: 'risks',
     label: { singular: 'Risk', plural: 'Risks' },
     color: colors('--color-error'),
+    lifecycle: LIFECYCLES.risk,
     fields: [
-      status(['identified', 'analyzing', 'mitigating', 'resolved', 'accepted']),
+      status(LIFECYCLES.risk),
       {
         id: 'category',
         label: 'Category',
@@ -262,16 +271,9 @@ export const ARTIFACT_KINDS: readonly ArtifactKind[] = [
     folder: 'documents',
     label: { singular: 'Document', plural: 'Documents' },
     color: colors('--color-text-secondary'),
+    lifecycle: LIFECYCLES.document,
     fields: [
-      {
-        ...status(['draft', 'review', 'approved', 'obsolete']),
-        options: [
-          { value: 'draft', label: 'Draft' },
-          { value: 'review', label: 'In Review' },
-          { value: 'approved', label: 'Approved' },
-          { value: 'obsolete', label: 'Obsolete' },
-        ],
-      },
+      status(LIFECYCLES.document),
       markdown('description', 'Description', { showInTable: true }),
     ],
     body: 'description',

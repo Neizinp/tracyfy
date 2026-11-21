@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { FileText, GitCommit, AlertCircle } from 'lucide-react';
 import { debug } from '../utils/debug';
 import type { ArtifactChange } from '../types';
 import { classifyPendingPath } from '../utils/pendingChanges';
+import { fingerprintsOf } from '../domain/fingerprint';
+import { isSuspect } from '../domain/traceability';
 import { isKindId, kind, type ArtifactKindId } from '../domain/artifactKinds';
 import { useAppStore } from '../state';
 
@@ -12,16 +14,27 @@ const OTHER_CHANGE_LABELS: Record<Exclude<ArtifactChange['type'], ArtifactKindId
   asset: 'Assets',
   link: 'Links',
   'saved-filter': 'Saved Searches',
-  workflow: 'Workflows',
 };
 
 export function PendingChangesPanel() {
   const pendingChanges = useAppStore((s) => s.pendingChanges);
+  const links = useAppStore((s) => s.links);
+  const artifacts = useAppStore((s) => s.artifacts);
+  // Links into an artifact whose change has not been reviewed yet, by that artifact
+  const suspectCount = useMemo(() => {
+    const fingerprintOf = fingerprintsOf(artifacts);
+    const counts = new Map<string, number>();
+    for (const link of links) {
+      if (isSuspect(link, fingerprintOf(link.targetId))) {
+        counts.set(link.targetId, (counts.get(link.targetId) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [links, artifacts]);
   const statusError = useAppStore((s) => s.statusError);
   const commitFile = useAppStore((s) => s.commitFile);
   const revertFile = useAppStore((s) => s.revertFile);
   const project = useAppStore((s) => s.project);
-  const links = useAppStore((s) => s.links);
   const getArtifactHistory = useAppStore((s) => s.artifactHistory);
   const refreshStatus = useAppStore((s) => s.refreshStatus);
   const startTask = useAppStore((s) => s.startTask);
@@ -385,6 +398,13 @@ export function PendingChangesPanel() {
                     {getStatusText(change.status)}
                   </span>
                 </div>
+                {isKindId(change.type) && (suspectCount.get(change.id) ?? 0) > 0 && (
+                  <div className="tf-field-help" role="note">
+                    Makes {suspectCount.get(change.id)} link
+                    {suspectCount.get(change.id) === 1 ? '' : 's'} suspect: review them on the
+                    Traceability page.
+                  </div>
+                )}
 
                 <input
                   ref={(el) => {

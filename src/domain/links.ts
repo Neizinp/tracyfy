@@ -7,7 +7,7 @@
  *
  * Pure TypeScript: no React, no IO.
  */
-import { getInverseType, type LinkType } from './linkTypes';
+import { isSymmetricType, type LinkType } from './linkTypes';
 import { kindOfId } from './artifactKinds';
 
 /** The part of a link these functions read */
@@ -19,20 +19,18 @@ export interface LinkEnds {
 }
 
 /**
- * The artifacts that `id` relates to with `type`, read from `id`'s side.
- *
- * A link can be stored from either end: "TC-001 verifies REQ-001" and
- * "REQ-001 verified_by TC-001" say the same thing. Both count, so the answer
- * does not depend on which artifact the link was created from.
+ * The artifacts that `id` relates to with `type`: "TC-001 verifies REQ-001"
+ * gives REQ-001 for TC-001. A link is stored in one direction, so a directed
+ * type is only read from its source; a symmetric one from both ends.
  * Sorted and without duplicates.
  */
 export function linkedIds(links: readonly LinkEnds[], id: string, type: LinkType): string[] {
-  const inverse = getInverseType(type);
+  const symmetric = isSymmetricType(type);
   const ids = new Set<string>();
   for (const link of links) {
-    if (link.isDeleted) continue;
-    if (link.sourceId === id && link.type === type) ids.add(link.targetId);
-    if (link.targetId === id && link.type === inverse) ids.add(link.sourceId);
+    if (link.isDeleted || link.type !== type) continue;
+    if (link.sourceId === id) ids.add(link.targetId);
+    else if (symmetric && link.targetId === id) ids.add(link.sourceId);
   }
   return [...ids].sort();
 }

@@ -1,22 +1,26 @@
 /**
  * ProjectSettingsModal Component
  *
- * Edit the project's name and description (saved to tracyfy.yaml).
+ * Edit the project's name, description and lifecycle settings (saved to tracyfy.yaml).
  * One folder is one project, so there is nothing to create, switch or delete.
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { FolderOpen } from 'lucide-react';
 import type { Project } from '../types';
+import type { LifecycleSettings } from '../domain/lifecycle';
+
+export type ProjectSettingsValues = Project & LifecycleSettings;
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { BaseArtifactModal } from './BaseArtifactModal';
 import { FormField } from './forms/FormField';
 
 interface ProjectSettingsModalProps {
   project: Project;
+  lifecycle: LifecycleSettings;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (project: Project) => Promise<void>;
+  onSave: (values: ProjectSettingsValues) => Promise<void>;
 }
 
 const fieldStyle: React.CSSProperties = {
@@ -30,12 +34,16 @@ const fieldStyle: React.CSSProperties = {
 
 export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   project,
+  lifecycle,
   isOpen,
   onClose,
   onSave,
 }) => {
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description);
+  const [reviewOnContentChange, setReviewOnContentChange] = useState(
+    lifecycle.reviewOnContentChange
+  );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -43,9 +51,10 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
     if (isOpen) {
       setName(project.name);
       setDescription(project.description);
+      setReviewOnContentChange(lifecycle.reviewOnContentChange);
       setError(null);
     }
-  }, [isOpen, project]);
+  }, [isOpen, project, lifecycle]);
 
   const handleSubmit = useCallback(
     async (e?: React.FormEvent) => {
@@ -53,7 +62,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       setIsSubmitting(true);
       setError(null);
       try {
-        await onSave({ name, description });
+        await onSave({ name, description, reviewOnContentChange });
         onClose();
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
@@ -61,7 +70,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
         setIsSubmitting(false);
       }
     },
-    [name, description, onSave, onClose]
+    [name, description, reviewOnContentChange, onSave, onClose]
   );
 
   useKeyboardShortcuts({ onSave: handleSubmit, onClose });
@@ -105,6 +114,25 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
             style={{ ...fieldStyle, resize: 'vertical' }}
           />
         </FormField>
+        <label style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'flex-start' }}>
+          <input
+            type="checkbox"
+            checked={reviewOnContentChange}
+            onChange={(e) => setReviewOnContentChange(e.target.checked)}
+          />
+          <span>
+            Editing an approved artifact sends it back to review
+            <span
+              style={{
+                display: 'block',
+                color: 'var(--color-text-muted)',
+                fontSize: 'var(--font-size-xs)',
+              }}
+            >
+              A change to its title or text sets its status to In review.
+            </span>
+          </span>
+        </label>
         {error && (
           <div
             role="alert"

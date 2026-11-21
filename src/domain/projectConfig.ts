@@ -11,6 +11,15 @@
  *       type: dropdown
  *       options: [UI, Backend]
  *       appliesTo: [requirement, testCase]
+ *   lifecycle:
+ *     reviewOnContentChange: false   # left out: true
+ *   traceability:                    # left out: DEFAULT_TRACEABILITY (traceability.ts)
+ *     allowed:
+ *       - [testCase, verifies, requirement]
+ *     coverage:
+ *       - name: Every requirement is verified
+ *         kind: requirement
+ *         needs: { incoming: verifies, from: testCase }
  *
  * Plain text the team edits and merges like any other file. Parsing validates
  * the content, so a broken file is reported instead of silently becoming
@@ -24,6 +33,14 @@ import { KIND_IDS } from './artifactKinds';
 import { nextIds } from './ids';
 import type { CustomAttributeDefinition } from '../types/customAttributes';
 import type { Project } from '../types/project';
+import { DEFAULT_LIFECYCLE_SETTINGS, type LifecycleSettings } from './lifecycle';
+import { LINK_TYPE_IDS } from './linkTypes';
+import {
+  DEFAULT_TRACEABILITY,
+  type AllowedLink,
+  type CoverageRule,
+  type TraceabilityRules,
+} from './traceability';
 
 export const PROJECT_CONFIG_FILE = 'tracyfy.yaml';
 
@@ -41,11 +58,37 @@ const customAttributeSchema = z.object({
   appliesTo: z.array(z.enum([...KIND_IDS, 'link'])),
 });
 
+const kindId = z.enum(KIND_IDS);
+const linkType = z.enum(LINK_TYPE_IDS);
+const kindPattern = z.union([kindId, z.literal('*')]);
+
+const traceabilitySchema = z
+  .object({
+    allowed: z.array(z.tuple([kindPattern, linkType, kindPattern])).optional(),
+    coverage: z
+      .array(
+        z
+          .object({
+            name: z.string().min(1),
+            kind: kindId,
+            needs: z.union([
+              z.object({ incoming: linkType, from: kindId.optional() }).strict(),
+              z.object({ outgoing: linkType, to: kindId.optional() }).strict(),
+            ]),
+          })
+          .strict()
+      )
+      .optional(),
+  })
+  .strict();
+
 const projectConfigSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
   name: z.string().min(1),
   description: z.string().default(''),
   customAttributes: z.array(customAttributeSchema).default([]),
+  lifecycle: z.object({ reviewOnContentChange: z.boolean().optional() }).strict().optional(),
+  traceability: traceabilitySchema.optional(),
 });
 
 export interface ProjectConfig {
@@ -53,7 +96,30 @@ export interface ProjectConfig {
   name: string;
   description: string;
   customAttributes: CustomAttributeDefinition[];
+  /** Only what the file sets; see lifecycleSettings() for the values in effect */
+  lifecycle?: Partial<LifecycleSettings>;
+  /** Only what the file sets; a list it leaves out is the default one */
+  traceability?: { allowed?: AllowedLink[]; coverage?: CoverageRule[] };
 }
+
+/** The rules a project works by, as in effect (defaults filled in) */
+export interface ProjectSettings {
+  lifecycle: LifecycleSettings;
+  traceability: TraceabilityRules;
+}
+
+/** The settings in effect: the file's, with defaults for what it leaves out */
+export function settingsOf(config: ProjectConfig): ProjectSettings {
+  return {
+    lifecycle: { ...DEFAULT_LIFECYCLE_SETTINGS, ...config.lifecycle },
+    traceability: {
+      allowed: config.traceability?.allowed ?? DEFAULT_TRACEABILITY.allowed,
+      coverage: config.traceability?.coverage ?? DEFAULT_TRACEABILITY.coverage,
+    },
+  };
+}
+
+export const DEFAULT_SETTINGS: ProjectSettings = settingsOf(defaultProjectConfig(''));
 
 /** The settings of a folder that has no tracyfy.yaml yet */
 export function defaultProjectConfig(name: string): ProjectConfig {
@@ -105,6 +171,10 @@ export function serializeProjectConfig(config: ProjectConfig): string {
       name: config.name,
       description: config.description,
       ...(attributes.length > 0 ? { customAttributes: attributes } : {}),
+      ...(config.lifecycle && Object.keys(config.lifecycle).length > 0
+        ? { lifecycle: config.lifecycle }
+        : {}),
+      ...(config.traceability ? { traceability: config.traceability } : {}),
     },
     { lineWidth: 0 }
   );

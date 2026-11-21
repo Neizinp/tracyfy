@@ -162,7 +162,7 @@ export const EngineeringGuide: React.FC = () => {
         <PrincipleCard
           title="The 'V-Model' Context"
           description="In Tracyfy, the relationship between Requirements and Test Cases represents the validation leg of the V-model. Without this link, you have no evidence of software quality."
-          tip="Use the Traceability Gaps dashboard daily to find unlinked artifacts before they become project risks."
+          tip="Use the Gaps tab of the traceability dashboard daily to find artifacts that break your traceability rules, such as requirements no test verifies."
         />
       </Section>
 

@@ -12,11 +12,13 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 
 ### Core Functionality
 
-- **Hierarchical Requirements** - Organize requirements in parent-child relationships
+- **Hierarchical Requirements** - A requirement refines another (a `refines` link)
 - **Use Cases** - Define and manage use cases with actors, flows, preconditions, and postconditions
 - **Test Cases** - Create test cases linked to requirements for verification tracking
 - **Information Management** - Store project notes, meeting minutes, and decisions
-- **Artifact Links** - Create relationships between artifacts (relates to, depends on, conflicts with) - stored directly within each artifact
+- **Artifact Links** - Typed links between artifacts (verifies, satisfies, refines, mitigates, ...), one file each in `links/`, stored in one direction
+- **Traceability Rules** - `tracyfy.yaml` says which links are allowed and what counts as coverage; gaps are reported by rule name
+- **Suspect Links** - A link is suspect when its target changed since it was last reviewed
 - **Traceability Matrix** - Visualize requirement relationships and dependencies
 - **Trash Bin** - Soft delete with restore capability for all artifact types
 
@@ -27,7 +29,7 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 - **User Management** - Multi-user support with author tracking and user switching
 - **Remote Git Sync** - Push/pull to remote Git repositories for team collaboration
 - **Custom Attributes** - Extend artifacts with custom fields per project
-- **Workflow Management** - Track approval workflows with status and assignment
+- **Review and Approval** - Statuses come from each kind's lifecycle; the Review page approves or sends back artifacts in review and commits each decision
 
 ### Revision Control & Baselines
 
@@ -63,7 +65,7 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 
 ### Artifact Fields
 
-**Requirements** - ID (REQ-001), Title, Description, Requirement Text, Rationale, Status, Priority, Revision, Parent relationships, Linked artifacts
+**Requirements** - ID (REQ-001), Title, Description, Requirement Text, Rationale, Status, Priority, Revision
 
 **Use Cases** - ID (UC-001), Title, Description, Actor, Preconditions, Main Flow, Alternative Flows, Postconditions, Status, Priority, Revision
 
@@ -74,8 +76,6 @@ A modern, web-based requirement management tool inspired by IBM Rational Doors. 
 **Risks** - ID (RISK-001), Title, Description, Probability, Impact, Mitigation, Category, Owner, Status, Revision
 
 **Documents** - ID (DOC-001), Title, Description, Structure (composed of headings and artifact references), Author, Status, Revision
-
-**Workflows** - ID (WF-001), Title, Description, Type, Status, Assigned To, Approval History, Revision
 
 ## 🚀 Getting Started
 
@@ -164,8 +164,7 @@ npm run preview  # Preview the production build
 
 ### Managing Hierarchy
 
-- Requirements can have multiple parents via links
-- Visual indicators show parent-child relationships in tree view
+- A requirement refines another with a `refines` link; it can refine several
 
 ### Creating Links
 

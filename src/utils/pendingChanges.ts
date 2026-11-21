@@ -17,7 +17,6 @@ const FOLDER_TO_TYPE: Record<string, ArtifactChange['type']> = {
   assets: 'asset',
   links: 'link',
   'saved-filters': 'saved-filter',
-  workflows: 'workflow',
 };
 
 /**

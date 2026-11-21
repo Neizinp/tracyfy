@@ -7,7 +7,6 @@ import {
   ExportModal,
   AdvancedSearchModal,
   CustomAttributeDefinitionModal,
-  WorkflowModal,
 } from '../';
 import { exportProjectToJSON } from '../../utils/jsonExportUtils';
 import type { ExportOptions } from '../../types';
@@ -233,8 +232,6 @@ export const ManagementModals: React.FC = () => {
           closeModal();
         }}
       />
-
-      <WorkflowModal isOpen={activeModal.type === 'workflow'} onClose={closeModal} />
     </>
   );
 };

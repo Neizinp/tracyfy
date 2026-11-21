@@ -176,7 +176,7 @@ describe('VersionHistory', () => {
       expect(screen.getByText('RISK')).toBeInTheDocument();
       expect(screen.getByText('PROJ')).toBeInTheDocument();
       expect(screen.getByText('LINK')).toBeInTheDocument();
-      expect(screen.getByText('WF')).toBeInTheDocument();
+      expect(screen.queryByText('WF')).toBeNull();
       expect(screen.getByText('OTHER')).toBeInTheDocument();
     });
 

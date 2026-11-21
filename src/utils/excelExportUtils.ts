@@ -14,7 +14,7 @@ import { formatDate } from './dateUtils';
 import { realGitService } from '../services/realGitService';
 import { diskCustomAttributeService } from '../services/diskCustomAttributeService';
 import { diskLinkService } from '../services/diskLinkService';
-import { LINK_TYPE_LABELS } from '../domain/linkTypes';
+import { linkTypeLabel } from '../domain/linkTypes';
 import { verifiedRequirementIds } from '../domain/links';
 import { kind, type ArtifactKindId } from '../domain/artifactKinds';
 
@@ -436,7 +436,7 @@ export async function exportProjectToExcel(
     const linkData = sortedLinks.map((link) => ({
       'Link ID': link.id,
       Source: link.sourceId,
-      Type: LINK_TYPE_LABELS[link.type] || link.type,
+      Type: linkTypeLabel(link.type),
       Target: link.targetId,
       Created: formatDate(link.dateCreated),
       'Last Modified': formatDate(link.lastModified),

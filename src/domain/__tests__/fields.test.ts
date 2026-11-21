@@ -101,7 +101,7 @@ describe('field values', () => {
 
   it('reads enum and boolean values as text', () => {
     const [statusField] = fieldsFor('document').filter((f) => f.id === 'status');
-    expect(fieldText({ status: 'review' }, statusField)).toBe('In Review');
+    expect(fieldText({ status: 'in_review' }, statusField)).toBe('In review');
     const [checkbox] = fieldsFor('risk', [reviewed]).filter((f) => f.type === 'boolean');
     expect(
       fieldText({ customAttributes: [{ attributeId: 'ATTR-002', value: true }] }, checkbox)

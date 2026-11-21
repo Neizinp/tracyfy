@@ -15,6 +15,7 @@ import {
   createDemoAttributeValues,
 } from '../utils/demoData';
 import type { Project, Requirement, UseCase, TestCase, Information, Risk } from '../types';
+import { fingerprintsOf } from '../domain/fingerprint';
 import type { ArtifactKindId } from '../domain/artifactKinds';
 
 interface CreatedArtifactIds {
@@ -131,13 +132,20 @@ export async function loadDemoData(): Promise<Project> {
     ...risks.map((r) => repository.save('risk', r)),
   ]);
 
-  // 5. Create links between artifacts
+  // 5. Create links between artifacts, reviewed against the targets as they are
+  const fingerprintOf = fingerprintsOf({
+    requirement: requirements,
+    useCase: useCases,
+    testCase: testCases,
+    information: informationItems,
+    risk: risks,
+  });
   for (const linkDef of DEMO_ARTIFACTS.links) {
     const sourceId = getArtifactId(linkDef.sourceType, linkDef.sourceIndex, createdIds);
     const targetId = getArtifactId(linkDef.targetType, linkDef.targetIndex, createdIds);
 
     if (sourceId && targetId) {
-      await repository.createLink(sourceId, targetId, linkDef.type);
+      await repository.createLink(sourceId, targetId, linkDef.type, fingerprintOf(targetId));
     }
   }
 

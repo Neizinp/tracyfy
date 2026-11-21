@@ -140,7 +140,7 @@ describe('integration: export', () => {
     ))!;
     // One link stored from each end
     await act(() => app().createLink(tc.id, login.id, 'verifies'));
-    await act(() => app().createLink(logout.id, tc.id, 'verified_by'));
+    await act(() => app().createLink(tc.id, logout.id, 'verifies'));
     await h.settle();
 
     const wb = XLSX.read(await exportVia(/excel sheet/i), { type: 'array' });

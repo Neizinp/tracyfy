@@ -1,6 +1,6 @@
 # Tracyfy target design
 
-Status: steps 1–6 of §7 are done; the rest is the plan.
+Status: steps 1–7 of §7 are done; the rest is the plan.
 
 This document describes where the codebase should end up, the decisions behind it, and
 the order in which to get there. The goal is a codebase where a change that concerns
@@ -212,8 +212,8 @@ my-project/                 ← one git repository = one project
 - `tracyfy.yaml` has a `schemaVersion`. Future format changes are explicit migrations
   keyed on it.
 - Removed: `projects/`, `counters/`, `users/`, `baselines/`, `project.md` and
-  `custom-attributes/` (moved into `tracyfy.yaml`), `.git/tracyfy-current-*`. `workflows/`
-  goes in step 7. `saved-filters/` stays until the open question in §8 is decided.
+  `custom-attributes/` (moved into `tracyfy.yaml`), `.git/tracyfy-current-*`, `workflows/`.
+  `saved-filters/` stays until the open question in §8 is decided.
 
 ## 5. Architecture
 
@@ -303,8 +303,28 @@ order is chosen so that each step makes the next one smaller.
    Advanced search (`src/domain/search.ts`) and the snapshot viewer cover every kind. Table
    columns are remembered per user and project folder (local storage). The UI changes custom
    attributes and links only through store actions; `useLinkService` is gone.
-7. **RE features**: traceability rules and rule-based gaps (P2), suspect links (P3),
-   lifecycle (P6, replaces workflows).
+7. ✅ **RE features** - done.
+   - **Lifecycle** (P6, `src/domain/lifecycle.ts`): each kind's statuses come from its
+     lifecycle, and a file with a status its kind does not have is reported. Review is
+     draft → in_review → approved. Editing the content of an approved artifact sends it back
+     to in_review, unless `lifecycle.reviewOnContentChange: false` is set in tracyfy.yaml
+     (Project Settings has a checkbox for it).
+   - **Review page** (`src/pages/ReviewPage.tsx`, replaces workflows): Approve or Send back
+     commits the decision at once, authored by the user, with the comment in the commit
+     message. This is the only automatic commit left, by the user's choice.
+   - **Traceability rules** (P2, `src/domain/traceability.ts`): `allowed` and `coverage` are
+     defaults that tracyfy.yaml can replace. The link dialog offers only allowed relations,
+     read from where the user starts. The gap list reports coverage rules by name, links the
+     rules do not allow, orphan links and suspect links.
+   - **One direction per fact**: the inverse types (`verified_by`, …) and parent/child are
+     gone. "Verified by" is only how `TC verifies REQ` reads from the requirement.
+     `mitigates` is new.
+   - **Suspect links** (P3, `src/domain/fingerprint.ts`): a link stores `reviewed`, the
+     fingerprint of its target's title and text fields. Suspect links show on the artifact,
+     in the gap list, on the Review page and in Pending Changes ("Makes N links suspect"),
+     each with Mark reviewed. A link without a fingerprint has never been reviewed, so it
+     is suspect.
+   - Link files keep `LINK-NNN` names (decided against naming them by fact).
 8. **Export** (PDF, Excel, JSON) rewritten over the registry.
 
 Styling moves to classes continuously, whenever a component is touched in steps 5–8.
@@ -320,40 +340,37 @@ Things noticed while doing a step that belong to a later one:
   use cases, test cases and information. This gets fixed by the rewrite in step 8.
 - **Left after step 2**: the JSON import/export keys its collections by state name
   (`useCases`). It goes with the export rewrite in step 8.
-- **Left after step 3**: `Workflow.artifactIds` still lists artifacts inside the workflow file.
-  It goes with workflows in step 7 (P6). The gap analysis still counts "has any link"; the
-  rule-based version is step 7 (P2).
-- **A link is one fact, stored from one end.** Creating `REQ verified_by TC` and
-  `TC verifies REQ` gives two link files for the same fact. The link dialog should normalize
-  to one direction per type pair (for example always `verifies`), which also makes the
-  `allowed` rules in §3.3 simpler. This fits with the link rules in step 7.
 - **Left after step 4**:
-  - Workflows still have their own file format and auto-commit approvals; they go in step 7.
-    Workflow assignees are git author names.
-  - A removed link deletes its file, so the highest link ID can be handed out again. Link
-    files could instead be named by what they link (`TC-007.verifies.REQ-012.md`): one file
-    per fact, no ID to allocate, and two branches adding the same link merge cleanly. Worth
-    deciding with the link rules in step 7.
+  - A removed link deletes its file, so the highest link ID can be handed out again. Naming
+    link files by fact was considered in step 7 and not chosen.
   - Tags are not pushed with Push; a baseline only exists in the local clone until it is.
 - **Left after step 5**:
   - The sidebar's sync status (ahead/behind) still runs on window events (`git-check`,
     `git-status-changed`) and its own polling, not on store state.
-  - Workflows are still written by components through `diskWorkflowService`; they go in step 7.
 - **Left after step 6**:
-  - Enum values are not checked when a file is read: a requirement with `status: review`
-    loads as is. Which statuses a kind has becomes the lifecycle in step 7 (P6).
+  - Other enum values than status (priority, a risk's probability) are still not checked
+    when a file is read.
   - Custom attribute values are not validated against their definitions when a file is read,
     on purpose: renaming a dropdown option must not make every file that uses it unreadable.
     The dialog enforces required attributes when saving.
   - PDF and Excel export read the custom attribute definitions themselves
     (`diskCustomAttributeService`) and list kinds and fields by hand; step 8.
-  - `WorkflowModal` still uses the old form pieces (`ArtifactOverviewFields`,
-    `ArtifactDetailsSections`); they go with workflows in step 7.
   - Changes users will notice: a requirement's Comments tab is now part of Details, the
     requirement "Approved" column is gone (Status shows it), a risk's broken Severity column
     is its Level, an information's description can be edited, and fields that were stored but
     not editable (a requirement's category) now are.
   - `BaseArtifactModal`, the Links page and the search dialog still have many inline styles.
+- **Left after step 7**:
+  - The traceability rules can only be edited in tracyfy.yaml; there is no UI for them.
+  - The fingerprint covers the title and text fields. Enum fields (a risk's impact) and
+    custom attributes do not make a link suspect.
+  - Approving commits the artifact's file as it is, so its other uncommitted edits go into
+    the approval commit. That is intended: you approve what you see.
+  - `people` in the store (commit authors) was only used for workflow assignees and has no
+    reader left.
+  - After the link dialog closes, the artifact dialog it was opened from is back on its
+    Overview tab.
+  - The traceability dashboard and the link dialog (`LinkModal`) still use inline styles.
 
 ## 8. Open questions
 

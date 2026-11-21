@@ -172,9 +172,9 @@ describe('LinksView', () => {
             ...store.getState().links,
             {
               id: 'LINK-099',
-              sourceId: 'REQ-009',
-              targetId: 'TC-009',
-              type: 'verified_by',
+              sourceId: 'TC-009',
+              targetId: 'REQ-009',
+              type: 'verifies',
               revision: '01',
               dateCreated: 1,
               lastModified: 1,

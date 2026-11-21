@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link as LinkIcon, ArrowRight, Plus } from 'lucide-react';
-import { LINK_TYPE_LABELS } from '../domain/linkTypes';
+import { linkTypeLabel } from '../domain/linkTypes';
 import { kind, kindOfId } from '../domain/artifactKinds';
 import type { Link } from '../types';
 import type { LinkType } from '../domain/linkTypes';
@@ -79,7 +79,7 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
         case 'id':
           return parseInt(link.id.replace(/\D/g, ''), 10) || 0;
         case 'type':
-          return (LINK_TYPE_LABELS[link.type as LinkType] || link.type).toLowerCase();
+          return linkTypeLabel(link.type).toLowerCase();
         default:
           return (link as unknown as Record<string, string | number | undefined>)[key];
       }
@@ -134,7 +134,7 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
             fontFamily: 'monospace',
           }}
         >
-          {LINK_TYPE_LABELS[link.type] || link.type}
+          {linkTypeLabel(link.type)}
           <ArrowRight size={12} />
         </span>
       ),
@@ -246,7 +246,7 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
           <option value="all">All Types</option>
           {uniqueTypes.map((type) => (
             <option key={type} value={type}>
-              {LINK_TYPE_LABELS[type as LinkType] || type}
+              {linkTypeLabel(type)}
             </option>
           ))}
         </select>

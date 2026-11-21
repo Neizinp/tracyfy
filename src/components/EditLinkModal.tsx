@@ -2,11 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link as LinkIcon, Trash2, ArrowRight } from 'lucide-react';
 import type { Link } from '../types';
 import type { LinkType } from '../domain/linkTypes';
-import { LINK_TYPE_LABELS } from '../domain/linkTypes';
+import { LINK_TYPE_IDS, linkTypeLabel } from '../domain/linkTypes';
+import { kindOfId } from '../domain/artifactKinds';
+import { isAllowed } from '../domain/traceability';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { BaseArtifactModal } from './BaseArtifactModal';
 import { FormField } from './forms/FormField';
-import { notifyError } from '../state';
+import { notifyError, useAppStore } from '../state';
 
 interface EditLinkModalProps {
   isOpen: boolean;
@@ -26,6 +28,7 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
   const [linkType, setLinkType] = useState<LinkType>('related_to');
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const rules = useAppStore((s) => s.settings.traceability);
 
   // Reset form when modal opens with a link
   useEffect(() => {
@@ -59,6 +62,14 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
   });
 
   if (!isOpen || !link) return null;
+
+  // The types the rules allow between these two kinds, and the link's own type either way
+  const source = kindOfId(link.sourceId);
+  const target = kindOfId(link.targetId);
+  const typeOptions = LINK_TYPE_IDS.filter(
+    (t) => t === link.type || (source && target && isAllowed(rules, source, t, target))
+  );
+  const allowed = (t: LinkType) => !!source && !!target && isAllowed(rules, source, t, target);
 
   return (
     <BaseArtifactModal
@@ -183,9 +194,10 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({
               outline: 'none',
             }}
           >
-            {Object.entries(LINK_TYPE_LABELS).map(([value, label]) => (
+            {typeOptions.map((value) => (
               <option key={value} value={value}>
-                {label}
+                {linkTypeLabel(value)}
+                {allowed(value) ? '' : ' (not allowed by the traceability rules)'}
               </option>
             ))}
           </select>

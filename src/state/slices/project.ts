@@ -8,7 +8,15 @@ import type { AppState } from '../store';
 import type { ArtifactByKind, ArtifactsByKind, Link, LinkType, Project } from '../../types';
 import type { CustomAttributeDefinition } from '../../types/customAttributes';
 import { KIND_IDS, type ArtifactKindId } from '../../domain/artifactKinds';
-import { projectOf, withNewAttribute } from '../../domain/projectConfig';
+import {
+  DEFAULT_SETTINGS,
+  projectOf,
+  settingsOf,
+  withNewAttribute,
+  type ProjectSettings,
+} from '../../domain/projectConfig';
+import type { LifecycleSettings } from '../../domain/lifecycle';
+import { fingerprintsOf } from '../../domain/fingerprint';
 import { repository } from '../../storage/repository';
 import { projectConfigStore } from '../../storage/projectConfigStore';
 import { fileSystemService } from '../../services/fileSystemService';
@@ -34,6 +42,8 @@ export interface ProjectSlice {
   fileProblems: FileProblem[];
   /** Custom attribute definitions from tracyfy.yaml */
   attributeDefinitions: CustomAttributeDefinition[];
+  /** Lifecycle and traceability rules from tracyfy.yaml, with defaults filled in */
+  settings: ProjectSettings;
 
   /**
    * Called when the app mounts: reopens the folder picked last time and
@@ -57,11 +67,19 @@ export interface ProjectSlice {
     updates: Partial<Omit<CustomAttributeDefinition, 'id'>>
   ) => Promise<void>;
 
+  /** Change lifecycle settings (in tracyfy.yaml, a pending change) */
+  updateLifecycleSettings: (updates: Partial<LifecycleSettings>) => Promise<void>;
+
   saveArtifact: <K extends ArtifactKindId>(kind: K, artifact: ArtifactByKind[K]) => Promise<void>;
   /** Rename the project or change its description */
   updateProject: (project: Project) => Promise<void>;
-  /** Create a link (a pending change like any other file) */
+  /**
+   * Create a link (a pending change like any other file). It counts as
+   * reviewed against the target as it is now.
+   */
   createLink: (sourceId: string, targetId: string, type: LinkType) => Promise<Link>;
+  /** The link's target was checked: it is no longer suspect (a pending change) */
+  markLinkReviewed: (id: string) => Promise<void>;
   saveLink: (link: Link) => Promise<void>;
   updateLink: (id: string, updates: Partial<Link>) => Promise<Link | null>;
   deleteLink: (id: string) => Promise<void>;
@@ -139,6 +157,7 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
     links: [],
     fileProblems: [],
     attributeDefinitions: [],
+    settings: DEFAULT_SETTINGS,
 
     start: () => {
       const unsubscribe = projectConfigStore.subscribe(() => void get().reloadConfig());
@@ -195,6 +214,7 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
         links: [],
         fileProblems: [],
         attributeDefinitions: [],
+        settings: DEFAULT_SETTINGS,
         pendingChanges: [],
         statusError: null,
         currentUser: null,
@@ -213,13 +233,18 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
           links: data.links,
           fileProblems: data.problems,
           attributeDefinitions: data.customAttributes,
+          settings: data.settings,
         });
       }),
 
     reloadConfig: async () => {
       if (e2e || !get().isReady) return;
       const config = await projectConfigStore.load();
-      set({ project: projectOf(config), attributeDefinitions: config.customAttributes });
+      set({
+        project: projectOf(config),
+        attributeDefinitions: config.customAttributes,
+        settings: settingsOf(config),
+      });
     },
 
     addAttributeDefinition: async (def) => {
@@ -247,6 +272,22 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
       get().refreshStatus();
     },
 
+    updateLifecycleSettings: async (updates) => {
+      requireReady();
+      if (e2e) {
+        set((s) => ({
+          settings: { ...s.settings, lifecycle: { ...s.settings.lifecycle, ...updates } },
+        }));
+        return;
+      }
+      await projectConfigStore.update((config) => ({
+        ...config,
+        lifecycle: { ...config.lifecycle, ...updates },
+      }));
+      await get().reloadConfig();
+      get().refreshStatus();
+    },
+
     saveArtifact: async (kindId, artifact) => {
       requireReady();
       if (!e2e) await repository.save(kindId, artifact);
@@ -268,6 +309,7 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
 
     createLink: async (sourceId, targetId, type) => {
       requireReady();
+      const reviewed = fingerprintsOf(get().artifacts)(targetId);
       let link: Link;
       if (e2e) {
         const now = Date.now();
@@ -276,12 +318,13 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
           sourceId,
           targetId,
           type,
+          reviewed,
           dateCreated: now,
           lastModified: now,
           revision: '01',
         };
       } else {
-        link = await repository.createLink(sourceId, targetId, type);
+        link = await repository.createLink(sourceId, targetId, type, reviewed);
       }
       set((s) => ({ links: upsert(s.links, link) }));
       if (!e2e) get().refreshStatus();
@@ -301,6 +344,14 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
       if (updated) set((s) => ({ links: upsert(s.links, updated) }));
       get().refreshStatus();
       return updated;
+    },
+
+    markLinkReviewed: async (id) => {
+      const link = get().links.find((l) => l.id === id);
+      if (!link) return;
+      const reviewed = fingerprintsOf(get().artifacts)(link.targetId);
+      if (!reviewed || reviewed === link.reviewed) return;
+      await get().saveLink({ ...link, reviewed, lastModified: Date.now() });
     },
 
     deleteLink: async (id) => {

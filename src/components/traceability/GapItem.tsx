@@ -1,7 +1,7 @@
 import React from 'react';
 import { XCircle, Plus, Trash2 } from 'lucide-react';
 import type { GapInfo } from './types';
-import { ISSUE_LABELS } from './types';
+import { ISSUE_COLORS, gapLabel } from './types';
 import { kind } from '../../domain/artifactKinds';
 
 interface GapItemProps {
@@ -9,11 +9,21 @@ interface GapItemProps {
   onClick?: () => void;
   onAddLink?: () => void;
   onRemoveOrphan?: () => void;
+  onMarkReviewed?: () => void;
 }
 
-export const GapItem: React.FC<GapItemProps> = ({ gap, onClick, onAddLink, onRemoveOrphan }) => {
+export const GapItem: React.FC<GapItemProps> = ({
+  gap,
+  onClick,
+  onAddLink,
+  onRemoveOrphan,
+  onMarkReviewed,
+}) => {
   const colors = kind(gap.artifact.type).color;
-  const issueInfo = ISSUE_LABELS[gap.issueType];
+  const issueColor = ISSUE_COLORS[gap.gap.issue];
+  const { label, details } = gapLabel(gap.gap);
+  const isOrphan = gap.gap.issue === 'orphan_link';
+  const isSuspectLink = gap.gap.issue === 'suspect';
 
   return (
     <div
@@ -27,7 +37,7 @@ export const GapItem: React.FC<GapItemProps> = ({ gap, onClick, onAddLink, onRem
         transition: 'background-color 0.15s',
       }}
     >
-      <XCircle size={16} style={{ color: issueInfo.color }} />
+      <XCircle size={16} style={{ color: issueColor }} />
       <span
         onClick={onClick}
         style={{
@@ -50,19 +60,31 @@ export const GapItem: React.FC<GapItemProps> = ({ gap, onClick, onAddLink, onRem
           padding: '2px 8px',
           backgroundColor: 'var(--color-bg-tertiary)',
           borderRadius: 'var(--radius-xs)',
-          color: issueInfo.color,
+          color: issueColor,
           fontWeight: 500,
         }}
       >
-        {issueInfo.label}
+        {label}
       </span>
-      {gap.details && (
+      {details && (
         <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
-          {gap.details}
+          {details}
         </span>
       )}
       {/* Quick action buttons */}
-      {gap.issueType !== 'orphan_link' && onAddLink && (
+      {isSuspectLink && onMarkReviewed && (
+        <button
+          type="button"
+          className="tf-button tf-button-small"
+          onClick={(e) => {
+            e.stopPropagation();
+            onMarkReviewed();
+          }}
+        >
+          Mark reviewed
+        </button>
+      )}
+      {!isOrphan && !isSuspectLink && onAddLink && (
         <button
           type="button"
           onClick={(e) => {
@@ -88,7 +110,7 @@ export const GapItem: React.FC<GapItemProps> = ({ gap, onClick, onAddLink, onRem
           Link
         </button>
       )}
-      {gap.issueType === 'orphan_link' && onRemoveOrphan && (
+      {isOrphan && onRemoveOrphan && (
         <button
           type="button"
           onClick={(e) => {

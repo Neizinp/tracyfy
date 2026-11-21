@@ -112,7 +112,7 @@ export const ProjectLayout: React.FC = () => {
     if (pageKind) return kind(pageKind).label.plural;
     if (location.pathname.includes('/traceability')) return 'Traceability Dashboard';
     if (location.pathname.includes('/links')) return 'Links';
-    if (location.pathname.includes('/workflows')) return 'Workflows';
+    if (location.pathname.includes('/review')) return 'Review';
     if (location.pathname.includes('/custom-attributes')) return 'Custom Attributes';
     return '';
   };
@@ -127,7 +127,6 @@ export const ProjectLayout: React.FC = () => {
       onNewTestCase={() => openModal('testCase')}
       onNewInformation={() => openModal('information')}
       onNewRisk={() => openModal('risk')}
-      onNewWorkflow={() => openModal('workflow')}
       onNewLink={() => navigate('/links')}
       onNewCustomAttribute={() => openModal('custom-attribute')}
       onNewDocument={() => openModal('document')}
@@ -266,28 +265,6 @@ export const ProjectLayout: React.FC = () => {
             {location.pathname.includes('/custom-attributes') && (
               <button
                 onClick={() => openModal('custom-attribute')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  height: '32px',
-                  padding: '0 12px',
-                  backgroundColor: 'var(--color-accent)',
-                  color: 'var(--color-on-accent)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-sm)',
-                  cursor: 'pointer',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 500,
-                }}
-              >
-                <Plus size={16} />
-                Add
-              </button>
-            )}
-            {location.pathname.includes('/workflows') && (
-              <button
-                onClick={() => openModal('workflow')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

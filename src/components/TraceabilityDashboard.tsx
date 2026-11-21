@@ -27,7 +27,7 @@ import {
 import { TraceabilityGraph } from './graph/TraceabilityGraph';
 import { ARTIFACT_KINDS, kind } from '../domain/artifactKinds';
 import { LinksView } from './LinksView';
-import { useAppStore } from '../state';
+import { notifyError, useAppStore } from '../state';
 
 type TabType = 'overview' | 'gaps' | 'links' | 'impact' | 'matrix' | 'graph';
 
@@ -58,7 +58,8 @@ interface TraceabilityDashboardProps {
   initialTab?: TabType;
   onSelectArtifact?: (artifactId: string) => void;
   onAddLink?: (artifactId: string, artifactType: string) => void;
-  onRemoveLink?: (artifactId: string, targetId: string) => void;
+  /** Removes the link with this ID (an orphan link) */
+  onRemoveLink?: (linkId: string) => void;
 }
 
 export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
@@ -75,6 +76,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
   onRemoveLink,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  const markLinkReviewed = useAppStore((s) => s.markLinkReviewed);
 
   // Sync activeTab with initialTab when it changes
   useEffect(() => {
@@ -287,8 +289,8 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                 <strong>Tip:</strong>
               </div>
               <span>
-                Click on &quot;gaps&quot; counts to see unlinked artifacts. Use the Links tab to
-                view all relationships.
+                Gaps are artifacts that break a traceability rule (tracyfy.yaml), such as a
+                requirement no test case verifies. Use the Links tab to view all relationships.
               </span>
             </div>
           </div>
@@ -320,7 +322,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                 color: 'var(--color-text-primary)',
               }}
             >
-              Unlinked Artifacts ({filteredGaps.length})
+              Gaps ({filteredGaps.length})
             </h3>
             <TypeFilterButtons selectedTypes={selectedTypes} onToggle={toggleType} />
           </div>
@@ -336,7 +338,7 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                 size={48}
                 style={{ marginBottom: '12px', color: 'var(--color-success-light)' }}
               />
-              <p>All artifacts are linked!</p>
+              <p>No gaps: every traceability rule is met.</p>
             </div>
           ) : (
             <div
@@ -348,20 +350,25 @@ export const TraceabilityDashboard: React.FC<TraceabilityDashboardProps> = ({
                 overflowY: 'auto',
               }}
             >
-              {filteredGaps.map((gap) => (
+              {filteredGaps.map((gap, i) => (
                 <GapItem
-                  key={gap.artifact.id}
+                  key={`${gap.artifact.id}-${i}`}
                   gap={gap}
                   onClick={onSelectArtifact ? () => onSelectArtifact(gap.artifact.id) : undefined}
                   onAddLink={
                     onAddLink ? () => onAddLink(gap.artifact.id, gap.artifact.type) : undefined
                   }
+                  onMarkReviewed={
+                    gap.gap.issue === 'suspect'
+                      ? () =>
+                          markLinkReviewed((gap.gap as { linkId: string }).linkId).catch((err) =>
+                            notifyError('Could not mark the link reviewed', err)
+                          )
+                      : undefined
+                  }
                   onRemoveOrphan={
-                    gap.issueType === 'orphan_link' && onRemoveLink && gap.details
-                      ? () => {
-                          const orphanTarget = gap.details?.replace('→ ', '').split(',')[0].trim();
-                          if (orphanTarget) onRemoveLink(gap.artifact.id, orphanTarget);
-                        }
+                    gap.gap.issue === 'orphan_link' && onRemoveLink
+                      ? () => onRemoveLink((gap.gap as { linkId: string }).linkId)
                       : undefined
                   }
                 />

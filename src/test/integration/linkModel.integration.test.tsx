@@ -73,9 +73,9 @@ describe('integration: one link model', () => {
     const logout = await addRequirement(h, 'Logout');
     const other = await addRequirement(h, 'Unrelated');
     const tc = await addTestCase(h, 'Log in and out');
-    // One link from each end, and one that is not a verification
+    // Two verifications, and one link that is not a verification
     await act(() => h.app().createLink(tc.id, login.id, 'verifies'));
-    await act(() => h.app().createLink(logout.id, tc.id, 'verified_by'));
+    await act(() => h.app().createLink(tc.id, logout.id, 'verifies'));
     await act(() => h.app().createLink(tc.id, other.id, 'related_to'));
     await h.settle();
 

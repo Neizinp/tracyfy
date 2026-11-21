@@ -1,7 +1,7 @@
 /**
  * Every folder the app stores data in must be shown in the Pending Changes
  * panel - otherwise users end up with uncommitted files they cannot see or
- * commit. (workflows/ was not, until this check existed.)
+ * commit.
  */
 import { describe, it, expect } from 'vitest';
 import { STORED_TYPES } from '../../services/storedTypes';
@@ -32,7 +32,8 @@ describe('pending changes coverage', () => {
       type: 'asset',
       id: '1234-abcd.png',
     });
-    expect(classifyPendingPath('workflows/WF-001.md')).toMatchObject({ type: 'workflow' });
+    // A folder the app no longer uses is not a pending change it can show
+    expect(classifyPendingPath('workflows/WF-001.md')).toBeNull();
     expect(classifyPendingPath('links/LINK-001.md')).toMatchObject({
       type: 'link',
       id: 'LINK-001',

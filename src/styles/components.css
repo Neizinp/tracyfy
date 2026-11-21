@@ -408,3 +408,98 @@ input[type='radio'] {
 .tf-nowrap {
   white-space: nowrap;
 }
+
+/* An artifact's links (Relationships tab) */
+.tf-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+.tf-links-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tf-link-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tf-link-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-card);
+  font-size: var(--font-size-sm);
+}
+.tf-link-target {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+.tf-link-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+.tf-icon-button {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-xs);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.tf-icon-button:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-hover);
+}
+
+.tf-button-small {
+  padding: 2px 8px;
+  font-size: var(--font-size-xs);
+}
+
+/* Review page */
+.tf-review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  padding: var(--spacing-lg);
+}
+.tf-review h2 {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-lg);
+}
+.tf-review-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-card);
+}
+.tf-review-head,
+.tf-review-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+.tf-review-actions .tf-input {
+  flex: 1;
+}

@@ -5,8 +5,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { EditLinkModal } from '../EditLinkModal';
+import { renderWithStore as render } from '../../test/renderWithStore';
 import type { Link } from '../../types';
 
 describe('EditLinkModal', () => {
@@ -72,22 +73,29 @@ describe('EditLinkModal', () => {
   });
 
   describe('Link type options', () => {
-    it('should include common link type options', () => {
+    it('offers only the types the traceability rules allow between the two kinds', () => {
       render(<EditLinkModal {...defaultProps} />);
 
-      // These should appear as options in the select
-      expect(screen.getByText('Satisfies')).toBeInTheDocument();
-      expect(screen.getByText('Verifies')).toBeInTheDocument();
-      expect(screen.getByText('Related to')).toBeInTheDocument();
+      // A requirement can satisfy a use case; it cannot verify one
+      const options = screen.getAllByRole('option').map((o) => o.textContent);
+      expect(options).toEqual(['Satisfies', 'Duplicates', 'Related to']);
+    });
+
+    it("keeps a link's own type in the menu even when the rules do not allow it", () => {
+      render(<EditLinkModal {...defaultProps} link={{ ...mockLink, type: 'verifies' }} />);
+
+      expect(
+        screen.getByRole('option', { name: 'Verifies (not allowed by the traceability rules)' })
+      ).toBeInTheDocument();
     });
 
     it('should allow changing link type', () => {
       render(<EditLinkModal {...defaultProps} />);
 
       const typeSelect = screen.getByRole('combobox');
-      fireEvent.change(typeSelect, { target: { value: 'depends_on' } });
+      fireEvent.change(typeSelect, { target: { value: 'related_to' } });
 
-      expect((typeSelect as HTMLSelectElement).value).toBe('depends_on');
+      expect((typeSelect as HTMLSelectElement).value).toBe('related_to');
     });
   });
 

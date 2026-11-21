@@ -51,7 +51,7 @@ describe('advanced search', () => {
     const statuses = findProperty(groups, 'status')!.options!.map((o) => o.value);
     // Every kind's statuses, once each
     expect(statuses).toEqual(
-      expect.arrayContaining(['approved', 'identified', 'review', 'passed'])
+      expect.arrayContaining(['approved', 'identified', 'in_review', 'passed'])
     );
     expect(new Set(statuses).size).toBe(statuses.length);
     expect(findProperty(groups, 'probability')!.options!.map((o) => o.value)).toEqual([

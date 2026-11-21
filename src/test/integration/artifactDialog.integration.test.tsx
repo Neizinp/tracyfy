@@ -153,7 +153,7 @@ describe('integration: dialog defaults and navigation', () => {
     h = await startApp({ initialRoute: '/requirements' });
     const req = await createThroughUi('requirement', 'Login');
     const tc = await createThroughUi('testCase', 'Login works');
-    await act(() => h.app().createLink(req.id, tc.id, 'verified_by'));
+    await act(() => h.app().createLink(tc.id, req.id, 'verifies'));
     await h.settle();
 
     fireEvent.click(await screen.findByText('Login'));

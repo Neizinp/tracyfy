@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   FolderOpen,
   GitBranch,
+  ClipboardCheck,
   FileText,
   FlaskConical,
   Link2,
@@ -625,7 +626,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 label="Traceability Dashboard"
                 iconStyle={{ transform: 'rotate(45deg)' }}
               />
-              <NavLink to="/workflows" icon={GitBranch} label="My Workflows" />
+              <NavLink to="/review" icon={ClipboardCheck} label="Review" />
               <NavLink to="/documents" icon={FileText} label="Documents" />
               <NavLink to="/requirements" icon={FileText} label="Requirements" />
               <NavLink to="/use-cases" icon={FileText} label="Use Cases" />

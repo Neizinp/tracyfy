@@ -21,6 +21,5 @@ export { BaseArtifactModal } from './BaseArtifactModal';
 export { UserSettingsModal } from './UserSettingsModal';
 export { AdvancedSearchModal } from './AdvancedSearchModal';
 export { CustomAttributeDefinitionModal } from './CustomAttributeDefinitionModal';
-export { WorkflowModal } from './WorkflowModal';
 export { DocumentEditor } from './DocumentEditor';
 export { MarkdownCell } from './MarkdownCell';

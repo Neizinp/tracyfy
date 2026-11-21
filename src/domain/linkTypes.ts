@@ -1,116 +1,88 @@
 /**
- * Link Type Definitions and Inverse Mapping
+ * Link types: the relations a link can express.
  *
- * Links are stored as separate files in the links/ folder.
- * Each link has a source, target, and type. The inverse type
- * is computed when viewing from the target's perspective.
+ * A link is one fact, stored in one direction: "TC-007 verifies REQ-012".
+ * Read from the target's side the same link says "REQ-012 is verified by
+ * TC-007", but that is only a label, never a second type, so there is exactly
+ * one way to store each fact. Symmetric types read the same from both ends.
+ *
+ * Pure TypeScript: no React, no IO.
  */
 
-export type LinkType =
-  // Hierarchical
-  | 'parent'
-  | 'child'
-  // Derivation
-  | 'derived_from'
-  | 'derives_to'
-  // Dependency
-  | 'depends_on'
-  | 'depended_on_by'
-  // Refinement
-  | 'refines'
-  | 'refined_by'
-  // Implementation
-  | 'satisfies'
-  | 'satisfied_by'
-  // Verification
-  | 'verifies'
-  | 'verified_by'
-  // Constraints
-  | 'constrains'
-  | 'constrained_by'
-  // Preconditions
-  | 'requires'
-  | 'required_by'
-  // Symmetric types
-  | 'conflicts_with'
-  | 'duplicates'
-  | 'related_to';
-
-/**
- * Mapping from a link type to its inverse.
- * When artifact A links to B with type X, B sees A with type LINK_INVERSE[X].
- */
-export const LINK_INVERSE: Record<LinkType, LinkType> = {
-  // Hierarchical
-  parent: 'child',
-  child: 'parent',
-  // Derivation
-  derived_from: 'derives_to',
-  derives_to: 'derived_from',
-  // Dependency
-  depends_on: 'depended_on_by',
-  depended_on_by: 'depends_on',
-  // Refinement
-  refines: 'refined_by',
-  refined_by: 'refines',
-  // Implementation
-  satisfies: 'satisfied_by',
-  satisfied_by: 'satisfies',
-  // Verification
-  verifies: 'verified_by',
-  verified_by: 'verifies',
-  // Constraints
-  constrains: 'constrained_by',
-  constrained_by: 'constrains',
-  // Preconditions
-  requires: 'required_by',
-  required_by: 'requires',
-  // Symmetric (same both directions)
-  conflicts_with: 'conflicts_with',
-  duplicates: 'duplicates',
-  related_to: 'related_to',
-};
-
-/**
- * Human-readable labels for link types
- */
-export const LINK_TYPE_LABELS: Record<LinkType, string> = {
-  parent: 'Parent of',
-  child: 'Child of',
-  derived_from: 'Derived from',
-  derives_to: 'Derives to',
-  depends_on: 'Depends on',
-  depended_on_by: 'Depended on by',
-  refines: 'Refines',
-  refined_by: 'Refined by',
-  satisfies: 'Satisfies',
-  satisfied_by: 'Satisfied by',
-  verifies: 'Verifies',
-  verified_by: 'Verified by',
-  constrains: 'Constrains',
-  constrained_by: 'Constrained by',
-  requires: 'Requires',
-  required_by: 'Required by',
-  conflicts_with: 'Conflicts with',
-  duplicates: 'Duplicates',
-  related_to: 'Related to',
-};
-
-/**
- * Link types that are symmetric - no inverse needed
- */
-export const SYMMETRIC_TYPES: LinkType[] = ['conflicts_with', 'duplicates', 'related_to'];
-
-/**
- * Check if a link type is symmetric
- */
-export function isSymmetricType(type: LinkType): boolean {
-  return SYMMETRIC_TYPES.includes(type);
+interface LinkTypeDef {
+  /** Read from the source: "TC-007 Verifies REQ-012" */
+  label: string;
+  /** Read from the target: "REQ-012 Verified by TC-007"; none for a symmetric type */
+  inverse?: string;
+  /** What it is for, shown in the link dialog */
+  description: string;
 }
 
-/**
- * Get the inverse of a link type
- */
-export function getInverseType(type: LinkType): LinkType {
-  return LINK_INVERSE[type];
+export const LINK_TYPES = {
+  verifies: {
+    label: 'Verifies',
+    inverse: 'Verified by',
+    description: 'A test shows that it is met',
+  },
+  satisfies: {
+    label: 'Satisfies',
+    inverse: 'Satisfied by',
+    description: 'Meets a need or realizes a use case',
+  },
+  refines: {
+    label: 'Refines',
+    inverse: 'Refined by',
+    description: 'Adds detail to it (a child of it)',
+  },
+  derived_from: {
+    label: 'Derived from',
+    inverse: 'Source of',
+    description: 'Follows from it',
+  },
+  mitigates: {
+    label: 'Mitigates',
+    inverse: 'Mitigated by',
+    description: 'Reduces the risk',
+  },
+  depends_on: {
+    label: 'Depends on',
+    inverse: 'Depended on by',
+    description: 'Needs it to be in place',
+  },
+  constrains: {
+    label: 'Constrains',
+    inverse: 'Constrained by',
+    description: 'Restricts how it can be met',
+  },
+  requires: {
+    label: 'Requires',
+    inverse: 'Required by',
+    description: 'Has it as a precondition',
+  },
+  conflicts_with: { label: 'Conflicts with', description: 'Both cannot be met' },
+  duplicates: { label: 'Duplicates', description: 'Says the same thing' },
+  related_to: { label: 'Related to', description: 'Any other association' },
+} as const satisfies Record<string, LinkTypeDef>;
+
+export type LinkType = keyof typeof LINK_TYPES;
+
+export const LINK_TYPE_IDS = Object.keys(LINK_TYPES) as [LinkType, ...LinkType[]];
+
+export function isLinkType(value: unknown): value is LinkType {
+  return typeof value === 'string' && value in LINK_TYPES;
+}
+
+/** A symmetric type says the same thing from both ends */
+export function isSymmetricType(type: LinkType): boolean {
+  return !('inverse' in LINK_TYPES[type]);
+}
+
+/** The type's name, read from the source */
+export const linkTypeLabel = (type: LinkType): string => LINK_TYPES[type]?.label ?? type;
+
+/** How a link reads from one of its ends: "Verifies" from the source, "Verified by" from the target */
+export function linkLabelFrom(type: LinkType, end: 'source' | 'target'): string {
+  const def: LinkTypeDef = LINK_TYPES[type];
+  if (!def) return type;
+  return end === 'target' && def.inverse ? def.inverse : def.label;
 }

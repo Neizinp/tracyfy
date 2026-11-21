@@ -8,7 +8,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Link, Risk } from '../../types';
 import type { TOCEntry } from './types';
-import { LINK_TYPE_LABELS } from '../../domain/linkTypes';
+import { linkTypeLabel } from '../../domain/linkTypes';
 import { renderRisk } from './pdfArtifactRenderer';
 
 /**
@@ -44,7 +44,7 @@ export function addLinksSection(
   const tableData = sortedLinks.map((link) => [
     link.id,
     link.sourceId,
-    LINK_TYPE_LABELS[link.type] || link.type,
+    linkTypeLabel(link.type),
     link.targetId,
   ]);
 

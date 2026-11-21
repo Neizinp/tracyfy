@@ -1,3 +1,4 @@
+import type { Gap } from '../../domain/traceability';
 import type { ArtifactKindId } from '../../domain/artifactKinds';
 
 export interface UnifiedArtifact {
@@ -6,12 +7,12 @@ export interface UnifiedArtifact {
   type: ArtifactKindId;
 }
 
-export type IssueType = 'no_outgoing' | 'no_incoming' | 'orphan_link' | 'unlinked';
+export type IssueType = Gap['issue'];
 
+/** A gap, with the artifact it is about */
 export interface GapInfo {
   artifact: UnifiedArtifact;
-  issueType: IssueType;
-  details?: string;
+  gap: Gap;
 }
 
 export interface LinkInfo {
@@ -22,9 +23,23 @@ export interface LinkInfo {
   targetType: ArtifactKindId;
 }
 
-export const ISSUE_LABELS: Record<IssueType, { label: string; color: string }> = {
-  unlinked: { label: 'No links', color: 'var(--color-warning-light)' },
-  no_outgoing: { label: 'No outgoing links', color: 'var(--color-warning-light)' },
-  no_incoming: { label: 'No incoming links', color: 'var(--color-info-light, #60a5fa)' },
-  orphan_link: { label: 'Orphan link', color: 'var(--color-error-light, #f87171)' },
+export const ISSUE_COLORS: Record<IssueType, string> = {
+  coverage: 'var(--color-warning-light)',
+  not_allowed: 'var(--color-info-light, #60a5fa)',
+  orphan_link: 'var(--color-error-light, #f87171)',
+  suspect: 'var(--color-warning)',
 };
+
+/** What the gap list says about a gap */
+export function gapLabel(gap: Gap): { label: string; details?: string } {
+  switch (gap.issue) {
+    case 'coverage':
+      return { label: gap.rule };
+    case 'not_allowed':
+      return { label: 'Link not allowed by the rules', details: gap.linkId };
+    case 'orphan_link':
+      return { label: 'Orphan link', details: `${gap.linkId} → ${gap.missingId}` };
+    case 'suspect':
+      return { label: 'Suspect link', details: `${gap.changedId} changed (${gap.linkId})` };
+  }
+}

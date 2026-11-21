@@ -80,7 +80,7 @@ describe('integration: the git author is the user', () => {
     expect(await git.getConfig({ fs, dir: h.dir, path: 'user.name' })).toBe('Ada Lovelace');
   }, 60_000);
 
-  it('people who committed to the repository can be assigned workflows', async () => {
+  it('people who committed to the repository are known by name', async () => {
     h = await startApp({ userName: 'Ada' });
     await h.colleagueCommits('Grace');
 

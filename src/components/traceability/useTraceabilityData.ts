@@ -2,7 +2,8 @@
  * useTraceabilityData Hook
  *
  * Manages traceability data calculations including artifact unification,
- * link analysis, gap detection, and statistics.
+ * link analysis, gap detection, and statistics. Gaps are violations of the
+ * project's traceability rules (src/domain/traceability.ts).
  * Extracted from TraceabilityDashboard for better separation of concerns.
  */
 
@@ -18,6 +19,9 @@ import type {
 } from '../../types';
 import type { UnifiedArtifact, GapInfo } from './types';
 import { KIND_IDS, kindOfId, type ArtifactKindId } from '../../domain/artifactKinds';
+import { findGaps } from '../../domain/traceability';
+import { fingerprintsOf } from '../../domain/fingerprint';
+import { useAppStore } from '../../state';
 
 interface UseTraceabilityDataOptions {
   requirements: Requirement[];
@@ -40,6 +44,7 @@ export function useTraceabilityData({
   documents = EMPTY,
   standaloneLinks,
 }: UseTraceabilityDataOptions) {
+  const rules = useAppStore((s) => s.settings.traceability);
   // Multi-select type toggles - all selected by default
   const [selectedTypes, setSelectedTypes] = useState<Set<ArtifactKindId>>(new Set(KIND_IDS));
 
@@ -81,58 +86,47 @@ export function useTraceabilityData({
     return links;
   }, [allArtifacts, standaloneLinks]);
 
-  // Calculate coverage stats per type
+  // Every rule violation, with the artifact it is about
+  const gapArtifacts = useMemo((): GapInfo[] => {
+    const byId = new Map(allArtifacts.map((a) => [a.id, a]));
+    const fingerprintOf = fingerprintsOf({
+      requirement: requirements,
+      useCase: useCases,
+      testCase: testCases,
+      information,
+      risk: risks,
+      document: documents,
+    });
+    const traced = allArtifacts.map((a) => ({ id: a.id, fingerprint: fingerprintOf(a.id) }));
+    return findGaps(rules, traced, standaloneLinks).flatMap((gap) => {
+      const artifact = byId.get(gap.artifactId);
+      return artifact ? [{ artifact, gap }] : [];
+    });
+  }, [
+    rules,
+    allArtifacts,
+    standaloneLinks,
+    requirements,
+    useCases,
+    testCases,
+    information,
+    risks,
+    documents,
+  ]);
+
+  // Per kind: how many there are, how many have a link, how many have a gap
   const stats = useMemo(() => {
-    const calculateStats = (artifacts: UnifiedArtifact[]) => {
-      const linked = artifacts.filter((a) => allLinksSet.has(a.id)).length;
-      return { total: artifacts.length, linked, gaps: artifacts.length - linked };
-    };
+    const withGaps = new Set(gapArtifacts.map((g) => g.artifact.id));
+    const calculateStats = (artifacts: UnifiedArtifact[]) => ({
+      total: artifacts.length,
+      linked: artifacts.filter((a) => allLinksSet.has(a.id)).length,
+      gaps: artifacts.filter((a) => withGaps.has(a.id)).length,
+    });
 
     return Object.fromEntries(
       KIND_IDS.map((type) => [type, calculateStats(allArtifacts.filter((a) => a.type === type))])
     ) as Record<ArtifactKindId, { total: number; linked: number; gaps: number }>;
-  }, [allArtifacts, allLinksSet]);
-
-  // Get gap artifacts with issue types, from the link files
-  const gapArtifacts = useMemo((): GapInfo[] => {
-    const gaps: GapInfo[] = [];
-    const artifactIds = new Set(allArtifacts.map((a) => a.id));
-
-    const outgoingTargets = new Map<string, string[]>();
-    const addOutgoing = (sourceId: string, targetId: string) => {
-      if (!targetId) return;
-      const list = outgoingTargets.get(sourceId) ?? [];
-      list.push(targetId);
-      outgoingTargets.set(sourceId, list);
-    };
-    standaloneLinks.forEach((link) => addOutgoing(link.sourceId, link.targetId));
-
-    const hasIncomingLink = new Set<string>();
-    outgoingTargets.forEach((targets) => targets.forEach((t) => hasIncomingLink.add(t)));
-
-    allArtifacts.forEach((artifact) => {
-      const targets = outgoingTargets.get(artifact.id) ?? [];
-      const hasOutgoing = targets.length > 0;
-      const hasIncoming = hasIncomingLink.has(artifact.id);
-      const orphanTargets = targets.filter((id) => !artifactIds.has(id));
-
-      if (orphanTargets.length > 0) {
-        gaps.push({
-          artifact,
-          issueType: 'orphan_link',
-          details: `→ ${orphanTargets.join(', ')}`,
-        });
-      } else if (!hasOutgoing && !hasIncoming) {
-        gaps.push({ artifact, issueType: 'unlinked' });
-      } else if (!hasOutgoing) {
-        gaps.push({ artifact, issueType: 'no_outgoing' });
-      } else if (!hasIncoming) {
-        gaps.push({ artifact, issueType: 'no_incoming' });
-      }
-    });
-
-    return gaps;
-  }, [allArtifacts, standaloneLinks]);
+  }, [allArtifacts, allLinksSet, gapArtifacts]);
 
   // Get all links as flat list
   const allLinks = useMemo(() => {
@@ -172,8 +166,8 @@ export function useTraceabilityData({
     return gapArtifacts.filter((gap) => selectedTypes.has(gap.artifact.type));
   }, [gapArtifacts, selectedTypes]);
 
-  // Computed totals
-  const totalGaps = KIND_IDS.reduce((sum, t) => sum + stats[t].gaps, 0);
+  // Computed totals: every gap, and every artifact with a link
+  const totalGaps = gapArtifacts.length;
   const totalLinked = KIND_IDS.reduce((sum, t) => sum + stats[t].linked, 0);
   const totalArtifacts = allArtifacts.length;
 

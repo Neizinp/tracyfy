@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { LinkModal } from '../LinkModal';
+import { renderWithStore as render } from '../../test/renderWithStore';
 import type { Requirement, Project, UseCase, TestCase, Information } from '../../types';
 
 describe('LinkModal', () => {
@@ -217,6 +218,24 @@ describe('LinkModal', () => {
         type: 'related_to',
       })
     );
+  });
+
+  it('from a requirement, "Verified by" a test case is stored as the test case verifying it', () => {
+    render(<LinkModal {...defaultProps} />);
+    fireEvent.click(screen.getByText('TC'));
+    fireEvent.click(screen.getByText('Test Test Case'));
+
+    const relation = screen.getByLabelText('Relation Type');
+    const offered = Array.from((relation as HTMLSelectElement).options).map((o) => o.textContent);
+    expect(offered).toEqual(['Verified by', 'Duplicates', 'Related to']);
+    fireEvent.change(relation, { target: { value: 'verifies:backward' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create Link' }));
+
+    expect(mockOnAddLink).toHaveBeenCalledWith({
+      sourceId: mockTestCase.id,
+      targetId: 'REQ-001',
+      type: 'verifies',
+    });
   });
 
   it('should reset form when reopened', () => {

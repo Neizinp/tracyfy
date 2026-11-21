@@ -112,14 +112,10 @@ export const TraceabilityDashboardPage: React.FC = () => {
 
   // Handler to remove an orphan link
   const handleRemoveLink = useCallback(
-    (artifactId: string, targetId: string) => {
-      standaloneLinks
-        .filter((l) => l.sourceId === artifactId && l.targetId === targetId)
-        .forEach((l) => {
-          deleteLink(l.id).catch((err) => notifyError('Could not remove link', err));
-        });
+    (linkId: string) => {
+      deleteLink(linkId).catch((err) => notifyError('Could not remove link', err));
     },
-    [standaloneLinks, deleteLink]
+    [deleteLink]
   );
 
   return (

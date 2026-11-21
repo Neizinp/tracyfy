@@ -155,10 +155,6 @@ export const ProjectManual: React.FC = () => {
           description="Identify and track project or technical risks. Capture probability, impact, mitigation strategies, contingency plans, and assign owners. Link risks to affected Requirements for impact analysis."
         />
         <FeatureCard
-          title="Workflows (WF)"
-          description="Manage approval and review processes. Workflows track the lifecycle of artifacts through states, recording who approved what and when. Use them for formal change control."
-        />
-        <FeatureCard
           title="Links"
           description="Establish traceability relationships between any two artifacts. Links define how artifacts relate to each other—for example, a Test Case verifies a Requirement, or a Risk impacts a Use Case. Links are bidirectional and visible from both connected artifacts."
         />
@@ -201,10 +197,18 @@ export const ProjectManual: React.FC = () => {
         />
       </Section>
 
-      <Section title="Workflow & Approvals" icon={<Users size={20} />}>
+      <Section title="Review & Approval" icon={<Users size={20} />}>
         <FeatureCard
-          title="Approval Workflows"
-          description="Set up structured approval processes for your artifacts. Once approved, the status is automatically updated and tracked."
+          title="Lifecycle"
+          description="Each kind of artifact has its own statuses. To ask for review, set an artifact's status to In review. On the Review page, Approve or Send back commits the decision at once, so git records who decided, when and why (the comment goes in the commit message)."
+        />
+        <FeatureCard
+          title="Back to review on change"
+          description="Editing the title or text of an approved artifact sets it back to In review. You can turn this off in Project Settings."
+        />
+        <FeatureCard
+          title="Traceability rules and suspect links"
+          description="tracyfy.yaml says which links are allowed and what counts as coverage, for example that every requirement is verified by a test case. The Gaps tab lists what breaks a rule. A link becomes suspect when its target changes. Check that it still holds, then use Mark reviewed."
         />
       </Section>
 

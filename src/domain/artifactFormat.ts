@@ -42,9 +42,7 @@ import type {
 } from '../types/artifact';
 import type { Link } from '../types/link';
 import type { CustomAttributeValue } from '../types/customAttributes';
-import { LINK_INVERSE, type LinkType } from './linkTypes';
-
-const LINK_TYPE_IDS = Object.keys(LINK_INVERSE) as [LinkType, ...LinkType[]];
+import { LINK_TYPE_IDS, linkTypeLabel } from './linkTypes';
 
 /** A short text field; a bare number (`title: 2024`) is read as text */
 const text = z.preprocess((v) => (typeof v === 'number' ? String(v) : v), z.string());
@@ -145,11 +143,23 @@ function formatOf(kindId: ArtifactKindId): KindFormat {
   const frontmatter = fields.filter((f) => !inSection(f));
   const kindKeys = frontmatter.filter((f) => !COMMON_KEYS.includes(f.id));
   const extra = EXTRA[kindId] ?? {};
+  const states = k.lifecycle.states;
+  const status = text
+    .superRefine((v, ctx) => {
+      if (!states.includes(v)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `"${v}" is not a status of a ${k.label.singular.toLowerCase()} (${states.join(', ')})`,
+        });
+      }
+    })
+    .optional();
   const defaults: Record<string, unknown> = { ...EXTRA_DEFAULTS[kindId] };
   for (const f of k.fields) if (f.default !== undefined) defaults[f.id] = f.default;
   return {
     schema: z.object({
       ...common,
+      status,
       ...Object.fromEntries(kindKeys.map((f) => [f.id, fieldSchema(f)])),
       ...extra,
     }),
@@ -246,6 +256,10 @@ const linkSchema = z.object({
   source: z.string().min(1),
   type: z.enum(LINK_TYPE_IDS),
   target: z.string().min(1),
+  reviewed: z
+    .string()
+    .regex(/^[0-9a-f]{8}$/, 'must be a fingerprint like 3f9a1c2e')
+    .optional(),
   revision: optionalText,
   dateCreated: time.optional(),
   lastModified: time.optional(),
@@ -258,12 +272,13 @@ export function serializeLink(link: Link): string {
       source: link.sourceId,
       type: link.type,
       target: link.targetId,
+      reviewed: link.reviewed,
       revision: link.revision,
       dateCreated: writeTime(link.dateCreated),
       lastModified: writeTime(link.lastModified),
       customAttributes: validAttributes(link.customAttributes),
     },
-    `# ${link.id}\n\nLinks **${link.sourceId}** to **${link.targetId}** (${link.type.replaceAll('_', ' ')})`
+    `# ${link.id}\n\nLinks **${link.sourceId}** to **${link.targetId}** (${linkTypeLabel(link.type).toLowerCase()})`
   );
 }
 
@@ -277,6 +292,7 @@ export function parseLink(id: string, content: string): Link {
     sourceId: l.source,
     targetId: l.target,
     type: l.type,
+    ...(l.reviewed ? { reviewed: l.reviewed } : {}),
     revision: l.revision ?? '01',
     dateCreated: l.dateCreated ?? 0,
     lastModified: l.lastModified ?? l.dateCreated ?? 0,

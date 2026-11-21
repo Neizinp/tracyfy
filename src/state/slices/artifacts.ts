@@ -8,6 +8,8 @@ import type { ArtifactByKind } from '../../types';
 import { kind as kindDef, type ArtifactKindId } from '../../domain/artifactKinds';
 import { hasArtifactChanges } from '../../domain/artifactChanges';
 import { savedByTheApp } from '../../domain/kindRules';
+import { fingerprint } from '../../domain/fingerprint';
+import { statusAfterEdit } from '../../domain/lifecycle';
 import { incrementRevision } from '../../utils/revisionUtils';
 import { withTask } from './tasks';
 import { notifyError } from '../notify';
@@ -39,6 +41,14 @@ export interface ArtifactsSlice {
   /** Mark an artifact deleted; its file and ID stay */
   deleteArtifact: (kind: ArtifactKindId, id: string) => Promise<void>;
   restoreArtifact: (kind: ArtifactKindId, id: string) => Promise<void>;
+  /**
+   * Review decisions (DESIGN.md §3.4, P6): set an artifact that is in review
+   * to approved, or back to its lifecycle's initial status, and commit its
+   * file at once so the decision is its own commit, authored by the user.
+   * `comment` goes in the commit message. Returns true if it was committed.
+   */
+  approveArtifact: (kind: ArtifactKindId, id: string, comment?: string) => Promise<boolean>;
+  sendBackArtifact: (kind: ArtifactKindId, id: string, comment?: string) => Promise<boolean>;
   /** Open an artifact's dialog for editing (needs a user) */
   editArtifact: (kind: ArtifactKindId, artifact: { id: string }) => void;
 }
@@ -48,6 +58,53 @@ const label = (kindId: ArtifactKindId) => kindDef(kindId).label.singular;
 export const createArtifactsSlice: StateCreator<AppState, [], [], ArtifactsSlice> = (set, get) => {
   const find = <K extends ArtifactKindId>(kindId: K, id: string) =>
     (get().artifacts[kindId] as ArtifactByKind[K][]).find((a) => a.id === id);
+
+  /** Approve or send back an artifact in review, then commit its file */
+  const decide = async (
+    kindId: ArtifactKindId,
+    id: string,
+    decision: 'approve' | 'sendBack',
+    comment?: string
+  ): Promise<boolean> => {
+    const { lifecycle } = kindDef(kindId);
+    const review = lifecycle.review;
+    const existing = find(kindId, id) as { status?: string; title?: string } | undefined;
+    if (!review || !existing || existing.status !== review.pending) return false;
+    if (!get().currentUser) {
+      get().showToast('Set your name in User Settings before reviewing.', 'warning');
+      return false;
+    }
+    const status = decision === 'approve' ? review.approved : lifecycle.initial;
+    const subject =
+      decision === 'approve'
+        ? `Approve ${id}: ${existing.title ?? ''}`
+        : `Send ${id} back to ${status}: ${existing.title ?? ''}`;
+    const note = comment?.trim();
+    try {
+      await withTask(
+        get(),
+        `${decision === 'approve' ? 'Approving' : 'Sending back'} ${id}...`,
+        async () => {
+          if (!(await get().updateArtifact(kindId, id, { status } as never))) {
+            throw new Error(`${id} could not be saved`);
+          }
+          await get().commitFile(
+            `${kindDef(kindId).folder}/${id}.md`,
+            note ? `${subject.trim()}\n\n${note}` : subject.trim()
+          );
+        }
+      );
+      get().refreshStatus();
+      get().showToast(
+        decision === 'approve' ? `${id} approved` : `${id} sent back to ${status}`,
+        'success'
+      );
+      return true;
+    } catch (err) {
+      notifyError(`Could not record the review of ${id}`, err);
+      return false;
+    }
+  };
 
   return {
     addArtifact: async (kindId, data) => {
@@ -87,7 +144,15 @@ export const createArtifactsSlice: StateCreator<AppState, [], [], ArtifactsSlice
       if (!hasArtifactChanges(existing, updates)) return false;
 
       const now = Date.now();
-      const changed = { ...existing, ...updates };
+      const edited = { ...existing, ...updates } as typeof existing & { status?: string };
+      const status = statusAfterEdit(
+        kindDef(kindId).lifecycle,
+        get().settings.lifecycle,
+        existing as { status?: string },
+        edited,
+        fingerprint(kindId, existing) !== fingerprint(kindId, edited)
+      );
+      const changed = { ...edited, status };
       const updated = {
         ...changed,
         ...savedByTheApp(kindId, existing as never, changed as never, now),
@@ -96,6 +161,9 @@ export const createArtifactsSlice: StateCreator<AppState, [], [], ArtifactsSlice
       };
       try {
         await withTask(get(), `Saving ${id}...`, () => get().saveArtifact(kindId, updated));
+        if (status !== edited.status) {
+          get().showToast(`${id} changed after approval, so it needs review again`, 'info');
+        }
         return true;
       } catch (error) {
         console.error(`Failed to update ${kindId}:`, error);
@@ -128,6 +196,10 @@ export const createArtifactsSlice: StateCreator<AppState, [], [], ArtifactsSlice
         notifyError(`Could not restore ${id}`, err);
       }
     },
+
+    approveArtifact: (kindId, id, comment) => decide(kindId, id, 'approve', comment),
+
+    sendBackArtifact: (kindId, id, comment) => decide(kindId, id, 'sendBack', comment),
 
     editArtifact: (kindId, artifact) => {
       if (!get().currentUser) {

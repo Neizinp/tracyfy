@@ -9,7 +9,7 @@
 import React, { useMemo, useState } from 'react';
 import { BaseArtifactModal } from '../../components/BaseArtifactModal';
 import { RevisionHistoryTab } from '../../components/RevisionHistoryTab';
-import { ArtifactRelationshipsTab } from '../../components/forms/ArtifactRelationshipsTab';
+import { ArtifactLinks } from './ArtifactLinks';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { useOpenArtifact } from '../../hooks/useOpenArtifact';
 import { fieldsFor, kind as kindDef, type ArtifactKindId } from '../../domain/artifactKinds';
@@ -21,7 +21,7 @@ import {
   setFieldValue,
   type FieldDef,
 } from '../../domain/fields';
-import { notifyError, useAppStore, type NewArtifact } from '../../state';
+import { useAppStore, type NewArtifact } from '../../state';
 import { FieldInput } from './FieldInput';
 import { KIND_OVERRIDES, type Draft } from '../kinds';
 
@@ -70,8 +70,6 @@ export const ArtifactDialog: React.FC<ArtifactDialogProps> = ({
   const updateArtifact = useAppStore((s) => s.updateArtifact);
   const deleteArtifact = useAppStore((s) => s.deleteArtifact);
   const openLinkDialog = useAppStore((s) => s.openLinkDialog);
-  const deleteLink = useAppStore((s) => s.deleteLink);
-  const allLinks = useAppStore((s) => s.links);
   const selectedArtifact = useAppStore((s) => s.selectedArtifact);
   const pushNavigationStack = useAppStore((s) => s.pushNavigationStack);
   const openArtifact = useOpenArtifact();
@@ -96,14 +94,6 @@ export const ArtifactDialog: React.FC<ArtifactDialogProps> = ({
   useKeyboardShortcuts({ onClose });
 
   const id = artifact?.id as string | undefined;
-  const outgoingLinks = useMemo(() => allLinks.filter((l) => l.sourceId === id), [allLinks, id]);
-  const incomingLinks = useMemo(
-    () =>
-      allLinks
-        .filter((l) => l.targetId === id)
-        .map((l) => ({ linkId: l.id, sourceId: l.sourceId, linkType: l.type })),
-    [allLinks, id]
-  );
 
   const customFields = fields.filter(isCustomField);
   const tabOf = (f: FieldDef) => f.tab ?? 'overview';
@@ -244,18 +234,11 @@ export const ArtifactDialog: React.FC<ArtifactDialogProps> = ({
           </div>
         )
       ) : activeTab === 'relationships' ? (
-        <ArtifactRelationshipsTab
+        <ArtifactLinks
           artifactId={id}
-          artifactType={label.toLowerCase()}
-          isEditMode={isEdit}
-          outgoingLinks={outgoingLinks}
-          incomingLinks={incomingLinks}
-          loading={false}
+          kindLabel={label.toLowerCase()}
           onAddLink={() => id && openLinkDialog(id, kindId)}
-          onRemoveLink={(linkId) =>
-            deleteLink(linkId).catch((err) => notifyError('Could not remove the link', err))
-          }
-          onNavigateToArtifact={handleNavigate}
+          onNavigate={handleNavigate}
         />
       ) : activeTab === 'history' && id ? (
         <RevisionHistoryTab artifactId={id} artifactType={kindId} />

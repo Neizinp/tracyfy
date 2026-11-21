@@ -1,19 +1,9 @@
 import { BaseArtifactService } from './baseArtifactService';
 import type { Link } from '../types';
 import type { LinkType } from '../domain/linkTypes';
-import { getInverseType } from '../domain/linkTypes';
 import { parseLink, serializeLink } from '../domain/artifactFormat';
 import { idAllocator } from '../storage/idAllocator';
 import { STORED_TYPES } from './storedTypes';
-
-/**
- * Incoming link representation (from target's perspective)
- */
-export interface IncomingLink {
-  linkId: string;
-  sourceId: string;
-  linkType: LinkType; // The inverse type
-}
 
 class DiskLinkService extends BaseArtifactService<Link> {
   constructor() {
@@ -38,51 +28,21 @@ class DiskLinkService extends BaseArtifactService<Link> {
   }
 
   /**
-   * Get outgoing links FROM an artifact (where it is the source)
-   */
-  async getOutgoingLinks(artifactId: string): Promise<Link[]> {
-    const allLinks = await this.getAllLinks();
-    return allLinks.filter((link) => link.sourceId === artifactId);
-  }
-
-  /**
-   * Get incoming links TO an artifact (where it is the target)
-   * Returns with inverse types computed
-   */
-  async getIncomingLinks(artifactId: string): Promise<IncomingLink[]> {
-    const allLinks = await this.getAllLinks();
-    return allLinks
-      .filter((link) => link.targetId === artifactId)
-      .map((link) => ({
-        linkId: link.id,
-        sourceId: link.sourceId,
-        linkType: getInverseType(link.type),
-      }));
-  }
-
-  /**
-   * Check if a link already exists between two artifacts
-   */
-  async linkExists(sourceId: string, targetId: string, type?: LinkType): Promise<boolean> {
-    const allLinks = await this.getAllLinks();
-    return allLinks.some(
-      (link) =>
-        link.sourceId === sourceId &&
-        link.targetId === targetId &&
-        (type === undefined || link.type === type)
-    );
-  }
-
-  /**
    * Create a new link
    */
-  async createLink(sourceId: string, targetId: string, type: LinkType): Promise<Link> {
+  async createLink(
+    sourceId: string,
+    targetId: string,
+    type: LinkType,
+    reviewed?: string
+  ): Promise<Link> {
     const nextId = await idAllocator.next(STORED_TYPES.link.folder, STORED_TYPES.link.idPrefix);
     const link: Link = {
       id: nextId,
       sourceId,
       targetId,
       type,
+      ...(reviewed ? { reviewed } : {}),
       dateCreated: Date.now(),
       lastModified: Date.now(),
       revision: '01',
