@@ -221,7 +221,6 @@ export const createProjectSlice: StateCreator<AppState, [], [], ProjectSlice> = 
         pendingChanges: [],
         statusError: null,
         currentUser: null,
-        people: [],
         isUserLoading: true,
         baselines: [],
       });
