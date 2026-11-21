@@ -92,7 +92,7 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
       label: 'ID',
       width: '100px',
       sortable: true,
-      render: (link) => <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{link.id}</span>,
+      render: (link) => <span className="tf-linksview-id">{link.id}</span>,
     },
     {
       key: 'sourceId',
@@ -105,11 +105,10 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
             e.stopPropagation();
             onNavigateToArtifact?.(link.sourceId);
           }}
-          style={{
-            color: getTypeColor(link.sourceId),
-            fontWeight: 500,
-            cursor: onNavigateToArtifact ? 'pointer' : 'default',
-          }}
+          className="tf-linksview-end"
+          data-clickable={onNavigateToArtifact ? true : undefined}
+          // The kind's own color
+          style={{ color: getTypeColor(link.sourceId) }}
         >
           {link.sourceId}
         </span>
@@ -122,18 +121,7 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
       sortable: true,
       align: 'center',
       render: (link) => (
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '4px 8px',
-            borderRadius: 'var(--radius-xs)',
-            backgroundColor: 'var(--color-bg-secondary)',
-            fontSize: 'var(--font-size-xs)',
-            fontFamily: 'monospace',
-          }}
-        >
+        <span className="tf-linksview-type">
           {linkTypeLabel(link.type)}
           <ArrowRight size={12} />
         </span>
@@ -150,11 +138,10 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
             e.stopPropagation();
             onNavigateToArtifact?.(link.targetId);
           }}
-          style={{
-            color: getTypeColor(link.targetId),
-            fontWeight: 500,
-            cursor: onNavigateToArtifact ? 'pointer' : 'default',
-          }}
+          className="tf-linksview-end"
+          data-clickable={onNavigateToArtifact ? true : undefined}
+          // The kind's own color
+          style={{ color: getTypeColor(link.targetId) }}
         >
           {link.targetId}
         </span>
@@ -163,85 +150,32 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
   ];
 
   return (
-    <div
-      style={{
-        padding: 'var(--spacing-lg)',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--spacing-md)',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--spacing-sm)',
-            fontWeight: 600,
-            fontSize: 'var(--font-size-xl)',
-            margin: 0,
-          }}
-        >
-          <LinkIcon size={24} style={{ color: 'var(--color-accent)' }} />
+    <div className="tf-linksview">
+      <div className="tf-linksview-header">
+        <h2>
+          <LinkIcon size={24} className="tf-accent-icon" />
           Links ({processedLinks.length})
         </h2>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {onAdd && (
-            <button
-              onClick={onAdd}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 12px',
-                backgroundColor: 'var(--color-accent)',
-                color: 'var(--color-on-accent)',
-                border: 'none',
-                borderRadius: 'var(--radius-sm)',
-                cursor: 'pointer',
-                fontSize: 'var(--font-size-sm)',
-                fontWeight: 600,
-              }}
-            >
-              <Plus size={16} />
-              Add
-            </button>
-          )}
-        </div>
+        {onAdd && (
+          <button onClick={onAdd} className="tf-linksview-add">
+            <Plus size={16} />
+            Add
+          </button>
+        )}
       </div>
 
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap' }}>
+      <div className="tf-linksview-filters">
         <input
           type="text"
           placeholder="Search links..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          style={{
-            flex: 1,
-            minWidth: '200px',
-            padding: '8px 12px',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-bg-app)',
-            color: 'var(--color-text-primary)',
-            fontSize: 'var(--font-size-sm)',
-          }}
+          className="tf-linksview-search"
         />
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          style={{
-            padding: '8px 12px',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-bg-app)',
-            color: 'var(--color-text-primary)',
-            fontSize: 'var(--font-size-sm)',
-          }}
+          className="tf-linksview-select"
         >
           <option value="all">All Types</option>
           {uniqueTypes.map((type) => (
@@ -253,17 +187,9 @@ export const LinksView: React.FC<LinksViewProps> = ({ onNavigateToArtifact, onAd
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, minHeight: '400px', overflow: 'hidden' }}>
+      <div className="tf-linksview-content">
         {loading && links.length === 0 ? (
-          <div
-            style={{
-              padding: 'var(--spacing-xl)',
-              textAlign: 'center',
-              color: 'var(--color-text-muted)',
-            }}
-          >
-            Loading links...
-          </div>
+          <div className="tf-linksview-loading">Loading links...</div>
         ) : (
           <BaseArtifactTable
             data={links}

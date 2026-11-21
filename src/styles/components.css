@@ -894,3 +894,93 @@ input[type='radio'] {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+/* An icon in the accent color, next to a heading */
+.tf-accent-icon {
+  color: var(--color-accent);
+}
+
+/* Links list (LinksView: the Links page and the dashboard's Links tab) */
+.tf-linksview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  height: 100%;
+  padding: var(--spacing-lg);
+  overflow: hidden;
+}
+.tf-linksview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tf-linksview-header h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+}
+.tf-linksview-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.tf-linksview-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+.tf-linksview-search,
+.tf-linksview-select {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-app);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+.tf-linksview-search {
+  flex: 1;
+  min-width: 200px;
+}
+.tf-linksview-content {
+  flex: 1;
+  min-height: 400px;
+  overflow: hidden;
+}
+.tf-linksview-loading {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+.tf-linksview-id {
+  font-family: monospace;
+  font-weight: 500;
+}
+.tf-linksview-end {
+  font-weight: 500;
+  cursor: default;
+}
+.tf-linksview-end[data-clickable] {
+  cursor: pointer;
+}
+.tf-linksview-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  background-color: var(--color-bg-secondary);
+  font-family: monospace;
+  font-size: var(--font-size-xs);
+}
