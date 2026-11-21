@@ -241,8 +241,7 @@ describe.each(TYPES)('integration: opening a $name from elsewhere', (t) => {
     fireEvent.keyDown(dialog, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
-    // Search: click the result (search does not cover documents yet, see DESIGN.md)
-    if (t.kind === 'document') return;
+    // Search: click the result
     await act(async () => h.app().openModal('search'));
     const search = await screen.findByRole('dialog', { name: 'Advanced Search' });
     fireEvent.click(await within(search).findByText(target.id));

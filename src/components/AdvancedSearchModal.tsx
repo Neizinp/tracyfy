@@ -8,13 +8,9 @@
 import React, { useCallback } from 'react';
 import { X, Search, Save, Trash2, Plus, ChevronDown, ChevronUp, Filter } from 'lucide-react';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import {
-  useAdvancedSearch,
-  PROPERTY_OPTIONS,
-  CONDITIONS,
-  type SearchResult,
-} from '../hooks/useAdvancedSearch';
+import { useAdvancedSearch, CONDITIONS, type SearchResult } from '../hooks/useAdvancedSearch';
 import { kind } from '../domain/artifactKinds';
+import { findProperty } from '../domain/search';
 
 interface AdvancedSearchModalProps {
   isOpen: boolean;
@@ -55,8 +51,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
     setSaveFilterName,
     results,
     activeCriteriaCount,
-    allPropertyOptions,
-    customAttrDefs,
+    propertyGroups,
     addCriterion,
     removeCriterion,
     updateCriterion,
@@ -231,9 +226,9 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
             }}
           >
             {criteria.map((criterion, index) => {
-              const prop = allPropertyOptions.find((p) => p.value === criterion.property);
-              const propType = prop?.type || 'text';
-              const conditions = CONDITIONS[propType as keyof typeof CONDITIONS] || CONDITIONS.text;
+              const prop = findProperty(propertyGroups, criterion.property);
+              const propType = prop?.type ?? 'text';
+              const conditions = CONDITIONS[propType];
 
               return (
                 <div
@@ -260,57 +255,15 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                     onChange={(e) => updateCriterion(criterion.id, 'property', e.target.value)}
                     style={selectStyle}
                   >
-                    <optgroup label="Common">
-                      {PROPERTY_OPTIONS.slice(0, 9).map((p) => (
-                        <option key={p.value} value={p.value}>
-                          {p.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Requirement">
-                      {PROPERTY_OPTIONS.slice(9, 14).map((p) => (
-                        <option key={p.value} value={p.value}>
-                          {p.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Use Case">
-                      {PROPERTY_OPTIONS.slice(14, 18).map((p) => (
-                        <option key={p.value} value={p.value}>
-                          {p.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Test Case">
-                      {PROPERTY_OPTIONS.slice(18, 20).map((p) => (
-                        <option key={p.value} value={p.value}>
-                          {p.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Risk">
-                      {PROPERTY_OPTIONS.slice(20, 25).map((p) => (
-                        <option key={p.value} value={p.value}>
-                          {p.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Filter">
-                      {PROPERTY_OPTIONS.slice(25).map((p) => (
-                        <option key={p.value} value={p.value}>
-                          {p.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                    {customAttrDefs.length > 0 && (
-                      <optgroup label="Custom Attributes">
-                        {customAttrDefs.map((def) => (
-                          <option key={def.id} value={`custom_${def.id}`}>
-                            [Custom] {def.name}
+                    {propertyGroups.map((group) => (
+                      <optgroup key={group.label} label={group.label}>
+                        {group.properties.map((p) => (
+                          <option key={p.value} value={p.value}>
+                            {p.label}
                           </option>
                         ))}
                       </optgroup>
-                    )}
+                    ))}
                   </select>
 
                   {/* Condition selector */}
@@ -336,8 +289,8 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                       >
                         <option value="">Select...</option>
                         {prop.options.map((o) => (
-                          <option key={o} value={o}>
-                            {o}
+                          <option key={o.value} value={o.value}>
+                            {o.label}
                           </option>
                         ))}
                       </select>

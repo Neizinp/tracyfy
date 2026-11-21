@@ -6,128 +6,23 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { Requirement, UseCase, TestCase, Information, Risk } from '../types';
 import { useCustomAttributes } from './useCustomAttributes';
 import { diskFilterService } from '../services/diskFilterService';
 import type { SavedFilter, FilterState } from '../types/filters';
-import type { ArtifactKindId } from '../domain/artifactKinds';
 import { useAppStore } from '../state';
+import {
+  CONDITIONS,
+  findProperty,
+  searchArtifacts,
+  searchProperties,
+  type SearchCriterion,
+} from '../domain/search';
 
-// Types
-type ArtifactType = Exclude<ArtifactKindId, 'document'>;
-
-export interface SearchCriterion {
-  id: string;
-  property: string;
-  condition: string;
-  value: string;
-}
+export { CONDITIONS, type SearchCriterion, type SearchResult } from '../domain/search';
 
 interface CriteriaFilterState {
   criteria: SearchCriterion[];
 }
-
-export interface SearchResult {
-  id: string;
-  title: string;
-  type: ArtifactType;
-  status: string;
-  priority: string;
-  description: string;
-  dateCreated?: number;
-  [key: string]: unknown;
-}
-
-// All searchable properties with metadata
-export const PROPERTY_OPTIONS = [
-  { value: 'any', label: 'Any Field', type: 'text' },
-  // Common
-  { value: 'id', label: 'ID', type: 'text' },
-  { value: 'title', label: 'Title', type: 'text' },
-  { value: 'description', label: 'Description', type: 'text' },
-  {
-    value: 'status',
-    label: 'Status',
-    type: 'select',
-    options: [
-      'draft',
-      'active',
-      'approved',
-      'deprecated',
-      'passed',
-      'failed',
-      'blocked',
-      'pending',
-    ],
-  },
-  {
-    value: 'priority',
-    label: 'Priority',
-    type: 'select',
-    options: ['critical', 'high', 'medium', 'low'],
-  },
-  { value: 'revision', label: 'Revision', type: 'text' },
-  { value: 'dateCreated', label: 'Created Date', type: 'date' },
-  { value: 'lastModified', label: 'Modified Date', type: 'date' },
-  // Requirement-specific
-  { value: 'text', label: 'Requirement Text', type: 'text' },
-  { value: 'rationale', label: 'Rationale', type: 'text' },
-  { value: 'author', label: 'Author', type: 'text' },
-  { value: 'verificationMethod', label: 'Verification Method', type: 'text' },
-  { value: 'comments', label: 'Comments', type: 'text' },
-  // Use Case-specific
-  { value: 'actor', label: 'Actor', type: 'text' },
-  { value: 'preconditions', label: 'Preconditions', type: 'text' },
-  { value: 'postconditions', label: 'Postconditions', type: 'text' },
-  { value: 'mainFlow', label: 'Main Flow', type: 'text' },
-  // Test Case-specific
-  { value: 'steps', label: 'Test Steps', type: 'text' },
-  { value: 'expectedResult', label: 'Expected Result', type: 'text' },
-  // Risk-specific
-  { value: 'category', label: 'Risk Category', type: 'text' },
-  {
-    value: 'probability',
-    label: 'Probability',
-    type: 'select',
-    options: ['very-low', 'low', 'medium', 'high', 'very-high'],
-  },
-  {
-    value: 'impact',
-    label: 'Impact',
-    type: 'select',
-    options: ['negligible', 'minor', 'moderate', 'major', 'severe'],
-  },
-  { value: 'mitigation', label: 'Mitigation', type: 'text' },
-  { value: 'owner', label: 'Owner', type: 'text' },
-  // Artifact type filter
-  {
-    value: '_type',
-    label: 'Artifact Type',
-    type: 'select',
-    options: ['requirement', 'useCase', 'testCase', 'information', 'risk'],
-  },
-];
-
-export const CONDITIONS = {
-  text: [
-    { value: 'contains', label: 'Contains' },
-    { value: 'equals', label: 'Equals' },
-    { value: 'startsWith', label: 'Starts with' },
-    { value: 'endsWith', label: 'Ends with' },
-    { value: 'notContains', label: 'Does not contain' },
-    { value: 'isEmpty', label: 'Is empty' },
-    { value: 'isNotEmpty', label: 'Is not empty' },
-  ],
-  select: [
-    { value: 'equals', label: 'Is' },
-    { value: 'notEquals', label: 'Is not' },
-  ],
-  date: [
-    { value: 'on', label: 'On' },
-    { value: 'before', label: 'Before' },
-    { value: 'after', label: 'After' },
-  ],
-};
 
 let criterionIdCounter = 0;
 
@@ -136,11 +31,7 @@ interface UseAdvancedSearchOptions {
 }
 
 export function useAdvancedSearch({ isOpen }: UseAdvancedSearchOptions) {
-  const requirements = useAppStore((s) => s.artifacts.requirement);
-  const useCases = useAppStore((s) => s.artifacts.useCase);
-  const testCases = useAppStore((s) => s.artifacts.testCase);
-  const information = useAppStore((s) => s.artifacts.information);
-  const risks = useAppStore((s) => s.artifacts.risk);
+  const artifacts = useAppStore((s) => s.artifacts);
   const { definitions: customAttrDefs } = useCustomAttributes();
 
   // Query builder criteria
@@ -154,16 +45,8 @@ export function useAdvancedSearch({ isOpen }: UseAdvancedSearchOptions) {
   const [saveFilterName, setSaveFilterName] = useState('');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
 
-  // Build property options including custom attributes
-  const allPropertyOptions = useMemo(() => {
-    const customProps = customAttrDefs.map((def) => ({
-      value: `custom_${def.id}`,
-      label: `[Custom] ${def.name}`,
-      type: def.type === 'dropdown' ? 'select' : def.type === 'date' ? 'date' : 'text',
-      options: def.type === 'dropdown' ? def.options : undefined,
-    }));
-    return [...PROPERTY_OPTIONS, ...customProps];
-  }, [customAttrDefs]);
+  // Every field of every kind, and the custom attributes
+  const propertyGroups = useMemo(() => searchProperties(customAttrDefs), [customAttrDefs]);
 
   useEffect(() => {
     if (isOpen) {
@@ -193,167 +76,21 @@ export function useAdvancedSearch({ isOpen }: UseAdvancedSearchOptions) {
           const updated = { ...c, [field]: value };
           // Reset condition when property type changes
           if (field === 'property') {
-            const prop = allPropertyOptions.find((p) => p.value === value);
-            const type = prop?.type || 'text';
-            updated.condition =
-              CONDITIONS[type as keyof typeof CONDITIONS]?.[0]?.value || 'contains';
+            const type = findProperty(propertyGroups, value)?.type ?? 'text';
+            updated.condition = CONDITIONS[type][0].value;
             updated.value = '';
           }
           return updated;
         })
       );
     },
-    [allPropertyOptions]
+    [propertyGroups]
   );
 
-  // Check if value matches criterion
-  const matchesCriterion = useCallback(
-    (fieldValue: unknown, criterion: SearchCriterion): boolean => {
-      const { condition, value } = criterion;
-
-      if (condition === 'isEmpty') return !fieldValue || String(fieldValue).trim() === '';
-      if (condition === 'isNotEmpty') return !!fieldValue && String(fieldValue).trim() !== '';
-
-      if (!value && condition !== 'isEmpty' && condition !== 'isNotEmpty') return true;
-
-      const strValue = String(fieldValue || '').toLowerCase();
-      const searchValue = value.toLowerCase();
-
-      switch (condition) {
-        case 'contains':
-          return strValue.includes(searchValue);
-        case 'equals':
-          return strValue === searchValue;
-        case 'notEquals':
-          return strValue !== searchValue;
-        case 'startsWith':
-          return strValue.startsWith(searchValue);
-        case 'endsWith':
-          return strValue.endsWith(searchValue);
-        case 'notContains':
-          return !strValue.includes(searchValue);
-        case 'before':
-        case 'after':
-        case 'on': {
-          if (!fieldValue) return false;
-          let fieldDate: string;
-          if (typeof fieldValue === 'number') {
-            fieldDate = new Date(fieldValue).toISOString().split('T')[0];
-          } else {
-            fieldDate = String(fieldValue).split('T')[0];
-          }
-          const searchDate = value;
-          if (condition === 'before') return fieldDate < searchDate;
-          if (condition === 'after') return fieldDate > searchDate;
-          return fieldDate === searchDate;
-        }
-        default:
-          return strValue.includes(searchValue);
-      }
-    },
-    []
+  const results = useMemo(
+    () => searchArtifacts(artifacts, criteria, customAttrDefs),
+    [artifacts, criteria, customAttrDefs]
   );
-
-  // Get field value from artifact
-  const getFieldValue = useCallback((artifact: SearchResult, property: string): unknown => {
-    if (property === 'any') {
-      return `${artifact.id} ${artifact.title} ${artifact.description || ''} ${artifact.text || ''} ${artifact.rationale || ''}`;
-    }
-    if (property === '_type') return artifact.type;
-    if (property.startsWith('custom_')) {
-      const attrId = property.replace('custom_', '');
-      const customAttrs = artifact.customAttributes as
-        | Array<{ attributeId: string; value: unknown }>
-        | undefined;
-      const attr = customAttrs?.find((a) => a.attributeId === attrId);
-      return attr?.value;
-    }
-    return artifact[property];
-  }, []);
-
-  // Apply all criteria and get results
-  const results: SearchResult[] = useMemo(() => {
-    const allArtifacts: SearchResult[] = [];
-
-    requirements
-      .filter((r: Requirement) => !r.isDeleted)
-      .forEach((r: Requirement) => {
-        allArtifacts.push({
-          ...r,
-          type: 'requirement' as ArtifactType,
-          status: r.status || 'draft',
-          priority: r.priority || 'medium',
-          description: r.description || '',
-        });
-      });
-    useCases
-      .filter((u: UseCase) => !u.isDeleted)
-      .forEach((u: UseCase) => {
-        allArtifacts.push({
-          ...u,
-          type: 'useCase' as ArtifactType,
-          status: u.status || 'draft',
-          priority: u.priority || 'medium',
-          description: u.description || '',
-        });
-      });
-    testCases
-      .filter((t: TestCase) => !t.isDeleted)
-      .forEach((t: TestCase) => {
-        allArtifacts.push({
-          ...t,
-          type: 'testCase' as ArtifactType,
-          status: t.status || 'draft',
-          priority: t.priority || 'medium',
-          description: t.description || '',
-        });
-      });
-    information
-      .filter((i: Information) => !i.isDeleted)
-      .forEach((i: Information) => {
-        allArtifacts.push({
-          ...i,
-          type: 'information' as ArtifactType,
-          status: 'active',
-          priority: 'medium',
-          description: i.text || '',
-        });
-      });
-    risks
-      .filter((r: Risk) => !r.isDeleted)
-      .forEach((r: Risk) => {
-        allArtifacts.push({
-          ...r,
-          type: 'risk' as ArtifactType,
-          status: r.status || 'open',
-          priority: r.impact || 'medium',
-          description: r.description || '',
-        });
-      });
-
-    return allArtifacts.filter((artifact) => {
-      return criteria.every((criterion) => {
-        if (
-          !criterion.value &&
-          criterion.condition !== 'isEmpty' &&
-          criterion.condition !== 'isNotEmpty'
-        ) {
-          return true;
-        }
-        const fieldValue = getFieldValue(artifact, criterion.property);
-        return matchesCriterion(fieldValue, criterion);
-      });
-    });
-  }, [
-    requirements,
-    useCases,
-    testCases,
-    information,
-    risks,
-    criteria,
-    getFieldValue,
-    matchesCriterion,
-  ]);
 
   const handleClearAll = useCallback(() => {
     setCriteria([
@@ -403,8 +140,7 @@ export function useAdvancedSearch({ isOpen }: UseAdvancedSearchOptions) {
     setSaveFilterName,
     results,
     activeCriteriaCount,
-    allPropertyOptions,
-    customAttrDefs,
+    propertyGroups,
 
     // Actions
     addCriterion,

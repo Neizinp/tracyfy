@@ -11,7 +11,7 @@ const artifacts = {
       id: 'REQ-001',
       title: 'User Authentication',
       description: 'Users must be able to log in',
-      status: 'active',
+      status: 'approved',
       priority: 'high',
       dateCreated: new Date('2024-01-15').getTime(),
       isDeleted: false,
@@ -35,7 +35,7 @@ const artifacts = {
       id: 'REQ-003',
       title: 'Admin Dashboard',
       description: 'Admin panel for management',
-      status: 'active',
+      status: 'approved',
       priority: 'high',
       dateCreated: new Date('2024-03-10').getTime(),
       isDeleted: false,
@@ -58,7 +58,7 @@ const artifacts = {
       id: 'UC-001',
       title: 'Login Flow',
       description: 'User login process',
-      status: 'active',
+      status: 'approved',
       priority: 'high',
       isDeleted: false,
     },
@@ -79,7 +79,7 @@ const artifacts = {
       id: 'RSK-001',
       title: 'Security Breach',
       description: 'Potential data leak',
-      status: 'active',
+      status: 'approved',
       impact: 'high',
       isDeleted: false,
     },
@@ -190,14 +190,14 @@ describe('AdvancedSearchModal', () => {
     const propertySelect = screen.getAllByRole('combobox')[0];
     fireEvent.change(propertySelect, { target: { value: 'status' } });
 
-    // Select "active" as value
+    // Select "approved" as value
     await waitFor(() => {
       const valueSelect = screen.getAllByRole('combobox')[2];
-      fireEvent.change(valueSelect, { target: { value: 'active' } });
+      fireEvent.change(valueSelect, { target: { value: 'approved' } });
     });
 
     await waitFor(() => {
-      // Should show only active items
+      // Should show only approved items
       expect(screen.getByText('REQ-001')).toBeInTheDocument();
       expect(screen.getByText('REQ-003')).toBeInTheDocument();
       expect(screen.getByText('UC-001')).toBeInTheDocument();
@@ -231,7 +231,8 @@ describe('AdvancedSearchModal', () => {
       expect(screen.getByText('REQ-003')).toBeInTheDocument();
       expect(screen.getByText('UC-001')).toBeInTheDocument();
       expect(screen.getByText('TC-001')).toBeInTheDocument();
-      expect(screen.getByText('RSK-001')).toBeInTheDocument();
+      // A risk has no priority (its impact is not one)
+      expect(screen.queryByText('RSK-001')).not.toBeInTheDocument();
       // Should NOT show medium priority
       expect(screen.queryByText('REQ-002')).not.toBeInTheDocument();
     });
@@ -246,13 +247,13 @@ describe('AdvancedSearchModal', () => {
       />
     );
 
-    // First criterion: status = active
+    // First criterion: status = approved
     const propertySelect = screen.getAllByRole('combobox')[0];
     fireEvent.change(propertySelect, { target: { value: 'status' } });
 
     await waitFor(() => {
       const valueSelect = screen.getAllByRole('combobox')[2];
-      fireEvent.change(valueSelect, { target: { value: 'active' } });
+      fireEvent.change(valueSelect, { target: { value: 'approved' } });
     });
 
     // Add second criterion
@@ -272,7 +273,7 @@ describe('AdvancedSearchModal', () => {
     });
 
     await waitFor(() => {
-      // Should only show REQ-001 and REQ-003 (active AND author=John)
+      // Should only show REQ-001 and REQ-003 (approved AND author=John)
       expect(screen.getByText('REQ-001')).toBeInTheDocument();
       expect(screen.getByText('REQ-003')).toBeInTheDocument();
       // Should NOT show others
